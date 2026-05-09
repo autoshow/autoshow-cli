@@ -11,7 +11,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 39
+          "msPerSecond": 32
         }
       },
       "base": {
@@ -22,7 +22,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 44
+          "msPerSecond": 39
         }
       },
       "small": {
@@ -70,7 +70,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 180
+          "msPerSecond": 162
         }
       }
     }
@@ -115,7 +115,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 200
+          "msPerSecond": 140
         }
       }
     }
@@ -145,7 +145,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 61
+          "msPerSecond": 69
         }
       }
     }
@@ -211,7 +211,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 73
+          "msPerSecond": 82
         }
       }
     }
@@ -267,7 +267,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 39
+          "msPerSecond": 33
         }
       }
     }
@@ -288,7 +288,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 180
+          "msPerSecond": 139
         }
       }
     }
@@ -305,6 +305,10 @@
           "effectiveBytes": 1073741824,
           "directUploadBytes": 1073741824,
           "notes": "Current Speechmatics docs publish a 1 GB limit for multipart uploads and explicitly suggest fetch-by-URL for larger files. They do not publish a current remote URL size cap or a batch-audio duration cap."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 469
         }
       },
       "enhanced": {
@@ -315,6 +319,10 @@
           "effectiveBytes": 1073741824,
           "directUploadBytes": 1073741824,
           "notes": "Current Speechmatics docs publish a 1 GB limit for multipart uploads and explicitly suggest fetch-by-URL for larger files. They do not publish a current remote URL size cap or a batch-audio duration cap."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 637
         }
       }
     }
@@ -337,6 +345,10 @@
         "billing": {
           "roundingIncrementSeconds": 1,
           "minimumSeconds": 15
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 431
         }
       },
       "low_cost": {
@@ -399,7 +411,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 71
+          "msPerSecond": 83
         }
       }
     }
@@ -440,6 +452,10 @@
           "remoteUrlBytes": 1048576000,
           "durationSeconds": 8100,
           "notes": "Direct YouTube links are limited to 120 minutes. Current CLI uploads files instead. Enterprise plans can raise the audio-length cap to 4 hours 15 minutes."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 173
         }
       }
     }

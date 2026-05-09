@@ -94,7 +94,7 @@ budgetedTest('write-project-lyrics-single-default-llama', 'write project single-
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
-    `./${project.trackOnePath}`,
+    project.trackOnePath,
     '--prompt',
     'folkSong'
   ])
@@ -128,7 +128,7 @@ budgetedTest('write-project-lyrics-directory-default-llama', 'write project dire
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
-    `./${project.textDir}`,
+    project.textDir,
     '--prompt',
     'shortSummary'
   ])

@@ -10,7 +10,7 @@
         "outputCostPer1MUSD": 15,
         "outputCostPer1MCents": 1500,
         "estimation": {
-          "costMultiplier": 0.6811,
+          "costMultiplier": 0.7927,
           "msPer1KTokens": 7500
         }
       },
@@ -21,7 +21,7 @@
         "outputCostPer1MUSD": 180,
         "outputCostPer1MCents": 18000,
         "estimation": {
-          "costMultiplier": 0.5358,
+          "costMultiplier": 0.6983,
           "msPer1KTokens": 127141
         }
       },
@@ -32,7 +32,7 @@
         "outputCostPer1MUSD": 4.5,
         "outputCostPer1MCents": 450,
         "estimation": {
-          "costMultiplier": 0.5094,
+          "costMultiplier": 0.6811,
           "msPer1KTokens": 3831
         }
       },
@@ -72,7 +72,7 @@
         "outputCostPer1MCents": 60,
         "estimation": {
           "costMultiplier": 0.848,
-          "msPer1KTokens": 1544
+          "msPer1KTokens": 1806
         }
       }
     }
@@ -88,7 +88,7 @@
         "outputCostPer1MUSD": 12,
         "outputCostPer1MCents": 1200,
         "estimation": {
-          "costMultiplier": 0.6292,
+          "costMultiplier": 0.759,
           "msPer1KTokens": 32312
         }
       },
@@ -99,8 +99,8 @@
         "outputCostPer1MUSD": 1.5,
         "outputCostPer1MCents": 150,
         "estimation": {
-          "costMultiplier": 0.753,
-          "msPer1KTokens": 6670
+          "costMultiplier": 0.8395,
+          "msPer1KTokens": 5120
         }
       }
     }
@@ -114,7 +114,11 @@
         "inputCostPer1MUSD": 5,
         "inputCostPer1MCents": 500,
         "outputCostPer1MUSD": 25,
-        "outputCostPer1MCents": 2500
+        "outputCostPer1MCents": 2500,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KTokens": 14456
+        }
       },
       "claude-opus-4-6": {
         "description": "Claude Opus 4.6 — previous Opus release",
@@ -123,7 +127,7 @@
         "outputCostPer1MUSD": 25,
         "outputCostPer1MCents": 2500,
         "estimation": {
-          "costMultiplier": 0.5165,
+          "costMultiplier": 0.6857,
           "msPer1KTokens": 14920
         }
       },
@@ -134,7 +138,7 @@
         "outputCostPer1MUSD": 15,
         "outputCostPer1MCents": 1500,
         "estimation": {
-          "costMultiplier": 0.6419,
+          "costMultiplier": 0.7672,
           "msPer1KTokens": 13968
         }
       },
@@ -145,7 +149,7 @@
         "outputCostPer1MUSD": 5,
         "outputCostPer1MCents": 500,
         "estimation": {
-          "costMultiplier": 0.449,
+          "costMultiplier": 0.6419,
           "msPer1KTokens": 5000
         }
       }
@@ -163,7 +167,7 @@
         "outputCostPer1MCents": 120,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 8234
+          "msPer1KTokens": 6672
         }
       },
       "MiniMax-M2.5-highspeed": {
@@ -174,7 +178,7 @@
         "outputCostPer1MCents": 240,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 48760
+          "msPer1KTokens": 41727
         }
       }
     }
@@ -190,7 +194,8 @@
         "outputCostPer1MUSD": 6,
         "outputCostPer1MCents": 600,
         "estimation": {
-          "msPer1KTokens": 26515
+          "msPer1KTokens": 33444,
+          "costMultiplier": 1
         }
       },
       "grok-4.20-non-reasoning": {
@@ -200,7 +205,8 @@
         "outputCostPer1MUSD": 6,
         "outputCostPer1MCents": 600,
         "estimation": {
-          "msPer1KTokens": 5456
+          "msPer1KTokens": 7829,
+          "costMultiplier": 1
         }
       }
     }
@@ -251,7 +257,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 1675
+          "msPer1KTokens": 1991
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {

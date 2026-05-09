@@ -240,7 +240,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 10000
+          "msPerPage": 14428
         }
       }
     }

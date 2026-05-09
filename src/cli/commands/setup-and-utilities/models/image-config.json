@@ -55,7 +55,7 @@
         "costPerImageCents": 8,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 52000
+          "msPerImage": 40283
         }
       },
       "gpt-image-1": {
@@ -82,7 +82,7 @@
         "costPerImageCents": 5.3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 23669
         }
       }
     }
@@ -97,7 +97,7 @@
         "costPerImageCents": 0.35,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 26000
+          "msPerImage": 21984
         }
       }
     }
@@ -121,7 +121,7 @@
         "costPerImageCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 15000
+          "msPerImage": 13260
         }
       }
     }
@@ -136,7 +136,7 @@
         "costPerImageCents": 7,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 15000
+          "msPerImage": 10549
         }
       }
     }
@@ -195,7 +195,7 @@
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 23767
         }
       },
       "flux-2-pro": {

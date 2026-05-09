@@ -2,6 +2,8 @@ import { test, expect, beforeAll, afterAll } from 'bun:test'
 import { E2E_TEST_TIMEOUT_MS } from './budget'
 import { runCommand, findLatestDirectory, cleanupTestOutput, hasConfiguredEnvVar } from './test-helpers'
 
+const RUNWAY_INSUFFICIENT_CREDITS_MESSAGE = 'You do not have enough credits to run this task.'
+
 export const withOutputLifecycle = (
   title: string,
   setup?: (() => Promise<void>) | undefined
@@ -52,6 +54,12 @@ export const runCommandAndExpectOutputDir = async (
   args: string[]
 ): Promise<string | null> => {
   const result = await runCommand(args)
+  const combinedOutput = `${result.stdout}\n${result.stderr}`
+  if (result.exitCode !== 0 && combinedOutput.includes(RUNWAY_INSUFFICIENT_CREDITS_MESSAGE)) {
+    console.log('Skipping: Runway account does not have enough credits to run this task')
+    return null
+  }
+
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory(title)

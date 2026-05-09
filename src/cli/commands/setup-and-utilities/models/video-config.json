@@ -19,7 +19,7 @@
         "resolutionMultiplier1080p": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 12000
+          "msPerSecond": 10543
         }
       },
       "veo-3.1-fast-generate-preview": {
@@ -62,7 +62,11 @@
         "blockCost720pUSD": 0.28,
         "blockCost720pCents": 28,
         "blockCost1080pUSD": 0.49,
-        "blockCost1080pCents": 49
+        "blockCost1080pCents": 49,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 15516
+        }
       },
       "MiniMax-Hailuo-02": {
         "description": "MiniMax Hailuo 02 — balanced video model",
@@ -70,7 +74,11 @@
         "blockCost720pUSD": 0.28,
         "blockCost720pCents": 28,
         "blockCost1080pUSD": 0.49,
-        "blockCost1080pCents": 49
+        "blockCost1080pCents": 49,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 12085
+        }
       },
       "T2V-01-Director": {
         "description": "T2V-01-Director — camera-control focused video model",
@@ -202,7 +210,7 @@
         "baseCostPerSecondCents": 0.08685,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 20000
+          "msPerSecond": 14990
         }
       },
       "Ltx2_19B_Dist_FP8": {

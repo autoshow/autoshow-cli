@@ -61,7 +61,7 @@
         "costPer1kCharsCents": 10,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 27283
+          "msPer1KChars": 31952
         }
       },
       "eleven_flash_v2_5": {
@@ -70,7 +70,7 @@
         "costPer1kCharsCents": 5,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 13400
+          "msPer1KChars": 10240
         }
       },
       "eleven_turbo_v2_5": {
@@ -94,7 +94,7 @@
         "costPer1kCharsCents": 10,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 63061
+          "msPer1KChars": 94592
         }
       },
       "speech-2.8-turbo": {
@@ -103,7 +103,7 @@
         "costPer1kCharsCents": 6,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 78672
+          "msPer1KChars": 118008
         }
       }
     }
@@ -150,7 +150,7 @@
         "costPer1kCharsCents": 0.42,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 17490
+          "msPer1KChars": 22183
         }
       }
     }
@@ -167,7 +167,7 @@
         "outputCostPer1MCharsCents": 1600,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 6000
+          "msPer1KChars": 9000
         }
       }
     }
@@ -201,7 +201,7 @@
         "outputCostPer1MCharsCents": 2000,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 69461
+          "msPer1KChars": 57158
         }
       },
       "gemini-2.5-flash-preview-tts": {
@@ -210,7 +210,7 @@
         "costPer1kCharsCents": 0.05,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 47341
+          "msPer1KChars": 42500
         }
       },
       "gemini-2.5-pro-preview-tts": {
@@ -219,7 +219,7 @@
         "costPer1kCharsCents": 0.1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 98500
+          "msPer1KChars": 84893
         }
       }
     }
@@ -365,7 +365,7 @@
         "characterBillingBlockCostCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 10000
+          "msPer1KChars": 15000
         }
       }
     }
@@ -497,7 +497,8 @@
         "costPer1kCharsUSD": 0.00077,
         "costPer1kCharsCents": 0.077,
         "estimation": {
-          "msPer1KChars": 10000
+          "msPer1KChars": 15000,
+          "costMultiplier": 1
         }
       },
       "Qwen3_TTS_12Hz_1_7B_VoiceDesign": {
