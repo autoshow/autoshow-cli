@@ -48,12 +48,37 @@ const decodeHrefPath = (href: string): string =>
     })
     .join('/')
 
+const tryDecodeURIComponent = (value: string): string => {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 const resolvePackageHref = (packagePath: string, href: string): string => {
   const cleanHref = href.split(/[?#]/, 1)[0]?.trim() ?? ''
   if (!cleanHref) return ''
   const resolved = posix.normalize(posix.join(posix.dirname(packagePath), decodeHrefPath(cleanHref)))
   return normalizeRelPath(resolved)
 }
+
+const splitTocHref = (hrefRaw: string): { href: string, fragment?: string } => {
+  const hashIndex = hrefRaw.indexOf('#')
+  if (hashIndex === -1) {
+    return { href: hrefRaw }
+  }
+
+  const href = hrefRaw.slice(0, hashIndex)
+  const fragment = hrefRaw.slice(hashIndex + 1).trim()
+  return {
+    href,
+    ...(fragment ? { fragment } : {})
+  }
+}
+
+const cleanEpubHtmlFragmentToText = (html: string): string =>
+  cleanEpubHtmlToText(`<html><body>${html}</body></html>`)
 
 const readTagTexts = (xml: string, tagName: string): string[] =>
   scanTagBlocks(xml, tagName)
@@ -130,7 +155,8 @@ const parseNcxNavPoint = (
   const navLabelBlock = firstTagBlock(block, 'navLabel')
   const label = navLabelBlock ? firstTagText(navLabelBlock, 'text') : undefined
   const src = firstTagAttr(block, 'content', 'src')
-  const href = src ? src.split('#')[0] : undefined
+  const hrefParts = src ? splitTocHref(src) : undefined
+  const href = hrefParts?.href
   const path = href ? resolvePackageHref(packagePath, href) : undefined
   const childrenXml = innerXml(block, 'navPoint')
   const children = scanTagBlocks(childrenXml, 'navPoint').map(child => parseNcxNavPoint(child, packagePath))
@@ -140,6 +166,7 @@ const parseNcxNavPoint = (
     ...(playOrder !== undefined && Number.isFinite(playOrder) ? { playOrder } : {}),
     title: label ?? 'Untitled',
     ...(href ? { href } : {}),
+    ...(hrefParts?.fragment ? { fragment: hrefParts.fragment } : {}),
     ...(path ? { path } : {}),
     children
   }
@@ -169,12 +196,14 @@ const parseNavHtml = (navXml: string, packagePath: string): EpubTocItem[] => {
   let match: RegExpExecArray | null
   while ((match = anchorRegex.exec(tocBlock)) !== null) {
     const hrefRaw = (match[1] || match[2] || '').trim()
-    const href = hrefRaw.split('#')[0] ?? ''
-    const title = collapseWhitespace(cleanEpubHtmlToText(match[3] || ''))
+    const hrefParts = splitTocHref(hrefRaw)
+    const href = hrefParts.href
+    const title = collapseWhitespace(cleanEpubHtmlFragmentToText(match[3] || ''))
     if (!href || !title) continue
     items.push({
       title,
       href,
+      ...(hrefParts.fragment ? { fragment: hrefParts.fragment } : {}),
       path: resolvePackageHref(packagePath, href),
       children: []
     })
@@ -191,14 +220,283 @@ const flattenToc = (items: EpubTocItem[]): EpubTocItem[] => {
   return out
 }
 
-const buildTocByPath = (tocItems: EpubTocItem[]): Map<string, EpubTocItem> => {
-  const tocByPath = new Map<string, EpubTocItem>()
+const buildTocItemsByPath = (tocItems: EpubTocItem[]): Map<string, EpubTocItem[]> => {
+  const tocByPath = new Map<string, EpubTocItem[]>()
   for (const item of flattenToc(tocItems)) {
-    if (item.path && !tocByPath.has(item.path)) {
-      tocByPath.set(item.path, item)
+    if (item.path) {
+      const existing = tocByPath.get(item.path) ?? []
+      existing.push(item)
+      tocByPath.set(item.path, existing)
     }
   }
   return tocByPath
+}
+
+type TocBoundary = {
+  tocItem: EpubTocItem
+  startOffset: number
+  tocOrder: number
+}
+
+const HEADING_ADJUST_BEFORE_CHARS = 1200
+const HEADING_ADJUST_AFTER_CHARS = 4000
+const HEADING_ADJUST_AFTER_FALLBACK_CHARS = 1600
+const HEADING_ADJUST_BEFORE_FALLBACK_CHARS = 800
+
+const NUMBER_WORDS: Record<string, string> = {
+  one: '1',
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+  eleven: '11',
+  twelve: '12',
+  thirteen: '13',
+  fourteen: '14',
+  fifteen: '15',
+  sixteen: '16',
+  seventeen: '17',
+  eighteen: '18',
+  nineteen: '19',
+  twenty: '20'
+}
+
+const NUMBER_WORD_RE = /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)\b/g
+
+const normalizeComparableText = (value: string): string =>
+  collapseWhitespace(
+    decodeXmlEntities(value)
+      .toLowerCase()
+      .replace(NUMBER_WORD_RE, word => NUMBER_WORDS[word] ?? word)
+      .replace(/[^a-z0-9]+/g, ' ')
+  )
+
+const isMeaningfulHeadingText = (text: string): boolean =>
+  text.length > 0 && !/^[\d\s-]+$/.test(text)
+
+const headingTitleMatches = (headingText: string, title: string): boolean => {
+  const headingKey = normalizeComparableText(headingText)
+  const titleKey = normalizeComparableText(title)
+  if (!headingKey || !titleKey) return false
+  return headingKey.includes(titleKey) || titleKey.includes(headingKey)
+}
+
+const isChapterHeadingKey = (key: string): boolean =>
+  /^(?:chapter|chatper)\s+(?:\d+|[ivxlcdm]+)\b/i.test(key)
+
+const isChapterHeadingText = (text: string): boolean =>
+  isChapterHeadingKey(normalizeComparableText(text))
+
+const isLikelyHeadingLine = (text: string, title: string, tagName: string): boolean => {
+  if (!isMeaningfulHeadingText(text)) {
+    return false
+  }
+  if (tagName.toLowerCase().startsWith('h')) {
+    return true
+  }
+  if (headingTitleMatches(text, title)) {
+    return true
+  }
+
+  const key = normalizeComparableText(text)
+  return isChapterHeadingKey(key)
+    || /^(?:introduction|prologue|epilogue|table of contents|contents)$/.test(key)
+}
+
+const findNearbyHeadingStart = (html: string, anchorOffset: number, tocTitle: string): number | undefined => {
+  const minOffset = Math.max(0, anchorOffset - HEADING_ADJUST_BEFORE_CHARS)
+  const maxOffset = Math.min(html.length, anchorOffset + HEADING_ADJUST_AFTER_CHARS)
+  const headingRegex = /<(h[1-6]|p)\b[\s\S]*?<\/\1>/gi
+  const candidates: Array<{ start: number, end: number, text: string }> = []
+  let match: RegExpExecArray | null
+
+  while ((match = headingRegex.exec(html)) !== null) {
+    const start = match.index
+    const end = start + match[0].length
+    if (end < minOffset) continue
+    if (start > maxOffset) break
+
+    const text = cleanEpubHtmlFragmentToText(match[0])
+    if (!isLikelyHeadingLine(text, tocTitle, match[1] ?? '')) continue
+    candidates.push({ start, end, text })
+  }
+
+  const containing = candidates.find(candidate => candidate.start <= anchorOffset && candidate.end >= anchorOffset)
+  if (containing) return containing.start
+
+  const tocTitleIsChapter = isChapterHeadingText(tocTitle)
+  const titleMatches = candidates
+    .filter(candidate => headingTitleMatches(candidate.text, tocTitle))
+    .sort((a, b) => {
+      if (tocTitleIsChapter) {
+        const chapterRank = Number(isChapterHeadingText(b.text)) - Number(isChapterHeadingText(a.text))
+        if (chapterRank !== 0) return chapterRank
+      }
+      return Math.abs(a.start - anchorOffset) - Math.abs(b.start - anchorOffset)
+    })
+  if (titleMatches[0]) return titleMatches[0].start
+
+  const after = candidates
+    .filter(candidate => candidate.start >= anchorOffset && candidate.start - anchorOffset <= HEADING_ADJUST_AFTER_FALLBACK_CHARS)
+    .sort((a, b) => a.start - b.start)
+  if (after[0]) return after[0].start
+
+  const before = candidates
+    .filter(candidate => candidate.start < anchorOffset && anchorOffset - candidate.start <= HEADING_ADJUST_BEFORE_FALLBACK_CHARS)
+    .sort((a, b) => b.start - a.start)
+  return before[0]?.start
+}
+
+const fragmentCandidates = (fragment: string): Set<string> => {
+  const decodedEntities = decodeXmlEntities(fragment)
+  const decodedUri = tryDecodeURIComponent(decodedEntities)
+  return new Set([
+    fragment,
+    decodedEntities,
+    decodedUri,
+    tryDecodeURIComponent(fragment)
+  ].filter(value => value.length > 0))
+}
+
+const findFragmentAnchorOffset = (html: string, fragment: string): number | undefined => {
+  const candidates = fragmentCandidates(fragment)
+  const tagRegex = /<[^!?/][^>]*\s(?:id|name|xml:id)\s*=\s*(["'])(.*?)\1[^>]*>/gi
+  let match: RegExpExecArray | null
+
+  while ((match = tagRegex.exec(html)) !== null) {
+    const value = decodeXmlEntities(match[2] ?? '').trim()
+    if (candidates.has(value) || candidates.has(tryDecodeURIComponent(value))) {
+      return match.index
+    }
+  }
+
+  return undefined
+}
+
+const resolveTocBoundaryOffset = (
+  html: string,
+  tocItem: EpubTocItem,
+  spinePath: string,
+  warnings: string[]
+): number | undefined => {
+  const fragment = tocItem.fragment
+  if (!fragment) {
+    return 0
+  }
+
+  const anchorOffset = findFragmentAnchorOffset(html, fragment)
+  if (anchorOffset === undefined) {
+    warnings.push(`TOC fragment target not found in ${spinePath}: #${fragment}`)
+    return undefined
+  }
+
+  return findNearbyHeadingStart(html, anchorOffset, tocItem.title) ?? anchorOffset
+}
+
+const buildTocBoundaries = (
+  html: string,
+  spinePath: string,
+  tocItems: EpubTocItem[],
+  warnings: string[]
+): TocBoundary[] =>
+  tocItems
+    .map((tocItem, tocOrder): TocBoundary | null => {
+      const startOffset = resolveTocBoundaryOffset(html, tocItem, spinePath, warnings)
+      return startOffset === undefined ? null : { tocItem, startOffset, tocOrder }
+    })
+    .filter((boundary): boundary is TocBoundary => boundary !== null)
+    .sort((a, b) => a.startOffset - b.startOffset || a.tocOrder - b.tocOrder)
+
+const appendChapter = (
+  chapters: EpubChapter[],
+  spineItem: EpubInspectionPayload['spine'][number],
+  text: string,
+  options: {
+    path: string
+    title?: string
+    tocItem?: EpubTocItem
+  }
+): void => {
+  const words = text.length === 0 ? 0 : text.split(/\s+/).filter(Boolean).length
+
+  chapters.push({
+    index: chapters.length + 1,
+    idref: spineItem.idref,
+    href: spineItem.href ?? '',
+    path: options.path,
+    ...(options.title ? { title: options.title } : {}),
+    ...(options.tocItem ? { tocTitle: options.tocItem.title, isTocStart: true } : {}),
+    text,
+    wordCount: words,
+    characterCount: text.length
+  })
+}
+
+const buildChapterFromFullSpineItem = (
+  chapters: EpubChapter[],
+  spineItem: EpubInspectionPayload['spine'][number],
+  spinePath: string,
+  html: string,
+  tocItem?: EpubTocItem
+): void => {
+  const title = tocItem?.title
+    ?? firstTagText(html, 'h1')
+    ?? firstTagText(html, 'title')
+  const text = cleanEpubHtmlToText(html)
+  appendChapter(chapters, spineItem, text, {
+    path: spinePath,
+    ...(title ? { title } : {}),
+    ...(tocItem ? { tocItem } : {})
+  })
+}
+
+const buildChaptersFromTocBoundaries = (
+  chapters: EpubChapter[],
+  spineItem: EpubInspectionPayload['spine'][number],
+  spinePath: string,
+  html: string,
+  tocItems: EpubTocItem[],
+  warnings: string[]
+): boolean => {
+  if (tocItems.length === 0) {
+    return false
+  }
+
+  const boundaries = buildTocBoundaries(html, spinePath, tocItems, warnings)
+  if (boundaries.length === 0) {
+    return false
+  }
+
+  const firstBoundary = boundaries[0] as TocBoundary
+  if (firstBoundary.startOffset > 0) {
+    const preludeText = cleanEpubHtmlFragmentToText(html.slice(0, firstBoundary.startOffset))
+    if (preludeText.length > 0) {
+      const title = firstTagText(html, 'title')
+      appendChapter(chapters, spineItem, preludeText, {
+        path: spinePath,
+        ...(title ? { title } : {})
+      })
+    }
+  }
+
+  for (let index = 0; index < boundaries.length; index++) {
+    const boundary = boundaries[index] as TocBoundary
+    const nextBoundary = boundaries[index + 1]
+    const endOffset = nextBoundary ? nextBoundary.startOffset : html.length
+    const text = cleanEpubHtmlFragmentToText(html.slice(boundary.startOffset, endOffset))
+    appendChapter(chapters, spineItem, text, {
+      path: spinePath,
+      title: boundary.tocItem.title,
+      tocItem: boundary.tocItem
+    })
+  }
+
+  return true
 }
 
 const buildChapters = async (
@@ -207,7 +505,7 @@ const buildChapters = async (
   tocItems: EpubTocItem[],
   warnings: string[]
 ): Promise<EpubChapter[]> => {
-  const tocByPath = buildTocByPath(tocItems)
+  const tocByPath = buildTocItemsByPath(tocItems)
   const chapters: EpubChapter[] = []
 
   for (const spineItem of spine) {
@@ -219,25 +517,12 @@ const buildChapters = async (
 
     const xhtml = await reader.readText(spineItem.path)
     const stripped = stripNsPrefixes(xhtml)
-    const tocItem = tocByPath.get(spineItem.path)
-    const title = tocItem?.title
-      ?? firstTagText(stripped, 'h1')
-      ?? firstTagText(stripped, 'title')
+    const tocForPath = tocByPath.get(spineItem.path) ?? []
+    if (buildChaptersFromTocBoundaries(chapters, spineItem, spineItem.path, stripped, tocForPath, warnings)) {
+      continue
+    }
 
-    const text = cleanEpubHtmlToText(stripped)
-    const words = text.length === 0 ? 0 : text.split(/\s+/).filter(Boolean).length
-
-    chapters.push({
-      index: chapters.length + 1,
-      idref: spineItem.idref,
-      href: spineItem.href,
-      path: spineItem.path,
-      ...(title ? { title } : {}),
-      ...(tocItem ? { tocTitle: tocItem.title, isTocStart: true } : {}),
-      text,
-      wordCount: words,
-      characterCount: text.length
-    })
+    buildChapterFromFullSpineItem(chapters, spineItem, spineItem.path, stripped, tocForPath[0])
   }
 
   return chapters

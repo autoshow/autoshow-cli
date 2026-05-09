@@ -1,0 +1,9 @@
+{
+  "Soniox": {
+    "STT": [
+      "https://soniox.com/docs/stt/api-reference/transcriptions/create_transcription.mdx",
+      "https://soniox.com/docs/stt/api-reference/transcriptions/get_transcription.mdx",
+      "https://soniox.com/docs/stt/async/async-transcription.mdx"
+    ]
+  }
+}

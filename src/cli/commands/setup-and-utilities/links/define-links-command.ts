@@ -1,5 +1,5 @@
 import { defineCommand } from 'clerc'
-import modelLinks from './model-links.json'
+import modelLinks from './model-links'
 import * as l from '~/utils/logger'
 import {
   extractHtmlToMarkdown,

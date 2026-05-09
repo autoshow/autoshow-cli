@@ -1,0 +1,27 @@
+{
+  "GCloud": {
+    "STT": [
+      "https://docs.cloud.google.com/speech-to-text/docs/quickstarts/transcribe-api.md.txt",
+      "https://docs.cloud.google.com/speech-to-text/docs/sync-recognize.md.txt",
+      "https://docs.cloud.google.com/speech-to-text/docs/batch-recognize.md.txt",
+      "https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3.md.txt"
+    ],
+    "TTS": [
+      "https://docs.cloud.google.com/text-to-speech/docs/chirp3-instant-custom-voice.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/create-audio.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/basics.md.txt",
+      "https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types.md.txt"
+    ],
+    "OCR": [
+      "https://docs.cloud.google.com/document-ai/docs/overview.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/setup.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/enrichment.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/normalization.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/enterprise-document-ocr.md.txt#ocr-processing",
+      "https://docs.cloud.google.com/document-ai/docs/layout-parse-chunk.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/layout-parse-quickstart.md.txt",
+      "https://docs.cloud.google.com/document-ai/docs/reference/rest.md.txt"
+    ]
+  }
+}

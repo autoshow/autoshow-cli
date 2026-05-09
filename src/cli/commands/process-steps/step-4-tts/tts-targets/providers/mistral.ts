@@ -1,0 +1,29 @@
+import { basename } from 'node:path'
+import type { MistralTtsModel, TtsTarget } from '~/types'
+import { validateMistralTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { runMistralTts } from '../../tts-services/mistral/run-mistral-tts'
+import type { TtsTargetSelection } from '../selection'
+
+export const collectMistralTtsTargets = (
+  selection: TtsTargetSelection
+): TtsTarget[] => {
+  const targets: TtsTarget[] = []
+  for (const rawModel of selection.mistralModels) {
+    const model: MistralTtsModel = validateMistralTtsModel(rawModel)
+    const voiceId = selection.mistralVoiceId
+    const refAudioPath = selection.mistralRefAudioPath
+    if (voiceId && refAudioPath) {
+      throw new Error('Mistral TTS requires exactly one voice source. Use either --mistral-tts-voice or --mistral-tts-ref-audio, not both.')
+    }
+
+    targets.push({
+      service: 'mistral',
+      model,
+      ...(voiceId ? { voice: voiceId } : refAudioPath ? { voice: `ref_audio:${basename(refAudioPath)}` } : {}),
+      run: async (text, outputDir) => {
+        return await runMistralTts(text, outputDir, { model, voiceId, refAudioPath })
+      }
+    })
+  }
+  return targets
+}

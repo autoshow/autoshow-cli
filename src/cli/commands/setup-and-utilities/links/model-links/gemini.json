@@ -1,0 +1,49 @@
+{
+  "Gemini": {
+    "General": [
+      "https://raw.githubusercontent.com/googleapis/js-genai/refs/heads/main/README.md",
+      "https://ai.google.dev/gemini-api/docs.md.txt",
+      "https://ai.google.dev/gemini-api/docs/quickstart.md.txt",
+      "https://ai.google.dev/gemini-api/docs/pricing.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models.md.txt",
+      "https://ai.google.dev/gemini-api/docs/file-input-methods.md.txt",
+      "https://ai.google.dev/gemini-api/docs/files.md.txt",
+      "https://ai.google.dev/gemini-api/docs/media-resolution.md.txt",
+      "https://ai.google.dev/api/generate-content#node.js"
+    ],
+    "Text": [
+      "https://ai.google.dev/gemini-api/docs/gemini-3.md.txt",
+      "https://ai.google.dev/gemini-api/docs/text-generation.md.txt",
+      "https://ai.google.dev/gemini-api/docs/structured-output.md.txt"
+    ],
+    "OCR": [
+      "https://ai.google.dev/gemini-api/docs/document-processing.md.txt"
+    ],
+    "STT": [
+      "https://ai.google.dev/gemini-api/docs/audio.md.txt"
+    ],
+    "TTS": [
+      "https://ai.google.dev/gemini-api/docs/speech-generation.md.txt",
+      "https://ai.google.dev/gemini-api/docs/audio.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-tts-preview.md.txt"
+    ],
+    "Image": [
+      "https://ai.google.dev/gemini-api/docs/image-generation.md.txt",
+      "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt",
+      "https://ai.google.dev/gemini-api/docs/imagen.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/imagen.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview.md.txt"
+    ],
+    "Video": [
+      "https://ai.google.dev/gemini-api/docs/video.md.txt",
+      "https://ai.google.dev/gemini-api/docs/video-understanding.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/veo-3.1-generate-preview.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/veo-3.1-lite-generate-preview.md.txt"
+    ],
+    "Music": [
+      "https://ai.google.dev/gemini-api/docs/music-generation.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/lyria-3-clip-preview.md.txt",
+      "https://ai.google.dev/gemini-api/docs/models/lyria-3-pro-preview.md.txt"
+    ]
+  }
+}

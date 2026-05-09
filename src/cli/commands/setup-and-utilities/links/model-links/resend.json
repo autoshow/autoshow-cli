@@ -1,0 +1,26 @@
+{
+  "Resend": {
+    "General": [
+      "https://resend.com/docs/cli.md",
+      "https://resend.com/docs/send-with-bun.md",
+      "https://resend.com/docs/send-with-nodejs.md",
+      "https://resend.com/docs/dashboard/emails/batch-sending.md",
+      "https://resend.com/docs/dashboard/emails/schedule-email.md",
+      "https://resend.com/docs/dashboard/emails/send-test-emails.md",
+      "https://resend.com/docs/dashboard/emails/custom-headers.md",
+      "https://resend.com/docs/dashboard/emails/email-bounces.md",
+      "https://resend.com/docs/dashboard/emails/deliverability-insights.md",
+      "https://resend.com/docs/dashboard/emails/add-unsubscribe-to-transactional-emails.md",
+      "https://resend.com/docs/dashboard/receiving/custom-domains.md",
+      "https://resend.com/docs/dashboard/receiving/introduction.md",
+      "https://resend.com/docs/dashboard/receiving/get-email-content.md",
+      "https://resend.com/docs/dashboard/receiving/forward-emails.md",
+      "https://resend.com/docs/dashboard/receiving/reply-to-emails.md",
+      "https://resend.com/docs/dashboard/domains/introduction.md",
+      "https://resend.com/docs/dashboard/domains/tracking.md",
+      "https://resend.com/docs/dashboard/domains/regions.md",
+      "https://resend.com/docs/dashboard/domains/dmarc.md",
+      "https://resend.com/docs/dashboard/api-keys/introduction.md"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "BFL": {
+    "Image": [
+      "https://docs.bfl.ml/quick_start/introduction.md",
+      "https://docs.bfl.ml/quick_start/get_started.md",
+      "https://docs.bfl.ml/quick_start/generating_images.md",
+      "https://docs.bfl.ml/quick_start/pricing.md",
+      "https://docs.bfl.ml/account_management/credits_billing.md",
+      "https://docs.bfl.ml/flux_2/flux2_overview.md",
+      "https://docs.bfl.ml/flux_2/flux2_image_editing.md",
+      "https://docs.bfl.ml/flux_2/flux2_text_to_image.md",
+      "https://docs.bfl.ml/api_integration/integration_guidelines.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[max]-highest-quality.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-9b]-fast-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-4b]-fastest-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[klein-9b-kv]-fast-editing-with-caching.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]-preview-recommended-for-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[pro]-recommended-for-editing.md",
+      "https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[flex]-recommended-for-editing.md"
+    ]
+  }
+}

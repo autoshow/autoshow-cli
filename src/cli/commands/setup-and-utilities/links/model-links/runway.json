@@ -1,0 +1,16 @@
+{
+  "Runway": {
+    "General": [
+      "https://docs.dev.runwayml.com/guides/using-the-api/",
+      "https://raw.githubusercontent.com/runwayml/skills/refs/heads/main/skills/use-runway-api/SKILL.md",
+      "https://docs.dev.runwayml.com/guides/models/",
+      "https://docs.dev.runwayml.com/guides/pricing/",
+      "https://docs.dev.runwayml.com/api/",
+      "https://raw.githubusercontent.com/runwayml/sdk-node/refs/heads/main/README.md",
+      "https://raw.githubusercontent.com/runwayml/sdk-node/ba7f2813c2393198e2f8a637593ae86d3acaa379/api.md",
+      "https://docs.dev.runwayml.com/assets/inputs/",
+      "https://docs.dev.runwayml.com/assets/outputs/",
+      "https://docs.dev.runwayml.com/errors/errors/"
+    ]
+  }
+}

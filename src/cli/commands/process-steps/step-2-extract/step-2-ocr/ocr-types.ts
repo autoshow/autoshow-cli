@@ -57,6 +57,7 @@ export type EpubTocItem = {
   playOrder?: number
   title: string
   href?: string
+  fragment?: string
   path?: string
   children: EpubTocItem[]
 }

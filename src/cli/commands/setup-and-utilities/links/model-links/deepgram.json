@@ -1,0 +1,22 @@
+{
+  "Deepgram": {
+    "STT": [
+      "https://developers.deepgram.com/reference/speech-to-text/listen-pre-recorded.md",
+      "https://developers.deepgram.com/docs/stt-pre-recorded-feature-overview.md"
+    ],
+    "TTS": [
+      "https://developers.deepgram.com/docs/text-to-speech.md",
+      "https://developers.deepgram.com/docs/tts-feature-overview.md",
+      "https://developers.deepgram.com/docs/tts-models.md",
+      "https://developers.deepgram.com/docs/tts-encoding.md",
+      "https://developers.deepgram.com/docs/tts-bit-rate.md",
+      "https://developers.deepgram.com/docs/tts-container.md",
+      "https://developers.deepgram.com/docs/tts-sample-rate.md",
+      "https://developers.deepgram.com/docs/improving-aura-2-formatting.md",
+      "https://developers.deepgram.com/docs/handling-audio-issues-in-text-to-speech.md",
+      "https://developers.deepgram.com/docs/text-chunking-for-tts-optimization.md",
+      "https://developers.deepgram.com/docs/text-to-speech-prompting.md",
+      "https://developers.deepgram.com/docs/tts-voice-controls.md"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "Cloudflare": {
+    "General": [
+      "https://developers.cloudflare.com/workers-ai/"
+    ],
+    "STT": [
+      "https://developers.cloudflare.com/workers-ai/platform/pricing/",
+      "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/",
+      "https://developers.cloudflare.com/workers-ai/models/whisper/",
+      "https://developers.cloudflare.com/workers-ai/models/whisper/index.md",
+      "https://developers.cloudflare.com/workers-ai/models/whisper-large-v3-turbo/index.md",
+      "https://developers.cloudflare.com/workers-ai/guides/tutorials/build-a-workers-ai-whisper-with-chunking/index.md",
+      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper/index.md",
+      "https://developers.cloudflare.com/ai/models/%40cf/openai/whisper-tiny-en/index.md"
+    ]
+  }
+}
