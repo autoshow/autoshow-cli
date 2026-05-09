@@ -253,26 +253,24 @@ const runAsyncTextract = async (
 export const runAwsTextract = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
-  model: string
+  model: string,
+  options: {
+    region?: string | undefined
+    bucket?: string | undefined
+    configPath?: string | undefined
+  } = {}
 ): Promise<{
   pages: PageResult[]
   extractionMethod: 'aws-textract'
   totalPages: number
 }> => {
-  const config = await ensureAwsTextractSetup()
   const fileSize = Bun.file(filePath).size
   const isPdf = step1Metadata.format === 'pdf'
   const isTiff = step1Metadata.format === 'tif'
   const isMultipage = isPdf || isTiff
+  const requiresAsync = isMultipage || fileSize > AWS_TEXTRACT_SYNC_BYTES
 
-  if (isMultipage || fileSize > AWS_TEXTRACT_SYNC_BYTES) {
-    if (!config.bucket) {
-      throw new Error(
-        'AWS S3 bucket is required for multi-page or large-file AWS Textract OCR. ' +
-        'Run `bun as setup --aws --aws-create-bucket` to create one, then pass --aws-bucket or save it with `bun as config --aws-bucket <bucket-name>`.'
-      )
-    }
-
+  if (requiresAsync) {
     if (fileSize > AWS_TEXTRACT_ASYNC_FILE_SIZE_BYTES) {
       throw new Error(
         `AWS Textract async supports files up to ${AWS_TEXTRACT_ASYNC_FILE_SIZE_BYTES / (1024 * 1024)} MB. ` +
@@ -280,10 +278,25 @@ export const runAwsTextract = async (
       )
     }
 
+    const config = await ensureAwsTextractSetup({
+      preferredRegion: options.region,
+      preferredBucket: options.bucket,
+      configPath: options.configPath,
+      requireBucket: true
+    })
+    if (!config.bucket) {
+      throw new Error('AWS S3 bucket setup failed for AWS Textract staging.')
+    }
+
     const result = await runAsyncTextract(filePath, config.region, config.bucket, model)
     return { ...result, extractionMethod: 'aws-textract' }
   }
 
+  const config = await ensureAwsTextractSetup({
+    preferredRegion: options.region,
+    preferredBucket: options.bucket,
+    configPath: options.configPath
+  })
   const result = await runSyncTextract(filePath, config.region, model)
   return { ...result, extractionMethod: 'aws-textract' }
 }

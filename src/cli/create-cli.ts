@@ -50,7 +50,7 @@ const cliErrorHandler = (error: unknown): void => {
     'AWS CLI is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
     'AWS CLI credentials are required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
     'AWS region is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
-    'AWS S3 bucket is required for AWS transcription': "Run 'bun as setup --aws --aws-create-bucket' to provision a staging bucket, then pass --aws-region/--aws-bucket or save them with 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'",
+    'AWS S3 bucket is required for AWS transcription': "Run 'bun as setup --aws --aws-create-bucket' to provision a staging bucket shared by Transcribe and Textract, then pass --aws-region/--aws-bucket or save them with 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'",
     'OPENAI_API_KEY': 'Set OPENAI_API_KEY environment variable to use OpenAI models',
     'GEMINI_API_KEY': 'Set GEMINI_API_KEY environment variable to use Gemini models',
     'GROQ_API_KEY': 'Set GROQ_API_KEY environment variable to use Groq models',

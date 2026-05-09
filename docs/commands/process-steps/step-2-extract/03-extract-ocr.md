@@ -332,13 +332,15 @@ DeepInfra OCR uses token pricing estimates and recorded usage when available.
 |--------|-------|
 | Selector | `--aws-textract <model>` |
 | Models | `detect-text`, `analyze-document` |
-| Staging | S3 bucket for PDFs and multi-page TIFFs; pass `--aws-bucket`, save one with `bun as config`, or run `bun as setup --aws --aws-create-bucket` |
+| Staging | S3 bucket shared with AWS Transcribe for PDFs and large async inputs; AutoShow can create and save one on first use, or you can pass `--aws-region` / `--aws-bucket` |
 
 ```bash
 bun as extract input/examples/document/1-document.pdf --aws-textract detect-text
 ```
 
 AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available. `detect-text` is text-only at $1.50 per 1,000 pages, and `analyze-document` is tables/forms/layout at $15 per 1,000 pages. Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging. AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
+
+For async inputs, AutoShow resolves the region from `--aws-region`, saved config, AWS environment/CLI config, then `us-east-1`. If no accessible staging bucket is configured, it creates an `autoshow-aws-...` bucket, uses it immediately, and saves the region and bucket under the shared `defaults.extract.stt.awsRegion` / `awsBucket` config keys.
 
 ### Google Cloud Document AI
 

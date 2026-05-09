@@ -133,8 +133,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
 | `--gcloud-stt <model>` | Select one or more Google Cloud STT models |
 | `--aws-stt <model>` | Select one or more AWS Transcribe models |
-| `--aws-region <region>` | Override the AWS CLI region used for AWS Transcribe jobs |
-| `--aws-bucket <bucket>` | S3 bucket used for temporary AWS Transcribe input/output objects |
+| `--aws-region <region>` | Override the AWS region used for AWS Transcribe and Textract staging |
+| `--aws-bucket <bucket>` | S3 bucket used for temporary AWS Transcribe and Textract staging objects |
 | `--elevenlabs-stt <model>` | Select one or more ElevenLabs STT models |
 | `--deepgram-stt <model>` | Select one or more Deepgram STT models |
 | `--soniox-stt <model>` | Select one or more Soniox STT models |

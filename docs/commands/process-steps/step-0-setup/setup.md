@@ -52,7 +52,7 @@ Create a staging bucket or create a specific bucket name:
 bun as setup --aws --aws-create-bucket
 ```
 
-You can optionally pin the region or bucket name:
+You can optionally pin the region or bucket name. The AWS bucket defaults are shared by Transcribe and Textract:
 
 ```bash
 bun as setup --aws --aws-create-bucket --aws-region us-east-2

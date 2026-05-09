@@ -8,6 +8,7 @@ import { runOcrProviderTargetPools, isLocalOcrTarget } from '~/cli/commands/proc
 import { runLlmProviderTargetPools, isLocalLlmTarget } from '~/cli/commands/process-steps/step-3-write/llm-provider-pool'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
+import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
 import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
 import {
@@ -132,6 +133,21 @@ describe('option resolution contracts', () => {
     expect(opts.openaiTtsConsentLanguage).toBe('en-US')
     expect(opts.openaiTtsConsentName).toBe('Anthony Consent')
     expect(opts.openaiTtsVoiceName).toBe('AutoShow Anthony')
+  })
+
+  test('AWS region and bucket flags reach OCR extraction options', () => {
+    const opts = buildOptsFromFlags(false, {
+      'aws-textract': 'detect-text',
+      'aws-region': 'us-west-2',
+      'aws-bucket': 'autoshow-textract-existing'
+    })
+    const extractionOpts = buildExtractionCallOpts('input/examples/document/1-document.pdf', 'output/test', opts)
+
+    expect(opts.awsRegion).toBe('us-west-2')
+    expect(opts.awsBucket).toBe('autoshow-textract-existing')
+    expect(extractionOpts.awsTextractModel).toBe('detect-text')
+    expect(extractionOpts.awsRegion).toBe('us-west-2')
+    expect(extractionOpts.awsBucket).toBe('autoshow-textract-existing')
   })
 
   test('buildOptsFromFlags only accepts canonical flags before the positional separator', () => {

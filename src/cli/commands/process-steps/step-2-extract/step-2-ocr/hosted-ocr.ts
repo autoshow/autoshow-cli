@@ -14,7 +14,6 @@ import {
   ANTHROPIC_OCR_LIMIT_SOURCE,
   ensureAnthropicOcrSetup
 } from './ocr-services/anthropic-ocr/anthropic-ocr'
-import { ensureAwsTextractSetup } from './ocr-services/aws-textract/aws-textract'
 import { ensureDeapiOcrSetup } from './ocr-services/deapi-ocr/deapi-ocr'
 import {
   DEEPINFRA_OCR_LIMIT_SOURCE,
@@ -579,10 +578,13 @@ export const runHostedOcr = async (
   }
 
   if (hasAwsTextract(opts)) {
-    await ensureAwsTextractSetup()
     warnHostedOnlyFlags('aws-textract', opts)
     const ocrModel = opts.awsTextractModel as string
-    const run = await runAwsTextract(filePath, step1Metadata, ocrModel)
+    const run = await runAwsTextract(filePath, step1Metadata, ocrModel, {
+      region: opts.awsRegion,
+      bucket: opts.awsBucket,
+      configPath: opts.configPath
+    })
     return {
       pages: run.pages,
       extractionMethod: run.extractionMethod,

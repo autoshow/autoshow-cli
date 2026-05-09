@@ -33,14 +33,17 @@ export const handleProcessTarget = async (
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
 
-  const opts = buildOptsFromFlags(
-    isExtractCommand(command) || command === 'download' || command === 'metadata',
-    mergedFlags,
-    doubleDash,
-    {},
-    explicitFlags,
-    Bun.argv.slice(2)
-  )
+  const opts: RuntimeOptions = {
+    ...buildOptsFromFlags(
+      isExtractCommand(command) || command === 'download' || command === 'metadata',
+      mergedFlags,
+      doubleDash,
+      {},
+      explicitFlags,
+      Bun.argv.slice(2)
+    ),
+    configPath: resolvedConfigPath
+  }
 
   const maxCents = resolveMaxCents(config.pricing)
 

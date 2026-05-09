@@ -105,7 +105,7 @@ export const ocrSingleImage = async (
       }
     }
     case 'ocrmypdf': {
-      const result = await runOcrmypdf(normalizedPath, opts)
+      const result = await runOcrmypdf(normalizedPath, opts, { pageCount: 1 })
       const combined = result.pages.map(page => page.text).join('\n').trim()
       return { pageNumber, method: 'ocr', text: combined }
     }

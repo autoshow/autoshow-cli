@@ -4,6 +4,7 @@ export const ProcessingOptionsSchema = v.pipe(
   v.object({
     url: v.optional(v.pipe(v.string(), v.url()), undefined),
     filePath: v.optional(v.string(), undefined),
+    configPath: v.optional(v.string(), undefined),
     whisperModels: v.optional(v.array(v.string()), undefined),
     whisperModel: v.string(),
     youtubeCaptions: v.optional(v.boolean(), undefined),

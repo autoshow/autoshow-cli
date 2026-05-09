@@ -59,11 +59,11 @@ export const transcriptionFlags = {
     default: '0.5'
   },
   'aws-region': {
-    description: 'AWS region for Amazon Transcribe and the configured S3 bucket (for example us-east-1)',
+    description: 'AWS region for Amazon Transcribe and Textract staging (for example us-east-1)',
     type: String
   },
   'aws-bucket': {
-    description: 'S3 bucket used for Amazon Transcribe input/output staging',
+    description: 'S3 bucket used for Amazon Transcribe and Textract staging',
     type: String
   },
   'happyscribe-organization-id': {

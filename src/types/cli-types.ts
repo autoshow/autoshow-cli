@@ -11,6 +11,7 @@ export type Step2ProviderSelectionOrigin = 'default' | 'explicit' | 'all-shortcu
 
 export type RuntimeOptions = {
   outputRootDir: string
+  configPath: string | undefined
   useReverb: boolean
   youtubeCaptions: boolean
   whisperExplicit: boolean

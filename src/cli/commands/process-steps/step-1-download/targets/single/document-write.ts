@@ -204,7 +204,10 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
     ocrLocalConcurrency: opts.ocrLocalConcurrency,
     primaryOcr: opts.primaryOcr,
     preserveInterwordSpaces: opts.preserveSpaces,
-    rotate: opts.rotate
+    rotate: opts.rotate,
+    awsRegion: opts.awsRegion,
+    awsBucket: opts.awsBucket,
+    configPath: opts.configPath
   }
 
   if (opts.pdfChapterMode !== 'local' && hasConfiguredLlmProvider(opts)) {

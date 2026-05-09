@@ -208,6 +208,7 @@ export const buildOptsFromFlags = (
 
   return {
     outputRootDir: getOutputRoot(),
+    configPath: readOptionalStringFlag(mergedFlags, 'config-path'),
     useReverb,
     youtubeCaptions: readBooleanFlag(mergedFlags, 'youtube-captions'),
     whisperExplicit,

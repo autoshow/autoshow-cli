@@ -22,7 +22,7 @@ import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from '../../step-1-download/document/dl-document'
 import { runOcr } from './orchestrator'
-import { runWithLogContext } from '~/utils/logger'
+import { l, runWithLogContext } from '~/utils/logger'
 import {
   buildExtractionOptionsForTarget,
   collectExplicitOcrTargets,
@@ -360,6 +360,8 @@ const buildSuccessfulResolvedProviderStates = (
     attempts: 1
   }))
 
+const formatProviderElapsed = (startedAt: number): string => `${Date.now() - startedAt}ms`
+
 const buildDocumentMetadataPayload = (
   step1Metadata: ProcessDocumentOutput['step1Metadata'],
   step2Metadata: ProcessDocumentOutput['step2Metadata'] | undefined,
@@ -471,6 +473,9 @@ export const processOcr = async (
     ...(rawOpts.deepinfraOcrModels ? { deepinfraOcrModels: rawOpts.deepinfraOcrModels } : {}),
     ...(rawOpts.awsTextractModel ? { awsTextractModel: rawOpts.awsTextractModel } : {}),
     ...(rawOpts.awsTextractModels ? { awsTextractModels: rawOpts.awsTextractModels } : {}),
+    ...(rawOpts.awsRegion ? { awsRegion: rawOpts.awsRegion } : {}),
+    ...(rawOpts.awsBucket ? { awsBucket: rawOpts.awsBucket } : {}),
+    ...(rawOpts.configPath ? { configPath: rawOpts.configPath } : {}),
     ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),
     ...(rawOpts.gcloudDocaiModels ? { gcloudDocaiModels: rawOpts.gcloudDocaiModels } : {}),
     ...(rawOpts.deapiOcrModel ? { deapiOcrModel: rawOpts.deapiOcrModel } : {}),
@@ -530,8 +535,11 @@ export const processOcr = async (
         async (requestedIndex, target) => {
           const providerDirName = getOcrTargetDirectoryName(target)
           const providerDir = `${providersDir}/${providerDirName}`
+          const providerLabel = `${target.service}/${target.model}`
+          const providerStartedAt = Date.now()
           await mkdir(providerDir, { recursive: true })
 
+          l.write('info', `OCR provider ${providerLabel} started`)
           try {
             const providerOpts = buildExtractionOptionsForTarget({
               ...opts,
@@ -556,6 +564,7 @@ export const processOcr = async (
               relativeDir: `providers/${providerDirName}`
             }
             failuresByIndex.delete(requestedIndex)
+            l.write('success', `OCR provider ${providerLabel} succeeded in ${formatProviderElapsed(providerStartedAt)}`)
           } catch (error) {
             const failure = classifyOcrProviderFailure(error)
             failuresByIndex.set(requestedIndex, failure)
@@ -564,6 +573,7 @@ export const processOcr = async (
               model: target.model,
               message: failure.message
             })
+            l.write('warn', `OCR provider ${providerLabel} failed in ${formatProviderElapsed(providerStartedAt)}: ${failure.message}`)
           }
         }
       )

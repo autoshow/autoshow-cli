@@ -3,6 +3,48 @@ import * as l from './logger'
 
 let envFileLoaded = false
 let lastEnvPath = ''
+const DEFAULT_EXEC_HEARTBEAT_MS = 60_000
+
+type ExecOptions = {
+  env?: Record<string, string | undefined>
+  onStdoutLine?: (line: string) => void
+  onStderrLine?: (line: string) => void
+  progressLabel?: string
+  heartbeatMs?: number
+  onHeartbeat?: (elapsedMs: number, message: string) => void
+}
+
+const resolveHeartbeatMs = (value: number | undefined): number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.max(1, Math.floor(value))
+    : DEFAULT_EXEC_HEARTBEAT_MS
+
+const formatElapsedSeconds = (elapsedMs: number): string =>
+  `${Math.max(1, Math.ceil(elapsedMs / 1000))}s`
+
+const startExecHeartbeat = (
+  command: string,
+  opts: ExecOptions | undefined
+): ReturnType<typeof setInterval> | undefined => {
+  if (!opts?.progressLabel && !opts?.onHeartbeat) {
+    return undefined
+  }
+
+  const label = opts.progressLabel ?? command
+  const startedAt = Date.now()
+  const heartbeat = setInterval(() => {
+    const elapsedMs = Date.now() - startedAt
+    const message = `${label} still running after ${formatElapsedSeconds(elapsedMs)}`
+    if (opts.onHeartbeat) {
+      opts.onHeartbeat(elapsedMs, message)
+      return
+    }
+    l.write('info', message)
+  }, resolveHeartbeatMs(opts.heartbeatMs))
+
+  ;(heartbeat as { unref?: () => void }).unref?.()
+  return heartbeat
+}
 
 const readStreamText = async (
   stream: ReadableStream<Uint8Array> | null,
@@ -70,11 +112,7 @@ const readStreamText = async (
 export const exec = async (
   command: string,
   args: string[] = [],
-  opts?: {
-    env?: Record<string, string | undefined>
-    onStdoutLine?: (line: string) => void
-    onStderrLine?: (line: string) => void
-  }
+  opts?: ExecOptions
 ): Promise<{ stdout: string, stderr: string, exitCode: number }> => {
   const env = opts?.env ? { ...process.env, ...opts.env } : undefined
   const proc = Bun.spawn([command, ...args], {
@@ -82,12 +120,19 @@ export const exec = async (
     stderr: 'pipe',
     ...(env ? { env: env as Record<string, string | undefined> } : {})
   })
-  const [stdout, stderr, exitCode] = await Promise.all([
-    readStreamText(proc.stdout, opts?.onStdoutLine),
-    readStreamText(proc.stderr, opts?.onStderrLine),
-    proc.exited
-  ])
-  return { stdout, stderr, exitCode }
+  const heartbeat = startExecHeartbeat(command, opts)
+  try {
+    const [stdout, stderr, exitCode] = await Promise.all([
+      readStreamText(proc.stdout, opts?.onStdoutLine),
+      readStreamText(proc.stderr, opts?.onStderrLine),
+      proc.exited
+    ])
+    return { stdout, stderr, exitCode }
+  } finally {
+    if (heartbeat) {
+      clearInterval(heartbeat)
+    }
+  }
 }
 
 export const commandExists = (command: string): boolean => {

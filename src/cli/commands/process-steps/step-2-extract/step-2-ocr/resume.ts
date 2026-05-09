@@ -218,6 +218,9 @@ const buildResumeExtractionOpts = (
     ocrLocalConcurrency: opts.ocrLocalConcurrency,
     preserveInterwordSpaces: opts.preserveSpaces,
     rotate: opts.rotate,
+    awsRegion: opts.awsRegion,
+    awsBucket: opts.awsBucket,
+    configPath: opts.configPath,
     ...(opts.useEpubBun ? { useEpubBun: true } : {}),
     ...(opts.useEpubCalibre ? { useEpubCalibre: true } : {}),
     ...(step2SelectionOrigins ? { step2SelectionOrigins } : {})

@@ -86,7 +86,7 @@ export const runOcrmypdfWithAutoPdf = async (
 ): Promise<{ pages: PageResult[], extractionMethod: string }> => {
   const imageFormats = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
   if (step1Metadata.format === 'pdf' || imageFormats.has(step1Metadata.format)) {
-    return await runOcrmypdf(filePath, opts)
+    return await runOcrmypdf(filePath, opts, { pageCount: step1Metadata.pageCount })
   }
 
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocrmypdf-convert-'))
@@ -98,7 +98,7 @@ export const runOcrmypdfWithAutoPdf = async (
     if (convertResult.exitCode !== 0) {
       throw new Error(convertResult.stderr || convertResult.stdout || 'mutool convert failed')
     }
-    return await runOcrmypdf(convertedPdfPath, opts)
+    return await runOcrmypdf(convertedPdfPath, opts, { pageCount: step1Metadata.pageCount })
   } catch (error) {
     throw CLIUsageError(`Failed to convert ${step1Metadata.format.toUpperCase()} to PDF for OCRmyPDF. ${error instanceof Error ? error.message : String(error)}`)
   } finally {
@@ -144,7 +144,7 @@ export const runPdfOcr = async (
       return { pages, extractionMethod: 'pdf+tesseract' }
     }
     case 'ocrmypdf': {
-      const r = await runOcrmypdf(pdfPath, opts)
+      const r = await runOcrmypdf(pdfPath, opts, { pageCount: tempMeta.pageCount })
       return { pages: r.pages, extractionMethod: 'pdf+ocrmypdf' }
     }
     case 'paddle-ocr': {

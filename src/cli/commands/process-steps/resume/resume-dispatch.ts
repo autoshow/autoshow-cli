@@ -201,7 +201,10 @@ export const dispatchResume = async (
   const config = await loadConfig(resolvedConfigPath)
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
-  const opts = buildOptsFromFlags(false, mergedFlags, doubleDash, {}, explicitFlags, Bun.argv.slice(2))
+  const opts = {
+    ...buildOptsFromFlags(false, mergedFlags, doubleDash, {}, explicitFlags, Bun.argv.slice(2)),
+    configPath: resolvedConfigPath
+  }
   const resolvedOutputDirInput = typeof outputDirInput === 'string' && outputDirInput.trim().length > 0
     ? outputDirInput
     : doubleDash.length === 1
