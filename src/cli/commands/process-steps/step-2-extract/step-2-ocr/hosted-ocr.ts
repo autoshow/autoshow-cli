@@ -633,7 +633,7 @@ export const runHostedOcr = async (
     const ocrModel = opts.awsTextractModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'AWS Textract', async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
-      const run = await runAwsTextract(inputPath, inputMetadata, ocrModel, {
+      const run = await runAwsTextract(inputPath, inputMetadata, {
         region: opts.awsRegion,
         bucket: opts.awsBucket,
         configPath: opts.configPath

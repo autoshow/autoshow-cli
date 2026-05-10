@@ -9,7 +9,6 @@ export const ocrRegistry: PriceSelectionEntry[] = [
     command('extract-openai-gpt-5.4-nano', 'extract-openai-gpt-5.4-nano', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-nano', '--price']),
     command('extract-anthropic-claude-haiku-4-5', 'extract-anthropic-claude-haiku-4-5', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-haiku-4-5', '--price']),
     command('extract-gemini-gemini-3.1-flash-lite-preview', 'extract-gemini-gemini-3.1-flash-lite-preview', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--gemini-ocr', 'gemini-3.1-flash-lite-preview', '--price']),
-    command('extract-deepinfra-paddleocr-vl-0.9b', 'extract-deepinfra-paddleocr-vl-0.9b', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--deepinfra-ocr', 'PaddlePaddle/PaddleOCR-VL-0.9B', '--price']),
     command('extract-deepinfra-qwen3-vl-235b-a22b-instruct', 'extract-deepinfra-qwen3-vl-235b-a22b-instruct', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--deepinfra-ocr', 'Qwen/Qwen3-VL-235B-A22B-Instruct', '--price']),
     command('extract-deepinfra-qwen3-vl-30b-a3b-instruct', 'extract-deepinfra-Qwen/Qwen3-VL-30B-A3B-Instruct', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--deepinfra-ocr', 'Qwen/Qwen3-VL-30B-A3B-Instruct', '--price']),
   ]),

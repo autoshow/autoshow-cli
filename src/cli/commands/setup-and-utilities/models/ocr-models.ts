@@ -42,7 +42,6 @@ export const validateGeminiOcrModel = createModelValidator<GeminiOcrModel>(SUPPO
 export const DEFAULT_DEEPINFRA_OCR_MODEL = 'Qwen/Qwen3-VL-30B-A3B-Instruct'
 
 export const SUPPORTED_DEEPINFRA_OCR_MODELS = [
-  'PaddlePaddle/PaddleOCR-VL-0.9B',
   'Qwen/Qwen3-VL-235B-A22B-Instruct',
   DEFAULT_DEEPINFRA_OCR_MODEL
 ] as const satisfies readonly string[]
@@ -50,8 +49,7 @@ export const SUPPORTED_DEEPINFRA_OCR_MODELS = [
 export const validateDeepinfraOcrModel = createModelValidator<DeepinfraOcrModel>(SUPPORTED_DEEPINFRA_OCR_MODELS, 'deepinfra-ocr')
 
 export const SUPPORTED_AWS_TEXTRACT_MODELS = [
-  'detect-text',
-  'analyze-document'
+  'detect-text'
 ] as const satisfies readonly string[]
 
 export const validateAwsTextractModel = createModelValidator<AwsTextractModel>(SUPPORTED_AWS_TEXTRACT_MODELS, 'aws-textract')

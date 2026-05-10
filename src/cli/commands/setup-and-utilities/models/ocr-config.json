@@ -172,23 +172,6 @@
     "description": "DeepInfra OpenAI-compatible vision/OCR models",
     "type": "api",
     "models": {
-      "PaddlePaddle/PaddleOCR-VL-0.9B": {
-        "description": "PaddleOCR-VL 0.9B via DeepInfra",
-        "costPerMInputTokensUSD": 0.14,
-        "costPerMOutputTokensUSD": 0.8,
-        "costPerMInputTokensCents": 14,
-        "costPerMOutputTokensCents": 80,
-        "limits": {
-          "imageBytes": 20971520,
-          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 4000,
-          "promptTokensPerPage": 346,
-          "completionTokensPerPage": 505.5
-        }
-      },
       "Qwen/Qwen3-VL-235B-A22B-Instruct": {
         "description": "Qwen3 VL 235B A22B Instruct via DeepInfra",
         "costPerMInputTokensUSD": 0.2,
@@ -281,21 +264,6 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerPage": 1200
-        }
-      },
-      "analyze-document": {
-        "description": "AWS Textract AnalyzeDocument API (tables, forms, layout)",
-        "costPer1kPagesUSD": 65,
-        "costPer1kPagesCents": 6500,
-        "limits": {
-          "pdfBytes": 524288000,
-          "imageBytes": 10485760,
-          "pageCount": 3000,
-          "notes": "Sync: single-page, 10 MB image. Async: up to 3000 pages per PDF, 500 MB max file size."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 2000
         }
       }
     }

@@ -200,7 +200,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
-    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('PaddlePaddle/PaddleOCR-VL-0.9B')
+    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({

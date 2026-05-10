@@ -51,9 +51,6 @@ const TextractGetResponseSchema = v.object({
 
 type TextractBlock = v.InferOutput<typeof TextractBlockSchema>
 
-const isAnalyzeMode = (model: string): boolean =>
-  model === 'analyze-document'
-
 const buildPageResults = (blocks: TextractBlock[], totalPages: number): PageResult[] => {
   const pageTexts = new Map<number, string[]>()
 
@@ -96,12 +93,9 @@ export const writeAwsTextractSyncDocumentFile = async (
 
 const runSyncTextract = async (
   filePath: string,
-  region: string,
-  model: string
+  region: string
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
-  const command = isAnalyzeMode(model)
-    ? 'analyze-document'
-    : 'detect-document-text'
+  const command = 'detect-document-text'
 
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-textract-sync-'))
 
@@ -114,10 +108,6 @@ const runSyncTextract = async (
       '--region', region,
       '--output', 'json'
     ]
-
-    if (isAnalyzeMode(model)) {
-      args.push('--feature-types', 'TABLES', 'FORMS', 'LAYOUT')
-    }
 
     logOcrJobProgress(l, {
       provider: 'aws-textract',
@@ -143,8 +133,7 @@ const runSyncTextract = async (
 const runAsyncTextract = async (
   filePath: string,
   region: string,
-  bucket: string,
-  model: string
+  bucket: string
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
   const s3Key = `autoshow-textract/${crypto.randomUUID()}/${basename(filePath)}`
   const s3Uri = `s3://${bucket}/${s3Key}`
@@ -161,9 +150,7 @@ const runAsyncTextract = async (
   }
 
   try {
-    const startCommand = isAnalyzeMode(model)
-      ? 'start-document-analysis'
-      : 'start-document-text-detection'
+    const startCommand = 'start-document-text-detection'
 
     const startArgs = [
       'textract',
@@ -172,10 +159,6 @@ const runAsyncTextract = async (
       '--region', region,
       '--output', 'json'
     ]
-
-    if (isAnalyzeMode(model)) {
-      startArgs.push('--feature-types', 'TABLES', 'FORMS', 'LAYOUT')
-    }
 
     logOcrJobProgress(l, {
       provider: 'aws-textract',
@@ -198,9 +181,7 @@ const runAsyncTextract = async (
       state: 'started'
     })
 
-    const getCommand = isAnalyzeMode(model)
-      ? 'get-document-analysis'
-      : 'get-document-text-detection'
+    const getCommand = 'get-document-text-detection'
 
     let allBlocks: TextractBlock[] = []
     let totalPages = 0
@@ -292,7 +273,6 @@ const runAsyncTextract = async (
 export const runAwsTextract = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
-  model: string,
   options: {
     region?: string | undefined
     bucket?: string | undefined
@@ -327,7 +307,7 @@ export const runAwsTextract = async (
       throw new Error('AWS S3 bucket setup failed for AWS Textract staging.')
     }
 
-    const result = await runAsyncTextract(filePath, config.region, config.bucket, model)
+    const result = await runAsyncTextract(filePath, config.region, config.bucket)
     return { ...result, extractionMethod: 'aws-textract' }
   }
 
@@ -336,6 +316,6 @@ export const runAwsTextract = async (
     preferredBucket: options.bucket,
     configPath: options.configPath
   })
-  const result = await runSyncTextract(filePath, config.region, model)
+  const result = await runSyncTextract(filePath, config.region)
   return { ...result, extractionMethod: 'aws-textract' }
 }

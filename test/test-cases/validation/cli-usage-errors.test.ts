@@ -49,6 +49,20 @@ test('extract rejects removed Google Document AI layout parser model', async () 
   )
 })
 
+test('extract rejects removed DeepInfra PaddleOCR model', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--deepinfra-ocr', 'PaddlePaddle/PaddleOCR-VL-0.9B', '--price'],
+    'Invalid --deepinfra-ocr model "PaddlePaddle/PaddleOCR-VL-0.9B". Allowed values: Qwen/Qwen3-VL-235B-A22B-Instruct, Qwen/Qwen3-VL-30B-A3B-Instruct'
+  )
+})
+
+test('extract rejects removed AWS Textract analyze-document model', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--aws-textract', 'analyze-document', '--price'],
+    'Invalid --aws-textract model "analyze-document". Allowed values: detect-text'
+  )
+})
+
 test('extract rejects removed deAPI OCR flag', async () => {
   await expectUsageExit(
     ['extract', 'input/examples/document/1-document.pdf', '--deapi-ocr', 'Nanonets_Ocr_S_F16', '--price'],

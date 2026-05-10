@@ -302,7 +302,7 @@ Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when Im
 | Option | Value |
 |--------|-------|
 | Selector | `--deepinfra-ocr <model>` |
-| Models | `PaddlePaddle/PaddleOCR-VL-0.9B`, `Qwen/Qwen3-VL-235B-A22B-Instruct`, `Qwen/Qwen3-VL-30B-A3B-Instruct` |
+| Models | `Qwen/Qwen3-VL-235B-A22B-Instruct`, `Qwen/Qwen3-VL-30B-A3B-Instruct` |
 | Direct input support | `PNG`, `JPG/JPEG`, and `WEBP`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
@@ -317,7 +317,6 @@ DeepInfra OCR uses token pricing estimates and recorded usage when available.
 
 | DeepInfra OCR model | Input | Output | Price-mode page heuristic | Initial speed estimate |
 |---------------------|-------|--------|---------------------------|------------------------|
-| `PaddlePaddle/PaddleOCR-VL-0.9B` | $0.14 / 1M tokens | $0.80 / 1M tokens | 346 input + 506 output tokens, about $0.00045/page or $0.45/1K pages | 4,000 ms/page |
 | `Qwen/Qwen3-VL-235B-A22B-Instruct` | $0.20 / 1M tokens | $0.88 / 1M tokens | 7,981 input + 473 output tokens, about $0.0020/page or $2.01/1K pages | 20,000 ms/page |
 | `Qwen/Qwen3-VL-30B-A3B-Instruct` | $0.15 / 1M tokens | $0.60 / 1M tokens | 7,981 input + 472 output tokens, about $0.0015/page or $1.48/1K pages | 14,428 ms/page |
 
@@ -330,14 +329,14 @@ DeepInfra OCR uses token pricing estimates and recorded usage when available.
 | Option | Value |
 |--------|-------|
 | Selector | `--aws-textract <model>` |
-| Models | `detect-text`, `analyze-document` |
+| Models | `detect-text` |
 | Staging | S3 bucket shared with AWS Transcribe for PDFs and large async inputs; AutoShow can create and save one on first use, or you can pass `--aws-region` / `--aws-bucket` |
 
 ```bash
 bun as extract input/examples/document/1-document.pdf --aws-textract detect-text
 ```
 
-AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available. `detect-text` is text-only at $1.50 per 1,000 pages, and `analyze-document` is tables/forms/layout at $15 per 1,000 pages. Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging. AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
+AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available. `detect-text` is text-only at $1.50 per 1,000 pages. Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging. AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
 
 For async inputs, AutoShow resolves the region from `--aws-region`, saved config, AWS environment/CLI config, then `us-east-1`. If no accessible staging bucket is configured, it creates an `autoshow-aws-...` bucket, uses it immediately, and saves the region and bucket under the shared `defaults.extract.stt.awsRegion` / `awsBucket` config keys.
 
