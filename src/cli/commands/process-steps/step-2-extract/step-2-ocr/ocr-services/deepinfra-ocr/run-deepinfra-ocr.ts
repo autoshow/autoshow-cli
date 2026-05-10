@@ -6,8 +6,7 @@ import * as v from 'valibot'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { classifyFetchRetry, withRetry } from '~/utils/retries'
-import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import {
   DEEPINFRA_OCR_IMAGE_BYTES,
   getDeepinfraOcrClientConfig
@@ -135,37 +134,32 @@ const runDeepinfraOcrImage = async (
   const imageUrl = await readImageDataUrl(imagePath, format)
   let lastError: Error | undefined
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const response = await withRetry(
-        { retryClass: 'runtime_http_create_conservative', operationName: 'deepinfra-ocr' },
-        async (signal) => {
-          const timeoutSignal = AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS)
-          const combined = AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
-          return await client.chat.completions.create({
-            model,
-            max_tokens: DEEPINFRA_OCR_MAX_TOKENS,
-            response_format: {
-              type: 'json_schema',
-              json_schema: {
-                name: 'ocr_pages',
-                schema: DEEPINFRA_OCR_JSON_SCHEMA,
-                strict: true
-              }
-            },
-            messages: [{
-              role: 'user',
-              content: [
-                { type: 'text', text: buildOcrPrompt() },
-                { type: 'image_url', image_url: { url: imageUrl } }
-              ]
-            }]
-          }, { signal: combined })
+  for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
+    const response = await withOcrCreateRetry(
+      'deepinfra-ocr',
+      async (signal) => await client.chat.completions.create({
+        model,
+        max_tokens: DEEPINFRA_OCR_MAX_TOKENS,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'ocr_pages',
+            schema: DEEPINFRA_OCR_JSON_SCHEMA,
+            strict: true
+          }
         },
-        (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
-      )
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: buildOcrPrompt() },
+            { type: 'image_url', image_url: { url: imageUrl } }
+          ]
+        }]
+      }, { signal })
+    )
+    const rawText = response.choices[0]?.message?.content ?? ''
 
-      const rawText = response.choices[0]?.message?.content ?? ''
+    try {
       if (!rawText.trim()) {
         throw new Error('DeepInfra OCR returned no text output.')
       }
@@ -178,7 +172,7 @@ const runDeepinfraOcrImage = async (
       }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
-      if (attempt === 0) {
+      if (attempt < OCR_SCHEMA_RETRY_ATTEMPTS - 1) {
         continue
       }
     }

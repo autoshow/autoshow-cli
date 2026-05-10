@@ -112,15 +112,34 @@ export const normalizeParsedResult = (value: unknown): unknown => {
 }
 
 export const fetchResultPayload = async (resultUrl: string): Promise<unknown> => {
-  const response = await fetch(resultUrl, {
-    method: 'GET',
-    headers: { accept: 'application/json,text/plain;q=0.9,*/*;q=0.8' }
-  })
-  if (!response.ok) {
-    throw new Error(`deAPI result_url fetch failed (${response.status})`)
-  }
+  return await withRetry(
+    {
+      retryClass: 'runtime_http_read',
+      operationName: 'deapi-result-fetch',
+      policy: { maxAttempts: 4 },
+      timeoutMs: DEFAULT_POLL_REQUEST_TIMEOUT_MS
+    },
+    async (signal) => {
+      const response = await fetch(resultUrl, {
+        method: 'GET',
+        headers: { accept: 'application/json,text/plain;q=0.9,*/*;q=0.8' },
+        signal: signal ?? null
+      })
+      const payload = await readJsonOrText(response)
+      if (!response.ok) {
+        throw createDeapiHttpError(
+          `deAPI result_url fetch failed (${response.status}): ${extractDeapiErrorMessage(payload) ?? 'Unknown error'}`,
+          response,
+          'result',
+          'runtime_http_read',
+          payload
+        )
+      }
 
-  return normalizeParsedResult(await readJsonOrText(response))
+      return normalizeParsedResult(payload)
+    },
+    (error) => classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
+  )
 }
 
 type PollDeapiJobResult = {

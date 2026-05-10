@@ -34,9 +34,10 @@ Check gcloud CLI readiness for Google Cloud Speech-to-Text, Text-to-Speech, and 
 bun as setup --gcloud
 bun as setup --gcloud --gcloud-project PROJECT_ID
 bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
+bun as setup --gcloud --aws
 ```
 
-`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com`, `texttospeech.googleapis.com`, `documentai.googleapis.com`, and `storage.googleapis.com` are enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables the required APIs when billing is ready, creates or reuses an `autoshow-ocr` Document AI OCR processor in `us`, creates or verifies a GCS staging bucket for batch OCR, and prints the runtime values to use. It does not save Google defaults to `config/autoshow.json`; use `bun as config --gcloud-stt chirp_3 --gcloud-docai ocr --gcloud-tts standard` for model defaults and set the printed environment values when you want reusable Document AI runtime settings. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
+`bun as setup --gcloud` verifies the `gcloud` binary, Google Cloud CLI auth, the active project, project billing state, and whether `speech.googleapis.com`, `texttospeech.googleapis.com`, `documentai.googleapis.com`, and `storage.googleapis.com` are enabled. `bun as setup --gcloud --gcloud-project PROJECT_ID` sets the active project or creates it when missing, auto-links billing when exactly one open billing account is visible, enables the required APIs when billing is ready, creates or reuses the `autoshow-ocr` and `autoshow-layout-parser` Document AI processors in `us`, creates or verifies a GCS staging bucket for batch OCR, and saves reusable Google STT/OCR/TTS defaults plus Document AI processor/bucket settings to `config/autoshow.json`. It still prints environment exports for one-off shell use. Use `--gcloud-billing-account ACCOUNT_ID` when multiple open billing accounts are available or when you want to force a specific billing account. When anything is still missing, setup prints the exact next-step commands to run.
 
 Check AWS CLI readiness for Amazon Transcribe separately:
 
@@ -44,7 +45,7 @@ Check AWS CLI readiness for Amazon Transcribe separately:
 bun as setup --aws
 ```
 
-This verifies the `aws` binary, AWS CLI auth, the effective region, the configured S3 bucket (when passed or saved explicitly), and basic Amazon Transcribe access. It does not create a bucket or save AWS defaults to `config/autoshow.json`.
+This verifies the `aws` binary, AWS CLI auth, the effective region, the configured S3 bucket (when passed or saved explicitly), and basic Amazon Transcribe access. When a staging bucket is configured and accessible, setup saves the shared AWS region/bucket defaults to `config/autoshow.json`.
 
 Create a staging bucket or create a specific bucket name:
 
@@ -52,11 +53,12 @@ Create a staging bucket or create a specific bucket name:
 bun as setup --aws --aws-create-bucket
 ```
 
-You can optionally pin the region or bucket name. The AWS bucket defaults are shared by Transcribe and Textract:
+You can optionally pin the region or bucket name. The AWS bucket defaults are shared by Transcribe and Textract and are saved after the bucket is verified:
 
 ```bash
 bun as setup --aws --aws-create-bucket --aws-region us-east-2
 bun as setup --aws --aws-create-bucket --aws-region us-east-2 --aws-bucket my-transcribe-bucket
+bun as setup --gcloud --gcloud-project PROJECT_ID --aws --aws-create-bucket --aws-region us-east-2
 ```
 
 ## Doctor

@@ -1,6 +1,7 @@
 import { extname } from 'node:path'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { GlmOcrResponseSchema } from '~/types'
+import { withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { validateData } from '~/utils/validate/validation'
 import { ensureGlmApiKey, resolveGlmBaseUrl } from './glm'
 
@@ -56,32 +57,43 @@ export const runGlmOcr = async (
   const base64 = Buffer.from(bytes).toString('base64')
   const mimeType = getMimeType(filePath, step1Metadata.format)
 
-  const response = await fetch(`${resolveGlmBaseUrl()}/layout_parsing`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model,
-      file: `data:${mimeType};base64,${base64}`
+  const payload = await withOcrCreateRetry('glm-ocr', async (signal) => {
+    const response = await fetch(`${resolveGlmBaseUrl()}/layout_parsing`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        file: `data:${mimeType};base64,${base64}`
+      }),
+      signal: signal ?? null
     })
+
+    const rawText = await response.text()
+    let parsedPayload: unknown = null
+    try {
+      parsedPayload = JSON.parse(rawText) as unknown
+    } catch {
+      parsedPayload = rawText
+    }
+
+    if (!response.ok) {
+      const message = isRecord(parsedPayload)
+        ? cleanString(parsedPayload['message']) ?? cleanString(parsedPayload['error'])
+        : undefined
+      throw Object.assign(
+        new Error(`GLM OCR request failed (${response.status} ${response.statusText})${message ? `: ${message}` : ''}`),
+        {
+          status: response.status,
+          headers: response.headers
+        }
+      )
+    }
+
+    return parsedPayload
   })
-
-  const rawText = await response.text()
-  let payload: unknown = null
-  try {
-    payload = JSON.parse(rawText) as unknown
-  } catch {
-    payload = rawText
-  }
-
-  if (!response.ok) {
-    const message = isRecord(payload)
-      ? cleanString(payload['message']) ?? cleanString(payload['error'])
-      : undefined
-    throw new Error(`GLM OCR request failed (${response.status} ${response.statusText})${message ? `: ${message}` : ''}`)
-  }
 
   const validated = validateData(GlmOcrResponseSchema, payload, 'GLM OCR response')
   const markdown = validated.md_results.trim()

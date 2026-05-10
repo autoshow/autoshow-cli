@@ -4,9 +4,10 @@ import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
-import { withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
+import { classifyOcrCreateRetry, OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import type { RetryDecision } from '~/types'
 import {
   GEMINI_FILE_UPLOAD_BYTES,
   GEMINI_INLINE_NON_PDF_BYTES,
@@ -145,6 +146,14 @@ const shouldUploadFile = (fileSizeBytes: number, format: DocumentMetadata['forma
   return fileSizeBytes > inlineLimit
 }
 
+const classifyGeminiOcrRetry = (error: unknown): RetryDecision => {
+  const ocrDecision = classifyOcrCreateRetry(error)
+  if (ocrDecision.shouldRetry) {
+    return ocrDecision
+  }
+  return classifyGeminiRetry(error)
+}
+
 export const runGeminiOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
@@ -175,68 +184,79 @@ export const runGeminiOcr = async (
     ...(baseUrl ? { httpOptions: { baseUrl } } : {})
   })
 
-  const response = await withRetry(
-    {
-      retryClass: 'runtime_http_create_conservative',
-      operationName: 'gemini-ocr',
-      policy: { maxAttempts: 3 }
-    },
-    async () => {
-      let uploadedFileName: string | undefined
-      try {
-        const contents = shouldUploadFile(fileSizeBytes, step1Metadata.format)
-          ? await (async () => {
-              const uploadedFile = await ai.files.upload({
-                file: filePath,
-                config: {
-                  mimeType,
-                  displayName: basename(filePath)
-                }
-              })
-              uploadedFileName = uploadedFile.name ?? undefined
-              const fileMimeType = uploadedFile.mimeType ?? mimeType
-              if (typeof uploadedFile.uri !== 'string' || uploadedFile.uri.length === 0) {
-                throw new Error('Gemini Files API upload did not return a file URI.')
-              }
-              return createUserContent([
-                { text: prompt },
-                createPartFromUri(uploadedFile.uri, fileMimeType)
-              ] as any)
-            })()
-          : await buildInlineContents(filePath, mimeType, prompt)
+  let lastSchemaError: Error | undefined
 
-        return await ai.models.generateContent({
-          model,
-          contents,
-          config: {
-            responseMimeType: 'application/json',
-            responseJsonSchema: GEMINI_OCR_JSON_SCHEMA
-          }
-        })
-      } finally {
-        if (uploadedFileName) {
-          try {
-            await ai.files.delete({ name: uploadedFileName })
-          } catch (error) {
-            l.warn(`Failed to delete Gemini OCR upload ${uploadedFileName}: ${error instanceof Error ? error.message : String(error)}`)
+  for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
+    const response = await withOcrCreateRetry(
+      'gemini-ocr',
+      async (signal) => {
+        let uploadedFileName: string | undefined
+        try {
+          const contents = shouldUploadFile(fileSizeBytes, step1Metadata.format)
+            ? await (async () => {
+                const uploadedFile = await ai.files.upload({
+                  file: filePath,
+                  config: {
+                    mimeType,
+                    displayName: basename(filePath),
+                    ...(signal ? { abortSignal: signal } : {})
+                  }
+                })
+                uploadedFileName = uploadedFile.name ?? undefined
+                const fileMimeType = uploadedFile.mimeType ?? mimeType
+                if (typeof uploadedFile.uri !== 'string' || uploadedFile.uri.length === 0) {
+                  throw new Error('Gemini Files API upload did not return a file URI.')
+                }
+                return createUserContent([
+                  { text: prompt },
+                  createPartFromUri(uploadedFile.uri, fileMimeType)
+                ] as any)
+              })()
+            : await buildInlineContents(filePath, mimeType, prompt)
+
+          return await ai.models.generateContent({
+            model,
+            contents,
+            config: {
+              responseMimeType: 'application/json',
+              responseJsonSchema: GEMINI_OCR_JSON_SCHEMA,
+              ...(signal ? { abortSignal: signal } : {})
+            }
+          })
+        } finally {
+          if (uploadedFileName) {
+            try {
+              await ai.files.delete({ name: uploadedFileName })
+            } catch (error) {
+              l.warn(`Failed to delete Gemini OCR upload ${uploadedFileName}: ${error instanceof Error ? error.message : String(error)}`)
+            }
           }
         }
+      },
+      classifyGeminiOcrRetry
+    )
+
+    const rawText = response.text ?? ''
+    try {
+      if (!rawText.trim()) {
+        throw new Error('Gemini OCR returned no text output.')
       }
-    },
-    classifyGeminiRetry
-  )
 
-  const rawText = response.text ?? ''
-  if (!rawText.trim()) {
-    throw new Error('Gemini OCR returned no text output.')
+      const usage = response.usageMetadata
+      return {
+        pages: parseOcrResponse(rawText, expectedPageCount),
+        extractionMethod: 'gemini-ocr',
+        totalPages: expectedPageCount,
+        ...(typeof usage?.promptTokenCount === 'number' ? { promptTokens: usage.promptTokenCount } : {}),
+        ...(typeof usage?.candidatesTokenCount === 'number' ? { completionTokens: usage.candidatesTokenCount } : {})
+      }
+    } catch (error) {
+      lastSchemaError = error instanceof Error ? error : new Error(String(error))
+      if (attempt < OCR_SCHEMA_RETRY_ATTEMPTS - 1) {
+        l.warn('Gemini OCR returned malformed output; retrying')
+      }
+    }
   }
 
-  const usage = response.usageMetadata
-  return {
-    pages: parseOcrResponse(rawText, expectedPageCount),
-    extractionMethod: 'gemini-ocr',
-    totalPages: expectedPageCount,
-    ...(typeof usage?.promptTokenCount === 'number' ? { promptTokens: usage.promptTokenCount } : {}),
-    ...(typeof usage?.candidatesTokenCount === 'number' ? { completionTokens: usage.candidatesTokenCount } : {})
-  }
+  throw lastSchemaError ?? new Error('Gemini OCR failed')
 }

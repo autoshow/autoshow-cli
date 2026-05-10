@@ -3,9 +3,11 @@ import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
 import { exec } from '~/utils/cli-utils'
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { writeConfig } from '~/cli/commands/setup-and-utilities/config/config-writer'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import type {
+  AutoshowConfig,
   AwsCallerIdentity,
   AwsSttConfigDefaults,
   AwsSttReadiness,
@@ -165,9 +167,11 @@ export const resolveAwsCliRegion = async (
   return normalizeString(configuredRegion.stdout)
 }
 
-export const readAwsSttConfigDefaults = async (): Promise<AwsSttConfigDefaults> => {
+export const readAwsSttConfigDefaults = async (
+  configPathOverride?: string | undefined
+): Promise<AwsSttConfigDefaults> => {
   try {
-    const configPath = await resolveConfigPath()
+    const configPath = await resolveConfigPath(configPathOverride)
     if (!await Bun.file(configPath).exists()) {
       return {}
     }
@@ -348,6 +352,37 @@ const resolveAwsSttReadinessState = async (
   return { state, ...(createdBucket ? { createdBucket } : {}) }
 }
 
+const persistAwsSetupDefaults = async (
+  options: {
+    configPathOverride?: string | undefined
+    region: string
+    bucket: string
+  }
+): Promise<string> => {
+  const configPath = await resolveConfigPath(options.configPathOverride)
+  const current = await loadConfig(configPath)
+  const currentStt = current.defaults?.extract?.stt
+  const next: AutoshowConfig = {
+    ...current,
+    defaults: {
+      ...current.defaults,
+      extract: {
+        ...current.defaults?.extract,
+        stt: {
+          ...currentStt,
+          awsStt: Array.isArray(currentStt?.awsStt) && currentStt.awsStt.length > 0
+            ? currentStt.awsStt
+            : [AWS_STT_DEFAULT_MODEL],
+          awsRegion: options.region,
+          awsBucket: options.bucket
+        }
+      }
+    }
+  }
+  await writeConfig(configPath, next as unknown as Record<string, unknown>)
+  return configPath
+}
+
 export const setupAwsStt = async (
   options: {
     preferredRegion?: string | undefined
@@ -355,10 +390,18 @@ export const setupAwsStt = async (
     focused?: boolean | undefined
     verifyTranscribe?: boolean | undefined
     autoCreateBucket?: boolean | undefined
+    configPathOverride?: string | undefined
   } = {}
 ): Promise<void> => {
   const explicitBucket = normalizeString(options.preferredBucket)
   const { state, createdBucket } = await resolveAwsSttReadinessState(options)
+  const savedConfigPath = state.region && state.bucket && state.bucketAccessible === true
+    ? await persistAwsSetupDefaults({
+        configPathOverride: options.configPathOverride,
+        region: state.region,
+        bucket: state.bucket
+      })
+    : undefined
 
   if (options.focused) {
     l.write('info', 'AWS STT setup')
@@ -392,7 +435,9 @@ export const setupAwsStt = async (
           ...(state.region && state.bucket
             ? [
                 { setting: 'use once', value: `--aws-region ${state.region} --aws-bucket ${state.bucket}` },
-                { setting: 'save default', value: `bun as config --aws-stt ${AWS_STT_DEFAULT_MODEL} --aws-region ${state.region} --aws-bucket ${state.bucket}` }
+                savedConfigPath
+                  ? { setting: 'config', value: `saved ${savedConfigPath}` }
+                  : { setting: 'save default', value: `bun as config --aws-stt ${AWS_STT_DEFAULT_MODEL} --aws-region ${state.region} --aws-bucket ${state.bucket}` }
               ]
             : [])
         ], ['setting', 'value'])

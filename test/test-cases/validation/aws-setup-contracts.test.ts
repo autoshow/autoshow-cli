@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { setupAwsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 
 const tempDirs: string[] = []
@@ -77,7 +78,8 @@ describe('aws setup contracts', () => {
     await setupAwsStt({
       focused: true,
       preferredRegion: 'us-east-1',
-      verifyTranscribe: true
+      verifyTranscribe: true,
+      configPathOverride: configPath
     })
 
     const commands = await readFile(log, 'utf8')
@@ -87,7 +89,7 @@ describe('aws setup contracts', () => {
     expect(await Bun.file(configPath).exists()).toBe(false)
   })
 
-  test('creates requested bucket without writing AutoShow config', async () => {
+  test('creates requested bucket and saves shared AWS defaults', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-aws-setup-create-'))
     tempDirs.push(dir)
     const configPath = join(dir, 'autoshow.json')
@@ -99,12 +101,23 @@ describe('aws setup contracts', () => {
       preferredRegion: 'us-east-2',
       preferredBucket: 'autoshow-transcribe-test',
       autoCreateBucket: true,
-      verifyTranscribe: true
+      verifyTranscribe: true,
+      configPathOverride: configPath
     })
 
     const commands = await readFile(log, 'utf8')
     expect(commands).toContain('s3api create-bucket --bucket autoshow-transcribe-test --region us-east-2')
     expect(commands).toContain('s3api head-bucket --bucket autoshow-transcribe-test --region us-east-2')
-    expect(await Bun.file(configPath).exists()).toBe(false)
+    await expect(loadConfig(configPath)).resolves.toMatchObject({
+      defaults: {
+        extract: {
+          stt: {
+            awsStt: ['standard'],
+            awsRegion: 'us-east-2',
+            awsBucket: 'autoshow-transcribe-test'
+          }
+        }
+      }
+    })
   })
 })

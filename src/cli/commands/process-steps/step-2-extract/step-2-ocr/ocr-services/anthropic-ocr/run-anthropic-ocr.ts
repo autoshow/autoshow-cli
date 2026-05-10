@@ -8,14 +8,13 @@ import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { ensureMutoolSetup } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
-import { classifyFetchRetry, withRetry } from '~/utils/retries'
+import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import {
   ANTHROPIC_OCR_FILES_BETA,
   ANTHROPIC_OCR_FILES_UPLOAD_BYTES,
   ANTHROPIC_OCR_IMAGE_BYTES,
-  ANTHROPIC_OCR_MAX_TOKENS,
-  ANTHROPIC_OCR_PDF_CHUNK_PAGE_COUNT
+  ANTHROPIC_OCR_MAX_TOKENS
 } from './anthropic-ocr'
 
 const ANTHROPIC_OCR_TIMEOUT_MS = OCR_REQUEST_TIMEOUT_MS
@@ -130,22 +129,16 @@ const parseOcrResponse = (
   return normalizePages(validation.value, expectedPageCount, pageLabel)
 }
 
-const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
-  const timeoutSignal = AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS)
-  return AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
-}
-
 const callAnthropicMessage = async (
   requestBody: Record<string, unknown>,
   operationName: string
 ) => {
   const client = createAnthropicClient({ timeout: ANTHROPIC_OCR_TIMEOUT_MS })
-  return await withRetry(
-    { retryClass: 'runtime_http_create_conservative', operationName },
+  return await withOcrCreateRetry(
+    operationName,
     async (signal) => await client.beta.messages.create(requestBody as any, {
-      signal: createCombinedSignal(signal)
-    }),
-    (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+      signal
+    })
   )
 }
 
@@ -157,7 +150,7 @@ const runMessageWithSchemaRetry = async (
 ): Promise<{ pages: PageResult[], promptTokens?: number, completionTokens?: number }> => {
   let lastError: Error | undefined
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
     const message = await callAnthropicMessage(requestBody, operationName)
     const rawText = extractAnthropicText(message.content as Array<{ type: string, text?: string }>)
 
@@ -174,8 +167,8 @@ const runMessageWithSchemaRetry = async (
       }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
-      if (attempt === 0) {
-        l.warn(`Anthropic OCR returned malformed output for ${pageLabel}; retrying once`)
+      if (attempt < OCR_SCHEMA_RETRY_ATTEMPTS - 1) {
+        l.warn(`Anthropic OCR returned malformed output for ${pageLabel}; retrying`)
         continue
       }
     }
@@ -252,15 +245,14 @@ const runPdfChunk = async (
       type: 'application/pdf'
     })
 
-    const uploaded = await withRetry(
-      { retryClass: 'runtime_http_create_conservative', operationName: 'anthropic-ocr-file-upload' },
+    const uploaded = await withOcrCreateRetry(
+      'anthropic-ocr-file-upload',
       async (signal) => await client.beta.files.upload({
         file: uploadFile,
         betas: [ANTHROPIC_OCR_FILES_BETA]
       }, {
-        signal: createCombinedSignal(signal)
-      }),
-      (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+        signal
+      })
     )
 
     uploadedFileId = uploaded.id
@@ -341,23 +333,13 @@ export const runAnthropicOcr = async (
   }
 
   const totalPages = Math.max(1, step1Metadata.pageCount)
-  const pages: PageResult[] = []
-  let promptTokens = 0
-  let completionTokens = 0
-
-  for (let startPage = 1; startPage <= totalPages; startPage += ANTHROPIC_OCR_PDF_CHUNK_PAGE_COUNT) {
-    const endPage = Math.min(totalPages, startPage + ANTHROPIC_OCR_PDF_CHUNK_PAGE_COUNT - 1)
-    const chunk = await runPdfChunk(filePath, model, startPage, endPage)
-    pages.push(...chunk.pages)
-    promptTokens += chunk.promptTokens
-    completionTokens += chunk.completionTokens
-  }
+  const chunk = await runPdfChunk(filePath, model, 1, totalPages)
 
   return {
-    pages,
+    pages: chunk.pages,
     extractionMethod: 'anthropic-ocr',
     totalPages,
-    ...(promptTokens > 0 ? { promptTokens } : {}),
-    ...(completionTokens > 0 ? { completionTokens } : {})
+    ...(chunk.promptTokens > 0 ? { promptTokens: chunk.promptTokens } : {}),
+    ...(chunk.completionTokens > 0 ? { completionTokens: chunk.completionTokens } : {})
   }
 }

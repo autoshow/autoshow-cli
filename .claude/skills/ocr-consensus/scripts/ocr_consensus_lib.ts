@@ -453,8 +453,8 @@ export function buildTimingLookup(runJson: OcrRunJson): Map<string, number> {
 
 export function loadOcrRunJson(runDir: string): OcrRunJson {
   const runJson = readJson<OcrRunJson>(join(runDir, "run.json"));
-  if (runJson.kind !== "ocr") {
-    throw new Error(`run.json kind is "${runJson.kind}", expected "ocr"`);
+  if (runJson.kind !== "ocr" && runJson.kind !== "extract") {
+    throw new Error(`run.json kind is "${runJson.kind}", expected "ocr" or "extract"`);
   }
   const step2 = runJson.metadata?.step2;
   if (!Array.isArray(step2) || step2.length === 0) {

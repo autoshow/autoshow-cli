@@ -101,17 +101,6 @@
           "costMultiplier": 1,
           "msPerPage": 5793
         }
-      },
-      "gpt-5.4-pro": {
-        "description": "GPT-5.4 pro OCR",
-        "costPerMInputTokensUSD": 30,
-        "costPerMOutputTokensUSD": 180,
-        "costPerMInputTokensCents": 3000,
-        "costPerMOutputTokensCents": 18000,
-        "limits": {
-          "pdfBytes": 52428800,
-          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
-        }
       }
     }
   },

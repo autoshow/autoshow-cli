@@ -54,6 +54,7 @@ import {
   warnHostedOnlyFlags
 } from './ocr-engine-selection'
 import { isPdfEncrypted, resolvePdfPageCount } from './pdf-utils'
+import { runHostedOcrWithPdfChunkFallback } from './ocr-utils/pdf-chunk-fallback'
 
 type HostedOcrService = HostedOcrRun['ocrService']
 
@@ -452,47 +453,74 @@ const assertHostedOcrWithinLimits = async (
   }
 }
 
+const runChunkableHostedPdfOcr = async (
+  filePath: string,
+  step1Metadata: DocumentMetadata,
+  opts: ExtractionOptions,
+  serviceLabel: string,
+  runProvider: (inputPath: string, inputMetadata: DocumentMetadata) => Promise<HostedOcrRun>
+): Promise<HostedOcrRun> => {
+  if (step1Metadata.format !== 'pdf') {
+    return await runProvider(filePath, step1Metadata)
+  }
+
+  return await runHostedOcrWithPdfChunkFallback({
+    filePath,
+    step1Metadata,
+    serviceLabel,
+    totalPages: Math.max(1, step1Metadata.pageCount),
+    password: opts.password,
+    runFull: async () => await runProvider(filePath, step1Metadata),
+    runChunk: async (chunkPath, chunkMetadata) => await runProvider(chunkPath, chunkMetadata)
+  })
+}
+
 export const runHostedOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   opts: ExtractionOptions
 ): Promise<HostedOcrRun> => {
-  await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
-
   if (hasMistralOcr(opts)) {
     await ensureMistralOcrSetup()
     warnMistralOnlyFlags(opts)
     const ocrModel = opts.mistralOcrModel as string
-    const run = await runMistralOcr(filePath, step1Metadata, ocrModel)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'mistral',
-      ocrModel
-    }
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Mistral OCR', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runMistralOcr(inputPath, inputMetadata, ocrModel)
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'mistral',
+        ocrModel
+      }
+    })
   }
 
   if (hasGlmOcr(opts)) {
     await ensureGlmOcrSetup()
     warnGlmOnlyFlags(opts)
     const ocrModel = opts.glmOcrModel as string
-    const run = await runGlmOcr(filePath, step1Metadata, ocrModel)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'glm',
-      ocrModel,
-      canonicalText: run.markdown,
-      ...(typeof run.totalPages === 'number' ? { totalPages: run.totalPages } : {}),
-      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
-      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
-    }
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'GLM OCR', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runGlmOcr(inputPath, inputMetadata, ocrModel)
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'glm',
+        ocrModel,
+        canonicalText: run.markdown,
+        ...(typeof run.totalPages === 'number' ? { totalPages: run.totalPages } : {}),
+        ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+        ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+      }
+    })
   }
 
   if (hasKimiOcr(opts)) {
     await ensureKimiOcrSetup()
     warnHostedOnlyFlags('kimi-ocr', opts)
     const ocrModel = opts.kimiOcrModel as string
+    await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
     const run = await runKimiOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
@@ -513,54 +541,64 @@ export const runHostedOcr = async (
     await ensureOpenAIOcrSetup()
     warnOpenAIOnlyFlags(opts)
     const ocrModel = opts.openaiOcrModel as string
-    const run = await runOpenAIOcr(filePath, step1Metadata, ocrModel)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'openai',
-      ocrModel,
-      totalPages: run.totalPages,
-      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
-      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
-    }
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'OpenAI OCR', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runOpenAIOcr(inputPath, inputMetadata, ocrModel)
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'openai',
+        ocrModel,
+        totalPages: run.totalPages,
+        ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+        ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+      }
+    })
   }
 
   if (hasAnthropicOcr(opts)) {
     await ensureAnthropicOcrSetup()
     warnAnthropicOnlyFlags(opts)
     const ocrModel = opts.anthropicOcrModel as string
-    const run = await runAnthropicOcr(filePath, step1Metadata, ocrModel)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'anthropic',
-      ocrModel,
-      totalPages: run.totalPages,
-      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
-      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
-    }
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Anthropic OCR', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runAnthropicOcr(inputPath, inputMetadata, ocrModel)
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'anthropic',
+        ocrModel,
+        totalPages: run.totalPages,
+        ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+        ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+      }
+    })
   }
 
   if (hasGeminiOcr(opts)) {
     await ensureGeminiOcrSetup()
     warnGeminiOnlyFlags(opts)
     const ocrModel = opts.geminiOcrModel as string
-    const run = await runGeminiOcr(filePath, step1Metadata, ocrModel)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'gemini',
-      ocrModel,
-      totalPages: run.totalPages,
-      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
-      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
-    }
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Gemini OCR', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runGeminiOcr(inputPath, inputMetadata, ocrModel)
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'gemini',
+        ocrModel,
+        totalPages: run.totalPages,
+        ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+        ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+      }
+    })
   }
 
   if (hasDeepinfraOcr(opts)) {
     await ensureDeepinfraOcrSetup()
     warnHostedOnlyFlags('deepinfra-ocr', opts)
     const ocrModel = opts.deepinfraOcrModel as string
+    await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
     const run = await runDeepinfraOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
@@ -580,38 +618,45 @@ export const runHostedOcr = async (
   if (hasAwsTextract(opts)) {
     warnHostedOnlyFlags('aws-textract', opts)
     const ocrModel = opts.awsTextractModel as string
-    const run = await runAwsTextract(filePath, step1Metadata, ocrModel, {
-      region: opts.awsRegion,
-      bucket: opts.awsBucket,
-      configPath: opts.configPath
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'AWS Textract', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runAwsTextract(inputPath, inputMetadata, ocrModel, {
+        region: opts.awsRegion,
+        bucket: opts.awsBucket,
+        configPath: opts.configPath
+      })
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'aws-textract',
+        ocrModel,
+        totalPages: run.totalPages
+      }
     })
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'aws-textract',
-      ocrModel,
-      totalPages: run.totalPages
-    }
   }
 
   if (hasGcloudDocai(opts)) {
     const ocrModel = opts.gcloudDocaiModel as string
     await ensureGcloudDocaiSetup(ocrModel)
     warnHostedOnlyFlags('gcloud-docai', opts)
-    const run = await runGcloudDocai(filePath, step1Metadata, ocrModel)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'gcloud-docai',
-      ocrModel,
-      totalPages: run.totalPages
-    }
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Google Cloud Document AI', async (inputPath, inputMetadata) => {
+      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
+      const run = await runGcloudDocai(inputPath, inputMetadata, ocrModel)
+      return {
+        pages: run.pages,
+        extractionMethod: run.extractionMethod,
+        ocrService: 'gcloud-docai',
+        ocrModel,
+        totalPages: run.totalPages
+      }
+    })
   }
 
   if (hasDeapiOcr(opts)) {
     await ensureDeapiOcrSetup()
     warnHostedOnlyFlags('deapi-ocr', opts)
     const ocrModel = opts.deapiOcrModel as DeapiOcrModel
+    await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
     const run = await runDeapiOcr(filePath, step1Metadata, ocrModel, opts)
     return {
       pages: run.pages,

@@ -4,7 +4,7 @@
 
 Use this skill against an AutoShow OCR run directory that contains:
 
-1. `run.json` with `kind: "ocr"` and `metadata.step2[]` array
+1. `run.json` with `kind: "ocr"` or `kind: "extract"` and `metadata.step2[]` array
 2. `providers/*/result.json` with `schemaVersion: 2` and `kind: "provider-result"`
 3. Optional `providers/*/extraction.txt`
 

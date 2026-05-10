@@ -28,6 +28,13 @@ test('extract rejects write LLM provider flags as unknown flags', async () => {
   await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--glm'], 'Unexpected flag: glm')
 })
 
+test('extract rejects removed OpenAI OCR models', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-pro', '--price'],
+    'Invalid --openai-ocr model "gpt-5.4-pro". Allowed values: gpt-5.4, gpt-5.4-mini, gpt-5.4-nano'
+  )
+})
+
 test('music lyric-video mode rejects missing audio or batch', async () => {
   await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
 })

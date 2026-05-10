@@ -52,16 +52,19 @@ bun as setup --gcloud
 # set or create the active gcloud project, link billing when possible,
 # enable Speech-to-Text, Text-to-Speech, Document AI, and Storage when billing is ready,
 # create/reuse the autoshow-ocr processor and GCS staging bucket,
-# and print runtime values without changing config/autoshow.json
+# and save reusable Google STT/OCR/TTS defaults to config/autoshow.json
 bun as setup --gcloud --gcloud-project PROJECT_ID
 
 # pin a specific billing account when multiple open billing accounts exist
 bun as setup --gcloud --gcloud-project PROJECT_ID --gcloud-billing-account ACCOUNT_ID
 
+# run cloud setup checks together
+bun as setup --gcloud --aws
+
 # verify AWS CLI auth, region, and bucket config for Amazon Transcribe
 bun as setup --aws
 
-# create a staging bucket or create a specific bucket name, then print the values
+# create a staging bucket or create a specific bucket name, then save the shared AWS defaults
 bun as setup --aws --aws-create-bucket
 
 # build whisper.cpp binary only

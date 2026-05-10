@@ -61,6 +61,7 @@ export const setupCommand = defineCommand({
       ['bun as setup --gcloud --gcloud-project my-project --gcloud-billing-account 000000-000000-000000', 'Bootstrap a Google Cloud project with an explicit billing account'],
       ['bun as setup --aws', 'Check AWS CLI auth/config for Amazon Transcribe and Textract staging'],
       ['bun as setup --aws --aws-create-bucket', 'Create a shared S3 staging bucket for Amazon Transcribe and Textract'],
+      ['bun as setup --gcloud --aws', 'Check and save both Google Cloud and AWS setup values'],
       ['bun as setup --sample --verify-only', 'Validate deterministic sample fixtures without regenerating'],
       ['bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF', 'Download Whisper and llama.cpp models without running inference'],
       ['bun as setup --doctor', 'Check prerequisites without installing'],
@@ -78,6 +79,7 @@ export const setupCommand = defineCommand({
   const usedModelsFlag = hasLongFlag(rawArgv, '--models')
   const modelTargets = normalizeStringArrayFlag(ctx.flags.models)
   const usedSampleOnlyFlags = getUsedLongFlags(rawArgv, SAMPLE_ONLY_FLAGS)
+  const configPathOverride = typeof ctx.flags['config-path'] === 'string' ? ctx.flags['config-path'] : undefined
 
   const gcloudSpecificFlags: string[] = []
   if (gcloudProject) {
@@ -148,20 +150,8 @@ export const setupCommand = defineCommand({
     }
   }
 
-  if (ctx.flags.gcloud) {
+  if (ctx.flags.gcloud || ctx.flags.aws) {
     const conflicts: string[] = []
-    if (ctx.flags.aws) {
-      conflicts.push('--aws')
-    }
-    if (ctx.flags['aws-create-bucket']) {
-      conflicts.push('--aws-create-bucket')
-    }
-    if (typeof ctx.flags['aws-region'] === 'string') {
-      conflicts.push('--aws-region')
-    }
-    if (typeof ctx.flags['aws-bucket'] === 'string') {
-      conflicts.push('--aws-bucket')
-    }
     if (ctx.flags.doctor) {
       conflicts.push('--doctor')
     }
@@ -175,56 +165,39 @@ export const setupCommand = defineCommand({
       conflicts.push('--repeat')
     }
     if (conflicts.length > 0) {
-      throw CLIUsageError(`--gcloud cannot be combined with ${conflicts.join(', ')}`)
+      throw CLIUsageError(`focused setup cannot be combined with ${conflicts.join(', ')}`)
     }
 
     await runWithLogContext({ step: 'setup' }, async () => {
-      await setupGcloudStt({
-        focused: true,
-        preferredProject: gcloudProject,
-        preferredBillingAccount: gcloudBillingAccount,
-        projectName: gcloudProjectName,
-        organizationId: gcloudOrganization,
-        folderId: gcloudFolder,
-        configPathOverride: typeof ctx.flags['config-path'] === 'string' ? ctx.flags['config-path'] : undefined
-      })
-    })
-    return
-  }
+      if (ctx.flags.gcloud) {
+        await setupGcloudStt({
+          focused: true,
+          preferredProject: gcloudProject,
+          preferredBillingAccount: gcloudBillingAccount,
+          projectName: gcloudProjectName,
+          organizationId: gcloudOrganization,
+          folderId: gcloudFolder,
+          configPathOverride
+        })
+      }
 
-  if (ctx.flags.aws) {
-    const conflicts: string[] = []
-    if (ctx.flags.gcloud) {
-      conflicts.push('--gcloud')
-    }
-    if ((ctx.flags.step as string) !== 'all') {
-      conflicts.push('--step')
-    }
-    if (ctx.flags['force-redownload']) {
-      conflicts.push('--force-redownload')
-    }
-    if ((ctx.flags.repeat as string) !== '1') {
-      conflicts.push('--repeat')
-    }
-    if (conflicts.length > 0) {
-      throw CLIUsageError(`--aws cannot be combined with ${conflicts.join(', ')}`)
-    }
-
-    const awsDefaults = await readAwsSttConfigDefaults()
-    const preferredRegion = typeof ctx.flags['aws-region'] === 'string'
-      ? ctx.flags['aws-region']
-      : awsDefaults.preferredRegion
-    const preferredBucket = typeof ctx.flags['aws-bucket'] === 'string'
-      ? ctx.flags['aws-bucket']
-      : awsDefaults.preferredBucket
-    await runWithLogContext({ step: 'setup' }, async () => {
-      await setupAwsStt({
-        preferredRegion,
-        preferredBucket,
-        autoCreateBucket: ctx.flags['aws-create-bucket'] === true,
-        focused: true,
-        verifyTranscribe: true
-      })
+      if (ctx.flags.aws) {
+        const awsDefaults = await readAwsSttConfigDefaults(configPathOverride)
+        const preferredRegion = typeof ctx.flags['aws-region'] === 'string'
+          ? ctx.flags['aws-region']
+          : awsDefaults.preferredRegion
+        const preferredBucket = typeof ctx.flags['aws-bucket'] === 'string'
+          ? ctx.flags['aws-bucket']
+          : awsDefaults.preferredBucket
+        await setupAwsStt({
+          preferredRegion,
+          preferredBucket,
+          autoCreateBucket: ctx.flags['aws-create-bucket'] === true,
+          focused: true,
+          verifyTranscribe: true,
+          configPathOverride
+        })
+      }
     })
     return
   }

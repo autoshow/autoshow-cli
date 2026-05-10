@@ -1,6 +1,8 @@
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
-import type { GcloudSttReadiness } from '~/types'
+import { loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { writeConfig } from '~/cli/commands/setup-and-utilities/config/config-writer'
+import type { AutoshowConfig, GcloudSttReadiness } from '~/types'
 import {
   GCLOUD_DOCAI_DEFAULT_LOCATION,
   GCLOUD_DOCAI_DEFAULT_MODEL,
@@ -26,6 +28,8 @@ import {
   readSavedGcloudDocaiDefaults
 } from './gcloud-docai-setup'
 import { readGcloudSttReadiness } from './gcloud-readiness'
+
+const GCLOUD_TTS_DEFAULT_MODEL = 'standard'
 
 const buildSetupGcloudCommand = (
   options: {
@@ -125,6 +129,60 @@ const resolvePreferredBillingAccount = async (
   return billingAccounts.accountIds[0]
 }
 
+const nonEmptyArray = (value: string[] | undefined): boolean =>
+  Array.isArray(value) && value.length > 0
+
+const persistGcloudSetupDefaults = async (
+  options: {
+    configPath: string
+    location: string
+    ocrProcessorId: string
+    layoutProcessorId: string
+    bucket: string
+  }
+): Promise<string> => {
+  const current = await loadConfig(options.configPath)
+  const currentStt = current.defaults?.extract?.stt
+  const currentOcr = current.defaults?.extract?.ocr
+  const currentTts = current.defaults?.post?.tts
+  const next: AutoshowConfig = {
+    ...current,
+    defaults: {
+      ...current.defaults,
+      extract: {
+        ...current.defaults?.extract,
+        stt: {
+          ...currentStt,
+          gcloudStt: nonEmptyArray(currentStt?.gcloudStt)
+            ? currentStt?.gcloudStt
+            : [GCLOUD_STT_DEFAULT_MODEL]
+        },
+        ocr: {
+          ...currentOcr,
+          gcloudDocai: nonEmptyArray(currentOcr?.gcloudDocai)
+            ? currentOcr?.gcloudDocai
+            : [GCLOUD_DOCAI_DEFAULT_MODEL],
+          gcloudDocaiLocation: options.location,
+          gcloudDocaiOcrProcessorId: options.ocrProcessorId,
+          gcloudDocaiLayoutProcessorId: options.layoutProcessorId,
+          gcloudDocaiBucket: options.bucket
+        }
+      },
+      post: {
+        ...current.defaults?.post,
+        tts: {
+          ...currentTts,
+          gcloudTts: nonEmptyArray(currentTts?.gcloudTts)
+            ? currentTts?.gcloudTts
+            : [GCLOUD_TTS_DEFAULT_MODEL]
+        }
+      }
+    }
+  }
+  await writeConfig(options.configPath, next as unknown as Record<string, unknown>)
+  return options.configPath
+}
+
 export const setupGcloudStt = async (
   options: {
     focused?: boolean | undefined
@@ -148,6 +206,7 @@ export const setupGcloudStt = async (
   let gcsBucketDetail: string | undefined
   let gcsBucketName: string | undefined
   let gcsBucketOk = false
+  let savedConfigPath: string | undefined
   let docaiLocation = GCLOUD_DOCAI_DEFAULT_LOCATION
   let state = await readGcloudSttReadiness()
 
@@ -245,6 +304,16 @@ export const setupGcloudStt = async (
     gcsBucketDetail = bucket.bucket ? `${bucket.bucket} (${bucket.detail})` : bucket.detail
     gcsBucketName = bucket.bucket
     gcsBucketOk = bucket.ok
+
+    if (docaiOcrProcessorId && docaiLayoutProcessorId && gcsBucketName && gcsBucketOk) {
+      savedConfigPath = await persistGcloudSetupDefaults({
+        configPath: savedDocai.configPath,
+        location: docaiLocation,
+        ocrProcessorId: docaiOcrProcessorId,
+        layoutProcessorId: docaiLayoutProcessorId,
+        bucket: gcsBucketName
+      })
+    }
   }
 
   if (options.focused) {
@@ -288,7 +357,8 @@ export const setupGcloudStt = async (
         { setting: 'layout parser', value: docaiLayoutProcessorId ?? 'not configured' },
         { setting: 'gcs bucket', value: gcsBucketName ?? 'not configured' },
         { setting: 'stt transport', value: 'direct REST Recognize requests via us-speech.googleapis.com' },
-        { setting: 'ocr transport', value: 'Document AI sync and batch APIs with GCS staging for multi-page or large files' }
+        { setting: 'ocr transport', value: 'Document AI sync and batch APIs with GCS staging for multi-page or large files' },
+        { setting: 'config', value: savedConfigPath ? `saved ${savedConfigPath}` : 'not saved' }
       ], ['setting', 'value'])
     })
 

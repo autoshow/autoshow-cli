@@ -2,6 +2,7 @@ import { basename } from 'node:path'
 import { stat } from 'node:fs/promises'
 import type { DeapiOcrModel, DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import {
+  createDeapiHttpError,
   deapiFetch,
   ensureDeapiApiKey,
   extractDeapiErrorMessage,
@@ -14,9 +15,12 @@ import {
   readJsonOrText
 } from '~/utils/deapi'
 import { processPages } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/page-processor'
+import { OCR_POLL_DEADLINE_MS } from '~/utils/timeouts'
+import { withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import * as l from '~/utils/logger'
 
 const MAX_DEAPI_OCR_IMAGE_BYTES = 10 * 1024 * 1024
+const DEAPI_OCR_JOB_RETRY_ATTEMPTS = 4
 
 export type DeapiOcrRun = {
   pages: PageResult[]
@@ -132,6 +136,123 @@ const resolveDeapiOcrImagePrice = async (
   return priceUsd * 100
 }
 
+type DeapiOcrJobError = Error & {
+  cause?: unknown
+  retryable?: unknown
+  stage?: unknown
+  status?: unknown
+}
+
+const isDeapiOcrJobError = (value: unknown): value is DeapiOcrJobError =>
+  value instanceof Error
+
+const collectDeapiOcrJobErrorChain = (error: unknown): DeapiOcrJobError[] => {
+  const chain: DeapiOcrJobError[] = []
+  const seen = new Set<unknown>()
+  let current: unknown = error
+
+  while (isDeapiOcrJobError(current) && !seen.has(current)) {
+    chain.push(current)
+    seen.add(current)
+    current = current.cause
+  }
+
+  return chain
+}
+
+export const isRetryableDeapiOcrJobFailure = (error: unknown): boolean => {
+  const chain = collectDeapiOcrJobErrorChain(error)
+  const message = chain.length > 0
+    ? chain.map((entry) => entry.message).join(' | ')
+    : error instanceof Error ? error.message : String(error)
+
+  if (/api key|auth(?:entication|orization)?|unauthori[sz]ed|forbidden|credential/i.test(message)) {
+    return false
+  }
+
+  if (/deAPI job failed:\s*unknown error/i.test(message)) {
+    return true
+  }
+
+  const retryable = chain.find((entry) => typeof entry.retryable === 'boolean')?.retryable
+  if (retryable === true) {
+    return true
+  }
+
+  const stage = chain.find((entry) => typeof entry.stage === 'string')?.stage
+  if (stage === 'create') {
+    return false
+  }
+
+  const status = chain.find((entry) => typeof entry.status === 'number')?.status
+  if (typeof status === 'number' && (status === 408 || status === 425 || status === 429 || status >= 500)) {
+    return true
+  }
+
+  return /timed out waiting|deadline exceeded|polling failed|result_url fetch failed|network|connection|socket|timeout/i.test(message)
+}
+
+const createDeapiOcrJob = async (
+  imagePath: string,
+  model: DeapiOcrModel,
+  apiKey: string,
+  language?: string | undefined
+): Promise<string> => {
+  const createPayload = await withOcrCreateRetry(
+    'deapi-ocr-create',
+    async (signal) => {
+      const body = new FormData()
+      await appendImage(body, imagePath)
+      body.append('model', model)
+      body.append('format', 'text')
+      body.append('return_result_in_response', 'true')
+      if (language) {
+        body.append('language', language)
+      }
+
+      const response = await deapiFetch('/api/v2/images/ocr', {
+        apiKey,
+        method: 'POST',
+        body,
+        signal: signal ?? null
+      })
+      const payload = await readJsonOrText(response)
+      if (!response.ok) {
+        throw createDeapiHttpError(
+          `deAPI OCR request failed (${response.status}): ${extractDeapiErrorMessage(payload) ?? 'Unknown error'}`,
+          response,
+          'create',
+          'runtime_http_create_conservative',
+          payload
+        )
+      }
+      return payload
+    }
+  )
+
+  const requestId = parseRequestId(createPayload)
+  if (!requestId) {
+    throw new Error('deAPI OCR request did not return request_id')
+  }
+  return requestId
+}
+
+const runDeapiOcrImageJob = async (
+  imagePath: string,
+  model: DeapiOcrModel,
+  apiKey: string,
+  language?: string | undefined
+): Promise<string> => {
+  const requestId = await createDeapiOcrJob(imagePath, model, apiKey, language)
+  const { status } = await pollDeapiJob({
+    requestId,
+    apiKey,
+    operationName: 'deapi-poll-ocr',
+    deadlineMs: OCR_POLL_DEADLINE_MS
+  })
+  return await extractOcrText(status.raw, extractResultUrl(status))
+}
+
 export const runDeapiOcrImage = async (
   imagePath: string,
   model: DeapiOcrModel,
@@ -155,41 +276,26 @@ export const runDeapiOcrImage = async (
     providerCostSource = 'registry_fallback'
   }
 
-  const body = new FormData()
-  await appendImage(body, imagePath)
-  body.append('model', model)
-  body.append('format', 'text')
-  body.append('return_result_in_response', 'true')
-  if (language) {
-    body.append('language', language)
+  let lastJobError: Error | undefined
+  for (let attempt = 0; attempt < DEAPI_OCR_JOB_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const text = await runDeapiOcrImageJob(imagePath, model, apiKey, language)
+      return {
+        text,
+        ...(providerCostCents !== undefined ? { providerCostCents } : {}),
+        ...(providerCostSource ? { providerCostSource } : {})
+      }
+    } catch (error) {
+      lastJobError = error instanceof Error ? error : new Error(String(error))
+      if (attempt < DEAPI_OCR_JOB_RETRY_ATTEMPTS - 1 && isRetryableDeapiOcrJobFailure(error)) {
+        l.warn(`deAPI OCR job failed (${lastJobError.message}); recreating job`)
+        continue
+      }
+      throw error
+    }
   }
 
-  const createResponse = await deapiFetch('/api/v2/images/ocr', {
-    apiKey,
-    method: 'POST',
-    body
-  })
-  const createPayload = await readJsonOrText(createResponse)
-  if (!createResponse.ok) {
-    throw new Error(`deAPI OCR request failed (${createResponse.status}): ${extractDeapiErrorMessage(createPayload) ?? 'Unknown error'}`)
-  }
-
-  const requestId = parseRequestId(createPayload)
-  if (!requestId) {
-    throw new Error('deAPI OCR request did not return request_id')
-  }
-
-  const { status } = await pollDeapiJob({
-    requestId,
-    apiKey,
-    operationName: 'deapi-poll-ocr'
-  })
-  const text = await extractOcrText(status.raw, extractResultUrl(status))
-  return {
-    text,
-    ...(providerCostCents !== undefined ? { providerCostCents } : {}),
-    ...(providerCostSource ? { providerCostSource } : {})
-  }
+  throw lastJobError ?? new Error('deAPI OCR failed')
 }
 
 export const runDeapiOcr = async (

@@ -3,8 +3,7 @@ import * as v from 'valibot'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import type { OpenAIOcrInputContent } from '~/types'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
@@ -210,22 +209,17 @@ export const runOpenAIOcr = async (
 
   let lastError: Error | undefined
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const requestBody = await createRequestBody(filePath, step1Metadata, model, expectedPageCount)
-      const response = await withRetry(
-        { retryClass: 'runtime_http_create_conservative', operationName: 'openai-ocr' },
-        async (signal) => {
-          const timeoutSignal = AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS)
-          const combined = AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
-          return await client.responses.create(requestBody as OpenAI.Responses.ResponseCreateParamsNonStreaming, {
-            signal: combined
-          })
-        },
-        (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
-      )
+  for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
+    const requestBody = await createRequestBody(filePath, step1Metadata, model, expectedPageCount)
+    const response = await withOcrCreateRetry(
+      'openai-ocr',
+      async (signal) => await client.responses.create(requestBody as OpenAI.Responses.ResponseCreateParamsNonStreaming, {
+        signal
+      })
+    )
+    const rawText = response.output_text || ''
 
-      const rawText = response.output_text || ''
+    try {
       if (!rawText.trim()) {
         throw new Error('OpenAI OCR returned no text output.')
       }
@@ -241,7 +235,7 @@ export const runOpenAIOcr = async (
       }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
-      if (attempt === 0) {
+      if (attempt < OCR_SCHEMA_RETRY_ATTEMPTS - 1) {
         continue
       }
     }

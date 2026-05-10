@@ -354,7 +354,7 @@ For async inputs, AutoShow resolves the region from `--aws-region`, saved config
 bun as extract input/examples/document/1-document.pdf --gcloud-docai ocr
 ```
 
-Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` can create or discover those resources and print the values, but it does not update `config/autoshow.json`; `layout-parser` remains an explicit processor setup step unless you save `gcloudDocaiLayoutProcessorId` or set `AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID`.
+Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use. The setup command also creates or reuses the `layout-parser` processor and saves `gcloudDocaiLayoutProcessorId`.
 
 ### deAPI OCR
 

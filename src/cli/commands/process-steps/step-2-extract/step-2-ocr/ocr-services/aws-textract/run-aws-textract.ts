@@ -5,6 +5,7 @@ import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { validateData } from '~/utils/validate/validation'
+import { OCR_POLL_DEADLINE_MS } from '~/utils/timeouts'
 import {
   ensureAwsTextractSetup,
   runAws,
@@ -13,7 +14,6 @@ import {
 } from './aws-textract'
 
 const POLL_INTERVAL_MS = 3000
-const MAX_POLL_ATTEMPTS = 600
 
 const TextractBlockSchema = v.object({
   BlockType: v.string(),
@@ -185,9 +185,12 @@ const runAsyncTextract = async (
     let allBlocks: TextractBlock[] = []
     let totalPages = 0
     let completed = false
+    let attempt = 0
+    const pollStartedAt = Date.now()
 
-    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS && !completed; attempt++) {
+    while (Date.now() - pollStartedAt < OCR_POLL_DEADLINE_MS && !completed) {
       await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+      attempt += 1
 
       let nextToken: string | undefined
       let firstPoll = true
@@ -238,7 +241,7 @@ const runAsyncTextract = async (
     }
 
     if (!completed) {
-      throw new Error(`AWS Textract job ${jobId} did not complete within ${MAX_POLL_ATTEMPTS * POLL_INTERVAL_MS / 1000}s`)
+      throw new Error(`AWS Textract job ${jobId} did not complete before OCR poll deadline (${OCR_POLL_DEADLINE_MS}ms)`)
     }
 
     l.write('info', `AWS Textract job ${jobId} completed, ${totalPages} pages`)

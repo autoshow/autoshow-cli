@@ -2,6 +2,8 @@ import { extname } from 'node:path'
 import { Mistral } from '@mistralai/mistralai'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { MistralOcrResponseSchema } from '~/types'
+import { withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
@@ -27,27 +29,27 @@ export const runMistralOcr = async (
   }
 
   const serverURL = normalizeMistralServerURL(readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1')
-  const client = new Mistral({ apiKey, serverURL })
+  const client = new Mistral({ apiKey, serverURL, timeoutMs: OCR_REQUEST_TIMEOUT_MS })
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
 
   const rawPayload: unknown = step1Metadata.format === 'pdf'
-    ? await client.ocr.process({
+    ? await withOcrCreateRetry('mistral-ocr', async () => await client.ocr.process({
         model,
         document: {
           type: 'document_url',
           documentUrl: `data:application/pdf;base64,${base64}`
         },
         includeImageBase64: false
-      })
-    : await client.ocr.process({
+      }, { timeoutMs: OCR_REQUEST_TIMEOUT_MS }))
+    : await withOcrCreateRetry('mistral-ocr', async () => await client.ocr.process({
         model,
         document: {
           type: 'image_url',
           imageUrl: `data:${imageMimeType(filePath)};base64,${base64}`
         },
         includeImageBase64: false
-      })
+      }, { timeoutMs: OCR_REQUEST_TIMEOUT_MS }))
 
   const payload = validateData(MistralOcrResponseSchema, rawPayload, 'Mistral OCR response')
   const pages: PageResult[] = payload.pages.map(page => ({

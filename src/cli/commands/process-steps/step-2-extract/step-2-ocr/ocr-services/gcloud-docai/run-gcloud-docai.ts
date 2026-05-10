@@ -3,6 +3,8 @@ import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { validateData } from '~/utils/validate/validation'
+import { withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { OCR_POLL_DEADLINE_MS } from '~/utils/timeouts'
 import {
   ensureGcloudDocaiSetup,
   runGcloud,
@@ -12,7 +14,6 @@ import {
 } from './gcloud-docai'
 
 const POLL_INTERVAL_MS = 3000
-const MAX_POLL_ATTEMPTS = 600
 
 const TextSegmentSchema = v.object({
   startIndex: v.optional(v.union([v.string(), v.number()]), '0'),
@@ -87,6 +88,24 @@ const buildOperationUrl = (
   operationName: string
 ): string =>
   `https://${config.location}-documentai.googleapis.com/v1/${operationName}`
+
+const readDocumentAiJson = async (
+  response: Response,
+  context: string
+): Promise<unknown> => {
+  const rawText = await response.text()
+  if (!response.ok) {
+    throw Object.assign(
+      new Error(`${context} (${response.status}): ${rawText || 'Unknown error'}`),
+      {
+        status: response.status,
+        headers: response.headers
+      }
+    )
+  }
+
+  return rawText.length > 0 ? JSON.parse(rawText) as unknown : {}
+}
 
 const extractTextFromSegments = (
   segments: v.InferOutput<typeof TextSegmentSchema>[],
@@ -180,22 +199,19 @@ const runSyncDocai = async (
   const endpoint = buildEndpointUrl(config, 'process')
   l.write('info', `Google Cloud Document AI sync process for ${basename(filePath)}`)
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${config.accessToken}`,
-      'Content-Type': 'application/json',
-      'X-Goog-User-Project': config.projectId
-    },
-    body: JSON.stringify(body)
+  const data = await withOcrCreateRetry('gcloud-docai-process', async (signal) => {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${config.accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Goog-User-Project': config.projectId
+      },
+      body: JSON.stringify(body),
+      signal: signal ?? null
+    })
+    return await readDocumentAiJson(response, 'Google Cloud Document AI API error')
   })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Google Cloud Document AI API error (${response.status}): ${errorText}`)
-  }
-
-  const data = await response.json()
   const validated = validateData(DocaiProcessResponseSchema, data, 'Document AI process response')
   const pages = buildPageResults(validated.document)
   return { pages, totalPages: pages.length }
@@ -242,29 +258,29 @@ const runBatchDocai = async (
     const endpoint = buildEndpointUrl(config, 'batchProcess')
     l.write('info', `Starting Google Cloud Document AI batch process for ${basename(filePath)}`)
 
-    const startResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${config.accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Goog-User-Project': config.projectId
-      },
-      body: JSON.stringify(body)
+    const startData = await withOcrCreateRetry('gcloud-docai-batch-start', async (signal) => {
+      const startResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.accessToken}`,
+          'Content-Type': 'application/json',
+          'X-Goog-User-Project': config.projectId
+        },
+        body: JSON.stringify(body),
+        signal: signal ?? null
+      })
+      return await readDocumentAiJson(startResponse, 'Google Cloud Document AI batch API error')
     })
-
-    if (!startResponse.ok) {
-      const errorText = await startResponse.text()
-      throw new Error(`Google Cloud Document AI batch API error (${startResponse.status}): ${errorText}`)
-    }
-
-    const startData = await startResponse.json()
     const operation = validateData(DocaiOperationSchema, startData, 'Document AI batch response')
     const operationName = operation.name
     l.write('info', `Document AI batch job started: ${operationName}`)
 
     let completed = false
-    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS && !completed; attempt++) {
+    let attempt = 0
+    const pollStartedAt = Date.now()
+    while (Date.now() - pollStartedAt < OCR_POLL_DEADLINE_MS && !completed) {
       await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
+      attempt += 1
 
       const pollUrl = buildOperationUrl(config, operationName)
       const pollResponse = await fetch(pollUrl, {
@@ -294,7 +310,7 @@ const runBatchDocai = async (
     }
 
     if (!completed) {
-      throw new Error(`Document AI batch job did not complete within ${MAX_POLL_ATTEMPTS * POLL_INTERVAL_MS / 1000}s`)
+      throw new Error(`Document AI batch job did not complete before OCR poll deadline (${OCR_POLL_DEADLINE_MS}ms)`)
     }
 
     l.write('info', 'Document AI batch job completed, reading output from GCS...')
