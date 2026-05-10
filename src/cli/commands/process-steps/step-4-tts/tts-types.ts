@@ -91,6 +91,8 @@ export type TtsOptions = Pick<
   | 'deapiTtsVoice'
   | 'deapiTtsRefAudio'
   | 'deapiTtsRefText'
+  | 'ttsProviderConcurrency'
+  | 'ttsLocalConcurrency'
 >
 
 export type TtsTarget = ProviderTargetBase<TtsProvider> & {

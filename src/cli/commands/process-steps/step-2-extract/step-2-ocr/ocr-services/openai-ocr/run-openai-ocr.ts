@@ -4,6 +4,7 @@ import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import type { OpenAIOcrInputContent } from '~/types'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
@@ -119,10 +120,15 @@ const parseOcrResponse = (
 ): PageResult[] => {
   const validation = parseAndValidateStructured(OpenAIOcrEnvelopeSchema, rawText)
   if (!validation.success) {
-    throw new Error(validation.issue ?? 'OpenAI OCR response was not valid JSON.')
+    throw new OcrStructuredResponseError(validation.issue ?? 'OpenAI OCR response was not valid JSON.', rawText)
   }
 
-  return normalizePages(validation.value, expectedPageCount)
+  try {
+    return normalizePages(validation.value, expectedPageCount)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new OcrStructuredResponseError(message, rawText)
+  }
 }
 
 const createInputContent = async (

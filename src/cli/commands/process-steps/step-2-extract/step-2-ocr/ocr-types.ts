@@ -143,6 +143,7 @@ export type ZipXmlResult = {
 export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
 
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
+export type OcrFnProvider = OcrFn | { getOcrFn: () => Promise<OcrFn> }
 
 export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'aws-textract' | 'gcloud-docai'
 export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr'
@@ -164,6 +165,22 @@ export type HostedOcrRun = {
 export type OcrTarget = {
   service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai'
   model: string
+}
+
+export type OcrCloudStagingObject = {
+  uri: string
+  mimeType: string
+  name?: string | undefined
+  cleanup?: (() => Promise<void>) | undefined
+}
+
+export type OcrPreparationCache = {
+  pageTriage: Map<string, Promise<InternalPage>>
+  renderedPages: Map<string, Promise<string>>
+  cloudStaging: Map<string, Promise<OcrCloudStagingObject>>
+  cleanupCallbacks: Array<() => Promise<void>>
+  tempDir?: string | undefined
+  nextRenderedPageIndex: number
 }
 
 export type OcrResumeRun = {

@@ -16,9 +16,10 @@ const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'runway-tts', 'speechify-tts', 'gcloud-tts', 'deapi-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'glm-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
-const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video'] as const
-const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music'] as const
+const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video', 'glm-video', 'grok-video', 'runway-video', 'deapi-video'] as const
+const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music', 'deapi-music', 'gemini-music'] as const
 const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
+const CONFIG_INJECTED_FLAGS_KEY = '__autoshowConfigInjectedFlags'
 const STEP2_PROVIDER_CONFIG_PATHS = Object.fromEntries(
   getStep2ProviderConfigPathEntries().map(({ flagName, configPath }) => [flagName, [...configPath]])
 ) as Record<string, string[]>
@@ -71,6 +72,7 @@ export const mergeConfigIntoRawFlags = (
   explicitFlags: Set<string>
 ): Record<string, unknown> => {
   const merged: Record<string, unknown> = { ...rawFlags }
+  const injectedFlags = new Set<string>()
   const d = config.defaults
   if (!d) return merged
 
@@ -79,6 +81,7 @@ export const mergeConfigIntoRawFlags = (
   const inject = (flagName: string, value: unknown): void => {
     if (value === undefined || explicitFlags.has(flagName)) return
     merged[flagName] = typeof value === 'number' ? String(value) : value
+    injectedFlags.add(flagName)
   }
 
   const injectProviderGroup = (group: readonly string[], entries: [string, unknown][]): void => {
@@ -165,6 +168,8 @@ export const mergeConfigIntoRawFlags = (
     inject('deapi-tts-voice', d.post.tts.deapiTtsVoice)
     inject('deapi-tts-ref-audio', d.post.tts.deapiTtsRefAudio)
     inject('deapi-tts-ref-text', d.post.tts.deapiTtsRefText)
+    inject('tts-provider-concurrency', d.post.tts.providerConcurrency)
+    inject('tts-local-concurrency', d.post.tts.localConcurrency)
   }
 
   if (d.post?.image) {
@@ -180,23 +185,32 @@ export const mergeConfigIntoRawFlags = (
     inject('image-format', d.post.image.imageFormat)
     inject('image-background', d.post.image.imageBackground)
     inject('imagen-count', d.post.image.imagenCount)
+    inject('image-provider-concurrency', d.post.image.providerConcurrency)
+    inject('image-local-concurrency', d.post.image.localConcurrency)
   }
 
   if (d.post?.video) {
     injectProviderGroup(VIDEO_PROVIDER_FLAGS, [
       ['gemini-video', d.post.video.geminiVideo], ['minimax-video', d.post.video.minimaxVideo],
+      ['glm-video', d.post.video.glmVideo], ['grok-video', d.post.video.grokVideo],
+      ['runway-video', d.post.video.runwayVideo], ['deapi-video', d.post.video.deapiVideo],
     ])
     inject('video-duration', d.post.video.videoDuration)
     inject('video-size', d.post.video.videoSize)
     inject('video-aspect-ratio', d.post.video.videoAspectRatio)
     inject('video-resolution', d.post.video.videoResolution)
+    inject('video-provider-concurrency', d.post.video.providerConcurrency)
+    inject('video-local-concurrency', d.post.video.localConcurrency)
   }
 
   if (d.post?.music) {
     injectProviderGroup(MUSIC_PROVIDER_FLAGS, [
       ['elevenlabs-music', d.post.music.elevenlabsMusic], ['minimax-music', d.post.music.minimaxMusic],
+      ['deapi-music', d.post.music.deapiMusic], ['gemini-music', d.post.music.geminiMusic],
     ])
     inject('music-duration', d.post.music.musicDuration)
+    inject('music-provider-concurrency', d.post.music.providerConcurrency)
+    inject('music-local-concurrency', d.post.music.localConcurrency)
   }
 
   if (d.extract?.ocr) {
@@ -224,6 +238,11 @@ export const mergeConfigIntoRawFlags = (
 
   if (d.prompts && d.prompts.length > 0 && !explicitFlags.has('prompt')) {
     merged['prompt'] = d.prompts
+    injectedFlags.add('prompt')
+  }
+
+  if (injectedFlags.size > 0) {
+    merged[CONFIG_INJECTED_FLAGS_KEY] = [...injectedFlags]
   }
 
   return merged
@@ -310,6 +329,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'deapi-tts-voice':   ['defaults', 'post', 'tts', 'deapiTtsVoice'],
   'deapi-tts-ref-audio': ['defaults', 'post', 'tts', 'deapiTtsRefAudio'],
   'deapi-tts-ref-text': ['defaults', 'post', 'tts', 'deapiTtsRefText'],
+  'tts-provider-concurrency': ['defaults', 'post', 'tts', 'providerConcurrency'],
+  'tts-local-concurrency': ['defaults', 'post', 'tts', 'localConcurrency'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
   'openai-image':      ['defaults', 'post', 'image', 'openaiImage'],
   'minimax-image':     ['defaults', 'post', 'image', 'minimaxImage'],
@@ -324,15 +345,27 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'image-format':      ['defaults', 'post', 'image', 'imageFormat'],
   'image-background':  ['defaults', 'post', 'image', 'imageBackground'],
   'imagen-count':      ['defaults', 'post', 'image', 'imagenCount'],
+  'image-provider-concurrency': ['defaults', 'post', 'image', 'providerConcurrency'],
+  'image-local-concurrency': ['defaults', 'post', 'image', 'localConcurrency'],
   'gemini-video':      ['defaults', 'post', 'video', 'geminiVideo'],
   'minimax-video':     ['defaults', 'post', 'video', 'minimaxVideo'],
+  'glm-video':         ['defaults', 'post', 'video', 'glmVideo'],
+  'grok-video':        ['defaults', 'post', 'video', 'grokVideo'],
+  'runway-video':      ['defaults', 'post', 'video', 'runwayVideo'],
+  'deapi-video':       ['defaults', 'post', 'video', 'deapiVideo'],
   'video-duration':    ['defaults', 'post', 'video', 'videoDuration'],
   'video-size':        ['defaults', 'post', 'video', 'videoSize'],
   'video-aspect-ratio': ['defaults', 'post', 'video', 'videoAspectRatio'],
   'video-resolution':  ['defaults', 'post', 'video', 'videoResolution'],
+  'video-provider-concurrency': ['defaults', 'post', 'video', 'providerConcurrency'],
+  'video-local-concurrency': ['defaults', 'post', 'video', 'localConcurrency'],
   'elevenlabs-music':  ['defaults', 'post', 'music', 'elevenlabsMusic'],
   'minimax-music':     ['defaults', 'post', 'music', 'minimaxMusic'],
+  'deapi-music':       ['defaults', 'post', 'music', 'deapiMusic'],
+  'gemini-music':      ['defaults', 'post', 'music', 'geminiMusic'],
   'music-duration':    ['defaults', 'post', 'music', 'musicDuration'],
+  'music-provider-concurrency': ['defaults', 'post', 'music', 'providerConcurrency'],
+  'music-local-concurrency': ['defaults', 'post', 'music', 'localConcurrency'],
   'lang':              ['defaults', 'extract', 'ocr', 'lang'],
   'out':               ['defaults', 'extract', 'ocr', 'out'],
   'dpi':               ['defaults', 'extract', 'ocr', 'dpi'],
@@ -407,7 +440,11 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
     'max-cents',
     'llm-provider-concurrency', 'llm-local-concurrency',
     'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency',
-    'ocr-provider-concurrency', 'ocr-local-concurrency'
+    'ocr-provider-concurrency', 'ocr-local-concurrency',
+    'tts-provider-concurrency', 'tts-local-concurrency',
+    'image-provider-concurrency', 'image-local-concurrency',
+    'video-provider-concurrency', 'video-local-concurrency',
+    'music-provider-concurrency', 'music-local-concurrency'
   ])
   if (numericFlags.has(flagName)) {
     const n = Number(rawValue)

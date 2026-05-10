@@ -102,7 +102,9 @@ const resumeTtsFlags = pickFlags(ttsFlags, [
   'gemini-speaker-1-name',
   'gemini-speaker-1-voice',
   'gemini-speaker-2-name',
-  'gemini-speaker-2-voice'
+  'gemini-speaker-2-voice',
+  'tts-provider-concurrency',
+  'tts-local-concurrency'
 ])
 
 const resumeImageFlags = pickFlags(imageGenFlags, [
@@ -119,7 +121,9 @@ const resumeImageFlags = pickFlags(imageGenFlags, [
   'image-quality',
   'image-format',
   'image-background',
-  'imagen-count'
+  'imagen-count',
+  'image-provider-concurrency',
+  'image-local-concurrency'
 ])
 
 const resumeVideoFlags = pickFlags(videoGenFlags, [
@@ -128,10 +132,13 @@ const resumeVideoFlags = pickFlags(videoGenFlags, [
   'glm-video',
   'grok-video',
   'runway-video',
+  'deapi-video',
   'video-duration',
   'video-size',
   'video-aspect-ratio',
-  'video-resolution'
+  'video-resolution',
+  'video-provider-concurrency',
+  'video-local-concurrency'
 ])
 
 const resumeMusicFlags = pickFlags(musicGenFlags, [
@@ -141,7 +148,9 @@ const resumeMusicFlags = pickFlags(musicGenFlags, [
   'gemini-music',
   'music-duration',
   'music-lyrics-file',
-  'music-instrumental'
+  'music-instrumental',
+  'music-provider-concurrency',
+  'music-local-concurrency'
 ])
 
 export const resumeFlags = {

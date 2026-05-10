@@ -2,6 +2,7 @@ import { defineCommand } from 'clerc'
 import { musicCommandFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { extractExplicitFlags as extractConfigExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { runMusicGen } from './run-music-gen'
 import { runMusicLyricVideo } from './lyrics-video/run-lyrics-video'
 import { buildMusicArtifactMap, collectMusicTargets, getMusicArtifactFileName } from './music-targets'
@@ -63,7 +64,8 @@ const runHostedMusicGeneration = async (
   const musicInstrumental = flags['music-instrumental'] === true
 
   const musicMaxCents = await resolveMaxCentsFromFlags(flags)
-  const musicOpts = buildOptsFromFlags(true, flags, [], {}, new Set(), Bun.argv.slice(2))
+  const explicitRuntimeFlags = extractConfigExplicitFlags(Bun.argv.slice(2))
+  const musicOpts = buildOptsFromFlags(true, flags, [], {}, explicitRuntimeFlags, Bun.argv.slice(2))
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {

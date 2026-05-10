@@ -9,6 +9,7 @@ import type { ExtractionOptions, OcrFn } from '~/types'
 import { paddleOcrUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { stripAnsi } from '../../ocr-run-state'
+import { logPaddleOcrPrepare } from '../../ocr-logging'
 
 const SCRIPT_PATH = join(import.meta.dir, 'scripts/run-paddle-ocr.py')
 type PaddleModelProfile = 'auto' | 'mobile'
@@ -112,7 +113,12 @@ const preparePaddleImage = async (inputPath: string, workDir: string, maxImageSi
   const imageFramePath = `${inputPath}[0]`
   const dimensionsResult = await exec('identify', ['-format', '%w %h', imageFramePath])
   if (dimensionsResult.exitCode !== 0) {
-    l.warn(`Failed to inspect ${basename(inputPath)} for PaddleOCR; using original image. ${dimensionsResult.stderr || dimensionsResult.stdout || 'ImageMagick identify failed.'}`)
+    logPaddleOcrPrepare(l, {
+      status: 'inspect-failed',
+      input: basename(inputPath),
+      maxSide: maxImageSidePx,
+      detail: dimensionsResult.stderr || dimensionsResult.stdout || 'ImageMagick identify failed.'
+    })
     return inputPath
   }
 
@@ -142,12 +148,23 @@ const preparePaddleImage = async (inputPath: string, workDir: string, maxImageSi
   ])
 
   if (result.exitCode !== 0) {
-    l.warn(`Failed to prepare ${basename(inputPath)} for PaddleOCR; using original image. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+    logPaddleOcrPrepare(l, {
+      status: 'failed',
+      input: basename(inputPath),
+      dimensions,
+      maxSide: maxImageSidePx,
+      detail: result.stderr || result.stdout || 'ImageMagick convert failed.'
+    })
     return inputPath
   }
 
   if (maxSide > maxImageSidePx) {
-    l.write('info', `Downsampled ${basename(inputPath)} for PaddleOCR (${dimensions.width}x${dimensions.height} -> max ${maxImageSidePx}px)`)
+    logPaddleOcrPrepare(l, {
+      status: 'downsampled',
+      input: basename(inputPath),
+      dimensions,
+      maxSide: maxImageSidePx
+    })
   }
 
   return preparedPath

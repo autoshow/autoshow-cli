@@ -46,6 +46,9 @@ import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-st
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtractEstimatedCosts } from './ocr-costs'
 import { logExtractManifestConsoleSummary } from '../../write-manifest-log'
+import { logOcrProviderLifecycle } from './ocr-logging'
+import { cleanupOcrPreparationCache, createOcrPreparationCache } from './ocr-utils/preparation-cache'
+import { writeInvalidOcrStructuredResponse } from './ocr-structured-response-error'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -195,8 +198,6 @@ const buildSuccessfulResolvedProviderStates = (
     attempts: 1
   }))
 
-const formatProviderElapsed = (startedAt: number): string => `${Date.now() - startedAt}ms`
-
 const buildDocumentMetadataPayload = (
   step1Metadata: ProcessDocumentOutput['step1Metadata'],
   step2Metadata: ProcessDocumentOutput['step2Metadata'] | undefined,
@@ -334,11 +335,16 @@ export const processOcr = async (
     : await runWithLogContext({ step: 'step-1-download' }, async () =>
       await downloadDocument(filePath, opts.outputDir, opts.password, sourceRef)
     )
+  const ocrPreparationCache = createOcrPreparationCache()
+  const optsWithPreparationCache: ExtractionOptions = {
+    ...opts,
+    ocrPreparationCache
+  }
 
   const { outputDir, step1Metadata, effectiveFilePath, tempCleanup, web } = prepared
   const extractFilePath = effectiveFilePath ?? filePath
 
-  const explicitTargets = opts.preparedMarkdown ? [] : collectExplicitOcrTargets(opts)
+  const explicitTargets = optsWithPreparationCache.preparedMarkdown ? [] : collectExplicitOcrTargets(optsWithPreparationCache)
   const documentSource = buildDocumentSource(filePath, sourceRef)
 
   try {
@@ -348,7 +354,7 @@ export const processOcr = async (
       const primaryTarget = resolvePrimaryOcrTarget(requestedTargets, opts.primaryOcr)
       const resolvedStep2 = resolveRecordedOcrStep2(
         step1Metadata.format,
-        opts,
+        optsWithPreparationCache,
         documentSource,
         requestedTargets,
         prepared.preparedMarkdown
@@ -360,6 +366,42 @@ export const processOcr = async (
       const successes: Array<OcrProviderSuccess | undefined> = [...existingRun.successes]
       const failuresByIndex = new Map<number, { message: string, retryable?: boolean | undefined }>()
       const failures: Array<{ service: string, model: string, message: string }> = []
+      let checkpointWrite = Promise.resolve()
+      const queueCheckpointWrite = (): void => {
+        const snapshotSuccesses = [...successes]
+        const snapshotFailuresByIndex = new Map(failuresByIndex)
+        checkpointWrite = checkpointWrite.then(async () => {
+          const providerStates = buildProviderStates(
+            requestedTargets,
+            snapshotSuccesses,
+            snapshotFailuresByIndex,
+            existingRun.providerStates
+          )
+          const missingProviders = buildMissingProviders(providerStates, requestedTargets)
+          const completionStatus = resolveCompletionStatus(requestedTargets, snapshotSuccesses)
+          const metadataErrors = buildMetadataErrorEntries(providerStates).map((value) => ({
+            service: value['service'] as string,
+            model: value['model'] as string,
+            message: value['message'] as string
+          }))
+          const step2Metadata = snapshotSuccesses
+            .filter((entry): entry is OcrProviderSuccess => entry !== undefined)
+            .map((entry) => entry.metadata)
+          const checkpointMetadata = buildDocumentMetadataPayload(step1Metadata, step2Metadata, {
+            failures: metadataErrors,
+            web,
+            source: documentSource,
+            completionStatus,
+            resolvedStep2,
+            requestedProviders: requestedTargets.map(toRequestedProvider),
+            providerStates,
+            missingProviders,
+            ...(primaryTarget ? { primaryProvider: toRequestedProvider(primaryTarget) } : {}),
+            preflightEstimate
+          })
+          await writeOcrRunManifest(outputDir, checkpointMetadata)
+        })
+      }
 
       await runOcrProviderTargetPools(
         requestedTargets,
@@ -371,15 +413,19 @@ export const processOcr = async (
         async (requestedIndex, target) => {
           const providerDirName = getOcrTargetDirectoryName(target)
           const providerDir = `${providersDir}/${providerDirName}`
-          const providerLabel = `${target.service}/${target.model}`
           const providerStartedAt = Date.now()
           await mkdir(providerDir, { recursive: true })
 
-          l.write('info', `OCR provider ${providerLabel} started`)
+          logOcrProviderLifecycle(l, {
+            provider: target.service,
+            model: target.model,
+            status: 'started'
+          })
           try {
             const providerOpts = buildExtractionOptionsForTarget({
-              ...opts,
-              outputDir: providerDir
+              ...optsWithPreparationCache,
+              outputDir: providerDir,
+              ocrPreparationCache
             }, target)
             const extracted = await runWithLogContext({ step: 'step-2-ocr', provider: providerDirName }, async () =>
               await runOcr(extractFilePath, step1Metadata, providerOpts)
@@ -400,8 +446,15 @@ export const processOcr = async (
               relativeDir: `providers/${providerDirName}`
             }
             failuresByIndex.delete(requestedIndex)
-            l.write('success', `OCR provider ${providerLabel} succeeded in ${formatProviderElapsed(providerStartedAt)}`)
+            queueCheckpointWrite()
+            logOcrProviderLifecycle(l, {
+              provider: target.service,
+              model: target.model,
+              status: 'succeeded',
+              elapsedMs: Date.now() - providerStartedAt
+            })
           } catch (error) {
+            await writeInvalidOcrStructuredResponse(providerDir, error)
             const failure = classifyOcrProviderFailure(error)
             failuresByIndex.set(requestedIndex, failure)
             failures.push({
@@ -409,10 +462,18 @@ export const processOcr = async (
               model: target.model,
               message: failure.message
             })
-            l.write('warn', `OCR provider ${providerLabel} failed in ${formatProviderElapsed(providerStartedAt)}: ${failure.message}`)
+            queueCheckpointWrite()
+            logOcrProviderLifecycle(l, {
+              provider: target.service,
+              model: target.model,
+              status: 'failed',
+              elapsedMs: Date.now() - providerStartedAt,
+              detail: failure.message
+            })
           }
         }
       )
+      await checkpointWrite
 
       const providerStates = buildProviderStates(
         requestedTargets,
@@ -483,14 +544,14 @@ export const processOcr = async (
     }
 
     const singleTargetOpts = explicitTargets.length === 1
-      ? buildExtractionOptionsForTarget(opts, explicitTargets[0] as typeof explicitTargets[number])
-      : opts
+      ? buildExtractionOptionsForTarget(optsWithPreparationCache, explicitTargets[0] as typeof explicitTargets[number])
+      : optsWithPreparationCache
     const extracted = await runWithLogContext({ step: 'step-2-ocr' }, async () =>
       await runOcr(extractFilePath, step1Metadata, singleTargetOpts)
     )
     const resolvedStep2 = resolveRecordedOcrStep2(
       step1Metadata.format,
-      opts,
+      optsWithPreparationCache,
       documentSource,
       explicitTargets.length === 1 ? explicitTargets : undefined,
       prepared.preparedMarkdown
@@ -540,6 +601,7 @@ export const processOcr = async (
       outputDir
     }
   } finally {
+    await cleanupOcrPreparationCache(ocrPreparationCache)
     if (tempCleanup) await tempCleanup()
   }
 }

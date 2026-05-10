@@ -17,6 +17,16 @@ export const videoGenFlags = {
     default: false,
     negatable: false
   },
+  'video-provider-concurrency': {
+    description: 'Video: max hosted providers/models running in parallel for one item (default 2; --all-video defaults up to 8)',
+    type: String,
+    default: '2'
+  },
+  'video-local-concurrency': {
+    description: 'Video: max local providers running in parallel for one item (default 1)',
+    type: String,
+    default: '1'
+  },
   'gemini-video': {
     description: buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS),
     type: [String] as [StringConstructor]

@@ -2,6 +2,7 @@ import { defineCommand } from 'clerc'
 import { imageGenFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { runImageGen } from './run-image-gen'
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageArtifactFileNames, getExpectedImageCount } from './image-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -34,7 +35,8 @@ export const imageCommand = defineCommand({
   const flags = ctx.flags
 
   const imageMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
+  const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
+  const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, explicitFlags, Bun.argv.slice(2))
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {
     throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, --minimax-image, --glm-image, --grok-image, --runway-image, --bfl-image, or --deapi-image.')

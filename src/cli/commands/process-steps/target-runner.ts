@@ -8,6 +8,7 @@ import type {
   SingleFileRunResult,
   TargetBase
 } from '~/types'
+import { runProviderTargetScheduler } from './provider-target-scheduler'
 
 export const sanitizeModelName = (model: string): string =>
   model.replace(/[/\\:*?"<>|]/g, '-')
@@ -44,30 +45,37 @@ export const runTargets = async <TTarget extends TargetBase, TResult>(
   opts: RunTargetsOptions<TTarget, TResult>
 ): Promise<TResult[]> => {
   const { targets, outputDir, stepLabel, noProviderMessage } = opts
-  const successes: TResult[] = []
-  const failedTargets: string[] = []
   const singleTarget = targets.length === 1
+  const scheduled = await runProviderTargetScheduler<TTarget, TResult>({
+    entries: targets.map((target, index) => ({
+      index,
+      target,
+      priority: opts.getTargetPriority?.(target, index)
+    })),
+    concurrency: opts.concurrency ?? { provider: 2, local: 1 },
+    getPool: opts.getTargetPool ?? (() => 'hosted'),
+    runTarget: async (_index, target) => {
+      const workspaceDir = singleTarget ? outputDir : opts.getWorkspaceDir(outputDir, target)
 
-  for (const target of targets) {
-    const workspaceDir = singleTarget ? outputDir : opts.getWorkspaceDir(outputDir, target)
-
-    try {
       if (!singleTarget) {
         await mkdir(workspaceDir, { recursive: true })
       }
 
-      const result = await opts.runTarget(target, workspaceDir)
-      successes.push(await opts.finalizeTarget(target, result, singleTarget))
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      l.error(`Failed to run ${stepLabel} target ${target.service}/${target.model}: ${message}`)
-      failedTargets.push(`${target.service}/${target.model}: ${message}`)
-    } finally {
-      if (!singleTarget) {
-        await rm(workspaceDir, { recursive: true, force: true })
+      try {
+        const result = await opts.runTarget(target, workspaceDir)
+        return await opts.finalizeTarget(target, result, singleTarget)
+      } finally {
+        if (!singleTarget) {
+          await rm(workspaceDir, { recursive: true, force: true })
+        }
       }
     }
-  }
+  })
+  const successes = scheduled.results.filter((result): result is TResult => result !== undefined)
+  const failedTargets = scheduled.failures.map(({ target, message }) => {
+    l.error(`Failed to run ${stepLabel} target ${target.service}/${target.model}: ${message}`)
+    return `${target.service}/${target.model}: ${message}`
+  })
 
   if (successes.length === 0) {
     const details = failedTargets.length > 0 ? failedTargets.join('; ') : noProviderMessage
@@ -91,6 +99,9 @@ export const runSingleFileTargets = async <TTarget extends TargetBase, TMetadata
     noProviderMessage: opts.noProviderMessage,
     getWorkspaceDir: (dir, target) =>
       `${dir}/${opts.workspacePrefix}-${target.service}-${sanitizeModelName(target.model)}`,
+    concurrency: opts.concurrency,
+    getTargetPool: opts.getTargetPool,
+    getTargetPriority: opts.getTargetPriority,
     runTarget: opts.runTarget,
     finalizeTarget: async (target, result, singleTarget) => {
       if (singleTarget) {

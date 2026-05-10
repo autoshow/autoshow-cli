@@ -53,6 +53,10 @@ export const runImageTargets = async (
     outputDir,
     stepLabel: 'image',
     noProviderMessage: 'No provider produced images',
+    concurrency: {
+      provider: options.imageProviderConcurrency ?? 2,
+      local: options.imageLocalConcurrency ?? 1
+    },
     getWorkspaceDir: (dir, target) =>
       `${dir}/.image-tmp-${target.service}-${sanitizeModelName(target.model)}`,
     runTarget: async (target, workspaceDir) =>

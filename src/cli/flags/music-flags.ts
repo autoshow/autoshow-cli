@@ -16,6 +16,16 @@ export const musicGenFlags = {
     default: false,
     negatable: false
   },
+  'music-provider-concurrency': {
+    description: 'Music: max hosted providers/models running in parallel for one item (default 2; --all-music defaults up to 8)',
+    type: String,
+    default: '2'
+  },
+  'music-local-concurrency': {
+    description: 'Music: max local providers running in parallel for one item (default 1)',
+    type: String,
+    default: '1'
+  },
   'elevenlabs-music': {
     description: buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS),
     type: [String] as [StringConstructor]

@@ -9,6 +9,7 @@ import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-
 import { ensureMutoolSetup } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import {
   ANTHROPIC_OCR_FILES_BETA,
@@ -123,10 +124,15 @@ const parseOcrResponse = (
 ): PageResult[] => {
   const validation = parseAndValidateStructured(AnthropicOcrEnvelopeSchema, rawText)
   if (!validation.success) {
-    throw new Error(`Anthropic OCR returned malformed JSON for ${pageLabel}. Split the document into smaller chunks and retry.`)
+    throw new OcrStructuredResponseError(`Anthropic OCR returned malformed JSON for ${pageLabel}. Split the document into smaller chunks and retry.`, rawText)
   }
 
-  return normalizePages(validation.value, expectedPageCount, pageLabel)
+  try {
+    return normalizePages(validation.value, expectedPageCount, pageLabel)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new OcrStructuredResponseError(message, rawText)
+  }
 }
 
 const callAnthropicMessage = async (

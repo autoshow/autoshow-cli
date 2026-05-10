@@ -10,6 +10,7 @@ export type VideoGenOptions = Pick<
   | 'runwayVideoModels' | 'runwayVideoModel'
   | 'deapiVideoModels' | 'deapiVideoModel'
   | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
+  | 'videoProviderConcurrency' | 'videoLocalConcurrency'
 >
 
 export type GeminiDurationSeconds = 4 | 6 | 8

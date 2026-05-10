@@ -2,6 +2,7 @@ import { defineCommand } from 'clerc'
 import { videoGenFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { runVideoGen } from './run-video-gen'
 import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } from './video-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -32,7 +33,8 @@ export const videoCommand = defineCommand({
   const flags = ctx.flags
 
   const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, new Set(), Bun.argv.slice(2))
+  const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
+  const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, explicitFlags, Bun.argv.slice(2))
   const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
     throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, --runway-video <model>, or --deapi-video <model>')

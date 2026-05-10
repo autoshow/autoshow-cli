@@ -5,10 +5,14 @@ import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ExtractionOptions, PageResult } from '~/types'
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
+import {
+  logOcrmypdfOutput,
+  logOcrmypdfRunConfig,
+  parseOcrmypdfOutputLine
+} from '../../ocr-logging'
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.gif', '.webp'])
 const DEFAULT_OCRMYPDF_MAX_JOBS = 2
-const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
 
 const isImageInputPath = (filePath: string): boolean => {
   const lower = filePath.toLowerCase()
@@ -77,11 +81,11 @@ const getOcrmypdfJobsArg = (args: string[]): string => {
 }
 
 const logOcrmypdfProgressLine = (streamName: 'stdout' | 'stderr') => (line: string): void => {
-  const normalized = line.replace(ANSI_PATTERN, '').trim()
-  if (normalized.length === 0) {
+  const event = parseOcrmypdfOutputLine(streamName, line)
+  if (!event) {
     return
   }
-  l.write('info', `OCRmyPDF ${streamName}: ${normalized}`)
+  logOcrmypdfOutput(l, event)
 }
 
 export const runOcrmypdf = async (
@@ -95,8 +99,14 @@ export const runOcrmypdf = async (
   try {
     const sidecarPath = join(tempDir, 'sidecar.txt')
     const args = buildOcrmypdfArgs(filePath, sidecarPath, opts, context)
+    const jobs = getOcrmypdfJobsArg(args)
 
-    l.write('info', `Running OCRmyPDF on ${filePath} with --jobs ${getOcrmypdfJobsArg(args)}`)
+    logOcrmypdfRunConfig(l, {
+      status: 'running',
+      input: filePath,
+      jobs,
+      languages: opts.languages ?? 'eng'
+    })
     const result = await exec('ocrmypdf', args, {
       progressLabel: 'OCRmyPDF',
       onStdoutLine: logOcrmypdfProgressLine('stdout'),

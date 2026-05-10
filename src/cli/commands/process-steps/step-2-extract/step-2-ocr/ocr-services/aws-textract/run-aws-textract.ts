@@ -12,6 +12,7 @@ import {
   AWS_TEXTRACT_ASYNC_FILE_SIZE_BYTES,
   AWS_TEXTRACT_SYNC_BYTES
 } from './aws-textract'
+import { logOcrJobProgress, logOcrTransfer } from '../../ocr-logging'
 
 const POLL_INTERVAL_MS = 3000
 
@@ -118,7 +119,12 @@ const runSyncTextract = async (
       args.push('--feature-types', 'TABLES', 'FORMS', 'LAYOUT')
     }
 
-    l.write('info', `AWS Textract sync ${command} for ${basename(filePath)}`)
+    logOcrJobProgress(l, {
+      provider: 'aws-textract',
+      action: command,
+      state: 'running',
+      detail: basename(filePath)
+    })
     const result = await runAws(args)
     if (result.exitCode !== 0) {
       const detail = result.stderr.trim() || result.stdout.trim() || 'command failed'
@@ -143,7 +149,11 @@ const runAsyncTextract = async (
   const s3Key = `autoshow-textract/${crypto.randomUUID()}/${basename(filePath)}`
   const s3Uri = `s3://${bucket}/${s3Key}`
 
-  l.write('info', `Uploading ${basename(filePath)} to ${s3Uri}`)
+  logOcrTransfer(l, {
+    action: 'upload',
+    file: basename(filePath),
+    destination: s3Uri
+  })
   const uploadResult = await runAws(['s3', 'cp', filePath, s3Uri, '--region', region])
   if (uploadResult.exitCode !== 0) {
     const detail = uploadResult.stderr.trim() || uploadResult.stdout.trim() || 'upload failed'
@@ -167,7 +177,12 @@ const runAsyncTextract = async (
       startArgs.push('--feature-types', 'TABLES', 'FORMS', 'LAYOUT')
     }
 
-    l.write('info', `Starting AWS Textract async ${startCommand} for ${basename(filePath)}`)
+    logOcrJobProgress(l, {
+      provider: 'aws-textract',
+      action: startCommand,
+      state: 'starting',
+      detail: basename(filePath)
+    })
     const startResult = await runAws(startArgs)
     if (startResult.exitCode !== 0) {
       const detail = startResult.stderr.trim() || startResult.stdout.trim() || 'command failed'
@@ -176,7 +191,12 @@ const runAsyncTextract = async (
 
     const startResponse = validateData(TextractStartResponseSchema, JSON.parse(startResult.stdout), `AWS Textract ${startCommand} response`)
     const jobId = startResponse.JobId
-    l.write('info', `AWS Textract job started: ${jobId}`)
+    logOcrJobProgress(l, {
+      provider: 'aws-textract',
+      action: startCommand,
+      remoteId: jobId,
+      state: 'started'
+    })
 
     const getCommand = isAnalyzeMode(model)
       ? 'get-document-analysis'
@@ -220,7 +240,13 @@ const runAsyncTextract = async (
 
         if (getResponse.JobStatus === 'IN_PROGRESS') {
           if (attempt % 10 === 9) {
-            l.write('info', `AWS Textract job ${jobId} still in progress (attempt ${attempt + 1})...`)
+            logOcrJobProgress(l, {
+              provider: 'aws-textract',
+              action: getCommand,
+              remoteId: jobId,
+              state: 'in_progress',
+              detail: `attempt ${attempt + 1}`
+            })
           }
           break
         }
@@ -244,11 +270,21 @@ const runAsyncTextract = async (
       throw new Error(`AWS Textract job ${jobId} did not complete before OCR poll deadline (${OCR_POLL_DEADLINE_MS}ms)`)
     }
 
-    l.write('info', `AWS Textract job ${jobId} completed, ${totalPages} pages`)
+    logOcrJobProgress(l, {
+      provider: 'aws-textract',
+      action: getCommand,
+      remoteId: jobId,
+      state: 'completed',
+      pages: totalPages
+    })
     const pages = buildPageResults(allBlocks, totalPages)
     return { pages, totalPages }
   } finally {
-    l.write('info', `Cleaning up S3 object ${s3Uri}`)
+    logOcrTransfer(l, {
+      action: 'cleanup',
+      file: basename(filePath),
+      destination: s3Uri
+    })
     await runAws(['s3', 'rm', s3Uri, '--region', region]).catch(() => {})
   }
 }

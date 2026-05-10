@@ -31,6 +31,46 @@ import { DEFAULT_KITTEN_TTS_SPEAKER, readRuntimeModelOptions, validateCliValue }
 
 export { REPEATABLE_MODEL_FLAGS, normalizeModelFlagOccurrences, parseRepeatableModelFlagOccurrences } from './options/model-flag-selection'
 
+const CONFIG_INJECTED_FLAGS_KEY = '__autoshowConfigInjectedFlags'
+
+const countSelectedTargets = (
+  models: string[] | undefined,
+  model: string | undefined
+): number => models?.length ?? (model ? 1 : 0)
+
+const countBooleanTarget = (selected: boolean): number => selected ? 1 : 0
+
+const readInjectedConfigFlags = (flags: Record<string, unknown>): Set<string> => {
+  const value = flags[CONFIG_INJECTED_FLAGS_KEY]
+  return new Set(Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : [])
+}
+
+const hasExplicitOrConfiguredFlag = (
+  flagName: string,
+  explicitFlags: Set<string>,
+  configuredFlags: Set<string>
+): boolean => explicitFlags.has(flagName) || configuredFlags.has(flagName)
+
+const resolveProviderConcurrency = (
+  flags: Record<string, unknown>,
+  flagName: string,
+  allShortcutSelected: boolean,
+  hostedTargetCount: number,
+  explicitFlags: Set<string>,
+  configuredFlags: Set<string>
+): number => {
+  const explicitOrConfigured = hasExplicitOrConfiguredFlag(flagName, explicitFlags, configuredFlags)
+  if (allShortcutSelected && !explicitOrConfigured) {
+    return Math.max(1, Math.min(8, hostedTargetCount))
+  }
+  return Math.max(1, parseIntWithDefault(readOptionalStringFlag(flags, flagName), 2))
+}
+
+const resolveLocalConcurrency = (
+  flags: Record<string, unknown>,
+  flagName: string
+): number => Math.max(1, parseIntWithDefault(readOptionalStringFlag(flags, flagName), 1))
+
 export const buildOptsFromFlags = (
   skipLLM: boolean,
   flags: Record<string, unknown>,
@@ -45,6 +85,7 @@ export const buildOptsFromFlags = (
 
   const mergedFlags: Record<string, unknown> = { ...flags }
   const allShortcutFlags = readAllShortcutFlags(mergedFlags)
+  const configuredFlags = readInjectedConfigFlags(mergedFlags)
   const outputFormat = readStringFlag(mergedFlags, 'out', 'json')
   const normalizedOut: OutputFormat = outputFormat === 'text' || outputFormat === 'tsv' || outputFormat === 'hocr' ? outputFormat : 'json'
   const epubLengthThousands = parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'length'), 'length')
@@ -203,6 +244,63 @@ export const buildOptsFromFlags = (
   const useTesseract = isStep2BooleanProviderSelected('tesseract-ocr', mergedFlags, allShortcutFlags)
   const useOcrmypdf = isStep2BooleanProviderSelected('ocrmypdf', mergedFlags, allShortcutFlags)
   const usePaddleOcr = isStep2BooleanProviderSelected('paddle-ocr', mergedFlags, allShortcutFlags)
+  const hostedOcrTargetCount =
+    countSelectedTargets(mistralOcrModels, mistralOcrModel)
+    + countSelectedTargets(glmOcrModels, glmOcrModel)
+    + countSelectedTargets(kimiOcrModels, kimiOcrModel)
+    + countSelectedTargets(openaiOcrModels, openaiOcrModel)
+    + countSelectedTargets(anthropicOcrModels, anthropicOcrModel)
+    + countSelectedTargets(geminiOcrModels, geminiOcrModel)
+    + countSelectedTargets(deepinfraOcrModels, deepinfraOcrModel)
+    + countSelectedTargets(awsTextractModels, awsTextractModel)
+    + countSelectedTargets(gcloudDocaiModels, gcloudDocaiModel)
+  const hostedLlmTargetCount =
+    countSelectedTargets(openaiModels, openaiModel)
+    + countSelectedTargets(groqModels, groqModel)
+    + countSelectedTargets(geminiModels, geminiModel)
+    + countSelectedTargets(anthropicModels, anthropicModel)
+    + countSelectedTargets(minimaxModels, minimaxModel)
+    + countSelectedTargets(grokModels, grokModel)
+    + countSelectedTargets(glmModels, glmModel)
+    + countSelectedTargets(kimiModels, kimiModel)
+  const hostedTtsTargetCount =
+    countSelectedTargets(elevenlabsTtsModels, elevenlabsTtsModel)
+    + countSelectedTargets(minimaxTtsModels, minimaxTtsModel)
+    + countSelectedTargets(groqTtsModels, groqTtsModel)
+    + countSelectedTargets(grokTtsModels, grokTtsModel)
+    + countSelectedTargets(mistralTtsModels, mistralTtsModel)
+    + countSelectedTargets(openaiTtsModels, openaiTtsModel)
+    + countSelectedTargets(geminiTtsModels, geminiTtsModel)
+    + countSelectedTargets(deepgramTtsModels, deepgramTtsModel)
+    + countSelectedTargets(runwayTtsModels, runwayTtsModel)
+    + countSelectedTargets(speechifyTtsModels, speechifyTtsModel)
+    + countSelectedTargets(gcloudTtsModels, gcloudTtsModel)
+    + countSelectedTargets(deapiTtsModels, deapiTtsModel)
+  const hostedImageTargetCount =
+    countSelectedTargets(geminiImageModels, geminiImageModel)
+    + countSelectedTargets(openaiImageModels, openaiImageModel)
+    + countSelectedTargets(minimaxImageModels, minimaxImageModel)
+    + countSelectedTargets(glmImageModels, glmImageModel)
+    + countSelectedTargets(grokImageModels, grokImageModel)
+    + countSelectedTargets(runwayImageModels, runwayImageModel)
+    + countSelectedTargets(bflImageModels, bflImageModel)
+    + countSelectedTargets(deapiImageModels, deapiImageModel)
+  const hostedVideoTargetCount =
+    countSelectedTargets(geminiVideoModels, geminiVideoModel)
+    + countSelectedTargets(minimaxVideoModels, minimaxVideoModel)
+    + countSelectedTargets(glmVideoModels, glmVideoModel)
+    + countSelectedTargets(grokVideoModels, grokVideoModel)
+    + countSelectedTargets(runwayVideoModels, runwayVideoModel)
+    + countSelectedTargets(deapiVideoModels, deapiVideoModel)
+  const hostedMusicTargetCount =
+    countSelectedTargets(elevenlabsMusicModels, elevenlabsMusicModel)
+    + countSelectedTargets(minimaxMusicModels, minimaxMusicModel)
+    + countSelectedTargets(deapiMusicModels, deapiMusicModel)
+    + countSelectedTargets(geminiMusicModels, geminiMusicModel)
+  const localTtsTargetCount = countSelectedTargets(kittenTtsModelValues, kittenTtsModelValue)
+  const localOcrTargetCount = countBooleanTarget(useTesseract) + countBooleanTarget(useOcrmypdf) + countBooleanTarget(usePaddleOcr)
+  void localOcrTargetCount
+  void localTtsTargetCount
 
   return {
     outputRootDir: getOutputRoot(),
@@ -282,10 +380,18 @@ export const buildOptsFromFlags = (
     sttLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-local-concurrency'), 1)),
     sttSegmentConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-segment-concurrency'), 2)),
     sttPreflightConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'stt-preflight-concurrency'), 4)),
-    ocrProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'ocr-provider-concurrency'), 2)),
-    ocrLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'ocr-local-concurrency'), 1)),
-    llmProviderConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'llm-provider-concurrency'), 2)),
-    llmLocalConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'llm-local-concurrency'), 1)),
+    ocrProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'ocr-provider-concurrency', allShortcutFlags['all-ocr'], hostedOcrTargetCount, explicitFlags, configuredFlags),
+    ocrLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'ocr-local-concurrency'),
+    llmProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'llm-provider-concurrency', allShortcutFlags['all-llm'], hostedLlmTargetCount, explicitFlags, configuredFlags),
+    llmLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'llm-local-concurrency'),
+    ttsProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'tts-provider-concurrency', allShortcutFlags['all-tts'], hostedTtsTargetCount, explicitFlags, configuredFlags),
+    ttsLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'tts-local-concurrency'),
+    imageProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'image-provider-concurrency', allShortcutFlags['all-image'], hostedImageTargetCount, explicitFlags, configuredFlags),
+    imageLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'image-local-concurrency'),
+    videoProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'video-provider-concurrency', allShortcutFlags['all-video'], hostedVideoTargetCount, explicitFlags, configuredFlags),
+    videoLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'video-local-concurrency'),
+    musicProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'music-provider-concurrency', allShortcutFlags['all-music'], hostedMusicTargetCount, explicitFlags, configuredFlags),
+    musicLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'music-local-concurrency'),
     refreshCache: readBooleanFlag(mergedFlags, 'refresh-cache'),
     noCache: readBooleanFlag(mergedFlags, 'no-cache'),
     price: readBooleanFlag(mergedFlags, 'price'),

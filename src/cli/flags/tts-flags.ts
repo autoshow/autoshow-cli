@@ -24,6 +24,16 @@ export const ttsFlags = {
     default: false,
     negatable: false
   },
+  'tts-provider-concurrency': {
+    description: 'TTS: max hosted providers/models running in parallel for one item (default 2; --all-tts defaults up to 8)',
+    type: String,
+    default: '2'
+  },
+  'tts-local-concurrency': {
+    description: 'TTS: max local providers running in parallel for one item (default 1)',
+    type: String,
+    default: '1'
+  },
   'kitten-voice': {
     description: 'Kitten TTS speaker: Bella|Jasper|Luna|Bruno|Rosie|Hugo|Kiki|Leo',
     type: String,

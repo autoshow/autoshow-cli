@@ -203,7 +203,9 @@ export type ProcessDocumentOutput = {
   outputDir: string
 }
 
-export type ExtractionOptions = v.InferOutput<typeof ExtractionOptionsSchema>
+export type ExtractionOptions = v.InferOutput<typeof ExtractionOptionsSchema> & {
+  ocrPreparationCache?: import('~/types').OcrPreparationCache | undefined
+}
 export type PageResult = v.InferOutput<typeof PageResultSchema>
 export type ExtractionResult = v.InferOutput<typeof ExtractionResultSchema>
 export type ExtractionMetadata = v.InferOutput<typeof ExtractionMetadataSchema>

@@ -33,6 +33,7 @@ type ProviderErrorLike = Error & {
 
 const CONTENT_POLICY_PATTERN = /content (?:filter|filtering|policy)|blocked by content|safety|policy violation|invalid_request_error/i
 const TRANSIENT_MESSAGE_PATTERN = /timed out|timeout|temporar(?:y|ily)|network|connection|socket|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|rate limit|too many requests/i
+const STRUCTURED_VALIDATION_PATTERN = /not valid json|malformed json|schema|expected page schema|returned \d+ pages|non-contiguous page numbers|returned no pages|returned no text output/i
 const PADDLE_NATIVE_CRASH_PATTERN = /PaddleOCR .*exited with code \d+ \((?:SIGBUS|SIGKILL|SIGSEGV)\)|PaddleOCR failed .*after attempts: .*?(?:SIGBUS|SIGKILL|SIGSEGV)/i
 const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
 const RETRY_CLASSES = new Set<RetryClass>([
@@ -93,6 +94,8 @@ export const classifyOcrProviderFailure = (
     retryable = explicitRetryable
   } else if (CONTENT_POLICY_PATTERN.test(message)) {
     retryable = false
+  } else if (STRUCTURED_VALIDATION_PATTERN.test(message)) {
+    retryable = true
   } else if (PADDLE_NATIVE_CRASH_PATTERN.test(message)) {
     retryable = true
   } else if (typeof status === 'number' || retryClass) {

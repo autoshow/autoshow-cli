@@ -15,9 +15,9 @@ const videoResumeConfig = {
     targets: VideoTarget[],
     input: string,
     outputDir: string,
-    _opts: RuntimeOptions
+    opts: RuntimeOptions
   ) => {
-    const { metadata } = await runVideoTargets(targets, input, outputDir)
+    const { metadata } = await runVideoTargets(targets, input, outputDir, opts)
     return metadata
   }
 }

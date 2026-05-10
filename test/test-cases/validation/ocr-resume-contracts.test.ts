@@ -8,6 +8,10 @@ import {
   classifyOcrProviderFailure,
   parseStoredRequestedTarget
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-run-state'
+import {
+  OcrStructuredResponseError,
+  writeInvalidOcrStructuredResponse
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import { resolvePrimaryOcrTarget } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
 import {
   buildPaddlePreparedImagePath,
@@ -93,6 +97,26 @@ describe('OCR resume contracts', () => {
     })
 
     expect(classifyOcrProviderFailure(error).retryable).toBe(true)
+  })
+
+  test('structured OCR validation failures are retryable and persist raw provider output', async () => {
+    const failure = classifyOcrProviderFailure(new OcrStructuredResponseError(
+      'OpenAI OCR response was not valid JSON.',
+      '{"pages":'
+    ))
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-structured-error-'))
+    try {
+      await writeInvalidOcrStructuredResponse(tempDir, new OcrStructuredResponseError(
+        'OpenAI OCR response was not valid JSON.',
+        '{"pages":'
+      ))
+      expect(failure.retryable).toBe(true)
+      expect(await Bun.file(join(tempDir, 'invalid-structured-response.txt')).text()).toBe('{"pages":')
+      const diagnostic = await Bun.file(join(tempDir, 'invalid-structured-response.json')).json() as Record<string, unknown>
+      expect(diagnostic['rawResponseFile']).toBe('invalid-structured-response.txt')
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
   test('primary OCR service-only match succeeds when unique', () => {

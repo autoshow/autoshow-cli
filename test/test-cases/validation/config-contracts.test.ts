@@ -76,6 +76,49 @@ describe('config contracts', () => {
     })
   })
 
+  test('buildConfigPatchFromFlags saves generation provider concurrency defaults', () => {
+    expect(buildConfigPatchFromFlags({
+      'tts-provider-concurrency': '4',
+      'tts-local-concurrency': '1',
+      'image-provider-concurrency': '5',
+      'image-local-concurrency': '1',
+      'video-provider-concurrency': '6',
+      'video-local-concurrency': '1',
+      'music-provider-concurrency': '7',
+      'music-local-concurrency': '1'
+    }, new Set([
+      'tts-provider-concurrency',
+      'tts-local-concurrency',
+      'image-provider-concurrency',
+      'image-local-concurrency',
+      'video-provider-concurrency',
+      'video-local-concurrency',
+      'music-provider-concurrency',
+      'music-local-concurrency'
+    ]))).toEqual({
+      defaults: {
+        post: {
+          tts: {
+            providerConcurrency: 4,
+            localConcurrency: 1
+          },
+          image: {
+            providerConcurrency: 5,
+            localConcurrency: 1
+          },
+          video: {
+            providerConcurrency: 6,
+            localConcurrency: 1
+          },
+          music: {
+            providerConcurrency: 7,
+            localConcurrency: 1
+          }
+        }
+      }
+    })
+  })
+
   test('runtime-only options are excluded from saved config patches', () => {
     expect(buildConfigPatchFromFlags({
       'reverb-stt': true,

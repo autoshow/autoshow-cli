@@ -91,6 +91,14 @@ export type RuntimeOptions = {
   ocrLocalConcurrency: number
   llmProviderConcurrency: number
   llmLocalConcurrency: number
+  ttsProviderConcurrency: number
+  ttsLocalConcurrency: number
+  imageProviderConcurrency: number
+  imageLocalConcurrency: number
+  videoProviderConcurrency: number
+  videoLocalConcurrency: number
+  musicProviderConcurrency: number
+  musicLocalConcurrency: number
   refreshCache: boolean
   noCache: boolean
   price: boolean

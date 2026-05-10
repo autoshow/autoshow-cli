@@ -9,12 +9,17 @@ export const runVideoTargets = async (
   targets: VideoTarget[],
   prompt: string,
   outputDir: string,
+  options?: Pick<VideoGenOptions, 'videoProviderConcurrency' | 'videoLocalConcurrency'>,
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
   const successes = await runSingleFileTargets<VideoTarget, Step6VideoMetadata>({
     targets,
     outputDir,
     stepLabel: 'video',
     noProviderMessage: 'No provider produced video',
+    concurrency: {
+      provider: options?.videoProviderConcurrency ?? 2,
+      local: options?.videoLocalConcurrency ?? 1
+    },
     runTarget: async (target, workspaceDir) =>
       target.run(prompt, workspaceDir).then(({ videoPath, metadata }) => ({ filePath: videoPath, metadata })),
     workspacePrefix: '.video-tmp',
@@ -43,5 +48,5 @@ export const runVideoGen = async (
   if (targets.length === 0) {
     throw new Error('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, --runway-video <model>, or --deapi-video <model>')
   }
-  return await runVideoTargets(targets, prompt, outputDir)
+  return await runVideoTargets(targets, prompt, outputDir, options)
 }

@@ -30,6 +30,8 @@ export type ImageGenOptions = Pick<
   | 'imageFormat'
   | 'imageBackground'
   | 'imagenCount'
+  | 'imageProviderConcurrency'
+  | 'imageLocalConcurrency'
 >
 
 export type ImageResult = {

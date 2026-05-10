@@ -533,7 +533,8 @@ export const runHostedOcr = async (
     const run = await runKimiOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
-      rotate: opts.rotate
+      rotate: opts.rotate,
+      ocrPreparationCache: opts.ocrPreparationCache
     })
     return withHostedUsageDetail({
       pages: run.pages,
@@ -590,7 +591,9 @@ export const runHostedOcr = async (
     const ocrModel = opts.geminiOcrModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Gemini OCR', async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
-      const run = await runGeminiOcr(inputPath, inputMetadata, ocrModel)
+      const run = await runGeminiOcr(inputPath, inputMetadata, ocrModel, {
+        ocrPreparationCache: opts.ocrPreparationCache
+      })
       return {
         pages: run.pages,
         extractionMethod: run.extractionMethod,
@@ -611,7 +614,8 @@ export const runHostedOcr = async (
     const run = await runDeepinfraOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
-      rotate: opts.rotate
+      rotate: opts.rotate,
+      ocrPreparationCache: opts.ocrPreparationCache
     })
     return withHostedUsageDetail({
       pages: run.pages,

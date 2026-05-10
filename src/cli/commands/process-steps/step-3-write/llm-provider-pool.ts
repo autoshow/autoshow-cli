@@ -1,4 +1,5 @@
 import type { LLMTarget } from '~/types'
+import { runProviderTargetScheduler } from '~/cli/commands/process-steps/provider-target-scheduler'
 
 export type LlmProviderPoolConcurrency = {
   provider: number
@@ -26,46 +27,29 @@ export const isHostedLlmTarget = (
   || target.service === 'glm'
   || target.service === 'kimi'
 
-const runIndexedTargetPool = async (
-  targets: IndexedLlmTarget[],
-  concurrency: number,
-  worker: (index: number, target: LLMTarget) => Promise<void>
-): Promise<void> => {
-  const normalizedConcurrency = Number.isFinite(concurrency)
-    ? Math.max(1, Math.floor(concurrency))
-    : 1
-  let next = 0
-
-  const runWorker = async (): Promise<void> => {
-    while (true) {
-      const current = next
-      next += 1
-      if (current >= targets.length) {
-        return
-      }
-      const entry = targets[current] as IndexedLlmTarget
-      await worker(entry.index, entry.target)
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(normalizedConcurrency, targets.length) }, async () => {
-      await runWorker()
-    })
-  )
-}
-
 export const runLlmProviderTargetPools = async (
   targets: LLMTarget[],
   concurrency: LlmProviderPoolConcurrency,
   worker: (index: number, target: LLMTarget) => Promise<void>
 ): Promise<void> => {
-  const indexedTargets = targets.map((target, index) => ({ index, target }))
-  const localTargets = indexedTargets.filter(({ target }) => isLocalLlmTarget(target))
-  const hostedTargets = indexedTargets.filter(({ target }) => isHostedLlmTarget(target))
-
-  await Promise.all([
-    runIndexedTargetPool(hostedTargets, concurrency.provider, worker),
-    runIndexedTargetPool(localTargets, concurrency.local, worker)
-  ])
+  const indexedTargets: IndexedLlmTarget[] = targets.map((target, index) => ({ index, target }))
+  const scheduled = await runProviderTargetScheduler<IndexedLlmTarget, void>({
+    entries: indexedTargets.map((entry) => ({
+      index: entry.index,
+      target: entry
+    })),
+    concurrency,
+    getPool: (entry) => isLocalLlmTarget(entry.target) ? 'local' : 'hosted',
+    runTarget: async (_index, entry) => {
+      if (!isLocalLlmTarget(entry.target) && !isHostedLlmTarget(entry.target)) {
+        return
+      }
+      await worker(entry.index, entry.target)
+    }
+  })
+  if (scheduled.failures.length > 0) {
+    throw new Error(scheduled.failures.map(({ target, message }) =>
+      `${target.target.service}/${target.target.model}: ${message}`
+    ).join('; '))
+  }
 }

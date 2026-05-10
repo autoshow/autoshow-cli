@@ -9,12 +9,17 @@ export const runMusicTargets = async (
   targets: MusicTarget[],
   prompt: string,
   outputDir: string,
+  options?: Pick<MusicGenOptions, 'musicProviderConcurrency' | 'musicLocalConcurrency'>,
 ): Promise<{ musicPaths: string[], metadata: Step7MusicMetadata[] }> => {
   const successes = await runSingleFileTargets<MusicTarget, Step7MusicMetadata>({
     targets,
     outputDir,
     stepLabel: 'music',
     noProviderMessage: 'No provider produced music',
+    concurrency: {
+      provider: options?.musicProviderConcurrency ?? 2,
+      local: options?.musicLocalConcurrency ?? 1
+    },
     runTarget: async (target, workspaceDir) =>
       target.run(prompt, workspaceDir).then(({ musicPath, metadata }) => ({ filePath: musicPath, metadata })),
     workspacePrefix: '.music-tmp',
@@ -44,5 +49,5 @@ export const runMusicGen = async (
     throw new Error('Specify a music generation provider: --elevenlabs-music <model>, --minimax-music <model>, --deapi-music <model>, or --gemini-music <model>')
   }
 
-  return await runMusicTargets(targets, prompt, outputDir)
+  return await runMusicTargets(targets, prompt, outputDir, options)
 }

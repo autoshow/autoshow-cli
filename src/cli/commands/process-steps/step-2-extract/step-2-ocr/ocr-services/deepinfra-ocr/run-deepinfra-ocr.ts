@@ -7,6 +7,8 @@ import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { getCachedRenderedPageImage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
+import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import {
   DEEPINFRA_OCR_IMAGE_BYTES,
   getDeepinfraOcrClientConfig
@@ -100,10 +102,15 @@ const parseOcrResponse = (
 ): PageResult[] => {
   const validation = parseAndValidateStructured(DeepinfraOcrEnvelopeSchema, rawText)
   if (!validation.success) {
-    throw new Error(validation.issue ?? 'DeepInfra OCR response was not valid JSON.')
+    throw new OcrStructuredResponseError(validation.issue ?? 'DeepInfra OCR response was not valid JSON.', rawText)
   }
 
-  return normalizePages(validation.value, pageNumber)
+  try {
+    return normalizePages(validation.value, pageNumber)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new OcrStructuredResponseError(message, rawText)
+  }
 }
 
 const assertImageWithinLimits = async (filePath: string, pageLabel: string): Promise<void> => {
@@ -185,7 +192,7 @@ export const runDeepinfraOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   model: string,
-  opts: Pick<ExtractionOptions, 'dpi' | 'password' | 'rotate'>
+  opts: Pick<ExtractionOptions, 'dpi' | 'password' | 'rotate' | 'ocrPreparationCache'>
 ): Promise<{
   pages: PageResult[]
   extractionMethod: 'deepinfra-ocr'
@@ -229,21 +236,53 @@ export const runDeepinfraOcr = async (
   try {
     for (let page = 1; page <= totalPages; page++) {
       const imagePath = join(tempDir, `page-${String(page).padStart(3, '0')}.png`)
-      const renderResult = await renderPageToImage(
-        filePath,
-        page,
-        opts.dpi,
-        imagePath,
-        opts.password,
-        opts.rotate
-      )
-      if (renderResult.exitCode !== 0) {
-        throw new Error(renderResult.stderr || `Failed rendering page ${page} for DeepInfra OCR`)
+      let renderedImagePath = imagePath
+      let removeRenderedImage = true
+      if (opts.ocrPreparationCache) {
+        const rendered = await getCachedRenderedPageImage(
+          opts.ocrPreparationCache,
+          {
+            filePath,
+            page,
+            dpi: opts.dpi,
+            password: opts.password,
+            rotate: opts.rotate
+          },
+          async (outputPath) => {
+            const renderResult = await renderPageToImage(
+              filePath,
+              page,
+              opts.dpi,
+              outputPath,
+              opts.password,
+              opts.rotate
+            )
+            if (renderResult.exitCode !== 0) {
+              throw new Error(renderResult.stderr || `Failed rendering page ${page} for DeepInfra OCR`)
+            }
+          }
+        )
+        renderedImagePath = rendered.imagePath
+        removeRenderedImage = false
+      } else {
+        const renderResult = await renderPageToImage(
+          filePath,
+          page,
+          opts.dpi,
+          imagePath,
+          opts.password,
+          opts.rotate
+        )
+        if (renderResult.exitCode !== 0) {
+          throw new Error(renderResult.stderr || `Failed rendering page ${page} for DeepInfra OCR`)
+        }
       }
-      const result = await runDeepinfraOcrImage(client, imagePath, 'png', model, page, `page ${page}`)
+      const result = await runDeepinfraOcrImage(client, renderedImagePath, 'png', model, page, `page ${page}`)
       addUsage(result)
       pages.push(result.page)
-      await rm(imagePath, { force: true })
+      if (removeRenderedImage) {
+        await rm(imagePath, { force: true })
+      }
     }
   } finally {
     await rm(tempDir, { recursive: true, force: true })

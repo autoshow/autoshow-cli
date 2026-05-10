@@ -9,7 +9,6 @@ import { assertNever } from '~/utils/validate/assert-never'
 import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { buildPaddleOcrPageFn } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { processPages } from './ocr-utils/page-processor'
-import { ensureTesseractSetup } from './ocr-utils/tesseract-utils'
 
 export const convertEpubToPdfForOcr = async (
   filePath: string,
@@ -114,7 +113,6 @@ export const runLocalPdfOcr = async (
 ): Promise<{ pages: PageResult[], extractionMethod: string }> => {
   switch (engine) {
     case 'tesseract': {
-      await ensureTesseractSetup()
       const pages = await processPages(filePath, step1Metadata.pageCount, opts)
       return { pages, extractionMethod: 'mutool+tesseract' }
     }
@@ -122,8 +120,9 @@ export const runLocalPdfOcr = async (
       return await runOcrmypdfWithAutoPdf(filePath, step1Metadata, opts)
     }
     case 'paddle-ocr': {
-      const paddleOcrFn = await buildPaddleOcrPageFn(opts)
-      const pages = await processPages(filePath, step1Metadata.pageCount, opts, paddleOcrFn)
+      const pages = await processPages(filePath, step1Metadata.pageCount, opts, {
+        getOcrFn: async () => await buildPaddleOcrPageFn(opts)
+      })
       return { pages, extractionMethod: 'mutool+paddle-ocr' }
     }
     default:
@@ -139,7 +138,6 @@ export const runPdfOcr = async (
 ): Promise<{ pages: PageResult[], extractionMethod: string }> => {
   switch (engine) {
     case 'tesseract': {
-      await ensureTesseractSetup()
       const pages = await processPages(pdfPath, tempMeta.pageCount, opts)
       return { pages, extractionMethod: 'pdf+tesseract' }
     }
@@ -148,8 +146,9 @@ export const runPdfOcr = async (
       return { pages: r.pages, extractionMethod: 'pdf+ocrmypdf' }
     }
     case 'paddle-ocr': {
-      const paddleOcrFn = await buildPaddleOcrPageFn(opts)
-      const pages = await processPages(pdfPath, tempMeta.pageCount, opts, paddleOcrFn)
+      const pages = await processPages(pdfPath, tempMeta.pageCount, opts, {
+        getOcrFn: async () => await buildPaddleOcrPageFn(opts)
+      })
       return { pages, extractionMethod: 'pdf+paddle-ocr' }
     }
     default:

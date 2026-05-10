@@ -19,6 +19,16 @@ export const imageGenFlags = {
     default: false,
     negatable: false
   },
+  'image-provider-concurrency': {
+    description: 'Image: max hosted providers/models running in parallel for one item (default 2; --all-image defaults up to 8)',
+    type: String,
+    default: '2'
+  },
+  'image-local-concurrency': {
+    description: 'Image: max local providers running in parallel for one item (default 1)',
+    type: String,
+    default: '1'
+  },
   'gemini-image': {
     description: buildModelDescription('Gemini image model', SUPPORTED_GEMINI_IMAGE_MODELS),
     type: [String] as [StringConstructor]

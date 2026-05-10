@@ -111,6 +111,13 @@ export type TargetBase = {
   model: string
 }
 
+export type TargetPoolKind = 'hosted' | 'local'
+
+export type TargetSchedulerConcurrency = {
+  provider: number
+  local: number
+}
+
 export type SingleFileArtifactNameOptions = {
   singleFileName: string
   multiFilePrefix: string
@@ -136,6 +143,9 @@ export type RunSingleFileTargetsOptions<TTarget extends TargetBase, TMetadata> =
   stepLabel: string
   noProviderMessage: string
   workspacePrefix: string
+  concurrency?: TargetSchedulerConcurrency | undefined
+  getTargetPool?: ((target: TTarget) => TargetPoolKind) | undefined
+  getTargetPriority?: ((target: TTarget, index: number) => number | undefined) | undefined
   runTarget: (target: TTarget, workspaceDir: string) => Promise<SingleFileRunResult<TMetadata>>
   getArtifactFileName: (target: TTarget, singleTarget: boolean) => string
   finalizeMetadata: (metadata: TMetadata, finalFileName: string, finalPath: string) => TMetadata
@@ -146,6 +156,9 @@ export type RunTargetsOptions<TTarget extends TargetBase, TResult> = {
   outputDir: string
   stepLabel: string
   noProviderMessage: string
+  concurrency?: TargetSchedulerConcurrency | undefined
+  getTargetPool?: ((target: TTarget) => TargetPoolKind) | undefined
+  getTargetPriority?: ((target: TTarget, index: number) => number | undefined) | undefined
   getWorkspaceDir: (outputDir: string, target: TTarget) => string
   runTarget: (target: TTarget, workspaceDir: string) => Promise<TResult>
   finalizeTarget: (target: TTarget, result: TResult, singleTarget: boolean) => Promise<TResult>

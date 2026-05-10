@@ -112,7 +112,9 @@ const TtsDefaultsSchema = v.strictObject({
   minimaxTtsPromptAudio: v.optional(v.string(), undefined),
   minimaxTtsPromptText: v.optional(v.string(), undefined),
   minimaxTtsCloneNoiseReduction: v.optional(v.boolean(), undefined),
-  minimaxTtsCloneVolumeNormalization: v.optional(v.boolean(), undefined)
+  minimaxTtsCloneVolumeNormalization: v.optional(v.boolean(), undefined),
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
 const ImageDefaultsSchema = v.strictObject({
@@ -129,7 +131,9 @@ const ImageDefaultsSchema = v.strictObject({
   imageQuality: v.optional(v.string(), undefined),
   imageFormat: v.optional(v.string(), undefined),
   imageBackground: v.optional(v.string(), undefined),
-  imagenCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
+  imagenCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
 const VideoDefaultsSchema = v.strictObject({
@@ -138,17 +142,23 @@ const VideoDefaultsSchema = v.strictObject({
   glmVideo: ModelArraySchema,
   grokVideo: ModelArraySchema,
   runwayVideo: ModelArraySchema,
+  deapiVideo: ModelArraySchema,
   videoDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   videoSize: v.optional(v.string(), undefined),
   videoAspectRatio: v.optional(v.string(), undefined),
-  videoResolution: v.optional(v.string(), undefined)
+  videoResolution: v.optional(v.string(), undefined),
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
 const MusicDefaultsSchema = v.strictObject({
   elevenlabsMusic: ModelArraySchema,
   minimaxMusic: ModelArraySchema,
   deapiMusic: ModelArraySchema,
-  musicDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
+  geminiMusic: ModelArraySchema,
+  musicDuration: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
 const ExtractOcrDefaultsSchema = v.strictObject({

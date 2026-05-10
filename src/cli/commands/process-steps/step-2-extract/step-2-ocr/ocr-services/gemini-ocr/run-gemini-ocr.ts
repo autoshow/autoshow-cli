@@ -7,6 +7,8 @@ import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import { classifyOcrCreateRetry, OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { getCachedCloudStagingObject } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
+import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import type { RetryDecision } from '~/types'
 import {
   GEMINI_FILE_UPLOAD_BYTES,
@@ -98,10 +100,15 @@ const parseOcrResponse = (
 ): PageResult[] => {
   const validation = parseAndValidateStructured(GeminiOcrEnvelopeSchema, rawText)
   if (!validation.success) {
-    throw new Error(validation.issue ?? 'Gemini OCR response was not valid JSON.')
+    throw new OcrStructuredResponseError(validation.issue ?? 'Gemini OCR response was not valid JSON.', rawText)
   }
 
-  return normalizePages(validation.value, expectedPageCount)
+  try {
+    return normalizePages(validation.value, expectedPageCount)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new OcrStructuredResponseError(message, rawText)
+  }
 }
 
 const getGeminiMimeType = (format: DocumentMetadata['format']): string => {
@@ -157,7 +164,8 @@ const classifyGeminiOcrRetry = (error: unknown): RetryDecision => {
 export const runGeminiOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
-  model: string
+  model: string,
+  opts: { ocrPreparationCache?: import('~/types').OcrPreparationCache | undefined } = {}
 ): Promise<{
   pages: PageResult[]
   extractionMethod: 'gemini-ocr'
@@ -194,22 +202,44 @@ export const runGeminiOcr = async (
         try {
           const contents = shouldUploadFile(fileSizeBytes, step1Metadata.format)
             ? await (async () => {
-                const uploadedFile = await ai.files.upload({
-                  file: filePath,
-                  config: {
+                const staged = await getCachedCloudStagingObject(
+                  opts.ocrPreparationCache,
+                  {
+                    provider: 'gemini',
+                    filePath,
                     mimeType,
-                    displayName: basename(filePath),
-                    ...(signal ? { abortSignal: signal } : {})
+                    displayName: basename(filePath)
+                  },
+                  async () => {
+                    const uploadedFile = await ai.files.upload({
+                      file: filePath,
+                      config: {
+                        mimeType,
+                        displayName: basename(filePath),
+                        ...(signal ? { abortSignal: signal } : {})
+                      }
+                    })
+                    const name = uploadedFile.name ?? undefined
+                    const fileMimeType = uploadedFile.mimeType ?? mimeType
+                    if (typeof uploadedFile.uri !== 'string' || uploadedFile.uri.length === 0) {
+                      throw new Error('Gemini Files API upload did not return a file URI.')
+                    }
+                    return {
+                      uri: uploadedFile.uri,
+                      mimeType: fileMimeType,
+                      name,
+                      cleanup: async () => {
+                        if (name) {
+                          await ai.files.delete({ name })
+                        }
+                      }
+                    }
                   }
-                })
-                uploadedFileName = uploadedFile.name ?? undefined
-                const fileMimeType = uploadedFile.mimeType ?? mimeType
-                if (typeof uploadedFile.uri !== 'string' || uploadedFile.uri.length === 0) {
-                  throw new Error('Gemini Files API upload did not return a file URI.')
-                }
+                )
+                uploadedFileName = opts.ocrPreparationCache ? undefined : staged.name
                 return createUserContent([
                   { text: prompt },
-                  createPartFromUri(uploadedFile.uri, fileMimeType)
+                  createPartFromUri(staged.uri, staged.mimeType)
                 ] as any)
               })()
             : await buildInlineContents(filePath, mimeType, prompt)

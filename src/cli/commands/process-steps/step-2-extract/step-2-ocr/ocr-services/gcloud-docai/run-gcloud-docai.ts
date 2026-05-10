@@ -12,6 +12,7 @@ import {
   GCLOUD_DOCAI_SYNC_BYTES,
   type GcloudDocaiRuntimeConfig
 } from './gcloud-docai'
+import { logOcrJobProgress, logOcrTransfer } from '../../ocr-logging'
 
 const POLL_INTERVAL_MS = 3000
 
@@ -193,7 +194,12 @@ const runSyncDocai = async (
   }
 
   const endpoint = buildEndpointUrl(config, 'process')
-  l.write('info', `Google Cloud Document AI sync process for ${basename(filePath)}`)
+  logOcrJobProgress(l, {
+    provider: 'gcloud-docai',
+    action: 'process',
+    state: 'running',
+    detail: basename(filePath)
+  })
 
   const data = await withOcrCreateRetry('gcloud-docai-process', async (signal) => {
     const response = await fetch(endpoint, {
@@ -221,7 +227,11 @@ const runBatchDocai = async (
   const gcsUri = `gs://${config.bucket}/${s3Key}`
   const outputPrefix = `gs://${config.bucket}/autoshow-docai/${crypto.randomUUID()}/output/`
 
-  l.write('info', `Uploading ${basename(filePath)} to ${gcsUri}`)
+  logOcrTransfer(l, {
+    action: 'upload',
+    file: basename(filePath),
+    destination: gcsUri
+  })
   const uploadResult = await runGcloud(['storage', 'cp', filePath, gcsUri])
   if (uploadResult.exitCode !== 0) {
     const detail = uploadResult.stderr.trim() || uploadResult.stdout.trim() || 'upload failed'
@@ -249,7 +259,12 @@ const runBatchDocai = async (
     }
 
     const endpoint = buildEndpointUrl(config, 'batchProcess')
-    l.write('info', `Starting Google Cloud Document AI batch process for ${basename(filePath)}`)
+    logOcrJobProgress(l, {
+      provider: 'gcloud-docai',
+      action: 'batchProcess',
+      state: 'starting',
+      detail: basename(filePath)
+    })
 
     const startData = await withOcrCreateRetry('gcloud-docai-batch-start', async (signal) => {
       const startResponse = await fetch(endpoint, {
@@ -266,7 +281,12 @@ const runBatchDocai = async (
     })
     const operation = validateData(DocaiOperationSchema, startData, 'Document AI batch response')
     const operationName = operation.name
-    l.write('info', `Document AI batch job started: ${operationName}`)
+    logOcrJobProgress(l, {
+      provider: 'gcloud-docai',
+      action: 'batchProcess',
+      remoteId: operationName,
+      state: 'started'
+    })
 
     let completed = false
     let attempt = 0
@@ -298,7 +318,13 @@ const runBatchDocai = async (
       if (pollResult.done) {
         completed = true
       } else if (attempt % 10 === 9) {
-        l.write('info', `Document AI batch job still in progress (attempt ${attempt + 1})...`)
+        logOcrJobProgress(l, {
+          provider: 'gcloud-docai',
+          action: 'poll',
+          remoteId: operationName,
+          state: 'in_progress',
+          detail: `attempt ${attempt + 1}`
+        })
       }
     }
 
@@ -306,7 +332,13 @@ const runBatchDocai = async (
       throw new Error(`Document AI batch job did not complete before OCR poll deadline (${OCR_POLL_DEADLINE_MS}ms)`)
     }
 
-    l.write('info', 'Document AI batch job completed, reading output from GCS...')
+    logOcrJobProgress(l, {
+      provider: 'gcloud-docai',
+      action: 'poll',
+      remoteId: operationName,
+      state: 'completed',
+      detail: 'reading output from GCS'
+    })
 
     const listResult = await runGcloud(['storage', 'ls', '-r', outputPrefix])
     if (listResult.exitCode !== 0) {
@@ -334,10 +366,20 @@ const runBatchDocai = async (
     }
 
     allPages.sort((a, b) => a.pageNumber - b.pageNumber)
-    l.write('info', `Document AI batch job completed, ${allPages.length} pages`)
+    logOcrJobProgress(l, {
+      provider: 'gcloud-docai',
+      action: 'read-output',
+      remoteId: operationName,
+      state: 'completed',
+      pages: allPages.length
+    })
     return { pages: allPages, totalPages: allPages.length }
   } finally {
-    l.write('info', `Cleaning up GCS objects under ${gcsUri}`)
+    logOcrTransfer(l, {
+      action: 'cleanup',
+      file: basename(filePath),
+      destination: `${gcsUri}, ${outputPrefix}`
+    })
     await runGcloud(['storage', 'rm', gcsUri]).catch(() => {})
     await runGcloud(['storage', 'rm', '-r', outputPrefix]).catch(() => {})
   }

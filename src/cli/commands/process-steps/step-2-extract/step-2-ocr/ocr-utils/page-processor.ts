@@ -2,11 +2,13 @@ import { cpus } from 'node:os'
 import { join } from 'node:path'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import type { ExtractionOptions, InternalPage, OcrFn, PageResult } from '~/types'
+import type { ExtractionOptions, InternalPage, OcrFn, OcrFnProvider, PageResult } from '~/types'
 import * as l from '~/utils/logger'
 import { extractPageText, renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { ocrImage } from './tesseract-utils'
 import { isTextUsable } from './page-triage'
+import { logOcrPagesProgress } from '../ocr-logging'
+import { getCachedRenderedPageImage } from './preparation-cache'
 
 const toPlainTextFromTsv = (tsv: string): string => {
   const lines = tsv.split('\n').map(l => l.trim()).filter(Boolean)
@@ -63,29 +65,111 @@ const runOcrAttempt = async (
   ocrFn: OcrFn
 ): Promise<{ text: string, confidence?: number }> => {
   const imagePath = join(tempDir, `page-${String(page).padStart(3, '0')}-${dpi}dpi.png`)
-  const renderResult = await renderPageToImage(
-    filePath,
-    page,
-    dpi,
-    imagePath,
-    options.password,
-    options.rotate
-  )
-  if (renderResult.exitCode !== 0) {
-    throw new Error(renderResult.stderr || `Failed rendering page ${page}`)
+  let renderedImagePath = imagePath
+  let shouldRemoveImage = true
+
+  if (options.ocrPreparationCache) {
+    const rendered = await getCachedRenderedPageImage(
+      options.ocrPreparationCache,
+      {
+        filePath,
+        page,
+        dpi,
+        password: options.password,
+        rotate: options.rotate
+      },
+      async (outputPath) => {
+        const renderResult = await renderPageToImage(
+          filePath,
+          page,
+          dpi,
+          outputPath,
+          options.password,
+          options.rotate
+        )
+        if (renderResult.exitCode !== 0) {
+          throw new Error(renderResult.stderr || `Failed rendering page ${page}`)
+        }
+      }
+    )
+    renderedImagePath = rendered.imagePath
+    shouldRemoveImage = false
+  } else {
+    const renderResult = await renderPageToImage(
+      filePath,
+      page,
+      dpi,
+      imagePath,
+      options.password,
+      options.rotate
+    )
+    if (renderResult.exitCode !== 0) {
+      throw new Error(renderResult.stderr || `Failed rendering page ${page}`)
+    }
   }
-  const result = await ocrFn(imagePath)
-  await rm(imagePath, { force: true })
+  const result = await ocrFn(renderedImagePath)
+  if (shouldRemoveImage) {
+    await rm(imagePath, { force: true })
+  }
   return result
+}
+
+const resolveOcrFn = async (
+  options: ExtractionOptions,
+  provider: OcrFnProvider | undefined
+): Promise<OcrFn> => {
+  if (!provider) {
+    const { ensureTesseractSetup } = await import('./tesseract-utils')
+    await ensureTesseractSetup()
+    return buildTesseractOcrFn(options)
+  }
+
+  if (typeof provider === 'function') {
+    return provider
+  }
+
+  return await provider.getOcrFn()
+}
+
+const getCachedPageTriage = async (
+  filePath: string,
+  pageNumber: number,
+  options: ExtractionOptions
+): Promise<InternalPage> => {
+  const cache = options.ocrPreparationCache
+  const key = JSON.stringify({
+    filePath,
+    pageNumber,
+    password: options.password
+  })
+  const existing = cache?.pageTriage.get(key)
+  if (existing) {
+    return await existing
+  }
+
+  const promise = (async (): Promise<InternalPage> => {
+    const extracted = await extractPageText(filePath, pageNumber, options.password)
+    return {
+      pageNumber,
+      text: extracted.stdout,
+      needsOcr: !isTextUsable(extracted.stdout)
+    }
+  })()
+  cache?.pageTriage.set(key, promise)
+  promise.catch(() => {
+    if (cache?.pageTriage.get(key) === promise) {
+      cache.pageTriage.delete(key)
+    }
+  })
+  return await promise
 }
 
 export const processPages = async (
   filePath: string,
   totalPages: number,
   options: ExtractionOptions,
-  ocrFn?: OcrFn
+  ocrFnProvider?: OcrFnProvider
 ): Promise<PageResult[]> => {
-  const effectiveOcrFn = ocrFn ?? buildTesseractOcrFn(options)
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-'))
   try {
     const cores = Math.max(1, cpus().length)
@@ -98,12 +182,7 @@ export const processPages = async (
       const pageNumber = idx + 1
       await renderPool.acquire()
       try {
-        const extracted = await extractPageText(filePath, pageNumber, options.password)
-        return {
-          pageNumber,
-          text: extracted.stdout,
-          needsOcr: !isTextUsable(extracted.stdout)
-        }
+        return await getCachedPageTriage(filePath, pageNumber, options)
       } finally {
         renderPool.release()
       }
@@ -112,12 +191,24 @@ export const processPages = async (
     const stageAByPage = new Map(stageA.map(page => [page.pageNumber, page]))
     const needingOcr = stageA.filter(p => p.needsOcr)
     if (needingOcr.length > 0) {
-      l.write('info', `Running OCR for ${needingOcr.length}/${totalPages} pages`)
+      logOcrPagesProgress(l, {
+        status: 'running',
+        ocrPages: needingOcr.length,
+        totalPages,
+        renderConcurrency,
+        ocrConcurrency
+      })
     }
 
+    const effectiveOcrFn = needingOcr.length > 0
+      ? await resolveOcrFn(options, ocrFnProvider)
+      : undefined
     const ocrResults = await Promise.all(needingOcr.map(async page => {
       await ocrPool.acquire()
       try {
+        if (!effectiveOcrFn) {
+          throw new Error('OCR function was not initialized')
+        }
         let attempt = await runOcrAttempt(filePath, page.pageNumber, options.dpi, tempDir, options, effectiveOcrFn)
         if ((attempt.confidence ?? 100) < 40) {
           attempt = await runOcrAttempt(filePath, page.pageNumber, options.dpi + 100, tempDir, options, effectiveOcrFn)

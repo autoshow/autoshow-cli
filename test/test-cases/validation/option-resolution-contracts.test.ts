@@ -8,6 +8,9 @@ import { runOcrProviderTargetPools, isLocalOcrTarget } from '~/cli/commands/proc
 import { runLlmProviderTargetPools, isLocalLlmTarget } from '~/cli/commands/process-steps/step-3-write/llm-provider-pool'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
+import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
+import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
+import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
 import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
 import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
@@ -235,6 +238,51 @@ describe('option resolution contracts', () => {
     expect(clamped.llmLocalConcurrency).toBe(1)
   })
 
+  test('generation provider concurrency defaults, falls back, and clamps like other provider concurrency flags', () => {
+    const defaults = buildOptsFromFlags(false, {})
+    const fallback = buildOptsFromFlags(false, {
+      'tts-provider-concurrency': 'not-a-number',
+      'tts-local-concurrency': 'nope',
+      'image-provider-concurrency': 'bad',
+      'image-local-concurrency': 'bad',
+      'video-provider-concurrency': 'bad',
+      'video-local-concurrency': 'bad',
+      'music-provider-concurrency': 'bad',
+      'music-local-concurrency': 'bad'
+    })
+    const clamped = buildOptsFromFlags(false, {
+      'tts-provider-concurrency': '0',
+      'tts-local-concurrency': '-1',
+      'image-provider-concurrency': '0',
+      'image-local-concurrency': '-1',
+      'video-provider-concurrency': '0',
+      'video-local-concurrency': '-1',
+      'music-provider-concurrency': '0',
+      'music-local-concurrency': '-1'
+    })
+
+    expect(defaults.ttsProviderConcurrency).toBe(2)
+    expect(defaults.ttsLocalConcurrency).toBe(1)
+    expect(defaults.imageProviderConcurrency).toBe(2)
+    expect(defaults.imageLocalConcurrency).toBe(1)
+    expect(defaults.videoProviderConcurrency).toBe(2)
+    expect(defaults.videoLocalConcurrency).toBe(1)
+    expect(defaults.musicProviderConcurrency).toBe(2)
+    expect(defaults.musicLocalConcurrency).toBe(1)
+    expect(fallback.ttsProviderConcurrency).toBe(2)
+    expect(fallback.imageProviderConcurrency).toBe(2)
+    expect(fallback.videoProviderConcurrency).toBe(2)
+    expect(fallback.musicProviderConcurrency).toBe(2)
+    expect(clamped.ttsProviderConcurrency).toBe(1)
+    expect(clamped.ttsLocalConcurrency).toBe(1)
+    expect(clamped.imageProviderConcurrency).toBe(1)
+    expect(clamped.imageLocalConcurrency).toBe(1)
+    expect(clamped.videoProviderConcurrency).toBe(1)
+    expect(clamped.videoLocalConcurrency).toBe(1)
+    expect(clamped.musicProviderConcurrency).toBe(1)
+    expect(clamped.musicLocalConcurrency).toBe(1)
+  })
+
   test('bare provider flags resolve to cheapest defaults', () => {
     const openaiDefault = resolveCheapestModelForFlag('openai')
     const glmDefault = resolveCheapestModelForFlag('glm')
@@ -278,6 +326,29 @@ describe('option resolution contracts', () => {
 
     expect(opts.glmModels).toEqual(['glm-5.1'])
     expect(opts.kimiModels).toEqual(['kimi-k2.6'])
+  })
+
+  test('--all shortcuts use aggressive hosted concurrency only when concurrency is not explicit', () => {
+    const ocrOpts = buildOptsFromFlags(false, { 'all-ocr': true })
+    const llmOpts = buildOptsFromFlags(false, { 'all-llm': true })
+    const ttsOpts = buildOptsFromFlags(false, { 'all-tts': true })
+    const imageOpts = buildOptsFromFlags(false, { 'all-image': true })
+    const videoOpts = buildOptsFromFlags(false, { 'all-video': true })
+    const musicOpts = buildOptsFromFlags(false, { 'all-music': true })
+    const explicitVideoOpts = buildOptsFromFlags(false, {
+      'all-video': true,
+      'video-provider-concurrency': '3'
+    }, [], {}, new Set(['video-provider-concurrency']))
+
+    expect(ocrOpts.ocrProviderConcurrency).toBe(8)
+    expect(llmOpts.llmProviderConcurrency).toBe(8)
+    expect(ttsOpts.ttsProviderConcurrency).toBe(8)
+    expect(imageOpts.imageProviderConcurrency).toBe(Math.min(8, collectImageTargets(imageOpts).length))
+    expect(videoOpts.videoProviderConcurrency).toBe(Math.min(8, collectVideoTargets(videoOpts).length))
+    expect(musicOpts.musicProviderConcurrency).toBe(Math.min(8, collectMusicTargets(musicOpts).length))
+    expect(explicitVideoOpts.videoProviderConcurrency).toBe(3)
+    expect(ocrOpts.ocrLocalConcurrency).toBe(1)
+    expect(ttsOpts.ttsLocalConcurrency).toBe(1)
   })
 
   test('--all-stt and --all-ocr expand to non-empty expected provider lists', () => {

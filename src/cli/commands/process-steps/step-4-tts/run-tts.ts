@@ -23,6 +23,11 @@ export const runTtsTargets = async (
     outputDir,
     stepLabel: 'TTS',
     noProviderMessage: 'No provider produced audio',
+    concurrency: {
+      provider: _options.ttsProviderConcurrency ?? 2,
+      local: _options.ttsLocalConcurrency ?? 1
+    },
+    getTargetPool: (target) => target.service === 'kitten' ? 'local' : 'hosted',
     getWorkspaceDir: (dir, target) =>
       `${dir}/.tts-tmp-${target.service}-${sanitizeModelName(target.model)}`,
     runTarget: async (target, workspaceDir) => {

@@ -15,9 +15,9 @@ const musicResumeConfig = {
     targets: MusicTarget[],
     input: string,
     outputDir: string,
-    _opts: RuntimeOptions
+    opts: RuntimeOptions
   ) => {
-    const { metadata } = await runMusicTargets(targets, input, outputDir)
+    const { metadata } = await runMusicTargets(targets, input, outputDir, opts)
     return metadata
   }
 }

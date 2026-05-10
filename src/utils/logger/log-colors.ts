@@ -73,6 +73,17 @@ const colorizePathValue = (value: string): string => {
   return preserveOuterWhitespace(value, terminalPalette.path)
 }
 
+const colorizeStreamValue = (value: string): string => {
+  const normalized = normalizeValue(value)
+  if (normalized === 'stderr') {
+    return preserveOuterWhitespace(value, terminalPalette.warning)
+  }
+  if (normalized === 'stdout') {
+    return preserveOuterWhitespace(value, terminalPalette.info)
+  }
+  return terminalStyles.info(value)
+}
+
 const isStatusColumn = (column: string): boolean =>
   column === 'status'
   || column === 'state'
@@ -120,6 +131,24 @@ const isThroughputColumn = (column: string): boolean =>
   || column.includes('persecond')
   || column.includes('fps')
 
+const isCountColumn = (column: string): boolean =>
+  column === 'page'
+  || column === 'pages'
+  || column === 'total'
+  || column === 'count'
+  || column === 'attempt'
+  || column.endsWith('page')
+  || column.endsWith('pages')
+  || column.endsWith('count')
+  || column.endsWith('counts')
+  || column.endsWith('concurrency')
+  || column.endsWith('attempt')
+  || column.endsWith('attempts')
+
+const isStreamColumn = (column: string): boolean =>
+  column === 'stream'
+  || column.endsWith('stream')
+
 const isProviderModelColumn = (column: string): boolean =>
   column === 'providermodel'
   || column === 'providerandmodel'
@@ -138,6 +167,19 @@ const isModelColumn = (column: string): boolean =>
   || column.endsWith('model')
   || column.endsWith('modelid')
 
+const isRemoteIdColumn = (column: string): boolean =>
+  column === 'id'
+  || column === 'remoteid'
+  || column === 'jobid'
+  || column === 'requestid'
+  || column === 'operationid'
+  || column === 'operationname'
+  || column.endsWith('remoteid')
+  || column.endsWith('jobid')
+  || column.endsWith('requestid')
+  || column.endsWith('operationid')
+  || column.endsWith('operationname')
+
 export const colorizeHumanTableBorder = (value: string): string =>
   terminalStyles.muted(value)
 
@@ -152,11 +194,17 @@ export const colorizeHumanTableCell = (context: TableCellColorContext): string =
   const column = normalizeColumn(semanticColumn(context))
   const value = context.value
 
+  if (isStreamColumn(column)) {
+    return colorizeStreamValue(value)
+  }
   if (isStatusColumn(column)) {
     return colorizeStatusValue(value)
   }
   if (isCostColumn(column) || value.includes('\u00a2')) {
     return terminalStyles.cost(value)
+  }
+  if (isCountColumn(column)) {
+    return terminalStyles.throughput(value)
   }
   if (isThroughputColumn(column)) {
     return terminalStyles.throughput(value)
@@ -178,6 +226,9 @@ export const colorizeHumanTableCell = (context: TableCellColorContext): string =
   }
   if (isModelColumn(column)) {
     return terminalStyles.model(value)
+  }
+  if (isRemoteIdColumn(column)) {
+    return terminalStyles.info(value)
   }
 
   return value

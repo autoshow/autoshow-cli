@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 import { buildAudioNormalizeTable } from '~/cli/commands/process-steps/step-1-download/audio/audio-logging'
+import {
+  buildOcrJobProgressTable,
+  buildOcrPagesProgressTable,
+  buildOcrProviderLifecycleTable,
+  buildOcrTransferTable,
+  buildOcrmypdfOutputTable,
+  buildOcrmypdfRunConfigTable,
+  buildPaddleOcrPrepareTable,
+  parseOcrmypdfOutputLine
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-logging'
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
@@ -216,6 +226,23 @@ describe('logging contracts', () => {
     expect(rendered).not.toMatch(/\x1b\[[0-9;]*mvideo\x1b\[0m/)
   })
 
+  test('ocr progress columns receive semantic colors', () => {
+    const rendered = withColorEnv({ forceColor: '1' }, () => renderHumanTable(createHumanTable([
+      {
+        stream: 'stderr',
+        page: 3,
+        totalPages: 10,
+        remoteId: 'job-123'
+      }
+    ], ['stream', 'page', 'totalPages', 'remoteId'])))
+
+    expect(hasAnsi(rendered)).toBe(true)
+    expect(rendered).toMatch(/\x1b\[[0-9;]*mstderr\x1b\[0m/)
+    expect(rendered).toMatch(/\x1b\[[0-9;]*m3\x1b\[0m/)
+    expect(rendered).toMatch(/\x1b\[[0-9;]*m10\x1b\[0m/)
+    expect(rendered).toMatch(/\x1b\[[0-9;]*mjob-123\x1b\[0m/)
+  })
+
   test('NO_COLOR disables human table ANSI output', () => {
     const rendered = withColorEnv({ noColor: '1' }, () => renderHumanTable(createHumanTable([
       { status: 'failed', cost: '2.00000\u00a2', path: 'output/run/run.json' }
@@ -296,6 +323,117 @@ describe('logging contracts', () => {
       checked: '3 commands',
       totalEstimatedCost: '12.34568\u00a2'
     }])
+  })
+
+  test('ocr log table builders produce structured progress rows', () => {
+    expect(buildOcrProviderLifecycleTable({
+      provider: 'openai',
+      model: 'gpt-5.4-nano',
+      status: 'succeeded',
+      elapsedMs: 1234
+    })).toEqual({
+      columns: ['provider', 'model', 'status', 'elapsedMs', 'detail'],
+      rows: [{
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        status: 'succeeded',
+        elapsedMs: 1234,
+        detail: ''
+      }]
+    })
+
+    expect(buildOcrPagesProgressTable({
+      status: 'running',
+      ocrPages: 2,
+      totalPages: 5,
+      renderConcurrency: 4,
+      ocrConcurrency: 2
+    }).rows).toEqual([{
+      status: 'running',
+      ocrPages: 2,
+      totalPages: 5,
+      renderConcurrency: 4,
+      ocrConcurrency: 2
+    }])
+
+    expect(buildOcrJobProgressTable({
+      provider: 'aws-textract',
+      action: 'poll',
+      remoteId: 'job-123',
+      state: 'in_progress',
+      pages: 7,
+      detail: 'attempt 10'
+    })).toEqual({
+      columns: ['provider', 'action', 'remoteId', 'state', 'pages', 'detail'],
+      rows: [{
+        provider: 'aws-textract',
+        action: 'poll',
+        remoteId: 'job-123',
+        state: 'in_progress',
+        pages: 7,
+        detail: 'attempt 10'
+      }]
+    })
+  })
+
+  test('ocr log table builders use key/value rows for single-operation details', () => {
+    expect(buildOcrmypdfRunConfigTable({
+      status: 'running',
+      input: '/tmp/input.pdf',
+      jobs: 2,
+      languages: 'eng'
+    }).rows).toEqual([
+      { key: 'status', value: 'running' },
+      { key: 'input', value: '/tmp/input.pdf' },
+      { key: 'jobs', value: 2 },
+      { key: 'languages', value: 'eng' }
+    ])
+
+    expect(buildPaddleOcrPrepareTable({
+      status: 'downsampled',
+      input: 'page-001.png',
+      dimensions: { width: 2400, height: 3200 },
+      maxSide: 1000
+    }).rows).toEqual([
+      { key: 'status', value: 'downsampled' },
+      { key: 'input', value: 'page-001.png' },
+      { key: 'dimensions', value: '2400x3200' },
+      { key: 'maxSide', value: 1000 }
+    ])
+
+    expect(buildOcrTransferTable({
+      action: 'upload',
+      file: 'document.pdf',
+      destination: 's3://bucket/document.pdf'
+    }).rows).toEqual([
+      { key: 'action', value: 'upload' },
+      { key: 'file', value: 'document.pdf' },
+      { key: 'destination', value: 's3://bucket/document.pdf' }
+    ])
+  })
+
+  test('ocrmypdf output parser creates compact stream/page rows', () => {
+    const event = parseOcrmypdfOutputLine('stderr', '\x1b[31mPage 3: deskew complete\x1b[0m')
+    expect(event).toEqual({
+      stream: 'stderr',
+      page: 3,
+      detail: 'deskew complete',
+      rawLine: '\x1b[31mPage 3: deskew complete\x1b[0m'
+    })
+
+    if (!event) throw new Error('Expected OCRmyPDF output event')
+    expect(buildOcrmypdfOutputTable(event)).toEqual({
+      columns: ['stream', 'page', 'detail'],
+      rows: [{
+        stream: 'stderr',
+        page: 3,
+        detail: 'deskew complete'
+      }]
+    })
+
+    const noPage = parseOcrmypdfOutputLine('stdout', 'Scanning contents')
+    if (!noPage) throw new Error('Expected OCRmyPDF output event')
+    expect(buildOcrmypdfOutputTable(noPage).columns).toEqual(['stream', 'detail'])
   })
 
   test('reporter prints estimate notes after the human cost table', () => {

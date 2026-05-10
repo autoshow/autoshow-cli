@@ -2,6 +2,7 @@ import { defineCommand } from 'clerc'
 import { ttsFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { runTts } from './run-tts'
 import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets, getTtsArtifactFileName } from './tts-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -76,7 +77,8 @@ export const ttsCommand = defineCommand({
   }
 
   const maxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' }, new Set(), Bun.argv.slice(2))
+  const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
+  const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' }, explicitFlags, Bun.argv.slice(2))
   const targets = collectTtsTargets(ttsOptions)
   const pvcSetupRequested = isElevenLabsTtsPvcSetupRequested(ttsOptions)
   const dialogueRequested = isDialogueTtsRequested(ttsOptions)
