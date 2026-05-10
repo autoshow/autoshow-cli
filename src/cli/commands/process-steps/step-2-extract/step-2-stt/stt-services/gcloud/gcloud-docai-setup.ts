@@ -1,8 +1,6 @@
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import {
   GCLOUD_DOCAI_DEFAULT_PROCESSOR_DISPLAY_NAME,
-  GCLOUD_DOCAI_LAYOUT_PROCESSOR_DISPLAY_NAME,
-  GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE,
   GCLOUD_DOCAI_OCR_PROCESSOR_TYPE
 } from './gcloud-constants'
 import {
@@ -17,7 +15,6 @@ export const readSavedGcloudDocaiDefaults = async (
   configPath: string
   location?: string | undefined
   ocrProcessorId?: string | undefined
-  layoutProcessorId?: string | undefined
   bucket?: string | undefined
 }> => {
   const configPath = await resolveConfigPath(configPathOverride)
@@ -27,7 +24,6 @@ export const readSavedGcloudDocaiDefaults = async (
     configPath,
     location: normalizeString(ocr?.gcloudDocaiLocation),
     ocrProcessorId: normalizeString(ocr?.gcloudDocaiOcrProcessorId),
-    layoutProcessorId: normalizeString(ocr?.gcloudDocaiLayoutProcessorId),
     bucket: normalizeString(ocr?.gcloudDocaiBucket)
   }
 }
@@ -105,61 +101,6 @@ export const ensureDocumentAiOcrProcessor = async (
   }
 
   const processorId = await createDocumentAiOcrProcessor(projectId, location, accessToken)
-  return { processorId, created: true, detail: `created ${processorId}` }
-}
-
-const createDocumentAiLayoutProcessor = async (
-  projectId: string,
-  location: string,
-  accessToken: string
-): Promise<string> => {
-  const response = await fetch(documentAiBaseUrl(projectId, location), {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      displayName: GCLOUD_DOCAI_LAYOUT_PROCESSOR_DISPLAY_NAME,
-      type: GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE
-    })
-  })
-  if (!response.ok) {
-    throw new Error(
-      `Failed to create Document AI Layout Parser processor (${response.status}): ${await response.text()}. ` +
-      `Create one manually in project ${projectId}, location ${location}, type ${GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE}.`
-    )
-  }
-  const payload = await response.json() as { name?: string }
-  const processorId = payload.name ? readGcloudDocaiProcessorId(payload.name) : undefined
-  if (!processorId) {
-    throw new Error('Document AI Layout Parser processor creation response did not include a processor ID.')
-  }
-  return processorId
-}
-
-export const ensureDocumentAiLayoutProcessor = async (
-  projectId: string,
-  location: string,
-  accessToken: string,
-  savedProcessorId?: string | undefined
-): Promise<{ processorId?: string | undefined, created: boolean, detail: string }> => {
-  if (savedProcessorId) {
-    return { processorId: savedProcessorId, created: false, detail: `saved ${savedProcessorId}` }
-  }
-
-  const processors = await listDocumentAiProcessors(projectId, location, accessToken)
-  const reusable = processors.find((processor) =>
-    processor.type === GCLOUD_DOCAI_LAYOUT_PROCESSOR_TYPE
-    && processor.displayName === GCLOUD_DOCAI_LAYOUT_PROCESSOR_DISPLAY_NAME
-    && processor.name
-  )
-  const reusableId = reusable?.name ? readGcloudDocaiProcessorId(reusable.name) : undefined
-  if (reusableId) {
-    return { processorId: reusableId, created: false, detail: `found ${reusableId}` }
-  }
-
-  const processorId = await createDocumentAiLayoutProcessor(projectId, location, accessToken)
   return { processorId, created: true, detail: `created ${processorId}` }
 }
 

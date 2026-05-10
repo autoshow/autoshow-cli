@@ -53,17 +53,12 @@ const getAccessToken = async (): Promise<string> => {
   return result.stdout.trim()
 }
 
-const resolveProcessorId = (model: string): string | undefined => {
-  if (model === 'layout-parser') {
-    return normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID'))
-  }
-  return normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID'))
-}
+const resolveProcessorId = (): string | undefined =>
+  normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID'))
 
 type SavedDocaiDefaults = {
   location?: string | undefined
   ocrProcessorId?: string | undefined
-  layoutProcessorId?: string | undefined
   bucket?: string | undefined
 }
 
@@ -73,19 +68,18 @@ const readSavedDocaiDefaults = async (): Promise<SavedDocaiDefaults> => {
   return {
     location: normalizeString(ocr?.gcloudDocaiLocation),
     ocrProcessorId: normalizeString(ocr?.gcloudDocaiOcrProcessorId),
-    layoutProcessorId: normalizeString(ocr?.gcloudDocaiLayoutProcessorId),
     bucket: normalizeString(ocr?.gcloudDocaiBucket)
   }
 }
 
-export const ensureGcloudDocaiSetup = async (model: string): Promise<GcloudDocaiRuntimeConfig> => {
+export const ensureGcloudDocaiSetup = async (): Promise<GcloudDocaiRuntimeConfig> => {
   if (!hasGcloudCli()) {
     throw new Error('gcloud CLI is required for Google Cloud Document AI OCR. Install the gcloud CLI and rerun `bun as setup --gcloud`.')
   }
 
   const envProjectId = normalizeString(readEnv('AUTOSHOW_GCLOUD_PROJECT'))
   const envLocation = normalizeString(readEnv('AUTOSHOW_GCLOUD_DOCAI_LOCATION'))
-  const envProcessorId = resolveProcessorId(model)
+  const envProcessorId = resolveProcessorId()
   const envBucket = normalizeString(readEnv('AUTOSHOW_GCLOUD_BUCKET'))
   const shouldReadSavedDefaults = !envLocation || !envProcessorId || !envBucket
   const savedDefaults = shouldReadSavedDefaults ? await readSavedDocaiDefaults() : {}
@@ -96,14 +90,10 @@ export const ensureGcloudDocaiSetup = async (model: string): Promise<GcloudDocai
 
   const location = envLocation ?? savedDefaults.location ?? 'us'
 
-  const processorId = envProcessorId
-    ?? (model === 'layout-parser' ? savedDefaults.layoutProcessorId : savedDefaults.ocrProcessorId)
+  const processorId = envProcessorId ?? savedDefaults.ocrProcessorId
   if (!processorId) {
-    const envVar = model === 'layout-parser'
-      ? 'AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID'
-      : 'AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID'
     throw new Error(
-      `${envVar} or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ${model}. ` +
+      'AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ocr. ' +
       'Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or discover the processor, then set the printed environment values or save the processor ID explicitly.'
     )
   }

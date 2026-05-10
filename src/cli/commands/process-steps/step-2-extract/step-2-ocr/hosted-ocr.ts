@@ -646,11 +646,11 @@ export const runHostedOcr = async (
 
   if (hasGcloudDocai(opts)) {
     const ocrModel = opts.gcloudDocaiModel as string
-    await ensureGcloudDocaiSetup(ocrModel)
+    await ensureGcloudDocaiSetup()
     warnHostedOnlyFlags('gcloud-docai', opts)
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Google Cloud Document AI', async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
-      const run = await runGcloudDocai(inputPath, inputMetadata, ocrModel)
+      const run = await runGcloudDocai(inputPath, inputMetadata)
       return {
         pages: run.pages,
         extractionMethod: run.extractionMethod,

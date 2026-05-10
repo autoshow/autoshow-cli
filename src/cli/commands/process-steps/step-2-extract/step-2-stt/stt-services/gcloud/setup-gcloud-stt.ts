@@ -22,7 +22,6 @@ import {
   verifyServiceApiEnabled
 } from './gcloud-cli'
 import {
-  ensureDocumentAiLayoutProcessor,
   ensureDocumentAiOcrProcessor,
   ensureGcloudDocaiBucket,
   readSavedGcloudDocaiDefaults
@@ -137,7 +136,6 @@ const persistGcloudSetupDefaults = async (
     configPath: string
     location: string
     ocrProcessorId: string
-    layoutProcessorId: string
     bucket: string
   }
 ): Promise<string> => {
@@ -164,7 +162,6 @@ const persistGcloudSetupDefaults = async (
             : [GCLOUD_DOCAI_DEFAULT_MODEL],
           gcloudDocaiLocation: options.location,
           gcloudDocaiOcrProcessorId: options.ocrProcessorId,
-          gcloudDocaiLayoutProcessorId: options.layoutProcessorId,
           gcloudDocaiBucket: options.bucket
         }
       },
@@ -201,8 +198,6 @@ export const setupGcloudStt = async (
   const folderId = normalizeString(options.folderId)
   let docaiProcessorDetail: string | undefined
   let docaiOcrProcessorId: string | undefined
-  let docaiLayoutProcessorDetail: string | undefined
-  let docaiLayoutProcessorId: string | undefined
   let gcsBucketDetail: string | undefined
   let gcsBucketName: string | undefined
   let gcsBucketOk = false
@@ -288,14 +283,6 @@ export const setupGcloudStt = async (
     )
     docaiProcessorDetail = processor.detail
     docaiOcrProcessorId = processor.processorId
-    const layoutProcessor = await ensureDocumentAiLayoutProcessor(
-      state.projectId,
-      docaiLocation,
-      tokenState.accessToken,
-      savedDocai.layoutProcessorId
-    )
-    docaiLayoutProcessorDetail = layoutProcessor.detail
-    docaiLayoutProcessorId = layoutProcessor.processorId
     const bucket = await ensureGcloudDocaiBucket(
       state.projectId,
       docaiLocation,
@@ -305,12 +292,11 @@ export const setupGcloudStt = async (
     gcsBucketName = bucket.bucket
     gcsBucketOk = bucket.ok
 
-    if (docaiOcrProcessorId && docaiLayoutProcessorId && gcsBucketName && gcsBucketOk) {
+    if (docaiOcrProcessorId && gcsBucketName && gcsBucketOk) {
       savedConfigPath = await persistGcloudSetupDefaults({
         configPath: savedDocai.configPath,
         location: docaiLocation,
         ocrProcessorId: docaiOcrProcessorId,
-        layoutProcessorId: docaiLayoutProcessorId,
         bucket: gcsBucketName
       })
     }
@@ -332,7 +318,6 @@ export const setupGcloudStt = async (
           { status: state.documentAiApiEnabled === true ? 'OK' : 'MISSING', check: 'documentai.googleapis.com', detail: state.details.documentAiApi },
           { status: state.storageApiEnabled === true ? 'OK' : 'MISSING', check: 'storage.googleapis.com', detail: state.details.storageApi },
           ...(docaiProcessorDetail ? [{ status: 'OK', check: 'Document AI OCR processor', detail: docaiProcessorDetail }] : []),
-          ...(docaiLayoutProcessorDetail ? [{ status: 'OK', check: 'Document AI Layout Parser processor', detail: docaiLayoutProcessorDetail }] : []),
           ...(gcsBucketDetail ? [{ status: gcsBucketOk ? 'OK' : 'MISSING', check: 'GCS Document AI bucket', detail: gcsBucketDetail }] : [])
         ]
       : [])
@@ -354,7 +339,6 @@ export const setupGcloudStt = async (
         { setting: 'ocr model', value: GCLOUD_DOCAI_DEFAULT_MODEL },
         { setting: 'ocr location', value: docaiLocation },
         { setting: 'ocr processor', value: docaiOcrProcessorId ?? 'not configured' },
-        { setting: 'layout parser', value: docaiLayoutProcessorId ?? 'not configured' },
         { setting: 'gcs bucket', value: gcsBucketName ?? 'not configured' },
         { setting: 'stt transport', value: 'direct REST Recognize requests via us-speech.googleapis.com' },
         { setting: 'ocr transport', value: 'Document AI sync and batch APIs with GCS staging for multi-page or large files' },
@@ -366,7 +350,6 @@ export const setupGcloudStt = async (
       ...(state.projectId ? [`export AUTOSHOW_GCLOUD_PROJECT=${state.projectId}`] : []),
       `export AUTOSHOW_GCLOUD_DOCAI_LOCATION=${docaiLocation}`,
       ...(docaiOcrProcessorId ? [`export AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID=${docaiOcrProcessorId}`] : []),
-      ...(docaiLayoutProcessorId ? [`export AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID=${docaiLayoutProcessorId}`] : []),
       ...(gcsBucketName ? [`export AUTOSHOW_GCLOUD_BUCKET=${gcsBucketName}`] : [])
     ]
     if (envCommands.length > 0) {

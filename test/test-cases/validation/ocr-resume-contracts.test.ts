@@ -102,16 +102,16 @@ describe('OCR resume contracts', () => {
   test('primary OCR service/model exact match succeeds', () => {
     const targets: OcrTarget[] = [
       { service: 'openai', model: 'gpt-5.4-nano' },
-      { service: 'openai', model: 'gpt-5.4-mini' }
+      { service: 'openai', model: 'gpt-5.4' }
     ]
 
-    expect(resolvePrimaryOcrTarget(targets, 'openai/gpt-5.4-mini')).toEqual(targets[1])
+    expect(resolvePrimaryOcrTarget(targets, 'openai/gpt-5.4')).toEqual(targets[1])
   })
 
   test('primary OCR unknown or ambiguous values fail', () => {
     const targets: OcrTarget[] = [
       { service: 'openai', model: 'gpt-5.4-nano' },
-      { service: 'openai', model: 'gpt-5.4-mini' }
+      { service: 'openai', model: 'gpt-5.4' }
     ]
 
     expect(() => resolvePrimaryOcrTarget(targets, 'gemini')).toThrow('--primary-ocr gemini does not match')

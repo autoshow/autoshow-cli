@@ -30,15 +30,22 @@ test('extract rejects write LLM provider flags as unknown flags', async () => {
 
 test('extract rejects removed OpenAI OCR models', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-pro', '--price'],
-    'Invalid --openai-ocr model "gpt-5.4-pro". Allowed values: gpt-5.4, gpt-5.4-mini, gpt-5.4-nano'
+    ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-mini', '--price'],
+    'Invalid --openai-ocr model "gpt-5.4-mini". Allowed values: gpt-5.4, gpt-5.4-nano'
   )
 })
 
-test('extract rejects removed Anthropic Sonnet OCR model', async () => {
+test('extract rejects removed Anthropic Opus OCR model', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-sonnet-4-6', '--price'],
-    'Invalid --anthropic-ocr model "claude-sonnet-4-6". Allowed values: claude-haiku-4-5, claude-opus-4-7'
+    ['extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-opus-4-7', '--price'],
+    'Invalid --anthropic-ocr model "claude-opus-4-7". Allowed values: claude-haiku-4-5'
+  )
+})
+
+test('extract rejects removed Google Document AI layout parser model', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--gcloud-docai', 'layout-parser', '--price'],
+    'Invalid --gcloud-docai model "layout-parser". Allowed values: ocr'
   )
 })
 

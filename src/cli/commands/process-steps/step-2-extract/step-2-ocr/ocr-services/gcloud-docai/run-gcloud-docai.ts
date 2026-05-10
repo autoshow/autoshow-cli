@@ -146,13 +146,12 @@ const buildPageResults = (document: v.InferOutput<typeof DocaiDocumentSchema>): 
     const page = document.pages[i]!
     const pageNumber = page.pageNumber ?? (i + 1)
 
-    // Try page-level layout first (used by OCR processor)
+    // Try page-level layout first, then fall back to nested anchors when needed.
     const segments = page.layout?.textAnchor?.textSegments
     let pageText = segments && segments.length > 0
       ? extractTextFromSegments(segments, fullText)
       : ''
 
-    // Fall back to paragraph/block/line-level anchors (used by Layout Parser)
     if (!pageText && page.paragraphs && page.paragraphs.length > 0) {
       pageText = extractTextFromBlocks(page.paragraphs, fullText)
     }
@@ -175,8 +174,7 @@ const buildPageResults = (document: v.InferOutput<typeof DocaiDocumentSchema>): 
 
 const runSyncDocai = async (
   filePath: string,
-  config: GcloudDocaiRuntimeConfig,
-  model: string
+  config: GcloudDocaiRuntimeConfig
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
@@ -187,13 +185,11 @@ const runSyncDocai = async (
       mimeType,
       content: base64
     },
-    ...(model === 'ocr' ? {
-      processOptions: {
-        ocrConfig: {
-          enableNativePdfParsing: true
-        }
+    processOptions: {
+      ocrConfig: {
+        enableNativePdfParsing: true
       }
-    } : {})
+    }
   }
 
   const endpoint = buildEndpointUrl(config, 'process')
@@ -219,8 +215,7 @@ const runSyncDocai = async (
 
 const runBatchDocai = async (
   filePath: string,
-  config: GcloudDocaiRuntimeConfig,
-  model: string
+  config: GcloudDocaiRuntimeConfig
 ): Promise<{ pages: PageResult[], totalPages: number }> => {
   const s3Key = `autoshow-docai/${crypto.randomUUID()}/${basename(filePath)}`
   const gcsUri = `gs://${config.bucket}/${s3Key}`
@@ -246,13 +241,11 @@ const runBatchDocai = async (
           gcsUri: outputPrefix
         }
       },
-      ...(model === 'ocr' ? {
-        processOptions: {
-          ocrConfig: {
-            enableNativePdfParsing: true
-          }
+      processOptions: {
+        ocrConfig: {
+          enableNativePdfParsing: true
         }
-      } : {})
+      }
     }
 
     const endpoint = buildEndpointUrl(config, 'batchProcess')
@@ -352,14 +345,13 @@ const runBatchDocai = async (
 
 export const runGcloudDocai = async (
   filePath: string,
-  step1Metadata: DocumentMetadata,
-  model: string
+  step1Metadata: DocumentMetadata
 ): Promise<{
   pages: PageResult[]
   extractionMethod: 'gcloud-docai'
   totalPages: number
 }> => {
-  const config = await ensureGcloudDocaiSetup(model)
+  const config = await ensureGcloudDocaiSetup()
   const fileSize = Bun.file(filePath).size
   const isPdf = step1Metadata.format === 'pdf'
   const isTiff = step1Metadata.format === 'tif'
@@ -380,10 +372,10 @@ export const runGcloudDocai = async (
       )
     }
 
-    const result = await runBatchDocai(filePath, config, model)
+    const result = await runBatchDocai(filePath, config)
     return { ...result, extractionMethod: 'gcloud-docai' }
   }
 
-  const result = await runSyncDocai(filePath, config, model)
+  const result = await runSyncDocai(filePath, config)
   return { ...result, extractionMethod: 'gcloud-docai' }
 }

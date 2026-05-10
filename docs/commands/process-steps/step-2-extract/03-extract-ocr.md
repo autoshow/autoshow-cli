@@ -260,7 +260,7 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 | Option | Value |
 |--------|-------|
 | Selector | `--openai-ocr <model>` |
-| Models | cheapest supported model, or `gpt-5.4-nano` |
+| Models | `gpt-5.4`, `gpt-5.4-nano` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
@@ -274,7 +274,7 @@ OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when Im
 | Option | Value |
 |--------|-------|
 | Selector | `--anthropic-ocr <model>` |
-| Models | cheapest supported model, or `claude-haiku-4-5`, `claude-opus-4-7` |
+| Models | `claude-haiku-4-5` |
 | Direct input support | Standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
@@ -346,14 +346,14 @@ For async inputs, AutoShow resolves the region from `--aws-region`, saved config
 | Option | Value |
 |--------|-------|
 | Selector | `--gcloud-docai <model>` |
-| Models | `ocr`, `layout-parser` |
+| Models | `ocr` |
 | Setup | `bun as setup --gcloud --gcloud-project PROJECT_ID` |
 
 ```bash
 bun as extract input/examples/document/1-document.pdf --gcloud-docai ocr
 ```
 
-Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use. The setup command also creates or reuses the `layout-parser` processor and saves `gcloudDocaiLayoutProcessorId`.
+Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use.
 
 ## OCR Notes
 

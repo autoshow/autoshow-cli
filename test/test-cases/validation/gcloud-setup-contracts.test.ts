@@ -14,7 +14,6 @@ const envKeys = [
   'AUTOSHOW_GCLOUD_PROJECT',
   'AUTOSHOW_GCLOUD_DOCAI_LOCATION',
   'AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID',
-  'AUTOSHOW_GCLOUD_DOCAI_LAYOUT_PROCESSOR_ID',
   'AUTOSHOW_GCLOUD_BUCKET'
 ]
 const originalFetch = globalThis.fetch
@@ -105,14 +104,13 @@ describe('gcloud setup contracts', () => {
     const { bin, log } = await writeFakeGcloud(dir)
     process.env['AUTOSHOW_GCLOUD_BIN'] = bin
 
-    const fetchCalls: Array<{ url: string, method: string }> = []
+    const fetchCalls: Array<{ url: string, method: string, body: string }> = []
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = input.toString()
-      fetchCalls.push({ url, method: init?.method ?? 'GET' })
+      const body = typeof init?.body === 'string' ? init.body : ''
+      fetchCalls.push({ url, method: init?.method ?? 'GET', body })
       if (init?.method === 'POST') {
-        const body = typeof init.body === 'string' ? init.body : ''
-        const processorId = body.includes('LAYOUT_PARSER_PROCESSOR') ? 'layout-created' : 'processor-created'
-        return Response.json({ name: `projects/test-project/locations/us/processors/${processorId}` })
+        return Response.json({ name: 'projects/test-project/locations/us/processors/processor-created' })
       }
       return Response.json({ processors: [] })
     }) as typeof fetch
@@ -129,7 +127,10 @@ describe('gcloud setup contracts', () => {
     expect(commands).toContain('services enable documentai.googleapis.com')
     expect(commands).toContain('services enable storage.googleapis.com')
     expect(commands).toContain('storage buckets create gs://autoshow-docai-test-project-')
-    expect(fetchCalls).toContainEqual(expect.objectContaining({ method: 'POST' }))
+    const postBodies = fetchCalls.filter((call) => call.method === 'POST').map((call) => call.body)
+    expect(postBodies).toHaveLength(1)
+    expect(postBodies[0] ?? '').toContain('OCR_PROCESSOR')
+    expect(postBodies[0] ?? '').not.toContain('LAYOUT_PARSER_PROCESSOR')
     await expect(loadConfig(configPath)).resolves.toMatchObject({
       defaults: {
         extract: {
@@ -139,8 +140,7 @@ describe('gcloud setup contracts', () => {
           ocr: {
             gcloudDocai: ['ocr'],
             gcloudDocaiLocation: 'us',
-            gcloudDocaiOcrProcessorId: 'processor-created',
-            gcloudDocaiLayoutProcessorId: 'layout-created'
+            gcloudDocaiOcrProcessorId: 'processor-created'
           }
         },
         post: {
@@ -151,10 +151,11 @@ describe('gcloud setup contracts', () => {
       }
     })
     const saved = await loadConfig(configPath)
+    expect(JSON.stringify(saved)).not.toContain('gcloudDocaiLayoutProcessorId')
     expect(saved.defaults?.extract?.ocr?.gcloudDocaiBucket).toMatch(/^autoshow-docai-test-project-[a-f0-9]{8}$/)
   })
 
-  test('reuses saved Document AI processor and bucket values while filling missing setup defaults', async () => {
+  test('reuses saved Document AI OCR processor and bucket values while filling missing setup defaults', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-gcloud-setup-saved-'))
     tempDirs.push(dir)
     const configPath = join(dir, 'autoshow.json')
@@ -235,7 +236,7 @@ describe('gcloud setup contracts', () => {
     process.env['AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID'] = 'env-processor'
     process.env['AUTOSHOW_GCLOUD_BUCKET'] = 'env-bucket'
 
-    await expect(ensureGcloudDocaiSetup('ocr')).resolves.toMatchObject({
+    await expect(ensureGcloudDocaiSetup()).resolves.toMatchObject({
       projectId: 'env-project',
       location: 'eu',
       processorId: 'env-processor',

@@ -84,21 +84,6 @@
           "completionTokensPerPage": 458.25
         }
       },
-      "gpt-5.4-mini": {
-        "description": "GPT-5.4 mini OCR",
-        "costPerMInputTokensUSD": 0.75,
-        "costPerMOutputTokensUSD": 4.5,
-        "costPerMInputTokensCents": 75,
-        "costPerMOutputTokensCents": 450,
-        "limits": {
-          "pdfBytes": 52428800,
-          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
-        },
-        "estimation": {
-          "promptTokensPerPage": 3109,
-          "completionTokensPerPage": 460.25
-        }
-      },
       "gpt-5.4-nano": {
         "description": "GPT-5.4 nano OCR",
         "costPerMInputTokensUSD": 0.2,
@@ -137,21 +122,6 @@
           "msPerPage": 7000,
           "promptTokensPerPage": 1657.5,
           "completionTokensPerPage": 474.5
-        }
-      },
-      "claude-opus-4-7": {
-        "description": "Claude Opus 4.7 OCR",
-        "costPerMInputTokensUSD": 5,
-        "costPerMOutputTokensUSD": 25,
-        "costPerMInputTokensCents": 500,
-        "costPerMOutputTokensCents": 2500,
-        "limits": {
-          "imageBytes": 5242880,
-          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
-        },
-        "estimation": {
-          "promptTokensPerPage": 1681,
-          "completionTokensPerPage": 595.25
         }
       }
     }
@@ -290,21 +260,6 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerPage": 1500
-        }
-      },
-      "layout-parser": {
-        "description": "Google Cloud Document AI Layout Parser processor",
-        "costPer1kPagesUSD": 10,
-        "costPer1kPagesCents": 1000,
-        "limits": {
-          "pdfBytes": 20971520,
-          "imageBytes": 20971520,
-          "pageCount": 2000,
-          "notes": "Sync API: 20 MB per request. Batch API: 1 GB per file, 50 GB per batch, 2000 pages per batch."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 2000
         }
       }
     }
