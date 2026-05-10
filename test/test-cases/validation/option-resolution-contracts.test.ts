@@ -259,7 +259,7 @@ describe('option resolution contracts', () => {
     expect(glmDefault).toBeDefined()
     expect(kimiDefault).toBe('kimi-k2.6')
     expect(deepgramDefault).toBeDefined()
-    expect(deepinfraOcrDefault).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
+    expect(deepinfraOcrDefault).toBe('PaddlePaddle/PaddleOCR-VL-0.9B')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
     expect(speechifyTtsDefault).toBe('simba-english')
     expect(gcloudTtsDefault).toBe('standard')

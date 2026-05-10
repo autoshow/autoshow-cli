@@ -200,7 +200,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
-    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
+    expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('PaddlePaddle/PaddleOCR-VL-0.9B')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
@@ -757,8 +757,8 @@ describe('price mode contracts', () => {
       provider: 'openai',
       model: 'gpt-5.4-nano',
       pageCount: 2,
-      promptTokens: 8000,
-      completionTokens: 2000,
+      promptTokens: 6152,
+      completionTokens: 579,
       estimateType: 'heuristic'
     })
     expect(cost.totalCost).toBe(
@@ -812,8 +812,8 @@ describe('price mode contracts', () => {
     })
     expect(predicted).toMatchObject({
       pageCount: 2,
-      promptTokens: 8000,
-      completionTokens: 2000,
+      promptTokens: 6152,
+      completionTokens: 579,
       estimateType: 'heuristic'
     })
     expect(actualInputs).toMatchObject({
@@ -870,8 +870,8 @@ describe('price mode contracts', () => {
     expect(fallbackEstimated.steps[0]).toMatchObject({
       provider: 'openai',
       model: 'gpt-5.4-nano',
-      promptTokens: 8000,
-      completionTokens: 2000
+      promptTokens: 6152,
+      completionTokens: 579
     })
   })
 })

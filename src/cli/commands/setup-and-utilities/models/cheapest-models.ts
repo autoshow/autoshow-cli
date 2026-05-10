@@ -10,6 +10,9 @@ const DEFAULT_LOCAL_MODEL_BY_FLAG = {
   'kitten-tts': 'kitten-tts-nano-0.8-int8',
 } as const satisfies Record<string, string>
 
+const DEFAULT_OCR_INPUT_TOKENS_PER_PAGE = 4000
+const DEFAULT_OCR_OUTPUT_TOKENS_PER_PAGE = 1000
+
 const runtimeRank = (model: string): number => {
   const lower = model.toLowerCase()
   const idx = PERFORMANCE_TIE_BREAKERS.findIndex(token => lower.includes(token))
@@ -87,16 +90,22 @@ export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' |
 
   return selectCheapestRegistryModel(serviceConfig.models, (model) => {
     if (typeof model.costPer1kPagesCents === 'number') {
-      return model.costPer1kPagesCents
+      return model.costPer1kPagesCents / 1000
     }
     if (typeof model.costPer1kPagesUSD === 'number') {
-      return model.costPer1kPagesUSD * 100
+      return (model.costPer1kPagesUSD * 100) / 1000
     }
     if (typeof model.costPerMInputTokensCents === 'number' && typeof model.costPerMOutputTokensCents === 'number') {
-      return model.costPerMInputTokensCents + model.costPerMOutputTokensCents
+      const promptTokensPerPage = model.estimation?.promptTokensPerPage ?? DEFAULT_OCR_INPUT_TOKENS_PER_PAGE
+      const completionTokensPerPage = model.estimation?.completionTokensPerPage ?? DEFAULT_OCR_OUTPUT_TOKENS_PER_PAGE
+      return (promptTokensPerPage / 1_000_000) * model.costPerMInputTokensCents
+        + (completionTokensPerPage / 1_000_000) * model.costPerMOutputTokensCents
     }
     if (typeof model.costPerMInputTokensUSD === 'number' && typeof model.costPerMOutputTokensUSD === 'number') {
-      return (model.costPerMInputTokensUSD + model.costPerMOutputTokensUSD) * 100
+      const promptTokensPerPage = model.estimation?.promptTokensPerPage ?? DEFAULT_OCR_INPUT_TOKENS_PER_PAGE
+      const completionTokensPerPage = model.estimation?.completionTokensPerPage ?? DEFAULT_OCR_OUTPUT_TOKENS_PER_PAGE
+      return (promptTokensPerPage / 1_000_000) * (model.costPerMInputTokensUSD * 100)
+        + (completionTokensPerPage / 1_000_000) * (model.costPerMOutputTokensUSD * 100)
     }
     return Number.POSITIVE_INFINITY
   })

@@ -35,7 +35,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3462
+          "msPerPage": 3462,
+          "promptTokensPerPage": 2403,
+          "completionTokensPerPage": 434.5
         }
       }
     }
@@ -56,7 +58,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 14300
+          "msPerPage": 14300,
+          "promptTokensPerPage": 4262,
+          "completionTokensPerPage": 471
         }
       }
     }
@@ -74,6 +78,10 @@
         "limits": {
           "pdfBytes": 52428800,
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 3076,
+          "completionTokensPerPage": 458.25
         }
       },
       "gpt-5.4-mini": {
@@ -85,6 +93,10 @@
         "limits": {
           "pdfBytes": 52428800,
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 3109,
+          "completionTokensPerPage": 460.25
         }
       },
       "gpt-5.4-nano": {
@@ -99,7 +111,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 5793
+          "msPerPage": 5793,
+          "promptTokensPerPage": 3076,
+          "completionTokensPerPage": 289.5
         }
       }
     }
@@ -120,7 +134,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 7000
+          "msPerPage": 7000,
+          "promptTokensPerPage": 1657.5,
+          "completionTokensPerPage": 474.5
         }
       },
       "claude-opus-4-7": {
@@ -132,6 +148,10 @@
         "limits": {
           "imageBytes": 5242880,
           "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "promptTokensPerPage": 1681,
+          "completionTokensPerPage": 595.25
         }
       }
     }
@@ -151,6 +171,10 @@
           "imageBytes": 2147483648,
           "pageCount": 1000,
           "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        },
+        "estimation": {
+          "promptTokensPerPage": 570.25,
+          "completionTokensPerPage": 443.75
         }
       },
       "gemini-3.1-flash-lite-preview": {
@@ -167,7 +191,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3280
+          "msPerPage": 3280,
+          "promptTokensPerPage": 570.25,
+          "completionTokensPerPage": 427.5
         }
       }
     }
@@ -188,7 +214,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 4000
+          "msPerPage": 4000,
+          "promptTokensPerPage": 346,
+          "completionTokensPerPage": 505.5
         }
       },
       "Qwen/Qwen3-VL-235B-A22B-Instruct": {
@@ -203,7 +231,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 20000
+          "msPerPage": 20000,
+          "promptTokensPerPage": 7981,
+          "completionTokensPerPage": 472.5
         }
       },
       "Qwen/Qwen3-VL-30B-A3B-Instruct": {
@@ -218,7 +248,9 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 14428
+          "msPerPage": 14428,
+          "promptTokensPerPage": 7981,
+          "completionTokensPerPage": 471.5
         }
       }
     }

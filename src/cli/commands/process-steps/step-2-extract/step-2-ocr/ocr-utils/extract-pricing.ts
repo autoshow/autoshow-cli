@@ -5,26 +5,39 @@ import { writeFile, unlink } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateKimiOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { getExtractEstimation, getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.gif', '.bmp'] as const
 const DEFAULT_EXTRACT_PAGE_COUNT = 1
 const FIRECRAWL_MODEL = 'firecrawl'
 export const OCR_INPUT_TOKENS_PER_PAGE = 4000
 export const OCR_OUTPUT_TOKENS_PER_PAGE = 1000
-export const OCR_TOKEN_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual OCR cost is computed from response usage after execution when available.'
-const OPENAI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
-export const ANTHROPIC_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
-export const GEMINI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual Gemini OCR cost is computed from response usage after execution.'
-export const GLM_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual GLM OCR cost is computed from response usage after execution.'
-export const DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE = OCR_INPUT_TOKENS_PER_PAGE
-export const DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE = OCR_OUTPUT_TOKENS_PER_PAGE
-export const DEEPINFRA_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual DeepInfra OCR cost is computed from response usage after execution.'
-export const KIMI_OCR_PROMPT_TOKENS_PER_PAGE = OCR_INPUT_TOKENS_PER_PAGE
-export const KIMI_OCR_COMPLETION_TOKENS_PER_PAGE = OCR_OUTPUT_TOKENS_PER_PAGE
-export const KIMI_OCR_PRICE_NOTE = 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual Kimi OCR cost is computed from response usage after execution. AutoShow uses Kimi cache-miss input pricing for conservative estimates.'
+export const OCR_TOKEN_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed OCR benchmark usage. Actual OCR cost is computed from response usage after execution when available.'
+const OPENAI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed OpenAI OCR benchmark usage. Actual OpenAI OCR cost is computed from response usage after execution.'
+export const ANTHROPIC_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Anthropic OCR benchmark usage. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+export const GEMINI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Gemini OCR benchmark usage. Actual Gemini OCR cost is computed from response usage after execution.'
+export const GLM_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed GLM OCR benchmark usage. Actual GLM OCR cost is computed from response usage after execution.'
+export const DEEPINFRA_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed DeepInfra OCR benchmark usage. Actual DeepInfra OCR cost is computed from response usage after execution.'
+export const KIMI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Kimi OCR benchmark usage. Actual Kimi OCR cost is computed from response usage after execution. AutoShow uses Kimi cache-miss input pricing for conservative estimates.'
 
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
+
+type TokenOcrProvider = 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra'
+
+export const estimateOcrTokenUsage = (
+  provider: TokenOcrProvider,
+  model: string,
+  pageCount: number
+): { promptTokens: number, completionTokens: number } => {
+  const estimation = getExtractEstimation(provider, model)
+  const promptTokensPerPage = estimation.promptTokensPerPage ?? OCR_INPUT_TOKENS_PER_PAGE
+  const completionTokensPerPage = estimation.completionTokensPerPage ?? OCR_OUTPUT_TOKENS_PER_PAGE
+
+  return {
+    promptTokens: Math.max(0, Math.round(pageCount * promptTokensPerPage)),
+    completionTokens: Math.max(0, Math.round(pageCount * completionTokensPerPage))
+  }
+}
 
 const hasImageExtension = (input: string): boolean => {
   const ext = extname(input).toLowerCase()
@@ -154,8 +167,7 @@ export const estimateGlmOcrCost = async (
   const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 3
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
-  const promptTokens = pageCount * OCR_INPUT_TOKENS_PER_PAGE
-  const completionTokens = pageCount * OCR_OUTPUT_TOKENS_PER_PAGE
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('glm', model, pageCount)
 
   return {
     provider: 'glm',
@@ -192,8 +204,7 @@ export const estimateOpenAIOcrCost = async (
   const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 125
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
-  const promptTokens = pageCount * OCR_INPUT_TOKENS_PER_PAGE
-  const completionTokens = pageCount * OCR_OUTPUT_TOKENS_PER_PAGE
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('openai', model, pageCount)
 
   return {
     provider: 'openai',
@@ -231,8 +242,7 @@ export const estimateAnthropicOcrCost = async (
   const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 500
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
-  const promptTokens = pageCount * OCR_INPUT_TOKENS_PER_PAGE
-  const completionTokens = pageCount * OCR_OUTPUT_TOKENS_PER_PAGE
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('anthropic', model, pageCount)
 
   return {
     provider: 'anthropic',
@@ -269,8 +279,7 @@ export const estimateGeminiOcrCost = async (
   const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 150
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
-  const promptTokens = pageCount * OCR_INPUT_TOKENS_PER_PAGE
-  const completionTokens = pageCount * OCR_OUTPUT_TOKENS_PER_PAGE
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('gemini', model, pageCount)
 
   return {
     provider: 'gemini',
@@ -307,8 +316,7 @@ export const estimateDeepinfraOcrCost = async (
   const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 19
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
-  const promptTokens = pageCount * DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE
-  const completionTokens = pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('deepinfra', model, pageCount)
 
   return {
     provider: 'deepinfra',
@@ -346,8 +354,7 @@ export const estimateKimiOcrCost = async (
   const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 400
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
-  const promptTokens = pageCount * KIMI_OCR_PROMPT_TOKENS_PER_PAGE
-  const completionTokens = pageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('kimi', model, pageCount)
 
   return {
     provider: 'kimi',

@@ -181,7 +181,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
-| `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use `Qwen/Qwen3-VL-30B-A3B-Instruct` |
+| `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use the cheapest supported model |
 | `--aws-textract <model>` | Use AWS Textract; omit the value to use the cheapest supported model |
 | `--gcloud-docai <model>` | Use Google Cloud Document AI; omit the value to use the cheapest supported model |
 | `--dpi <n>` | Render DPI for OCR pages |

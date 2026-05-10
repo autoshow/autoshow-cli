@@ -345,15 +345,15 @@ describe('logging contracts', () => {
       },
       cost: {
         estimated: {
-          totalCost: 0.41,
+          totalCost: 0.195415,
           steps: [{
             step: 'extract',
             provider: 'openai',
             model: 'gpt-5.4-nano',
-            cost: 0.41,
+            cost: 0.195415,
             pageCount: 2,
-            promptTokens: 8000,
-            completionTokens: 2000,
+            promptTokens: 6152,
+            completionTokens: 579,
             inputCostPer1MCents: 20,
             outputCostPer1MCents: 125,
             estimateType: 'heuristic'
@@ -377,12 +377,12 @@ describe('logging contracts', () => {
           model: 'gpt-5.4-nano',
           pages: 2,
           predictedCostInputs: {
-            costCents: 0.41,
+            costCents: 0.195415,
             pageCount: 2,
             inputMetric: 'tokens',
-            inputValue: 10000,
-            promptTokens: 8000,
-            completionTokens: 2000,
+            inputValue: 6731,
+            promptTokens: 6152,
+            completionTokens: 579,
             estimateType: 'heuristic'
           },
           actualCostInputs: {
@@ -398,8 +398,8 @@ describe('logging contracts', () => {
             outputCostPer1MCents: 125
           },
           delta: {
-            costCents: -0.1025,
-            percent: -25
+            costCents: 0.11208499999999999,
+            percent: 57.35741882659979
           }
         }]
       }
@@ -409,7 +409,7 @@ describe('logging contracts', () => {
     expect(summary.runSummary?.rows[0]).toMatchObject({
       step: 'Extract',
       providerModel: 'openai/gpt-5.4-nano',
-      predictedCostCents: 0.41,
+      predictedCostCents: 0.195415,
       actualCostCents: 0.3075
     })
     expect(summary.promptUsage?.rows[0]).toMatchObject({
@@ -420,11 +420,11 @@ describe('logging contracts', () => {
     expect(summary.ocrCostCalculation?.rows[0]).toMatchObject({
       providerModel: 'openai/gpt-5.4-nano',
       pages: 2,
-      predictedInputs: '8000/2000 tokens',
+      predictedInputs: '6152/579 tokens',
       actualInputs: '6000/1500 tokens',
-      predictedCostCents: 0.41,
+      predictedCostCents: 0.195415,
       actualCostCents: 0.3075,
-      deltaCents: -0.1025
+      deltaCents: 0.11208499999999999
     })
 
     const { logger, writes } = createCapturingLogger()

@@ -13,17 +13,12 @@ import {
   getVideoEstimation
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
-  DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
   DEEPINFRA_OCR_PRICE_NOTE,
-  DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
   GEMINI_OCR_PRICE_NOTE,
   GLM_OCR_PRICE_NOTE,
-  KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
   KIMI_OCR_PRICE_NOTE,
-  KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
-  OCR_INPUT_TOKENS_PER_PAGE,
-  OCR_OUTPUT_TOKENS_PER_PAGE,
-  OPENAI_OCR_PRICE_NOTE
+  OPENAI_OCR_PRICE_NOTE,
+  estimateOcrTokenUsage
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
@@ -205,8 +200,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'kimi' as const,
               model: input.kimiOcrModel,
               pageCount: input.extractPageCount,
-              promptTokens: input.extractPageCount * KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
-              completionTokens: input.extractPageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
               estimateType: 'heuristic' as const,
               note: KIMI_OCR_PRICE_NOTE
             }]
@@ -226,7 +219,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               model: input.anthropicOcrModel,
               pageCount: input.extractPageCount,
               estimateType: 'heuristic' as const,
-              note: 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+              note: 'Model-specific heuristic token estimate based on observed Anthropic OCR benchmark usage. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
             }]
           : []),
         ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
@@ -243,8 +236,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'deepinfra' as const,
               model: input.deepinfraOcrModel,
               pageCount: input.extractPageCount,
-              promptTokens: input.extractPageCount * DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
-              completionTokens: input.extractPageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
               estimateType: 'heuristic' as const,
               note: DEEPINFRA_OCR_PRICE_NOTE
             }]
@@ -279,8 +270,11 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     const pageCount = target.pageCount ?? input.extractPageCount ?? 0
     const hasExactPromptTokens = typeof target.promptTokens === 'number'
     const hasExactCompletionTokens = typeof target.completionTokens === 'number'
-    const promptTokens = hasExactPromptTokens ? target.promptTokens as number : pageCount * OCR_INPUT_TOKENS_PER_PAGE
-    const completionTokens = hasExactCompletionTokens ? target.completionTokens as number : pageCount * OCR_OUTPUT_TOKENS_PER_PAGE
+    const heuristicTokens = hasExactPromptTokens && hasExactCompletionTokens
+      ? undefined
+      : estimateOcrTokenUsage(target.provider, target.model, pageCount)
+    const promptTokens = hasExactPromptTokens ? target.promptTokens as number : heuristicTokens?.promptTokens ?? 0
+    const completionTokens = hasExactCompletionTokens ? target.completionTokens as number : heuristicTokens?.completionTokens ?? 0
     const cost = applyCostMultiplier(
       (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
       + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),

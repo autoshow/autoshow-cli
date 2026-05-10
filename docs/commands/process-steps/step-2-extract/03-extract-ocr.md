@@ -115,6 +115,8 @@ bun as extract input/examples/document/1-document.pdf --out json
 bun as extract input/examples/document/1-document.pdf --all-ocr --price
 ```
 
+For token-priced hosted OCR providers, `--price` uses model-specific input/output token heuristics from recent benchmark usage. Actual runs write provider usage to `run.json` when available, and post-run cost diagnostics use those actual token counts.
+
 ## EPUB Options
 
 ### Inspect Modes
@@ -248,7 +250,7 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 
 | Kimi OCR model | Input | Output | Price-mode page heuristic | Initial speed estimate |
 |----------------|-------|--------|---------------------------|------------------------|
-| `kimi-k2.6` | $0.95 / 1M tokens | $4.00 / 1M tokens | 4,000 input + 1,000 output tokens, about $0.0078/page or $7.80/1K pages | 6,000 ms/page |
+| `kimi-k2.6` | $0.95 / 1M tokens | $4.00 / 1M tokens | 4,262 input + 471 output tokens, about $0.0059/page or $5.93/1K pages | 14,300 ms/page |
 
 - Kimi OCR price mode uses cache-miss K2.6 input/output pricing from `project/links/kimi-general-ocr-text-links.md`. Cached input pricing is not used because OCR image requests are not cache-stable.
 - Actual Kimi OCR runs write `promptTokens` and `completionTokens` into `run.json` when the API returns usage.
@@ -313,13 +315,13 @@ DeepInfra OCR normalizes `GIF`, `BMP`, and `TIF/TIFF` inputs to `PNG` before upl
 
 DeepInfra OCR uses token pricing estimates and recorded usage when available.
 
-| DeepInfra OCR model | Input | Output | Initial speed estimate |
-|---------------------|-------|--------|------------------------|
-| `PaddlePaddle/PaddleOCR-VL-0.9B` | $0.14 / 1M tokens | $0.80 / 1M tokens | 4,000 ms/page |
-| `Qwen/Qwen3-VL-235B-A22B-Instruct` | $0.20 / 1M tokens | $0.88 / 1M tokens | 20,000 ms/page |
-| `Qwen/Qwen3-VL-30B-A3B-Instruct` | $0.15 / 1M tokens | $0.60 / 1M tokens | 10,000 ms/page |
+| DeepInfra OCR model | Input | Output | Price-mode page heuristic | Initial speed estimate |
+|---------------------|-------|--------|---------------------------|------------------------|
+| `PaddlePaddle/PaddleOCR-VL-0.9B` | $0.14 / 1M tokens | $0.80 / 1M tokens | 346 input + 506 output tokens, about $0.00045/page or $0.45/1K pages | 4,000 ms/page |
+| `Qwen/Qwen3-VL-235B-A22B-Instruct` | $0.20 / 1M tokens | $0.88 / 1M tokens | 7,981 input + 473 output tokens, about $0.0020/page or $2.01/1K pages | 20,000 ms/page |
+| `Qwen/Qwen3-VL-30B-A3B-Instruct` | $0.15 / 1M tokens | $0.60 / 1M tokens | 7,981 input + 472 output tokens, about $0.0015/page or $1.48/1K pages | 14,428 ms/page |
 
-- DeepInfra OCR price mode uses a heuristic of 4,000 input tokens plus 1,000 output tokens per page. Actual runs write `promptTokens` and `completionTokens` into `run.json` when DeepInfra returns usage.
+- DeepInfra OCR price mode uses model-specific token heuristics. Actual runs write `promptTokens` and `completionTokens` into `run.json` when DeepInfra returns usage.
 - Cached-token pricing is not used for OCR estimates because AutoShow sends direct or rendered page images and those image requests are not cache-stable.
 - DeepInfra implementation details are based on DeepInfra's [Vision & OCR](https://docs.deepinfra.com/chat/vision), [OpenAI-compatible Chat Completions](https://docs.deepinfra.com/api-reference/chat-completions/openai-chat-completions), and [OCR catalog](https://deepinfra.com/models/ocr) docs.
 

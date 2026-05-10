@@ -1,0 +1,533 @@
+{
+  "runDir": "/Users/ajc/c/as/autoshow-cli/output/2026-05-09_23-05-34-884_document",
+  "consensusExtractionPath": "/Users/ajc/c/as/autoshow-cli/output/2026-05-09_23-05-34-884_document/consensus-extraction.txt",
+  "consensusCharCount": 6989,
+  "consensusWordCount": 1337,
+  "metric": "wer",
+  "scoreFormula": "max(0, 100 * (1 - WER))",
+  "werFormula": "(Substitutions + Deletions + Insertions) / Reference Word Count",
+  "normalization": {
+    "lowercase": true,
+    "contractionsExpanded": true,
+    "abbreviationsExpanded": true,
+    "currencySymbolsExpanded": true,
+    "punctuationStripped": true
+  },
+  "local": {
+    "count": 3,
+    "providers": [
+      {
+        "providerKey": "tesseract/tesseract",
+        "provider": "tesseract",
+        "model": "tesseract",
+        "group": "local",
+        "score": 95.88631264023934,
+        "wer": 0.04113687359760658,
+        "cer": 0.021402214022140223,
+        "werBreakdown": {
+          "substitutions": 19,
+          "deletions": 12,
+          "insertions": 24,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 13,
+          "deletions": 68,
+          "insertions": 64,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1352,
+        "processingTimeMs": 6490,
+        "costCents": 0,
+        "rank": 1
+      },
+      {
+        "providerKey": "ocrmypdf/ocrmypdf",
+        "provider": "ocrmypdf",
+        "model": "ocrmypdf",
+        "group": "local",
+        "score": 95.73672400897532,
+        "wer": 0.04263275991024682,
+        "cer": 0.021549815498154982,
+        "werBreakdown": {
+          "substitutions": 22,
+          "deletions": 13,
+          "insertions": 22,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 15,
+          "deletions": 69,
+          "insertions": 62,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1350,
+        "processingTimeMs": 7916,
+        "costCents": 0,
+        "rank": 2
+      },
+      {
+        "providerKey": "paddle-ocr/paddle-ocr",
+        "provider": "paddle-ocr",
+        "model": "paddle-ocr",
+        "group": "local",
+        "score": 91.54824233358265,
+        "wer": 0.08451757666417352,
+        "cer": 0.02214022140221402,
+        "werBreakdown": {
+          "substitutions": 54,
+          "deletions": 45,
+          "insertions": 14,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 24,
+          "deletions": 96,
+          "insertions": 30,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1215,
+        "processingTimeMs": 63601,
+        "costCents": 0,
+        "rank": 3
+      }
+    ]
+  },
+  "cloud": {
+    "count": 17,
+    "providers": [
+      {
+        "providerKey": "gemini/gemini-3.1-pro-preview",
+        "provider": "gemini",
+        "model": "gemini-3.1-pro-preview",
+        "group": "cloud",
+        "score": 99.4016454749439,
+        "wer": 0.005983545250560957,
+        "cer": 0.004132841328413284,
+        "werBreakdown": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 8,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 28,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1339,
+        "processingTimeMs": 72711,
+        "costCents": 2.5862000000000003,
+        "rank": 1
+      },
+      {
+        "providerKey": "mistral/mistral-ocr-2512",
+        "provider": "mistral",
+        "model": "mistral-ocr-2512",
+        "group": "cloud",
+        "score": 99.25205684367988,
+        "wer": 0.0074794315632011965,
+        "cer": 0.005461254612546125,
+        "werBreakdown": {
+          "substitutions": 2,
+          "deletions": 0,
+          "insertions": 8,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 3,
+          "deletions": 6,
+          "insertions": 28,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1338,
+        "processingTimeMs": 6536,
+        "costCents": 0.8,
+        "rank": 2
+      },
+      {
+        "providerKey": "anthropic/claude-opus-4-7",
+        "provider": "anthropic",
+        "model": "claude-opus-4-7",
+        "group": "cloud",
+        "score": 99.17726252804788,
+        "wer": 0.008227374719521317,
+        "cer": 0.006937269372693727,
+        "werBreakdown": {
+          "substitutions": 2,
+          "deletions": 1,
+          "insertions": 8,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 15,
+          "deletions": 11,
+          "insertions": 21,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1337,
+        "processingTimeMs": 71585,
+        "costCents": 9.314499999999999,
+        "rank": 3
+      },
+      {
+        "providerKey": "gemini/gemini-3.1-flash-lite-preview",
+        "provider": "gemini",
+        "model": "gemini-3.1-flash-lite-preview",
+        "group": "cloud",
+        "score": 98.80329094988781,
+        "wer": 0.011967090501121914,
+        "cer": 0.010332103321033211,
+        "werBreakdown": {
+          "substitutions": 4,
+          "deletions": 8,
+          "insertions": 4,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 5,
+          "deletions": 51,
+          "insertions": 14,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1327,
+        "processingTimeMs": 10226,
+        "costCents": 0.313525,
+        "rank": 4
+      },
+      {
+        "providerKey": "deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "provider": "deepinfra",
+        "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "group": "cloud",
+        "score": 98.42931937172776,
+        "wer": 0.015706806282722512,
+        "cer": 0.007970479704797048,
+        "werBreakdown": {
+          "substitutions": 5,
+          "deletions": 3,
+          "insertions": 13,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 14,
+          "deletions": 14,
+          "insertions": 26,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1340,
+        "processingTimeMs": 34964,
+        "costCents": 0.8048000000000001,
+        "rank": 5
+      },
+      {
+        "providerKey": "glm/glm-ocr",
+        "provider": "glm",
+        "model": "glm-ocr",
+        "group": "cloud",
+        "score": 98.42931937172776,
+        "wer": 0.015706806282722512,
+        "cer": 0.015055350553505535,
+        "werBreakdown": {
+          "substitutions": 3,
+          "deletions": 17,
+          "insertions": 1,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 10,
+          "deletions": 88,
+          "insertions": 4,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1313,
+        "processingTimeMs": 19884,
+        "costCents": 0.03405,
+        "rank": 6
+      },
+      {
+        "providerKey": "kimi/kimi-k2.6",
+        "provider": "kimi",
+        "model": "kimi-k2.6",
+        "group": "cloud",
+        "score": 97.60658189977562,
+        "wer": 0.02393418100224383,
+        "cer": 0.00959409594095941,
+        "werBreakdown": {
+          "substitutions": 14,
+          "deletions": 4,
+          "insertions": 14,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 6,
+          "deletions": 35,
+          "insertions": 24,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1349,
+        "processingTimeMs": 47755,
+        "costCents": 2.3731600000000004,
+        "rank": 7
+      },
+      {
+        "providerKey": "anthropic/claude-haiku-4-5",
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5",
+        "group": "cloud",
+        "score": 97.60658189977562,
+        "wer": 0.02393418100224383,
+        "cer": 0.010332103321033211,
+        "werBreakdown": {
+          "substitutions": 13,
+          "deletions": 6,
+          "insertions": 13,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 5,
+          "deletions": 42,
+          "insertions": 23,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1328,
+        "processingTimeMs": 35693,
+        "costCents": 1.6119999999999999,
+        "rank": 8
+      },
+      {
+        "providerKey": "gcloud-docai/ocr",
+        "provider": "gcloud-docai",
+        "model": "ocr",
+        "group": "cloud",
+        "score": 97.5317875841436,
+        "wer": 0.02468212415856395,
+        "cer": 0.008708487084870849,
+        "werBreakdown": {
+          "substitutions": 12,
+          "deletions": 2,
+          "insertions": 19,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 14,
+          "deletions": 13,
+          "insertions": 32,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1349,
+        "processingTimeMs": 31342,
+        "costCents": 0.6,
+        "rank": 9
+      },
+      {
+        "providerKey": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "provider": "deepinfra",
+        "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "group": "cloud",
+        "score": 97.5317875841436,
+        "wer": 0.02468212415856395,
+        "cer": 0.00959409594095941,
+        "werBreakdown": {
+          "substitutions": 12,
+          "deletions": 5,
+          "insertions": 16,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 4,
+          "deletions": 30,
+          "insertions": 31,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1343,
+        "processingTimeMs": 44424,
+        "costCents": 0.59202,
+        "rank": 10
+      },
+      {
+        "providerKey": "aws-textract/analyze-document",
+        "provider": "aws-textract",
+        "model": "analyze-document",
+        "group": "cloud",
+        "score": 97.4569932685116,
+        "wer": 0.025430067314884067,
+        "cer": 0.008413284132841328,
+        "werBreakdown": {
+          "substitutions": 15,
+          "deletions": 1,
+          "insertions": 18,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 3,
+          "deletions": 15,
+          "insertions": 39,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1351,
+        "processingTimeMs": 17402,
+        "costCents": 26,
+        "rank": 11
+      },
+      {
+        "providerKey": "aws-textract/detect-text",
+        "provider": "aws-textract",
+        "model": "detect-text",
+        "group": "cloud",
+        "score": 97.4569932685116,
+        "wer": 0.025430067314884067,
+        "cer": 0.008413284132841328,
+        "werBreakdown": {
+          "substitutions": 15,
+          "deletions": 1,
+          "insertions": 18,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 3,
+          "deletions": 15,
+          "insertions": 39,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1351,
+        "processingTimeMs": 11204,
+        "costCents": 0.6,
+        "rank": 12
+      },
+      {
+        "providerKey": "openai/gpt-5.4",
+        "provider": "openai",
+        "model": "gpt-5.4",
+        "group": "cloud",
+        "score": 97.4569932685116,
+        "wer": 0.025430067314884067,
+        "cer": 0.01151291512915129,
+        "werBreakdown": {
+          "substitutions": 13,
+          "deletions": 8,
+          "insertions": 13,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 5,
+          "deletions": 50,
+          "insertions": 23,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1333,
+        "processingTimeMs": 32575,
+        "costCents": 5.8255,
+        "rank": 13
+      },
+      {
+        "providerKey": "deepinfra/PaddlePaddle/PaddleOCR-VL-0.9B",
+        "provider": "deepinfra",
+        "model": "PaddlePaddle/PaddleOCR-VL-0.9B",
+        "group": "cloud",
+        "score": 97.00822737471952,
+        "wer": 0.029917726252804786,
+        "cer": 0.013136531365313652,
+        "werBreakdown": {
+          "substitutions": 17,
+          "deletions": 1,
+          "insertions": 22,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 9,
+          "deletions": 16,
+          "insertions": 64,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1358,
+        "processingTimeMs": 47458,
+        "costCents": 0.181136,
+        "rank": 14
+      },
+      {
+        "providerKey": "openai/gpt-5.4-mini",
+        "provider": "openai",
+        "model": "gpt-5.4-mini",
+        "group": "cloud",
+        "score": 96.8586387434555,
+        "wer": 0.031413612565445025,
+        "cer": 0.015645756457564577,
+        "werBreakdown": {
+          "substitutions": 16,
+          "deletions": 12,
+          "insertions": 14,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 10,
+          "deletions": 72,
+          "insertions": 24,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 1331,
+        "processingTimeMs": 135345,
+        "costCents": 1.76115,
+        "rank": 15
+      },
+      {
+        "providerKey": "openai/gpt-5.4-nano",
+        "provider": "openai",
+        "model": "gpt-5.4-nano",
+        "group": "cloud",
+        "score": 58.563949139865365,
+        "wer": 0.4143605086013463,
+        "cer": 0.39202952029520294,
+        "werBreakdown": {
+          "substitutions": 25,
+          "deletions": 521,
+          "insertions": 8,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 27,
+          "deletions": 2623,
+          "insertions": 6,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 825,
+        "processingTimeMs": 32692,
+        "costCents": 0.39083,
+        "rank": 16
+      },
+      {
+        "providerKey": "gcloud-docai/layout-parser",
+        "provider": "gcloud-docai",
+        "model": "layout-parser",
+        "group": "cloud",
+        "score": 0,
+        "wer": 1,
+        "cer": 1,
+        "werBreakdown": {
+          "substitutions": 0,
+          "deletions": 1337,
+          "insertions": 0,
+          "referenceCount": 1337
+        },
+        "cerBreakdown": {
+          "substitutions": 0,
+          "deletions": 6775,
+          "insertions": 0,
+          "referenceCount": 6775
+        },
+        "tokenEstimate": 0,
+        "processingTimeMs": 26852,
+        "costCents": 0,
+        "rank": 17
+      }
+    ]
+  },
+  "notes": [
+    "Best local model: `tesseract/tesseract` scored 95.89/100.",
+    "Best cloud service: `gemini/gemini-3.1-pro-preview` scored 99.40/100.",
+    "The cheapest cloud provider was `gcloud-docai/layout-parser` at 0.0000¢ ($0.0000).",
+    "Fastest local model: `tesseract/tesseract` at 6.49s.",
+    "Fastest cloud service: `mistral/mistral-ocr-2512` at 6.54s."
+  ]
+}

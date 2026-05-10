@@ -237,6 +237,8 @@ export type ExtractLimits = InferOutput<typeof ExtractLimitsSchema>
 
 export type ExtractEstimation = CostEstimation & {
   msPerPage: number
+  promptTokensPerPage?: number
+  completionTokensPerPage?: number
 }
 
 export type LlmEstimation = CostEstimation & {

@@ -71,7 +71,9 @@ const ExtractModelSchema = v.object({
   limits: v.optional(ExtractLimitsSchema, undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
-    msPerPage: v.optional(v.number(), undefined)
+    msPerPage: v.optional(v.number(), undefined),
+    promptTokensPerPage: v.optional(v.number(), undefined),
+    completionTokensPerPage: v.optional(v.number(), undefined)
   }), undefined)
 })
 
@@ -393,6 +395,12 @@ export const getExtractEstimation = (service: string, model: string): ExtractEst
   return {
     costMultiplier: modelMeta?.estimation?.costMultiplier ?? DEFAULT_COST_MULTIPLIER,
     msPerPage: modelMeta?.estimation?.msPerPage ?? DEFAULT_EXTRACT_MS_PER_PAGE,
+    ...(modelMeta?.estimation?.promptTokensPerPage !== undefined
+      ? { promptTokensPerPage: modelMeta.estimation.promptTokensPerPage }
+      : {}),
+    ...(modelMeta?.estimation?.completionTokensPerPage !== undefined
+      ? { completionTokensPerPage: modelMeta.estimation.completionTokensPerPage }
+      : {}),
   }
 }
 
