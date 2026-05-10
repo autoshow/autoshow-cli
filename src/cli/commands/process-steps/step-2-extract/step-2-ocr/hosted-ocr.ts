@@ -1,7 +1,6 @@
 import { stat } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import type {
-  DeapiOcrModel,
   DocumentMetadata,
   ExtractionOptions,
   HostedExtractOcrEngine,
@@ -14,7 +13,6 @@ import {
   ANTHROPIC_OCR_LIMIT_SOURCE,
   ensureAnthropicOcrSetup
 } from './ocr-services/anthropic-ocr/anthropic-ocr'
-import { ensureDeapiOcrSetup } from './ocr-services/deapi-ocr/deapi-ocr'
 import {
   DEEPINFRA_OCR_LIMIT_SOURCE,
   ensureDeepinfraOcrSetup
@@ -32,7 +30,6 @@ import { ensureMistralOcrSetup } from './ocr-services/mistral-ocr/mistral'
 import { ensureOpenAIOcrSetup } from './ocr-services/openai-ocr/openai-ocr'
 import { runAnthropicOcr } from './ocr-services/anthropic-ocr/run-anthropic-ocr'
 import { runAwsTextract } from './ocr-services/aws-textract/run-aws-textract'
-import { runDeapiOcr } from './ocr-services/deapi-ocr/run-deapi-ocr'
 import { runDeepinfraOcr } from './ocr-services/deepinfra-ocr/run-deepinfra-ocr'
 import { runGcloudDocai } from './ocr-services/gcloud-docai/run-gcloud-docai'
 import { runGeminiOcr } from './ocr-services/gemini-ocr/run-gemini-ocr'
@@ -43,7 +40,6 @@ import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
 import {
   hasAnthropicOcr,
   hasAwsTextract,
-  hasDeapiOcr,
   hasDeepinfraOcr,
   hasGcloudDocai,
   hasGeminiOcr,
@@ -85,8 +81,6 @@ const formatHostedOcrLabel = (service: HostedOcrService): string => {
       return 'AWS Textract'
     case 'gcloud-docai':
       return 'Google Cloud Document AI'
-    case 'deapi':
-      return 'deAPI OCR'
   }
 }
 
@@ -108,8 +102,6 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
       return 'project/links/aws-ocr-links.md'
     case 'gcloud-docai':
       return 'project/links/gcloud-ocr-links.md'
-    case 'deapi':
-      return 'project/links/deapi-general-music-ocr-tts-links.md'
     default:
       return 'project/links/all-all-links.md'
   }
@@ -160,9 +152,6 @@ export const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine)
   if (engine === 'gcloud-docai') {
     return 'The --gcloud-docai engine supports PDF and PNG/JPG/TIF/GIF/BMP/WEBP images directly.'
   }
-  if (engine === 'deapi-ocr') {
-    return 'The --deapi-ocr engine supports PDF and JPG/JPEG/PNG/GIF/BMP/WEBP images directly. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
-  }
   return 'The --openai-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. Convert BMP/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
 }
 
@@ -186,9 +175,7 @@ const assertSupportedHostedDirectImageFormat = (
                 ? new Set(['png', 'jpg', 'tif'])
                 : engine === 'gcloud-docai'
                   ? new Set(['png', 'jpg', 'tif', 'gif', 'bmp', 'webp'])
-                  : engine === 'deapi-ocr'
-                    ? new Set(['png', 'jpg', 'gif', 'bmp', 'webp'])
-                    : new Set(['png', 'jpg', 'webp', 'gif'])
+                  : new Set(['png', 'jpg', 'webp', 'gif'])
 
   if (!supportedFormats.has(format)) {
     throw CLIUsageError(getHostedDirectImageSupportError(engine))
@@ -289,21 +276,6 @@ export const normalizeHostedDirectImageInput = async (
       }
     }
 
-    if (engine === 'deapi-ocr') {
-      if (normalizedFormat === 'tif') {
-        if (!commandExists('convert')) {
-          throw CLIUsageError(getHostedDirectImageSupportError(engine))
-        }
-
-        const pngPath = join(tempDir, `${outputStem}.png`)
-        const result = await exec('convert', [imagePath, pngPath])
-        if (result.exitCode !== 0) {
-          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --deapi-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-        }
-
-        return { filePath: pngPath, format: 'png' }
-      }
-    }
     assertSupportedHostedDirectImageFormat(normalizedFormat, engine)
     return { filePath: imagePath, format: normalizedFormat as DocumentMetadata['format'] }
   }
@@ -366,10 +338,6 @@ const resolveHostedOcrSelection = (
 
   if (hasGcloudDocai(opts)) {
     return { service: 'gcloud-docai', model: opts.gcloudDocaiModel as string }
-  }
-
-  if (hasDeapiOcr(opts)) {
-    return { service: 'deapi', model: opts.deapiOcrModel as string }
   }
 
   return undefined
@@ -461,7 +429,10 @@ const runChunkableHostedPdfOcr = async (
   runProvider: (inputPath: string, inputMetadata: DocumentMetadata) => Promise<HostedOcrRun>
 ): Promise<HostedOcrRun> => {
   if (step1Metadata.format !== 'pdf') {
-    return await runProvider(filePath, step1Metadata)
+    return withHostedUsageDetail(await runProvider(filePath, step1Metadata), {
+      unit: 'document',
+      pages: Math.max(1, step1Metadata.pageCount)
+    })
   }
 
   return await runHostedOcrWithPdfChunkFallback({
@@ -470,9 +441,47 @@ const runChunkableHostedPdfOcr = async (
     serviceLabel,
     totalPages: Math.max(1, step1Metadata.pageCount),
     password: opts.password,
-    runFull: async () => await runProvider(filePath, step1Metadata),
-    runChunk: async (chunkPath, chunkMetadata) => await runProvider(chunkPath, chunkMetadata)
+    runFull: async () => withHostedUsageDetail(await runProvider(filePath, step1Metadata), {
+      unit: 'document',
+      pages: Math.max(1, step1Metadata.pageCount)
+    }),
+    runChunk: async (chunkPath, chunkMetadata, range) => withHostedUsageDetail(await runProvider(chunkPath, chunkMetadata), {
+      unit: 'chunk',
+      pageStart: range.startPage,
+      pageEnd: range.endPage,
+      pages: Math.max(1, chunkMetadata.pageCount)
+    })
   })
+}
+
+const withHostedUsageDetail = (
+  run: HostedOcrRun,
+  context: Record<string, unknown>
+): HostedOcrRun => {
+  if (run.providerUsage && run.providerUsage.length > 0) {
+    return run
+  }
+
+  const hasUsage = typeof run.promptTokens === 'number'
+    || typeof run.completionTokens === 'number'
+    || typeof run.providerCostCents === 'number'
+
+  if (!hasUsage) {
+    return run
+  }
+
+  return {
+    ...run,
+    providerUsage: [{
+      ...context,
+      provider: run.ocrService,
+      model: run.ocrModel,
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {}),
+      ...(typeof run.providerCostCents === 'number' ? { providerCostCents: run.providerCostCents } : {}),
+      ...(run.providerCostSource ? { providerCostSource: run.providerCostSource } : {})
+    }]
+  }
 }
 
 export const runHostedOcr = async (
@@ -526,7 +535,7 @@ export const runHostedOcr = async (
       password: opts.password,
       rotate: opts.rotate
     })
-    return {
+    return withHostedUsageDetail({
       pages: run.pages,
       extractionMethod: run.extractionMethod,
       ocrService: 'kimi',
@@ -534,7 +543,7 @@ export const runHostedOcr = async (
       totalPages: run.totalPages,
       ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
       ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
-    }
+    }, { unit: 'document', pages: run.totalPages })
   }
 
   if (hasOpenAIOcr(opts)) {
@@ -604,7 +613,7 @@ export const runHostedOcr = async (
       password: opts.password,
       rotate: opts.rotate
     })
-    return {
+    return withHostedUsageDetail({
       pages: run.pages,
       extractionMethod: run.extractionMethod,
       ocrService: 'deepinfra',
@@ -612,7 +621,7 @@ export const runHostedOcr = async (
       totalPages: run.totalPages,
       ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
       ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
-    }
+    }, { unit: 'document', pages: run.totalPages })
   }
 
   if (hasAwsTextract(opts)) {
@@ -650,23 +659,6 @@ export const runHostedOcr = async (
         totalPages: run.totalPages
       }
     })
-  }
-
-  if (hasDeapiOcr(opts)) {
-    await ensureDeapiOcrSetup()
-    warnHostedOnlyFlags('deapi-ocr', opts)
-    const ocrModel = opts.deapiOcrModel as DeapiOcrModel
-    await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
-    const run = await runDeapiOcr(filePath, step1Metadata, ocrModel, opts)
-    return {
-      pages: run.pages,
-      extractionMethod: run.extractionMethod,
-      ocrService: 'deapi',
-      ocrModel,
-      totalPages: run.totalPages,
-      ...(typeof run.providerCostCents === 'number' ? { providerCostCents: run.providerCostCents } : {}),
-      ...(run.providerCostSource ? { providerCostSource: run.providerCostSource } : {})
-    }
   }
 
   throw CLIUsageError('Hosted OCR requested without a configured hosted OCR model.')

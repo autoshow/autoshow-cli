@@ -7,7 +7,6 @@ import {
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_DEEPINFRA_OCR_MODELS,
   SUPPORTED_AWS_TEXTRACT_MODELS,
-  SUPPORTED_DEAPI_OCR_MODELS,
   SUPPORTED_GCLOUD_DOCAI_MODELS,
   validateMistralOcrModel,
   validateGlmOcrModel,
@@ -17,8 +16,7 @@ import {
   validateGeminiOcrModel,
   validateDeepinfraOcrModel,
   validateAwsTextractModel,
-  validateGcloudDocaiModel,
-  validateDeapiOcrModel
+  validateGcloudDocaiModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type { Step2ProviderRegistryEntry } from '~/types'
@@ -198,20 +196,5 @@ export const STEP2_OCR_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_GCLOUD_DOCAI_MODELS,
     validateModel: validateGcloudDocaiModel,
     description: buildModelDescription('Google Cloud Document AI model', SUPPORTED_GCLOUD_DOCAI_MODELS)
-  }),
-  modelProvider({
-    step: 'ocr',
-    modality: 'document',
-    flagName: 'deapi-ocr',
-    targetService: 'deapi',
-    providerSpecProvider: 'deapi-ocr',
-    bootstrapProviderId: 'deapi-ocr',
-    configKey: 'deapiOcr',
-    allShortcut: 'all-ocr',
-    runtimeModelsKey: 'deapiOcrModels',
-    runtimeModelKey: 'deapiOcrModel',
-    supportedModels: SUPPORTED_DEAPI_OCR_MODELS,
-    validateModel: validateDeapiOcrModel,
-    description: buildModelDescription('deAPI OCR model', SUPPORTED_DEAPI_OCR_MODELS)
   })
 ] as const satisfies readonly Step2ProviderRegistryEntry[]

@@ -1,9 +1,10 @@
 import type { ExtractStepEstimate, ResolvedStep2Execution, RuntimeOptions } from '~/types'
 import {
+  GEMINI_OCR_PRICE_NOTE,
+  GLM_OCR_PRICE_NOTE,
   estimateAnthropicOcrCost,
   estimateAwsTextractCost,
   estimateDeepinfraOcrCost,
-  estimateDeapiOcrCost,
   estimateGcloudDocaiCost,
   estimateGeminiOcrCost,
   estimateGlmOcrCost,
@@ -17,7 +18,7 @@ import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
 export const buildExtractEstimates = async (
   resolvedTarget: string,
   resolvedStep2: Extract<ResolvedStep2Execution, { route: 'ocr' }>,
-  opts: RuntimeOptions
+  _opts: RuntimeOptions
 ): Promise<ExtractStepEstimate[]> => {
   const estimates: ExtractStepEstimate[] = []
 
@@ -92,7 +93,7 @@ export const buildExtractEstimates = async (
         totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
         costMultiplier: estimation.costMultiplier,
         estimateType: estimate.estimateType,
-        note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+        note: GLM_OCR_PRICE_NOTE
       })
       continue
     }
@@ -172,7 +173,7 @@ export const buildExtractEstimates = async (
         totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
         costMultiplier: estimation.costMultiplier,
         estimateType: estimate.estimateType,
-        note: 'Heuristic token estimate based on 4,000 total tokens per page.'
+        note: GEMINI_OCR_PRICE_NOTE
       })
       continue
     }
@@ -229,30 +230,6 @@ export const buildExtractEstimates = async (
       continue
     }
 
-    if (provider.service === 'deapi') {
-      const estimate = await estimateDeapiOcrCost(provider.model, resolvedTarget, {
-        dpi: opts.dpi,
-        password: opts.password,
-        rotate: opts.rotate,
-        languages: opts.lang
-      })
-      const estimation = getExtractEstimation(estimate.provider, estimate.model)
-      const totalCost = estimate.estimateType === 'exact'
-        ? estimate.totalCost
-        : applyCostMultiplier(estimate.totalCost, estimation.costMultiplier)
-      estimates.push({
-        step: 'extract',
-        provider: estimate.provider,
-        model: estimate.model,
-        pageCount: estimate.pageCount,
-        costPer1kOutputCharsCents: estimate.costPer1kOutputCharsCents,
-        ...(estimate.estimatedOutputChars !== undefined ? { estimatedOutputChars: estimate.estimatedOutputChars } : {}),
-        totalCost,
-        costMultiplier: estimate.estimateType === 'exact' ? 1 : estimation.costMultiplier,
-        estimateType: estimate.estimateType,
-        ...(estimate.note ? { note: estimate.note } : {})
-      })
-    }
   }
 
   return estimates

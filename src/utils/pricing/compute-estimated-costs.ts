@@ -13,15 +13,16 @@ import {
   getVideoEstimation
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
-  computeDeapiOcrHeuristicCost,
-  DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
   DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE,
   DEEPINFRA_OCR_PRICE_NOTE,
   DEEPINFRA_OCR_PROMPT_TOKENS_PER_PAGE,
-  estimateDeapiOcrOutputCharsForPages,
+  GEMINI_OCR_PRICE_NOTE,
+  GLM_OCR_PRICE_NOTE,
   KIMI_OCR_COMPLETION_TOKENS_PER_PAGE,
   KIMI_OCR_PRICE_NOTE,
   KIMI_OCR_PROMPT_TOKENS_PER_PAGE,
+  OCR_INPUT_TOKENS_PER_PAGE,
+  OCR_OUTPUT_TOKENS_PER_PAGE,
   OPENAI_OCR_PRICE_NOTE
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
@@ -191,7 +192,13 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
           ? [{ provider: 'mistral' as const, model: input.mistralOcrModel, pageCount: input.extractPageCount, estimateType: 'exact' as const }]
           : []),
         ...(input.glmOcrModel && typeof input.extractPageCount === 'number'
-          ? [{ provider: 'glm' as const, model: input.glmOcrModel, pageCount: input.extractPageCount, estimateType: 'heuristic' as const }]
+          ? [{
+              provider: 'glm' as const,
+              model: input.glmOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const,
+              note: GLM_OCR_PRICE_NOTE
+            }]
           : []),
         ...(input.kimiOcrModel && typeof input.extractPageCount === 'number'
           ? [{
@@ -219,7 +226,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               model: input.anthropicOcrModel,
               pageCount: input.extractPageCount,
               estimateType: 'heuristic' as const,
-              note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+              note: 'Heuristic token estimate based on 4,000 input tokens plus 1,000 output tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
             }]
           : []),
         ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
@@ -227,7 +234,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'gemini' as const,
               model: input.geminiOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const
+              estimateType: 'heuristic' as const,
+              note: GEMINI_OCR_PRICE_NOTE
             }]
           : []),
         ...(input.deepinfraOcrModel && typeof input.extractPageCount === 'number'
@@ -241,40 +249,11 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               note: DEEPINFRA_OCR_PRICE_NOTE
             }]
           : []),
-        ...(input.deapiOcrModel && typeof input.extractPageCount === 'number'
-          ? [{
-              provider: 'deapi' as const,
-              model: input.deapiOcrModel,
-              pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: 'deAPI OCR pricing is resolved from provider quotes during execution when available.'
-            }]
-          : [])
       ]
 
   for (const target of extractTargets) {
     const estimation = getExtractEstimation(target.provider, target.model)
     const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
-    if (target.provider === 'deapi') {
-      const estimatedOutputChars = estimateDeapiOcrOutputCharsForPages(target.pageCount ?? input.extractPageCount ?? 1)
-      const cost = typeof target.quotedCostCents === 'number'
-        ? target.quotedCostCents
-        : applyCostMultiplier(computeDeapiOcrHeuristicCost(estimatedOutputChars), costMultiplier)
-      totalCost += cost
-      steps.push({
-        step: 'extract',
-        provider: target.provider,
-        model: target.model,
-        cost,
-        costMultiplier: typeof target.quotedCostCents === 'number' ? 1 : costMultiplier,
-        costPer1kOutputCharsCents: DEAPI_OCR_COST_PER_1K_OUTPUT_CHARS_CENTS,
-        ...(typeof target.quotedCostCents === 'number' ? {} : { estimatedOutputChars }),
-        ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
-        ...(typeof target.note === 'string' ? { note: target.note } : {}),
-        estimateType: target.estimateType ?? (typeof target.quotedCostCents === 'number' ? 'exact' : 'heuristic')
-      })
-      continue
-    }
     if (target.provider === 'mistral' || target.provider === 'firecrawl' || target.provider === 'gcloud-docai' || target.provider === 'aws-textract') {
       const extractPricing = getExtractPricing(target.provider, target.model)
       const cost = applyCostMultiplier(
@@ -297,11 +276,13 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     }
 
     const extractPricing = getExtractPricing(target.provider, target.model)
-    const promptTokens = target.promptTokens ?? 0
-    const completionTokens = target.completionTokens ?? 0
-    const effectivePromptTokens = promptTokens > 0 ? promptTokens : ((target.pageCount ?? input.extractPageCount ?? 0) * 4000)
+    const pageCount = target.pageCount ?? input.extractPageCount ?? 0
+    const hasExactPromptTokens = typeof target.promptTokens === 'number'
+    const hasExactCompletionTokens = typeof target.completionTokens === 'number'
+    const promptTokens = hasExactPromptTokens ? target.promptTokens as number : pageCount * OCR_INPUT_TOKENS_PER_PAGE
+    const completionTokens = hasExactCompletionTokens ? target.completionTokens as number : pageCount * OCR_OUTPUT_TOKENS_PER_PAGE
     const cost = applyCostMultiplier(
-      (effectivePromptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
+      (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
       + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),
       costMultiplier
     )
@@ -315,10 +296,10 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       ...(typeof extractPricing.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: extractPricing.inputCostPer1MCents } : {}),
       ...(typeof extractPricing.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: extractPricing.outputCostPer1MCents } : {}),
       ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
-      promptTokens: effectivePromptTokens,
+      promptTokens,
       completionTokens,
       ...(typeof target.note === 'string' ? { note: target.note } : {}),
-      estimateType: target.estimateType ?? (promptTokens > 0 || completionTokens > 0 ? 'exact' : 'heuristic')
+      estimateType: target.estimateType ?? (hasExactPromptTokens && hasExactCompletionTokens ? 'exact' : 'heuristic')
     })
   }
 

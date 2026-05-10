@@ -7,7 +7,6 @@ export type {
   AwsSttModel,
   DeapiSttModel,
   DeapiTtsModel,
-  DeapiOcrModel,
   DeapiMusicModel,
   GcloudSttModel,
   DeepgramSttModel,

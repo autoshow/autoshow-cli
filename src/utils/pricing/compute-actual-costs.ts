@@ -289,15 +289,6 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
-    } else if (provider === 'deapi') {
-      steps.push({
-        step: 'extract',
-        provider: 'deapi',
-        model,
-        cost: typeof input.step2.providerCostCents === 'number' ? input.step2.providerCostCents : 0,
-        inputMetric: 'pages',
-        inputValue: input.step2.totalPages,
-      })
     } else if (provider !== 'extract') {
       steps.push({
         step: 'extract',
@@ -339,8 +330,6 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('gcloud-docai', model).costPer1kPagesCents ?? 0)
         : provider === 'aws-textract'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('aws-textract', model).costPer1kPagesCents ?? 0)
-        : provider === 'deapi'
-          ? (step2Entry.providerCostCents ?? 0)
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)

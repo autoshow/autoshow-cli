@@ -292,15 +292,29 @@ describe('option resolution contracts', () => {
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['kimi-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deepinfra-ocr']?.shortcut).toBe('all-ocr')
+    expect(expansions['deapi-ocr']).toBeUndefined()
+    expect(ocrOpts.anthropicOcrModels).toEqual(['claude-haiku-4-5', 'claude-opus-4-7'])
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('cloudflare')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
-    expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('tesseract')
-    expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('openai')
-    expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('kimi')
-    expect(collectExplicitOcrTargets(ocrOpts).map((target) => target.service)).toContain('deepinfra')
+    const ocrTargets = collectExplicitOcrTargets(ocrOpts)
+    expect(ocrTargets.map((target) => target.service)).toContain('tesseract')
+    expect(ocrTargets.map((target) => target.service)).toContain('openai')
+    expect(ocrTargets.map((target) => target.service)).toContain('kimi')
+    expect(ocrTargets.map((target) => target.service)).toContain('deepinfra')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('anthropic:claude-sonnet-4-6')
+    expect(ocrTargets.map((target) => target.service)).not.toContain('deapi')
+  })
+
+  test('Anthropic Sonnet remains a write model but is not an OCR model', () => {
+    const writeOpts = buildOptsFromFlags(false, { anthropic: 'claude-sonnet-4-6' })
+
+    expect(writeOpts.anthropicModel).toBe('claude-sonnet-4-6')
+    expect(() => buildOptsFromFlags(false, { 'anthropic-ocr': 'claude-sonnet-4-6' })).toThrow(
+      'Invalid --anthropic-ocr model "claude-sonnet-4-6". Allowed values: claude-haiku-4-5, claude-opus-4-7'
+    )
   })
 
   test('--all-tts expands hosted TTS defaults and excludes Google instant custom voice', () => {

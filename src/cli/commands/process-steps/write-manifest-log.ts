@@ -6,6 +6,8 @@ import type {
   EstimatedCostBreakdown,
   ExtractionMetadata,
   Logger,
+  OcrCostCalculationRow,
+  OcrCostCalculationSection,
   Step2Metadata,
   Step3Metadata,
   Step4Metadata,
@@ -28,6 +30,7 @@ import type {
 
 const SUMMARY_COLUMNS = ['step', 'providerModel', 'predCost', 'actCost', 'predTime', 'actTime', 'predSpeed', 'actSpeed'] as const
 const PROMPT_USAGE_COLUMNS = ['step', 'providerModel', 'promptSource', 'usage'] as const
+const OCR_COST_COLUMNS = ['providerModel', 'pages', 'predInputs', 'actInputs', 'rates', 'predCost', 'actCost', 'delta'] as const
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -362,6 +365,58 @@ export const formatWriteManifestThroughput = (
 const formatPromptUsageTokenPair = (left: number, right: number): string =>
   `${formatCount(left, 'token', 'tokens').replace(/ tokens?$/, '')}/${formatCount(right, 'token', 'tokens').replace(/ tokens?$/, '')} tokens`
 
+const getNumber = (record: Record<string, unknown>, key: string): number | undefined =>
+  typeof record[key] === 'number' && Number.isFinite(record[key])
+    ? record[key]
+    : undefined
+
+const getRecord = (record: Record<string, unknown>, key: string): Record<string, unknown> | undefined =>
+  isRecord(record[key]) ? record[key] : undefined
+
+const formatInputSummary = (record: Record<string, unknown> | undefined): string | null => {
+  if (!record) return null
+  const promptTokens = getNumber(record, 'promptTokens')
+  const completionTokens = getNumber(record, 'completionTokens')
+  if (promptTokens !== undefined || completionTokens !== undefined) {
+    return formatPromptUsageTokenPair(promptTokens ?? 0, completionTokens ?? 0)
+  }
+
+  const estimatedOutputChars = getNumber(record, 'estimatedOutputChars')
+  if (estimatedOutputChars !== undefined) {
+    return formatCount(estimatedOutputChars, 'char', 'chars')
+  }
+
+  const inputMetric = typeof record['inputMetric'] === 'string' ? record['inputMetric'] : undefined
+  const inputValue = getNumber(record, 'inputValue')
+  if (inputMetric && inputValue !== undefined) {
+    switch (inputMetric) {
+      case 'pages':
+        return formatCount(inputValue, 'page', 'pages')
+      case 'tokens':
+        return formatCount(inputValue, 'token', 'tokens')
+      case 'outputCharacters':
+      case 'characters':
+        return formatCount(inputValue, 'char', 'chars')
+      default:
+        return `${formatNumber(inputValue)} ${inputMetric}`
+    }
+  }
+
+  const pageCount = getNumber(record, 'pageCount')
+  return pageCount !== undefined ? formatCount(pageCount, 'page', 'pages') : null
+}
+
+const formatRatesSummary = (record: Record<string, unknown> | undefined): string | null => {
+  if (!record) return null
+  const parts = [
+    getNumber(record, 'inputCostPer1MCents') !== undefined ? `${formatCost(getNumber(record, 'inputCostPer1MCents') as number)}/1M in` : null,
+    getNumber(record, 'outputCostPer1MCents') !== undefined ? `${formatCost(getNumber(record, 'outputCostPer1MCents') as number)}/1M out` : null,
+    getNumber(record, 'costPer1kPagesCents') !== undefined ? `${formatCost(getNumber(record, 'costPer1kPagesCents') as number)}/1k pages` : null,
+    getNumber(record, 'costPer1kOutputCharsCents') !== undefined ? `${formatCost(getNumber(record, 'costPer1kOutputCharsCents') as number)}/1k chars` : null
+  ].filter((value): value is string => typeof value === 'string')
+  return parts.length > 0 ? parts.join(' / ') : null
+}
+
 const buildRunSummary = (metadata: WriteManifestMetadata): SummarySection | undefined => {
   const baseRows = buildSummaryBaseRows(metadata)
   if (baseRows.length === 0) {
@@ -543,16 +598,67 @@ const buildPromptUsage = (
   }
 }
 
+const getOcrDiagnostics = (metadata: WriteManifestMetadata): Record<string, unknown>[] => {
+  const cost = metadata['cost']
+  if (!isRecord(cost) || !Array.isArray(cost['ocrDiagnostics'])) {
+    return []
+  }
+  return cost['ocrDiagnostics'].filter(isRecord)
+}
+
+const buildOcrCostCalculation = (metadata: WriteManifestMetadata): OcrCostCalculationSection | undefined => {
+  const diagnostics = getOcrDiagnostics(metadata)
+  if (diagnostics.length === 0) {
+    return undefined
+  }
+
+  const rows: OcrCostCalculationRow[] = diagnostics.map((entry) => {
+    const provider = typeof entry['provider'] === 'string' ? entry['provider'] : 'ocr'
+    const model = typeof entry['model'] === 'string' ? entry['model'] : 'unknown'
+    const predictedCostInputs = getRecord(entry, 'predictedCostInputs')
+    const actualCostInputs = getRecord(entry, 'actualCostInputs')
+    const delta = getRecord(entry, 'delta')
+
+    return {
+      providerModel: buildProviderModelLabel(provider, model),
+      pages: getNumber(entry, 'pages') ?? null,
+      predictedInputs: formatInputSummary(predictedCostInputs),
+      actualInputs: formatInputSummary(actualCostInputs),
+      rates: formatRatesSummary(getRecord(entry, 'ratesUsed')),
+      predictedCostCents: getNumber(predictedCostInputs ?? {}, 'costCents') ?? null,
+      actualCostCents: getNumber(actualCostInputs ?? {}, 'costCents') ?? null,
+      deltaCents: getNumber(delta ?? {}, 'costCents') ?? null
+    }
+  })
+
+  return {
+    columns: OCR_COST_COLUMNS,
+    rows,
+    humanTable: createHumanTable(rows.map((row) => ({
+      providerModel: row.providerModel,
+      pages: row.pages === null ? '' : formatNumber(row.pages),
+      predInputs: row.predictedInputs ?? '',
+      actInputs: row.actualInputs ?? '',
+      rates: row.rates ?? '',
+      predCost: row.predictedCostCents === null ? '' : formatCost(row.predictedCostCents),
+      actCost: row.actualCostCents === null ? '' : formatCost(row.actualCostCents),
+      delta: row.deltaCents === null ? '' : formatCost(row.deltaCents)
+    })), OCR_COST_COLUMNS)
+  }
+}
+
 export const buildWriteManifestConsoleSummary = (
   metadata: WriteManifestMetadata,
   refs: WriteManifestSourceRefs = {}
 ): WriteManifestConsoleSummary => {
   const runSummary = buildRunSummary(metadata)
   const promptUsage = buildPromptUsage(metadata, refs)
+  const ocrCostCalculation = buildOcrCostCalculation(metadata)
 
   return {
     ...(runSummary ? { runSummary } : {}),
-    ...(promptUsage ? { promptUsage } : {})
+    ...(promptUsage ? { promptUsage } : {}),
+    ...(ocrCostCalculation ? { ocrCostCalculation } : {})
   }
 }
 
@@ -578,9 +684,28 @@ export const logWriteManifestConsoleSummary = (
   refs: WriteManifestSourceRefs = {},
   logger: Pick<Logger, 'write' | 'debug'> = l
 ): void => {
+  logManifestConsoleSummary(outputDir, 'write', metadata, refs, logger)
+}
+
+export const logExtractManifestConsoleSummary = (
+  outputDir: string,
+  metadata: WriteManifestMetadata,
+  refs: WriteManifestSourceRefs = {},
+  logger: Pick<Logger, 'write' | 'debug'> = l
+): void => {
+  logManifestConsoleSummary(outputDir, 'extract', metadata, refs, logger)
+}
+
+const logManifestConsoleSummary = (
+  outputDir: string,
+  kind: string,
+  metadata: WriteManifestMetadata,
+  refs: WriteManifestSourceRefs,
+  logger: Pick<Logger, 'write' | 'debug'>
+): void => {
   const summary = buildWriteManifestConsoleSummary(metadata, refs)
 
-  logRunManifestLocation(outputDir, logger, 'write')
+  logRunManifestLocation(outputDir, logger, kind)
 
   if (summary.runSummary) {
     logger.write('info', 'Run Summary', {
@@ -604,9 +729,20 @@ export const logWriteManifestConsoleSummary = (
     })
   }
 
+  if (summary.ocrCostCalculation) {
+    logger.write('info', 'OCR Cost Calculation', {
+      category: 'usage',
+      humanTable: summary.ocrCostCalculation.humanTable,
+      metadata: {
+        columns: summary.ocrCostCalculation.columns,
+        rows: summary.ocrCostCalculation.rows
+      }
+    })
+  }
+
   logger.debug(`Run manifest:\n${JSON.stringify({
     schemaVersion: 2,
-    kind: 'write',
+    kind,
     metadata
   }, null, 2)}`)
 }

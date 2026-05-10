@@ -247,9 +247,7 @@ export const processMediaSingle = async (
     geminiOcrModels: llmDefaults.geminiOcrModels,
     geminiOcrModel: llmDefaults.geminiOcrModel,
     deepinfraOcrModels: llmDefaults.deepinfraOcrModels,
-    deepinfraOcrModel: llmDefaults.deepinfraOcrModel,
-    deapiOcrModels: llmDefaults.deapiOcrModels,
-    deapiOcrModel: llmDefaults.deapiOcrModel
+    deepinfraOcrModel: llmDefaults.deepinfraOcrModel
   }
 
   const options: ProcessingOptions = validateData(ProcessingOptionsSchema, baseOptions, 'processing options')

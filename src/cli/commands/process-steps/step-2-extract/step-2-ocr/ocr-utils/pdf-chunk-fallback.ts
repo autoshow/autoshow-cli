@@ -165,6 +165,7 @@ export const stitchHostedOcrChunkRuns = (
   const providerCostSources = runs
     .map((run) => run.providerCostSource)
     .filter((source): source is NonNullable<HostedOcrRun['providerCostSource']> => source !== undefined)
+  const providerUsage = runs.flatMap((run) => run.providerUsage ?? [])
 
   return {
     pages,
@@ -178,7 +179,8 @@ export const stitchHostedOcrChunkRuns = (
     ...(hasProviderCost ? { providerCostCents } : {}),
     ...(providerCostSources.length > 0
       ? { providerCostSource: providerCostSources.includes('registry_fallback') ? 'registry_fallback' as const : 'provider_quote' as const }
-      : {})
+      : {}),
+    ...(providerUsage.length > 0 ? { providerUsage } : {})
   }
 }
 

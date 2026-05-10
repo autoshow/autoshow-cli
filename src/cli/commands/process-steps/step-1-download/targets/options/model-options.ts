@@ -38,7 +38,6 @@ import {
   validateDeepinfraOcrModel,
   validateAwsTextractModel,
   validateGcloudDocaiModel,
-  validateDeapiOcrModel,
   validateMistralOcrModel,
   validateOpenAIOcrModel,
   validateKittenTtsModel,
@@ -144,7 +143,6 @@ export const readRuntimeModelOptions = (
   const deepinfraOcrModels = readValidatedMany('deepinfra-ocr', validateDeepinfraOcrModel)
   const awsTextractModels = readValidatedMany('aws-textract', validateAwsTextractModel)
   const gcloudDocaiModels = readValidatedMany('gcloud-docai', validateGcloudDocaiModel)
-  const deapiOcrModels = readValidatedMany('deapi-ocr', validateDeapiOcrModel)
   const llamaModels = readValidatedMany('llama', validateLlamaModel)
   const openaiModels = readValidatedMany('openai', validateOpenAIModel)
   const groqModels = readValidatedMany('groq', validateGroqModel)
@@ -184,7 +182,6 @@ export const readRuntimeModelOptions = (
   const deepinfraOcrModel = first(deepinfraOcrModels)
   const awsTextractModel = first(awsTextractModels)
   const gcloudDocaiModel = first(gcloudDocaiModels)
-  const deapiOcrModel = first(deapiOcrModels)
   const llamaModel = first(llamaModels)
   const openaiModel = first(openaiModels)
   const groqModel = first(groqModels)
@@ -308,8 +305,6 @@ export const readRuntimeModelOptions = (
     awsTextractModel,
     gcloudDocaiModels,
     gcloudDocaiModel,
-    deapiOcrModels,
-    deapiOcrModel,
     llamaModels,
     llamaModel,
     openaiModels,

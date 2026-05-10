@@ -1,6 +1,6 @@
 import { basename } from 'node:path'
 import { stat } from 'node:fs/promises'
-import type { DeapiOcrModel, DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
+import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import {
   createDeapiHttpError,
   deapiFetch,
@@ -21,6 +21,7 @@ import * as l from '~/utils/logger'
 
 const MAX_DEAPI_OCR_IMAGE_BYTES = 10 * 1024 * 1024
 const DEAPI_OCR_JOB_RETRY_ATTEMPTS = 4
+type DeapiOcrModel = string
 
 export type DeapiOcrRun = {
   pages: PageResult[]

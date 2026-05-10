@@ -10,6 +10,7 @@ import {
   ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
   ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
+import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -238,7 +239,7 @@ describe('price mode contracts', () => {
       ttsTargets: [{ service: 'mistral', model: 'voxtral-mini-tts-2603' }],
       ttsCharacterCount: 1000
     })
-    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(6000)
+    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(9000)
   })
 
   test('Speechify and Google Cloud TTS estimates use registry pricing and timing defaults', () => {
@@ -346,8 +347,8 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { provider: 'elevenlabs', model: 'eleven_flash_v2_5', processingTimeMs: 23_400 },
-      { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 27_283 }
+      { provider: 'elevenlabs', model: 'eleven_flash_v2_5', processingTimeMs: 20_240 },
+      { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 31_952 }
     ])
 
     const pvcReadyCosts = estimateTtsCosts({
@@ -416,8 +417,8 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { model: 'speech-2.8-turbo', processingTimeMs: 93_672 },
-      { model: 'speech-2.8-hd', processingTimeMs: 63_061 }
+      { model: 'speech-2.8-turbo', processingTimeMs: 133_008 },
+      { model: 'speech-2.8-hd', processingTimeMs: 94_592 }
     ])
   })
 
@@ -603,8 +604,8 @@ describe('price mode contracts', () => {
       processingTimeMs: step.processingTimeMs,
       inputValue: step.inputValue
     }))).toEqual([
-      { model: 'lyria-3-clip-preview', processingTimeMs: 30_000, inputValue: 30 },
-      { model: 'lyria-3-pro-preview', processingTimeMs: 180_000, inputValue: 120 }
+      { model: 'lyria-3-clip-preview', processingTimeMs: 23_220, inputValue: 30 },
+      { model: 'lyria-3-pro-preview', processingTimeMs: 128_760, inputValue: 120 }
     ])
   })
 
@@ -622,8 +623,8 @@ describe('price mode contracts', () => {
       processingTimeMs: step.processingTimeMs,
       inputValue: step.inputValue
     }))).toEqual([
-      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 291_360, inputValue: 120 },
-      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 291_360, inputValue: 120 }
+      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 241_800, inputValue: 120 },
+      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 241_800, inputValue: 120 }
     ])
   })
 
@@ -674,7 +675,7 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'deepinfra',
       model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
-      processingTimeMs: 20_000
+      processingTimeMs: 28_856
     })
 
     const actualMetadata: ExtractionMetadata = {
@@ -736,6 +737,141 @@ describe('price mode contracts', () => {
       provider: 'kimi',
       model: 'kimi-k2.6',
       processingTimeMs: 28_600
+    })
+  })
+
+  test('hosted token OCR estimates include output tokens when usage is not exact', () => {
+    const cost = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      extractTargets: [{
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        pageCount: 2,
+        estimateType: 'heuristic'
+      }]
+    })
+    const step = cost.steps[0]
+
+    expect(step).toMatchObject({
+      step: 'extract',
+      provider: 'openai',
+      model: 'gpt-5.4-nano',
+      pageCount: 2,
+      promptTokens: 8000,
+      completionTokens: 2000,
+      estimateType: 'heuristic'
+    })
+    expect(cost.totalCost).toBe(
+      ((step?.promptTokens ?? 0) / 1_000_000) * (step?.inputCostPer1MCents ?? 0)
+      + ((step?.completionTokens ?? 0) / 1_000_000) * (step?.outputCostPer1MCents ?? 0)
+    )
+  })
+
+  test('OCR diagnostics compare page-based estimates with actual token usage', () => {
+    const estimated = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      extractTargets: [{
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        pageCount: 2,
+        estimateType: 'heuristic'
+      }]
+    })
+    const actualMetadata: ExtractionMetadata = {
+      extractionMethod: 'pdf+openai-ocr',
+      totalPages: 2,
+      ocrPages: 2,
+      textPages: 0,
+      processingTime: 1234,
+      dpi: 300,
+      languages: 'eng',
+      tokenEstimate: 10_000,
+      ocrService: 'openai',
+      ocrModel: 'gpt-5.4-nano',
+      promptTokens: 6000,
+      completionTokens: 1500,
+      ocrProviderUsage: [{
+        unit: 'document',
+        pages: 2,
+        promptTokens: 6000,
+        completionTokens: 1500
+      }]
+    }
+    const actual = computeActualCosts({ step2: actualMetadata })
+    const diagnostics = buildOcrCostDiagnostics(actualMetadata, estimated, actual)
+    const diagnostic = diagnostics[0] as Record<string, unknown>
+    const predicted = diagnostic['predictedCostInputs'] as Record<string, unknown>
+    const actualInputs = diagnostic['actualCostInputs'] as Record<string, unknown>
+    const delta = diagnostic['delta'] as Record<string, unknown>
+
+    expect(diagnostics).toHaveLength(1)
+    expect(diagnostic).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-5.4-nano',
+      pages: 2
+    })
+    expect(predicted).toMatchObject({
+      pageCount: 2,
+      promptTokens: 8000,
+      completionTokens: 2000,
+      estimateType: 'heuristic'
+    })
+    expect(actualInputs).toMatchObject({
+      pageCount: 2,
+      inputMetric: 'tokens',
+      inputValue: 7500,
+      promptTokens: 6000,
+      completionTokens: 1500
+    })
+    expect(actualInputs['usageDetails']).toEqual(actualMetadata.ocrProviderUsage)
+    expect(delta['costCents']).toBe((actual.steps[0]?.cost ?? 0) - (estimated.steps[0]?.cost ?? 0))
+  })
+
+  test('OCR manifest estimates preserve preflight values and fallback avoids actual usage tokens', () => {
+    const actualMetadata: ExtractionMetadata = {
+      extractionMethod: 'pdf+openai-ocr',
+      totalPages: 2,
+      ocrPages: 2,
+      textPages: 0,
+      processingTime: 1234,
+      dpi: 300,
+      languages: 'eng',
+      tokenEstimate: 10_000,
+      ocrService: 'openai',
+      ocrModel: 'gpt-5.4-nano',
+      promptTokens: 1,
+      completionTokens: 1
+    }
+    const preflightEstimated = resolveExtractEstimatedCosts({
+      totalEstimatedCost: 9,
+      steps: [{
+        step: 'extract',
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        pageCount: 2,
+        promptTokens: 8000,
+        completionTokens: 2000,
+        inputCostPer1MCents: 20,
+        outputCostPer1MCents: 125,
+        totalCost: 9,
+        estimateType: 'heuristic'
+      }]
+    }, actualMetadata)
+    const fallbackEstimated = resolveExtractEstimatedCosts(undefined, actualMetadata)
+
+    expect(preflightEstimated.totalCost).toBe(9)
+    expect(preflightEstimated.steps[0]).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-5.4-nano',
+      promptTokens: 8000,
+      completionTokens: 2000,
+      cost: 9
+    })
+    expect(fallbackEstimated.steps[0]).toMatchObject({
+      provider: 'openai',
+      model: 'gpt-5.4-nano',
+      promptTokens: 8000,
+      completionTokens: 2000
     })
   })
 })

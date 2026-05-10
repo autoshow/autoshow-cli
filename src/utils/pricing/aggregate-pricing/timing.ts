@@ -13,8 +13,7 @@ const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
   'deepinfra',
   'firecrawl',
   'gcloud-docai',
-  'aws-textract',
-  'deapi'
+  'aws-textract'
 ])
 
 const isTimedExtractProvider = (provider: ExtractStepEstimate['provider']): provider is TimedExtractProvider =>

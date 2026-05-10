@@ -46,6 +46,7 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--grok-stt')
   expect(result.stdout).toContain('--ocr-provider-concurrency')
   expect(result.stdout).toContain('--ocr-local-concurrency')
+  expect(result.stdout).not.toContain('--deapi-ocr')
 })
 
 test('download help exposes media preservation flags', async () => {

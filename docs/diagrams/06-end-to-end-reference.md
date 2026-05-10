@@ -83,8 +83,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --gemini-video, --gemini-music models  │
 │  ├── DEEPINFRA_API_KEY               Required for --deepinfra-stt and        │
 │  │                                   --deepinfra-ocr models                  │
-│  ├── DEAPI_API_KEY                   Required for --deapi-stt, --deapi-ocr,  │
-│  │                                   --deapi-tts, --deapi-image,             │
+│  ├── DEAPI_API_KEY                   Required for --deapi-stt, --deapi-tts,  │
+│  │                                   --deapi-image,                         │
 │  │                                   --deapi-video, --deapi-music models     │
 │  ├── MINIMAX_API_KEY                 Required for --minimax, --minimax-tts,  │
 │  │                                   --minimax-image, --minimax-video,       │

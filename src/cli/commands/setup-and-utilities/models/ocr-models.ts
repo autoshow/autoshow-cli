@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AnthropicOcrModel, AwsTextractModel, DeapiOcrModel, DeepinfraOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, KimiOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
+import type { AnthropicOcrModel, AwsTextractModel, DeepinfraOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, KimiOcrModel, MistralOcrModel, OpenAIOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'
@@ -29,7 +29,6 @@ export const validateOpenAIOcrModel = createModelValidator<OpenAIOcrModel>(SUPPO
 
 export const SUPPORTED_ANTHROPIC_OCR_MODELS = [
   'claude-haiku-4-5',
-  'claude-sonnet-4-6',
   'claude-opus-4-7'
 ] as const satisfies readonly string[]
 
@@ -65,9 +64,3 @@ export const SUPPORTED_GCLOUD_DOCAI_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateGcloudDocaiModel = createModelValidator<GcloudDocaiModel>(SUPPORTED_GCLOUD_DOCAI_MODELS, 'gcloud-docai')
-
-export const SUPPORTED_DEAPI_OCR_MODELS = [
-  'Nanonets_Ocr_S_F16'
-] as const satisfies readonly string[]
-
-export const validateDeapiOcrModel = createModelValidator<DeapiOcrModel>(SUPPORTED_DEAPI_OCR_MODELS, 'deapi-ocr')

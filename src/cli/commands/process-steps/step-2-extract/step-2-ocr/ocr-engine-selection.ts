@@ -38,9 +38,6 @@ export const hasAwsTextract = (opts: ExtractionOptions): boolean =>
 export const hasGcloudDocai = (opts: ExtractionOptions): boolean =>
   typeof opts.gcloudDocaiModel === 'string' && opts.gcloudDocaiModel.length > 0
 
-export const hasDeapiOcr = (opts: ExtractionOptions): boolean =>
-  typeof opts.deapiOcrModel === 'string' && opts.deapiOcrModel.length > 0
-
 export const hasHostedOcr = (opts: ExtractionOptions): boolean =>
   hasMistralOcr(opts)
   || hasGlmOcr(opts)
@@ -51,7 +48,6 @@ export const hasHostedOcr = (opts: ExtractionOptions): boolean =>
   || hasDeepinfraOcr(opts)
   || hasAwsTextract(opts)
   || hasGcloudDocai(opts)
-  || hasDeapiOcr(opts)
 
 export const hasOcrFlag = (opts: ExtractionOptions): boolean =>
   opts.useTesseract === true || opts.useOcrmypdf === true || opts.usePaddleOcr === true || hasHostedOcr(opts)
@@ -71,8 +67,7 @@ export const countSelectedOcrEngines = (opts: ExtractionOptions): number =>
     hasGeminiOcr(opts),
     hasDeepinfraOcr(opts),
     hasAwsTextract(opts),
-    hasGcloudDocai(opts),
-    hasDeapiOcr(opts)
+    hasGcloudDocai(opts)
   ].filter(Boolean).length
 
 export const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEngine | undefined => {
@@ -85,7 +80,6 @@ export const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEng
   if (hasDeepinfraOcr(opts)) return 'deepinfra-ocr'
   if (hasAwsTextract(opts)) return 'aws-textract'
   if (hasGcloudDocai(opts)) return 'gcloud-docai'
-  if (hasDeapiOcr(opts)) return 'deapi-ocr'
   return undefined
 }
 

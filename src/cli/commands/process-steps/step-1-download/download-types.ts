@@ -1,4 +1,5 @@
 import type {
+  AggregatedPriceEstimate,
   BatchItem,
   BatchSource,
   DocumentMetadata,
@@ -237,7 +238,6 @@ export type RepeatableModelFlag =
   | 'deepinfra-ocr'
   | 'aws-textract'
   | 'gcloud-docai'
-  | 'deapi-ocr'
   | 'llama'
   | 'openai'
   | 'groq'
@@ -335,6 +335,7 @@ export type WriteDocumentOutputMetadataOptions = {
   step1: DocumentMetadata
   step2: ExtractionMetadata | ExtractionMetadata[]
   step3: Step3Metadata | Step3Metadata[]
+  preflightEstimate?: AggregatedPriceEstimate | undefined
   mistralOcrModel: string | undefined
   glmOcrModel: string | undefined
   kimiOcrModel: string | undefined
@@ -342,7 +343,6 @@ export type WriteDocumentOutputMetadataOptions = {
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined
   deepinfraOcrModel: string | undefined
-  deapiOcrModel: string | undefined
   llmService: string
   llmModel: string
   llmInputTokenCount: number

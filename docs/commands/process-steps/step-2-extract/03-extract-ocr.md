@@ -25,7 +25,6 @@ Documents and images route through local OCR, hosted OCR, or native text extract
   - [DeepInfra OCR](#deepinfra-ocr)
   - [AWS Textract](#aws-textract)
   - [Google Cloud Document AI](#google-cloud-document-ai)
-  - [deAPI OCR](#deapi-ocr)
 - [OCR Notes](#ocr-notes)
 
 See the [`extract` overview](./01-extract.md) for input routing across STT, OCR, article HTML, and X/Twitter inputs. Remote article URLs and local HTML are documented separately in [URL and X extraction](./04-extract-url.md).
@@ -68,8 +67,6 @@ KIMI_API_KEY=...
 KIMI_BASE_URL=https://api.moonshot.ai/v1
 DEEPINFRA_API_KEY=...
 DEEPINFRA_BASE_URL=https://api.deepinfra.com/v1/openai
-DEAPI_API_KEY=...
-DEAPI_BASE_URL=https://api.deapi.ai
 # AWS Textract uses AWS CLI auth and region/bucket config
 bun as setup --aws
 # Google Cloud Document AI uses gcloud CLI auth plus Document AI/GCS settings
@@ -80,7 +77,7 @@ bun as setup --gcloud
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--kimi-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deepinfra-ocr`, `--aws-textract`, `--gcloud-docai`, `--deapi-ocr` |
+| PDF | `mutool+tesseract` | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--kimi-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deepinfra-ocr`, `--aws-textract`, `--gcloud-docai` |
 | EPUB | cleaned native extraction (`epub-text`) | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
@@ -275,7 +272,7 @@ OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when Im
 | Option | Value |
 |--------|-------|
 | Selector | `--anthropic-ocr <model>` |
-| Models | cheapest supported model, or `claude-haiku-4-5` |
+| Models | cheapest supported model, or `claude-haiku-4-5`, `claude-opus-4-7` |
 | Direct input support | Standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
@@ -355,29 +352,6 @@ bun as extract input/examples/document/1-document.pdf --gcloud-docai ocr
 ```
 
 Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use. The setup command also creates or reuses the `layout-parser` processor and saves `gcloudDocaiLayoutProcessorId`.
-
-### deAPI OCR
-
-| Option | Value |
-|--------|-------|
-| Selector | `--deapi-ocr <model>` |
-| Models | `Nanonets_Ocr_S_F16` |
-| Direct input support | Rendered PDF pages plus `PNG`, `JPG`, `JPEG`, `GIF`, `BMP`, and `WEBP` images |
-
-```bash
-bun as extract input/examples/document/1-document.pdf --deapi-ocr Nanonets_Ocr_S_F16
-bun as extract input/examples/document/1-document.png --deapi-ocr Nanonets_Ocr_S_F16
-bun as extract input/examples/document/1-document.pdf --deapi-ocr Nanonets_Ocr_S_F16 --price
-```
-
-deAPI OCR normalizes `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error.
-
-deAPI OCR uses provider quotes when possible.
-
-- For local image preflight, `--price` calls the deAPI OCR price endpoint and records an exact estimate when `DEAPI_API_KEY` is available. For local PDFs, price mode renders pages to temporary PNGs and sums deAPI page quotes when possible.
-- If exact deAPI OCR pricing is unavailable, AutoShow reports a non-zero heuristic from deAPI's published OCR output-character rate.
-- During execution, deAPI OCR quotes each direct image or rendered PDF page before submission when the provider price endpoint is available. The summed quote is written to `run.json` as `providerCostCents` with `providerCostSource: "provider_quote"`.
-- If quote lookup fails, deAPI OCR still runs and records a registry fallback cost.
 
 ## OCR Notes
 

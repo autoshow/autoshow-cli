@@ -8,12 +8,10 @@ import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-extract
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
-import { DEFAULT_DEEPINFRA_OCR_MODEL } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE, KIMI_OCR_COMPLETION_TOKENS_PER_PAGE, KIMI_OCR_PRICE_NOTE } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
+import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumentWriteEstimatedCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
-import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import type { BatchChildRunContext, ExtractionMetadata, ExtractionOptions, PreparedDocument, RuntimeOptions, Step1SourceRef, Step3Metadata, TranscriptionResult, VideoMetadata, WriteDocumentOutputMetadataOptions } from '~/types'
+import type { AggregatedPriceEstimate, BatchChildRunContext, ExtractionMetadata, ExtractionOptions, PreparedDocument, RuntimeOptions, Step1SourceRef, Step3Metadata, TranscriptionResult, VideoMetadata, WriteDocumentOutputMetadataOptions } from '~/types'
 import { isLikelyUrl } from '../input/input-classifier'
 import { resolveLLMDefaults } from '../llm-defaults'
 
@@ -29,153 +27,6 @@ const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
     ...(opts.glmModels ?? (opts.glmModel ? [opts.glmModel] : [])),
     ...(opts.kimiModels ?? (opts.kimiModel ? [opts.kimiModel] : []))
   ].some((value) => typeof value === 'string' && value.length > 0)
-
-const collectEstimatedExtractTargets = (
-  metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: Pick<RuntimeOptions, 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'deapiOcrModel'>
-): Array<{
-  provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
-  model: string
-  pageCount?: number
-  promptTokens?: number
-  completionTokens?: number
-  quotedCostCents?: number
-  estimateType?: 'heuristic' | 'exact'
-  note?: string
-}> => {
-  const targets: Array<{
-    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'deapi'
-    model: string
-    pageCount?: number
-    promptTokens?: number
-    completionTokens?: number
-    quotedCostCents?: number
-    estimateType?: 'heuristic' | 'exact'
-    note?: string
-  }> = []
-
-  for (const entry of Array.isArray(metadata) ? metadata : [metadata]) {
-    if (entry.extractionMethod === 'html+firecrawl') {
-      targets.push({
-        provider: 'firecrawl',
-        model: 'firecrawl',
-        pageCount: entry.totalPages,
-        estimateType: 'exact',
-        note: FIRECRAWL_PRICE_NOTE
-      })
-      continue
-    }
-
-    if (entry.extractionMethod.startsWith('html+')) {
-      continue
-    }
-
-    if ((entry.ocrService === 'glm' || entry.extractionMethod.includes('glm-ocr')) && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'glm' as const,
-        model: entry.ocrModel ?? opts.glmOcrModel ?? 'glm-ocr',
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
-      })
-      continue
-    }
-
-    if ((entry.ocrService === 'kimi' || entry.extractionMethod.includes('kimi-ocr')) && typeof entry.ocrModel === 'string') {
-      const pageCount = entry.totalPages ?? 1
-      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
-      targets.push({
-        provider: 'kimi' as const,
-        model: entry.ocrModel ?? opts.kimiOcrModel ?? 'kimi-k2.6',
-        pageCount,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE }),
-        estimateType: hasUsage ? 'exact' : 'heuristic',
-        ...(hasUsage ? {} : { note: KIMI_OCR_PRICE_NOTE })
-      })
-      continue
-    }
-
-    if ((entry.ocrService === 'mistral' || entry.extractionMethod.includes('mistral-ocr')) && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'mistral' as const,
-        model: entry.ocrModel ?? opts.mistralOcrModel ?? 'mistral-ocr-2512',
-        pageCount: entry.totalPages,
-        estimateType: 'exact' as const
-      })
-      continue
-    }
-
-    if ((entry.ocrService === 'openai' || entry.extractionMethod.includes('openai-ocr')) && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'openai' as const,
-        model: entry.ocrModel ?? opts.openaiOcrModel ?? 'gpt-5.4-nano',
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
-        note: 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
-      })
-      continue
-    }
-
-    if ((entry.ocrService === 'anthropic' || entry.extractionMethod.includes('anthropic-ocr')) && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'anthropic' as const,
-        model: entry.ocrModel ?? opts.anthropicOcrModel ?? 'claude-haiku-4-5',
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
-        note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
-      })
-      continue
-    }
-
-    if ((entry.ocrService === 'gemini' || entry.extractionMethod.includes('gemini-ocr')) && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'gemini' as const,
-        model: entry.ocrModel ?? opts.geminiOcrModel ?? 'gemini-3.1-flash-lite-preview',
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'deepinfra' || entry.extractionMethod.includes('deepinfra-ocr')) {
-      const pageCount = entry.totalPages ?? 1
-      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
-      targets.push({
-        provider: 'deepinfra' as const,
-        model: entry.ocrModel ?? opts.deepinfraOcrModel ?? DEFAULT_DEEPINFRA_OCR_MODEL,
-        pageCount,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE }),
-        estimateType: hasUsage ? 'exact' : 'heuristic',
-        ...(hasUsage ? {} : { note: DEEPINFRA_OCR_PRICE_NOTE })
-      })
-      continue
-    }
-
-    if ((entry.ocrService === 'deapi' || entry.extractionMethod.includes('deapi-ocr')) && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'deapi' as const,
-        model: entry.ocrModel ?? opts.deapiOcrModel ?? 'Nanonets_Ocr_S_F16',
-        pageCount: entry.totalPages,
-        ...(typeof entry.providerCostCents === 'number' ? { quotedCostCents: entry.providerCostCents } : {}),
-        estimateType: typeof entry.providerCostCents === 'number' ? 'exact' as const : 'heuristic' as const,
-        note: typeof entry.providerCostCents === 'number'
-          ? `Provider quote recorded during OCR execution: ${entry.providerCostCents.toFixed(4)}¢`
-          : 'deAPI OCR pricing is available from the provider quote endpoint during execution.'
-      })
-    }
-  }
-
-  return targets
-}
 
 const toDocumentSourceUrl = (target: string): string => {
   if (isLikelyUrl(target)) {
@@ -287,12 +138,6 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
   if (opts.gcloudDocaiModels) {
     extractionOpts.gcloudDocaiModels = opts.gcloudDocaiModels
   }
-  if (opts.deapiOcrModel) {
-    extractionOpts.deapiOcrModel = opts.deapiOcrModel
-  }
-  if (opts.deapiOcrModels) {
-    extractionOpts.deapiOcrModels = opts.deapiOcrModels
-  }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
   }
@@ -326,8 +171,8 @@ const writeDocumentOutputMetadata = async (
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
-    deapiOcrModel,
     artifactFiles,
+    preflightEstimate,
     completionStatus,
     requestedProviders,
     providerStates,
@@ -342,23 +187,25 @@ const writeDocumentOutputMetadata = async (
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
-    deepinfraOcrModel,
-    deapiOcrModel
+    deepinfraOcrModel
   })
 
-  const estimated = computeEstimatedCosts({
-    applyCostMultipliers: false,
-    extractTargets,
-    llmTargets: (Array.isArray(step3) ? step3 : [step3]).map((entry) => ({
-      service: entry.llmService,
-      model: entry.llmModel,
-      inputTokens: entry.inputTokenCount,
-      outputTokens: entry.outputTokenCount
-    })),
-    skipLLM: false
+  const estimated = resolveDocumentWriteEstimatedCosts(preflightEstimate, step2, step3, {
+    mistralOcrModel,
+    glmOcrModel,
+    kimiOcrModel,
+    openaiOcrModel,
+    anthropicOcrModel,
+    geminiOcrModel,
+    deepinfraOcrModel
   })
   const actual = computeActualCosts({ step2, step3 })
-  const cost = { estimated, actual }
+  const ocrDiagnostics = buildOcrCostDiagnostics(step2, estimated, actual)
+  const cost = {
+    estimated,
+    actual,
+    ...(ocrDiagnostics.length > 0 ? { ocrDiagnostics } : {})
+  }
 
   const estimatedTiming = computeEstimatedProcessingTimes({
     extractTargets: extractTargets.map((target) => ({
@@ -426,6 +273,7 @@ export const runDocumentWrite = async (
   opts: RuntimeOptions,
   sourceRef?: Step1SourceRef,
   preparedDocument?: PreparedDocument,
+  preflightEstimate?: AggregatedPriceEstimate,
   batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
   const llmConfig = resolveLLMDefaults(opts)
@@ -436,7 +284,8 @@ export const runDocumentWrite = async (
     target,
     buildExtractionCallOpts(target, baseDir, opts),
     sourceRef,
-    resolvedPreparedDocument
+    resolvedPreparedDocument,
+    preflightEstimate
   )
 
   const documentMeta: VideoMetadata = {
@@ -536,12 +385,12 @@ export const runDocumentWrite = async (
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
     deepinfraOcrModel: opts.deepinfraOcrModel,
-    deapiOcrModel: opts.deapiOcrModel,
     llmService,
     llmModel,
     llmInputTokenCount,
     llmOutputTokenCount,
     artifactFiles,
+    preflightEstimate,
     ...(extraction.completionStatus ? { completionStatus: extraction.completionStatus } : {}),
     ...(extraction.requestedProviders ? { requestedProviders: extraction.requestedProviders } : {}),
     ...(extraction.providerStates ? { providerStates: extraction.providerStates } : {}),

@@ -31,6 +31,7 @@ export type OcrResultBuilderInput = {
   completionTokens: number | undefined
   providerCostCents: number | undefined
   providerCostSource: HostedOcrRun['providerCostSource'] | undefined
+  ocrProviderUsage: HostedOcrRun['providerUsage'] | undefined
   chapterExportSummary: Record<string, unknown> | undefined
   pdfChapterDetectionSummary: Record<string, unknown> | undefined
   artifactFiles: EpubArtifactFile[] | undefined
@@ -102,14 +103,14 @@ export const buildOcrOutput = (
   if (typeof input.opts.gcloudDocaiModel === 'string' && input.extractionMethod.includes('gcloud-docai')) {
     step2MetadataPayload['ocrModel'] = input.opts.gcloudDocaiModel
   }
-  if (typeof input.opts.deapiOcrModel === 'string' && input.extractionMethod.includes('deapi-ocr')) {
-    step2MetadataPayload['ocrModel'] = input.opts.deapiOcrModel
-  }
   if (typeof input.providerCostCents === 'number') {
     step2MetadataPayload['providerCostCents'] = input.providerCostCents
   }
   if (input.providerCostSource) {
     step2MetadataPayload['providerCostSource'] = input.providerCostSource
+  }
+  if (input.ocrProviderUsage && input.ocrProviderUsage.length > 0) {
+    step2MetadataPayload['ocrProviderUsage'] = input.ocrProviderUsage
   }
   if (typeof input.promptTokens === 'number') {
     step2MetadataPayload['promptTokens'] = input.promptTokens

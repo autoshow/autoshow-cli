@@ -144,13 +144,13 @@ export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
 
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 
-export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'aws-textract' | 'gcloud-docai' | 'deapi-ocr'
+export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'aws-textract' | 'gcloud-docai'
 export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr'
 
 export type HostedOcrRun = {
   pages: PageResult[]
   extractionMethod: HostedExtractOcrEngine
-  ocrService: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai' | 'deapi'
+  ocrService: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai'
   ocrModel: string
   canonicalText?: string
   totalPages?: number
@@ -158,10 +158,11 @@ export type HostedOcrRun = {
   completionTokens?: number
   providerCostCents?: number
   providerCostSource?: 'provider_quote' | 'registry_fallback'
+  providerUsage?: Array<Record<string, unknown>>
 }
 
 export type OcrTarget = {
-  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai' | 'deapi'
+  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai'
   model: string
 }
 

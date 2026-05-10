@@ -77,8 +77,6 @@ export const resolveInputRoutingForCommand = async (
     | 'geminiOcrModels'
     | 'deepinfraOcrModel'
     | 'deepinfraOcrModels'
-    | 'deapiOcrModel'
-    | 'deapiOcrModels'
     | 'useEpubBun'
     | 'useEpubCalibre'
   >

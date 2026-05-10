@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { buildAudioNormalizeTable } from '~/cli/commands/process-steps/step-1-download/audio/audio-logging'
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
+import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 import { createReporter } from '~/utils/logger/reporter'
 import { createHumanTable, createKeyValueTable, renderHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
@@ -324,6 +325,126 @@ describe('logging contracts', () => {
     expect(writes[1]?.options?.humanTable).toBeDefined()
     expect(writes[2]?.options?.humanTable).toBeUndefined()
     expect(writes[3]?.options?.humanTable).toBeUndefined()
+  })
+
+  test('extract manifest summary includes OCR cost calculation diagnostics', () => {
+    const metadata = {
+      step2: {
+        extractionMethod: 'pdf+openai-ocr',
+        totalPages: 2,
+        ocrPages: 2,
+        textPages: 0,
+        processingTime: 1234,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 5000,
+        ocrService: 'openai',
+        ocrModel: 'gpt-5.4-nano',
+        promptTokens: 6000,
+        completionTokens: 1500
+      },
+      cost: {
+        estimated: {
+          totalCost: 0.41,
+          steps: [{
+            step: 'extract',
+            provider: 'openai',
+            model: 'gpt-5.4-nano',
+            cost: 0.41,
+            pageCount: 2,
+            promptTokens: 8000,
+            completionTokens: 2000,
+            inputCostPer1MCents: 20,
+            outputCostPer1MCents: 125,
+            estimateType: 'heuristic'
+          }]
+        },
+        actual: {
+          totalCost: 0.3075,
+          steps: [{
+            step: 'extract',
+            provider: 'openai',
+            model: 'gpt-5.4-nano',
+            cost: 0.3075,
+            inputMetric: 'tokens',
+            inputValue: 7500,
+            promptTokens: 6000,
+            completionTokens: 1500
+          }]
+        },
+        ocrDiagnostics: [{
+          provider: 'openai',
+          model: 'gpt-5.4-nano',
+          pages: 2,
+          predictedCostInputs: {
+            costCents: 0.41,
+            pageCount: 2,
+            inputMetric: 'tokens',
+            inputValue: 10000,
+            promptTokens: 8000,
+            completionTokens: 2000,
+            estimateType: 'heuristic'
+          },
+          actualCostInputs: {
+            costCents: 0.3075,
+            pageCount: 2,
+            inputMetric: 'tokens',
+            inputValue: 7500,
+            promptTokens: 6000,
+            completionTokens: 1500
+          },
+          ratesUsed: {
+            inputCostPer1MCents: 20,
+            outputCostPer1MCents: 125
+          },
+          delta: {
+            costCents: -0.1025,
+            percent: -25
+          }
+        }]
+      }
+    }
+
+    const summary = buildWriteManifestConsoleSummary(metadata)
+    expect(summary.runSummary?.rows[0]).toMatchObject({
+      step: 'Extract',
+      providerModel: 'openai/gpt-5.4-nano',
+      predictedCostCents: 0.41,
+      actualCostCents: 0.3075
+    })
+    expect(summary.promptUsage?.rows[0]).toMatchObject({
+      step: 'Extract',
+      providerModel: 'openai/gpt-5.4-nano',
+      usage: '6000/1500 tokens'
+    })
+    expect(summary.ocrCostCalculation?.rows[0]).toMatchObject({
+      providerModel: 'openai/gpt-5.4-nano',
+      pages: 2,
+      predictedInputs: '8000/2000 tokens',
+      actualInputs: '6000/1500 tokens',
+      predictedCostCents: 0.41,
+      actualCostCents: 0.3075,
+      deltaCents: -0.1025
+    })
+
+    const { logger, writes } = createCapturingLogger()
+    logExtractManifestConsoleSummary('/tmp/autoshow-run', metadata, {}, logger)
+    expect(writes.map((write) => write.message)).toEqual([
+      'Locations',
+      'Run Summary',
+      'Prompt Usage',
+      'OCR Cost Calculation'
+    ])
+    expect(writes[3]?.options?.humanTable?.columns).toEqual([
+      'providerModel',
+      'pages',
+      'predInputs',
+      'actInputs',
+      'rates',
+      'predCost',
+      'actCost',
+      'delta'
+    ])
   })
 
   test('reporter renders aggregate cost estimates as key/value rows', () => {

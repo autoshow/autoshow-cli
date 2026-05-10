@@ -35,6 +35,20 @@ test('extract rejects removed OpenAI OCR models', async () => {
   )
 })
 
+test('extract rejects removed Anthropic Sonnet OCR model', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-sonnet-4-6', '--price'],
+    'Invalid --anthropic-ocr model "claude-sonnet-4-6". Allowed values: claude-haiku-4-5, claude-opus-4-7'
+  )
+})
+
+test('extract rejects removed deAPI OCR flag', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--deapi-ocr', 'Nanonets_Ocr_S_F16', '--price'],
+    'Unexpected flag: deapiOcr'
+  )
+})
+
 test('music lyric-video mode rejects missing audio or batch', async () => {
   await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
 })

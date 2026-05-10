@@ -184,7 +184,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use `Qwen/Qwen3-VL-30B-A3B-Instruct` |
 | `--aws-textract <model>` | Use AWS Textract; omit the value to use the cheapest supported model |
 | `--gcloud-docai <model>` | Use Google Cloud Document AI; omit the value to use the cheapest supported model |
-| `--deapi-ocr <model>` | Use deAPI OCR; omit the value to use `Nanonets_Ocr_S_F16` |
 | `--dpi <n>` | Render DPI for OCR pages |
 | `--psm <n>` | Tesseract page segmentation mode |
 | `--oem <n>` | Tesseract OCR engine mode |

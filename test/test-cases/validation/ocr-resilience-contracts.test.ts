@@ -155,7 +155,14 @@ describe('OCR resilience contracts', () => {
         promptTokens: 2,
         completionTokens: 20,
         providerCostCents: 3,
-        providerCostSource: 'provider_quote'
+        providerCostSource: 'provider_quote',
+        providerUsage: [{
+          unit: 'chunk',
+          pageStart: 1,
+          pageEnd: 2,
+          promptTokens: 2,
+          completionTokens: 20
+        }]
       }),
       hostedRun([
         { pageNumber: 3, method: 'ocr', text: 'three' }
@@ -164,7 +171,16 @@ describe('OCR resilience contracts', () => {
         promptTokens: 1,
         completionTokens: 10,
         providerCostCents: 5,
-        providerCostSource: 'registry_fallback'
+        providerCostSource: 'registry_fallback',
+        providerUsage: [{
+          unit: 'chunk',
+          pageStart: 3,
+          pageEnd: 3,
+          promptTokens: 1,
+          completionTokens: 10,
+          providerCostCents: 5,
+          providerCostSource: 'registry_fallback'
+        }]
       })
     ], 3)
 
@@ -174,6 +190,24 @@ describe('OCR resilience contracts', () => {
     expect(result.completionTokens).toBe(30)
     expect(result.providerCostCents).toBe(8)
     expect(result.providerCostSource).toBe('registry_fallback')
+    expect(result.providerUsage).toEqual([
+      {
+        unit: 'chunk',
+        pageStart: 1,
+        pageEnd: 2,
+        promptTokens: 2,
+        completionTokens: 20
+      },
+      {
+        unit: 'chunk',
+        pageStart: 3,
+        pageEnd: 3,
+        promptTokens: 1,
+        completionTokens: 10,
+        providerCostCents: 5,
+        providerCostSource: 'registry_fallback'
+      }
+    ])
   })
 
   test('PDF fallback classifier splits retryable and limit failures but not auth or policy failures', () => {

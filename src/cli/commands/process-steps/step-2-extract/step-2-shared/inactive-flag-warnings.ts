@@ -29,7 +29,6 @@ export const hasConfiguredOcrProviderSelection = (
   || hasSelectedModel(opts.deepinfraOcrModels, opts.deepinfraOcrModel)
   || hasSelectedModel(opts.awsTextractModels, opts.awsTextractModel)
   || hasSelectedModel(opts.gcloudDocaiModels, opts.gcloudDocaiModel)
-  || hasSelectedModel(opts.deapiOcrModels, opts.deapiOcrModel)
 
 export const formatHtmlArticleOcrFlagsIgnoredWarning = (
   target?: string

@@ -137,9 +137,9 @@ export const processSingleTarget = async (
       const downloaded = await downloadDocumentUrlToTempFile(item)
       try {
         if (isExtractCommand(command)) {
-          return await processOcrSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
+          return await processOcrSingle(downloaded.filePath, baseDir, opts, { url: item }, undefined, preflightEstimate, batchChildContext)
         }
-        return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, batchChildContext)
+        return await runDocumentWrite(downloaded.filePath, baseDir, opts, { url: item }, undefined, preflightEstimate, batchChildContext)
       } finally {
         await downloaded.cleanup()
       }
@@ -148,9 +148,9 @@ export const processSingleTarget = async (
     if (kind === 'url_html_article') {
       const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       if (isExtractCommand(command)) {
-        return await processOcrSingle(item, baseDir, opts, { url: item }, prepared, batchChildContext)
+        return await processOcrSingle(item, baseDir, opts, { url: item }, prepared, preflightEstimate, batchChildContext)
       }
-      return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, batchChildContext)
+      return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, preflightEstimate, batchChildContext)
     }
 
     if (isExtractCommand(command)) {
@@ -181,11 +181,11 @@ export const processSingleTarget = async (
     const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
 
     if (isExtractCommand(command)) {
-      return await processOcrSingle(item, baseDir, opts, undefined, prepared, batchChildContext)
+      return await processOcrSingle(item, baseDir, opts, undefined, prepared, preflightEstimate, batchChildContext)
     }
 
     if (command === 'write') {
-      return await runDocumentWrite(item, baseDir, opts, undefined, prepared, batchChildContext)
+      return await runDocumentWrite(item, baseDir, opts, undefined, prepared, preflightEstimate, batchChildContext)
     }
   }
 
@@ -195,11 +195,11 @@ export const processSingleTarget = async (
     if (family !== 'document') {
       throwUnsupportedProcessInput(command, item, family)
     }
-    return await processOcrSingle(item, baseDir, opts, undefined, undefined, batchChildContext)
+    return await processOcrSingle(item, baseDir, opts, undefined, undefined, preflightEstimate, batchChildContext)
   }
 
   if (command === 'write' && family === 'document') {
-    return await runDocumentWrite(item, baseDir, opts, undefined, undefined, batchChildContext)
+    return await runDocumentWrite(item, baseDir, opts, undefined, undefined, preflightEstimate, batchChildContext)
   }
 
   if (isExtractCommand(command)) {

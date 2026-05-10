@@ -39,6 +39,17 @@ export type WritePromptUsageRow = {
   usage: string | null
 }
 
+export type OcrCostCalculationRow = {
+  providerModel: string
+  pages: number | null
+  predictedInputs: string | null
+  actualInputs: string | null
+  rates: string | null
+  predictedCostCents: number | null
+  actualCostCents: number | null
+  deltaCents: number | null
+}
+
 export type SummaryBaseRow = {
   stepKey: WriteStepKind
   step: string
@@ -83,9 +94,16 @@ export type PromptUsageSection = {
   rows: WritePromptUsageRow[]
 }
 
+export type OcrCostCalculationSection = {
+  columns: readonly string[]
+  humanTable: HumanLogTable
+  rows: OcrCostCalculationRow[]
+}
+
 export type WriteManifestConsoleSummary = {
   runSummary?: SummarySection
   promptUsage?: PromptUsageSection
+  ocrCostCalculation?: OcrCostCalculationSection
 }
 
 export type TargetBase = {

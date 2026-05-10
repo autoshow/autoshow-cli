@@ -4,6 +4,7 @@ import { writeFile } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import {
   ExtractionOptionsSchema,
+  type AggregatedPriceEstimate,
   type ExtractionOptions,
   type ExtractionMetadata,
   type ExtractionResult,
@@ -18,7 +19,6 @@ import {
   type OcrResumeRun
 } from '~/types'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
-import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from '../../step-1-download/document/dl-document'
 import { runOcr } from './orchestrator'
@@ -40,180 +40,15 @@ import {
 } from './ocr-run-state'
 import { runOcrProviderTargetPools } from './ocr-provider-pool'
 import { writeOcrRunManifest } from './manifest'
-import { DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE, DEEPINFRA_OCR_PRICE_NOTE, FIRECRAWL_PRICE_NOTE, KIMI_OCR_COMPLETION_TOKENS_PER_PAGE, KIMI_OCR_PRICE_NOTE } from './ocr-utils/extract-pricing'
 import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
+import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtractEstimatedCosts } from './ocr-costs'
+import { logExtractManifestConsoleSummary } from '../../write-manifest-log'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
-
-const collectEstimatedExtractTargets = (
-  metadata: ExtractionMetadata | ExtractionMetadata[]
-): Array<{
-  provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
-  model: string
-  pageCount?: number
-  promptTokens?: number
-  completionTokens?: number
-  quotedCostCents?: number
-  estimateType?: 'heuristic' | 'exact'
-  note?: string
-}> => {
-  const targets: Array<{
-    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'firecrawl' | 'gcloud-docai' | 'aws-textract' | 'deapi'
-    model: string
-    pageCount?: number
-    promptTokens?: number
-    completionTokens?: number
-    quotedCostCents?: number
-    estimateType?: 'heuristic' | 'exact'
-    note?: string
-  }> = []
-
-  for (const entry of Array.isArray(metadata) ? metadata : [metadata]) {
-    if (entry.extractionMethod === 'html+firecrawl') {
-      targets.push({
-        provider: 'firecrawl',
-        model: 'firecrawl',
-        pageCount: entry.totalPages,
-        estimateType: 'exact',
-        note: FIRECRAWL_PRICE_NOTE
-      })
-      continue
-    }
-
-    if (entry.extractionMethod.startsWith('html+')) {
-      continue
-    }
-
-    if (entry.ocrService === 'glm' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'glm' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'kimi' && typeof entry.ocrModel === 'string') {
-      const pageCount = entry.totalPages ?? 1
-      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
-      targets.push({
-        provider: 'kimi' as const,
-        model: entry.ocrModel,
-        pageCount,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * KIMI_OCR_COMPLETION_TOKENS_PER_PAGE }),
-        estimateType: hasUsage ? 'exact' : 'heuristic',
-        ...(hasUsage ? {} : { note: KIMI_OCR_PRICE_NOTE })
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'mistral' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'mistral' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        estimateType: 'exact' as const
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'openai' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'openai' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
-        note: 'Heuristic token estimate based on 4,000 prompt tokens per page. Actual OpenAI OCR cost is computed from response usage after execution.'
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'anthropic' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'anthropic' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic',
-        note: 'Heuristic token estimate based on 4,000 total tokens per page. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'gemini' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'gemini' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : {}),
-        estimateType: typeof entry.promptTokens === 'number' || typeof entry.completionTokens === 'number' ? 'exact' : 'heuristic'
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'deepinfra' && typeof entry.ocrModel === 'string') {
-      const pageCount = entry.totalPages ?? 1
-      const hasUsage = typeof entry.promptTokens === 'number' && typeof entry.completionTokens === 'number'
-      targets.push({
-        provider: 'deepinfra' as const,
-        model: entry.ocrModel,
-        pageCount,
-        ...(typeof entry.promptTokens === 'number' ? { promptTokens: entry.promptTokens } : {}),
-        ...(typeof entry.completionTokens === 'number' ? { completionTokens: entry.completionTokens } : { completionTokens: pageCount * DEEPINFRA_OCR_COMPLETION_TOKENS_PER_PAGE }),
-        estimateType: hasUsage ? 'exact' : 'heuristic',
-        ...(hasUsage ? {} : { note: DEEPINFRA_OCR_PRICE_NOTE })
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'gcloud-docai' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'gcloud-docai' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        estimateType: 'exact' as const
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'aws-textract' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'aws-textract' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        estimateType: 'exact' as const
-      })
-      continue
-    }
-
-    if (entry.ocrService === 'deapi' && typeof entry.ocrModel === 'string') {
-      targets.push({
-        provider: 'deapi' as const,
-        model: entry.ocrModel,
-        pageCount: entry.totalPages,
-        ...(typeof entry.providerCostCents === 'number' ? { quotedCostCents: entry.providerCostCents } : {}),
-        estimateType: typeof entry.providerCostCents === 'number' ? 'exact' as const : 'heuristic' as const,
-        note: typeof entry.providerCostCents === 'number'
-          ? `Provider quote recorded during OCR execution: ${entry.providerCostCents.toFixed(4)}¢`
-          : 'deAPI OCR pricing is available from the provider quote endpoint during execution.'
-      })
-    }
-  }
-
-  return targets
-}
 
 const writeExtractionArtifact = async (
   outputDir: string,
@@ -365,7 +200,7 @@ const formatProviderElapsed = (startedAt: number): string => `${Date.now() - sta
 const buildDocumentMetadataPayload = (
   step1Metadata: ProcessDocumentOutput['step1Metadata'],
   step2Metadata: ProcessDocumentOutput['step2Metadata'] | undefined,
-  options: OcrMetadataOptions = {}
+  options: OcrMetadataOptions & { preflightEstimate?: AggregatedPriceEstimate | undefined } = {}
 ): Record<string, unknown> => {
   const normalizedStep2 = step2Metadata === undefined
     ? []
@@ -374,12 +209,14 @@ const buildDocumentMetadataPayload = (
       : [step2Metadata]
   const failures = options.failures ?? []
   const extractTargets = collectEstimatedExtractTargets(normalizedStep2)
-  const estimated = computeEstimatedCosts({
-    applyCostMultipliers: false,
-    extractTargets
-  })
+  const estimated = resolveExtractEstimatedCosts(options.preflightEstimate, normalizedStep2)
   const actual = computeActualCosts({ step2: normalizedStep2 })
-  const cost = { estimated, actual }
+  const ocrDiagnostics = buildOcrCostDiagnostics(normalizedStep2, estimated, actual)
+  const cost = {
+    estimated,
+    actual,
+    ...(ocrDiagnostics.length > 0 ? { ocrDiagnostics } : {})
+  }
 
   const estimatedTiming = computeEstimatedProcessingTimes({
     extractTargets: extractTargets.map((target) => ({
@@ -432,6 +269,7 @@ export const processOcr = async (
   rawOpts: Partial<ExtractionOptions>,
   sourceRef?: Step1SourceRef,
   preparedDocument?: PreparedDocument,
+  preflightEstimate?: AggregatedPriceEstimate,
   resumeRun?: OcrResumeRun
 ): Promise<ProcessDocumentOutput> => {
   const resolvedOutputDir = resumeRun?.outputDir !== undefined
@@ -478,8 +316,6 @@ export const processOcr = async (
     ...(rawOpts.configPath ? { configPath: rawOpts.configPath } : {}),
     ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),
     ...(rawOpts.gcloudDocaiModels ? { gcloudDocaiModels: rawOpts.gcloudDocaiModels } : {}),
-    ...(rawOpts.deapiOcrModel ? { deapiOcrModel: rawOpts.deapiOcrModel } : {}),
-    ...(rawOpts.deapiOcrModels ? { deapiOcrModels: rawOpts.deapiOcrModels } : {}),
     ...(rawOpts.primaryOcr ? { primaryOcr: rawOpts.primaryOcr } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
@@ -599,20 +435,20 @@ export const processOcr = async (
         : undefined
       const firstSuccess = successes.find((entry): entry is OcrProviderSuccess => entry !== undefined)
 
-      await writeOcrRunManifest(
-        outputDir,
-        buildDocumentMetadataPayload(step1Metadata, step2Metadata, {
-          failures: metadataErrors,
-          web,
-          source: documentSource,
-          completionStatus,
-          resolvedStep2,
-          requestedProviders: requestedTargets.map(toRequestedProvider),
-          providerStates,
-          missingProviders,
-          ...(primaryTarget ? { primaryProvider: toRequestedProvider(primaryTarget) } : {})
-        })
-      )
+      const writtenMetadata = buildDocumentMetadataPayload(step1Metadata, step2Metadata, {
+        failures: metadataErrors,
+        web,
+        source: documentSource,
+        completionStatus,
+        resolvedStep2,
+        requestedProviders: requestedTargets.map(toRequestedProvider),
+        providerStates,
+        missingProviders,
+        ...(primaryTarget ? { primaryProvider: toRequestedProvider(primaryTarget) } : {}),
+        preflightEstimate
+      })
+      await writeOcrRunManifest(outputDir, writtenMetadata)
+      logExtractManifestConsoleSummary(outputDir, writtenMetadata)
 
       if (!firstSuccess) {
         throw new OcrBatchCompletionError(
@@ -672,9 +508,11 @@ export const processOcr = async (
             providerStates: buildSuccessfulResolvedProviderStates(resolvedRequestedProviders),
             missingProviders: []
           }
-        : {})
+        : {}),
+      preflightEstimate
     })
     await writeOcrRunManifest(outputDir, rootMetadata)
+    logExtractManifestConsoleSummary(outputDir, rootMetadata)
     await writeExtractionArtifact(
       outputDir,
       extracted.result,

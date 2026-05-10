@@ -144,7 +144,6 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
     && value['service'] !== 'deepinfra'
     && value['service'] !== 'aws-textract'
     && value['service'] !== 'gcloud-docai'
-    && value['service'] !== 'deapi'
   ) {
     return undefined
   }

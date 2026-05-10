@@ -325,6 +325,7 @@ const runResumeOcrTarget = async (
         buildResumeExtractionOpts(opts, entry.outputDir),
         entry.source,
         preparedDocument,
+        undefined,
         {
           outputDir: entry.outputDir,
           requestedTargets: entry.requestedTargets,

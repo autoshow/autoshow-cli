@@ -52,8 +52,7 @@ describe('provider selection contracts', () => {
       'gemini-ocr',
       'deepinfra-ocr',
       'aws-textract',
-      'gcloud-docai',
-      'deapi-ocr'
+      'gcloud-docai'
     ])
   })
 

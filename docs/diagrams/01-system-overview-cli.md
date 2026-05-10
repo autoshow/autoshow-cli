@@ -32,7 +32,7 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
-   - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, Cloudflare) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/deAPI OCR/hosted article backends)
+   - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, Cloudflare) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway, Speechify, Google Cloud, deAPI)
    - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway, BFL, deAPI)
@@ -162,7 +162,6 @@ src/cli/flags/
 │  ├── --deepinfra-ocr MODEL DeepInfra OCR (API)             │
 │  ├── --aws-textract MODEL AWS Textract                     │
 │  ├── --gcloud-docai MODEL Google Cloud Document AI         │
-│  ├── --deapi-ocr MODEL   deAPI OCR                         │
 │  ├── --primary-ocr NAME  top-level artifact provider       │
 │  └── --url-backend NAME  defuddle|firecrawl|glm-reader     │
 │                                                            │

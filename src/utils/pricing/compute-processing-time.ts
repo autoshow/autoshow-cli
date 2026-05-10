@@ -171,9 +171,6 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.deepinfraOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'deepinfra' as const, model: input.deepinfraOcrModel, pageCount: input.extractPageCount }]
-          : []),
-        ...(input.deapiOcrModel && typeof input.extractPageCount === 'number'
-          ? [{ provider: 'deapi' as const, model: input.deapiOcrModel, pageCount: input.extractPageCount }]
           : [])
       ]
 

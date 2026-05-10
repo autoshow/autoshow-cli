@@ -19,6 +19,6 @@ export const validateWriteStep2ProviderSelection = (command: ProcessCommand, opt
 
   const ocrTargets = collectExplicitOcrTargets(opts)
   if (ocrTargets.length > 1) {
-    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai, --deapi-ocr).')
+    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai).')
   }
 }

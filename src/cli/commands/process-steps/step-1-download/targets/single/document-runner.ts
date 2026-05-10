@@ -8,7 +8,7 @@ import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/proces
 import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { processOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
-import type { BatchChildRunContext, BatchItemProcessResult, PreparedDocument, RuntimeOptions, Step1SourceRef } from '~/types'
+import type { AggregatedPriceEstimate, BatchChildRunContext, BatchItemProcessResult, PreparedDocument, RuntimeOptions, Step1SourceRef } from '~/types'
 import { formatHtmlArticleOcrFlagsIgnoredWarning, hasConfiguredOcrProviderSelection } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
 import { buildDocumentMetadataView, writeMetadataTerminalOutput, writeSavedMetadataArtifacts } from './metadata-output'
 import { appendChapterExportArtifacts, buildExtractionCallOpts } from './document-write'
@@ -42,6 +42,7 @@ export const processOcrSingle = async (
   opts: RuntimeOptions,
   sourceRef?: Step1SourceRef,
   preparedDocument?: PreparedDocument,
+  preflightEstimate?: AggregatedPriceEstimate,
   batchChildContext?: BatchChildRunContext
 ): Promise<{ outputDir: string }> => {
   const resolvedPreparedDocument = preparedDocument ?? (batchChildContext
@@ -51,7 +52,8 @@ export const processOcrSingle = async (
     target,
     buildExtractionCallOpts(target, baseDir, opts),
     sourceRef,
-    resolvedPreparedDocument
+    resolvedPreparedDocument,
+    preflightEstimate
   )
 
   const artifactFiles: Record<string, string> = {

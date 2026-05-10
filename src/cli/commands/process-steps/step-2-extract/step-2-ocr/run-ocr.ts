@@ -77,16 +77,23 @@ export const runOcr = async (
   let completionTokens: number | undefined
   let providerCostCents: number | undefined
   let providerCostSource: HostedOcrRun['providerCostSource'] | undefined
+  let ocrProviderUsage: HostedOcrRun['providerUsage'] | undefined
   let chapterExportSummary: Record<string, unknown> | undefined
   let pdfChapterDetectionSummary: Record<string, unknown> | undefined
   let artifactFiles: EpubArtifactFile[] | undefined
 
   const mergeHostedProviderCost = (run: HostedOcrRun): void => {
     if (typeof run.providerCostCents !== 'number') {
+      if (run.providerUsage && run.providerUsage.length > 0) {
+        ocrProviderUsage = [...(ocrProviderUsage ?? []), ...run.providerUsage]
+      }
       return
     }
     providerCostCents = (providerCostCents ?? 0) + run.providerCostCents
     providerCostSource = run.providerCostSource ?? providerCostSource
+    if (run.providerUsage && run.providerUsage.length > 0) {
+      ocrProviderUsage = [...(ocrProviderUsage ?? []), ...run.providerUsage]
+    }
   }
 
   const useEpubBun = opts.useEpubBun === true
@@ -95,7 +102,7 @@ export const runOcr = async (
   const ocrEngineCount = countSelectedOcrEngines(opts)
 
   if ((typeof opts.preparedMarkdown !== 'string' || opts.preparedMarkdown.trim().length === 0) && ocrEngineCount > 1) {
-    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai, --deapi-ocr).')
+    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai).')
   }
 
   if (useEpubBun && useEpubCalibre) {
@@ -387,6 +394,7 @@ export const runOcr = async (
     completionTokens,
     providerCostCents,
     providerCostSource,
+    ocrProviderUsage,
     chapterExportSummary,
     pdfChapterDetectionSummary,
     artifactFiles

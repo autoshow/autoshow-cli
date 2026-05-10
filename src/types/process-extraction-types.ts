@@ -61,8 +61,6 @@ export const ExtractionOptionsSchema = v.object({
   configPath: v.optional(v.string(), undefined),
   gcloudDocaiModel: v.optional(v.string(), undefined),
   gcloudDocaiModels: v.optional(v.array(v.string()), undefined),
-  deapiOcrModel: v.optional(v.string(), undefined),
-  deapiOcrModels: v.optional(v.array(v.string()), undefined),
   primaryOcr: v.optional(v.string(), undefined),
   epubChapterFiles: v.optional(v.boolean(), undefined),
   epubChunkLimitChars: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
@@ -117,11 +115,11 @@ export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
     'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'openai-ocr', 'epub-bun', 'epub-calibre',
     'epub-text',
-    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+kimi-ocr', 'pdf+openai-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+deepinfra-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai', 'pdf+deapi-ocr',
+    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+kimi-ocr', 'pdf+openai-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+deepinfra-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai',
     'office-native', 'rtf-native',
-    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+kimi-ocr', 'cbz+openai-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+deepinfra-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai', 'cbz+deapi-ocr',
+    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+kimi-ocr', 'cbz+openai-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+deepinfra-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+kimi-ocr', 'image+openai-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+deepinfra-ocr', 'image+aws-textract', 'image+gcloud-docai', 'image+deapi-ocr',
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+kimi-ocr', 'image+openai-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+deepinfra-ocr', 'image+aws-textract', 'image+gcloud-docai',
     'glm-ocr',
     'kimi-ocr',
     'openai-ocr',
@@ -130,7 +128,6 @@ export const ExtractionMetadataSchema = v.object({
     'deepinfra-ocr',
     'aws-textract',
     'gcloud-docai',
-    'deapi-ocr',
     'html+defuddle', 'html+firecrawl', 'html+glm-reader'
   ]),
   totalPages: v.number(),
@@ -158,7 +155,8 @@ export const ExtractionMetadataSchema = v.object({
   headerContentTypeOverridden: v.optional(v.boolean(), undefined),
   metadataSchemaVersion: v.optional(v.number(), undefined),
   providerCostCents: v.optional(v.number(), undefined),
-  providerCostSource: v.optional(v.string(), undefined)
+  providerCostSource: v.optional(v.string(), undefined),
+  ocrProviderUsage: v.optional(v.array(v.record(v.string(), v.unknown())), undefined)
 })
 
 export const DocumentMetadataSchema = v.object({

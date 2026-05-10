@@ -81,7 +81,6 @@ export const REPEATABLE_MODEL_FLAGS = [
   'deepinfra-ocr',
   'aws-textract',
   'gcloud-docai',
-  'deapi-ocr',
   'llama',
   'openai',
   'groq',

@@ -123,7 +123,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     Supadata, AWS
 
   Hosted OCR/readiness
-    Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra, deAPI
+    Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra
 
   Hosted TTS readiness
     ElevenLabs, Groq, Grok, OpenAI, Gemini, Deepgram, Runway, Speechify,
@@ -152,7 +152,6 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `extract --gemini-ocr` | `GEMINI_API_KEY` |
 | `extract --kimi-ocr` | `KIMI_API_KEY` |
 | `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
-| `extract --deapi-ocr` | `DEAPI_API_KEY` |
 | `extract --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
 | `extract --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
