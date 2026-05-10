@@ -10,7 +10,9 @@
         "provider-comparison-report.md exists and contains ranking tables for local and cloud groups",
         "provider-comparison-report.json exists and is valid JSON with local and cloud keys",
         "The report provider count matches the number of providers/*/result.json directories",
-        "consensus-extraction.txt does not contain commentary, notes, or section headings"
+        "consensus-extraction.txt does not contain commentary, notes, or section headings",
+        "provider-comparison-report.md contains an Overall Ranking section with best overall and worst overall notes",
+        "provider-comparison-report.json has overallMetric, overallWeights, overall.count, and provider overallComponents fields"
       ],
       "files": [
         "evals/files/run.json",
@@ -42,7 +44,8 @@
         "provider-comparison-report.md has separate Local Models and Cloud Services sections",
         "provider-comparison-report.json has local and cloud top-level keys",
         "Local providers are not ranked against cloud providers",
-        "Local provider table does not include a Cost column"
+        "Local provider table does not include a Cost column",
+        "The combined overall leaderboard ranks local and cloud providers together without changing local/cloud accuracy rankings"
       ],
       "files": [
         "evals/files/run.json",

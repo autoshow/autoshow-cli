@@ -43,13 +43,18 @@ Scoring rules:
 2. Speaker-aware WER must use that same ordered word stream after mapping provider speaker IDs onto canonical speakers and inserting synthetic speaker-change tokens.
 3. Do not penalize providers for failing to match the gold segment boundaries exactly.
 4. WER breakdown reports substitutions, deletions, and insertions separately: `WER = (S + D + I) / N`.
-5. Text normalization expands contractions, abbreviations, and currency symbols, removes filler words, and strips punctuation before tokenization to avoid penalizing formatting differences as recognition errors.
+5. Overall score formula: `50% accuracy + 25% processing speed + 25% cost efficiency`, exposed as `overallMetric: "balanced-overall"` with `overallWeights: { accuracy: 0.5, processingSpeed: 0.25, costEfficiency: 0.25 }`.
+6. Overall accuracy uses `max(0, 100 * (1 - speakerAwareWER))`, processing speed and cost are min/max normalized across available provider values with lower values better, whisper and reverb are treated as local zero-cost providers, and missing timing or missing cloud cost receives a neutral 50/100 component score.
+7. Overall ranking sorts by `overallScore` descending, then accuracy component, speed component, cost component, and provider key ascending. The markdown report identifies both best and worst overall providers.
+8. Text normalization expands contractions, abbreviations, and currency symbols, removes filler words, and strips punctuation before tokenization to avoid penalizing formatting differences as recognition errors.
 
 The report script intentionally uses only:
 
 1. `consensus-transcription.txt`
 2. `providers/*/result.json`
 3. `run.json` cost and timing metadata
+
+JSON report includes `overallMetric`, `overallWeights`, and `overall` top-level fields. Each provider object includes backward-compatible `score` fields plus `overallScore`, `overallRank`, and `overallComponents`.
 
 It ignores:
 

@@ -138,6 +138,94 @@ function joinProviderNames(providers: Array<{ providerKey: string }>): string {
   return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function normalizeLowerIsBetter(value: number | null, availableValues: number[]): number {
+  if (!isFiniteNumber(value)) {
+    return 50;
+  }
+  const finiteValues = availableValues.filter(isFiniteNumber);
+  if (finiteValues.length === 0) {
+    return 50;
+  }
+  const min = Math.min(...finiteValues);
+  const max = Math.max(...finiteValues);
+  if (min === max) {
+    return 100;
+  }
+  return Math.max(0, Math.min(100, 100 * (1 - (value - min) / (max - min))));
+}
+
+function addOverallScores(providers: ProviderData[]): OverallScoredProvider[] {
+  const timingValues = providers.map((provider) => provider.processingTimeMs).filter(isFiniteNumber);
+  const costValues = providers
+    .map((provider) => isLocalService(provider.ttsService) ? 0 : provider.costCents)
+    .filter(isFiniteNumber);
+
+  const withComponents = providers.map((provider) => {
+    const costCents = isLocalService(provider.ttsService) ? 0 : provider.costCents;
+    const costSource = isLocalService(provider.ttsService)
+      ? "local-zero-cost"
+      : provider.costCents === null
+        ? "missing-cloud-cost"
+        : "reported-cost";
+    const accuracyScore = provider.roundtripWER !== null ? Math.max(0, 100 * (1 - provider.roundtripWER)) : 50;
+    const overallComponents: OverallComponents = {
+      accuracy: {
+        score: accuracyScore,
+        source: provider.roundtripWER !== null ? "roundtrip-wer" : "missing-roundtrip-accuracy",
+      },
+      processingSpeed: {
+        score: normalizeLowerIsBetter(provider.processingTimeMs, timingValues),
+        source: provider.processingTimeMs === null ? "missing-timing" : "processing-time",
+        processingTimeMs: provider.processingTimeMs,
+      },
+      costEfficiency: {
+        score: normalizeLowerIsBetter(costCents, costValues),
+        source: costSource,
+        costCents,
+      },
+    };
+    const overallScore =
+      overallComponents.accuracy.score * OVERALL_WEIGHTS.accuracy +
+      overallComponents.processingSpeed.score * OVERALL_WEIGHTS.processingSpeed +
+      overallComponents.costEfficiency.score * OVERALL_WEIGHTS.costEfficiency;
+    return {
+      ...provider,
+      overallScore,
+      overallComponents,
+    };
+  });
+
+  const overallRanks = new Map<string, number>();
+  [...withComponents]
+    .sort((left, right) => {
+      if (left.overallScore !== right.overallScore) {
+        return right.overallScore - left.overallScore;
+      }
+      if (left.overallComponents.accuracy.score !== right.overallComponents.accuracy.score) {
+        return right.overallComponents.accuracy.score - left.overallComponents.accuracy.score;
+      }
+      if (left.overallComponents.processingSpeed.score !== right.overallComponents.processingSpeed.score) {
+        return right.overallComponents.processingSpeed.score - left.overallComponents.processingSpeed.score;
+      }
+      if (left.overallComponents.costEfficiency.score !== right.overallComponents.costEfficiency.score) {
+        return right.overallComponents.costEfficiency.score - left.overallComponents.costEfficiency.score;
+      }
+      return left.providerKey.localeCompare(right.providerKey);
+    })
+    .forEach((provider, index) => {
+      overallRanks.set(provider.providerKey, index + 1);
+    });
+
+  return withComponents.map((provider) => ({
+    ...provider,
+    overallRank: overallRanks.get(provider.providerKey) ?? 0,
+  }));
+}
+
 type ProviderGroup = "local" | "cloud";
 
 interface RankedProvider {
@@ -151,11 +239,40 @@ interface RankedProvider {
   roundtripWER: number | null;
   speakingRateCharsPerSec: number | null;
   durationSeconds: number | null;
-  processingTimeMs: number;
+  processingTimeMs: number | null;
   costCents: number | null;
   audioFileSize: number;
   audioFileName: string;
+  overallRank: number;
+  overallScore: number;
+  overallComponents: OverallComponents;
 }
+
+interface OverallComponents {
+  accuracy: {
+    score: number;
+    source: "roundtrip-wer" | "missing-roundtrip-accuracy";
+  };
+  processingSpeed: {
+    score: number;
+    source: "processing-time" | "missing-timing";
+    processingTimeMs: number | null;
+  };
+  costEfficiency: {
+    score: number;
+    source: "local-zero-cost" | "reported-cost" | "missing-cloud-cost";
+    costCents: number | null;
+  };
+}
+
+const OVERALL_WEIGHTS = {
+  accuracy: 0.5,
+  processingSpeed: 0.25,
+  costEfficiency: 0.25,
+} as const;
+
+type ProviderData = Omit<RankedProvider, "rank" | "overallRank" | "overallScore" | "overallComponents">;
+type OverallScoredProvider = ProviderData & Pick<RankedProvider, "overallRank" | "overallScore" | "overallComponents">;
 
 // Natural speaking rate for English: ~120-180 chars/sec
 // Deviation from midpoint (150 c/s) is penalized
@@ -190,7 +307,7 @@ export async function buildReport(
   const timingLookup = buildTimingLookup(runJson);
   const hasRoundtrip = roundtripDir !== null;
 
-  const providerData: Array<Omit<RankedProvider, "rank">> = [];
+  const providerData: ProviderData[] = [];
 
   for (const entry of runJson.metadata.tts) {
     const providerKey = makeProviderKey(entry.ttsService, entry.ttsModel);
@@ -208,7 +325,7 @@ export async function buildReport(
 
     const speakingRate = durationSeconds !== null ? computeSpeakingRate(charCount, durationSeconds) : null;
     const costCents = costLookup.get(providerKey) ?? null;
-    const processingTimeMs = timingLookup.get(providerKey) ?? entry.processingTime;
+    const processingTimeMs = timingLookup.get(providerKey) ?? (isFiniteNumber(entry.processingTime) ? entry.processingTime : null);
 
     let wer: number | null = null;
     if (hasRoundtrip) {
@@ -232,7 +349,7 @@ export async function buildReport(
       const costComponent = costCents !== null && costCents === 0 ? 20 : costCents !== null ? Math.max(0, 20 * (1 - costCents / 20)) : 10;
 
       // Speed component: faster processing is better
-      const speedComponent = processingTimeMs > 0 ? Math.max(0, 20 * (1 - processingTimeMs / 60000)) : 10;
+      const speedComponent = processingTimeMs !== null && processingTimeMs > 0 ? Math.max(0, 20 * (1 - processingTimeMs / 60000)) : 10;
 
       score = rateComponent + costComponent + speedComponent;
     }
@@ -254,10 +371,11 @@ export async function buildReport(
   }
 
   // Partition into local and cloud groups
-  const localData = providerData.filter((p) => isLocalService(p.ttsService));
-  const cloudData = providerData.filter((p) => !isLocalService(p.ttsService));
+  const providerDataWithOverall = addOverallScores(providerData);
+  const localData = providerDataWithOverall.filter((p) => isLocalService(p.ttsService));
+  const cloudData = providerDataWithOverall.filter((p) => !isLocalService(p.ttsService));
 
-  function rankGroup(group: Array<Omit<RankedProvider, "rank">>, groupLabel: ProviderGroup): RankedProvider[] {
+  function rankGroup(group: OverallScoredProvider[], groupLabel: ProviderGroup): RankedProvider[] {
     return [...group]
       .sort((left, right) => {
         if (left.roundtripWER !== null && right.roundtripWER !== null) {
@@ -276,12 +394,31 @@ export async function buildReport(
   const rankedLocal = rankGroup(localData, "local");
   const rankedCloud = rankGroup(cloudData, "cloud");
   const allRanked = [...rankedLocal, ...rankedCloud];
+  const rankedOverall = [...allRanked].sort((left, right) => {
+    if (left.overallRank !== right.overallRank) {
+      return left.overallRank - right.overallRank;
+    }
+    return left.providerKey.localeCompare(right.providerKey);
+  });
 
   const scoringMethod = hasRoundtrip && allRanked.some((p) => p.roundtripWER !== null)
     ? "roundtrip-wer"
     : "composite";
 
   const notes: string[] = [];
+
+  const bestOverall = rankedOverall[0];
+  const worstOverall = rankedOverall.at(-1);
+  if (bestOverall) {
+    notes.push(
+      `Best overall provider: \`${bestOverall.providerKey}\` scored ${bestOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
+    );
+  }
+  if (worstOverall) {
+    notes.push(
+      `Worst overall provider: \`${worstOverall.providerKey}\` scored ${worstOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
+    );
+  }
 
   if (rankedLocal.length > 0 && rankedLocal[0]) {
     notes.push(
@@ -304,13 +441,13 @@ export async function buildReport(
     );
   }
 
-  const allWithTime = allRanked.filter((p) => p.processingTimeMs > 0);
+  const allWithTime = allRanked.filter((p) => p.processingTimeMs !== null && p.processingTimeMs > 0);
   if (allWithTime.length > 0) {
     const fastestLocal = rankedLocal.length > 0
-      ? [...rankedLocal].sort((a, b) => a.processingTimeMs - b.processingTimeMs)[0]
+      ? [...rankedLocal].sort((a, b) => (a.processingTimeMs ?? Infinity) - (b.processingTimeMs ?? Infinity))[0]
       : null;
     const fastestCloud = rankedCloud.length > 0
-      ? [...rankedCloud].sort((a, b) => a.processingTimeMs - b.processingTimeMs)[0]
+      ? [...rankedCloud].sort((a, b) => (a.processingTimeMs ?? Infinity) - (b.processingTimeMs ?? Infinity))[0]
       : null;
     if (fastestLocal) {
       notes.push(
@@ -326,7 +463,7 @@ export async function buildReport(
 
   if (scoringMethod === "composite") {
     notes.push(
-      "No roundtrip STT data was available. Ranking used a composite of speaking rate naturalness (60%), cost (20%), and speed (20%).",
+      "No roundtrip STT data was available. Existing local/cloud ranking used a composite of speaking rate naturalness (60%), cost (20%), and speed (20%); overall ranking used neutral 50/100 accuracy components for providers without roundtrip data.",
     );
   }
 
@@ -342,12 +479,36 @@ export async function buildReport(
     inputTextWordCount: wordCount,
     metric: scoringMethod,
     scoreFormula,
+    overallMetric: "balanced-overall",
+    overallWeights: OVERALL_WEIGHTS,
+    overall: { count: rankedOverall.length, providers: rankedOverall },
     local: { count: rankedLocal.length, providers: rankedLocal },
     cloud: { count: rankedCloud.length, providers: rankedCloud },
     notes,
   };
 
   const hasWerColumn = allRanked.some((p) => p.roundtripWER !== null);
+
+  function buildOverallRankingTable(providers: RankedProvider[]): string {
+    const headerCols = ["Rank", "Provider", "Group", "Overall / 100", "Accuracy", "Speed", "Cost"];
+    const headerRow = `| ${headerCols.join(" | ")} |`;
+    const separatorRow = `| ${headerCols.map(() => "---:").join(" | ")} |`;
+    const rows = providers
+      .map((p) => {
+        const cols = [
+          String(p.overallRank),
+          `\`${p.providerKey}\``,
+          p.group,
+          p.overallScore.toFixed(2),
+          p.overallComponents.accuracy.score.toFixed(2),
+          p.overallComponents.processingSpeed.score.toFixed(2),
+          p.overallComponents.costEfficiency.score.toFixed(2),
+        ];
+        return `| ${cols.join(" | ")} |`;
+      })
+      .join("\n");
+    return `${headerRow}\n${separatorRow}\n${rows}`;
+  }
 
   function buildRankingTable(providers: RankedProvider[], includeCost: boolean): string {
     const headerCols = ["Rank", "Provider", "Score / 100"];
@@ -391,7 +552,7 @@ export async function buildReport(
 
   const methodDescription = hasWerColumn
     ? "- Roundtrip WER was computed by transcribing each provider's audio via STT and comparing against the original input text.\n- Ranking primarily uses roundtrip WER (lower is better)."
-    : "- No roundtrip STT transcriptions were available.\n- Ranking uses a composite score: 60% speaking rate naturalness (120-180 c/s optimal for English), 20% cost efficiency, 20% processing speed.";
+    : "- No roundtrip STT transcriptions were available.\n- Existing local/cloud ranking uses a composite score: 60% speaking rate naturalness (120-180 c/s optimal for English), 20% cost efficiency, 20% processing speed.\n- Overall ranking uses neutral 50/100 accuracy components when roundtrip WER is missing.";
 
   const localSection = rankedLocal.length > 0
     ? `### Local Models (${rankedLocal.length})
@@ -419,6 +580,7 @@ ${buildRankingTable(rankedCloud, true)}
 - Total providers: ${allRanked.length} (${rankedLocal.length} local, ${rankedCloud.length} cloud)
 - Scoring method: ${scoringMethod === "roundtrip-wer" ? "roundtrip WER (TTS audio -> STT -> compare against original text)" : "composite (speaking rate naturalness + cost + speed)"}
 - Score formula: \`${scoreFormula}\`
+- Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
 
 ## Method
 
@@ -426,7 +588,12 @@ ${buildRankingTable(rankedCloud, true)}
 - Audio duration was measured via ffprobe to compute speaking rate (characters per second).
 - Cost and processing time were extracted from \`run.json\` metadata.
 - Providers are separated into local models and cloud services for independent comparison.
+- Overall ranking combines all providers using roundtrip WER accuracy when present, neutral 50/100 accuracy when missing, normalized processing speed, and normalized cost efficiency.
 ${methodDescription}
+
+## Overall Ranking
+
+${buildOverallRankingTable(rankedOverall)}
 
 ## Ranking
 

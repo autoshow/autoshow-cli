@@ -89,17 +89,20 @@ The report script:
 5. Computes text-only WER and speaker-aware WER from each provider's ordered word stream rather than by forcing provider text onto gold segment boundaries.
 6. Reports WER breakdown with substitutions, deletions, and insertions: `WER = (S + D + I) / N`.
 7. Pulls actual cost and processing time from `run.json` when available.
-8. Ignores `transcription.txt` files and any pre-existing comparison reports.
+8. Adds a combined overall leaderboard using `overallScore = 50% accuracy + 25% processing speed + 25% cost efficiency`, treats whisper and reverb as local/free for cost scoring, and reports the best and worst overall providers.
+9. Ignores `transcription.txt` files and any pre-existing comparison reports.
 
 ## Validation Checklist
 
 1. Confirm `consensus-transcription.txt` exists and every nonblank line matches `[HH:MM:SS] [speaker-n] text`.
 2. Confirm the providers counted in the report are the providers that actually exist under `providers/`.
 3. Confirm `reference-comparison-report.md` and `.json` were regenerated after the consensus transcript changed.
-4. Confirm speaker labels are stable across the transcript and the report speaker maps are non-empty for diarized providers.
-5. Confirm the final segment in the consensus transcript does not extend past the run duration in `run.json`.
-6. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
-7. If a script fails, report the exact command, the run directory, and the first actionable error line.
+4. Confirm the markdown report contains an `Overall Ranking` section with best and worst overall notes.
+5. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, and per-provider `overallComponents`.
+6. Confirm speaker labels are stable across the transcript and the report speaker maps are non-empty for diarized providers.
+7. Confirm the final segment in the consensus transcript does not extend past the run duration in `run.json`.
+8. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
+9. If a script fails, report the exact command, the run directory, and the first actionable error line.
 
 ## Gotchas
 

@@ -45,8 +45,12 @@ Scoring rules:
 2. Without roundtrip data, score using a composite: 60% speaking rate naturalness (120-180 c/s optimal for English), 20% cost efficiency, 20% processing speed.
 3. Cost and processing time are extracted from `run.json` metadata (actual if available, estimated as fallback).
 4. Each group is ranked independently so local and cloud providers are not mixed.
+5. Overall score formula: `50% accuracy + 25% processing speed + 25% cost efficiency`, exposed as `overallMetric: "balanced-overall"` with `overallWeights: { accuracy: 0.5, processingSpeed: 0.25, costEfficiency: 0.25 }`.
+6. Overall accuracy uses roundtrip WER when available; providers missing roundtrip accuracy receive a neutral 50/100 accuracy component marked as `missing-roundtrip-accuracy`.
+7. Overall processing speed and cost are min/max normalized across available provider values with lower values better, local providers score as zero monetary cost, and missing timing or missing cloud cost receives a neutral 50/100 component score.
+8. Overall ranking sorts by `overallScore` descending, then accuracy component, speed component, cost component, and provider key ascending. The markdown report identifies both best and worst overall providers.
 
-The JSON report uses `local` and `cloud` top-level keys instead of a flat `providers` array.
+The JSON report uses `overall`, `local`, and `cloud` top-level keys instead of a flat `providers` array. Each provider object includes backward-compatible `score` fields plus `overallScore`, `overallRank`, and `overallComponents`.
 
 The report script uses only:
 

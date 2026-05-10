@@ -87,7 +87,8 @@ The report script:
 5. Reports WER and CER breakdowns with substitutions, deletions, and insertions: `WER = (S + D + I) / N`.
 6. Ranks providers by WER within separate local and cloud groups.
 7. Pulls actual cost and processing time from `run.json` when available.
-8. Ignores `extraction.txt` files and any pre-existing comparison reports.
+8. Adds a combined overall leaderboard using `overallScore = 50% accuracy + 25% processing speed + 25% cost efficiency`, and reports the best and worst overall providers.
+9. Ignores `extraction.txt` files and any pre-existing comparison reports.
 
 ## Validation Checklist
 
@@ -95,9 +96,11 @@ The report script:
 2. Confirm the providers counted in the report match the providers that actually exist under `providers/`.
 3. Confirm `provider-comparison-report.md` and `.json` were regenerated after the consensus extraction changed.
 4. Confirm local and cloud providers are ranked in separate groups.
-5. Confirm the local provider table does not include a Cost column.
-6. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
-7. If a script fails, report the exact command, the run directory, and the first actionable error line.
+5. Confirm the markdown report contains an `Overall Ranking` section with best and worst overall notes.
+6. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, and per-provider `overallComponents`.
+7. Confirm the local provider table does not include a Cost column.
+8. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
+9. If a script fails, report the exact command, the run directory, and the first actionable error line.
 
 ## Gotchas
 

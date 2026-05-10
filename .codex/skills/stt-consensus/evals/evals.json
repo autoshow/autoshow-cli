@@ -11,7 +11,9 @@
         "reference-comparison-report.json exists and is valid JSON",
         "Speaker labels are stable canonical labels like speaker-1, speaker-2 throughout",
         "Timestamps are monotonically increasing",
-        "The report provider count matches the number of providers/*/result.json directories"
+        "The report provider count matches the number of providers/*/result.json directories",
+        "reference-comparison-report.md contains an Overall Ranking section with best overall and worst overall notes",
+        "reference-comparison-report.json has overallMetric, overallWeights, overall.count, and provider overallComponents fields"
       ],
       "files": [
         "evals/files/run.json",
@@ -27,7 +29,8 @@
       "assertions": [
         "The regenerated report does not mention the removed provider by name in the ranking",
         "The provider count in the report matches the number of result.json files on disk",
-        "The stale comparison report was not used as input"
+        "The stale comparison report was not used as input",
+        "The regenerated report derives the overall provider count from current result.json files only"
       ],
       "files": [
         "evals/files/run.json",

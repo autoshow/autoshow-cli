@@ -11,7 +11,9 @@
         "provider-comparison-report.md exists and contains a ranking table",
         "provider-comparison-report.json exists and is valid JSON",
         "The report provider count matches the number of entries in metadata.tts[]",
-        "consensus-evaluation.txt states which metrics were and were not available"
+        "consensus-evaluation.txt states which metrics were and were not available",
+        "provider-comparison-report.md contains an Overall Ranking section with best overall and worst overall notes",
+        "provider-comparison-report.json has overallMetric, overallWeights, overall.count, and provider overallComponents fields"
       ],
       "files": [
         "evals/files/run.json",
@@ -45,7 +47,8 @@
         "The scoring method is reported as composite, not roundtrip-wer",
         "The evaluation mentions that roundtrip STT data was not available",
         "Providers are ranked by speaking rate naturalness, cost, and speed",
-        "The report score formula references the composite method"
+        "The report score formula references the composite method",
+        "Providers missing roundtrip STT accuracy receive neutral overall accuracy components and do not produce NaN overall scores"
       ],
       "files": [
         "evals/files/run.json",

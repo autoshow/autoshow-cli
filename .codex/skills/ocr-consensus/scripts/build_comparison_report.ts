@@ -46,7 +46,36 @@ interface RankedProvider {
   tokenEstimate: number | null;
   processingTimeMs: number | null;
   costCents: number | null;
+  overallRank: number;
+  overallScore: number;
+  overallComponents: OverallComponents;
 }
+
+interface OverallComponents {
+  accuracy: {
+    score: number;
+    source: "wer";
+  };
+  processingSpeed: {
+    score: number;
+    source: "processing-time" | "missing-timing";
+    processingTimeMs: number | null;
+  };
+  costEfficiency: {
+    score: number;
+    source: "local-zero-cost" | "reported-cost" | "missing-cloud-cost";
+    costCents: number | null;
+  };
+}
+
+const OVERALL_WEIGHTS = {
+  accuracy: 0.5,
+  processingSpeed: 0.25,
+  costEfficiency: 0.25,
+} as const;
+
+type ProviderData = Omit<RankedProvider, "rank" | "overallRank" | "overallScore" | "overallComponents">;
+type OverallScoredProvider = ProviderData & Pick<RankedProvider, "overallRank" | "overallScore" | "overallComponents">;
 
 function helpText(): string {
   return [
@@ -145,6 +174,95 @@ function joinProviderNames(providers: Array<{ providerKey: string }>): string {
   return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function normalizeLowerIsBetter(value: number | null, availableValues: number[]): number {
+  if (!isFiniteNumber(value)) {
+    return 50;
+  }
+  const finiteValues = availableValues.filter(isFiniteNumber);
+  if (finiteValues.length === 0) {
+    return 50;
+  }
+  const min = Math.min(...finiteValues);
+  const max = Math.max(...finiteValues);
+  if (min === max) {
+    return 100;
+  }
+  return Math.max(0, Math.min(100, 100 * (1 - (value - min) / (max - min))));
+}
+
+function addOverallScores(providers: ProviderData[]): OverallScoredProvider[] {
+  const timingValues = providers.map((provider) => provider.processingTimeMs).filter(isFiniteNumber);
+  const costValues = providers
+    .map((provider) => provider.group === "local" ? 0 : provider.costCents)
+    .filter(isFiniteNumber);
+
+  const withComponents = providers.map((provider) => {
+    const costCents = provider.group === "local" ? 0 : provider.costCents;
+    const costSource = provider.group === "local"
+      ? "local-zero-cost"
+      : provider.costCents === null
+        ? "missing-cloud-cost"
+        : "reported-cost";
+    const processingSpeedScore = normalizeLowerIsBetter(provider.processingTimeMs, timingValues);
+    const costEfficiencyScore = normalizeLowerIsBetter(costCents, costValues);
+    const overallComponents: OverallComponents = {
+      accuracy: {
+        score: provider.score,
+        source: "wer",
+      },
+      processingSpeed: {
+        score: processingSpeedScore,
+        source: provider.processingTimeMs === null ? "missing-timing" : "processing-time",
+        processingTimeMs: provider.processingTimeMs,
+      },
+      costEfficiency: {
+        score: costEfficiencyScore,
+        source: costSource,
+        costCents,
+      },
+    };
+    const overallScore =
+      overallComponents.accuracy.score * OVERALL_WEIGHTS.accuracy +
+      overallComponents.processingSpeed.score * OVERALL_WEIGHTS.processingSpeed +
+      overallComponents.costEfficiency.score * OVERALL_WEIGHTS.costEfficiency;
+    return {
+      ...provider,
+      overallScore,
+      overallComponents,
+    };
+  });
+
+  const overallRanks = new Map<string, number>();
+  [...withComponents]
+    .sort((left, right) => {
+      if (left.overallScore !== right.overallScore) {
+        return right.overallScore - left.overallScore;
+      }
+      if (left.overallComponents.accuracy.score !== right.overallComponents.accuracy.score) {
+        return right.overallComponents.accuracy.score - left.overallComponents.accuracy.score;
+      }
+      if (left.overallComponents.processingSpeed.score !== right.overallComponents.processingSpeed.score) {
+        return right.overallComponents.processingSpeed.score - left.overallComponents.processingSpeed.score;
+      }
+      if (left.overallComponents.costEfficiency.score !== right.overallComponents.costEfficiency.score) {
+        return right.overallComponents.costEfficiency.score - left.overallComponents.costEfficiency.score;
+      }
+      return left.providerKey.localeCompare(right.providerKey);
+    })
+    .forEach((provider, index) => {
+      overallRanks.set(provider.providerKey, index + 1);
+    });
+
+  return withComponents.map((provider) => ({
+    ...provider,
+    overallRank: overallRanks.get(provider.providerKey) ?? 0,
+  }));
+}
+
 export function buildReport(runDir: string, consensusPath: string) {
   const consensus = parseConsensusExtraction(consensusPath);
   const consensusFullText = consensus.pages.map((p) => p.text).join("\n\n");
@@ -159,7 +277,7 @@ export function buildReport(runDir: string, consensusPath: string) {
     throw new Error(`No providers found in ${runDir}`);
   }
 
-  const providerData: Array<Omit<RankedProvider, "rank">> = [];
+  const providerData: ProviderData[] = [];
 
   for (const provider of providers) {
     const providerFullText = provider.text;
@@ -193,10 +311,11 @@ export function buildReport(runDir: string, consensusPath: string) {
     });
   }
 
-  const localData = providerData.filter((p) => p.group === "local");
-  const cloudData = providerData.filter((p) => p.group === "cloud");
+  const providerDataWithOverall = addOverallScores(providerData);
+  const localData = providerDataWithOverall.filter((p) => p.group === "local");
+  const cloudData = providerDataWithOverall.filter((p) => p.group === "cloud");
 
-  function rankGroup(group: Array<Omit<RankedProvider, "rank">>, groupLabel: ProviderGroup): RankedProvider[] {
+  function rankGroup(group: OverallScoredProvider[], groupLabel: ProviderGroup): RankedProvider[] {
     return [...group]
       .sort((left, right) => {
         if (left.wer !== right.wer) {
@@ -212,8 +331,27 @@ export function buildReport(runDir: string, consensusPath: string) {
 
   const rankedLocal = rankGroup(localData, "local");
   const rankedCloud = rankGroup(cloudData, "cloud");
+  const rankedOverall = [...rankedLocal, ...rankedCloud].sort((left, right) => {
+    if (left.overallRank !== right.overallRank) {
+      return left.overallRank - right.overallRank;
+    }
+    return left.providerKey.localeCompare(right.providerKey);
+  });
 
   const notes: string[] = [];
+
+  const bestOverall = rankedOverall[0];
+  const worstOverall = rankedOverall.at(-1);
+  if (bestOverall) {
+    notes.push(
+      `Best overall provider: \`${bestOverall.providerKey}\` scored ${bestOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
+    );
+  }
+  if (worstOverall) {
+    notes.push(
+      `Worst overall provider: \`${worstOverall.providerKey}\` scored ${worstOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
+    );
+  }
 
   if (rankedLocal.length > 0 && rankedLocal[0]) {
     notes.push(
@@ -273,6 +411,9 @@ export function buildReport(runDir: string, consensusPath: string) {
       currencySymbolsExpanded: true,
       punctuationStripped: true,
     },
+    overallMetric: "balanced-overall",
+    overallWeights: OVERALL_WEIGHTS,
+    overall: { count: rankedOverall.length, providers: rankedOverall },
     local: { count: rankedLocal.length, providers: rankedLocal },
     cloud: { count: rankedCloud.length, providers: rankedCloud },
     notes,
@@ -299,6 +440,27 @@ export function buildReport(runDir: string, consensusPath: string) {
         if (includeCost) {
           cols.push(formatCents(p.costCents));
         }
+        return `| ${cols.join(" | ")} |`;
+      })
+      .join("\n");
+    return `${headerRow}\n${separatorRow}\n${rows}`;
+  }
+
+  function buildOverallRankingTable(rankedProviders: RankedProvider[]): string {
+    const headerCols = ["Rank", "Provider", "Group", "Overall / 100", "Accuracy", "Speed", "Cost"];
+    const headerRow = `| ${headerCols.join(" | ")} |`;
+    const separatorRow = `| ${headerCols.map(() => "---:").join(" | ")} |`;
+    const rows = rankedProviders
+      .map((p) => {
+        const cols = [
+          String(p.overallRank),
+          `\`${p.providerKey}\``,
+          p.group,
+          p.overallScore.toFixed(2),
+          p.overallComponents.accuracy.score.toFixed(2),
+          p.overallComponents.processingSpeed.score.toFixed(2),
+          p.overallComponents.costEfficiency.score.toFixed(2),
+        ];
         return `| ${cols.join(" | ")} |`;
       })
       .join("\n");
@@ -346,6 +508,7 @@ ${buildRankingTable(rankedCloud, true)}
 - Total providers: ${totalProviders} (${rankedLocal.length} local, ${rankedCloud.length} cloud)
 - Ranking metric: word error rate (WER) against consensus extraction
 - Score formula: \`${scoreFormula}\`
+- Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
 - WER formula: \`(Substitutions + Deletions + Insertions) / Reference Word Count\`
 
 ## Method
@@ -355,6 +518,11 @@ ${buildRankingTable(rankedCloud, true)}
 - WER compares the provider's full word stream against the gold extraction word stream.
 - CER compares normalized character sequences for finer-grained accuracy.
 - Providers are separated into local models and cloud services for independent comparison.
+- Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
+
+## Overall Ranking
+
+${buildOverallRankingTable(rankedOverall)}
 
 ## Ranking
 

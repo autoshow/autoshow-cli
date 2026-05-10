@@ -119,6 +119,131 @@ function joinProviderNames(providers: Array<{ provider: string }>): string {
   return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
+const OVERALL_WEIGHTS = {
+  accuracy: 0.5,
+  processingSpeed: 0.25,
+  costEfficiency: 0.25,
+} as const;
+
+const LOCAL_STT_SERVICES = new Set(["whisper", "reverb"]);
+
+interface OverallComponents {
+  accuracy: {
+    score: number;
+    source: "speaker-aware-wer";
+  };
+  processingSpeed: {
+    score: number;
+    source: "processing-time" | "missing-timing";
+    processingTimeMs: number | null;
+  };
+  costEfficiency: {
+    score: number;
+    source: "local-zero-cost" | "reported-cost" | "missing-cloud-cost";
+    costCents: number | null;
+  };
+}
+
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function normalizeLowerIsBetter(value: number | null, availableValues: number[]): number {
+  if (!isFiniteNumber(value)) {
+    return 50;
+  }
+  const finiteValues = availableValues.filter(isFiniteNumber);
+  if (finiteValues.length === 0) {
+    return 50;
+  }
+  const min = Math.min(...finiteValues);
+  const max = Math.max(...finiteValues);
+  if (min === max) {
+    return 100;
+  }
+  return Math.max(0, Math.min(100, 100 * (1 - (value - min) / (max - min))));
+}
+
+function isLocalSttProvider(provider: string, providerKey: string): boolean {
+  const providerName = provider.toLowerCase();
+  const serviceName = providerKey.split("/")[0]?.toLowerCase() ?? providerName;
+  return LOCAL_STT_SERVICES.has(serviceName) || [...LOCAL_STT_SERVICES].some((service) => providerName === service || providerName.startsWith(`${service}-`));
+}
+
+function addOverallScores<T extends {
+  provider: string;
+  providerKey: string;
+  score: number;
+  actualProcessingTimeMs: number | null;
+  actualCostCents: number | null;
+}>(providers: T[]): Array<T & { overallRank: number; overallScore: number; overallComponents: OverallComponents }> {
+  const timingValues = providers.map((provider) => provider.actualProcessingTimeMs).filter(isFiniteNumber);
+  const costValues = providers
+    .map((provider) => isLocalSttProvider(provider.provider, provider.providerKey) ? 0 : provider.actualCostCents)
+    .filter(isFiniteNumber);
+
+  const withComponents = providers.map((provider) => {
+    const isLocal = isLocalSttProvider(provider.provider, provider.providerKey);
+    const costCents = isLocal ? 0 : provider.actualCostCents;
+    const costSource = isLocal
+      ? "local-zero-cost"
+      : provider.actualCostCents === null
+        ? "missing-cloud-cost"
+        : "reported-cost";
+    const overallComponents: OverallComponents = {
+      accuracy: {
+        score: provider.score,
+        source: "speaker-aware-wer",
+      },
+      processingSpeed: {
+        score: normalizeLowerIsBetter(provider.actualProcessingTimeMs, timingValues),
+        source: provider.actualProcessingTimeMs === null ? "missing-timing" : "processing-time",
+        processingTimeMs: provider.actualProcessingTimeMs,
+      },
+      costEfficiency: {
+        score: normalizeLowerIsBetter(costCents, costValues),
+        source: costSource,
+        costCents,
+      },
+    };
+    const overallScore =
+      overallComponents.accuracy.score * OVERALL_WEIGHTS.accuracy +
+      overallComponents.processingSpeed.score * OVERALL_WEIGHTS.processingSpeed +
+      overallComponents.costEfficiency.score * OVERALL_WEIGHTS.costEfficiency;
+    return {
+      ...provider,
+      overallScore,
+      overallComponents,
+    };
+  });
+
+  const overallRanks = new Map<string, number>();
+  [...withComponents]
+    .sort((left, right) => {
+      if (left.overallScore !== right.overallScore) {
+        return right.overallScore - left.overallScore;
+      }
+      if (left.overallComponents.accuracy.score !== right.overallComponents.accuracy.score) {
+        return right.overallComponents.accuracy.score - left.overallComponents.accuracy.score;
+      }
+      if (left.overallComponents.processingSpeed.score !== right.overallComponents.processingSpeed.score) {
+        return right.overallComponents.processingSpeed.score - left.overallComponents.processingSpeed.score;
+      }
+      if (left.overallComponents.costEfficiency.score !== right.overallComponents.costEfficiency.score) {
+        return right.overallComponents.costEfficiency.score - left.overallComponents.costEfficiency.score;
+      }
+      return left.providerKey.localeCompare(right.providerKey);
+    })
+    .forEach((provider, index) => {
+      overallRanks.set(provider.providerKey, index + 1);
+    });
+
+  return withComponents.map((provider) => ({
+    ...provider,
+    overallRank: overallRanks.get(provider.providerKey) ?? 0,
+  }));
+}
+
 export function buildReport(runDir: string, referencePath: string) {
   const runJson = loadRunJson(runDir);
   const runDurationSeconds = durationSecondsFromRun(runJson);
@@ -128,8 +253,7 @@ export function buildReport(runDir: string, referencePath: string) {
     throw new Error(`No providers/*/result.json files found under ${runDir}`);
   }
 
-  const rankedProviders = providers
-    .map((provider) => {
+  const rankedProviders = addOverallScores(providers.map((provider) => {
       const speakerMap = mapProviderSpeakers(referenceSegments, provider.segments);
       const textOnlyWer = wordWer(referenceSegments, provider.segments, false);
       const speakerAwareWer = wordWer(referenceSegments, provider.segments, true, speakerMap);
@@ -158,7 +282,7 @@ export function buildReport(runDir: string, referencePath: string) {
         speakerPenalty: speakerAwareWer - textOnlyWer,
         speakerMap,
       };
-    })
+    }))
     .sort((left, right) => {
       if (left.speakerAwareWER !== right.speakerAwareWER) {
         return left.speakerAwareWER - right.speakerAwareWER;
@@ -172,6 +296,12 @@ export function buildReport(runDir: string, referencePath: string) {
       ...provider,
       rank: index + 1,
     }));
+  const rankedOverall = [...rankedProviders].sort((left, right) => {
+    if (left.overallRank !== right.overallRank) {
+      return left.overallRank - right.overallRank;
+    }
+    return left.providerKey.localeCompare(right.providerKey);
+  });
 
   const bestProvider = rankedProviders[0];
   if (!bestProvider) {
@@ -186,9 +316,22 @@ export function buildReport(runDir: string, referencePath: string) {
     throw new Error("Could not compute speaker penalty notes");
   }
 
+  const bestOverall = rankedOverall[0];
+  const worstOverall = rankedOverall.at(-1);
   const notes = [
     `\`${bestProvider.provider}\` was the most accurate provider on strict speaker-aware WER, scoring ${bestProvider.score.toFixed(2)}/100.`,
   ];
+
+  if (bestOverall) {
+    notes.push(
+      `Best overall provider: \`${bestOverall.provider}\` scored ${bestOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
+    );
+  }
+  if (worstOverall) {
+    notes.push(
+      `Worst overall provider: \`${worstOverall.provider}\` scored ${worstOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
+    );
+  }
 
   if (providersWithCost.length > 0) {
     const cheapestCost = Math.min(...providersWithCost.map((provider) => provider.actualCostCents as number));
@@ -235,11 +378,20 @@ export function buildReport(runDir: string, referencePath: string) {
       punctuationStripped: true,
       fillerWordsRemoved: true,
     },
+    overallMetric: "balanced-overall",
+    overallWeights: OVERALL_WEIGHTS,
+    overall: { count: rankedOverall.length, providers: rankedOverall },
     providers: rankedProviders,
     notes,
   };
 
   const providerList = rankedProviders.map((provider) => `  - \`${provider.provider}\``).join("\n");
+  const overallRankingRows = rankedOverall
+    .map(
+      (provider) =>
+        `| ${provider.overallRank} | \`${provider.provider}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
+    )
+    .join("\n");
   const rankingRows = rankedProviders
     .map(
       (provider) =>
@@ -264,6 +416,7 @@ export function buildReport(runDir: string, referencePath: string) {
 ${providerList}
 - Ranking metric: strict speaker-aware word error rate (WER)
 - Score formula: \`max(0, 100 * (1 - speakerAwareWER))\`
+- Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
 - WER formula: \`(Substitutions + Deletions + Insertions) / Reference Word Count\`
 - Cost and processing time source: actual per-provider billing and timing data from \`run.json\` when available
 
@@ -278,6 +431,13 @@ ${providerList}
 - Text-only WER compares the provider's full ordered word stream against the gold transcript word stream.
 - Speaker-aware WER compares those same ordered word streams after inserting synthetic speaker-change tokens and mapping provider speaker IDs onto canonical gold speakers by overlap.
 - Ranking uses exact unrounded speaker-aware WER, with text-only WER included for context.
+- Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score; whisper and reverb are treated as local zero-cost providers.
+
+## Overall Ranking
+
+| Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| --- | --- | ---: | ---: | ---: | ---: |
+${overallRankingRows}
 
 ## Ranking
 
