@@ -2,10 +2,9 @@ import type { AudioSegmentDescriptor } from '~/types'
 import * as l from '~/utils/logger'
 import { exec, ensureDirectory } from '~/utils/cli-utils'
 import { planNormalizedAudioArtifact, resolveSplitAudioPlan } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
+import { logSttSplitSegments, logSttSplitSummary } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 
 export const splitAudioFile = async (audioPath: string, outputDir: string, segmentDurationMinutes: number = 10): Promise<AudioSegmentDescriptor[]> => {
-  l.write('info', `Splitting audio file into ${segmentDurationMinutes}-minute segments`)
-
   const segmentDurationSeconds = segmentDurationMinutes * 60
   const segmentsDir = `${outputDir}/segments`
   await ensureDirectory(segmentsDir)
@@ -25,8 +24,12 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
   }
   const totalSegments = Math.ceil(totalDuration / segmentDurationSeconds)
 
-  l.write('info', `Audio duration: ${Math.floor(totalDuration / 60)} minutes`)
-  l.write('info', `Will create ${totalSegments} segments`)
+  logSttSplitSummary(l, {
+    input: audioPath,
+    segmentDurationMinutes,
+    totalDurationSeconds: totalDuration,
+    totalSegments
+  })
 
   const segmentDescriptors: AudioSegmentDescriptor[] = []
 
@@ -55,7 +58,6 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
       throw new Error(`Failed to create segment ${i + 1}`)
     }
 
-    l.write('success', `Segment ${i + 1}/${totalSegments} created`)
     segmentDescriptors.push({
       path: segmentPath,
       segmentNumber: i + 1,
@@ -65,6 +67,7 @@ export const splitAudioFile = async (audioPath: string, outputDir: string, segme
     } satisfies AudioSegmentDescriptor)
   }
 
+  logSttSplitSegments(l, segmentDescriptors)
   return segmentDescriptors
 }
 

@@ -9,7 +9,10 @@ import type {
 } from '~/types'
 import { ElevenLabsSttResponseSchema } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttDiarizationConfig,
+  logSttSegmentLifecycle
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -173,7 +176,12 @@ export const runElevenLabsTranscribe = async (
     logSttSegmentLifecycle(l, { provider: 'elevenlabs', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
   if (diarizationOptions?.speakerCount !== undefined) {
-    l.write('info', `ElevenLabs diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
+    logSttDiarizationConfig(l, {
+      provider: 'elevenlabs',
+      model: modelName,
+      enabled: true,
+      speakerCount: diarizationOptions.speakerCount
+    })
   }
 
   const startTime = Date.now()

@@ -49,6 +49,7 @@ import { collectSttTargets } from './stt-targets'
 import { createMistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
 import { assertNever } from '~/utils/validate/assert-never'
 import type { SplitPolicyTarget } from '~/types'
+import { logSttSplitDecision } from './stt-logging'
 
 export { STT_ENGINE_CAPABILITIES, getSttEngineCapabilities, resolveDiarizationOptions } from './cli'
 export {
@@ -81,24 +82,6 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'glm-stt',
   'together'
 ])
-
-const formatBytes = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < (1024 * 1024)) return `${(bytes / 1024).toFixed(1)} KB`
-  if (bytes < (1024 * 1024 * 1024)) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-}
-
-const formatSeconds = (seconds: number): string =>
-  Number.isInteger(seconds) ? `${seconds} seconds` : `${seconds.toFixed(1)} seconds`
-
-const formatSegmentDurationMinutes = (minutes: number): string => {
-  const roundedMinutes = Number.isInteger(minutes) ? String(minutes) : String(Number(minutes.toFixed(2)))
-  return `${roundedMinutes}-minute`
-}
-
-const formatServiceLabel = (service: string): string =>
-  `${service[0]!.toUpperCase()}${service.slice(1)}`
 
 const toErrorMessage = (error: unknown): string | undefined => {
   if (error instanceof Error) {
@@ -161,13 +144,10 @@ const logAutoSplitDecision = (
     return
   }
 
-  const inputFilename = audioPath.split('/').pop() || 'audio'
-  if (autoReason.kind === 'attachment_cap') {
-    l.warn(`${formatServiceLabel(target.service)} file uploads are capped at ${formatBytes(autoReason.attachmentCapBytes)}; ${inputFilename} is ${formatBytes(autoReason.audioFileSizeBytes)}. Splitting into ${formatSegmentDurationMinutes(splitDecision.segmentDurationMinutes)} segments automatically`)
-    return
-  }
-
-  l.warn(`${formatServiceLabel(target.service)} ${target.model} audio duration is capped at ${formatSeconds(autoReason.maxDurationSeconds)}; ${inputFilename} is ${formatSeconds(autoReason.audioDurationSeconds)}. Splitting into ${formatSegmentDurationMinutes(splitDecision.segmentDurationMinutes)} segments automatically`)
+  logSttSplitDecision(l, target, splitDecision, {
+    trigger: 'auto',
+    audioPath
+  })
 }
 
 export const shouldSplitTranscriptionInput = (
@@ -684,11 +664,16 @@ export const sttTarget = async (
         audioFileSizeBytes: audioFileSize,
         audioDurationSeconds: effectiveOptions.audioDurationSeconds
       })
-      if (splitRetryReason === 'attachment_cap') {
-        l.warn(`${formatServiceLabel(target.service)} rejected the upload as too large. Retrying with ${formatSegmentDurationMinutes(splitSegmentDurationMinutes)} split transcription`)
-      } else {
-        l.warn(`${formatServiceLabel(target.service)} ${target.model} exceeded the model audio duration limit. Retrying with ${formatSegmentDurationMinutes(splitSegmentDurationMinutes)} split transcription`)
-      }
+      logSttSplitDecision(l, target, {
+        reasons: [],
+        segmentDurationMinutes: splitSegmentDurationMinutes
+      }, {
+        trigger: 'retry',
+        retryReason: splitRetryReason,
+        audioPath,
+        audioFileSizeBytes: audioFileSize,
+        audioDurationSeconds: effectiveOptions.audioDurationSeconds
+      })
 
       return await runSplitTranscription(target, audioPath, outputDir, {
         ...effectiveOptions,

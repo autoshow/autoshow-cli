@@ -62,7 +62,7 @@ import { setupDeapiMusicGen } from '~/cli/commands/process-steps/step-7-music/mu
 import { setupGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/gemini-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
-import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import { logProviderReadiness, logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
 const RUNTIME = join(PROJECT_ROOT, 'runtime')
@@ -227,10 +227,20 @@ const setupHostedVideoApiKey = async (
 ): Promise<void> => {
   const apiKey = process.env[envKey]
   if (apiKey && apiKey.length > 0) {
-    l.write('success', `${envKey} found — ${providerName} video generation ready`)
+    logProviderReadiness(l, {
+      provider: providerName,
+      capability: 'video generation',
+      status: 'ready',
+      envKey
+    })
   } else {
-    l.warn(`${envKey} not set — ${providerName} video generation will not work until set`)
-    l.write('info', `Set ${envKey} environment variable to use ${providerName} video models`)
+    logProviderReadiness(l, {
+      provider: providerName,
+      capability: 'video generation',
+      status: 'missing',
+      envKey,
+      detail: `Set ${envKey} environment variable to use ${providerName} video models`
+    })
   }
 }
 

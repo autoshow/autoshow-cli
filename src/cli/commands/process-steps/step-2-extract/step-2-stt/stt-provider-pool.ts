@@ -10,7 +10,8 @@ import { buildSttProviderSlotSummaries, describeSttBatchProviderSlotLimits } fro
 import { getSttEngineCapabilities } from './orchestrator'
 import { formatSttTargetLabel } from './stt-targets'
 import {
-  logSttProviderConcurrency
+  logSttProviderConcurrency,
+  logSttProviderSpeakerCountHints
 } from './stt-logging'
 
 const emittedInfoMessages = new Set<string>()
@@ -25,13 +26,13 @@ const emitInfoOnce = (key: string, emit: () => void): void => {
   emit()
 }
 
-const logWarnOnce = (message: string): void => {
-  if (emittedWarnMessages.has(message)) {
+const emitWarnOnce = (key: string, emit: () => void): void => {
+  if (emittedWarnMessages.has(key)) {
     return
   }
 
-  emittedWarnMessages.add(message)
-  l.warn(message)
+  emittedWarnMessages.add(key)
+  emit()
 }
 
 export const resolveEffectiveSttProviderConcurrency = (
@@ -59,7 +60,16 @@ export const logSpeakerCountHintSummary = (
     formatSttTargetLabel
   )
   if (warning) {
-    logWarnOnce(warning)
+    emitWarnOnce(warning, () => {
+      logSttProviderSpeakerCountHints(
+        l,
+        targets.map((target) => ({
+          provider: formatSttTargetLabel(target),
+          speakerCount: requestedSpeakerCount as number,
+          support: getSttEngineCapabilities(target.service).supportsSpeakerCountHint ? 'honored' : 'ignored'
+        }))
+      )
+    })
   }
 }
 

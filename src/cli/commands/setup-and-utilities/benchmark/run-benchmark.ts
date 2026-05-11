@@ -5,6 +5,7 @@ import { probeMediaFile } from '~/cli/commands/process-steps/step-1-download/aud
 import { sttTarget } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/run-stt'
 import * as l from '~/utils/logger'
 import { sanitizeLogText } from '~/utils/logger/redaction'
+import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { generateCompressionVariant, generateSpeedVariant } from './audio-variants'
 import { resolveAvailableServices, parseReferenceStt } from './benchmark-services'
 import { computeWER } from './wer'
@@ -276,7 +277,13 @@ export const runBenchmark = async (
     : resolve('output', 'benchmark', timestamp)
   await ensureDir(outputDir)
 
-  l.write('info',`Benchmark output: ${outputDir}`)
+  l.write('info', 'Benchmark Output', {
+    category: 'artifact',
+    humanTable: createKeyValueTable([
+      ['directory', outputDir]
+    ]),
+    metadata: { outputDir }
+  })
 
   // Phase 1: Prepare source audio
   l.write('info','\n--- Phase 1: Prepare Source Audio ---')
@@ -290,7 +297,19 @@ export const runBenchmark = async (
     flags['skip-compression'], flags['skip-speed']
   )
   const allVariants = [...compressionVariants, ...speedVariants]
-  l.write('info',`Generated ${allVariants.length} variants (${compressionVariants.length} compression, ${speedVariants.length} speed)`)
+  l.write('info', 'Benchmark Variants', {
+    category: 'pipeline',
+    humanTable: createKeyValueTable([
+      ['total', allVariants.length],
+      ['compression', compressionVariants.length],
+      ['speed', speedVariants.length]
+    ]),
+    metadata: {
+      total: allVariants.length,
+      compression: compressionVariants.length,
+      speed: speedVariants.length
+    }
+  })
 
   // Phase 3: Resolve available services and get reference transcription
   l.write('info','\n--- Phase 3: Reference Transcription ---')
@@ -319,8 +338,19 @@ export const runBenchmark = async (
   // Phase 4: Transcribe all variants through all services
   l.write('info','\n--- Phase 4: Transcribe Variants ---')
   const services = resolveAvailableServices(flags['stt-services'])
-  l.write('info',`Testing ${services.length} service/model combinations across ${allVariants.length} variants`)
-  l.write('info',`Services: ${[...new Set(services.map(s => s.service))].join(', ')}`)
+  l.write('info', 'Benchmark Matrix', {
+    category: 'pipeline',
+    humanTable: createKeyValueTable([
+      ['serviceModels', services.length],
+      ['variants', allVariants.length],
+      ['services', [...new Set(services.map(s => s.service))].join(', ')]
+    ]),
+    metadata: {
+      serviceModels: services.length,
+      variants: allVariants.length,
+      services: [...new Set(services.map(s => s.service))]
+    }
+  })
 
   const transcriptions: VariantTranscription[] = []
   for (const variant of allVariants) {
@@ -404,28 +434,65 @@ export const runBenchmark = async (
 
   const reportPath = join(outputDir, 'report.json')
   await Bun.write(reportPath, JSON.stringify(report, null, 2))
-  l.write('info',`Report written to: ${reportPath}`)
+  l.write('info', 'Benchmark Report', {
+    category: 'artifact',
+    humanTable: createKeyValueTable([
+      ['path', reportPath]
+    ]),
+    metadata: { reportPath }
+  })
 
   // Print summary
-  l.write('info','\n=== Benchmark Summary ===')
-  l.write('info',`Total variants tested: ${allVariants.length}`)
-  l.write('info',`Total transcriptions: ${transcriptions.length}`)
-  l.write('info',`Errors: ${transcriptions.filter(t => t.error).length}`)
+  l.write('info', 'Benchmark Summary', {
+    category: 'pipeline',
+    humanTable: createKeyValueTable([
+      ['variants', allVariants.length],
+      ['transcriptions', transcriptions.length],
+      ['errors', transcriptions.filter(t => t.error).length]
+    ]),
+    metadata: {
+      variants: allVariants.length,
+      transcriptions: transcriptions.length,
+      errors: transcriptions.filter(t => t.error).length
+    }
+  })
 
   if (summary.bestCompressionThreshold) {
-    l.write('info',`\nBest compression threshold: ${summary.bestCompressionThreshold.minBitrateKbps}kbps`)
-    l.write('info',`  Service: ${summary.bestCompressionThreshold.service}:${summary.bestCompressionThreshold.model}`)
-    l.write('info',`  WER at threshold: ${(summary.bestCompressionThreshold.werAtThreshold * 100).toFixed(1)}%`)
+    l.write('info', 'Benchmark Compression Threshold', {
+      category: 'pipeline',
+      humanTable: createKeyValueTable([
+        ['minBitrateKbps', summary.bestCompressionThreshold.minBitrateKbps],
+        ['providerModel', `${summary.bestCompressionThreshold.service}/${summary.bestCompressionThreshold.model}`],
+        ['wer', `${(summary.bestCompressionThreshold.werAtThreshold * 100).toFixed(1)}%`]
+      ]),
+      metadata: summary.bestCompressionThreshold
+    })
   }
 
   if (summary.bestSpeedThreshold) {
-    l.write('info',`\nBest speed threshold: ${summary.bestSpeedThreshold.maxSpeed}x`)
-    l.write('info',`  Service: ${summary.bestSpeedThreshold.service}:${summary.bestSpeedThreshold.model}`)
-    l.write('info',`  WER at threshold: ${(summary.bestSpeedThreshold.werAtThreshold * 100).toFixed(1)}%`)
+    l.write('info', 'Benchmark Speed Threshold', {
+      category: 'pipeline',
+      humanTable: createKeyValueTable([
+        ['maxSpeed', `${summary.bestSpeedThreshold.maxSpeed}x`],
+        ['providerModel', `${summary.bestSpeedThreshold.service}/${summary.bestSpeedThreshold.model}`],
+        ['wer', `${(summary.bestSpeedThreshold.werAtThreshold * 100).toFixed(1)}%`]
+      ]),
+      metadata: summary.bestSpeedThreshold
+    })
   }
 
-  l.write('info','\nService rankings (by average WER):')
-  for (const ranking of summary.serviceRankings.slice(0, 10)) {
-    l.write('info',`  ${ranking.service}:${ranking.model} — ${(ranking.averageWer * 100).toFixed(1)}%`)
-  }
+  l.write('info', 'Benchmark Rankings', {
+    category: 'pipeline',
+    humanTable: createHumanTable(
+      summary.serviceRankings.slice(0, 10).map((ranking, index) => ({
+        rank: index + 1,
+        providerModel: `${ranking.service}/${ranking.model}`,
+        averageWer: `${(ranking.averageWer * 100).toFixed(1)}%`
+      })),
+      ['rank', 'providerModel', 'averageWer']
+    ),
+    metadata: {
+      rankings: summary.serviceRankings.slice(0, 10)
+    }
+  })
 }

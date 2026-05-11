@@ -11,8 +11,14 @@ import {
   parseOcrmypdfOutputLine
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-logging'
 import {
+  buildSttCleanupArtifactsTable,
+  buildSttDiarizationConfigTable,
+  buildSttProviderSpeakerCountHintsTable,
   buildSttProviderConcurrencyTable,
   buildSttProviderSlotsTable,
+  buildSttSplitDecisionTable,
+  buildSttSplitSegmentsTable,
+  buildSttTranscriptOutputTable,
   logSttProviderConcurrency
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
@@ -22,9 +28,11 @@ import {
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
+import { buildProviderReadinessTable } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 import { createReporter } from '~/utils/logger/reporter'
 import { createHumanTable, createKeyValueTable, renderHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
+import { buildRetryAttemptTable } from '~/utils/retries'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
 import { stripAnsi } from '~/utils/terminal-colors'
@@ -394,6 +402,102 @@ describe('logging contracts', () => {
     })
   })
 
+  test('STT split and retry table builders expose structured rows', () => {
+    expect(buildSttSplitDecisionTable(
+      { service: 'groq', model: 'whisper-large-v3-turbo' },
+      {
+        reasons: [{ kind: 'attachment_cap', attachmentCapBytes: 25_000_000, audioFileSizeBytes: 30_000_000 }],
+        segmentDurationMinutes: 12.5
+      }
+    )).toEqual({
+      columns: ['provider', 'model', 'trigger', 'reason', 'cap', 'inputSize', 'inputDuration', 'segmentDuration'],
+      rows: [{
+        provider: 'groq',
+        model: 'whisper-large-v3-turbo',
+        trigger: 'auto',
+        reason: 'attachment_cap',
+        cap: '23.8 MB',
+        inputSize: '28.6 MB',
+        inputDuration: '',
+        segmentDuration: '12.5m'
+      }]
+    })
+
+    expect(buildRetryAttemptTable({
+      operation: 'supadata-poll-transcript',
+      attempt: 2,
+      maxAttempts: 4,
+      reason: 'retryable status 429',
+      delayMs: 1000
+    })).toEqual({
+      columns: ['operation', 'attempt', 'maxAttempts', 'reason', 'delayMs'],
+      rows: [{
+        operation: 'supadata-poll-transcript',
+        attempt: 2,
+        maxAttempts: 4,
+        reason: 'retryable status 429',
+        delayMs: 1000
+      }]
+    })
+  })
+
+  test('STT segment, diarization, output, and cleanup tables use compact shapes', () => {
+    expect(buildSttSplitSegmentsTable([
+      {
+        path: '/tmp/out/segments/segment_001.flac',
+        segmentNumber: 1,
+        totalSegments: 2,
+        startSeconds: 0,
+        durationSeconds: 1799.5
+      },
+      {
+        path: '/tmp/out/segments/segment_002.flac',
+        segmentNumber: 2,
+        totalSegments: 2,
+        startSeconds: 1799.5,
+        durationSeconds: 60
+      }
+    ])).toEqual({
+      columns: ['segment', 'start', 'duration', 'path'],
+      rows: [
+        { segment: '1/2', start: '0s', duration: '1799.5s', path: '/tmp/out/segments/segment_001.flac' },
+        { segment: '2/2', start: '1799.5s', duration: '60s', path: '/tmp/out/segments/segment_002.flac' }
+      ]
+    })
+
+    expect(buildSttDiarizationConfigTable({
+      provider: 'aws',
+      model: 'standard',
+      enabled: true,
+      speakerCount: 3,
+      maxSpeakers: 3
+    }).rows).toEqual([
+      { key: 'provider', value: 'aws' },
+      { key: 'model', value: 'standard' },
+      { key: 'enabled', value: true },
+      { key: 'speakerCount', value: 3 },
+      { key: 'maxSpeakers', value: 3 }
+    ])
+
+    expect(buildSttTranscriptOutputTable({
+      provider: 'reverb',
+      path: '/tmp/out/transcription.txt',
+      characters: 1234,
+      speakers: 2
+    }).columns).toEqual(['key', 'value'])
+
+    const cleanupRendered = stripAnsi(renderHumanTable(buildSttCleanupArtifactsTable([
+      { artifact: 'ctm', path: '/tmp/out/reverb-output/file.ctm' }
+    ])))
+    expect(cleanupRendered).toContain('\u2502 ctm \u2502 /tmp/out/reverb-output/file.ctm')
+    expect(cleanupRendered).not.toContain('\u2502 artifact \u2502 path')
+
+    expect(buildSttProviderSpeakerCountHintsTable([
+      { provider: 'aws/standard', speakerCount: 2, support: 'honored' },
+      { provider: 'reverb/reverb_asr_v1', speakerCount: 2, support: 'ignored' }
+    ]).columns).toEqual(['provider', 'speakerCount', 'support'])
+  })
+
   test('json sink routes warnings and errors to stderr and info to stdout', () => {
     const sink = createJsonSink()
     const captured = withColorEnv({ forceColor: '1' }, () => captureConsole(() => {
@@ -444,6 +548,22 @@ describe('logging contracts', () => {
       checked: '3 commands',
       totalEstimatedCost: '12.35\u00a2'
     }])
+    expect(buildProviderReadinessTable({
+      provider: 'supadata',
+      capability: 'transcription',
+      status: 'ready',
+      envKey: 'SUPADATA_API_KEY',
+      detail: 'https://api.supadata.ai/v1'
+    })).toEqual({
+      columns: ['provider', 'capability', 'status', 'envKey', 'detail'],
+      rows: [{
+        provider: 'supadata',
+        capability: 'transcription',
+        status: 'ready',
+        envKey: 'SUPADATA_API_KEY',
+        detail: 'https://api.supadata.ai/v1'
+      }]
+    })
   })
 
   test('ocr log table builders produce structured progress rows', () => {

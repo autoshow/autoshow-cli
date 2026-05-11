@@ -10,7 +10,13 @@ import type {
   TranscriptionResult
 } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttAsyncJobLifecycle,
+  logSttCleanupFailure,
+  logSttDiarizationConfig,
+  logSttSegmentLifecycle,
+  logSttTranscriptOutput
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -169,7 +175,13 @@ export const runAwsStt = async (
   }
 
   const maxSpeakerLabels = resolveAwsMaxSpeakerLabels(diarizationOptions?.speakerCount)
-  l.write('info', `AWS diarization enabled with max speakers: ${maxSpeakerLabels}`)
+  logSttDiarizationConfig(l, {
+    provider: 'aws',
+    model: modelName,
+    enabled: true,
+    ...(diarizationOptions?.speakerCount !== undefined ? { speakerCount: diarizationOptions.speakerCount } : {}),
+    maxSpeakers: maxSpeakerLabels
+  })
 
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
@@ -295,7 +307,12 @@ export const runAwsStt = async (
       ])
       return true
     } catch (error) {
-      l.warn(`AWS cleanup failed for job ${transcriptionJobName}: ${error instanceof Error ? error.message : String(error)}`)
+      logSttCleanupFailure(l, {
+        provider: 'aws',
+        artifact: 'job',
+        id: transcriptionJobName,
+        detail: error instanceof Error ? error.message : String(error)
+      })
       return false
     }
   }
@@ -313,7 +330,12 @@ export const runAwsStt = async (
       ])
       return true
     } catch (error) {
-      l.warn(`AWS cleanup failed for s3://${resolved.bucket}/${prefix}: ${error instanceof Error ? error.message : String(error)}`)
+      logSttCleanupFailure(l, {
+        provider: 'aws',
+        artifact: 's3',
+        id: `s3://${resolved.bucket}/${prefix}`,
+        detail: error instanceof Error ? error.message : String(error)
+      })
       return false
     }
   }
@@ -513,6 +535,12 @@ export const runAwsStt = async (
     }
 
     await Bun.write(`${outputBase}.txt`, formatTranscriptText(result.segments))
+    logSttTranscriptOutput(l, {
+      provider: 'aws',
+      path: `${outputBase}.txt`,
+      characters: result.text.length,
+      speakers: new Set(result.segments.map((segment) => segment.speaker).filter(Boolean)).size
+    })
 
     const processingTime = Date.now() - startTime
     const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs - transcriptMs)

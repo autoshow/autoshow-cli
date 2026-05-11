@@ -17,7 +17,11 @@ import {
   SonioxTranscriptionStatusSchema
 } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttAsyncJobLifecycle,
+  logSttCleanupFailure,
+  logSttSegmentLifecycle
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -354,12 +358,22 @@ const deleteTranscription = async (
     })
 
     if (!response.ok && response.status !== 404) {
-      l.warn(`Soniox cleanup failed for transcription ${transcriptionId} (${response.status})`)
+      logSttCleanupFailure(l, {
+        provider: 'soniox',
+        artifact: 'transcription',
+        id: transcriptionId,
+        detail: String(response.status)
+      })
       return false
     }
     return true
   } catch (error) {
-    l.warn(`Soniox cleanup failed for transcription ${transcriptionId}: ${error instanceof Error ? error.message : String(error)}`)
+    logSttCleanupFailure(l, {
+      provider: 'soniox',
+      artifact: 'transcription',
+      id: transcriptionId,
+      detail: error instanceof Error ? error.message : String(error)
+    })
     return false
   }
 }
@@ -378,12 +392,22 @@ const deleteFile = async (
     })
 
     if (!response.ok && response.status !== 404) {
-      l.warn(`Soniox cleanup failed for file ${fileId} (${response.status})`)
+      logSttCleanupFailure(l, {
+        provider: 'soniox',
+        artifact: 'file',
+        id: fileId,
+        detail: String(response.status)
+      })
       return false
     }
     return true
   } catch (error) {
-    l.warn(`Soniox cleanup failed for file ${fileId}: ${error instanceof Error ? error.message : String(error)}`)
+    logSttCleanupFailure(l, {
+      provider: 'soniox',
+      artifact: 'file',
+      id: fileId,
+      detail: error instanceof Error ? error.message : String(error)
+    })
     return false
   }
 }

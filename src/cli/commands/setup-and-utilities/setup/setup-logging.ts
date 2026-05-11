@@ -25,3 +25,37 @@ export const logSetupToolStatus = (
     metadata: summary
   })
 }
+
+export const buildProviderReadinessTable = (
+  summary: {
+    provider: string
+    capability: string
+    status: 'ready' | 'missing'
+    envKey?: string | undefined
+    detail?: string | undefined
+  }
+): HumanLogTable =>
+  createHumanTable([{
+    provider: summary.provider,
+    capability: summary.capability,
+    status: summary.status,
+    envKey: summary.envKey ?? '',
+    detail: summary.detail ?? ''
+  }], ['provider', 'capability', 'status', 'envKey', 'detail'])
+
+export const logProviderReadiness = (
+  logger: TableLogger,
+  summary: {
+    provider: string
+    capability: string
+    status: 'ready' | 'missing'
+    envKey?: string | undefined
+    detail?: string | undefined
+  }
+): void => {
+  logger.write(summary.status === 'ready' ? 'success' : 'warn', 'Provider Readiness', {
+    category: 'command',
+    humanTable: buildProviderReadinessTable(summary),
+    metadata: summary
+  })
+}

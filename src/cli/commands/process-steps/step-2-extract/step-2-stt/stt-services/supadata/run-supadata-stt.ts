@@ -8,7 +8,11 @@ import type {
   TranscriptionSegment
 } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttAsyncJobLifecycle,
+  logSttSegmentLifecycle,
+  logSttTranscriptOutput
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -581,6 +585,12 @@ export const runSupadataStt = async (
     jobId = resumedRuntime.remoteJobId
     await persistProgressMetadata(resumedRuntime)
     await notifyJobReady(resumedRuntime)
+    logSttAsyncJobLifecycle(l, {
+      provider: `supadata/${modelName}`,
+      action: 'resumed',
+      remoteId: jobId,
+      state: 'polling'
+    })
   } else {
     let createResult: Awaited<ReturnType<typeof fetchTranscript>> | undefined
     try {
@@ -618,6 +628,12 @@ export const runSupadataStt = async (
       await persistProgressMetadata({
         ...nextRuntime,
         stage: 'polling'
+      })
+      logSttAsyncJobLifecycle(l, {
+        provider: `supadata/${modelName}`,
+        action: 'created',
+        remoteId: jobPayload.jobId,
+        state: 'polling'
       })
     } else {
       captureCreateBilling(createResult.headers)
@@ -716,6 +732,11 @@ export const runSupadataStt = async (
 
   const result = normalizeSupadataTranscript(finalPayload, offsetSeconds)
   await Bun.write(`${outputBase}.txt`, formatTranscriptText(result.segments))
+  logSttTranscriptOutput(l, {
+    provider: 'supadata',
+    path: `${outputBase}.txt`,
+    characters: result.text.length
+  })
 
   const processingTime = Date.now() - startTime
   const metadata: Step2Metadata = {

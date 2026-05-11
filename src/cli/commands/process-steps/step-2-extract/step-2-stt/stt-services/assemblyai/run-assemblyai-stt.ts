@@ -10,7 +10,11 @@ import type {
 } from '~/types'
 import { AssemblyAiTranscriptResponseSchema } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttAsyncJobLifecycle,
+  logSttDiarizationConfig,
+  logSttSegmentLifecycle
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import {
   pollAsyncSttJobUntilComplete,
@@ -130,7 +134,12 @@ export const runAssemblyAiTranscribe = async (
     logSttSegmentLifecycle(l, { provider: 'assemblyai', action: 'started', segmentNumber, totalSegments, model: modelName })
   }
   if (diarizationOptions?.speakerCount !== undefined) {
-    l.write('info', `AssemblyAI diarization speaker-count hint: ${diarizationOptions.speakerCount}`)
+    logSttDiarizationConfig(l, {
+      provider: 'assemblyai',
+      model: modelName,
+      enabled: true,
+      speakerCount: diarizationOptions.speakerCount
+    })
   }
 
   const startTime = Date.now()

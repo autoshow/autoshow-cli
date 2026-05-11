@@ -16,7 +16,11 @@ import {
   RevTranscriptResponseSchema
 } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttAsyncJobLifecycle,
+  logSttCleanupFailure,
+  logSttSegmentLifecycle
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -217,13 +221,23 @@ const deleteJob = async (
     })
 
     if (!response.ok && response.status !== 404) {
-      l.warn(`Rev cleanup failed for job ${jobId} (${response.status})`)
+      logSttCleanupFailure(l, {
+        provider: 'rev',
+        artifact: 'job',
+        id: jobId,
+        detail: String(response.status)
+      })
       return false
     }
 
     return true
   } catch (error) {
-    l.warn(`Rev cleanup failed for job ${jobId}: ${error instanceof Error ? error.message : String(error)}`)
+    logSttCleanupFailure(l, {
+      provider: 'rev',
+      artifact: 'job',
+      id: jobId,
+      detail: error instanceof Error ? error.message : String(error)
+    })
     return false
   }
 }

@@ -22,7 +22,7 @@ import type {
 } from '~/types'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import { logLocationsTable } from '~/utils/logger/human-table'
+import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { extractSourceMetadata, createUniqueDirectoryName } from './step-1-download/audio/metadata-utils'
 import { sttTarget } from './step-2-extract/step-2-stt/orchestrator'
@@ -174,7 +174,20 @@ export const processVideo = async (
 
       if (captionTranscription) {
         if (sttTargets.length > 0) {
-          l.write('info', `YouTube captions selected; skipping requested STT providers: ${sttTargets.map((target) => `${target.service}/${target.model}`).join(', ')}`)
+          l.write('info', 'STT Provider Skips', {
+            category: 'pipeline',
+            humanTable: createHumanTable(
+              sttTargets.map((target) => ({
+                provider: `${target.service}/${target.model}`,
+                reason: 'youtube-captions'
+              })),
+              ['provider', 'reason']
+            ),
+            metadata: {
+              reason: 'youtube-captions',
+              skippedProviders: sttTargets.map((target) => `${target.service}/${target.model}`)
+            }
+          })
         }
 
         transcriptionResult = {

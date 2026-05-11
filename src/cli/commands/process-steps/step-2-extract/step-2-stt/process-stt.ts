@@ -52,11 +52,12 @@ import {
 } from './youtube-captions'
 import { createMistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
 import { logRunManifestLocation } from '../../write-manifest-log'
-import { logLocationsTable } from '~/utils/logger/human-table'
+import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
 import {
   logSttAcquireSummary,
   logSttProviderFailures,
   logSttProviderSkips,
+  logSttRecoveryPass,
   logSttRunStatus
 } from './stt-logging'
 import { resolveSttStep2Execution } from '../step-2-shared/resolved-step2'
@@ -211,7 +212,20 @@ export const processStt = async (
 
       if (captionTranscription) {
         if (requestedTargets.length > 0) {
-          l.write('info', `YouTube captions selected; skipping requested STT providers: ${requestedTargets.map(formatSttTargetLabel).join(', ')}`)
+          l.write('info', 'STT Provider Skips', {
+            category: 'pipeline',
+            humanTable: createHumanTable(
+              requestedTargets.map((target) => ({
+                provider: formatSttTargetLabel(target),
+                reason: 'youtube-captions'
+              })),
+              ['provider', 'reason']
+            ),
+            metadata: {
+              reason: 'youtube-captions',
+              skippedProviders: requestedTargets.map(formatSttTargetLabel)
+            }
+          })
         }
 
         await buildPromptFile(outputDir, preparedStepMedia.metadata, captionTranscription.result, preparedStepMedia.step1Metadata.slug, {
@@ -637,7 +651,12 @@ export const processStt = async (
         }
 
         let recoveredCount = 0
-        l.warn(`Retrying ${recoveryIndices.length} transient STT provider failure(s) serially (pass ${pass}/${STT_RECOVERY_MAX_PASSES}): ${recoveryIndices.map((index) => `${requestedTargets[index]!.service}/${requestedTargets[index]!.model}`).join(', ')}`)
+        logSttRecoveryPass(l, {
+          pass,
+          maxPasses: STT_RECOVERY_MAX_PASSES,
+          retryableFailures: recoveryIndices.length,
+          providers: recoveryIndices.map((index) => `${requestedTargets[index]!.service}/${requestedTargets[index]!.model}`).join(', ')
+        })
         await runTargetPool(recoveryIndices, 1, async (index) => {
           const hadFailure = failuresByIndex.has(index)
           await runTargetAtIndex(index, 'recovery')

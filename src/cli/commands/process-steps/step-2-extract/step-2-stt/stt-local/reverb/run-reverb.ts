@@ -1,7 +1,13 @@
 import { readdir, rm } from 'node:fs/promises'
 import type { TranscriptionResult, Step2Metadata } from '~/types'
 import * as l from '~/utils/logger'
-import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  logSttCleanupArtifacts,
+  logSttCleanupFailure,
+  logSttDiarizationConfig,
+  logSttSegmentLifecycle,
+  logSttTranscriptOutput
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
@@ -10,6 +16,7 @@ import { reverbUvEnvDir, reverbModelDir } from '~/cli/commands/setup-and-utiliti
 import { pollUntil } from '~/utils/retries'
 import { prepareLocalSttInput } from '../local-audio-normalize'
 import { REVERB_ASR_MODEL_ID } from '../../stt-model-labels'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 
 let detectedGpuSupportPromise: Promise<boolean> | null = null
 
@@ -28,7 +35,13 @@ const detectGpuSupport = async (): Promise<boolean> => {
       const exitCode = await proc.exited
       const hasGpu = exitCode === 0
       if (hasGpu) {
-        l.write('info', `GPU detected: ${stdout.trim()}`)
+        l.write('info', 'Reverb Device', {
+          category: 'pipeline',
+          humanTable: createKeyValueTable([
+            ['gpu', stdout.trim()]
+          ]),
+          metadata: { gpu: stdout.trim() }
+        })
       }
       return hasGpu
     } catch {
@@ -127,23 +140,29 @@ const findAndReadOutputFile = async (resultDir: string): Promise<string | null> 
 
 const cleanupIntermediateFiles = async (resultDir: string): Promise<void> => {
   try {
-    l.write('info', `Cleaning up intermediate Reverb files`)
     const files = await listFilesRecursive(resultDir)
+    const cleanupArtifacts: Array<{ artifact: string, path: string }> = []
     const ctmFileList = files.filter(path => path.endsWith('.ctm'))
     for (const ctmFile of ctmFileList) {
       await rm(ctmFile, { force: true })
-      l.write('info', `Deleted CTM file: ${ctmFile}`)
+      cleanupArtifacts.push({ artifact: 'ctm', path: ctmFile })
     }
     const rttmPath = `${resultDir}/diarization.rttm`
     const rttmExists = await Bun.file(rttmPath).exists()
     if (rttmExists) {
       await rm(rttmPath, { force: true })
-      l.write('info', `Deleted RTTM file: ${rttmPath}`)
+      cleanupArtifacts.push({ artifact: 'rttm', path: rttmPath })
     }
     await rm(resultDir, { recursive: true, force: true })
-    l.write('success', `Cleaned up intermediate directory: ${resultDir}`)
+    cleanupArtifacts.push({ artifact: 'directory', path: resultDir })
+    logSttCleanupArtifacts(l, 'Reverb Cleanup', cleanupArtifacts, 'success')
   } catch (error) {
-    l.warn(`Failed to clean up intermediate files`, error)
+    logSttCleanupFailure(l, {
+      provider: 'reverb',
+      artifact: 'intermediate',
+      id: resultDir,
+      detail: error instanceof Error ? error.message : String(error)
+    })
   }
 }
 
@@ -165,15 +184,35 @@ export const runReverbTranscribe = async (
   if (segmentNumber && totalSegments) {
     logSttSegmentLifecycle(l, { provider: 'reverb', action: 'started', segmentNumber, totalSegments, model: version, detail: 'diarization' })
   } else {
-    l.write('info', `Transcribing with Reverb ASR (diarization model: ${version})`)
+    logSttDiarizationConfig(l, {
+      provider: 'reverb',
+      model: REVERB_ASR_MODEL_ID,
+      enabled: true,
+      detail: `diarization:${version}`
+    })
   }
   try {
     const startTime = Date.now()
     const verbatimicity = options.reverbVerbatimicity ?? 0.5
-    l.write('info', `Verbatimicity level: ${verbatimicity}`)
     const hasGpu = await detectGpuSupport()
     const device = hasGpu ? '0' : '-1'
-    l.write('info', `Using device: ${hasGpu ? 'GPU' : 'CPU'}`)
+    l.write('info', 'Reverb Config', {
+      category: 'pipeline',
+      humanTable: createKeyValueTable([
+        ['provider', 'reverb'],
+        ['model', REVERB_ASR_MODEL_ID],
+        ['diarizationModel', version],
+        ['verbatimicity', verbatimicity],
+        ['device', hasGpu ? 'GPU' : 'CPU']
+      ]),
+      metadata: {
+        provider: 'reverb',
+        model: REVERB_ASR_MODEL_ID,
+        diarizationModel: version,
+        verbatimicity,
+        device: hasGpu ? 'GPU' : 'CPU'
+      }
+    })
     const uvEnvDir = reverbUvEnvDir
     const segmentSuffix = segmentNumber ? `_segment_${String(segmentNumber).padStart(3, '0')}` : ''
     const resultDir = `${outputDir}/reverb-output${segmentSuffix}`
@@ -232,7 +271,12 @@ export const runReverbTranscribe = async (
           const jsonOutputPath = `${outputDir}/transcription${segmentSuffix}.json`
           const diarizedData = await mergeASRWithDiarization(ctmPath, rttmPath, jsonOutputPath)
           if (diarizedData && typeof diarizedData === 'object' && diarizedData !== null) {
-            l.write('success', `Successfully performed speaker diarization with ${version}`)
+            logSttDiarizationConfig(l, {
+              provider: 'reverb',
+              model: version,
+              enabled: true,
+              detail: 'completed'
+            }, 'success')
             const rawSegments = Array.isArray((diarizedData as Record<string, unknown>)['segments'])
               ? (diarizedData as Record<string, unknown>)['segments'] as Array<Record<string, unknown>>
               : []
@@ -267,7 +311,7 @@ export const runReverbTranscribe = async (
               })
             })
             await Bun.$`rm -f ${jsonOutputPath}`.quiet()
-            l.write('success', `Deleted intermediary JSON file: ${jsonOutputPath}`)
+            logSttCleanupArtifacts(l, 'Reverb Cleanup', [{ artifact: 'json', path: jsonOutputPath }], 'success')
             transcription = parseReverbWithSpeakers(diarizedData, segmentOffset)
             evidence = {
               ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
@@ -309,15 +353,48 @@ export const runReverbTranscribe = async (
     } else {
       logSttSegmentLifecycle(l, { provider: 'reverb', action: 'completed', model: version, processingTimeMs: processingTime })
     }
-    l.write('info', `Saved transcript to ${outputBase}.txt`)
-    l.write('info', `Total transcribed text length: ${transcription.text.length} characters`)
     const hasSpeakers = transcription.segments.some(seg => seg.speaker)
+    const speakerSet = hasSpeakers
+      ? new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
+      : undefined
+    logSttTranscriptOutput(l, {
+      provider: 'reverb',
+      path: `${outputBase}.txt`,
+      characters: transcription.text.length,
+      ...(speakerSet ? { speakers: speakerSet.size } : {})
+    })
     if (hasSpeakers) {
-      const speakerSet = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
-      l.write('success', `Identified ${speakerSet.size} speakers in transcription`)
+      logSttDiarizationConfig(l, {
+        provider: 'reverb',
+        model: version,
+        enabled: true,
+        detail: `${speakerSet?.size ?? 0} speakers`
+      }, 'success')
     }
-    l.write('info', `Recording transcription model: ${REVERB_ASR_MODEL_ID}`)
-    l.debug(`Reverb runtime model files: ${checkpointPath} | ${configPath} | diarization:${version}`)
+    l.write('info', 'Reverb Model', {
+      category: 'pipeline',
+      humanTable: createKeyValueTable([
+        ['provider', 'reverb'],
+        ['model', REVERB_ASR_MODEL_ID]
+      ]),
+      metadata: {
+        provider: 'reverb',
+        model: REVERB_ASR_MODEL_ID
+      }
+    })
+    l.write('debug', 'Reverb Runtime Model', {
+      category: 'pipeline',
+      humanTable: createKeyValueTable([
+        ['checkpoint', checkpointPath],
+        ['config', configPath],
+        ['diarization', version]
+      ]),
+      metadata: {
+        checkpointPath,
+        configPath,
+        diarizationModel: version
+      }
+    })
     const metadata: Step2Metadata = {
       transcriptionService: 'reverb',
       transcriptionModel: REVERB_ASR_MODEL_ID,

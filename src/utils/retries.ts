@@ -1,5 +1,6 @@
 import type {
   ClassifyFetchRetryOptions,
+  HumanLogTable,
   PollOptions,
   RetryClass,
   RetryClassifier,
@@ -8,6 +9,7 @@ import type {
   RetryPolicy
 } from '~/types'
 import * as l from '~/utils/logger'
+import { createHumanTable } from '~/utils/logger/human-table'
 
 const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 422])
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504])
@@ -171,6 +173,33 @@ const computeDelay = (attempt: number, baseDelayMs: number, maxDelayMs: number, 
   return Math.min(delay, maxDelayMs)
 }
 
+export type RetryAttemptLog = {
+  operation: string
+  attempt: number
+  maxAttempts: number
+  reason: string
+  delayMs: number
+}
+
+export const buildRetryAttemptTable = (
+  summary: RetryAttemptLog
+): HumanLogTable =>
+  createHumanTable([summary], ['operation', 'attempt', 'maxAttempts', 'reason', 'delayMs'])
+
+export const logRetryAttempt = (
+  summary: RetryAttemptLog,
+  metadata: Record<string, unknown> = {}
+): void => {
+  l.write('warn', 'Retry Attempt', {
+    category: 'pipeline',
+    humanTable: buildRetryAttemptTable(summary),
+    metadata: {
+      ...summary,
+      ...metadata
+    }
+  })
+}
+
 export const withRetry = async <T>(
   ctx: RetryContext,
   operation: (signal?: AbortSignal) => Promise<T>,
@@ -193,6 +222,7 @@ export const withRetry = async <T>(
       const isLastAttempt = attempt === policy.maxAttempts - 1
       if (isLastAttempt) break
 
+      let classifiedReason: string | undefined
       if (classifier) {
         const decision = classifier(error)
         if (!decision.shouldRetry) {
@@ -204,16 +234,30 @@ export const withRetry = async <T>(
 
         if (decision.delayMs > 0) {
           retried = true
-          l.warn(`${ctx.operationName}: attempt ${attempt + 1}/${policy.maxAttempts} failed (${decision.reason}), retrying in ${decision.delayMs}ms`)
+          logRetryAttempt({
+            operation: ctx.operationName,
+            attempt: attempt + 1,
+            maxAttempts: policy.maxAttempts,
+            reason: decision.reason,
+            delayMs: decision.delayMs
+          }, { retryClass: ctx.retryClass })
           await Bun.sleep(decision.delayMs)
           continue
         }
+
+        classifiedReason = decision.reason
       }
 
       retried = true
       const delay = computeDelay(attempt, policy.baseDelayMs, policy.maxDelayMs, policy.exponential, policy.jitter)
-      const reason = error instanceof Error ? error.message : String(error)
-      l.warn(`${ctx.operationName}: attempt ${attempt + 1}/${policy.maxAttempts} failed (${reason}), retrying in ${Math.round(delay)}ms`)
+      const reason = classifiedReason ?? (error instanceof Error ? error.message : String(error))
+      logRetryAttempt({
+        operation: ctx.operationName,
+        attempt: attempt + 1,
+        maxAttempts: policy.maxAttempts,
+        reason,
+        delayMs: Math.round(delay)
+      }, { retryClass: ctx.retryClass })
       await Bun.sleep(delay)
     }
   }

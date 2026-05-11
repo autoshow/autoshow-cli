@@ -1,10 +1,15 @@
-import { createHumanTable, createSingleRowTable } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable, createSingleRowTable } from '~/utils/logger/human-table'
 import type { HumanLogTable, LogLevel, TableLogger } from '~/types'
 import type {
+  AudioSegmentDescriptor,
+  DiarizationOptions,
   EffectiveSttProviderConcurrency,
   ProviderFailure,
+  SplitPolicyTarget,
   SttCompletionStatus,
-  SttProviderState
+  SttProviderState,
+  SttSplitDecision,
+  SttSplitDecisionReason
 } from '~/types'
 import { formatSttTargetLabel } from './stt-targets'
 import type {
@@ -16,6 +21,355 @@ import type {
   SttRunStatusSummary,
   SttSegmentLifecycle
 } from '~/types'
+
+const formatBytes = (bytes: number | undefined): string => {
+  if (bytes === undefined) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < (1024 * 1024)) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < (1024 * 1024 * 1024)) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+}
+
+const formatSeconds = (seconds: number | undefined): string => {
+  if (seconds === undefined) return ''
+  return Number.isInteger(seconds) ? `${seconds}s` : `${seconds.toFixed(1)}s`
+}
+
+const formatMinutes = (minutes: number | undefined): string => {
+  if (minutes === undefined) return ''
+  const rounded = Number.isInteger(minutes) ? String(minutes) : String(Number(minutes.toFixed(3)))
+  return `${rounded}m`
+}
+
+const describeSplitReason = (reason: SttSplitDecisionReason | { kind: 'attachment_cap' | 'duration_cap' }): string => {
+  if (reason.kind === 'explicit') {
+    return 'explicit'
+  }
+
+  return reason.kind
+}
+
+const getSplitReasonCap = (reason: SttSplitDecisionReason | { kind: 'attachment_cap' | 'duration_cap' }): string => {
+  if (reason.kind === 'attachment_cap' && 'attachmentCapBytes' in reason) {
+    return formatBytes(reason.attachmentCapBytes)
+  }
+  if (reason.kind === 'duration_cap' && 'maxDurationSeconds' in reason) {
+    return formatSeconds(reason.maxDurationSeconds)
+  }
+  return ''
+}
+
+const getSplitReasonInputSize = (reason: SttSplitDecisionReason): string =>
+  reason.kind === 'attachment_cap' ? formatBytes(reason.audioFileSizeBytes) : ''
+
+const getSplitReasonInputDuration = (reason: SttSplitDecisionReason): string =>
+  reason.kind === 'duration_cap' ? formatSeconds(reason.audioDurationSeconds) : ''
+
+export const buildSttDiarizationConfigTable = (
+  summary: {
+    provider: string
+    model?: string | undefined
+    enabled?: boolean | undefined
+    speakerCount?: number | undefined
+    maxSpeakers?: number | undefined
+    detail?: string | undefined
+  }
+): HumanLogTable =>
+  createKeyValueTable([
+    ['provider', summary.provider],
+    ...(summary.model ? [['model', summary.model] as const] : []),
+    ...(summary.enabled !== undefined ? [['enabled', summary.enabled] as const] : []),
+    ...(summary.speakerCount !== undefined ? [['speakerCount', summary.speakerCount] as const] : []),
+    ...(summary.maxSpeakers !== undefined ? [['maxSpeakers', summary.maxSpeakers] as const] : []),
+    ...(summary.detail ? [['detail', summary.detail] as const] : [])
+  ])
+
+export const logSttDiarizationConfig = (
+  logger: TableLogger,
+  summary: {
+    provider: string
+    model?: string | undefined
+    enabled?: boolean | undefined
+    speakerCount?: number | undefined
+    maxSpeakers?: number | undefined
+    detail?: string | undefined
+  },
+  level: LogLevel = 'info'
+): void => {
+  logger.write(level, 'STT Diarization', {
+    category: 'pipeline',
+    humanTable: buildSttDiarizationConfigTable(summary),
+    metadata: summary
+  })
+}
+
+export const buildSttPromptDiarizationTable = (
+  summary: {
+    detectedSpeakers: number
+    requestedSpeakerCount?: number | undefined
+    sourceProvider?: string | undefined
+  }
+): HumanLogTable =>
+  createKeyValueTable([
+    ['detectedSpeakers', summary.detectedSpeakers],
+    ...(summary.requestedSpeakerCount !== undefined ? [['requestedSpeakerCount', summary.requestedSpeakerCount] as const] : []),
+    ...(summary.sourceProvider ? [['sourceProvider', summary.sourceProvider] as const] : [])
+  ])
+
+export const buildSttSplitDecisionTable = (
+  target: SplitPolicyTarget,
+  decision: Pick<SttSplitDecision, 'reasons' | 'segmentDurationMinutes'>,
+  options: {
+    trigger?: 'auto' | 'retry' | 'explicit' | undefined
+    retryReason?: 'attachment_cap' | 'duration_cap' | undefined
+    audioFileSizeBytes?: number | undefined
+    audioDurationSeconds?: number | undefined
+  } = {}
+): HumanLogTable => {
+  const reasons = decision.reasons.length > 0
+    ? decision.reasons
+    : options.retryReason
+      ? [{ kind: options.retryReason }]
+      : [{ kind: 'explicit' as const }]
+
+  return createHumanTable(
+    reasons.map((reason) => ({
+      provider: target.service,
+      model: target.model,
+      trigger: options.trigger ?? (reason.kind === 'explicit' ? 'explicit' : 'auto'),
+      reason: describeSplitReason(reason),
+      cap: getSplitReasonCap(reason),
+      inputSize: reason.kind === 'attachment_cap'
+        ? getSplitReasonInputSize(reason as SttSplitDecisionReason)
+        : formatBytes(options.audioFileSizeBytes),
+      inputDuration: reason.kind === 'duration_cap'
+        ? getSplitReasonInputDuration(reason as SttSplitDecisionReason)
+        : formatSeconds(options.audioDurationSeconds),
+      segmentDuration: formatMinutes(decision.segmentDurationMinutes)
+    })),
+    ['provider', 'model', 'trigger', 'reason', 'cap', 'inputSize', 'inputDuration', 'segmentDuration']
+  )
+}
+
+export const logSttSplitDecision = (
+  logger: TableLogger,
+  target: SplitPolicyTarget,
+  decision: Pick<SttSplitDecision, 'reasons' | 'segmentDurationMinutes'>,
+  options: {
+    trigger?: 'auto' | 'retry' | 'explicit' | undefined
+    retryReason?: 'attachment_cap' | 'duration_cap' | undefined
+    audioPath?: string | undefined
+    audioFileSizeBytes?: number | undefined
+    audioDurationSeconds?: number | undefined
+    level?: LogLevel | undefined
+  } = {}
+): void => {
+  logger.write(options.level ?? 'warn', 'STT Split', {
+    category: 'pipeline',
+    humanTable: buildSttSplitDecisionTable(target, decision, options),
+    metadata: {
+      target,
+      decision,
+      trigger: options.trigger,
+      retryReason: options.retryReason,
+      audioPath: options.audioPath,
+      audioFileSizeBytes: options.audioFileSizeBytes,
+      audioDurationSeconds: options.audioDurationSeconds
+    }
+  })
+}
+
+export const buildSttSplitSummaryTable = (
+  summary: {
+    input: string
+    segmentDurationMinutes: number
+    totalDurationSeconds: number
+    totalSegments: number
+  }
+): HumanLogTable =>
+  createKeyValueTable([
+    ['input', summary.input],
+    ['segmentDuration', formatMinutes(summary.segmentDurationMinutes)],
+    ['totalDuration', formatSeconds(summary.totalDurationSeconds)],
+    ['totalSegments', summary.totalSegments]
+  ])
+
+export const buildSttSplitSegmentsTable = (
+  segments: readonly AudioSegmentDescriptor[]
+): HumanLogTable =>
+  createHumanTable(
+    segments.map((segment) => ({
+      segment: `${segment.segmentNumber}/${segment.totalSegments}`,
+      start: formatSeconds(segment.startSeconds),
+      duration: formatSeconds(segment.durationSeconds),
+      path: segment.path
+    })),
+    ['segment', 'start', 'duration', 'path']
+  )
+
+export const logSttSplitSummary = (
+  logger: TableLogger,
+  summary: {
+    input: string
+    segmentDurationMinutes: number
+    totalDurationSeconds: number
+    totalSegments: number
+  }
+): void => {
+  logger.write('info', 'STT Split Plan', {
+    category: 'pipeline',
+    humanTable: buildSttSplitSummaryTable(summary),
+    metadata: summary
+  })
+}
+
+export const logSttSplitSegments = (
+  logger: TableLogger,
+  segments: readonly AudioSegmentDescriptor[]
+): void => {
+  logger.write('success', 'STT Split Segments', {
+    category: 'artifact',
+    humanTable: buildSttSplitSegmentsTable(segments),
+    metadata: { segments }
+  })
+}
+
+export const buildSttTranscriptOutputTable = (
+  summary: {
+    provider: string
+    path: string
+    characters: number
+    speakers?: number | undefined
+  }
+): HumanLogTable =>
+  createKeyValueTable([
+    ['provider', summary.provider],
+    ['path', summary.path],
+    ['characters', summary.characters],
+    ...(summary.speakers !== undefined ? [['speakers', summary.speakers] as const] : [])
+  ])
+
+export const logSttTranscriptOutput = (
+  logger: TableLogger,
+  summary: {
+    provider: string
+    path: string
+    characters: number
+    speakers?: number | undefined
+  }
+): void => {
+  logger.write('info', 'Transcript Output', {
+    category: 'artifact',
+    humanTable: buildSttTranscriptOutputTable(summary),
+    metadata: summary
+  })
+}
+
+export const buildSttCleanupArtifactsTable = (
+  rows: ReadonlyArray<{ artifact: string, path: string }>
+): HumanLogTable =>
+  createHumanTable(rows, ['artifact', 'path'])
+
+export const logSttCleanupArtifacts = (
+  logger: TableLogger,
+  message: string,
+  rows: ReadonlyArray<{ artifact: string, path: string }>,
+  level: LogLevel = 'info'
+): void => {
+  if (rows.length === 0) {
+    return
+  }
+
+  logger.write(level, message, {
+    category: 'artifact',
+    humanTable: buildSttCleanupArtifactsTable(rows),
+    metadata: { artifacts: rows }
+  })
+}
+
+export const buildSttCleanupFailureTable = (
+  summary: {
+    provider: string
+    artifact: string
+    id: string
+    detail: string
+  }
+): HumanLogTable =>
+  createHumanTable([summary], ['provider', 'artifact', 'id', 'detail'])
+
+export const logSttCleanupFailure = (
+  logger: TableLogger,
+  summary: {
+    provider: string
+    artifact: string
+    id: string
+    detail: string
+  }
+): void => {
+  logger.write('warn', 'STT Cleanup', {
+    category: 'artifact',
+    humanTable: buildSttCleanupFailureTable(summary),
+    metadata: summary
+  })
+}
+
+export const buildSttProviderSpeakerCountHintsTable = (
+  rows: ReadonlyArray<{ provider: string, speakerCount: number, support: 'honored' | 'ignored' }>
+): HumanLogTable =>
+  createHumanTable(rows, ['provider', 'speakerCount', 'support'])
+
+export const logSttProviderSpeakerCountHints = (
+  logger: TableLogger,
+  rows: ReadonlyArray<{ provider: string, speakerCount: number, support: 'honored' | 'ignored' }>
+): void => {
+  if (rows.length === 0) {
+    return
+  }
+
+  logger.write('warn', 'Provider Speaker Count Hints', {
+    category: 'pipeline',
+    humanTable: buildSttProviderSpeakerCountHintsTable(rows),
+    metadata: { rows }
+  })
+}
+
+export const buildSttRecoveryPassTable = (
+  summary: {
+    pass: number
+    maxPasses: number
+    retryableFailures: number
+    providers: string
+  }
+): HumanLogTable =>
+  createHumanTable([summary], ['pass', 'maxPasses', 'retryableFailures', 'providers'])
+
+export const logSttRecoveryPass = (
+  logger: TableLogger,
+  summary: {
+    pass: number
+    maxPasses: number
+    retryableFailures: number
+    providers: string
+  }
+): void => {
+  logger.write('warn', 'STT Recovery Pass', {
+    category: 'pipeline',
+    humanTable: buildSttRecoveryPassTable(summary),
+    metadata: summary
+  })
+}
+
+export const buildSttProviderDiarizationHintTable = (
+  provider: string,
+  model: string,
+  diarizationOptions: DiarizationOptions | undefined
+): HumanLogTable =>
+  buildSttDiarizationConfigTable({
+    provider,
+    model,
+    enabled: diarizationOptions?.enabled !== false,
+    ...(diarizationOptions?.speakerCount !== undefined ? { speakerCount: diarizationOptions.speakerCount } : {})
+  })
 
 export const buildSttCacheRows = (
   event: SttCacheEvent

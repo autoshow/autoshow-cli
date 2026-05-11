@@ -1,6 +1,7 @@
 import * as l from '~/utils/logger'
 import { isDirectMediaUrl } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { readEnv } from '~/utils/validate/env-utils'
+import { logProviderReadiness } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
 const SUPADATA_SUPPORTED_HOST_PATTERNS = [
   /(^|\.)youtube\.com$/i,
@@ -61,10 +62,21 @@ export const describeSupadataUnsupportedSource = (
 export const setupSupadataStt = async (): Promise<void> => {
   const apiKey = readEnv('SUPADATA_API_KEY')
   if (apiKey) {
-    l.write('success', `SUPADATA_API_KEY found — Supadata transcription ready (${getSupadataBaseUrl()})`)
+    logProviderReadiness(l, {
+      provider: 'supadata',
+      capability: 'transcription',
+      status: 'ready',
+      envKey: 'SUPADATA_API_KEY',
+      detail: getSupadataBaseUrl()
+    })
   } else {
-    l.warn('SUPADATA_API_KEY not set — Supadata transcription will not work until set')
-    l.write('info', 'Set SUPADATA_API_KEY environment variable to use Supadata transcription')
+    logProviderReadiness(l, {
+      provider: 'supadata',
+      capability: 'transcription',
+      status: 'missing',
+      envKey: 'SUPADATA_API_KEY',
+      detail: 'Set SUPADATA_API_KEY environment variable to use Supadata transcription'
+    })
   }
 }
 
