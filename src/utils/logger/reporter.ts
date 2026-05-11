@@ -29,27 +29,6 @@ const costField = (mode: EstimateMode, cents: number): string | number =>
 const costKey = (mode: EstimateMode): string =>
   mode === 'human' ? 'cost' : 'totalCostCents'
 
-const noteFromEstimate = (estimate: StepEstimate): string | undefined => {
-  const note = 'note' in estimate ? estimate.note : undefined
-  if (typeof note !== 'string') {
-    return undefined
-  }
-  const trimmed = note.trim()
-  return trimmed.length > 0 ? trimmed : undefined
-}
-
-const addRawNote = (
-  entry: Record<string, string | number>,
-  estimate: StepEstimate,
-  mode: EstimateMode
-): Record<string, string | number> => {
-  const note = noteFromEstimate(estimate)
-  if (mode === 'raw' && note) {
-    entry['note'] = note
-  }
-  return entry
-}
-
 const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<string, string | number> => {
   const base = { step: estimate.step, provider: estimate.provider, model: estimate.model }
 
@@ -61,7 +40,7 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
         model: estimate.provider === 'reverb' ? resolveReverbModelLabel(estimate.model) : estimate.model,
         [costKey(mode)]: costField(mode, estimate.totalCost)
       }
-      return addRawNote(entry, estimate, mode)
+      return entry
     }
     case 'llm': {
       const entry: Record<string, string | number> = { ...base }
@@ -75,7 +54,7 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       if (typeof estimate.estimatedInputTokens === 'number') entry['estInputTokens'] = estimate.estimatedInputTokens
       if (typeof estimate.estimatedOutputTokens === 'number') entry['estOutputTokens'] = estimate.estimatedOutputTokens
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
-      return addRawNote(entry, estimate, mode)
+      return entry
     }
     case 'extract': {
       const entry: Record<string, string | number> = { ...base }
@@ -100,7 +79,7 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       if (typeof estimate.completionTokens === 'number') entry['completionTokens'] = estimate.completionTokens
       if (typeof estimate.estimateType === 'string') entry['estimateType'] = estimate.estimateType
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
-      return addRawNote(entry, estimate, mode)
+      return entry
     }
     case 'tts': {
       const entry: Record<string, string | number> = { ...base }
@@ -118,17 +97,17 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
         else entry['setupCostCents'] = estimate.setupCostCents
       }
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
-      return addRawNote(entry, estimate, mode)
+      return entry
     }
     case 'image':
-      return addRawNote({ ...base, [costKey(mode)]: costField(mode, estimate.totalCost) }, estimate, mode)
+      return { ...base, [costKey(mode)]: costField(mode, estimate.totalCost) }
     case 'video':
-      return addRawNote({ ...base, [costKey(mode)]: costField(mode, estimate.totalCost) }, estimate, mode)
+      return { ...base, [costKey(mode)]: costField(mode, estimate.totalCost) }
     case 'music': {
       const entry: Record<string, string | number> = { ...base }
       if (mode === 'human') entry['lyrics'] = estimate.lyricsSource
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
-      return addRawNote(entry, estimate, mode)
+      return entry
     }
     default:
       assertNever(estimate)
@@ -232,30 +211,6 @@ const buildHumanCompletionTables = (
   }
 }
 
-type EstimateNoteRegistry = {
-  indexByNote: Map<string, number>
-  notes: string[]
-}
-
-const registerEstimateNote = (
-  registry: EstimateNoteRegistry,
-  note: string | undefined
-): number | undefined => {
-  if (!note) {
-    return undefined
-  }
-
-  const existing = registry.indexByNote.get(note)
-  if (existing !== undefined) {
-    return existing
-  }
-
-  const index = registry.notes.length + 1
-  registry.indexByNote.set(note, index)
-  registry.notes.push(note)
-  return index
-}
-
 const formatRate = (amount: number, unit: string): string =>
   `${formatEstimatedCost(amount)}/${unit}`
 
@@ -313,12 +268,10 @@ const buildEstimateDetails = (estimate: StepEstimate): string => {
 }
 
 const buildHumanEstimateRows = (
-  estimate: AggregatedPriceEstimate,
-  noteRegistry: EstimateNoteRegistry
+  estimate: AggregatedPriceEstimate
 ): HumanLogTableRow[] =>
   estimate.steps.map((step) => {
     const details = buildEstimateDetails(step)
-    const noteNumber = registerEstimateNote(noteRegistry, noteFromEstimate(step))
     return {
       step: step.step,
       provider: step.step === 'stt' ? formatSttProvider(step.provider) : step.provider,
@@ -326,8 +279,7 @@ const buildHumanEstimateRows = (
         ? resolveReverbModelLabel(step.model)
         : step.model,
       ...(details.length > 0 ? { details } : {}),
-      cost: formatEstimatedCost(step.totalCost),
-      ...(noteNumber !== undefined ? { note: `[${noteNumber}]` } : {})
+      cost: formatEstimatedCost(step.totalCost)
     }
   })
 
@@ -339,22 +291,10 @@ const buildHumanEstimateTable = (
     'provider',
     'model',
     ...(rows.some(row => row['details'] !== undefined) ? ['details'] : []),
-    'cost',
-    ...(rows.some(row => row['note'] !== undefined) ? ['note'] : [])
+    'cost'
   ]
 
   return createHumanTable(rows, columns, { align: { cost: 'right' } })
-}
-
-const buildEstimateNotesMessage = (notes: readonly string[]): string | undefined => {
-  if (notes.length === 0) {
-    return undefined
-  }
-
-  return [
-    'Cost estimate notes:',
-    ...notes.map((note, index) => `[${index + 1}] ${note}`)
-  ].join('\n')
 }
 
 const buildCompleteResultData = (
@@ -396,21 +336,13 @@ export const createReporter = (logger: Logger): Reporter => {
       })
     },
     estimate: (estimate) => {
-      const noteRegistry: EstimateNoteRegistry = { indexByNote: new Map(), notes: [] }
-      const estimateRows = buildHumanEstimateRows(estimate, noteRegistry)
-      for (const note of estimate.notes ?? []) {
-        registerEstimateNote(noteRegistry, note.trim().length > 0 ? note.trim() : undefined)
-      }
+      const estimateRows = buildHumanEstimateRows(estimate)
 
       logger.write('info', `Total estimated cost: ${formatEstimatedCostWithExactCents(estimate.totalEstimatedCost)}`, { category: 'pricing' })
       logger.write('info', 'Cost Estimate', {
         category: 'pricing',
         humanTable: buildHumanEstimateTable(estimateRows)
       })
-      const notesMessage = buildEstimateNotesMessage(noteRegistry.notes)
-      if (notesMessage) {
-        logger.write('info', notesMessage, { category: 'pricing' })
-      }
       if (estimate.timing && estimate.timing.steps.length > 0) {
         logger.write('info', `Total estimated processing time: ${formatDuration(estimate.timing.totalProcessingTimeMs)}`, { category: 'pricing' })
         logger.write('info', 'Processing Time Estimate', {
@@ -424,8 +356,7 @@ export const createReporter = (logger: Logger): Reporter => {
         estimate: {
           steps: estimate.steps.map(s => mapStepEstimate(s, 'raw')),
           totalEstimatedCostCents: estimate.totalEstimatedCost,
-          ...(estimate.timing ? { timing: estimate.timing } : {}),
-          ...(estimate.notes && estimate.notes.length > 0 ? { notes: estimate.notes } : {})
+          ...(estimate.timing ? { timing: estimate.timing } : {})
         }
       })
     },

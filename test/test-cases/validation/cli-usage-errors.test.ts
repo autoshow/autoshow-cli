@@ -70,6 +70,17 @@ test('extract rejects removed deAPI OCR flag', async () => {
   )
 })
 
+test('extract rejects removed Supadata STT modes', async () => {
+  await expectUsageExit(
+    ['extract', 'https://example.com/audio.mp3', '--supadata-stt', 'native', '--price'],
+    'Invalid --supadata-stt model "native". Allowed values: auto'
+  )
+  await expectUsageExit(
+    ['extract', 'https://example.com/audio.mp3', '--supadata-stt', 'generate', '--price'],
+    'Invalid --supadata-stt model "generate". Allowed values: auto'
+  )
+})
+
 test('music lyric-video mode rejects missing audio or batch', async () => {
   await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
 })

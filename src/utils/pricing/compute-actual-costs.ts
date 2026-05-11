@@ -120,7 +120,8 @@ const resolveExtractionProviderModel = (
 
 const computeActualSttCharge = (
   metadata: Step2Metadata,
-  durationSeconds: number
+  durationSeconds: number,
+  sourceUrl: string | undefined
 ): { cost: number, inputMetric: string, inputValue: number } => {
   const service = metadata.transcriptionService
   const model = resolveTranscriptionModel(metadata)
@@ -130,7 +131,8 @@ const computeActualSttCharge = (
       model,
       durationSeconds,
       metadata.billing?.creditsUsed,
-      metadata.billing?.creditRateCents ?? getSupadataCreditRateCents()
+      metadata.billing?.creditRateCents ?? getSupadataCreditRateCents(),
+      { sourceUrl }
     )
     return {
       cost: actual.totalCost,
@@ -328,7 +330,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     const durationSeconds = resolveSttBillingDurationSeconds(input)
     const service = input.step2.transcriptionService
     const model = resolveTranscriptionModel(input.step2)
-    const actual = computeActualSttCharge(input.step2, durationSeconds)
+    const actual = computeActualSttCharge(input.step2, durationSeconds, input.step1?.url)
 
     steps.push({
       step: 'stt',
@@ -385,7 +387,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     for (const step2Entry of input.step2) {
       const service = step2Entry.transcriptionService
       const model = resolveTranscriptionModel(step2Entry)
-      const actual = computeActualSttCharge(step2Entry, durationSeconds)
+      const actual = computeActualSttCharge(step2Entry, durationSeconds, input.step1?.url)
       steps.push({
         step: 'stt',
         provider: service,

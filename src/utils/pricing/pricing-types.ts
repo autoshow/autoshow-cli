@@ -111,6 +111,7 @@ export type ComputeActualCostsInput = ActualPipelineInputsBase<Step1Metadata> & 
 
 export type ComputeEstimatedCostsInput = {
   applyCostMultipliers?: boolean | undefined
+  sourceUrl?: string | undefined
   sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   whisperModel?: string | undefined
   gcloudSttModel?: string | undefined
@@ -293,7 +294,6 @@ export type EstimatedStepEntry = {
   promptTokens?: number
   completionTokens?: number
   estimateType?: 'heuristic' | 'exact'
-  note?: string
   costPer1kCharactersCents?: number
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number

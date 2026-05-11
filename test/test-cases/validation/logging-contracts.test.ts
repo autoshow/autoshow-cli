@@ -677,7 +677,7 @@ describe('logging contracts', () => {
     expect(buildOcrmypdfOutputTable(noPage).columns).toEqual(['stream', 'detail'])
   })
 
-  test('reporter prints estimate notes after the human cost table', () => {
+  test('reporter ignores estimate notes in human pricing output', () => {
     const { logger, writes } = createCapturingLogger()
     const reporter = createReporter(logger)
 
@@ -697,15 +697,10 @@ describe('logging contracts', () => {
 
     expect(writes.map(write => write.message)).toEqual([
       'Total estimated cost: free (0.00000\u00a2)',
-      'Cost Estimate',
-      [
-        'Cost estimate notes:',
-        '[1] TTS estimate omitted: step 4 only runs when write produces exactly one summary.',
-        '[2] Second aggregate estimate note.'
-      ].join('\n')
+      'Cost Estimate'
     ])
     expect(writes[1]?.options?.humanTable).toBeDefined()
-    expect(writes[2]?.options?.humanTable).toBeUndefined()
+    expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
   })
 
   test('reporter displays Reverb cost estimates with the ASR model id', () => {
@@ -894,7 +889,7 @@ describe('logging contracts', () => {
     })
   })
 
-  test('reporter renders aggregate cost estimates as compact rows with readable costs and notes', () => {
+  test('reporter renders aggregate cost estimates as compact rows without note output', () => {
     const { logger, writes } = createCapturingLogger()
     const reporter = createReporter(logger)
 
@@ -928,26 +923,23 @@ describe('logging contracts', () => {
 
     const humanTable = writes[1]?.options?.humanTable
     expect(humanTable).toEqual({
-      columns: ['step', 'provider', 'model', 'details', 'cost', 'note'],
+      columns: ['step', 'provider', 'model', 'details', 'cost'],
       align: { cost: 'right' },
       rows: [
         { step: 'video', provider: 'gemini', model: 'veo-3.1-lite-generate-preview', cost: '$2.00' },
-        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', details: 'characters 100', cost: '1.25\u00a2', note: '[1]' },
-        { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2', note: '[1]' }
+        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', details: 'characters 100', cost: '1.25\u00a2' },
+        { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2' }
       ]
     })
     expect(writes[0]?.message).toBe('Total estimated cost: $2.01 (201.25500\u00a2)')
-    expect(writes[2]?.message).toBe([
-      'Cost estimate notes:',
-      '[1] Provider credits may apply outside local estimates.',
-      '[2] Aggregate caveat.'
-    ].join('\n'))
+    expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
 
     if (!humanTable) throw new Error('Expected cost estimate human table')
     const rendered = stripAnsi(renderHumanTable(humanTable))
     expect(rendered).toContain('\u2502 video   \u2502 gemini')
     expect(rendered).toContain('\u2502  $2.00 \u2502')
-    expect(rendered).toContain('\u2502 <0.01\u00a2 \u2502 [1]')
+    expect(rendered).toContain('\u2502 <0.01\u00a2 \u2502')
+    expect(rendered).not.toContain('[1]')
     expect(rendered).not.toContain('\u2502 key')
   })
 

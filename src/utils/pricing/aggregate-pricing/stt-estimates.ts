@@ -32,10 +32,11 @@ const buildCloudSttEstimate = async (
 
 const buildSupadataSttEstimate = (
   model: string,
-  durationSeconds: number
+  durationSeconds: number,
+  sourceUrl: string
 ): SttStepEstimate => {
   const estimation = getSttEstimation('supadata', model)
-  const cost = estimateSupadataCost(model, durationSeconds)
+  const cost = estimateSupadataCost(model, durationSeconds, { sourceUrl })
   return {
     step: 'stt',
     provider: 'supadata',
@@ -144,7 +145,7 @@ export const buildSttEstimates = async (
     }
 
     if (target.service === 'supadata') {
-      estimates.push(buildSupadataSttEstimate(target.model, durationSeconds))
+      estimates.push(buildSupadataSttEstimate(target.model, durationSeconds, resolvedTarget))
       continue
     }
 

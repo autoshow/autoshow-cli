@@ -29,13 +29,15 @@ const filterSttPreflightEstimateByTargets = (
 export const resolveSttEstimatedCosts = (
   preflightEstimate: AggregatedPriceEstimate | undefined,
   targets: SttTarget[],
-  durationSeconds: number
+  durationSeconds: number,
+  sourceUrl?: string | undefined
 ) => preflightEstimate
   ? preflightToEstimated(filterSttPreflightEstimateByTargets(preflightEstimate, targets))
   : computeEstimatedCosts({
       applyCostMultipliers: false,
       sttTargets: targets.map((entry) => ({ service: entry.service, model: entry.model })),
-      audioDurationSeconds: durationSeconds
+      audioDurationSeconds: durationSeconds,
+      sourceUrl
     })
 
 export const buildSingleStepSummaries = (

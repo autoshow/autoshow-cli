@@ -456,6 +456,7 @@ export const processVideo = async (
 	        applyCostMultipliers: false,
 	        sttTargets: selectedSttTargets,
 	        audioDurationSeconds: mediaDurationSeconds,
+	        sourceUrl: processingOptions.url,
 	        llmTargets,
 	        skipLLM: processingOptions.skipLLM,
 	        ttsTargets: ttsEstimateTargets,

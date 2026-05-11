@@ -74,9 +74,7 @@ export const SUPPORTED_HAPPYSCRIBE_STT_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_SUPADATA_STT_MODELS = [
-  'auto',
-  'native',
-  'generate'
+  'auto'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_OPENAI_STT_MODELS = [

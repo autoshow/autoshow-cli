@@ -71,7 +71,7 @@ export const transcriptionFlags = {
     type: String
   },
   'supadata-lang': {
-    description: 'Supadata preferred transcript language (ISO 639-1); only used with auto/native modes',
+    description: 'Supadata preferred transcript language (ISO 639-1); used with auto mode when a native transcript is available',
     type: String
   },
   'speaker-count': {

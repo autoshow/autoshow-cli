@@ -85,6 +85,17 @@ describe('provider selection contracts', () => {
     ])
   })
 
+  test('--all-stt expands Supadata to auto only', () => {
+    const opts = buildOptsFromFlags(false, { 'all-stt': true })
+    const supadataTargets = collectSttTargets(opts).filter((target) => target.service === 'supadata')
+
+    expect(supadataTargets).toEqual([{
+      service: 'supadata',
+      model: 'auto',
+      local: false
+    }])
+  })
+
   test('BFL/deAPI image and deAPI video flags select targets and participate in all-provider shortcuts', () => {
     const explicitOpts = buildOptsFromFlags(false, {
       'bfl-image': ['flux-2-pro-preview'],

@@ -4,7 +4,7 @@ import {
   resolveHappyScribeOrganizationSelection
 } from './happyscribe'
 
-const GENERIC_ESTIMATE_NOTE = 'Happy Scribe preflight uses the published $0.20/min AI rate; exact billed cents and credits are captured only on real runs.'
+const GENERIC_ESTIMATE_NOTE = 'Happy Scribe preflight uses the published $0.01/min AI rate; exact billed cents and credits are captured only on real runs.'
 
 export const buildHappyScribeRegistryEstimate = (
   model: string,

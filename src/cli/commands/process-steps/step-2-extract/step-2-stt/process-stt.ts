@@ -234,7 +234,7 @@ export const processStt = async (
           promptSourceProvider: buildProviderModelLabel(captionTranscription.metadata)
         })
 
-        const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], preparedStepMedia.durationSeconds))
+        const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], preparedStepMedia.durationSeconds, preparedStepMedia.step1Metadata.url))
         const actual = computeActualCosts({
           step1: preparedStepMedia.step1Metadata,
           step2: captionTranscription.metadata,
@@ -322,7 +322,7 @@ export const processStt = async (
         requestedSpeakerCount: target.diarizationOptions?.speakerCount
       })
 
-      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, preparedStepMedia.durationSeconds))
+      const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, preparedStepMedia.durationSeconds, preparedStepMedia.step1Metadata.url))
       const actual = computeActualCosts({
         step1: preparedStepMedia.step1Metadata,
         step2: transcription.metadata,
@@ -691,7 +691,7 @@ export const processStt = async (
 
     const promptSource = selectPrimaryPromptProvider(successes)
 
-    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, applicableTargets, prepared.durationSeconds))
+    const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, applicableTargets, prepared.durationSeconds, prepared.step1Metadata.url))
     const actual = computeActualCosts({
       step1: prepared.step1Metadata,
       step2: successfulProviders.map((entry) => entry.metadata),

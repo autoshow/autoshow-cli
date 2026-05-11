@@ -150,7 +150,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--deapi-stt <model>` | Select one or more deAPI STT models |
 | `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models |
 | `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |
-| `--supadata-stt <model>` | Select one or more Supadata STT modes |
+| `--supadata-stt auto` | Select Supadata STT auto mode |
 | `--supadata-lang <code>` | Supadata preferred transcript language |
 | `--mistral-stt <model>` | Select one or more Mistral STT models |
 | `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models |

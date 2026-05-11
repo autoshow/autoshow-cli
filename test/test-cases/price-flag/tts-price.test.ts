@@ -251,7 +251,7 @@ test('write --price omits TTS estimates when multiple LLM providers are selected
   const output = `${result.stdout}\n${result.stderr}`
 
   expect(result.exitCode).toBe(0)
-  expect(output).toContain('TTS estimate omitted')
+  expect(output).not.toContain('TTS estimate omitted')
   expect(output).not.toContain('speech-kitten-kitten-tts-mini.wav')
   expect(output).not.toContain('speech-openai-gpt-4o-mini-tts.wav')
 })

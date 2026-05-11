@@ -18,8 +18,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
           durationSeconds: s.durationSeconds,
-          ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {}),
-          ...(typeof s.note === 'string' ? { note: s.note } : {})
+          ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {})
         })
         break
       case 'extract':
@@ -37,8 +36,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           ...(typeof s.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: s.outputCostPer1MCents } : {}),
           ...(typeof s.promptTokens === 'number' ? { promptTokens: s.promptTokens } : {}),
           ...(typeof s.completionTokens === 'number' ? { completionTokens: s.completionTokens } : {}),
-          ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {}),
-          ...(typeof s.note === 'string' ? { note: s.note } : {}),
+          ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {})
         })
         break
       case 'llm':
@@ -90,8 +88,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           provider: s.provider,
           model: s.model,
           cost: s.totalCost,
-          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
-          ...(typeof s.note === 'string' ? { note: s.note } : {}),
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {})
         })
         break
     }

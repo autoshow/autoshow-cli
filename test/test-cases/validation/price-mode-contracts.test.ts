@@ -163,6 +163,44 @@ const buildSttMetadata = (overrides: Partial<Step2Metadata> = {}): Step2Metadata
   ...overrides
 })
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+const findPricingNoteKeys = (value: unknown): string[] => {
+  const keys: string[] = []
+  const visit = (entry: unknown): void => {
+    if (Array.isArray(entry)) {
+      for (const item of entry) visit(item)
+      return
+    }
+    if (!isRecord(entry)) {
+      return
+    }
+    for (const [key, child] of Object.entries(entry)) {
+      if (key === 'note' || key === 'notes') {
+        keys.push(key)
+      }
+      visit(child)
+    }
+  }
+
+  visit(value)
+  return keys
+}
+
+const parseJsonLines = (text: string): unknown[] =>
+  text
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.startsWith('{') && line.endsWith('}'))
+    .flatMap((line) => {
+      try {
+        return [JSON.parse(line) as unknown]
+      } catch {
+        return []
+      }
+    })
+
 describe('price mode contracts', () => {
   for (const priceCase of priceCases) {
     test(`${priceCase.label} accepts --price without producing an output directory`, async () => {
@@ -186,6 +224,30 @@ describe('price mode contracts', () => {
       expect(result.outputDir).toBeNull()
       expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: price')
     }
+  })
+
+  test('price JSON result omits estimate note fields', async () => {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'write',
+      STABLE_LOCAL_AUDIO_PATH,
+      '--openai',
+      'gpt-5.4',
+      '--groq',
+      'openai/gpt-oss-20b',
+      '--kitten-tts',
+      'kitten-tts-mini',
+      '--price',
+      '--json'
+    ])
+
+    expect(result.exitCode).toBe(0)
+    const emittedResult = parseJsonLines(`${result.stdout}\n${result.stderr}`)
+      .find((entry) => isRecord(entry) && entry['dryRun'] === true)
+
+    expect(emittedResult).toBeDefined()
+    expect(findPricingNoteKeys(emittedResult)).toEqual([])
+    expect(JSON.stringify(emittedResult)).not.toContain('TTS estimate omitted')
   })
 
   test('music lyric-video mode rejects --price', async () => {
@@ -221,6 +283,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
+    expect(resolveCheapestModelForFlag('supadata-stt')).toBe('auto')
     expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
@@ -646,6 +709,58 @@ describe('price mode contracts', () => {
     expect(actual.totalCost).toBe(providerCostCents)
   })
 
+  test('Supadata STT estimates force generation pricing for direct media URLs', () => {
+    const audioDurationSeconds = 2423.04
+    const expectedCredits = (audioDurationSeconds / 60) * 2
+    const estimated = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      sourceUrl: 'https://ajc.pics/autoshow/benchmarks/stt/2022-09-30-widgets-fsjam-40-minutes.mp3',
+      audioDurationSeconds,
+      sttTargets: [
+        { service: 'supadata', model: 'auto' }
+      ]
+    })
+
+    expect(estimated.steps.map((step) => ({
+      provider: step.provider,
+      model: step.model,
+      cost: Number(step.cost.toFixed(5))
+    }))).toEqual([
+      { provider: 'supadata', model: 'auto', cost: Number(expectedCredits.toFixed(5)) }
+    ])
+    expect(findPricingNoteKeys(estimated)).toEqual([])
+
+    const platformAuto = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      audioDurationSeconds,
+      sttTargets: [{ service: 'supadata', model: 'auto' }]
+    })
+    expect(platformAuto.steps[0]?.cost).toBe(expectedCredits)
+  })
+
+  test('Supadata actual fallback forces generation pricing for direct media URLs', () => {
+    const audioDurationSeconds = 2423.04
+    const expectedCredits = (audioDurationSeconds / 60) * 2
+    const actual = computeActualCosts({
+      step1: buildHostedStep1(),
+      step2: buildSttMetadata({
+        transcriptionService: 'supadata',
+        transcriptionModel: 'auto'
+      }),
+      audioDurationSeconds
+    })
+
+    expect(actual.steps[0]).toMatchObject({
+      step: 'stt',
+      provider: 'supadata',
+      model: 'auto',
+      inputMetric: 'credits'
+    })
+    expect(actual.steps[0]?.cost).toBeCloseTo(expectedCredits)
+    expect(actual.steps[0]?.inputValue).toBeCloseTo(expectedCredits)
+  })
+
   test('Gemini music estimates use per-song Lyria 3 pricing', () => {
     const estimates = estimateMusicCosts({
       geminiMusicModels: ['lyria-3-clip-preview', 'lyria-3-pro-preview'],
@@ -925,8 +1040,10 @@ describe('price mode contracts', () => {
         inputCostPer1MCents: 20,
         outputCostPer1MCents: 125,
         totalCost: 9,
-        estimateType: 'heuristic'
-      }]
+        estimateType: 'heuristic',
+        note: 'Internal OCR estimate caveat.'
+      }],
+      notes: ['Internal aggregate estimate caveat.']
     }, actualMetadata)
     const fallbackEstimated = resolveExtractEstimatedCosts(undefined, actualMetadata)
 
@@ -938,11 +1055,13 @@ describe('price mode contracts', () => {
       completionTokens: 2000,
       cost: 9
     })
+    expect(findPricingNoteKeys(preflightEstimated)).toEqual([])
     expect(fallbackEstimated.steps[0]).toMatchObject({
       provider: 'openai',
       model: 'gpt-5.4-nano',
       promptTokens: 6152,
       completionTokens: 579
     })
+    expect(findPricingNoteKeys(fallbackEstimated)).toEqual([])
   })
 })

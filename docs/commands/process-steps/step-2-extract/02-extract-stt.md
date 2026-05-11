@@ -180,19 +180,19 @@ Organization resolution order is CLI `--happyscribe-organization-id`, config def
 
 | Option | Value |
 |--------|-------|
-| Selector | `--supadata-stt <auto\|native\|generate>` |
-| Language | `--supadata-lang <code>` for `auto` and `native` modes |
+| Selector | `--supadata-stt auto` |
+| Language | `--supadata-lang <code>` when a native transcript is available |
 | Required env | `SUPADATA_API_KEY` |
 | Optional env | `SUPADATA_BASE_URL` |
 | Input support | Public YouTube, TikTok, Instagram, X/Twitter, Facebook, or direct media/file URLs |
 
 ```bash
 bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --supadata-stt auto --supadata-lang en
-bun as extract https://www.tiktok.com/@example/video/1234567890 --supadata-stt generate
-bun as extract https://example.com/audio/interview.mp3 --supadata-stt native --price
+bun as extract https://www.tiktok.com/@example/video/1234567890 --supadata-stt auto
+bun as extract https://example.com/audio/interview.mp3 --supadata-stt auto --price
 ```
 
-Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. `auto` tries provider-native transcripts first and generates a transcript when needed, `native` only fetches existing transcripts, and `generate` requests AI transcript generation. `--supadata-lang` is only sent for `auto` and `native`; generated transcripts ignore that flag.
+Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. AutoShow exposes only Supadata `auto` mode: it tries provider-native transcripts first and generates a transcript when needed. Supadata treats direct media/file URLs as generated transcripts. `--supadata-lang` is sent with the auto request, but generated transcripts ignore that flag.
 
 ### Gladia
 
@@ -442,15 +442,19 @@ deAPI uses live provider pricing when its quote endpoint succeeds.
 
 Happy Scribe price preflight is intentionally side-effect free.
 
-- `--price` never creates Happy Scribe uploads or draft orders. Preflight uses the published AI rate of `$0.20/min` and the local timing registry.
-- If preflight cannot resolve a unique organization, AutoShow still prints the generic estimate and adds a note that execution needs an explicit organization override.
+- `--price` never creates Happy Scribe uploads or draft orders. Preflight uses the published AI rate of `$0.01/min` and the local timing registry.
+- If preflight cannot resolve a unique organization, AutoShow still prints the generic estimate. Execution needs an explicit organization override before exact billing can be captured.
 - During execution, AutoShow records Happy Scribe billing in `step2.billing` using `totalCost`, `creditsUsed`, `creditRateCents`, `source: "provider_quote"`, and `mode: "order"` when the selected organization reports `currency: "usd"`. Non-USD execution is rejected in v1. If exact provider billing is unavailable, AutoShow falls back to registry math with `source: "registry_fallback"`.
 - Happy Scribe split runs submit one order per segment and merge segment billing into `step2.billing.mode: "segment_sum"`.
 
 Supadata price estimates use provider credits.
 
 - `--price` uses the published Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, or `1.00 cents/credit`.
-- `native` estimates as one transcript request credit. `generate` estimates generated transcript credits from media duration. `auto` is priced conservatively as the higher of one native transcript request credit or generated transcript credits from media duration.
+- `native` estimates one transcript request credit, including transcript-unavailable responses.
+- `generate` estimates AI generation from media duration at roughly `2 credits/min`.
+- `auto` is priced conservatively as the higher of one native transcript request credit or generated transcript credits from media duration.
+- Direct media/file URLs are treated as generated transcripts by Supadata, so they estimate from media duration even when `auto` is selected.
+- Published credit pricing can vary by plan, billing setup, promotions, or enterprise terms; AutoShow's preflight uses the Basic/Pro auto-recharge reference rate for consistency.
 - During execution, Supadata billing metadata records credit counts from provider response headers when available.
 
 ## STT Notes

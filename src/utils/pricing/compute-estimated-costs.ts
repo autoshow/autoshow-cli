@@ -12,14 +12,7 @@ import {
   getTtsPricing,
   getVideoEstimation
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import {
-  DEEPINFRA_OCR_PRICE_NOTE,
-  GEMINI_OCR_PRICE_NOTE,
-  GLM_OCR_PRICE_NOTE,
-  KIMI_OCR_PRICE_NOTE,
-  OPENAI_OCR_PRICE_NOTE,
-  estimateOcrTokenUsage
-} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
+import { estimateOcrTokenUsage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
@@ -96,7 +89,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       if (target.service === 'supadata') {
         const estimation = getSttEstimation(target.service, target.model)
         const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
-        const supadataEstimate = estimateSupadataCost(target.model, durationSeconds)
+        const supadataEstimate = estimateSupadataCost(target.model, durationSeconds, { sourceUrl: input.sourceUrl })
         const cost = applyCostMultiplier(supadataEstimate.totalCost, costMultiplier)
         totalCost += cost
         steps.push({
@@ -105,8 +98,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
           model: target.model,
           cost,
           costMultiplier,
-          durationSeconds,
-          note: supadataEstimate.note
+          durationSeconds
         })
         continue
       }
@@ -149,7 +141,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         const estimation = getSttEstimation(provider, model)
         const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
         if (provider === 'supadata') {
-          const supadataEstimate = estimateSupadataCost(model, durationSeconds)
+          const supadataEstimate = estimateSupadataCost(model, durationSeconds, { sourceUrl: input.sourceUrl })
           const cost = applyCostMultiplier(supadataEstimate.totalCost, costMultiplier)
           totalCost += cost
           steps.push({
@@ -158,8 +150,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
             model,
             cost,
             costMultiplier,
-            durationSeconds,
-            note: supadataEstimate.note
+            durationSeconds
           })
           break
         }
@@ -190,8 +181,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'glm' as const,
               model: input.glmOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: GLM_OCR_PRICE_NOTE
+              estimateType: 'heuristic' as const
             }]
           : []),
         ...(input.kimiOcrModel && typeof input.extractPageCount === 'number'
@@ -199,8 +189,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'kimi' as const,
               model: input.kimiOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: KIMI_OCR_PRICE_NOTE
+              estimateType: 'heuristic' as const
             }]
           : []),
         ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
@@ -208,8 +197,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'openai' as const,
               model: input.openaiOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: OPENAI_OCR_PRICE_NOTE
+              estimateType: 'heuristic' as const
             }]
           : []),
         ...(input.anthropicOcrModel && typeof input.extractPageCount === 'number'
@@ -217,8 +205,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'anthropic' as const,
               model: input.anthropicOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: 'Model-specific heuristic token estimate based on observed Anthropic OCR benchmark usage. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
+              estimateType: 'heuristic' as const
             }]
           : []),
         ...(input.geminiOcrModel && typeof input.extractPageCount === 'number'
@@ -226,8 +213,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'gemini' as const,
               model: input.geminiOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: GEMINI_OCR_PRICE_NOTE
+              estimateType: 'heuristic' as const
             }]
           : []),
         ...(input.deepinfraOcrModel && typeof input.extractPageCount === 'number'
@@ -235,8 +221,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               provider: 'deepinfra' as const,
               model: input.deepinfraOcrModel,
               pageCount: input.extractPageCount,
-              estimateType: 'heuristic' as const,
-              note: DEEPINFRA_OCR_PRICE_NOTE
+              estimateType: 'heuristic' as const
             }]
           : []),
       ]
@@ -259,7 +244,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         costMultiplier,
         ...(typeof extractPricing.costPer1kPagesCents === 'number' ? { costPer1kPagesCents: extractPricing.costPer1kPagesCents } : {}),
         ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
-        ...(typeof target.note === 'string' ? { note: target.note } : {}),
         estimateType: target.estimateType ?? 'exact'
       })
       continue
@@ -291,7 +275,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
       promptTokens,
       completionTokens,
-      ...(typeof target.note === 'string' ? { note: target.note } : {}),
       estimateType: target.estimateType ?? (hasExactPromptTokens && hasExactCompletionTokens ? 'exact' : 'heuristic')
     })
   }
@@ -364,7 +347,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       cost,
       costMultiplier,
       ...(typeof ttsTarget.setupCostCents === 'number' ? { setupCostCents: setupCost } : {}),
-      ...(typeof ttsTarget.setupNote === 'string' ? { note: ttsTarget.setupNote } : {}),
       ...(costPer1kCharsCents !== undefined ? { costPer1kCharactersCents: costPer1kCharsCents } : {}),
       ...(pricing.inputCostPer1MCharsCents !== undefined ? { inputCostPer1MCharactersCents: pricing.inputCostPer1MCharsCents } : {}),
       ...(pricing.outputCostPer1MCharsCents !== undefined ? { outputCostPer1MCharactersCents: pricing.outputCostPer1MCharsCents } : {})
