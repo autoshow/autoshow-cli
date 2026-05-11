@@ -269,7 +269,8 @@ const dispatchStt = async (
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds
     })
   }
 
@@ -345,7 +346,8 @@ const dispatchStt = async (
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds
     })
   }
 
@@ -364,6 +366,7 @@ const dispatchStt = async (
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds,
       segmentStartSeconds: whisperProgress?.segmentStartSeconds,
       segmentDurationSeconds: whisperProgress?.segmentDurationSeconds,
       totalDurationSeconds: whisperProgress?.totalDurationSeconds,
@@ -440,7 +443,8 @@ const dispatchStt = async (
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds
     })
   }
 
@@ -449,7 +453,8 @@ const dispatchStt = async (
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds
     })
   }
 
@@ -458,7 +463,8 @@ const dispatchStt = async (
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds
     })
   }
 
@@ -467,7 +473,8 @@ const dispatchStt = async (
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds: options.audioDurationSeconds
     })
   }
 

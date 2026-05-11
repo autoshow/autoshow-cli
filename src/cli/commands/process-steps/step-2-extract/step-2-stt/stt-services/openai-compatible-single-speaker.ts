@@ -14,10 +14,12 @@ import {
   resolveTranscriptionOutput,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { repairZeroDurationMonotonicSegments } from '../stt-utils/stt-timing-quality'
 
 const parseSegments = (
   raw: unknown,
-  offsetSeconds: number
+  offsetSeconds: number,
+  knownEndSeconds?: number | undefined
 ): TranscriptionSegment[] => {
   if (!Array.isArray(raw)) {
     return []
@@ -42,7 +44,7 @@ const parseSegments = (
     })
   }
 
-  return segments
+  return repairZeroDurationMonotonicSegments(segments, { knownEndSeconds }).segments
 }
 
 const normalizeBaseURL = (baseURL: string): string =>
@@ -60,6 +62,7 @@ export const runOpenAICompatibleSingleSpeakerStt = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
   const {
@@ -70,7 +73,8 @@ export const runOpenAICompatibleSingleSpeakerStt = async (
     model,
     segmentOffsetMinutes = 0,
     segmentNumber,
-    totalSegments
+    totalSegments,
+    audioDurationSeconds
   } = options
 
   if (segmentNumber && totalSegments) {
@@ -101,7 +105,10 @@ export const runOpenAICompatibleSingleSpeakerStt = async (
   }
 
   const payload = await response.json() as OpenAICompatibleTranscriptionResponse
-  const segments = parseSegments(payload.segments, offsetSeconds)
+  const knownEndSeconds = typeof audioDurationSeconds === 'number' && Number.isFinite(audioDurationSeconds)
+    ? offsetSeconds + audioDurationSeconds
+    : undefined
+  const segments = parseSegments(payload.segments, offsetSeconds, knownEndSeconds)
   const text = typeof payload.text === 'string'
     ? payload.text.trim()
     : segments.map((segment) => segment.text).join(' ').trim()

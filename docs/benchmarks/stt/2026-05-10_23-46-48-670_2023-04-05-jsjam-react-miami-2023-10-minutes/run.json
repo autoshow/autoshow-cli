@@ -1,0 +1,2562 @@
+{
+  "schemaVersion": 2,
+  "kind": "extract",
+  "metadata": {
+    "step1": {
+      "title": "2023-04-05-jsjam-react-miami-2023-10-minutes",
+      "duration": "Unknown",
+      "channel": "Unknown",
+      "description": "",
+      "url": "https://ajc.pics/autoshow/benchmarks/stt/2023-04-05-jsjam-react-miami-2023-10-minutes.mp3",
+      "slug": "2023-04-05-jsjam-react-miami-2023-10-minutes",
+      "audioFileName": "2023-04-05-jsjam-react-miami-2023-10-minutes.mp3",
+      "audioFileSize": 7200621,
+      "durationSeconds": 600
+    },
+    "step2": [
+      {
+        "transcriptionService": "reverb",
+        "transcriptionModel": "reverb_asr_v1",
+        "processingTime": 678845,
+        "tokenCount": 1565
+      },
+      {
+        "transcriptionService": "gcloud",
+        "transcriptionModel": "chirp_3",
+        "processingTime": 109620,
+        "tokenCount": 1644,
+        "timings": {
+          "transcribeMs": 64139,
+          "remoteProcessingMs": 45481,
+          "requestCount": 11
+        }
+      },
+      {
+        "transcriptionService": "aws",
+        "transcriptionModel": "standard",
+        "processingTime": 61017,
+        "tokenCount": 1688,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "cleanup-complete",
+          "remoteJobId": "autoshow-1778474932151-source_media-9de89063bc6d",
+          "remoteAssetId": "autoshow/transcribe/autoshow-1778474932151-source_media-9de89063bc6d",
+          "remoteAssetUrl": "s3://autoshow-transcribe-710271913540-us-east-2-967f3f2dc6/autoshow/transcribe/autoshow-1778474932151-source_media-9de89063bc6d/input/source_media.mp3",
+          "createCompletedAt": "2026-05-11T04:48:54.382Z",
+          "lastPollAt": "2026-05-11T04:49:52.359Z",
+          "completedAt": "2026-05-11T04:49:52.360Z",
+          "cleanupCompletedAt": "2026-05-11T04:49:54.437Z",
+          "cleanup": {
+            "remoteJobDeleted": true,
+            "remoteAssetDeleted": true
+          }
+        },
+        "timings": {
+          "uploadMs": 960,
+          "createMs": 1268,
+          "createCount": 1,
+          "pollMs": 3953,
+          "pollSleepMs": 54019,
+          "pollCount": 7,
+          "transcriptMs": 796,
+          "remoteProcessingMs": 52771,
+          "cleanupMs": 1269,
+          "requestCount": 10
+        }
+      },
+      {
+        "transcriptionService": "deepinfra",
+        "transcriptionModel": "openai/whisper-large-v3-turbo",
+        "processingTime": 7272,
+        "tokenCount": 1576
+      },
+      {
+        "transcriptionService": "deepinfra",
+        "transcriptionModel": "openai/whisper-large-v3",
+        "processingTime": 11053,
+        "tokenCount": 1576
+      },
+      {
+        "transcriptionService": "deapi",
+        "transcriptionModel": "WhisperLargeV3",
+        "processingTime": 40707,
+        "tokenCount": 1679,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "completed",
+          "remoteJobId": "ed36b63f-6be1-47df-bb3f-3d2e6474b4f9",
+          "createCompletedAt": "2026-05-11T04:52:10.653Z",
+          "lastPollAt": "2026-05-11T04:52:47.151Z",
+          "completedAt": "2026-05-11T04:52:47.151Z"
+        },
+        "billing": {
+          "totalCost": 0.519718,
+          "source": "provider_quote",
+          "mode": "duration"
+        },
+        "timings": {
+          "uploadMs": 2535,
+          "createCount": 1,
+          "pollMs": 1487,
+          "pollSleepMs": 35009,
+          "pollCount": 6,
+          "remoteProcessingMs": 36685,
+          "requestCount": 7
+        }
+      },
+      {
+        "transcriptionService": "elevenlabs",
+        "transcriptionModel": "scribe_v2",
+        "processingTime": 30057,
+        "tokenCount": 1718,
+        "timings": {
+          "transcribeMs": 30054,
+          "remoteProcessingMs": 3,
+          "requestCount": 1
+        }
+      },
+      {
+        "transcriptionService": "deepgram",
+        "transcriptionModel": "nova-3",
+        "processingTime": 6932,
+        "tokenCount": 1607,
+        "timings": {
+          "transcribeMs": 6929,
+          "remoteProcessingMs": 3,
+          "requestCount": 1
+        }
+      },
+      {
+        "transcriptionService": "soniox",
+        "transcriptionModel": "stt-async-v4",
+        "processingTime": 36788,
+        "tokenCount": 1702,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "cleanup-complete",
+          "remoteJobId": "162150d9-a524-4da0-9c4d-1d01f811a9fd",
+          "remoteAssetId": "22fd8c33-19aa-4c64-8985-0c3931421320",
+          "createCompletedAt": "2026-05-11T04:51:20.966Z",
+          "lastPollAt": "2026-05-11T04:51:56.230Z",
+          "completedAt": "2026-05-11T04:51:56.765Z",
+          "cleanupCompletedAt": "2026-05-11T04:51:56.907Z",
+          "cleanup": {
+            "remoteJobDeleted": true,
+            "remoteAssetDeleted": true
+          }
+        },
+        "timings": {
+          "uploadMs": 941,
+          "createMs": 48,
+          "createCount": 1,
+          "pollMs": 254,
+          "pollSleepMs": 35007,
+          "pollCount": 6,
+          "transcriptMs": 531,
+          "remoteProcessingMs": 34872,
+          "cleanupMs": 142,
+          "requestCount": 9
+        }
+      },
+      {
+        "transcriptionService": "speechmatics",
+        "transcriptionModel": "standard",
+        "processingTime": 38359,
+        "tokenCount": 1683,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "cleanup-complete",
+          "remoteJobId": "3lprbe3ly5",
+          "createCompletedAt": "2026-05-11T04:47:07.095Z",
+          "lastPollAt": "2026-05-11T04:47:43.532Z",
+          "completedAt": "2026-05-11T04:47:43.532Z",
+          "cleanupCompletedAt": "2026-05-11T04:47:44.334Z",
+          "cleanup": {
+            "remoteJobDeleted": true
+          }
+        },
+        "timings": {
+          "createMs": 1266,
+          "createCount": 1,
+          "pollMs": 1424,
+          "pollSleepMs": 35008,
+          "pollCount": 6,
+          "transcriptMs": 652,
+          "remoteProcessingMs": 34871,
+          "cleanupMs": 146,
+          "requestCount": 8
+        }
+      },
+      {
+        "transcriptionService": "speechmatics",
+        "transcriptionModel": "enhanced",
+        "processingTime": 38782,
+        "tokenCount": 1679,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "cleanup-complete",
+          "remoteJobId": "zh3p7evm8f",
+          "createCompletedAt": "2026-05-11T04:46:50.337Z",
+          "lastPollAt": "2026-05-11T04:47:26.895Z",
+          "completedAt": "2026-05-11T04:47:26.895Z",
+          "cleanupCompletedAt": "2026-05-11T04:47:27.694Z",
+          "cleanup": {
+            "remoteJobDeleted": true
+          }
+        },
+        "timings": {
+          "createMs": 1563,
+          "createCount": 1,
+          "pollMs": 1546,
+          "pollSleepMs": 35009,
+          "pollCount": 6,
+          "transcriptMs": 655,
+          "remoteProcessingMs": 34880,
+          "cleanupMs": 138,
+          "requestCount": 8
+        }
+      },
+      {
+        "transcriptionService": "rev",
+        "transcriptionModel": "machine",
+        "processingTime": 65278,
+        "tokenCount": 1617,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "cleanup-complete",
+          "remoteJobId": "2I0RoiCdOsNUMJPI",
+          "createCompletedAt": "2026-05-11T04:47:44.752Z",
+          "lastPollAt": "2026-05-11T04:48:49.426Z",
+          "completedAt": "2026-05-11T04:48:49.426Z",
+          "cleanupCompletedAt": "2026-05-11T04:48:49.712Z",
+          "cleanup": {
+            "remoteJobDeleted": true
+          }
+        },
+        "timings": {
+          "createMs": 401,
+          "createCount": 1,
+          "pollMs": 541,
+          "pollSleepMs": 64024,
+          "pollCount": 8,
+          "transcriptMs": 199,
+          "remoteProcessingMs": 64053,
+          "cleanupMs": 84,
+          "requestCount": 10
+        }
+      },
+      {
+        "transcriptionService": "rev",
+        "transcriptionModel": "low_cost",
+        "processingTime": 66357,
+        "tokenCount": 1609,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "cleanup-complete",
+          "remoteJobId": "UUe9fElvruUCUu7P",
+          "createCompletedAt": "2026-05-11T04:47:28.974Z",
+          "lastPollAt": "2026-05-11T04:48:33.561Z",
+          "completedAt": "2026-05-11T04:48:33.562Z",
+          "cleanupCompletedAt": "2026-05-11T04:48:34.504Z",
+          "cleanup": {
+            "remoteJobDeleted": true
+          }
+        },
+        "timings": {
+          "createMs": 1264,
+          "createCount": 1,
+          "pollMs": 557,
+          "pollSleepMs": 64013,
+          "pollCount": 8,
+          "transcriptMs": 329,
+          "remoteProcessingMs": 63775,
+          "cleanupMs": 432,
+          "requestCount": 10
+        }
+      },
+      {
+        "transcriptionService": "groq",
+        "transcriptionModel": "whisper-large-v3-turbo",
+        "processingTime": 9947,
+        "tokenCount": 1579
+      },
+      {
+        "transcriptionService": "groq",
+        "transcriptionModel": "whisper-large-v3",
+        "processingTime": 9593,
+        "tokenCount": 1588
+      },
+      {
+        "transcriptionService": "grok",
+        "transcriptionModel": "speech-to-text",
+        "processingTime": 7325,
+        "tokenCount": 1562,
+        "timings": {
+          "transcribeMs": 7323,
+          "remoteProcessingMs": 2,
+          "requestCount": 1
+        }
+      },
+      {
+        "transcriptionService": "mistral",
+        "transcriptionModel": "voxtral-mini-2602",
+        "processingTime": 10471,
+        "tokenCount": 1571,
+        "timings": {
+          "transcribeMs": 10464
+        }
+      },
+      {
+        "transcriptionService": "assemblyai",
+        "transcriptionModel": "universal-3-pro",
+        "processingTime": 17054,
+        "tokenCount": 1593,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "completed",
+          "remoteJobId": "f8dff3b7-0bc5-4d0c-9c6c-c6e92bd5f2ec",
+          "remoteAssetUrl": "https://cdn.assemblyai.com/upload/8a97edd451e36e60458714c740e33faa032e4b8686b68208028d3fae79e19842/80497cef-d700-4167-86f3-58d1e0e93ca4",
+          "createCompletedAt": "2026-05-11T04:46:50.108Z",
+          "lastPollAt": "2026-05-11T04:47:05.822Z",
+          "completedAt": "2026-05-11T04:47:05.822Z"
+        },
+        "timings": {
+          "uploadMs": 1240,
+          "createMs": 98,
+          "createCount": 1,
+          "pollMs": 703,
+          "pollSleepMs": 15005,
+          "pollCount": 4,
+          "remoteProcessingMs": 15013,
+          "requestCount": 6
+        }
+      },
+      {
+        "transcriptionService": "gladia",
+        "transcriptionModel": "default",
+        "processingTime": 20889,
+        "tokenCount": 1599,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "completed",
+          "remoteJobId": "5691f0d2-290e-416d-9875-fbbe887bfb11",
+          "remoteAssetId": "85b3905b-5f5b-4c0a-945c-3e48c3e80b00",
+          "remoteAssetUrl": "https://api.gladia.io/file/85b3905b-5f5b-4c0a-945c-3e48c3e80b00",
+          "createCompletedAt": "2026-05-11T04:50:31.294Z",
+          "lastPollAt": "2026-05-11T04:50:47.480Z",
+          "completedAt": "2026-05-11T04:50:47.481Z"
+        },
+        "timings": {
+          "uploadMs": 4021,
+          "createMs": 680,
+          "createCount": 1,
+          "pollMs": 1169,
+          "pollSleepMs": 15009,
+          "pollCount": 4,
+          "remoteProcessingMs": 15019,
+          "requestCount": 6
+        }
+      },
+      {
+        "transcriptionService": "happyscribe",
+        "transcriptionModel": "auto",
+        "processingTime": 40580,
+        "tokenCount": 1593,
+        "runtime": {
+          "mode": "fresh",
+          "stage": "completed",
+          "remoteJobId": "67b171d8dc21442bb5f8cdbedc073bb5",
+          "remoteAssetUrl": "https://media2.happyscribe.com/uploads/249be27f-a00c-4f04-830f-5d2728d31448/source_media.mp3?x-amz-acl=public-read&x-amz-meta-user_id=17600298&x-amz-meta-generated_by=happyscribe-api&x-amz-sdk-checksum-algorithm=CRC32&x-amz-checksum-crc32=AAAAAA%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA3QN374LNFOXT7QML%2F20260511%2Feu-west-1%2Fs3%2Faws4_request&X-Amz-Date=20260511T044944Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=08c262db4183a7b1aee6671d10b71eaf48b0b9b7239fb1d04dc9af5e935c8beb",
+          "createCompletedAt": "2026-05-11T04:49:46.233Z",
+          "lastPollAt": "2026-05-11T04:50:22.598Z",
+          "completedAt": "2026-05-11T04:50:23.136Z"
+        },
+        "billing": {
+          "totalCost": 0,
+          "source": "provider_quote",
+          "mode": "order",
+          "creditsUsed": 0
+        },
+        "timings": {
+          "uploadMs": 1863,
+          "createMs": 416,
+          "createCount": 1,
+          "pollMs": 1356,
+          "pollSleepMs": 35006,
+          "pollCount": 6,
+          "transcriptMs": 537,
+          "remoteProcessingMs": 36408,
+          "requestCount": 10
+        }
+      },
+      {
+        "transcriptionService": "supadata",
+        "transcriptionModel": "auto",
+        "processingTime": 11431,
+        "tokenCount": 1572,
+        "timings": {
+          "createMs": 11429,
+          "createCount": 1,
+          "requestCount": 1
+        },
+        "billing": {
+          "creditRateCents": 1,
+          "creditsUsed": 20,
+          "source": "response-header"
+        }
+      },
+      {
+        "transcriptionService": "supadata",
+        "transcriptionModel": "native",
+        "processingTime": 4902,
+        "tokenCount": 1572,
+        "timings": {
+          "createMs": 4900,
+          "createCount": 1,
+          "requestCount": 1
+        },
+        "billing": {
+          "creditRateCents": 1,
+          "creditsUsed": 20,
+          "source": "response-header"
+        }
+      },
+      {
+        "transcriptionService": "supadata",
+        "transcriptionModel": "generate",
+        "processingTime": 6881,
+        "tokenCount": 1572,
+        "timings": {
+          "createMs": 6880,
+          "createCount": 1,
+          "requestCount": 1
+        },
+        "billing": {
+          "creditRateCents": 1,
+          "creditsUsed": 20,
+          "source": "response-header"
+        }
+      },
+      {
+        "transcriptionService": "openai-stt",
+        "transcriptionModel": "gpt-4o-mini-transcribe",
+        "processingTime": 14117,
+        "tokenCount": 1587
+      },
+      {
+        "transcriptionService": "openai-stt",
+        "transcriptionModel": "gpt-4o-transcribe",
+        "processingTime": 25260,
+        "tokenCount": 1575
+      },
+      {
+        "transcriptionService": "gemini-stt",
+        "transcriptionModel": "gemini-3-flash-preview",
+        "processingTime": 68956,
+        "tokenCount": 1587,
+        "timings": {
+          "requestCount": 1
+        }
+      },
+      {
+        "transcriptionService": "glm-stt",
+        "transcriptionModel": "glm-asr-2512",
+        "processingTime": 37216,
+        "tokenCount": 1585
+      },
+      {
+        "transcriptionService": "together",
+        "transcriptionModel": "openai/whisper-large-v3",
+        "processingTime": 2877,
+        "tokenCount": 1578
+      },
+      {
+        "transcriptionService": "whisper",
+        "transcriptionModel": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
+        "processingTime": 8704,
+        "tokenCount": 1552
+      },
+      {
+        "transcriptionService": "whisper",
+        "transcriptionModel": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
+        "processingTime": 10614,
+        "tokenCount": 1675
+      },
+      {
+        "transcriptionService": "whisper",
+        "transcriptionModel": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
+        "processingTime": 21881,
+        "tokenCount": 1681
+      },
+      {
+        "transcriptionService": "whisper",
+        "transcriptionModel": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
+        "processingTime": 51091,
+        "tokenCount": 1572
+      },
+      {
+        "transcriptionService": "whisper",
+        "transcriptionModel": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
+        "processingTime": 39011,
+        "tokenCount": 1615
+      }
+    ],
+    "resolvedStep2": {
+      "route": "stt",
+      "sourceKind": "media",
+      "providers": [
+        {
+          "service": "reverb",
+          "model": "reverb",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "gcloud",
+          "model": "chirp_3",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "aws",
+          "model": "standard",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "deepinfra",
+          "model": "openai/whisper-large-v3-turbo",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "deepinfra",
+          "model": "openai/whisper-large-v3",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "deapi",
+          "model": "WhisperLargeV3",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "elevenlabs",
+          "model": "scribe_v2",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "deepgram",
+          "model": "nova-3",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "soniox",
+          "model": "stt-async-v4",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "speechmatics",
+          "model": "standard",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "speechmatics",
+          "model": "enhanced",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "rev",
+          "model": "machine",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "rev",
+          "model": "low_cost",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "groq",
+          "model": "whisper-large-v3-turbo",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "groq",
+          "model": "whisper-large-v3",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "grok",
+          "model": "speech-to-text",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "mistral",
+          "model": "voxtral-mini-2602",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "assemblyai",
+          "model": "universal-3-pro",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "gladia",
+          "model": "default",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "happyscribe",
+          "model": "auto",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "supadata",
+          "model": "auto",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "supadata",
+          "model": "native",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "supadata",
+          "model": "generate",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "openai-stt",
+          "model": "gpt-4o-mini-transcribe",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "openai-stt",
+          "model": "gpt-4o-transcribe",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "gemini-stt",
+          "model": "gemini-3-flash-preview",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "glm-stt",
+          "model": "glm-asr-2512",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "together",
+          "model": "openai/whisper-large-v3",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "whisper",
+          "model": "tiny",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "whisper",
+          "model": "base",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "whisper",
+          "model": "small",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "whisper",
+          "model": "medium",
+          "origin": "all-shortcut"
+        },
+        {
+          "service": "whisper",
+          "model": "large-v3-turbo",
+          "origin": "all-shortcut"
+        }
+      ]
+    },
+    "completionStatus": "full",
+    "requestedProviders": [
+      {
+        "service": "reverb",
+        "model": "reverb",
+        "local": true
+      },
+      {
+        "service": "gcloud",
+        "model": "chirp_3",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "aws",
+        "model": "standard",
+        "local": false,
+        "awsRegion": "us-east-2",
+        "awsBucket": "autoshow-transcribe-710271913540-us-east-2-967f3f2dc6",
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "deepinfra",
+        "model": "openai/whisper-large-v3-turbo",
+        "local": false
+      },
+      {
+        "service": "deepinfra",
+        "model": "openai/whisper-large-v3",
+        "local": false
+      },
+      {
+        "service": "deapi",
+        "model": "WhisperLargeV3",
+        "local": false
+      },
+      {
+        "service": "elevenlabs",
+        "model": "scribe_v2",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "deepgram",
+        "model": "nova-3",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "soniox",
+        "model": "stt-async-v4",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "speechmatics",
+        "model": "standard",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "speechmatics",
+        "model": "enhanced",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "rev",
+        "model": "machine",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "rev",
+        "model": "low_cost",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "groq",
+        "model": "whisper-large-v3-turbo",
+        "local": false
+      },
+      {
+        "service": "groq",
+        "model": "whisper-large-v3",
+        "local": false
+      },
+      {
+        "service": "grok",
+        "model": "speech-to-text",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "mistral",
+        "model": "voxtral-mini-2602",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "assemblyai",
+        "model": "universal-3-pro",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "gladia",
+        "model": "default",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "happyscribe",
+        "model": "auto",
+        "local": false,
+        "diarizationOptions": {
+          "enabled": true
+        }
+      },
+      {
+        "service": "supadata",
+        "model": "auto",
+        "local": false
+      },
+      {
+        "service": "supadata",
+        "model": "native",
+        "local": false
+      },
+      {
+        "service": "supadata",
+        "model": "generate",
+        "local": false
+      },
+      {
+        "service": "openai-stt",
+        "model": "gpt-4o-mini-transcribe",
+        "local": false
+      },
+      {
+        "service": "openai-stt",
+        "model": "gpt-4o-transcribe",
+        "local": false
+      },
+      {
+        "service": "gemini-stt",
+        "model": "gemini-3-flash-preview",
+        "local": false
+      },
+      {
+        "service": "glm-stt",
+        "model": "glm-asr-2512",
+        "local": false
+      },
+      {
+        "service": "together",
+        "model": "openai/whisper-large-v3",
+        "local": false
+      },
+      {
+        "service": "whisper",
+        "model": "tiny",
+        "local": true
+      },
+      {
+        "service": "whisper",
+        "model": "base",
+        "local": true
+      },
+      {
+        "service": "whisper",
+        "model": "small",
+        "local": true
+      },
+      {
+        "service": "whisper",
+        "model": "medium",
+        "local": true
+      },
+      {
+        "service": "whisper",
+        "model": "large-v3-turbo",
+        "local": true
+      }
+    ],
+    "providerStates": [
+      {
+        "service": "reverb",
+        "model": "reverb",
+        "local": true,
+        "artifactDir": "providers/reverb-reverb",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "gcloud",
+        "model": "chirp_3",
+        "local": false,
+        "artifactDir": "providers/gcloud-chirp_3",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "aws",
+        "model": "standard",
+        "local": false,
+        "artifactDir": "providers/aws-standard",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "deepinfra",
+        "model": "openai/whisper-large-v3-turbo",
+        "local": false,
+        "artifactDir": "providers/deepinfra-openai_whisper-large-v3-turbo",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "deepinfra",
+        "model": "openai/whisper-large-v3",
+        "local": false,
+        "artifactDir": "providers/deepinfra-openai_whisper-large-v3",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "deapi",
+        "model": "WhisperLargeV3",
+        "local": false,
+        "artifactDir": "providers/deapi-WhisperLargeV3",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "elevenlabs",
+        "model": "scribe_v2",
+        "local": false,
+        "artifactDir": "providers/elevenlabs-scribe_v2",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "deepgram",
+        "model": "nova-3",
+        "local": false,
+        "artifactDir": "providers/deepgram-nova-3",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "soniox",
+        "model": "stt-async-v4",
+        "local": false,
+        "artifactDir": "providers/soniox-stt-async-v4",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "speechmatics",
+        "model": "standard",
+        "local": false,
+        "artifactDir": "providers/speechmatics-standard",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "speechmatics",
+        "model": "enhanced",
+        "local": false,
+        "artifactDir": "providers/speechmatics-enhanced",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "rev",
+        "model": "machine",
+        "local": false,
+        "artifactDir": "providers/rev-machine",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "rev",
+        "model": "low_cost",
+        "local": false,
+        "artifactDir": "providers/rev-low_cost",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "groq",
+        "model": "whisper-large-v3-turbo",
+        "local": false,
+        "artifactDir": "providers/groq-whisper-large-v3-turbo",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "groq",
+        "model": "whisper-large-v3",
+        "local": false,
+        "artifactDir": "providers/groq-whisper-large-v3",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "grok",
+        "model": "speech-to-text",
+        "local": false,
+        "artifactDir": "providers/grok-speech-to-text",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "mistral",
+        "model": "voxtral-mini-2602",
+        "local": false,
+        "artifactDir": "providers/mistral-voxtral-mini-2602",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "assemblyai",
+        "model": "universal-3-pro",
+        "local": false,
+        "artifactDir": "providers/assemblyai-universal-3-pro",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "gladia",
+        "model": "default",
+        "local": false,
+        "artifactDir": "providers/gladia-default",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "happyscribe",
+        "model": "auto",
+        "local": false,
+        "artifactDir": "providers/happyscribe-auto",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "supadata",
+        "model": "auto",
+        "local": false,
+        "artifactDir": "providers/supadata-auto",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "supadata",
+        "model": "native",
+        "local": false,
+        "artifactDir": "providers/supadata-native",
+        "status": "succeeded",
+        "attempts": 2
+      },
+      {
+        "service": "supadata",
+        "model": "generate",
+        "local": false,
+        "artifactDir": "providers/supadata-generate",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "openai-stt",
+        "model": "gpt-4o-mini-transcribe",
+        "local": false,
+        "artifactDir": "providers/openai-stt-gpt-4o-mini-transcribe",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "openai-stt",
+        "model": "gpt-4o-transcribe",
+        "local": false,
+        "artifactDir": "providers/openai-stt-gpt-4o-transcribe",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "gemini-stt",
+        "model": "gemini-3-flash-preview",
+        "local": false,
+        "artifactDir": "providers/gemini-stt-gemini-3-flash-preview",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "glm-stt",
+        "model": "glm-asr-2512",
+        "local": false,
+        "artifactDir": "providers/glm-stt-glm-asr-2512",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "together",
+        "model": "openai/whisper-large-v3",
+        "local": false,
+        "artifactDir": "providers/together-openai_whisper-large-v3",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "whisper",
+        "model": "tiny",
+        "local": true,
+        "artifactDir": "providers/whisper-tiny",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "whisper",
+        "model": "base",
+        "local": true,
+        "artifactDir": "providers/whisper-base",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "whisper",
+        "model": "small",
+        "local": true,
+        "artifactDir": "providers/whisper-small",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "whisper",
+        "model": "medium",
+        "local": true,
+        "artifactDir": "providers/whisper-medium",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "whisper",
+        "model": "large-v3-turbo",
+        "local": true,
+        "artifactDir": "providers/whisper-large-v3-turbo",
+        "status": "succeeded",
+        "attempts": 1
+      }
+    ],
+    "missingProviders": [],
+    "cost": {
+      "estimated": {
+        "totalCost": 361.52,
+        "steps": [
+          {
+            "step": "stt",
+            "provider": "reverb",
+            "model": "reverb",
+            "cost": 0,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gcloud",
+            "model": "chirp_3",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "aws",
+            "model": "standard",
+            "cost": 24,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3-turbo",
+            "cost": 0.19999999999999998,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3",
+            "cost": 0.45,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deapi",
+            "model": "WhisperLargeV3",
+            "cost": 4.166666666666666,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "elevenlabs",
+            "model": "scribe_v2",
+            "cost": 3.6666666666666665,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepgram",
+            "model": "nova-3",
+            "cost": 9.7,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "soniox",
+            "model": "stt-async-v4",
+            "cost": 1.6666666666666665,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "standard",
+            "cost": 7.5,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "enhanced",
+            "cost": 12.5,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "machine",
+            "cost": 3.333333333333333,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "low_cost",
+            "cost": 1.6666666666666665,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3-turbo",
+            "cost": 0.6666666666666666,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3",
+            "cost": 1.8499999999999999,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "grok",
+            "model": "speech-to-text",
+            "cost": 1.6666666666666665,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "mistral",
+            "model": "voxtral-mini-2602",
+            "cost": 3,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "assemblyai",
+            "model": "universal-3-pro",
+            "cost": 3.5,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gladia",
+            "model": "default",
+            "cost": 10.166666666666666,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "happyscribe",
+            "model": "auto",
+            "cost": 200,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "auto",
+            "cost": 20,
+            "costMultiplier": 1,
+            "durationSeconds": 600,
+            "note": "Estimated at Supadata Basic/Pro auto-recharge rate ($10 / 1,000 credits = 1.00¢/credit): auto mode is priced conservatively as the higher of 1 credit for native transcript retrieval or ~20 credits for AI generation (10 min x 2 credits/min)."
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "native",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 600,
+            "note": "Estimated at Supadata Basic/Pro auto-recharge rate ($10 / 1,000 credits = 1.00¢/credit): 1 credit per request, including transcript-unavailable responses."
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "generate",
+            "cost": 20,
+            "costMultiplier": 1,
+            "durationSeconds": 600,
+            "note": "Estimated at Supadata Basic/Pro auto-recharge rate ($10 / 1,000 credits = 1.00¢/credit): ~20 credits (10 min x 2 credits/min)."
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-mini-transcribe",
+            "cost": 3,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-transcribe",
+            "cost": 6,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gemini-stt",
+            "model": "gemini-3-flash-preview",
+            "cost": 1.92,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "glm-stt",
+            "model": "glm-asr-2512",
+            "cost": 2.4,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "together",
+            "model": "openai/whisper-large-v3",
+            "cost": 1.5,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "tiny",
+            "cost": 0,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "base",
+            "cost": 0,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "small",
+            "cost": 0,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "medium",
+            "cost": 0,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "large-v3-turbo",
+            "cost": 0,
+            "costMultiplier": 1,
+            "durationSeconds": 600
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 176.8730513333333,
+        "steps": [
+          {
+            "step": "stt",
+            "provider": "reverb",
+            "model": "reverb_asr_v1",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gcloud",
+            "model": "chirp_3",
+            "cost": 16,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "aws",
+            "model": "standard",
+            "cost": 24,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3-turbo",
+            "cost": 0.19999999999999998,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3",
+            "cost": 0.45,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deapi",
+            "model": "WhisperLargeV3",
+            "cost": 0.519718,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "elevenlabs",
+            "model": "scribe_v2",
+            "cost": 3.6666666666666665,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepgram",
+            "model": "nova-3",
+            "cost": 9.7,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "soniox",
+            "model": "stt-async-v4",
+            "cost": 1.6666666666666665,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "standard",
+            "cost": 7.5,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "enhanced",
+            "cost": 12.5,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "machine",
+            "cost": 3.333333333333333,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "low_cost",
+            "cost": 1.6666666666666665,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3-turbo",
+            "cost": 0.6666666666666666,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3",
+            "cost": 1.8499999999999999,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "grok",
+            "model": "speech-to-text",
+            "cost": 1.6666666666666665,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "mistral",
+            "model": "voxtral-mini-2602",
+            "cost": 3,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "assemblyai",
+            "model": "universal-3-pro",
+            "cost": 3.5,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gladia",
+            "model": "default",
+            "cost": 10.166666666666666,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "happyscribe",
+            "model": "auto",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "auto",
+            "cost": 20,
+            "inputMetric": "credits",
+            "inputValue": 20
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "native",
+            "cost": 20,
+            "inputMetric": "credits",
+            "inputValue": 20
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "generate",
+            "cost": 20,
+            "inputMetric": "credits",
+            "inputValue": 20
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-mini-transcribe",
+            "cost": 3,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-transcribe",
+            "cost": 6,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gemini-stt",
+            "model": "gemini-3-flash-preview",
+            "cost": 1.92,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "glm-stt",
+            "model": "glm-asr-2512",
+            "cost": 2.4,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "together",
+            "model": "openai/whisper-large-v3",
+            "cost": 1.5,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "tiny",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "base",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "small",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "medium",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "large-v3-turbo",
+            "cost": 0,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          }
+        ]
+      },
+      "aggregate": {
+        "estimatedTotalCost": 361.52,
+        "actualTotalCost": 176.8730513333333
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 3280200,
+        "steps": [
+          {
+            "step": "stt",
+            "provider": "gcloud",
+            "model": "chirp_3",
+            "processingTimeMs": 97200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "aws",
+            "model": "standard",
+            "processingTimeMs": 156000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3-turbo",
+            "processingTimeMs": 24000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3",
+            "processingTimeMs": 41400,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deapi",
+            "model": "WhisperLargeV3",
+            "processingTimeMs": 49200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "elevenlabs",
+            "model": "scribe_v2",
+            "processingTimeMs": 64200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepgram",
+            "model": "nova-3",
+            "processingTimeMs": 84000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "soniox",
+            "model": "stt-async-v4",
+            "processingTimeMs": 83400,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "standard",
+            "processingTimeMs": 281400,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "enhanced",
+            "processingTimeMs": 382200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "machine",
+            "processingTimeMs": 258600,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "low_cost",
+            "processingTimeMs": 264600,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3-turbo",
+            "processingTimeMs": 15600,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3",
+            "processingTimeMs": 15000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "grok",
+            "model": "speech-to-text",
+            "processingTimeMs": 19800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "mistral",
+            "model": "voxtral-mini-2602",
+            "processingTimeMs": 49800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "assemblyai",
+            "model": "universal-3-pro",
+            "processingTimeMs": 106800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gladia",
+            "model": "default",
+            "processingTimeMs": 103800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "happyscribe",
+            "model": "auto",
+            "processingTimeMs": 144000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "auto",
+            "processingTimeMs": 96000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "native",
+            "processingTimeMs": 36000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "generate",
+            "processingTimeMs": 132000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-mini-transcribe",
+            "processingTimeMs": 90000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-transcribe",
+            "processingTimeMs": 120000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gemini-stt",
+            "model": "gemini-3-flash-preview",
+            "processingTimeMs": 180000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "glm-stt",
+            "model": "glm-asr-2512",
+            "processingTimeMs": 120000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "together",
+            "model": "openai/whisper-large-v3",
+            "processingTimeMs": 24000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "tiny",
+            "processingTimeMs": 19200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "base",
+            "processingTimeMs": 23400,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "small",
+            "processingTimeMs": 60000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "medium",
+            "processingTimeMs": 60000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "large-v3-turbo",
+            "processingTimeMs": 78600,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 1609867,
+        "steps": [
+          {
+            "step": "stt",
+            "provider": "reverb",
+            "model": "reverb_asr_v1",
+            "processingTimeMs": 678845,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gcloud",
+            "model": "chirp_3",
+            "processingTimeMs": 109620,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "aws",
+            "model": "standard",
+            "processingTimeMs": 61017,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3-turbo",
+            "processingTimeMs": 7272,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepinfra",
+            "model": "openai/whisper-large-v3",
+            "processingTimeMs": 11053,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deapi",
+            "model": "WhisperLargeV3",
+            "processingTimeMs": 40707,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "elevenlabs",
+            "model": "scribe_v2",
+            "processingTimeMs": 30057,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "deepgram",
+            "model": "nova-3",
+            "processingTimeMs": 6932,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "soniox",
+            "model": "stt-async-v4",
+            "processingTimeMs": 36788,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "standard",
+            "processingTimeMs": 38359,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "speechmatics",
+            "model": "enhanced",
+            "processingTimeMs": 38782,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "machine",
+            "processingTimeMs": 65278,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "rev",
+            "model": "low_cost",
+            "processingTimeMs": 66357,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3-turbo",
+            "processingTimeMs": 9947,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "groq",
+            "model": "whisper-large-v3",
+            "processingTimeMs": 9593,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "grok",
+            "model": "speech-to-text",
+            "processingTimeMs": 7325,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "mistral",
+            "model": "voxtral-mini-2602",
+            "processingTimeMs": 10471,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "assemblyai",
+            "model": "universal-3-pro",
+            "processingTimeMs": 17054,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gladia",
+            "model": "default",
+            "processingTimeMs": 20889,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "happyscribe",
+            "model": "auto",
+            "processingTimeMs": 40580,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "auto",
+            "processingTimeMs": 11431,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "native",
+            "processingTimeMs": 4902,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "supadata",
+            "model": "generate",
+            "processingTimeMs": 6881,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-mini-transcribe",
+            "processingTimeMs": 14117,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "openai-stt",
+            "model": "gpt-4o-transcribe",
+            "processingTimeMs": 25260,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "gemini-stt",
+            "model": "gemini-3-flash-preview",
+            "processingTimeMs": 68956,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "glm-stt",
+            "model": "glm-asr-2512",
+            "processingTimeMs": 37216,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "together",
+            "model": "openai/whisper-large-v3",
+            "processingTimeMs": 2877,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "tiny",
+            "processingTimeMs": 8704,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "base",
+            "processingTimeMs": 10614,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "small",
+            "processingTimeMs": 21881,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "medium",
+            "processingTimeMs": 51091,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          },
+          {
+            "step": "stt",
+            "provider": "whisper",
+            "model": "large-v3-turbo",
+            "processingTimeMs": 39011,
+            "inputMetric": "durationSeconds",
+            "inputValue": 600
+          }
+        ]
+      },
+      "aggregate": {
+        "wallTimeMs": 815377,
+        "scheduler": {
+          "hostedProviderCount": 27,
+          "itemProviderConcurrency": 2,
+          "coordinatedAcrossBatch": false
+        },
+        "providers": [
+          {
+            "service": "reverb",
+            "model": "reverb_asr_v1",
+            "processingTimeMs": 678845
+          },
+          {
+            "service": "gcloud",
+            "model": "chirp_3",
+            "processingTimeMs": 109620,
+            "timings": {
+              "transcribeMs": 64139,
+              "remoteProcessingMs": 45481,
+              "requestCount": 11
+            }
+          },
+          {
+            "service": "aws",
+            "model": "standard",
+            "processingTimeMs": 61017,
+            "timings": {
+              "uploadMs": 960,
+              "createMs": 1268,
+              "createCount": 1,
+              "pollMs": 3953,
+              "pollSleepMs": 54019,
+              "pollCount": 7,
+              "transcriptMs": 796,
+              "remoteProcessingMs": 52771,
+              "cleanupMs": 1269,
+              "requestCount": 10
+            }
+          },
+          {
+            "service": "deepinfra",
+            "model": "openai/whisper-large-v3-turbo",
+            "processingTimeMs": 7272
+          },
+          {
+            "service": "deepinfra",
+            "model": "openai/whisper-large-v3",
+            "processingTimeMs": 11053
+          },
+          {
+            "service": "deapi",
+            "model": "WhisperLargeV3",
+            "processingTimeMs": 40707,
+            "timings": {
+              "uploadMs": 2535,
+              "createCount": 1,
+              "pollMs": 1487,
+              "pollSleepMs": 35009,
+              "pollCount": 6,
+              "remoteProcessingMs": 36685,
+              "requestCount": 7
+            }
+          },
+          {
+            "service": "elevenlabs",
+            "model": "scribe_v2",
+            "processingTimeMs": 30057,
+            "timings": {
+              "transcribeMs": 30054,
+              "remoteProcessingMs": 3,
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "deepgram",
+            "model": "nova-3",
+            "processingTimeMs": 6932,
+            "timings": {
+              "transcribeMs": 6929,
+              "remoteProcessingMs": 3,
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "soniox",
+            "model": "stt-async-v4",
+            "processingTimeMs": 36788,
+            "timings": {
+              "uploadMs": 941,
+              "createMs": 48,
+              "createCount": 1,
+              "pollMs": 254,
+              "pollSleepMs": 35007,
+              "pollCount": 6,
+              "transcriptMs": 531,
+              "remoteProcessingMs": 34872,
+              "cleanupMs": 142,
+              "requestCount": 9
+            }
+          },
+          {
+            "service": "speechmatics",
+            "model": "standard",
+            "processingTimeMs": 38359,
+            "timings": {
+              "createMs": 1266,
+              "createCount": 1,
+              "pollMs": 1424,
+              "pollSleepMs": 35008,
+              "pollCount": 6,
+              "transcriptMs": 652,
+              "remoteProcessingMs": 34871,
+              "cleanupMs": 146,
+              "requestCount": 8
+            }
+          },
+          {
+            "service": "speechmatics",
+            "model": "enhanced",
+            "processingTimeMs": 38782,
+            "timings": {
+              "createMs": 1563,
+              "createCount": 1,
+              "pollMs": 1546,
+              "pollSleepMs": 35009,
+              "pollCount": 6,
+              "transcriptMs": 655,
+              "remoteProcessingMs": 34880,
+              "cleanupMs": 138,
+              "requestCount": 8
+            }
+          },
+          {
+            "service": "rev",
+            "model": "machine",
+            "processingTimeMs": 65278,
+            "timings": {
+              "createMs": 401,
+              "createCount": 1,
+              "pollMs": 541,
+              "pollSleepMs": 64024,
+              "pollCount": 8,
+              "transcriptMs": 199,
+              "remoteProcessingMs": 64053,
+              "cleanupMs": 84,
+              "requestCount": 10
+            }
+          },
+          {
+            "service": "rev",
+            "model": "low_cost",
+            "processingTimeMs": 66357,
+            "timings": {
+              "createMs": 1264,
+              "createCount": 1,
+              "pollMs": 557,
+              "pollSleepMs": 64013,
+              "pollCount": 8,
+              "transcriptMs": 329,
+              "remoteProcessingMs": 63775,
+              "cleanupMs": 432,
+              "requestCount": 10
+            }
+          },
+          {
+            "service": "groq",
+            "model": "whisper-large-v3-turbo",
+            "processingTimeMs": 9947
+          },
+          {
+            "service": "groq",
+            "model": "whisper-large-v3",
+            "processingTimeMs": 9593
+          },
+          {
+            "service": "grok",
+            "model": "speech-to-text",
+            "processingTimeMs": 7325,
+            "timings": {
+              "transcribeMs": 7323,
+              "remoteProcessingMs": 2,
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "mistral",
+            "model": "voxtral-mini-2602",
+            "processingTimeMs": 10471,
+            "timings": {
+              "transcribeMs": 10464
+            }
+          },
+          {
+            "service": "assemblyai",
+            "model": "universal-3-pro",
+            "processingTimeMs": 17054,
+            "timings": {
+              "uploadMs": 1240,
+              "createMs": 98,
+              "createCount": 1,
+              "pollMs": 703,
+              "pollSleepMs": 15005,
+              "pollCount": 4,
+              "remoteProcessingMs": 15013,
+              "requestCount": 6
+            }
+          },
+          {
+            "service": "gladia",
+            "model": "default",
+            "processingTimeMs": 20889,
+            "timings": {
+              "uploadMs": 4021,
+              "createMs": 680,
+              "createCount": 1,
+              "pollMs": 1169,
+              "pollSleepMs": 15009,
+              "pollCount": 4,
+              "remoteProcessingMs": 15019,
+              "requestCount": 6
+            }
+          },
+          {
+            "service": "happyscribe",
+            "model": "auto",
+            "processingTimeMs": 40580,
+            "timings": {
+              "uploadMs": 1863,
+              "createMs": 416,
+              "createCount": 1,
+              "pollMs": 1356,
+              "pollSleepMs": 35006,
+              "pollCount": 6,
+              "transcriptMs": 537,
+              "remoteProcessingMs": 36408,
+              "requestCount": 10
+            }
+          },
+          {
+            "service": "supadata",
+            "model": "auto",
+            "processingTimeMs": 11431,
+            "timings": {
+              "createMs": 11429,
+              "createCount": 1,
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "supadata",
+            "model": "native",
+            "processingTimeMs": 4902,
+            "timings": {
+              "createMs": 4900,
+              "createCount": 1,
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "supadata",
+            "model": "generate",
+            "processingTimeMs": 6881,
+            "timings": {
+              "createMs": 6880,
+              "createCount": 1,
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "openai-stt",
+            "model": "gpt-4o-mini-transcribe",
+            "processingTimeMs": 14117
+          },
+          {
+            "service": "openai-stt",
+            "model": "gpt-4o-transcribe",
+            "processingTimeMs": 25260
+          },
+          {
+            "service": "gemini-stt",
+            "model": "gemini-3-flash-preview",
+            "processingTimeMs": 68956,
+            "timings": {
+              "requestCount": 1
+            }
+          },
+          {
+            "service": "glm-stt",
+            "model": "glm-asr-2512",
+            "processingTimeMs": 37216
+          },
+          {
+            "service": "together",
+            "model": "openai/whisper-large-v3",
+            "processingTimeMs": 2877
+          },
+          {
+            "service": "whisper",
+            "model": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
+            "processingTimeMs": 8704
+          },
+          {
+            "service": "whisper",
+            "model": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
+            "processingTimeMs": 10614
+          },
+          {
+            "service": "whisper",
+            "model": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
+            "processingTimeMs": 21881
+          },
+          {
+            "service": "whisper",
+            "model": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
+            "processingTimeMs": 51091
+          },
+          {
+            "service": "whisper",
+            "model": "/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
+            "processingTimeMs": 39011
+          }
+        ]
+      }
+    },
+    "cache": {
+      "sourceMedia": "hit"
+    },
+    "extractRoute": "media"
+  }
+}

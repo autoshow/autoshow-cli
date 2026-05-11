@@ -10,9 +10,10 @@ export const runGroqTranscribe = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
+  const { model: modelName, segmentOffsetMinutes = 0, segmentNumber, totalSegments, audioDurationSeconds } = options
   const apiKey = readEnv('GROQ_API_KEY')
   if (!apiKey) {
     throw new Error('GROQ_API_KEY environment variable is required for Groq STT models')
@@ -27,6 +28,7 @@ export const runGroqTranscribe = async (
     model: modelName,
     segmentOffsetMinutes,
     segmentNumber,
-    totalSegments
+    totalSegments,
+    audioDurationSeconds
   })
 }

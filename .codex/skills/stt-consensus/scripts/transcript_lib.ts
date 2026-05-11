@@ -24,6 +24,9 @@ export interface ProviderRun {
   tokenCount: number | null;
   processingTimeMs: number | null;
   actualCostCents: number | null;
+  timingQuality: string | null;
+  hasSpeakerLabels: boolean | null;
+  rawResponse: unknown;
 }
 
 interface RunStepCostEntry {
@@ -46,6 +49,7 @@ interface RunJson {
   metadata?: {
     step1?: {
       duration?: string;
+      durationSeconds?: number;
     };
     providerStates?: RunProviderState[];
     cost?: {
@@ -76,6 +80,13 @@ interface ProviderResultPayload {
       speaker?: string;
       text?: string;
     }>;
+    evidence?: {
+      timingQuality?: string;
+      capabilities?: {
+        hasSpeakerLabels?: boolean;
+      };
+      rawResponse?: unknown;
+    };
   };
 }
 
@@ -183,6 +194,73 @@ export function formatClock(seconds: number): string {
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${Math.round(wholeSeconds).toString().padStart(2, "0")}`;
   }
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${wholeSeconds.toFixed(3).padStart(6, "0")}`;
+}
+
+export interface ProviderSegmentStats {
+  segmentCount: number;
+  timedSegmentCount: number;
+  zeroDurationSegmentCount: number;
+  negativeDurationSegmentCount: number;
+  monotonicStarts: boolean;
+  firstStartSeconds: number | null;
+  lastEndSeconds: number | null;
+  totalSegmentDurationSeconds: number;
+  coverageSeconds: number | null;
+  durationCoverageRatio: number | null;
+  timingQuality: string | null;
+  hasSpeakerLabels: boolean | null;
+}
+
+export function computeProviderSegmentStats(
+  provider: ProviderRun,
+  runDurationSeconds: number,
+): ProviderSegmentStats {
+  let timedSegmentCount = 0;
+  let zeroDurationSegmentCount = 0;
+  let negativeDurationSegmentCount = 0;
+  let monotonicStarts = true;
+  let firstStartSeconds: number | null = null;
+  let lastEndSeconds: number | null = null;
+  let previousStartSeconds: number | null = null;
+  let totalSegmentDurationSeconds = 0;
+
+  for (const segment of provider.segments) {
+    timedSegmentCount += 1;
+    if (previousStartSeconds !== null && segment.start < previousStartSeconds) {
+      monotonicStarts = false;
+    }
+    previousStartSeconds = segment.start;
+    firstStartSeconds = firstStartSeconds === null ? segment.start : Math.min(firstStartSeconds, segment.start);
+    lastEndSeconds = lastEndSeconds === null ? segment.end : Math.max(lastEndSeconds, segment.end);
+    const durationSeconds = segment.end - segment.start;
+    if (durationSeconds < 0) {
+      negativeDurationSegmentCount += 1;
+    } else {
+      if (durationSeconds === 0) {
+        zeroDurationSegmentCount += 1;
+      }
+      totalSegmentDurationSeconds += durationSeconds;
+    }
+  }
+
+  const coverageSeconds = firstStartSeconds !== null && lastEndSeconds !== null
+    ? Math.max(0, lastEndSeconds - firstStartSeconds)
+    : null;
+
+  return {
+    segmentCount: provider.segments.length,
+    timedSegmentCount,
+    zeroDurationSegmentCount,
+    negativeDurationSegmentCount,
+    monotonicStarts,
+    firstStartSeconds,
+    lastEndSeconds,
+    totalSegmentDurationSeconds,
+    coverageSeconds,
+    durationCoverageRatio: coverageSeconds !== null && runDurationSeconds > 0 ? coverageSeconds / runDurationSeconds : null,
+    timingQuality: provider.timingQuality,
+    hasSpeakerLabels: provider.hasSpeakerLabels,
+  };
 }
 
 export function normalizeText(text: string): string {
@@ -325,6 +403,11 @@ export function loadRunJson(runDir: string): RunJson {
 }
 
 export function durationSecondsFromRun(runJson: RunJson, providers: ProviderRun[] = []): number {
+  const numericDuration = runJson.metadata?.step1?.durationSeconds;
+  if (typeof numericDuration === "number" && Number.isFinite(numericDuration) && numericDuration > 0) {
+    return numericDuration;
+  }
+
   const duration = runJson.metadata?.step1?.duration?.trim();
   if (duration && duration.toLowerCase() !== "unknown") {
     return parseClock(duration);
@@ -419,6 +502,7 @@ export function loadProviderRuns(runDir: string): { providers: ProviderRun[]; wa
     if (!provider || !model) {
       throw new Error(`${resultPath} is missing provider/model metadata`);
     }
+    const evidence = payload.result?.evidence;
     const segments = (payload.result?.segments ?? [])
       .map((item) => {
         const rawStart = String(item.start ?? "0:00");
@@ -462,6 +546,9 @@ export function loadProviderRuns(runDir: string): { providers: ProviderRun[]; wa
         timingLookup.get(lookupKey) ??
         (payload.metadata?.processingTime !== undefined ? Number(payload.metadata.processingTime) : null),
       actualCostCents: costLookup.get(lookupKey) ?? null,
+      timingQuality: typeof evidence?.timingQuality === "string" ? evidence.timingQuality : null,
+      hasSpeakerLabels: typeof evidence?.capabilities?.hasSpeakerLabels === "boolean" ? evidence.capabilities.hasSpeakerLabels : null,
+      rawResponse: evidence && "rawResponse" in evidence ? evidence.rawResponse : undefined,
     } satisfies ProviderRun;
   });
 

@@ -117,6 +117,7 @@ export const runWhisperTranscribe = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
     segmentStartSeconds?: number | undefined
     segmentDurationSeconds?: number | undefined
     totalDurationSeconds?: number | undefined
@@ -128,6 +129,7 @@ export const runWhisperTranscribe = async (
     segmentOffsetMinutes = 0,
     segmentNumber,
     totalSegments,
+    audioDurationSeconds,
     segmentStartSeconds,
     segmentDurationSeconds,
     totalDurationSeconds,
@@ -208,9 +210,10 @@ export const runWhisperTranscribe = async (
     }
     const jsonText = await Bun.file(jsonFile).text()
     const rawResponse = JSON.parse(jsonText) as unknown
-    let words = extractWhisperWords(jsonText)
+    const maxRelativeEndSeconds = segmentDurationSeconds ?? audioDurationSeconds ?? totalDurationSeconds
+    let words = extractWhisperWords(jsonText, { maxEndSeconds: maxRelativeEndSeconds })
     await Bun.write(`${outputBase}.words.json`, JSON.stringify(words))
-    let { text, segments } = parseWhisperJson(jsonText)
+    let { text, segments } = parseWhisperJson(jsonText, { maxEndSeconds: maxRelativeEndSeconds })
     if (segmentOffsetMinutes > 0) {
       const offsetSeconds = segmentOffsetMinutes * 60
       segments = segments.map(seg => {

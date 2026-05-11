@@ -1,17 +1,20 @@
 #!/usr/bin/env bun
 
 import { writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
 import {
+  computeProviderSegmentStats,
   durationSecondsFromRun,
   formatCents,
   formatProcessingSeconds,
   loadProviderRuns,
   loadRunJson,
   mapProviderSpeakers,
+  normalizeText,
+  parseClock,
   parseReferenceTranscript,
-  wordWer,
   wordWerDetailed,
 } from "./transcript_lib.ts";
 
@@ -119,6 +122,132 @@ function joinProviderNames(providers: Array<{ provider: string }>): string {
   return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+const DEAPI_TIMESTAMP_MARKER_RE = /\[\s*\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d+)?\s*-\s*\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d+)?\s*\]/;
+
+function unknownToSearchText(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "";
+  }
+}
+
+function hasDeapiTimestampMarkers(value: unknown): boolean {
+  return DEAPI_TIMESTAMP_MARKER_RE.test(unknownToSearchText(value));
+}
+
+function parseTimestampMaybe(value: unknown): number | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  try {
+    return parseClock(value.replace(",", "."));
+  } catch {
+    return null;
+  }
+}
+
+function rawWhisperMaxEndSeconds(rawResponse: unknown): number | null {
+  if (!isRecord(rawResponse) || !Array.isArray(rawResponse["transcription"])) {
+    return null;
+  }
+  let maxEndSeconds: number | null = null;
+  for (const entry of rawResponse["transcription"]) {
+    if (!isRecord(entry) || !isRecord(entry["timestamps"])) {
+      continue;
+    }
+    const endSeconds = parseTimestampMaybe(entry["timestamps"]["to"]);
+    if (endSeconds !== null) {
+      maxEndSeconds = maxEndSeconds === null ? endSeconds : Math.max(maxEndSeconds, endSeconds);
+    }
+  }
+  return maxEndSeconds;
+}
+
+function rawGeminiLatestEndSeconds(rawResponse: unknown): number | null {
+  if (!isRecord(rawResponse) || !Array.isArray(rawResponse["candidates"])) {
+    return null;
+  }
+  for (const candidate of rawResponse["candidates"]) {
+    if (!isRecord(candidate) || !isRecord(candidate["content"]) || !Array.isArray(candidate["content"]["parts"])) {
+      continue;
+    }
+    for (const part of candidate["content"]["parts"]) {
+      if (!isRecord(part) || typeof part["text"] !== "string") {
+        continue;
+      }
+      try {
+        const payload = JSON.parse(part["text"]) as unknown;
+        if (!isRecord(payload) || !Array.isArray(payload["segments"])) {
+          continue;
+        }
+        let latestEndSeconds: number | null = null;
+        for (const segment of payload["segments"]) {
+          if (!isRecord(segment) || typeof segment["end"] !== "number" || !Number.isFinite(segment["end"])) {
+            continue;
+          }
+          latestEndSeconds = latestEndSeconds === null ? segment["end"] : Math.max(latestEndSeconds, segment["end"]);
+        }
+        if (latestEndSeconds !== null) {
+          return latestEndSeconds;
+        }
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizedTextHash(text: string): string {
+  return createHash("sha256").update(normalizeText(text)).digest("hex").slice(0, 16);
+}
+
+interface DuplicateGroup {
+  id: string;
+  normalizedTextHash: string;
+  segmentCount: number;
+  providers: string[];
+}
+
+function detectDuplicateGroups<T extends { provider: string; text: string; segmentStats: { segmentCount: number } }>(
+  providers: T[],
+): { duplicateGroups: DuplicateGroup[]; providerGroupIds: Map<string, string> } {
+  const buckets = new Map<string, { hash: string; segmentCount: number; providers: string[] }>();
+  for (const provider of providers) {
+    const hash = normalizedTextHash(provider.text);
+    const segmentCount = provider.segmentStats.segmentCount;
+    const key = `${hash}:${segmentCount}`;
+    const bucket = buckets.get(key) ?? { hash, segmentCount, providers: [] };
+    bucket.providers.push(provider.provider);
+    buckets.set(key, bucket);
+  }
+
+  const duplicateGroups = [...buckets.values()]
+    .filter((bucket) => bucket.providers.length > 1)
+    .sort((left, right) => left.providers[0]!.localeCompare(right.providers[0]!))
+    .map((bucket, index) => ({
+      id: `duplicate-${index + 1}`,
+      normalizedTextHash: bucket.hash,
+      segmentCount: bucket.segmentCount,
+      providers: bucket.providers.sort((left, right) => left.localeCompare(right)),
+    }));
+  const providerGroupIds = new Map<string, string>();
+  for (const group of duplicateGroups) {
+    for (const provider of group.providers) {
+      providerGroupIds.set(provider, group.id);
+    }
+  }
+  return { duplicateGroups, providerGroupIds };
+}
+
 const OVERALL_WEIGHTS = {
   accuracy: 0.5,
   processingSpeed: 0.25,
@@ -126,6 +255,69 @@ const OVERALL_WEIGHTS = {
 } as const;
 
 const LOCAL_STT_SERVICES = new Set(["whisper", "reverb"]);
+
+function buildQualityWarnings(
+  provider: {
+    provider: string;
+    providerKey: string;
+    text: string;
+    rawResponse: unknown;
+    segmentStats: ReturnType<typeof computeProviderSegmentStats>;
+    duplicateGroupId?: string;
+  },
+  runDurationSeconds: number,
+): string[] {
+  const warnings: string[] = [];
+  const service = provider.providerKey.split("/")[0]?.toLowerCase() ?? "";
+  const stats = provider.segmentStats;
+
+  if (service === "deapi") {
+    if (hasDeapiTimestampMarkers(provider.text)) {
+      warnings.push("deAPI transcript text still contains bracket timestamp markers.");
+    } else if (hasDeapiTimestampMarkers(provider.rawResponse)) {
+      warnings.push("deAPI raw response used bracket timestamp blocks; report uses cleaned parsed transcript text.");
+    }
+  }
+
+  if (service === "gemini-stt") {
+    const rawLatestEndSeconds = rawGeminiLatestEndSeconds(provider.rawResponse);
+    const rawCoverageRatio = rawLatestEndSeconds !== null && runDurationSeconds > 0
+      ? rawLatestEndSeconds / runDurationSeconds
+      : null;
+    if ((stats.durationCoverageRatio !== null && stats.durationCoverageRatio < 0.75 && stats.segmentCount > 2) || (rawCoverageRatio !== null && rawCoverageRatio < 0.75)) {
+      warnings.push("Gemini generated compressed timestamps relative to the known audio duration; timing should be treated as coarse/unreliable.");
+    }
+  }
+
+  if (service === "glm-stt") {
+    if (stats.zeroDurationSegmentCount === stats.segmentCount && stats.segmentCount > 1) {
+      warnings.push("GLM returned all-zero-duration segment timing.");
+    } else if (stats.segmentCount > 1 && stats.timingQuality === "segment_interpolated") {
+      warnings.push("GLM segment timing is model-generated; zero-duration output is repaired with adjacent starts when detected, but no native word timing or speaker labels are available.");
+    }
+  }
+
+  if (service === "openai-stt" && (stats.timingQuality === "coarse" || stats.segmentCount === 1)) {
+    warnings.push("OpenAI STT returned coarse single-speaker transcript output without reliable segment timing or speaker labels.");
+  }
+
+  if (service === "supadata" && provider.duplicateGroupId) {
+    warnings.push(`Supadata output duplicates another provider artifact in ${provider.duplicateGroupId}; ranking is unchanged.`);
+  }
+
+  if (service === "whisper") {
+    const rawMaxEndSeconds = rawWhisperMaxEndSeconds(provider.rawResponse);
+    if ((rawMaxEndSeconds !== null && rawMaxEndSeconds > runDurationSeconds + 0.01) || (stats.lastEndSeconds !== null && stats.lastEndSeconds > runDurationSeconds + 0.01)) {
+      warnings.push("Whisper timestamps exceeded the known audio duration and were clamped for normalized artifacts.");
+    }
+  }
+
+  if (stats.zeroDurationSegmentCount > 0 && stats.zeroDurationSegmentCount === stats.segmentCount && service !== "glm-stt" && service !== "openai-stt") {
+    warnings.push("All provider segments have zero duration; timing is coarse for overlap-based speaker analysis.");
+  }
+
+  return warnings;
+}
 
 interface OverallComponents {
   accuracy: {
@@ -253,15 +445,21 @@ export function buildReport(runDir: string, referencePath: string) {
   const runDurationSeconds = durationSecondsFromRun(runJson, providers);
   const referenceSegments = parseReferenceTranscript(referencePath, runDurationSeconds);
 
-  const rankedProviders = addOverallScores(providers.map((provider) => {
+  const scoredProviders = providers.map((provider) => {
       const speakerMap = mapProviderSpeakers(referenceSegments, provider.segments);
-      const textOnlyWer = wordWer(referenceSegments, provider.segments, false);
-      const speakerAwareWer = wordWer(referenceSegments, provider.segments, true, speakerMap);
       const textOnlyDetailed = wordWerDetailed(referenceSegments, provider.segments, false, undefined, { stripFillers: true });
       const speakerAwareDetailed = wordWerDetailed(referenceSegments, provider.segments, true, speakerMap, { stripFillers: true });
+      const textOnlyWer = textOnlyDetailed.wer;
+      const speakerAwareWer = speakerAwareDetailed.wer;
+      const segmentStats = computeProviderSegmentStats(provider, runDurationSeconds);
       return {
         provider: provider.directoryName,
         providerKey: provider.providerKey,
+        text: provider.text,
+        rawResponse: provider.rawResponse,
+        tokenCount: provider.tokenCount,
+        transcriptTextHash: normalizedTextHash(provider.text),
+        segmentStats,
         score: Math.max(0, 100 * (1 - speakerAwareWer)),
         speakerAwareWER: speakerAwareWer,
         textOnlyWER: textOnlyWer,
@@ -282,7 +480,30 @@ export function buildReport(runDir: string, referencePath: string) {
         speakerPenalty: speakerAwareWer - textOnlyWer,
         speakerMap,
       };
-    }))
+    });
+  const { duplicateGroups, providerGroupIds } = detectDuplicateGroups(scoredProviders);
+  const providersWithQuality = scoredProviders.map((provider) => {
+    const duplicateGroupId = providerGroupIds.get(provider.provider);
+    const qualityWarnings = buildQualityWarnings(
+      {
+        provider: provider.provider,
+        providerKey: provider.providerKey,
+        text: provider.text,
+        rawResponse: provider.rawResponse,
+        segmentStats: provider.segmentStats,
+        ...(duplicateGroupId ? { duplicateGroupId } : {}),
+      },
+      runDurationSeconds,
+    );
+    const { text: _text, rawResponse: _rawResponse, ...reportProvider } = provider;
+    return {
+      ...reportProvider,
+      qualityWarnings,
+      ...(duplicateGroupId ? { duplicateGroupId } : {}),
+    };
+  });
+
+  const rankedProviders = addOverallScores(providersWithQuality)
     .sort((left, right) => {
       if (left.speakerAwareWER !== right.speakerAwareWER) {
         return left.speakerAwareWER - right.speakerAwareWER;
@@ -381,6 +602,7 @@ export function buildReport(runDir: string, referencePath: string) {
     overallMetric: "balanced-overall",
     overallWeights: OVERALL_WEIGHTS,
     overall: { count: rankedOverall.length, providers: rankedOverall },
+    duplicateGroups,
     providers: rankedProviders,
     notes,
   };
@@ -404,6 +626,13 @@ export function buildReport(runDir: string, referencePath: string) {
         `| \`${provider.provider}\` | ${provider.textOnlyBreakdown.substitutions} | ${provider.textOnlyBreakdown.deletions} | ${provider.textOnlyBreakdown.insertions} | ${provider.textOnlyBreakdown.referenceWordCount} |`,
     )
     .join("\n");
+  const qualityFlagRows = rankedProviders
+    .filter((provider) => provider.qualityWarnings.length > 0)
+    .map((provider) => `| \`${provider.provider}\` | ${provider.qualityWarnings.join("<br>")} |`)
+    .join("\n");
+  const qualityFlagsBlock = qualityFlagRows.length > 0
+    ? `| Provider | Quality Flags |\n| --- | --- |\n${qualityFlagRows}`
+    : "No provider quality flags were detected.";
   const notesBlock = notes.map((note) => `- ${note}`).join("\n");
 
   const referenceName = referencePath.split("/").at(-1) ?? referencePath;
@@ -450,6 +679,10 @@ ${rankingRows}
 | Provider | Substitutions | Deletions | Insertions | Ref. Words |
 | --- | ---: | ---: | ---: | ---: |
 ${breakdownRows}
+
+## Quality Flags
+
+${qualityFlagsBlock}
 
 ## Notes
 

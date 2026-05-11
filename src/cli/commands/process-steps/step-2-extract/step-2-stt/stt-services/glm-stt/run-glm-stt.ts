@@ -92,9 +92,10 @@ export const runGlmStt = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
+  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments, audioDurationSeconds } = options
   const apiKey = readEnv('GLM_API_KEY')
   if (!apiKey) {
     throw new Error('GLM_API_KEY environment variable is required for GLM transcription')
@@ -110,7 +111,8 @@ export const runGlmStt = async (
       model,
       segmentOffsetMinutes,
       segmentNumber,
-      totalSegments
+      totalSegments,
+      audioDurationSeconds
     })
   } catch (error) {
     if (!shouldRetryMinimalGlmRequest(error)) {

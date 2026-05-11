@@ -12,6 +12,7 @@ import {
   resolveTranscriptionOutput,
   toTimestamp
 } from '../../stt-utils/stt-utils'
+import { detectCompressedTimingCoverage } from '../../stt-utils/stt-timing-quality'
 
 const GEMINI_INLINE_AUDIO_BYTES = 14 * 1024 * 1024
 const GEMINI_FILE_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
@@ -43,10 +44,13 @@ type GeminiSttPayload = {
   segments?: unknown
 }
 
-const buildSttPrompt = (): string => [
+const buildSttPrompt = (audioDurationSeconds?: number | undefined): string => [
   'Transcribe the provided audio exactly.',
   'Return only JSON with this shape: {"text": string, "segments": [{"start": number, "end": number, "text": string}]}.',
   'Use seconds from the start of this audio for start and end.',
+  ...(typeof audioDurationSeconds === 'number' && Number.isFinite(audioDurationSeconds)
+    ? [`The audio duration is ${audioDurationSeconds.toFixed(3)} seconds; keep all segment times within that range.`]
+    : []),
   'Do not summarize, translate, explain, or add speaker labels.'
 ].join(' ')
 
@@ -185,9 +189,10 @@ export const runGeminiStt = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
+  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments, audioDurationSeconds } = options
   const apiKey = readEnv('GEMINI_API_KEY')
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY environment variable is required for Gemini transcription')
@@ -200,7 +205,7 @@ export const runGeminiStt = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const prompt = buildSttPrompt()
+  const prompt = buildSttPrompt(audioDurationSeconds)
   const mimeType = getAudioMimeType(audioPath)
   const fileSizeBytes = Bun.file(audioPath).size
   if (fileSizeBytes > GEMINI_FILE_UPLOAD_BYTES) {
@@ -269,9 +274,22 @@ export const runGeminiStt = async (
 
   const rawText = response.text?.trim() ?? ''
   const parsed = rawText.length > 0 ? parseGeminiJson(rawText, offsetSeconds) : undefined
-  const { finalSegments, finalText } = parsed
+  const knownEndSeconds = typeof audioDurationSeconds === 'number' && Number.isFinite(audioDurationSeconds)
+    ? offsetSeconds + audioDurationSeconds
+    : undefined
+  const compressedTiming = parsed
+    ? detectCompressedTimingCoverage(parsed.segments, {
+        knownStartSeconds: offsetSeconds,
+        knownEndSeconds
+      })
+    : undefined
+  const timingIsCompressed = compressedTiming?.compressed === true
+  const parsedText = parsed
+    ? (parsed.text.length > 0 ? parsed.text : parsed.segments.map((segment) => segment.text).join(' ').trim())
+    : ''
+  const { finalSegments, finalText } = parsed && !timingIsCompressed
     ? resolveTranscriptionOutput(parsed.segments, parsed.text, offsetSeconds)
-    : resolveTranscriptionOutput([], rawText, offsetSeconds)
+    : resolveTranscriptionOutput([], parsedText.length > 0 ? parsedText : rawText, offsetSeconds)
 
   await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
@@ -291,7 +309,7 @@ export const runGeminiStt = async (
           hasConfidence: false,
           hasSpeakerLabels: false
         },
-        timingQuality: parsed && parsed.segments.length > 0 ? 'segment_interpolated' : 'coarse',
+        timingQuality: parsed && parsed.segments.length > 0 && !timingIsCompressed ? 'segment_interpolated' : 'coarse',
         rawResponse: response
       }
     },

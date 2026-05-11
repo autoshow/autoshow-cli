@@ -110,6 +110,65 @@ describe('Happy Scribe transcript parser contracts', () => {
     expect(result.evidence?.timingQuality).toBe('segment_interpolated')
   })
 
+  test('normalizes Happy Scribe data_start/data_end blocks with nested words', () => {
+    const result = parseHappyScribeTranscriptPayload([
+      {
+        speaker: 'Speaker 1',
+        speaker_number: 1,
+        data_start: 1.25,
+        data_end: 2.5,
+        words: [
+          {
+            text: 'Hello',
+            type: 'word',
+            data_start: 1.25,
+            data_end: 1.75,
+            confidence: 0.95
+          },
+          {
+            text: ' world.',
+            type: 'word',
+            data_start: 1.75,
+            data_end: 2.5,
+            confidence: 0.96
+          }
+        ]
+      },
+      {
+        speaker: 'Speaker 2',
+        speaker_number: 2,
+        data_start: 3,
+        data_end: 4,
+        words: [
+          {
+            text: 'Goodbye.',
+            type: 'word',
+            data_start: 3,
+            data_end: 4
+          }
+        ]
+      }
+    ])
+
+    expect(result.text).toBe('Hello world. Goodbye.')
+    expect(result.segments).toEqual([
+      {
+        start: '00:00:01',
+        end: '00:00:02',
+        text: 'Hello world.',
+        speaker: 'speaker-1'
+      },
+      {
+        start: '00:00:03',
+        end: '00:00:04',
+        text: 'Goodbye.',
+        speaker: 'speaker-2'
+      }
+    ])
+    expect(result.evidence?.capabilities?.hasNativeWordTiming).toBe(true)
+    expect(result.evidence?.capabilities?.hasSpeakerLabels).toBe(true)
+  })
+
   test('rejects payloads without recognizable transcript content', () => {
     expect(() => parseHappyScribeTranscriptPayload({
       metadata: {

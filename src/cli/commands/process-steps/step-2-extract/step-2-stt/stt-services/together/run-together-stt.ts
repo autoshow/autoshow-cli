@@ -10,9 +10,10 @@ export const runTogetherStt = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
+  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments, audioDurationSeconds } = options
   const apiKey = readEnv('TOGETHER_API_KEY')
   if (!apiKey) {
     throw new Error('TOGETHER_API_KEY environment variable is required for Together transcription')
@@ -26,6 +27,7 @@ export const runTogetherStt = async (
     model,
     segmentOffsetMinutes,
     segmentNumber,
-    totalSegments
+    totalSegments,
+    audioDurationSeconds
   })
 }

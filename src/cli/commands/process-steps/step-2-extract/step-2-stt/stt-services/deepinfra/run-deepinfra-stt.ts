@@ -13,9 +13,10 @@ export const runDeepinfraTranscribe = async (
     segmentOffsetMinutes: number
     segmentNumber?: number | undefined
     totalSegments?: number | undefined
+    audioDurationSeconds?: number | undefined
   }
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments } = options
+  const { model, segmentOffsetMinutes = 0, segmentNumber, totalSegments, audioDurationSeconds } = options
   const apiKey = readEnv('DEEPINFRA_API_KEY')
   if (!apiKey) {
     throw new Error('DEEPINFRA_API_KEY environment variable is required for DeepInfra transcription')
@@ -32,6 +33,7 @@ export const runDeepinfraTranscribe = async (
     model,
     segmentOffsetMinutes,
     segmentNumber,
-    totalSegments
+    totalSegments,
+    audioDurationSeconds
   })
 }

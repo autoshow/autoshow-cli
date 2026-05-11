@@ -1,21 +1,32 @@
 import { validateJson } from '~/utils/validate/validation'
 import { WhisperJsonOutputSchema, type TranscriptionSegment, type WhisperJsonOutput } from '~/types'
+import { clampSegmentsToKnownEnd, clampWordTimingsToKnownEnd } from '../../stt-utils/stt-timing-quality'
 
-export const parseWhisperJson = (jsonContent: string): { text: string, segments: TranscriptionSegment[] } => {
+export const parseWhisperJson = (
+  jsonContent: string,
+  options: { maxEndSeconds?: number | undefined } = {}
+): { text: string, segments: TranscriptionSegment[] } => {
   const data = validateJson(WhisperJsonOutputSchema, jsonContent, 'Whisper JSON output')
   const wordSegments = data.transcription.filter(seg => seg.text.trim().length > 0)
-  const aggregatedSegments = aggregateWordSegments(wordSegments)
+  const aggregatedSegments = clampSegmentsToKnownEnd(
+    aggregateWordSegments(wordSegments),
+    options.maxEndSeconds
+  ).segments
   const fullText = aggregatedSegments.map(seg => seg.text).join(' ')
   return { text: fullText, segments: aggregatedSegments }
 }
 
-export const extractWhisperWords = (jsonContent: string): Array<{ start: number; end: number; word: string }> => {
+export const extractWhisperWords = (
+  jsonContent: string,
+  options: { maxEndSeconds?: number | undefined } = {}
+): Array<{ start: number; end: number; word: string }> => {
   const data = validateJson(WhisperJsonOutputSchema, jsonContent, 'Whisper JSON output words')
-  return data.transcription.map(s => {
+  const words = data.transcription.map(s => {
     const from = parseTimestampMs(s.timestamps.from) / 1000
     const to = parseTimestampMs(s.timestamps.to) / 1000
     return { start: from, end: to, word: s.text }
   }).filter(w => w.word && w.word !== "'")
+  return clampWordTimingsToKnownEnd(words, options.maxEndSeconds).words
 }
 
 const aggregateWordSegments = (wordSegments: WhisperJsonOutput['transcription']): TranscriptionSegment[] => {

@@ -40,6 +40,7 @@ import {
   parseStatusPayload,
   readJsonOrText
 } from '~/utils/deapi'
+import { parseDeapiTimestampedTranscript } from './deapi-transcript-parser'
 
 const INITIAL_POLL_INTERVAL_MS = 1_000
 const MAX_POLL_INTERVAL_MS = 10_000
@@ -630,12 +631,18 @@ export const runDeapiStt = async (
   }
 
   const payload = resolvedResultPayload.payload
-  const segments = typeof payload === 'string'
+  const structuredSegments = typeof payload === 'string'
     ? []
     : parseStructuredSegments(payload, offsetSeconds)
-  const text = typeof payload === 'string'
+  const rawText = typeof payload === 'string'
     ? payload.trim()
     : parseStructuredText(payload) ?? resolvedResultPayload.plainTextFallback ?? ''
+  const parsedPlainText = parseDeapiTimestampedTranscript(rawText, {
+    offsetSeconds,
+    audioDurationSeconds
+  })
+  const segments = structuredSegments.length > 0 ? structuredSegments : parsedPlainText.segments
+  const text = parsedPlainText.markerCount > 0 ? parsedPlainText.text : rawText
   const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
 
   await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))

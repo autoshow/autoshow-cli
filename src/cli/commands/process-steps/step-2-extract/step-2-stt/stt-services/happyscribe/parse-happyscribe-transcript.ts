@@ -151,6 +151,8 @@ const parseWord = (
     { key: 'startMs', unit: 'milliseconds' },
     { key: 'start_time_ms', unit: 'milliseconds' },
     { key: 'startTimeMs', unit: 'milliseconds' },
+    { key: 'data_start', unit: 'seconds' },
+    { key: 'dataStart', unit: 'seconds' },
     { key: 'start_time', unit: 'auto' },
     { key: 'startTime', unit: 'auto' },
     { key: 'start', unit: 'auto' }
@@ -162,6 +164,8 @@ const parseWord = (
     { key: 'endMs', unit: 'milliseconds' },
     { key: 'end_time_ms', unit: 'milliseconds' },
     { key: 'endTimeMs', unit: 'milliseconds' },
+    { key: 'data_end', unit: 'seconds' },
+    { key: 'dataEnd', unit: 'seconds' },
     { key: 'end_time', unit: 'auto' },
     { key: 'endTime', unit: 'auto' },
     { key: 'end', unit: 'auto' }
@@ -209,6 +213,8 @@ const parseSegment = (
     { key: 'startMs', unit: 'milliseconds' },
     { key: 'start_time_ms', unit: 'milliseconds' },
     { key: 'startTimeMs', unit: 'milliseconds' },
+    { key: 'data_start', unit: 'seconds' },
+    { key: 'dataStart', unit: 'seconds' },
     { key: 'start_time', unit: 'auto' },
     { key: 'startTime', unit: 'auto' },
     { key: 'start', unit: 'auto' }
@@ -220,6 +226,8 @@ const parseSegment = (
     { key: 'endMs', unit: 'milliseconds' },
     { key: 'end_time_ms', unit: 'milliseconds' },
     { key: 'endTimeMs', unit: 'milliseconds' },
+    { key: 'data_end', unit: 'seconds' },
+    { key: 'dataEnd', unit: 'seconds' },
     { key: 'end_time', unit: 'auto' },
     { key: 'endTime', unit: 'auto' },
     { key: 'end', unit: 'auto' }
@@ -229,7 +237,19 @@ const parseSegment = (
     return undefined
   }
 
-  const speaker = resolveSpeakerLabel(value['speaker'] ?? value['speaker_id'] ?? value['speakerId'] ?? value['speaker_name'] ?? value['speakerName'])
+  const metadata = isRecord(value['metadata']) ? value['metadata'] : undefined
+  const speaker = resolveSpeakerLabel(
+    value['speaker_number']
+      ?? value['speakerNumber']
+      ?? value['speaker']
+      ?? value['speaker_id']
+      ?? value['speakerId']
+      ?? value['speaker_name']
+      ?? value['speakerName']
+      ?? metadata?.['speaker_number']
+      ?? metadata?.['speakerNumber']
+      ?? metadata?.['speaker']
+  )
   const confidence = parseHappyScribeNumber(value['confidence'])
   return {
     startSeconds,
@@ -285,6 +305,39 @@ const toEvidenceSegmentsFromWords = (
     ...(segment.speaker ? { speaker: segment.speaker } : {})
   }))
 
+const hasRecognizedTiming = (record: Record<string, unknown>): boolean => {
+  const timingKeys = [
+    'start_seconds',
+    'startSeconds',
+    'start_ms',
+    'startMs',
+    'start_time_ms',
+    'startTimeMs',
+    'data_start',
+    'dataStart',
+    'start_time',
+    'startTime',
+    'start',
+    'end_seconds',
+    'endSeconds',
+    'end_ms',
+    'endMs',
+    'end_time_ms',
+    'endTimeMs',
+    'data_end',
+    'dataEnd',
+    'end_time',
+    'endTime',
+    'end'
+  ] as const
+  if (timingKeys.some((key) => key in record)) {
+    return true
+  }
+
+  const metadata = isRecord(record['metadata']) ? record['metadata'] : undefined
+  return metadata ? timingKeys.some((key) => key in metadata) : false
+}
+
 export const parseHappyScribeTranscriptPayload = (
   payload: unknown,
   options: {
@@ -303,6 +356,7 @@ export const parseHappyScribeTranscriptPayload = (
       - left.reduce((sum, segment) => sum + segment.text.length, 0)
     )[0] ?? []
   const text = candidates.records
+    .filter((record) => !hasRecognizedTiming(record) && !Array.isArray(record['words']))
     .map(extractText)
     .filter((value): value is string => typeof value === 'string' && value.length > 0)
     .sort((left, right) => right.length - left.length)[0]
