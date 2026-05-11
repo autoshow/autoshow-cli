@@ -119,7 +119,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
   Hosted STT readiness
     ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Grok, Mistral,
-    OpenAI, Gemini, GLM, Together, Cloudflare, AssemblyAI, Gladia,
+    OpenAI, Gemini, GLM, Together, AssemblyAI, Gladia,
     Supadata, AWS
 
   Hosted OCR/readiness
@@ -145,7 +145,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected STT provider readiness: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, or Cloudflare) |
+| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected STT provider readiness: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, or Together) |
 | `extract --reverb-stt` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
 | `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/hosted OCR provider readiness) |
 | `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |

@@ -104,8 +104,6 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  │                                   --runway-image, --runway-video models   │
 │  ├── SPEECHIFY_API_KEY               Required for --speechify-tts models     │
 │  ├── TOGETHER_API_KEY                Required for --together-stt models      │
-│  ├── CLOUDFLARE_API_TOKEN            Required with CLOUDFLARE_ACCOUNT_ID     │
-│  ├── CLOUDFLARE_ACCOUNT_ID           Required with CLOUDFLARE_API_TOKEN      │
 │  ├── BFL_API_KEY                     Required for --bfl-image models         │
 │  └── HF_TOKEN                        HuggingFace private model access         │
 │                                                                              │

@@ -59,8 +59,7 @@ export const buildApiCheapSelections = () => {
     { service: 'happyscribe', flag: '--happyscribe-stt', envVar: 'HAPPYSCRIBE_API_KEY', model: selectCheapestSttModel('happyscribe') },
     { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') },
     { service: 'grok', flag: '--grok-stt', envVar: 'XAI_API_KEY', model: selectCheapestSttModel('grok') },
-    { service: 'together', flag: '--together-stt', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') },
-    { service: 'cloudflare', flag: '--cloudflare-stt', envVar: 'CLOUDFLARE_API_TOKEN', model: selectCheapestSttModel('cloudflare') }
+    { service: 'together', flag: '--together-stt', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') }
   ]
 
   const ttsSelections = [

@@ -16,8 +16,9 @@ import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tt
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { computeSttCost } from '~/utils/pricing/cost-helpers'
 import { STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
-import type { ExtractionMetadata } from '~/types'
+import type { ExtractionMetadata, Step1Metadata, Step2Metadata } from '~/types'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string; env?: Record<string, string | undefined> }> = [
   {
@@ -141,6 +142,26 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
     expected: 'gemini'
   }
 ]
+
+const buildHostedStep1 = (overrides: Partial<Step1Metadata> = {}): Step1Metadata => ({
+  title: 'Hosted audio',
+  duration: 'Unknown',
+  channel: 'Unknown',
+  description: '',
+  url: 'https://example.com/audio.mp3',
+  slug: 'hosted-audio',
+  audioFileName: 'audio.mp3',
+  audioFileSize: 1234,
+  ...overrides
+})
+
+const buildSttMetadata = (overrides: Partial<Step2Metadata> = {}): Step2Metadata => ({
+  transcriptionService: 'deepgram',
+  transcriptionModel: 'nova-3',
+  processingTime: 1234,
+  tokenCount: 0,
+  ...overrides
+})
 
 describe('price mode contracts', () => {
   for (const priceCase of priceCases) {
@@ -573,6 +594,56 @@ describe('price mode contracts', () => {
       model: 'gpt-image-2',
       cost: 0.6
     })
+  })
+
+  test('STT actual fallback costs use explicit audio duration when step1 duration is unknown', () => {
+    const audioDurationSeconds = 59.585306
+    const actual = computeActualCosts({
+      step1: buildHostedStep1(),
+      step2: buildSttMetadata(),
+      audioDurationSeconds
+    })
+    const sttStep = actual.steps[0]
+
+    expect(sttStep).toMatchObject({
+      step: 'stt',
+      provider: 'deepgram',
+      model: 'nova-3',
+      inputMetric: 'durationSeconds',
+      inputValue: audioDurationSeconds
+    })
+    expect(sttStep?.cost).toBe(computeSttCost('deepgram', 'nova-3', audioDurationSeconds))
+    expect(actual.totalCost).toBeGreaterThan(0)
+  })
+
+  test('STT provider billing metadata wins over duration fallback', () => {
+    const audioDurationSeconds = 3600
+    const providerCostCents = 1.23
+    const actual = computeActualCosts({
+      step1: buildHostedStep1(),
+      step2: buildSttMetadata({
+        transcriptionService: 'deapi',
+        transcriptionModel: 'WhisperLargeV3',
+        billing: {
+          totalCost: providerCostCents,
+          source: 'provider_quote',
+          mode: 'duration'
+        }
+      }),
+      audioDurationSeconds
+    })
+    const sttStep = actual.steps[0]
+
+    expect(computeSttCost('deapi', 'WhisperLargeV3', audioDurationSeconds)).toBeGreaterThan(providerCostCents)
+    expect(sttStep).toMatchObject({
+      step: 'stt',
+      provider: 'deapi',
+      model: 'WhisperLargeV3',
+      cost: providerCostCents,
+      inputMetric: 'durationSeconds',
+      inputValue: audioDurationSeconds
+    })
+    expect(actual.totalCost).toBe(providerCostCents)
   })
 
   test('Gemini music estimates use per-song Lyria 3 pricing', () => {

@@ -68,8 +68,10 @@ const cliErrorHandler = (error: unknown): void => {
   }
 
   if (error instanceof Error) {
+    const emittedHints = new Set<string>()
     for (const [needle, hint] of Object.entries(ERROR_HINTS)) {
-      if (error.message.includes(needle)) {
+      if (error.message.includes(needle) && !emittedHints.has(hint)) {
+        emittedHints.add(hint)
         l.write('info', hint)
       }
     }

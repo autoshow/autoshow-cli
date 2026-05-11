@@ -223,7 +223,8 @@ export const processStt = async (
         const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], preparedStepMedia.durationSeconds))
         const actual = computeActualCosts({
           step1: preparedStepMedia.step1Metadata,
-          step2: captionTranscription.metadata
+          step2: captionTranscription.metadata,
+          audioDurationSeconds: preparedStepMedia.durationSeconds
         })
         const cost = { estimated, actual }
         const estimatedTiming = computeEstimatedProcessingTimes({
@@ -310,7 +311,8 @@ export const processStt = async (
       const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, preparedStepMedia.durationSeconds))
       const actual = computeActualCosts({
         step1: preparedStepMedia.step1Metadata,
-        step2: transcription.metadata
+        step2: transcription.metadata,
+        audioDurationSeconds: preparedStepMedia.durationSeconds
       })
       const cost = { estimated, actual }
       const estimatedTiming = computeEstimatedProcessingTimes({
@@ -673,7 +675,8 @@ export const processStt = async (
     const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, applicableTargets, prepared.durationSeconds))
     const actual = computeActualCosts({
       step1: prepared.step1Metadata,
-      step2: successfulProviders.map((entry) => entry.metadata)
+      step2: successfulProviders.map((entry) => entry.metadata),
+      audioDurationSeconds: prepared.durationSeconds
     })
     const cost = {
       estimated,
@@ -736,21 +739,18 @@ export const processStt = async (
     logRunManifestLocation(outputDir, l, 'extract')
     l.debug(`Run manifest:\n${metadataJson}`)
 
+    const actualSttSteps = actual.steps.filter((step) => step.step === 'stt')
     const stepSummaries: StepTimingCost[] = [
       {
         label: 'Download',
         processingTime: acquisitionTimeMs,
         cost: 0
       },
-      ...successfulProviders.map((entry) => ({
+      ...successfulProviders.map((entry, index) => ({
         label: 'Transcribe',
         providerModel: buildTimingProviderModelLabel(entry.metadata),
         processingTime: entry.metadata.processingTime,
-        cost: actual.steps.find((step) =>
-          step.step === 'stt'
-          && step.provider === entry.metadata.transcriptionService
-          && step.model === entry.metadata.transcriptionModel
-        )?.cost ?? 0
+        cost: actualSttSteps[index]?.cost ?? 0
       }))
     ]
 

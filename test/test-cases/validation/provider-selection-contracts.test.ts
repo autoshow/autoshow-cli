@@ -34,7 +34,6 @@ describe('provider selection contracts', () => {
       'gemini-stt',
       'glm-stt',
       'together-stt',
-      'cloudflare-stt',
       'whisper-stt'
     ])
   })

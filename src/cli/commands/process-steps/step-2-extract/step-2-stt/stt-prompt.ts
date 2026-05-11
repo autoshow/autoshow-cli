@@ -9,6 +9,7 @@ import type {
 } from '~/types'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { buildPrompt } from '../../step-3-write/write-utils/prompt-utils'
+import { resolveReverbModelLabel } from './stt-model-labels'
 
 export const buildProviderModelLabel = (
   metadata: Pick<Step2Metadata, 'transcriptionService' | 'transcriptionModel'>
@@ -18,7 +19,9 @@ export const buildProviderModelLabel = (
     ? basename(metadata.transcriptionModel.split(' | ')[0] ?? metadata.transcriptionModel)
       .replace(/^ggml-/, '')
       .replace(/\.bin$/, '')
-    : metadata.transcriptionModel
+    : metadata.transcriptionService === 'reverb'
+      ? resolveReverbModelLabel(metadata.transcriptionModel)
+      : metadata.transcriptionModel
 
   return `${provider}/${model}`
 }

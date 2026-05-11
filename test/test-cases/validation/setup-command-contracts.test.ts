@@ -74,6 +74,21 @@ describe('setup command contracts', () => {
     const output = `${result.stdout}\n${result.stderr}`
     expect(output).toContain('Google Cloud STT + Document AI OCR + TTS setup')
     expect(output).toContain('AWS STT setup')
+    expect(output).not.toContain('Cloudflare')
+    expect(output).not.toContain('CLOUDFLARE_API_TOKEN')
+    expect(output).not.toContain('--cloudflare')
     expect(output).not.toContain('--gcloud cannot be combined with --aws')
+  })
+
+  test('setup help does not expose Cloudflare focused setup', async () => {
+    const result = await runCommand(['src/cli/create-cli.ts', 'setup', '--help'], {
+      env: { NO_COLOR: '1' }
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('--gcloud')
+    expect(result.stdout).toContain('--aws')
+    expect(result.stdout).not.toContain('--cloudflare')
+    expect(result.stdout).not.toContain('Cloudflare')
   })
 })

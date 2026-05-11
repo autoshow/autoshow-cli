@@ -1,5 +1,5 @@
 import type { HumanLogTableRow } from '~/types'
-import type { SttBatchProviderProfile, SttBatchSchedulerSnapshot, SttTarget } from '~/types'
+import type { SttBatchProviderProfile, SttBatchSchedulerSnapshot, SttProviderSlotSummary, SttTarget } from '~/types'
 import { formatSttTargetLabel, getSttTargetKey } from '../stt-targets'
 
 const DEFAULT_PROVIDER_SLOT_LIMIT = 2
@@ -117,10 +117,10 @@ export const getSttBatchProviderProfile = (
   pollSlotLimit: resolveSttBatchPollSlotLimit(target, batchConcurrency)
 })
 
-export const describeSttBatchProviderSlotLimits = (
+export const buildSttProviderSlotSummaries = (
   targets: Array<Pick<SttTarget, 'service' | 'model' | 'local'>>,
   batchConcurrency = 1
-): string => {
+): SttProviderSlotSummary[] => {
   const seen = new Set<string>()
   return targets
     .filter((target) => !target.local)
@@ -134,14 +134,30 @@ export const describeSttBatchProviderSlotLimits = (
     })
     .map((target) => {
       const profile = getSttBatchProviderProfile(target, batchConcurrency)
-      if (profile.kind !== 'async') {
-        return `${formatSttTargetLabel(target)}:launch=${profile.launchSlotLimit}`
+      return {
+        service: target.service,
+        model: target.model,
+        provider: formatSttTargetLabel(target),
+        kind: profile.kind,
+        launchSlots: profile.launchSlotLimit,
+        pollSlots: profile.kind === 'async' ? profile.pollSlotLimit : null
+      }
+    })
+}
+
+export const describeSttBatchProviderSlotLimits = (
+  targets: Array<Pick<SttTarget, 'service' | 'model' | 'local'>>,
+  batchConcurrency = 1
+): string =>
+  buildSttProviderSlotSummaries(targets, batchConcurrency)
+    .map((slot) => {
+      if (slot.kind !== 'async') {
+        return `${slot.provider}:launch=${slot.launchSlots}`
       }
 
-      return `${formatSttTargetLabel(target)}:create=${profile.launchSlotLimit},poll=${profile.pollSlotLimit}`
+      return `${slot.provider}:create=${slot.launchSlots},poll=${slot.pollSlots ?? ''}`
     })
     .join(', ')
-}
 
 export const buildSttBatchSchedulerRows = (
   snapshot: SttBatchSchedulerSnapshot

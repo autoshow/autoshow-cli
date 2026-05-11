@@ -24,7 +24,6 @@ import { setupOpenaiStt } from '~/cli/commands/process-steps/step-2-extract/step
 import { setupGeminiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/gemini-stt'
 import { setupGlmStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/glm-stt/glm-stt'
 import { setupTogetherStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/together/together'
-import { setupCloudflareStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/cloudflare/cloudflare'
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/assemblyai/assemblyai'
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
 import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
@@ -287,7 +286,6 @@ const runFullSetup = async (): Promise<void> => {
     await setupGeminiStt()
     await setupGlmStt()
     await setupTogetherStt()
-    await setupCloudflareStt()
     await setupMistralOcr()
     await setupGlmOcr()
     await setupKimiOcr()
@@ -378,7 +376,6 @@ const runSetupTranscription = async (): Promise<void> => {
   await setupGeminiStt()
   await setupGlmStt()
   await setupTogetherStt()
-  await setupCloudflareStt()
   await setupGrokStt()
   await setupAwsStt({
     ...awsDefaults,

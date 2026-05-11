@@ -19,7 +19,6 @@ const SERVICE_DEFINITIONS: {
   { service: 'gemini-stt', models: ['gemini-3-flash-preview'], envVar: 'GEMINI_API_KEY' },
   { service: 'glm-stt', models: ['glm-asr-2512'], envVar: 'GLM_API_KEY' },
   { service: 'together', models: ['openai/whisper-large-v3'], envVar: 'TOGETHER_API_KEY' },
-  { service: 'cloudflare', models: ['whisper-large-v3-turbo', 'whisper'], envVar: 'CLOUDFLARE_API_TOKEN' },
   { service: 'elevenlabs', models: ['scribe_v2'], envVar: 'ELEVENLABS_API_KEY' },
   { service: 'mistral', models: ['voxtral-mini-2602'], envVar: 'MISTRAL_API_KEY' },
   { service: 'assemblyai', models: ['universal-3-pro'], envVar: 'ASSEMBLYAI_API_KEY' },
@@ -69,5 +68,11 @@ export const parseReferenceStt = (flag: string): { service: TranscribeEngine, mo
   if (!service || !model) {
     throw new Error(`Invalid --reference-stt format: "${flag}". Expected "service:model" (e.g., "deepgram:nova-3")`)
   }
-  return { service: service as TranscribeEngine, model }
+
+  const serviceDefinition = SERVICE_DEFINITIONS.find((definition) => definition.service === service.toLowerCase())
+  if (!serviceDefinition) {
+    throw new Error(`Unsupported --reference-stt service: ${service}. Supported services: ${SERVICE_DEFINITIONS.map((definition) => definition.service).join(', ')}`)
+  }
+
+  return { service: serviceDefinition.service, model }
 }

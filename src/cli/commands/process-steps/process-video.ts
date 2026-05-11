@@ -45,11 +45,12 @@ import { buildMusicArtifactMap, collectMusicTargets } from './step-7-music/music
 import { buildProviderStepSummaries } from './generation-command-utils'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
-import { parseDurationToSeconds, preflightToEstimated } from '~/utils/pricing/compute-costs'
+import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
 import {
   buildProviderModelLabel,
+  buildTimingProviderModelLabel,
   classifySttProviderFailure,
   logSpeakerCountHintSummary,
   prioritizeCloudSttTargetIndices,
@@ -161,6 +162,7 @@ export const processVideo = async (
     const step1Metadata: Step1Metadata = preparedMedia.step1Metadata
     const sourceMetadata = preparedMedia.metadata
     const audioPath = preparedMedia.executionArtifacts.sourceMediaPath
+    const mediaDurationSeconds = preparedMedia.durationSeconds
     logSpeakerCountHintSummary(sttTargets, processingOptions.diarizationSpeakerCount)
 
     if (processingOptions.youtubeCaptions && processingOptions.url) {
@@ -440,7 +442,7 @@ export const processVideo = async (
 	      : computeEstimatedCosts({
 	        applyCostMultipliers: false,
 	        sttTargets: selectedSttTargets,
-	        audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+	        audioDurationSeconds: mediaDurationSeconds,
 	        llmTargets,
 	        skipLLM: processingOptions.skipLLM,
 	        ttsTargets: ttsEstimateTargets,
@@ -470,6 +472,7 @@ export const processVideo = async (
 	    const actual = computeActualCosts({
 	      step1: step1Metadata,
 	      step2: transcriptionResult.metadata,
+	      audioDurationSeconds: mediaDurationSeconds,
 	      ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
 	      ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
 	      ...(step5Metadata ? { step5: step5Metadata } : {}),
@@ -480,7 +483,7 @@ export const processVideo = async (
 	    const cost = { estimated, actual }
 	    const estimatedTiming = computeEstimatedProcessingTimes({
 	      sttTargets: selectedSttTargets,
-	      audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+	      audioDurationSeconds: mediaDurationSeconds,
 	      llmTargets,
 	      skipLLM: processingOptions.skipLLM,
 	      ttsTargets: ttsEstimateTargets,
@@ -506,7 +509,7 @@ export const processVideo = async (
 	        : {}),
 	    })
 	    const actualTiming = computeActualProcessingTimes({
-	      audioDurationSeconds: parseDurationToSeconds(step1Metadata.duration),
+	      audioDurationSeconds: mediaDurationSeconds,
 	      step2: transcriptionResult.metadata,
 	      ...(step3Serialized !== undefined ? { step3: step3Serialized } : {}),
 	      ...(step4Metadata ? { step4: step4Metadata, ttsCharacterCount } : {}),
@@ -620,12 +623,13 @@ export const processVideo = async (
 	      step2Entries,
 	      actual.steps,
 	      (entry) => {
+	        if (entry.transcriptionService === 'reverb') {
+	          return buildTimingProviderModelLabel(entry)
+	        }
 	        const displayService = entry.transcriptionService === 'whisper' ? 'whisper.cpp' : entry.transcriptionService
 	        const displayModel = entry.transcriptionService === 'whisper'
 	          ? (processingOptions.whisperModel ?? entry.transcriptionModel)
-	          : entry.transcriptionService === 'reverb'
-	            ? 'reverb'
-	            : entry.transcriptionModel
+	          : entry.transcriptionModel
 	        return `${displayService}/${displayModel}`
 	      },
 	      (entry) => entry.processingTime

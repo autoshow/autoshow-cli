@@ -23,7 +23,7 @@ test('bun as extract https://ajcwebdev.com --url-backend glm-reader --price', as
   )
 
   expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Total estimated cost: 0.00000¢')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Total estimated cost: free (0.00000¢)')
   expect(`${result.stdout}\n${result.stderr}`).toContain('extraction.txt')
   expect(`${result.stdout}\n${result.stderr}`).toContain('run.json')
 })

@@ -14,7 +14,6 @@ import { ensureOpenaiSttSetup } from '~/cli/commands/process-steps/step-2-extrac
 import { ensureGeminiSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/gemini-stt'
 import { ensureGlmSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/glm-stt/glm-stt'
 import { ensureTogetherSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/together/together'
-import { ensureCloudflareSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/cloudflare/cloudflare'
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/rev/rev'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/soniox/soniox'
 import { ensureSupadataSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
@@ -129,9 +128,6 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'together-stt': {
     ensure: async () => await ensureTogetherSttSetup()
-  },
-  'cloudflare-stt': {
-    ensure: async () => await ensureCloudflareSttSetup()
   },
   tesseract: {
     ensure: async () => await ensureTesseractSetup()

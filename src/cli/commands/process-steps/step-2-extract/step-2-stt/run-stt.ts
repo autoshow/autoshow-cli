@@ -32,7 +32,6 @@ import { runOpenaiStt } from './stt-services/openai-stt/run-openai-stt'
 import { runGeminiStt } from './stt-services/gemini-stt/run-gemini-stt'
 import { runGlmStt } from './stt-services/glm-stt/run-glm-stt'
 import { runTogetherStt } from './stt-services/together/run-together-stt'
-import { runCloudflareStt } from './stt-services/cloudflare/run-cloudflare-stt'
 import { runGcloudStt } from './stt-services/gcloud/run-gcloud-stt'
 import { runAwsStt } from './stt-services/aws/run-aws-stt'
 import { splitAudioFile } from './stt-utils/audio-splitter'
@@ -80,8 +79,7 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'happyscribe',
   'openai-stt',
   'glm-stt',
-  'together',
-  'cloudflare'
+  'together'
 ])
 
 const formatBytes = (bytes: number): string => {
@@ -466,15 +464,6 @@ const dispatchStt = async (
 
   if (target.service === 'together') {
     return await runTogetherStt(audioPath, outputDir, {
-      model: target.model,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments
-    })
-  }
-
-  if (target.service === 'cloudflare') {
-    return await runCloudflareStt(audioPath, outputDir, {
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,

@@ -1,89 +1,8 @@
-import { createServer, type IncomingMessage } from 'node:http'
 import { expect, test } from 'bun:test'
 import { defineSTTServicePriceTests } from '../../test-utils/define-stt-service-test'
 import { runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
 import { E2E_TEST_TIMEOUT_MS } from '../../test-utils/budget'
-
-const readBodyText = async (request: IncomingMessage): Promise<string> => {
-  let body = ''
-  for await (const chunk of request) {
-    body += typeof chunk === 'string' ? chunk : chunk.toString('utf8')
-  }
-  return body
-}
-
-const isAddressInUseError = (error: unknown): boolean => {
-  return typeof error === 'object'
-    && error !== null
-    && 'code' in error
-    && (error as { code?: unknown }).code === 'EADDRINUSE'
-}
-
-const listenOnPort = async (server: ReturnType<typeof createServer>, port: number): Promise<void> => {
-  await new Promise<void>((resolve, reject) => {
-    const cleanup = () => {
-      server.off('error', onError)
-      server.off('listening', onListening)
-    }
-    const onError = (error: Error) => {
-      cleanup()
-      reject(error)
-    }
-    const onListening = () => {
-      cleanup()
-      resolve()
-    }
-
-    server.once('error', onError)
-    server.once('listening', onListening)
-    server.listen(port, '127.0.0.1')
-  })
-}
-
-const startDeapiStubServer = async (): Promise<{
-  server: ReturnType<typeof createServer>
-  baseUrl: string
-  state: { priceBodies: string[] }
-}> => {
-  const state = { priceBodies: [] as string[] }
-
-  const createStubServer = () => createServer(async (req, res) => {
-    const url = new URL(req.url ?? '/', 'http://127.0.0.1')
-
-    if (req.method === 'POST' && url.pathname === '/api/v1/client/transcribe/price-calculation') {
-      state.priceBodies.push(await readBodyText(req))
-      res.writeHead(200, { 'content-type': 'application/json' })
-      res.end(JSON.stringify({ data: { price: 0.0175 } }))
-      return
-    }
-
-    res.writeHead(404, { 'content-type': 'application/json' })
-    res.end(JSON.stringify({ message: `${req.method} ${url.pathname} not stubbed` }))
-  })
-
-  let lastError: unknown
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const server = createStubServer()
-    const port = 32000 + Math.floor(Math.random() * 20000)
-    try {
-      await listenOnPort(server, port)
-      return { server, baseUrl: `http://127.0.0.1:${port}`, state }
-    } catch (error) {
-      lastError = error
-      if (!isAddressInUseError(error)) {
-        throw error
-      }
-    }
-  }
-
-  throw new Error(`Failed to start deAPI stub server after repeated port attempts: ${String(lastError)}`)
-}
-
-const stopServer = async (server: ReturnType<typeof createServer>): Promise<void> => {
-  await new Promise<void>((resolve, reject) => {
-    server.close((error) => error ? reject(error) : resolve())
-  })
-}
+import { resolveDeapiTranscriptionPrice } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi-pricing'
 
 for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as const) {
   test(`whisper model ${model} --price prints estimate`, async () => {
@@ -155,12 +74,6 @@ defineSTTServicePriceTests({
 })
 
 defineSTTServicePriceTests({
-  models: ['whisper-large-v3-turbo', 'whisper'],
-  cliFlag: '--cloudflare-stt',
-  sttService: 'cloudflare',
-})
-
-defineSTTServicePriceTests({
   models: ['voxtral-mini-2602'],
   cliFlag: '--mistral-stt',
   sttService: 'mistral',
@@ -214,44 +127,64 @@ test('gcloud chirp_3 --price prints estimate', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('chirp_3')
 }, E2E_TEST_TIMEOUT_MS)
 
-test('deapi --price uses the exact pricing endpoint for local audio', async () => {
-  let stub: Awaited<ReturnType<typeof startDeapiStubServer>>
-  try {
-    stub = await startDeapiStubServer()
-  } catch (error) {
-    if (String(error).includes('Failed to start deAPI stub server after repeated port attempts')) {
-      console.warn(`Skipping deAPI exact pricing endpoint assertion: ${String(error)}`)
-      return
-    }
-    throw error
-  }
+test('deapi exact pricing uses duration payload for local audio', async () => {
+  const originalFetch = globalThis.fetch
+  const originalApiKey = process.env['DEAPI_API_KEY']
+  const originalBaseUrl = process.env['DEAPI_BASE_URL']
+  const requests: Array<{ url: string, init: RequestInit }> = []
 
-  const { server, baseUrl, state } = stub
-
-  try {
-    const result = await runCommand([
-      'src/cli/create-cli.ts',
-      'extract',
-      STABLE_LOCAL_AUDIO_PATH,
-      '--deapi-stt',
-      'WhisperLargeV3',
-      '--price'
-    ], {
-      env: {
-        DEAPI_API_KEY: 'test-key',
-        DEAPI_BASE_URL: baseUrl
-      }
+  process.env['DEAPI_API_KEY'] = 'test-key'
+  process.env['DEAPI_BASE_URL'] = 'https://deapi.test'
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+    requests.push({
+      url: input instanceof Request ? input.url : String(input),
+      init: init ?? {}
     })
 
-    expect(result.exitCode).toBe(0)
-    expect(`${result.stdout}\n${result.stderr}`).toContain('deapi')
-    expect(`${result.stdout}\n${result.stderr}`).toContain('WhisperLargeV3')
-    expect(state.priceBodies).toHaveLength(1)
-    expect(state.priceBodies[0]).toContain('name="duration_seconds"')
-    expect(state.priceBodies[0]).toContain('name="model"')
-    expect(state.priceBodies[0]).toContain('WhisperLargeV3')
-    expect(state.priceBodies[0]).not.toContain('name="source_url"')
+    return new Response(JSON.stringify({ data: { price: 0.0175 } }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    })
+  }) as typeof fetch
+
+  try {
+    const price = await resolveDeapiTranscriptionPrice({
+      model: 'WhisperLargeV3',
+      durationSeconds: 12.34
+    })
+
+    expect(price).toEqual({
+      totalCost: 1.7500000000000002,
+      source: 'provider_quote',
+      mode: 'duration',
+      estimateType: 'exact'
+    })
+    expect(requests).toHaveLength(1)
+    expect(requests[0]?.url).toBe('https://deapi.test/api/v1/client/transcribe/price-calculation')
+    expect(requests[0]?.init.method).toBe('POST')
+    expect(requests[0]?.init.headers).toEqual({
+      accept: 'application/json',
+      authorization: 'Bearer test-key'
+    })
+
+    const body = requests[0]?.init.body
+    expect(body).toBeInstanceOf(FormData)
+    const form = body as FormData
+    expect(form.get('include_ts')).toBe('true')
+    expect(form.get('model')).toBe('WhisperLargeV3')
+    expect(form.get('duration_seconds')).toBe('12.34')
+    expect(form.has('source_url')).toBe(false)
   } finally {
-    await stopServer(server)
+    globalThis.fetch = originalFetch
+    if (originalApiKey === undefined) {
+      delete process.env['DEAPI_API_KEY']
+    } else {
+      process.env['DEAPI_API_KEY'] = originalApiKey
+    }
+    if (originalBaseUrl === undefined) {
+      delete process.env['DEAPI_BASE_URL']
+    } else {
+      process.env['DEAPI_BASE_URL'] = originalBaseUrl
+    }
   }
 }, E2E_TEST_TIMEOUT_MS)

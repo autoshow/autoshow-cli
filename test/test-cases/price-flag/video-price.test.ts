@@ -61,11 +61,11 @@ test('allows multiple providers with --price', async () => {
 
 test('new video providers print price estimates', async () => {
   const providers = [
-    ['--glm-video', 'cogvideox-3', '20.00000¢'],
-    ['--glm-video', 'viduq1-text', '40.00000¢'],
-    ['--grok-video', 'grok-imagine-video', '25.00000¢'],
-    ['--runway-video', 'gen4.5', '60.00000¢'],
-    ['--deapi-video', 'Ltxv_13B_0_9_8_Distilled_FP8', '0.34740¢']
+    ['--glm-video', 'cogvideox-3', '20.00¢'],
+    ['--glm-video', 'viduq1-text', '40.00¢'],
+    ['--grok-video', 'grok-imagine-video', '25.00¢'],
+    ['--runway-video', 'gen4.5', '60.00¢'],
+    ['--deapi-video', 'Ltxv_13B_0_9_8_Distilled_FP8', '0.35¢']
   ] as const
 
   for (const [flag, model, expectedCost] of providers) {
@@ -88,12 +88,12 @@ test('new video providers print price estimates', async () => {
 
 test('Gemini video price estimates use current per-second pricing', async () => {
   const cases = [
-    ['veo-3.1-lite-generate-preview', '720p', '4', '20.00000¢'],
-    ['veo-3.1-lite-generate-preview', '1080p', '4', '64.00000¢'],
-    ['veo-3.1-fast-generate-preview', '720p', '4', '40.00000¢'],
-    ['veo-3.1-fast-generate-preview', '1080p', '4', '96.00000¢'],
-    ['veo-3.1-generate-preview', '720p', '4', '160.00000¢'],
-    ['veo-3.1-generate-preview', '1080p', '4', '320.00000¢']
+    ['veo-3.1-lite-generate-preview', '720p', '4', '20.00¢'],
+    ['veo-3.1-lite-generate-preview', '1080p', '4', '64.00¢'],
+    ['veo-3.1-fast-generate-preview', '720p', '4', '40.00¢'],
+    ['veo-3.1-fast-generate-preview', '1080p', '4', '96.00¢'],
+    ['veo-3.1-generate-preview', '720p', '4', '$1.60'],
+    ['veo-3.1-generate-preview', '1080p', '4', '$3.20']
   ] as const
 
   for (const [model, resolution, duration, expectedCost] of cases) {

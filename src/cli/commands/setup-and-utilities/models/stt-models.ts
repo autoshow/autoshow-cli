@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel, CloudflareSttModel } from '~/types'
+import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -96,11 +96,6 @@ export const SUPPORTED_TOGETHER_STT_MODELS = [
   'openai/whisper-large-v3'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_CLOUDFLARE_STT_MODELS = [
-  'whisper-large-v3-turbo',
-  'whisper'
-] as const satisfies readonly string[]
-
 export const validateWhisperModel = createModelValidator(SUPPORTED_WHISPER_MODELS, 'whisper', 'This flag uses local whisper.cpp models.')
 export const validateGcloudSttModel = createModelValidator<GcloudSttModel>(SUPPORTED_GCLOUD_STT_MODELS, 'gcloud-stt')
 export const validateAwsSttModel = createModelValidator<AwsSttModel>(SUPPORTED_AWS_STT_MODELS, 'aws-stt')
@@ -122,4 +117,3 @@ export const validateOpenaiSttModel = createModelValidator<OpenaiSttModel>(SUPPO
 export const validateGeminiSttModel = createModelValidator<GeminiSttModel>(SUPPORTED_GEMINI_STT_MODELS, 'gemini-stt')
 export const validateGlmSttModel = createModelValidator<GlmSttModel>(SUPPORTED_GLM_STT_MODELS, 'glm-stt')
 export const validateTogetherSttModel = createModelValidator<TogetherSttModel>(SUPPORTED_TOGETHER_STT_MODELS, 'together-stt', 'This flag only accepts Together OpenAI-compatible Whisper models.')
-export const validateCloudflareSttModel = createModelValidator<CloudflareSttModel>(SUPPORTED_CLOUDFLARE_STT_MODELS, 'cloudflare-stt', 'This flag only accepts Cloudflare Workers AI Whisper models.')

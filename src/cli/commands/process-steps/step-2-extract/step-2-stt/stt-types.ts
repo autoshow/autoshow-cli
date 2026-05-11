@@ -292,6 +292,15 @@ export type SttBatchProviderProfile = {
   pollSlotLimit: number
 }
 
+export type SttProviderSlotSummary = {
+  service: SttTarget['service']
+  model: string
+  provider: string
+  kind: 'sync' | 'async'
+  launchSlots: number
+  pollSlots: number | null
+}
+
 export type SttBatchBlockedProviderReason = {
   service: SttTarget['service']
   model: string

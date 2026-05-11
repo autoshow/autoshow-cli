@@ -52,7 +52,6 @@ Accepted provider selectors are the lowercase names below.
 | `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
 | `--groq` | `general`, `text`, `stt`, `tts` |
 | `--together` | `general`, `stt` |
-| `--cloudflare` | `general`, `stt` |
 | `--drive` | `general` |
 | `--openai` | `general`, `text`, `ocr`, `stt`, `tts`, `image` |
 | `--gemini` | `general`, `text`, `ocr`, `stt`, `tts`, `image`, `video`, `music` |

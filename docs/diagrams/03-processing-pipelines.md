@@ -55,7 +55,7 @@ src/cli/commands/process-steps/process-video.ts
 │  Local: Whisper.cpp, Reverb ASR                                             │
 │  Cloud: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox,  │
 │         Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia,         │
-│         Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together, Cloudflare   │
+│         Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together               │
 │                                    │                                         │
 │           (no engine flag) → Whisper.cpp (local binary)                      │
 │           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo        │

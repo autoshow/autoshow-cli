@@ -246,12 +246,12 @@ function addOverallScores<T extends {
 
 export function buildReport(runDir: string, referencePath: string) {
   const runJson = loadRunJson(runDir);
-  const runDurationSeconds = durationSecondsFromRun(runJson);
-  const referenceSegments = parseReferenceTranscript(referencePath, runDurationSeconds);
   const { providers, warnings } = loadProviderRuns(runDir);
   if (providers.length === 0) {
     throw new Error(`No providers/*/result.json files found under ${runDir}`);
   }
+  const runDurationSeconds = durationSecondsFromRun(runJson, providers);
+  const referenceSegments = parseReferenceTranscript(referencePath, runDurationSeconds);
 
   const rankedProviders = addOverallScores(providers.map((provider) => {
       const speakerMap = mapProviderSpeakers(referenceSegments, provider.segments);

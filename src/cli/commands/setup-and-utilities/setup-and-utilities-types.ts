@@ -28,8 +28,7 @@ import {
   SUPPORTED_OPENAI_STT_MODELS,
   SUPPORTED_GEMINI_STT_MODELS,
   SUPPORTED_GLM_STT_MODELS,
-  SUPPORTED_TOGETHER_STT_MODELS,
-  SUPPORTED_CLOUDFLARE_STT_MODELS
+  SUPPORTED_TOGETHER_STT_MODELS
 } from './models/stt-models'
 import {
   SUPPORTED_ANTHROPIC_OCR_MODELS,
@@ -179,7 +178,6 @@ export type OpenaiSttModel = typeof SUPPORTED_OPENAI_STT_MODELS[number]
 export type GeminiSttModel = typeof SUPPORTED_GEMINI_STT_MODELS[number]
 export type GlmSttModel = typeof SUPPORTED_GLM_STT_MODELS[number]
 export type TogetherSttModel = typeof SUPPORTED_TOGETHER_STT_MODELS[number]
-export type CloudflareSttModel = typeof SUPPORTED_CLOUDFLARE_STT_MODELS[number]
 export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
 export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
 export type KimiOcrModel = typeof SUPPORTED_KIMI_OCR_MODELS[number]

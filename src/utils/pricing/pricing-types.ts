@@ -105,7 +105,9 @@ export type ActualPipelineInputsBase<TStep1> = {
   ttsCharacterCount?: number | undefined
 }
 
-export type ComputeActualCostsInput = ActualPipelineInputsBase<Step1Metadata>
+export type ComputeActualCostsInput = ActualPipelineInputsBase<Step1Metadata> & {
+  audioDurationSeconds?: number | undefined
+}
 
 export type ComputeEstimatedCostsInput = {
   applyCostMultipliers?: boolean | undefined
@@ -131,7 +133,6 @@ export type ComputeEstimatedCostsInput = {
   geminiSttModel?: string | undefined
   glmSttModel?: string | undefined
   togetherSttModel?: string | undefined
-  cloudflareSttModel?: string | undefined
   mistralOcrModel?: string | undefined
   glmOcrModel?: string | undefined
   kimiOcrModel?: string | undefined

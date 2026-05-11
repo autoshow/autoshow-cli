@@ -75,8 +75,6 @@ export type RuntimeOptions = {
   glmSttModel: string | undefined
   togetherSttModels: string[] | undefined
   togetherSttModel: string | undefined
-  cloudflareSttModels: string[] | undefined
-  cloudflareSttModel: string | undefined
   supadataLang: string | undefined
   speechmaticsSttModels: string[] | undefined
   speechmaticsSttModel: string | undefined

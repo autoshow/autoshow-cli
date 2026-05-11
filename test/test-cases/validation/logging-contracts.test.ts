@@ -10,6 +10,15 @@ import {
   buildPaddleOcrPrepareTable,
   parseOcrmypdfOutputLine
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-logging'
+import {
+  buildSttProviderConcurrencyTable,
+  buildSttProviderSlotsTable,
+  logSttProviderConcurrency
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
+import {
+  buildProviderModelLabel,
+  buildTimingProviderModelLabel
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-prompt'
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
@@ -201,6 +210,16 @@ describe('logging contracts', () => {
     expect(rendered).not.toMatch(/elevenlabs\x1b\[0m.*music_v1/)
   })
 
+  test('Reverb provider model labels collapse runtime model paths', () => {
+    const metadata = {
+      transcriptionService: 'reverb',
+      transcriptionModel: '/Users/ajc/c/as/autoshow-cli/runtime/models/reverb/reverb_asr_v1/reverb_asr_v1.pt | /Users/ajc/c/as/autoshow-cli/runtime/models/reverb/reverb_asr_v1/config.yaml | diarization:v2'
+    } as const
+
+    expect(buildProviderModelLabel(metadata)).toBe('reverb/reverb_asr_v1')
+    expect(buildTimingProviderModelLabel(metadata)).toBe('reverb/reverb_asr_v1')
+  })
+
   test('slash paths render as one non-filename color span', () => {
     const path = './output/2026-04-29_10-21-25-009_1-audio/generated-music.mp3'
     const filename = 'generated-music.mp3'
@@ -273,6 +292,108 @@ describe('logging contracts', () => {
     expect(rendered).not.toContain('\u2502 0 \u2502')
   })
 
+  test('STT provider concurrency summary omits long provider slot details', () => {
+    const table = buildSttProviderConcurrencyTable({
+      mode: 'cloud_provider_concurrency',
+      requested: 2,
+      effective: 2,
+      batchConcurrency: 1,
+      hostedProviders: 27,
+      providerSlots: 'aws/standard:create=2,poll=1, deepgram/nova-3:launch=4'
+    })
+
+    expect(table).toEqual({
+      columns: ['mode', 'requested', 'effective', 'batch', 'providers'],
+      rows: [{
+        mode: 'cloud_provider_concurrency',
+        requested: 2,
+        effective: 2,
+        batch: 1,
+        providers: 27
+      }]
+    })
+
+    const rendered = stripAnsi(renderHumanTable(table))
+    expect(rendered).not.toContain('providerSlots')
+    expect(rendered).not.toContain('aws/standard')
+  })
+
+  test('STT provider slot details render as provider rows', () => {
+    const table = buildSttProviderSlotsTable([
+      {
+        service: 'deepgram',
+        model: 'nova-3',
+        provider: 'deepgram/nova-3',
+        kind: 'sync',
+        launchSlots: 4,
+        pollSlots: null
+      },
+      {
+        service: 'aws',
+        model: 'standard',
+        provider: 'aws/standard',
+        kind: 'async',
+        launchSlots: 2,
+        pollSlots: 1
+      }
+    ])
+
+    expect(table).toEqual({
+      columns: ['provider', 'kind', 'launch', 'poll'],
+      rows: [
+        { provider: 'deepgram/nova-3', kind: 'sync', launch: 4, poll: '' },
+        { provider: 'aws/standard', kind: 'async', launch: 2, poll: 1 }
+      ]
+    })
+
+    const rendered = stripAnsi(renderHumanTable(table))
+    expect(rendered).toContain('\u2502 deepgram/nova-3 \u2502 sync')
+    expect(rendered).toContain('\u2502 aws/standard    \u2502 async \u2502 2      \u2502 1')
+  })
+
+  test('STT provider concurrency log emits compact summary and slot tables', () => {
+    const { logger, writes } = createCapturingLogger()
+    const providerSlots = 'deepgram/nova-3:launch=4, aws/standard:create=2,poll=1'
+    const providerSlotDetails = [
+      {
+        service: 'deepgram',
+        model: 'nova-3',
+        provider: 'deepgram/nova-3',
+        kind: 'sync',
+        launchSlots: 4,
+        pollSlots: null
+      },
+      {
+        service: 'aws',
+        model: 'standard',
+        provider: 'aws/standard',
+        kind: 'async',
+        launchSlots: 2,
+        pollSlots: 1
+      }
+    ] as const
+
+    logSttProviderConcurrency(
+      logger,
+      { requested: 2, effective: 2, hostedProviderCount: 2 },
+      1,
+      false,
+      providerSlots,
+      providerSlotDetails
+    )
+
+    expect(writes.map(write => write.message)).toEqual([
+      'STT Provider Concurrency',
+      'STT Provider Slots'
+    ])
+    expect(writes[0]?.options?.humanTable?.columns).toEqual(['mode', 'requested', 'effective', 'batch', 'providers'])
+    expect(writes[1]?.options?.humanTable?.columns).toEqual(['provider', 'kind', 'launch', 'poll'])
+    expect(writes[0]?.options?.metadata).toMatchObject({
+      providerSlots,
+      providerSlotDetails
+    })
+  })
+
   test('json sink routes warnings and errors to stderr and info to stdout', () => {
     const sink = createJsonSink()
     const captured = withColorEnv({ forceColor: '1' }, () => captureConsole(() => {
@@ -321,7 +442,7 @@ describe('logging contracts', () => {
       totalEstimatedCost: 12.345678
     })).toEqual([{
       checked: '3 commands',
-      totalEstimatedCost: '12.34568\u00a2'
+      totalEstimatedCost: '12.35\u00a2'
     }])
   })
 
@@ -455,14 +576,37 @@ describe('logging contracts', () => {
     })
 
     expect(writes.map(write => write.message)).toEqual([
-      'Total estimated cost: 0.00000\u00a2',
+      'Total estimated cost: free (0.00000\u00a2)',
       'Cost Estimate',
-      'TTS estimate omitted: step 4 only runs when write produces exactly one summary.',
-      'Second aggregate estimate note.'
+      [
+        'Cost estimate notes:',
+        '[1] TTS estimate omitted: step 4 only runs when write produces exactly one summary.',
+        '[2] Second aggregate estimate note.'
+      ].join('\n')
     ])
     expect(writes[1]?.options?.humanTable).toBeDefined()
     expect(writes[2]?.options?.humanTable).toBeUndefined()
-    expect(writes[3]?.options?.humanTable).toBeUndefined()
+  })
+
+  test('reporter displays Reverb cost estimates with the ASR model id', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+
+    reporter.estimate({
+      totalEstimatedCost: 0,
+      steps: [{
+        step: 'stt',
+        provider: 'reverb',
+        model: 'reverb',
+        durationSeconds: 0,
+        totalCost: 0
+      }]
+    })
+
+    expect(writes[1]?.options?.humanTable?.rows[0]).toMatchObject({
+      provider: 'reverb',
+      model: 'reverb_asr_v1'
+    })
   })
 
   test('extract manifest summary includes OCR cost calculation diagnostics', () => {
@@ -585,47 +729,105 @@ describe('logging contracts', () => {
     ])
   })
 
-  test('reporter renders aggregate cost estimates as key/value rows', () => {
+  test('STT manifest summary displays concise Reverb ASR model label', () => {
+    const reverbDescriptor = '/Users/ajc/c/as/autoshow-cli/runtime/models/reverb/reverb_asr_v1/reverb_asr_v1.pt | /Users/ajc/c/as/autoshow-cli/runtime/models/reverb/reverb_asr_v1/config.yaml | diarization:v2'
+    const metadata = {
+      step2: {
+        transcriptionService: 'reverb',
+        transcriptionModel: reverbDescriptor,
+        processingTime: 67000,
+        tokenCount: 1234
+      },
+      cost: {
+        estimated: {
+          totalCost: 0,
+          steps: [{
+            step: 'stt',
+            provider: 'reverb',
+            model: 'reverb',
+            cost: 0
+          }]
+        },
+        actual: {
+          totalCost: 0,
+          steps: [{
+            step: 'stt',
+            provider: 'reverb',
+            model: reverbDescriptor,
+            cost: 0
+          }]
+        }
+      }
+    }
+
+    const summary = buildWriteManifestConsoleSummary(metadata)
+    expect(summary.runSummary?.rows[0]).toMatchObject({
+      step: 'Transcribe',
+      providerModel: 'reverb/reverb_asr_v1',
+      predictedCostCents: 0,
+      actualCostCents: 0
+    })
+    expect(summary.promptUsage?.rows[0]).toMatchObject({
+      step: 'Transcribe',
+      providerModel: 'reverb/reverb_asr_v1',
+      usage: '1234 tokens'
+    })
+  })
+
+  test('reporter renders aggregate cost estimates as compact rows with readable costs and notes', () => {
     const { logger, writes } = createCapturingLogger()
     const reporter = createReporter(logger)
 
     reporter.estimate({
-      totalEstimatedCost: 21.25,
+      totalEstimatedCost: 201.255,
       steps: [
         {
           step: 'video',
           provider: 'gemini',
           model: 'veo-3.1-lite-generate-preview',
-          totalCost: 20
+          totalCost: 200
         },
         {
           step: 'tts',
           provider: 'kitten',
           model: 'kitten-tts-mini',
-          totalCost: 1.25
+          totalCost: 1.25,
+          characterCount: 100,
+          note: 'Provider credits may apply outside local estimates.'
+        },
+        {
+          step: 'extract',
+          provider: 'firecrawl',
+          model: 'firecrawl',
+          totalCost: 0.005,
+          note: 'Provider credits may apply outside local estimates.'
         }
-      ]
+      ],
+      notes: ['Aggregate caveat.']
     })
 
     const humanTable = writes[1]?.options?.humanTable
     expect(humanTable).toEqual({
-      columns: ['key', 'value'],
+      columns: ['step', 'provider', 'model', 'details', 'cost', 'note'],
+      align: { cost: 'right' },
       rows: [
-        { key: 'step', value: 'video' },
-        { key: 'provider', value: 'gemini' },
-        { key: 'model', value: 'veo-3.1-lite-generate-preview' },
-        { key: 'cost', value: '20.00000\u00a2' },
-        { key: 'step', value: 'tts' },
-        { key: 'provider', value: 'kitten' },
-        { key: 'model', value: 'kitten-tts-mini' },
-        { key: 'cost', value: '1.25000\u00a2' }
+        { step: 'video', provider: 'gemini', model: 'veo-3.1-lite-generate-preview', cost: '$2.00' },
+        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', details: 'characters 100', cost: '1.25\u00a2', note: '[1]' },
+        { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2', note: '[1]' }
       ]
     })
+    expect(writes[0]?.message).toBe('Total estimated cost: $2.01 (201.25500\u00a2)')
+    expect(writes[2]?.message).toBe([
+      'Cost estimate notes:',
+      '[1] Provider credits may apply outside local estimates.',
+      '[2] Aggregate caveat.'
+    ].join('\n'))
 
     if (!humanTable) throw new Error('Expected cost estimate human table')
     const rendered = stripAnsi(renderHumanTable(humanTable))
-    expect(rendered).toContain('\u2502 step     \u2502 video')
-    expect(rendered).toContain('\u2502 provider \u2502 gemini')
+    expect(rendered).toContain('\u2502 video   \u2502 gemini')
+    expect(rendered).toContain('\u2502  $2.00 \u2502')
+    expect(rendered).toContain('\u2502 <0.01\u00a2 \u2502 [1]')
     expect(rendered).not.toContain('\u2502 key')
   })
 

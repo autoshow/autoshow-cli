@@ -72,11 +72,11 @@ function parseArgs(argv: string[]): ParsedArgs {
 
 export function buildPacket(runDir: string) {
   const runJson = loadRunJson(runDir);
-  const runDurationSeconds = durationSecondsFromRun(runJson);
   const { providers, warnings } = loadProviderRuns(runDir);
   if (providers.length === 0) {
     throw new Error(`No providers/*/result.json files found under ${runDir}`);
   }
+  const runDurationSeconds = durationSecondsFromRun(runJson, providers);
 
   const { baseline, agreement } = chooseBaselineProvider(providers);
 

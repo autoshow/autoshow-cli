@@ -147,7 +147,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--gemini-stt <model>` | Select one or more Gemini STT models |
 | `--glm-stt <model>` | Select one or more GLM STT models |
 | `--together-stt <model>` | Select one or more Together Whisper STT models |
-| `--cloudflare-stt <model>` | Select one or more Cloudflare Workers AI STT models |
 | `--deapi-stt <model>` | Select one or more deAPI STT models |
 | `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models |
 | `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |

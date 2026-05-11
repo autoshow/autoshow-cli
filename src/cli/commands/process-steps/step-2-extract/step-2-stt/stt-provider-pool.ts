@@ -6,7 +6,7 @@ import type {
 } from '~/types'
 import { getSttEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { buildSpeakerCountHintWarning } from '../step-2-shared/inactive-flag-warnings'
-import { describeSttBatchProviderSlotLimits } from './batch'
+import { buildSttProviderSlotSummaries, describeSttBatchProviderSlotLimits } from './batch'
 import { getSttEngineCapabilities } from './orchestrator'
 import { formatSttTargetLabel } from './stt-targets'
 import {
@@ -74,6 +74,7 @@ export const logEffectiveProviderConcurrency = (
   }
 
   const providerSlots = describeSttBatchProviderSlotLimits(targets, batchConcurrency)
+  const providerSlotDetails = buildSttProviderSlotSummaries(targets, batchConcurrency)
   const dedupeKey = [
     coordinatedAcrossBatch ? 'batch_scheduler' : 'cloud_provider_concurrency',
     resolution.requested,
@@ -89,7 +90,8 @@ export const logEffectiveProviderConcurrency = (
       resolution,
       batchConcurrency,
       coordinatedAcrossBatch,
-      providerSlots
+      providerSlots,
+      providerSlotDetails
     )
   })
 }

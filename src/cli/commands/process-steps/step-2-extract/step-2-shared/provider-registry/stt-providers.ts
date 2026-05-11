@@ -20,7 +20,6 @@ import {
   SUPPORTED_GEMINI_STT_MODELS,
   SUPPORTED_GLM_STT_MODELS,
   SUPPORTED_TOGETHER_STT_MODELS,
-  SUPPORTED_CLOUDFLARE_STT_MODELS,
   validateWhisperModel,
   validateGcloudSttModel,
   validateAwsSttModel,
@@ -41,8 +40,7 @@ import {
   validateOpenaiSttModel,
   validateGeminiSttModel,
   validateGlmSttModel,
-  validateTogetherSttModel,
-  validateCloudflareSttModel
+  validateTogetherSttModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type { Step2ProviderRegistryEntry } from '~/types'
@@ -361,21 +359,6 @@ export const STEP2_STT_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_TOGETHER_STT_MODELS,
     validateModel: validateTogetherSttModel,
     description: buildModelDescription('Together Whisper STT model (API, billed)', SUPPORTED_TOGETHER_STT_MODELS)
-  }),
-  modelProvider({
-    step: 'stt',
-    modality: 'media',
-    flagName: 'cloudflare-stt',
-    targetService: 'cloudflare',
-    providerSpecProvider: 'cloudflare',
-    bootstrapProviderId: 'cloudflare-stt',
-    configKey: 'cloudflareStt',
-    allShortcut: 'all-stt',
-    runtimeModelsKey: 'cloudflareSttModels',
-    runtimeModelKey: 'cloudflareSttModel',
-    supportedModels: SUPPORTED_CLOUDFLARE_STT_MODELS,
-    validateModel: validateCloudflareSttModel,
-    description: buildModelDescription('Cloudflare Workers AI STT model (API, billed)', SUPPORTED_CLOUDFLARE_STT_MODELS)
   }),
   modelProvider({
     step: 'stt',

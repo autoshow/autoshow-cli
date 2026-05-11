@@ -44,6 +44,7 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--all-stt')
   expect(result.stdout).toContain('--all-ocr')
   expect(result.stdout).toContain('--grok-stt')
+  expect(result.stdout).not.toContain('--cloudflare-stt')
   expect(result.stdout).toContain('--ocr-provider-concurrency')
   expect(result.stdout).toContain('--ocr-local-concurrency')
   expect(result.stdout).not.toContain('--deapi-ocr')
@@ -56,6 +57,15 @@ test('download help exposes media preservation flags', async () => {
   expect(result.stdout).toContain('--keep-original-media')
   expect(result.stdout).toContain('--best-quality')
   expect(result.stdout).toContain('--flat-batch')
+})
+
+test('setup help exposes focused cloud setup flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'setup', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--gcloud')
+  expect(result.stdout).toContain('--aws')
+  expect(result.stdout).not.toContain('--cloudflare')
 })
 
 test('tts help exposes hosted TTS provider flags', async () => {

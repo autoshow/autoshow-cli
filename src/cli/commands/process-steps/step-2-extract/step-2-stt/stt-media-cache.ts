@@ -702,13 +702,14 @@ export const prepareSttMedia = async (
       }
 
       const primaryStats = await stat(outputPaths.primaryFilePath)
+      const durationSeconds = await probeDurationSeconds(sourceMediaExecutionPath, cacheLookup.metadata)
       const step1Metadata: Step1Metadata = {
         ...cacheLookup.metadata,
         slug: buildMediaStep1Slug(source, cacheLookup.metadata),
         audioFileName: basename(outputPaths.primaryFilePath),
-        audioFileSize: primaryStats.size
+        audioFileSize: primaryStats.size,
+        durationSeconds
       }
-      const durationSeconds = await probeDurationSeconds(sourceMediaExecutionPath, cacheLookup.metadata)
 
       return {
         metadata: cacheLookup.metadata,
@@ -838,11 +839,13 @@ export const prepareSttMedia = async (
       }
 
       const primaryStats = await stat(outputPaths.primaryFilePath)
+      const durationSeconds = entry.durationSeconds ?? 0
       const step1Metadata: Step1Metadata = {
         ...cacheLookup.metadata,
         slug: buildMediaStep1Slug(source, cacheLookup.metadata),
         audioFileName: basename(outputPaths.primaryFilePath),
-        audioFileSize: primaryStats.size
+        audioFileSize: primaryStats.size,
+        durationSeconds
       }
 
       void pruneMediaCache()
@@ -851,7 +854,7 @@ export const prepareSttMedia = async (
         metadata: cacheLookup.metadata,
         ...(cacheLookup.sourceVideoInfo ? { sourceVideoInfo: cacheLookup.sourceVideoInfo } : {}),
         step1Metadata,
-        durationSeconds: entry.durationSeconds ?? 0,
+        durationSeconds,
         executionArtifacts: {
           sourceMediaPath: sourceMediaExecutionPath
         },

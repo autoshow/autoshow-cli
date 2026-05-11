@@ -17,7 +17,7 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
 
 ## Current Coverage
 
-- `test/test-cases/e2e/step-2-stt-e2e/stt-services/service-models.test.ts` is the shared provider suite for AssemblyAI, Cloudflare, deAPI, Deepgram, DeepInfra, ElevenLabs, Gladia, Groq, Grok, Mistral, Rev, Soniox, Speechmatics, and Together.
+- `test/test-cases/e2e/step-2-stt-e2e/stt-services/service-models.test.ts` is the shared provider suite for AssemblyAI, deAPI, Deepgram, DeepInfra, ElevenLabs, Gladia, Groq, Grok, Mistral, Rev, Soniox, Speechmatics, and Together.
 - The shared `defineSTTServiceTest` helper covers invalid model rejection, `--price` output, and real transcription when the required API key is configured.
 - deAPI coverage also verifies exact-price preflight and run-manifest estimated/actual STT cost fields with local stubbed responses.
 - AWS has a dedicated suite because readiness depends on AWS CLI auth plus explicit or saved `awsRegion` / `awsBucket` values instead of a single API-key env var.

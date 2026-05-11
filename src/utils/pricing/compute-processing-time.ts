@@ -8,6 +8,7 @@ import {
   getTtsEstimation,
   getVideoEstimation,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 import type {
   ComputeActualProcessingTimesInput,
   ComputeEstimatedProcessingTimesInput,
@@ -99,6 +100,9 @@ const resolveExtractionProviderModel = (
 }
 
 const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
+  if (metadata.transcriptionService === 'reverb') {
+    return resolveReverbModelLabel(metadata.transcriptionModel)
+  }
   if (metadata.transcriptionService !== 'whisper') {
     return metadata.transcriptionModel
   }

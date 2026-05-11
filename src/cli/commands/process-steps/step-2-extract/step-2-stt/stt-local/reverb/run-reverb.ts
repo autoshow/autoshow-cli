@@ -9,6 +9,7 @@ import { getHuggingFaceToken, runDiarization, mergeASRWithDiarization, findCTMFi
 import { reverbUvEnvDir, reverbModelDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
 import { prepareLocalSttInput } from '../local-audio-normalize'
+import { REVERB_ASR_MODEL_ID } from '../../stt-model-labels'
 
 let detectedGpuSupportPromise: Promise<boolean> | null = null
 
@@ -178,7 +179,7 @@ export const runReverbTranscribe = async (
     const resultDir = `${outputDir}/reverb-output${segmentSuffix}`
     await Bun.$`mkdir -p ${resultDir}`.quiet()
     preparedInput = await prepareLocalSttInput(audioPath, 'autoshow-reverb-')
-    const checkpointPath = `${reverbModelDir}/reverb_asr_v1.pt`
+    const checkpointPath = `${reverbModelDir}/${REVERB_ASR_MODEL_ID}.pt`
     const configPath = `${reverbModelDir}/config.yaml`
     const args = [
       'run', '-p', `${uvEnvDir}/bin/python`, '-m', 'wenet.bin.recognize_wav',
@@ -315,11 +316,11 @@ export const runReverbTranscribe = async (
       const speakerSet = new Set(transcription.segments.map(seg => seg.speaker).filter(s => s))
       l.write('success', `Identified ${speakerSet.size} speakers in transcription`)
     }
-    const transcriptionModelDescriptor = `${checkpointPath} | ${configPath} | diarization:${version}`
-    l.write('info', `Recording transcription model: ${transcriptionModelDescriptor}`)
+    l.write('info', `Recording transcription model: ${REVERB_ASR_MODEL_ID}`)
+    l.debug(`Reverb runtime model files: ${checkpointPath} | ${configPath} | diarization:${version}`)
     const metadata: Step2Metadata = {
       transcriptionService: 'reverb',
-      transcriptionModel: transcriptionModelDescriptor,
+      transcriptionModel: REVERB_ASR_MODEL_ID,
       processingTime,
       tokenCount
     }

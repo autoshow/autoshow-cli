@@ -10,6 +10,7 @@ import { resolvePriceSelection } from '../../test-runner/price-commands'
 import { PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
 import { evaluatePriceObservations } from '../../test-runner/price-evaluation'
 import { formatSelectedPathsLabel } from '../../test-runner/path-selection'
+import { parseCommandEstimatedTotal } from '../../test-runner/utils'
 import { shouldSkipBudgetKeys } from '../../test-utils/budget'
 
 const tempDirs: string[] = []
@@ -257,6 +258,15 @@ describe('test-runner contracts', () => {
 
     expect(parsed.pathFilters).toEqual(['test/test-cases/validation/'])
     expect(parsed.preserveTestOutput).toBe(true)
+  })
+
+  test('estimated-cost parser accepts readable totals and exact parenthetical cents', () => {
+    expect(parseCommandEstimatedTotal('Total estimated cost: $3.59 (358.69030¢)')).toBe(358.69030)
+    expect(parseCommandEstimatedTotal('Total estimated cost: free (0.00000¢)')).toBe(0)
+    expect(parseCommandEstimatedTotal('Suite total estimated cost: $3.59')).toBe(359)
+    expect(parseCommandEstimatedTotal('Total estimated cost: 16.00¢')).toBe(16)
+    expect(parseCommandEstimatedTotal('Total estimated cost: free')).toBe(0)
+    expect(parseCommandEstimatedTotal('{"estimate":{"totalEstimatedCostCents":12.345}}')).toBe(12.345)
   })
 
   test('test-output cleanup preserves latest.log only', async () => {

@@ -32,9 +32,12 @@ export type HumanLogTableCell = string | number | boolean | null
 
 export type HumanLogTableRow = Readonly<Record<string, HumanLogTableCell>>
 
+export type HumanLogTableAlign = 'left' | 'right'
+
 export type HumanLogTable = {
   rows: readonly HumanLogTableRow[]
   columns?: readonly string[]
+  align?: Readonly<Record<string, HumanLogTableAlign>>
 }
 
 export type LogEvent = {

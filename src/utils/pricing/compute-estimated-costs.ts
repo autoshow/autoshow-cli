@@ -141,7 +141,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'geminiSttModel' as const, provider: 'gemini-stt' },
       { field: 'glmSttModel' as const, provider: 'glm-stt' },
       { field: 'togetherSttModel' as const, provider: 'together' },
-      { field: 'cloudflareSttModel' as const, provider: 'cloudflare' },
       { field: 'whisperModel' as const, provider: 'whisper' },
     ]
     for (const { field, provider } of STT_FIELD_MAP) {

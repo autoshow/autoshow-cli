@@ -22,6 +22,7 @@ export type Step1Metadata = VideoMetadata & {
   slug: string
   audioFileName: string
   audioFileSize: number
+  durationSeconds?: number | undefined
   mediaFileName?: string | undefined
   mediaFileSize?: number | undefined
   mediaKind?: 'audio' | 'video' | 'media' | undefined

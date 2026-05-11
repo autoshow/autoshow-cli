@@ -61,7 +61,7 @@ export const setupCommand = defineCommand({
       ['bun as setup --gcloud --gcloud-project my-project --gcloud-billing-account 000000-000000-000000', 'Bootstrap a Google Cloud project with an explicit billing account'],
       ['bun as setup --aws', 'Check AWS CLI auth/config for Amazon Transcribe and Textract staging'],
       ['bun as setup --aws --aws-create-bucket', 'Create a shared S3 staging bucket for Amazon Transcribe and Textract'],
-      ['bun as setup --gcloud --aws', 'Check and save both Google Cloud and AWS setup values'],
+      ['bun as setup --gcloud --aws', 'Check and save Google Cloud and AWS setup values'],
       ['bun as setup --sample --verify-only', 'Validate deterministic sample fixtures without regenerating'],
       ['bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF', 'Download Whisper and llama.cpp models without running inference'],
       ['bun as setup --doctor', 'Check prerequisites without installing'],

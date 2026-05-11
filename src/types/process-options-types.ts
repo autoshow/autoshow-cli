@@ -47,8 +47,6 @@ export const ProcessingOptionsSchema = v.pipe(
     glmSttModel: v.optional(v.string(), undefined),
     togetherSttModels: v.optional(v.array(v.string()), undefined),
     togetherSttModel: v.optional(v.string(), undefined),
-    cloudflareSttModels: v.optional(v.array(v.string()), undefined),
-    cloudflareSttModel: v.optional(v.string(), undefined),
     supadataLang: v.optional(v.string(), undefined),
     speechmaticsSttModels: v.optional(v.array(v.string()), undefined),
     speechmaticsSttModel: v.optional(v.string(), undefined),

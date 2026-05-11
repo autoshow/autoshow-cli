@@ -1,0 +1,1336 @@
+{
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/2026-05-10_04-27-00-431_document",
+  "consensusExtractionPath": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/2026-05-10_04-27-00-431_document/consensus-extraction.txt",
+  "consensusCharCount": 12591,
+  "consensusWordCount": 2359,
+  "metric": "wer",
+  "scoreFormula": "max(0, 100 * (1 - WER))",
+  "werFormula": "(Substitutions + Deletions + Insertions) / Reference Word Count",
+  "normalization": {
+    "lowercase": true,
+    "contractionsExpanded": true,
+    "abbreviationsExpanded": true,
+    "currencySymbolsExpanded": true,
+    "punctuationStripped": true
+  },
+  "overallMetric": "balanced-overall",
+  "overallWeights": {
+    "accuracy": 0.5,
+    "processingSpeed": 0.25,
+    "costEfficiency": 0.25
+  },
+  "overall": {
+    "count": 15,
+    "providers": [
+      {
+        "providerKey": "glm/glm-ocr",
+        "provider": "glm",
+        "model": "glm-ocr",
+        "group": "cloud",
+        "score": 82.49258160237389,
+        "wer": 0.17507418397626112,
+        "cer": 0.15469568062827224,
+        "werBreakdown": {
+          "substitutions": 67,
+          "deletions": 157,
+          "insertions": 189,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2341,
+        "processingTimeMs": 6345,
+        "costCents": 0.03496200000000001,
+        "overallScore": 89.99593626505425,
+        "overallComponents": {
+          "accuracy": {
+            "score": 82.49258160237389,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 95.73761900602673,
+            "source": "processing-time",
+            "processingTimeMs": 6345
+          },
+          "costEfficiency": {
+            "score": 99.26096284944248,
+            "source": "reported-cost",
+            "costCents": 0.03496200000000001
+          }
+        },
+        "overallRank": 1,
+        "rank": 3
+      },
+      {
+        "providerKey": "kimi/kimi-k2.6",
+        "provider": "kimi",
+        "model": "kimi-k2.6",
+        "group": "cloud",
+        "score": 98.30436625688851,
+        "wer": 0.01695633743111488,
+        "cer": 0.009571335078534032,
+        "werBreakdown": {
+          "substitutions": 28,
+          "deletions": 6,
+          "insertions": 6,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2304,
+        "processingTimeMs": 85163,
+        "costCents": 1.63369,
+        "overallScore": 76.21425209198051,
+        "overallComponents": {
+          "accuracy": {
+            "score": 98.30436625688851,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 42.78170078676673,
+            "source": "processing-time",
+            "processingTimeMs": 85163
+          },
+          "costEfficiency": {
+            "score": 65.46657506737832,
+            "source": "reported-cost",
+            "costCents": 1.63369
+          }
+        },
+        "overallRank": 2,
+        "rank": 1
+      },
+      {
+        "providerKey": "mistral/mistral-ocr-2512",
+        "provider": "mistral",
+        "model": "mistral-ocr-2512",
+        "group": "cloud",
+        "score": 46.969054684188215,
+        "wer": 0.5303094531581178,
+        "cer": 0.4157395287958115,
+        "werBreakdown": {
+          "substitutions": 586,
+          "deletions": 620,
+          "insertions": 45,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1755,
+        "processingTimeMs": 9998,
+        "costCents": 0.2,
+        "overallScore": 70.74842652148128,
+        "overallComponents": {
+          "accuracy": {
+            "score": 46.969054684188215,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 93.283256179579,
+            "source": "processing-time",
+            "processingTimeMs": 9998
+          },
+          "costEfficiency": {
+            "score": 95.77234053796967,
+            "source": "reported-cost",
+            "costCents": 0.2
+          }
+        },
+        "overallRank": 3,
+        "rank": 6
+      },
+      {
+        "providerKey": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "provider": "deepinfra",
+        "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "group": "cloud",
+        "score": 59.940652818991104,
+        "wer": 0.40059347181008903,
+        "cer": 0.34211387434554974,
+        "werBreakdown": {
+          "substitutions": 278,
+          "deletions": 634,
+          "insertions": 33,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1717,
+        "processingTimeMs": 54352,
+        "costCents": 0.34043999999999996,
+        "overallScore": 69.04196355612521,
+        "overallComponents": {
+          "accuracy": {
+            "score": 59.940652818991104,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 63.48287052278667,
+            "source": "processing-time",
+            "processingTimeMs": 54352
+          },
+          "costEfficiency": {
+            "score": 92.80367806373197,
+            "source": "reported-cost",
+            "costCents": 0.34043999999999996
+          }
+        },
+        "overallRank": 4,
+        "rank": 5
+      },
+      {
+        "providerKey": "deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "provider": "deepinfra",
+        "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "group": "cloud",
+        "score": 72.99703264094956,
+        "wer": 0.27002967359050445,
+        "cer": 0.24983638743455497,
+        "werBreakdown": {
+          "substitutions": 75,
+          "deletions": 546,
+          "insertions": 16,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1781,
+        "processingTimeMs": 92809,
+        "costCents": 0.478704,
+        "overallScore": 68.37990377974272,
+        "overallComponents": {
+          "accuracy": {
+            "score": 72.99703264094956,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 37.6445373126306,
+            "source": "processing-time",
+            "processingTimeMs": 92809
+          },
+          "costEfficiency": {
+            "score": 89.88101252444115,
+            "source": "reported-cost",
+            "costCents": 0.478704
+          }
+        },
+        "overallRank": 5,
+        "rank": 4
+      },
+      {
+        "providerKey": "gemini/gemini-3.1-flash-lite-preview",
+        "provider": "gemini",
+        "model": "gemini-3.1-flash-lite-preview",
+        "group": "cloud",
+        "score": 16.108520559559135,
+        "wer": 0.8389147944044086,
+        "cer": 0.7954842931937173,
+        "werBreakdown": {
+          "substitutions": 60,
+          "deletions": 1855,
+          "insertions": 64,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 553,
+        "processingTimeMs": 6052,
+        "costCents": 0.1507,
+        "overallScore": 56.24149459308475,
+        "overallComponents": {
+          "accuracy": {
+            "score": 16.108520559559135,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 95.93447865786061,
+            "source": "processing-time",
+            "processingTimeMs": 6052
+          },
+          "costEfficiency": {
+            "score": 96.81445859536014,
+            "source": "reported-cost",
+            "costCents": 0.1507
+          }
+        },
+        "overallRank": 6,
+        "rank": 9
+      },
+      {
+        "providerKey": "gemini/gemini-3.1-pro-preview",
+        "provider": "gemini",
+        "model": "gemini-3.1-pro-preview",
+        "group": "cloud",
+        "score": 98.13480288257736,
+        "wer": 0.018651971174226366,
+        "cer": 0.009407722513089006,
+        "werBreakdown": {
+          "substitutions": 29,
+          "deletions": 7,
+          "insertions": 8,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2307,
+        "processingTimeMs": 148838,
+        "costCents": 3.7388,
+        "overallScore": 54.30943494548991,
+        "overallComponents": {
+          "accuracy": {
+            "score": 98.13480288257736,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 0,
+            "source": "processing-time",
+            "processingTimeMs": 148838
+          },
+          "costEfficiency": {
+            "score": 20.96813401680494,
+            "source": "reported-cost",
+            "costCents": 3.7388
+          }
+        },
+        "overallRank": 7,
+        "rank": 2
+      },
+      {
+        "providerKey": "ocrmypdf/ocrmypdf",
+        "provider": "ocrmypdf",
+        "model": "ocrmypdf",
+        "group": "local",
+        "score": 12.929207291225097,
+        "wer": 0.870707927087749,
+        "cer": 0.6293357329842932,
+        "werBreakdown": {
+          "substitutions": 1813,
+          "deletions": 152,
+          "insertions": 89,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2287,
+        "processingTimeMs": 19546,
+        "costCents": 0,
+        "overallScore": 53.18164981020872,
+        "overallComponents": {
+          "accuracy": {
+            "score": 12.929207291225097,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 86.86818465838468,
+            "source": "processing-time",
+            "processingTimeMs": 19546
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 8,
+        "rank": 1
+      },
+      {
+        "providerKey": "openai/gpt-5.4-nano",
+        "provider": "openai",
+        "model": "gpt-5.4-nano",
+        "group": "cloud",
+        "score": 10.04662992793557,
+        "wer": 0.8995337007206443,
+        "cer": 0.831151832460733,
+        "werBreakdown": {
+          "substitutions": 210,
+          "deletions": 1906,
+          "insertions": 6,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 441,
+        "processingTimeMs": 11235,
+        "costCents": 0.13139,
+        "overallScore": 52.44201115203003,
+        "overallComponents": {
+          "accuracy": {
+            "score": 10.04662992793557,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 92.4521456358298,
+            "source": "processing-time",
+            "processingTimeMs": 11235
+          },
+          "costEfficiency": {
+            "score": 97.22263911641917,
+            "source": "reported-cost",
+            "costCents": 0.13139
+          }
+        },
+        "overallRank": 9,
+        "rank": 10
+      },
+      {
+        "providerKey": "paddle-ocr/paddle-ocr",
+        "provider": "paddle-ocr",
+        "model": "paddle-ocr",
+        "group": "local",
+        "score": 4.832556167867741,
+        "wer": 0.9516744383213226,
+        "cer": 0.8315608638743456,
+        "werBreakdown": {
+          "substitutions": 460,
+          "deletions": 1774,
+          "insertions": 11,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 549,
+        "processingTimeMs": 1,
+        "costCents": 0,
+        "overallScore": 52.416278083933875,
+        "overallComponents": {
+          "accuracy": {
+            "score": 4.832556167867741,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 100,
+            "source": "processing-time",
+            "processingTimeMs": 1
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 10,
+        "rank": 2
+      },
+      {
+        "providerKey": "tesseract/tesseract",
+        "provider": "tesseract",
+        "model": "tesseract",
+        "group": "local",
+        "score": 4.832556167867741,
+        "wer": 0.9516744383213226,
+        "cer": 0.8315608638743456,
+        "werBreakdown": {
+          "substitutions": 460,
+          "deletions": 1774,
+          "insertions": 11,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 549,
+        "processingTimeMs": 29,
+        "costCents": 0,
+        "overallScore": 52.411574952320095,
+        "overallComponents": {
+          "accuracy": {
+            "score": 4.832556167867741,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 99.98118747354489,
+            "source": "processing-time",
+            "processingTimeMs": 29
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 11,
+        "rank": 3
+      },
+      {
+        "providerKey": "aws-textract/detect-text",
+        "provider": "aws-textract",
+        "model": "detect-text",
+        "group": "cloud",
+        "score": 4.57821110640102,
+        "wer": 0.9542178889359898,
+        "cer": 0.7199770942408377,
+        "werBreakdown": {
+          "substitutions": 2158,
+          "deletions": 43,
+          "insertions": 50,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2329,
+        "processingTimeMs": 18164,
+        "costCents": 0.15,
+        "overallScore": 48.44559870760322,
+        "overallComponents": {
+          "accuracy": {
+            "score": 4.57821110640102,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 87.79671721413358,
+            "source": "processing-time",
+            "processingTimeMs": 18164
+          },
+          "costEfficiency": {
+            "score": 96.82925540347725,
+            "source": "reported-cost",
+            "costCents": 0.15
+          }
+        },
+        "overallRank": 12,
+        "rank": 12
+      },
+      {
+        "providerKey": "gcloud-docai/ocr",
+        "provider": "gcloud-docai",
+        "model": "ocr",
+        "group": "cloud",
+        "score": 5.595591352267915,
+        "wer": 0.9440440864773209,
+        "cer": 0.6879090314136126,
+        "werBreakdown": {
+          "substitutions": 1823,
+          "deletions": 95,
+          "insertions": 309,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2496,
+        "processingTimeMs": 30727,
+        "costCents": 0.15,
+        "overallScore": 46.84409445682583,
+        "overallComponents": {
+          "accuracy": {
+            "score": 5.595591352267915,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 79.35593971929022,
+            "source": "processing-time",
+            "processingTimeMs": 30727
+          },
+          "costEfficiency": {
+            "score": 96.82925540347725,
+            "source": "reported-cost",
+            "costCents": 0.15
+          }
+        },
+        "overallRank": 13,
+        "rank": 11
+      },
+      {
+        "providerKey": "anthropic/claude-haiku-4-5",
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5",
+        "group": "cloud",
+        "score": 18.524798643493,
+        "wer": 0.81475201356507,
+        "cer": 0.6172284031413613,
+        "werBreakdown": {
+          "substitutions": 1738,
+          "deletions": 168,
+          "insertions": 16,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2165,
+        "processingTimeMs": 47643,
+        "costCents": 2.0149,
+        "overallScore": 40.61213206834567,
+        "overallComponents": {
+          "accuracy": {
+            "score": 18.524798643493,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 67.99048623662128,
+            "source": "processing-time",
+            "processingTimeMs": 47643
+          },
+          "costEfficiency": {
+            "score": 57.4084447497754,
+            "source": "reported-cost",
+            "costCents": 2.0149
+          }
+        },
+        "overallRank": 14,
+        "rank": 8
+      },
+      {
+        "providerKey": "openai/gpt-5.4",
+        "provider": "openai",
+        "model": "gpt-5.4",
+        "group": "cloud",
+        "score": 41.20389995760916,
+        "wer": 0.5879610004239084,
+        "cer": 0.4232657068062827,
+        "werBreakdown": {
+          "substitutions": 939,
+          "deletions": 389,
+          "insertions": 59,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1984,
+        "processingTimeMs": 59779,
+        "costCents": 4.73075,
+        "overallScore": 35.56109992135919,
+        "overallComponents": {
+          "accuracy": {
+            "score": 41.20389995760916,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 59.83659977021843,
+            "source": "processing-time",
+            "processingTimeMs": 59779
+          },
+          "costEfficiency": {
+            "score": 0,
+            "source": "reported-cost",
+            "costCents": 4.73075
+          }
+        },
+        "overallRank": 15,
+        "rank": 7
+      }
+    ]
+  },
+  "local": {
+    "count": 3,
+    "providers": [
+      {
+        "providerKey": "ocrmypdf/ocrmypdf",
+        "provider": "ocrmypdf",
+        "model": "ocrmypdf",
+        "group": "local",
+        "score": 12.929207291225097,
+        "wer": 0.870707927087749,
+        "cer": 0.6293357329842932,
+        "werBreakdown": {
+          "substitutions": 1813,
+          "deletions": 152,
+          "insertions": 89,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2287,
+        "processingTimeMs": 19546,
+        "costCents": 0,
+        "overallScore": 53.18164981020872,
+        "overallComponents": {
+          "accuracy": {
+            "score": 12.929207291225097,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 86.86818465838468,
+            "source": "processing-time",
+            "processingTimeMs": 19546
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 8,
+        "rank": 1
+      },
+      {
+        "providerKey": "paddle-ocr/paddle-ocr",
+        "provider": "paddle-ocr",
+        "model": "paddle-ocr",
+        "group": "local",
+        "score": 4.832556167867741,
+        "wer": 0.9516744383213226,
+        "cer": 0.8315608638743456,
+        "werBreakdown": {
+          "substitutions": 460,
+          "deletions": 1774,
+          "insertions": 11,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 549,
+        "processingTimeMs": 1,
+        "costCents": 0,
+        "overallScore": 52.416278083933875,
+        "overallComponents": {
+          "accuracy": {
+            "score": 4.832556167867741,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 100,
+            "source": "processing-time",
+            "processingTimeMs": 1
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 10,
+        "rank": 2
+      },
+      {
+        "providerKey": "tesseract/tesseract",
+        "provider": "tesseract",
+        "model": "tesseract",
+        "group": "local",
+        "score": 4.832556167867741,
+        "wer": 0.9516744383213226,
+        "cer": 0.8315608638743456,
+        "werBreakdown": {
+          "substitutions": 460,
+          "deletions": 1774,
+          "insertions": 11,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 549,
+        "processingTimeMs": 29,
+        "costCents": 0,
+        "overallScore": 52.411574952320095,
+        "overallComponents": {
+          "accuracy": {
+            "score": 4.832556167867741,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 99.98118747354489,
+            "source": "processing-time",
+            "processingTimeMs": 29
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 11,
+        "rank": 3
+      }
+    ]
+  },
+  "cloud": {
+    "count": 12,
+    "providers": [
+      {
+        "providerKey": "kimi/kimi-k2.6",
+        "provider": "kimi",
+        "model": "kimi-k2.6",
+        "group": "cloud",
+        "score": 98.30436625688851,
+        "wer": 0.01695633743111488,
+        "cer": 0.009571335078534032,
+        "werBreakdown": {
+          "substitutions": 28,
+          "deletions": 6,
+          "insertions": 6,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2304,
+        "processingTimeMs": 85163,
+        "costCents": 1.63369,
+        "overallScore": 76.21425209198051,
+        "overallComponents": {
+          "accuracy": {
+            "score": 98.30436625688851,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 42.78170078676673,
+            "source": "processing-time",
+            "processingTimeMs": 85163
+          },
+          "costEfficiency": {
+            "score": 65.46657506737832,
+            "source": "reported-cost",
+            "costCents": 1.63369
+          }
+        },
+        "overallRank": 2,
+        "rank": 1
+      },
+      {
+        "providerKey": "gemini/gemini-3.1-pro-preview",
+        "provider": "gemini",
+        "model": "gemini-3.1-pro-preview",
+        "group": "cloud",
+        "score": 98.13480288257736,
+        "wer": 0.018651971174226366,
+        "cer": 0.009407722513089006,
+        "werBreakdown": {
+          "substitutions": 29,
+          "deletions": 7,
+          "insertions": 8,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2307,
+        "processingTimeMs": 148838,
+        "costCents": 3.7388,
+        "overallScore": 54.30943494548991,
+        "overallComponents": {
+          "accuracy": {
+            "score": 98.13480288257736,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 0,
+            "source": "processing-time",
+            "processingTimeMs": 148838
+          },
+          "costEfficiency": {
+            "score": 20.96813401680494,
+            "source": "reported-cost",
+            "costCents": 3.7388
+          }
+        },
+        "overallRank": 7,
+        "rank": 2
+      },
+      {
+        "providerKey": "glm/glm-ocr",
+        "provider": "glm",
+        "model": "glm-ocr",
+        "group": "cloud",
+        "score": 82.49258160237389,
+        "wer": 0.17507418397626112,
+        "cer": 0.15469568062827224,
+        "werBreakdown": {
+          "substitutions": 67,
+          "deletions": 157,
+          "insertions": 189,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2341,
+        "processingTimeMs": 6345,
+        "costCents": 0.03496200000000001,
+        "overallScore": 89.99593626505425,
+        "overallComponents": {
+          "accuracy": {
+            "score": 82.49258160237389,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 95.73761900602673,
+            "source": "processing-time",
+            "processingTimeMs": 6345
+          },
+          "costEfficiency": {
+            "score": 99.26096284944248,
+            "source": "reported-cost",
+            "costCents": 0.03496200000000001
+          }
+        },
+        "overallRank": 1,
+        "rank": 3
+      },
+      {
+        "providerKey": "deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "provider": "deepinfra",
+        "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "group": "cloud",
+        "score": 72.99703264094956,
+        "wer": 0.27002967359050445,
+        "cer": 0.24983638743455497,
+        "werBreakdown": {
+          "substitutions": 75,
+          "deletions": 546,
+          "insertions": 16,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1781,
+        "processingTimeMs": 92809,
+        "costCents": 0.478704,
+        "overallScore": 68.37990377974272,
+        "overallComponents": {
+          "accuracy": {
+            "score": 72.99703264094956,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 37.6445373126306,
+            "source": "processing-time",
+            "processingTimeMs": 92809
+          },
+          "costEfficiency": {
+            "score": 89.88101252444115,
+            "source": "reported-cost",
+            "costCents": 0.478704
+          }
+        },
+        "overallRank": 5,
+        "rank": 4
+      },
+      {
+        "providerKey": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "provider": "deepinfra",
+        "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "group": "cloud",
+        "score": 59.940652818991104,
+        "wer": 0.40059347181008903,
+        "cer": 0.34211387434554974,
+        "werBreakdown": {
+          "substitutions": 278,
+          "deletions": 634,
+          "insertions": 33,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1717,
+        "processingTimeMs": 54352,
+        "costCents": 0.34043999999999996,
+        "overallScore": 69.04196355612521,
+        "overallComponents": {
+          "accuracy": {
+            "score": 59.940652818991104,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 63.48287052278667,
+            "source": "processing-time",
+            "processingTimeMs": 54352
+          },
+          "costEfficiency": {
+            "score": 92.80367806373197,
+            "source": "reported-cost",
+            "costCents": 0.34043999999999996
+          }
+        },
+        "overallRank": 4,
+        "rank": 5
+      },
+      {
+        "providerKey": "mistral/mistral-ocr-2512",
+        "provider": "mistral",
+        "model": "mistral-ocr-2512",
+        "group": "cloud",
+        "score": 46.969054684188215,
+        "wer": 0.5303094531581178,
+        "cer": 0.4157395287958115,
+        "werBreakdown": {
+          "substitutions": 586,
+          "deletions": 620,
+          "insertions": 45,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1755,
+        "processingTimeMs": 9998,
+        "costCents": 0.2,
+        "overallScore": 70.74842652148128,
+        "overallComponents": {
+          "accuracy": {
+            "score": 46.969054684188215,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 93.283256179579,
+            "source": "processing-time",
+            "processingTimeMs": 9998
+          },
+          "costEfficiency": {
+            "score": 95.77234053796967,
+            "source": "reported-cost",
+            "costCents": 0.2
+          }
+        },
+        "overallRank": 3,
+        "rank": 6
+      },
+      {
+        "providerKey": "openai/gpt-5.4",
+        "provider": "openai",
+        "model": "gpt-5.4",
+        "group": "cloud",
+        "score": 41.20389995760916,
+        "wer": 0.5879610004239084,
+        "cer": 0.4232657068062827,
+        "werBreakdown": {
+          "substitutions": 939,
+          "deletions": 389,
+          "insertions": 59,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 1984,
+        "processingTimeMs": 59779,
+        "costCents": 4.73075,
+        "overallScore": 35.56109992135919,
+        "overallComponents": {
+          "accuracy": {
+            "score": 41.20389995760916,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 59.83659977021843,
+            "source": "processing-time",
+            "processingTimeMs": 59779
+          },
+          "costEfficiency": {
+            "score": 0,
+            "source": "reported-cost",
+            "costCents": 4.73075
+          }
+        },
+        "overallRank": 15,
+        "rank": 7
+      },
+      {
+        "providerKey": "anthropic/claude-haiku-4-5",
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5",
+        "group": "cloud",
+        "score": 18.524798643493,
+        "wer": 0.81475201356507,
+        "cer": 0.6172284031413613,
+        "werBreakdown": {
+          "substitutions": 1738,
+          "deletions": 168,
+          "insertions": 16,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2165,
+        "processingTimeMs": 47643,
+        "costCents": 2.0149,
+        "overallScore": 40.61213206834567,
+        "overallComponents": {
+          "accuracy": {
+            "score": 18.524798643493,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 67.99048623662128,
+            "source": "processing-time",
+            "processingTimeMs": 47643
+          },
+          "costEfficiency": {
+            "score": 57.4084447497754,
+            "source": "reported-cost",
+            "costCents": 2.0149
+          }
+        },
+        "overallRank": 14,
+        "rank": 8
+      },
+      {
+        "providerKey": "gemini/gemini-3.1-flash-lite-preview",
+        "provider": "gemini",
+        "model": "gemini-3.1-flash-lite-preview",
+        "group": "cloud",
+        "score": 16.108520559559135,
+        "wer": 0.8389147944044086,
+        "cer": 0.7954842931937173,
+        "werBreakdown": {
+          "substitutions": 60,
+          "deletions": 1855,
+          "insertions": 64,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 553,
+        "processingTimeMs": 6052,
+        "costCents": 0.1507,
+        "overallScore": 56.24149459308475,
+        "overallComponents": {
+          "accuracy": {
+            "score": 16.108520559559135,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 95.93447865786061,
+            "source": "processing-time",
+            "processingTimeMs": 6052
+          },
+          "costEfficiency": {
+            "score": 96.81445859536014,
+            "source": "reported-cost",
+            "costCents": 0.1507
+          }
+        },
+        "overallRank": 6,
+        "rank": 9
+      },
+      {
+        "providerKey": "openai/gpt-5.4-nano",
+        "provider": "openai",
+        "model": "gpt-5.4-nano",
+        "group": "cloud",
+        "score": 10.04662992793557,
+        "wer": 0.8995337007206443,
+        "cer": 0.831151832460733,
+        "werBreakdown": {
+          "substitutions": 210,
+          "deletions": 1906,
+          "insertions": 6,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 441,
+        "processingTimeMs": 11235,
+        "costCents": 0.13139,
+        "overallScore": 52.44201115203003,
+        "overallComponents": {
+          "accuracy": {
+            "score": 10.04662992793557,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 92.4521456358298,
+            "source": "processing-time",
+            "processingTimeMs": 11235
+          },
+          "costEfficiency": {
+            "score": 97.22263911641917,
+            "source": "reported-cost",
+            "costCents": 0.13139
+          }
+        },
+        "overallRank": 9,
+        "rank": 10
+      },
+      {
+        "providerKey": "gcloud-docai/ocr",
+        "provider": "gcloud-docai",
+        "model": "ocr",
+        "group": "cloud",
+        "score": 5.595591352267915,
+        "wer": 0.9440440864773209,
+        "cer": 0.6879090314136126,
+        "werBreakdown": {
+          "substitutions": 1823,
+          "deletions": 95,
+          "insertions": 309,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2496,
+        "processingTimeMs": 30727,
+        "costCents": 0.15,
+        "overallScore": 46.84409445682583,
+        "overallComponents": {
+          "accuracy": {
+            "score": 5.595591352267915,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 79.35593971929022,
+            "source": "processing-time",
+            "processingTimeMs": 30727
+          },
+          "costEfficiency": {
+            "score": 96.82925540347725,
+            "source": "reported-cost",
+            "costCents": 0.15
+          }
+        },
+        "overallRank": 13,
+        "rank": 11
+      },
+      {
+        "providerKey": "aws-textract/detect-text",
+        "provider": "aws-textract",
+        "model": "detect-text",
+        "group": "cloud",
+        "score": 4.57821110640102,
+        "wer": 0.9542178889359898,
+        "cer": 0.7199770942408377,
+        "werBreakdown": {
+          "substitutions": 2158,
+          "deletions": 43,
+          "insertions": 50,
+          "referenceCount": 2359
+        },
+        "cerBreakdown": {
+          "substitutions": -1,
+          "deletions": -1,
+          "insertions": -1,
+          "referenceCount": 12224
+        },
+        "tokenEstimate": 2329,
+        "processingTimeMs": 18164,
+        "costCents": 0.15,
+        "overallScore": 48.44559870760322,
+        "overallComponents": {
+          "accuracy": {
+            "score": 4.57821110640102,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 87.79671721413358,
+            "source": "processing-time",
+            "processingTimeMs": 18164
+          },
+          "costEfficiency": {
+            "score": 96.82925540347725,
+            "source": "reported-cost",
+            "costCents": 0.15
+          }
+        },
+        "overallRank": 12,
+        "rank": 12
+      }
+    ]
+  },
+  "notes": [
+    "Best overall provider: `glm/glm-ocr` scored 90.00/100 using balanced overall weighting.",
+    "Worst overall provider: `openai/gpt-5.4` scored 35.56/100 using balanced overall weighting.",
+    "Best local model: `ocrmypdf/ocrmypdf` scored 12.93/100.",
+    "Best cloud service: `kimi/kimi-k2.6` scored 98.30/100.",
+    "The cheapest cloud provider was `glm/glm-ocr` at 0.0350¢ ($0.0003).",
+    "Fastest local model: `paddle-ocr/paddle-ocr` at 0.00s.",
+    "Fastest cloud service: `gemini/gemini-3.1-flash-lite-preview` at 6.05s."
+  ]
+}

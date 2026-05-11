@@ -1,11 +1,12 @@
 import { createSingleRowTable } from '~/utils/logger/human-table'
+import { formatEstimatedCost } from '~/utils/logger/formatters'
 import type { HumanLogTable, SuitePriceSummary, TableLogger } from '~/types'
 
 export const buildSuitePriceSummaryRows = (
   summary: SuitePriceSummary
 ): Array<{ checked: string, totalEstimatedCost: string }> => [{
   checked: `${summary.checkedCount} ${summary.checkedLabel}`,
-  totalEstimatedCost: `${summary.totalEstimatedCost.toFixed(5)}¢`
+  totalEstimatedCost: formatEstimatedCost(summary.totalEstimatedCost)
 }]
 
 export const buildSuitePriceSummaryTable = (

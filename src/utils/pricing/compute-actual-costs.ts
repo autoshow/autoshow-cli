@@ -30,10 +30,14 @@ import {
   computeSupadataActualCost,
   getSupadataCreditRateCents
 } from './supadata-pricing'
+import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
 
 const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
+  if (metadata.transcriptionService === 'reverb') {
+    return resolveReverbModelLabel(metadata.transcriptionModel)
+  }
   if (metadata.transcriptionService !== 'whisper') {
     return metadata.transcriptionModel
   }
@@ -46,6 +50,25 @@ const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
 
 const isExtractionMetadata = (metadata: Step2Metadata | ExtractionMetadata): metadata is ExtractionMetadata => {
   return 'extractionMethod' in metadata
+}
+
+const normalizeDurationSeconds = (value: number): number =>
+  Number.isFinite(value) ? Math.max(0, value) : 0
+
+const resolveSttBillingDurationSeconds = (input: ComputeActualCostsInput): number => {
+  if (typeof input.audioDurationSeconds === 'number') {
+    return normalizeDurationSeconds(input.audioDurationSeconds)
+  }
+
+  if (typeof input.step1?.durationSeconds === 'number') {
+    return normalizeDurationSeconds(input.step1.durationSeconds)
+  }
+
+  if (input.step1) {
+    return normalizeDurationSeconds(parseDurationToSeconds(input.step1.duration))
+  }
+
+  return 0
 }
 
 const resolveExtractionProviderModel = (
@@ -301,8 +324,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     }
   }
 
-  if (input.step1 && input.step2 && !Array.isArray(input.step2) && !isExtractionMetadata(input.step2)) {
-    const durationSeconds = parseDurationToSeconds(input.step1.duration)
+  if (input.step2 && !Array.isArray(input.step2) && !isExtractionMetadata(input.step2)) {
+    const durationSeconds = resolveSttBillingDurationSeconds(input)
     const service = input.step2.transcriptionService
     const model = resolveTranscriptionModel(input.step2)
     const actual = computeActualSttCharge(input.step2, durationSeconds)
@@ -357,8 +380,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     }
   }
 
-  if (input.step1 && Array.isArray(input.step2) && !input.step2.every(isExtractionMetadata)) {
-    const durationSeconds = parseDurationToSeconds(input.step1.duration)
+  if (Array.isArray(input.step2) && !input.step2.every(isExtractionMetadata)) {
+    const durationSeconds = resolveSttBillingDurationSeconds(input)
     for (const step2Entry of input.step2) {
       const service = step2Entry.transcriptionService
       const model = resolveTranscriptionModel(step2Entry)

@@ -324,12 +324,28 @@ export function loadRunJson(runDir: string): RunJson {
   return readJson<RunJson>(join(runDir, "run.json"));
 }
 
-export function durationSecondsFromRun(runJson: RunJson): number {
-  const duration = runJson.metadata?.step1?.duration;
-  if (!duration) {
-    throw new Error("run.json is missing metadata.step1.duration");
+export function durationSecondsFromRun(runJson: RunJson, providers: ProviderRun[] = []): number {
+  const duration = runJson.metadata?.step1?.duration?.trim();
+  if (duration && duration.toLowerCase() !== "unknown") {
+    return parseClock(duration);
   }
-  return parseClock(duration);
+
+  const fallbackDuration = Math.max(
+    0,
+    ...providers.flatMap((provider) =>
+      provider.segments
+        .map((segment) => segment.end)
+        .filter((end) => Number.isFinite(end) && end > 0),
+    ),
+  );
+  if (fallbackDuration > 0) {
+    return fallbackDuration;
+  }
+
+  if (!duration) {
+    throw new Error("run.json is missing metadata.step1.duration and provider segment ends are unavailable");
+  }
+  throw new Error(`run.json metadata.step1.duration is ${JSON.stringify(duration)} and provider segment ends are unavailable`);
 }
 
 function makeProviderLookupKey(provider: string, model: string): string {

@@ -1,6 +1,7 @@
 import type {
   BatchItemTableRow,
   HumanLogTable,
+  HumanLogTableAlign,
   HumanLogTableCell,
   HumanLogTableRow,
   HumanTableLogOptions,
@@ -97,8 +98,17 @@ const shouldRenderHeader = (columns: readonly string[]): boolean =>
     )
   )
 
-const padColoredTableCell = (coloredValue: string, plainValue: string, width: number): string =>
-  `${coloredValue}${' '.repeat(Math.max(0, width - plainValue.length))}`
+const padColoredTableCell = (
+  coloredValue: string,
+  plainValue: string,
+  width: number,
+  align: HumanLogTableAlign = 'left'
+): string => {
+  const padding = ' '.repeat(Math.max(0, width - plainValue.length))
+  return align === 'right'
+    ? `${padding}${coloredValue}`
+    : `${coloredValue}${padding}`
+}
 
 const renderBorder = (
   left: string,
@@ -125,7 +135,7 @@ const renderTableRow = (
   values: readonly string[],
   widths: readonly number[],
   columns: readonly string[],
-  options: { header?: boolean } = {}
+  options: { header?: boolean; align?: HumanLogTable['align'] } = {}
 ): string => {
   const row = createStringRow(columns, values)
   const vertical = colorizeHumanTableBorder(tableChars.vertical)
@@ -133,20 +143,23 @@ const renderTableRow = (
     .map((value, index) => {
       const width = widths[index] ?? 0
       const column = columns[index] ?? ''
+      const align = options.align?.[column] ?? 'left'
       const coloredValue = options.header
         ? colorizeHumanTableHeader(value)
         : colorizeHumanTableCell({ column, value, row })
-      return ` ${padColoredTableCell(coloredValue, value, width)} `
+      return ` ${padColoredTableCell(coloredValue, value, width, align)} `
     })
     .join(vertical)}${vertical}`
 }
 
 export const createHumanTable = (
   rows: readonly HumanLogTableRow[],
-  columns?: readonly string[]
+  columns?: readonly string[],
+  options: Pick<HumanLogTable, 'align'> = {}
 ): HumanLogTable => ({
   rows,
-  ...(columns ? { columns } : {})
+  ...(columns ? { columns } : {}),
+  ...(options.align ? { align: options.align } : {})
 })
 
 export const createKeyValueTable = (
@@ -291,11 +304,11 @@ export const renderHumanTable = (table: HumanLogTable): string => {
     renderBorder(tableChars.topLeft, tableChars.topJoin, tableChars.topRight, widths),
     ...(renderHeader
       ? [
-          renderTableRow(columns, widths, columns, { header: true }),
+          renderTableRow(columns, widths, columns, { header: true, align: table.align }),
           renderBorder(tableChars.leftJoin, tableChars.crossJoin, tableChars.rightJoin, widths)
         ]
       : []),
-    ...rows.map(row => renderTableRow(row, widths, columns)),
+    ...rows.map(row => renderTableRow(row, widths, columns, { align: table.align })),
     renderBorder(tableChars.bottomLeft, tableChars.bottomJoin, tableChars.bottomRight, widths)
   ]
 

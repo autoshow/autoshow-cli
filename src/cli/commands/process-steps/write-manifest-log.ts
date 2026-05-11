@@ -1,6 +1,7 @@
 import { l } from '~/utils/logger'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
 import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
+import { resolveReverbModelLabel } from './step-2-extract/step-2-stt/stt-model-labels'
 import type {
   ActualCostBreakdown,
   EstimatedCostBreakdown,
@@ -175,7 +176,8 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
 
 const buildProviderModelLabel = (provider: string, model: string): string => {
   const displayProvider = provider === 'whisper' ? 'whisper.cpp' : provider
-  return `${displayProvider}/${model}`
+  const displayModel = provider === 'reverb' ? resolveReverbModelLabel(model) : model
+  return `${displayProvider}/${displayModel}`
 }
 
 const buildStep2SummaryRows = (metadata: WriteManifestMetadata): SummaryBaseRow[] => {
@@ -198,7 +200,7 @@ const buildStep2SummaryRows = (metadata: WriteManifestMetadata): SummaryBaseRow[
     const model = provider === 'whisper'
       ? resolveWhisperModel(entry.transcriptionModel)
       : provider === 'reverb'
-        ? 'reverb'
+        ? resolveReverbModelLabel(entry.transcriptionModel)
         : entry.transcriptionModel
     return {
       stepKey: 'stt' as const,
@@ -519,7 +521,7 @@ const buildPromptUsage = (
     const model = entry.transcriptionService === 'whisper'
       ? resolveWhisperModel(entry.transcriptionModel)
       : entry.transcriptionService === 'reverb'
-        ? 'reverb'
+        ? resolveReverbModelLabel(entry.transcriptionModel)
         : entry.transcriptionModel
     rows.push({
       step: 'Transcribe',

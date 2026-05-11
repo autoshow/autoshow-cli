@@ -168,36 +168,6 @@
       }
     }
   },
-  "cloudflare": {
-    "description": "Cloudflare Workers AI Whisper speech-to-text",
-    "type": "api",
-    "models": {
-      "whisper-large-v3-turbo": {
-        "description": "Cloudflare Workers AI OpenAI Whisper large v3 turbo",
-        "costPerHourUSD": 0.0306,
-        "costPerHourCents": 3.06,
-        "limits": {
-          "notes": "Cloudflare model docs do not publish a clear file-size or duration cap for the Workers AI STT endpoint. AutoShow keeps split policy notes-only and relies on retry-with-split for provider size errors."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 80
-        }
-      },
-      "whisper": {
-        "description": "Cloudflare Workers AI OpenAI Whisper",
-        "costPerHourUSD": 0.027,
-        "costPerHourCents": 2.7,
-        "limits": {
-          "notes": "Cloudflare model docs do not publish a clear file-size or duration cap for the Workers AI STT endpoint. AutoShow keeps split policy notes-only and relies on retry-with-split for provider size errors."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 60
-        }
-      }
-    }
-  },
   "deapi": {
     "description": "deAPI hosted Whisper transcription with exact provider quote support",
     "type": "api",

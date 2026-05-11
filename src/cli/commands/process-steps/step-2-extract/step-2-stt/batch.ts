@@ -5,6 +5,7 @@ export {
 } from './stt-batch/stt-batch'
 
 export {
+  buildSttProviderSlotSummaries,
   describeSttBatchProviderSlotLimits
 } from './stt-batch/stt-batch-policy'
 

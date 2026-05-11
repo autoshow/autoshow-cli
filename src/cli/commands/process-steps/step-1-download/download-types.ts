@@ -228,7 +228,6 @@ export type RepeatableModelFlag =
   | 'gemini-stt'
   | 'glm-stt'
   | 'together-stt'
-  | 'cloudflare-stt'
   | 'mistral-ocr'
   | 'glm-ocr'
   | 'kimi-ocr'

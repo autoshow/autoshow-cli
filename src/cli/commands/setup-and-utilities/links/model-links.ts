@@ -2,7 +2,6 @@ import assemblyLinks from './model-links/assembly.json'
 import awsLinks from './model-links/aws.json'
 import bflLinks from './model-links/bfl.json'
 import claudeLinks from './model-links/claude.json'
-import cloudflareLinks from './model-links/cloudflare.json'
 import deapiLinks from './model-links/deapi.json'
 import deepgramLinks from './model-links/deepgram.json'
 import deepinfraLinks from './model-links/deepinfra.json'
@@ -33,7 +32,6 @@ const providerLinks = [
   elevenlabsLinks,
   groqLinks,
   togetherLinks,
-  cloudflareLinks,
   driveLinks,
   openaiLinks,
   geminiLinks,

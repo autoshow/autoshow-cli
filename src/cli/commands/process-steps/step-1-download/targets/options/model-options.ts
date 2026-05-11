@@ -30,7 +30,6 @@ import {
   validateGeminiSttModel,
   validateGlmSttModel,
   validateTogetherSttModel,
-  validateCloudflareSttModel,
   validateGlmOcrModel,
   validateKimiOcrModel,
   validateAnthropicOcrModel,
@@ -133,7 +132,6 @@ export const readRuntimeModelOptions = (
   const geminiSttModels = readValidatedMany('gemini-stt', validateGeminiSttModel)
   const glmSttModels = readValidatedMany('glm-stt', validateGlmSttModel)
   const togetherSttModels = readValidatedMany('together-stt', validateTogetherSttModel)
-  const cloudflareSttModels = readValidatedMany('cloudflare-stt', validateCloudflareSttModel)
   const mistralOcrModels = readValidatedMany('mistral-ocr', validateMistralOcrModel)
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
   const kimiOcrModels = readValidatedMany('kimi-ocr', validateKimiOcrModel)
@@ -172,7 +170,6 @@ export const readRuntimeModelOptions = (
   const geminiSttModel = first(geminiSttModels)
   const glmSttModel = first(glmSttModels)
   const togetherSttModel = first(togetherSttModels)
-  const cloudflareSttModel = first(cloudflareSttModels)
   const mistralOcrModel = first(mistralOcrModels)
   const glmOcrModel = first(glmOcrModels)
   const kimiOcrModel = first(kimiOcrModels)
@@ -285,8 +282,6 @@ export const readRuntimeModelOptions = (
     glmSttModel,
     togetherSttModels,
     togetherSttModel,
-    cloudflareSttModels,
-    cloudflareSttModel,
     mistralOcrModels,
     mistralOcrModel,
     glmOcrModels,

@@ -12,6 +12,7 @@ import type {
   SttAsyncJobLifecycle,
   SttCacheEvent,
   SttProviderConcurrencySummary,
+  SttProviderSlotSummary,
   SttRunStatusSummary,
   SttSegmentLifecycle
 } from '~/types'
@@ -172,21 +173,40 @@ export const logSttRunStatus = (
 export const buildSttProviderConcurrencyTable = (
   summary: SttProviderConcurrencySummary
 ): HumanLogTable =>
-  createSingleRowTable(summary, [
+  createSingleRowTable({
+    mode: summary.mode,
+    requested: summary.requested,
+    effective: summary.effective,
+    batch: summary.batchConcurrency,
+    providers: summary.hostedProviders
+  }, [
     'mode',
     'requested',
     'effective',
-    'batchConcurrency',
-    'hostedProviders',
-    'providerSlots'
+    'batch',
+    'providers'
   ])
+
+export const buildSttProviderSlotsTable = (
+  providerSlots: readonly SttProviderSlotSummary[]
+): HumanLogTable =>
+  createHumanTable(
+    providerSlots.map((slot) => ({
+      provider: slot.provider,
+      kind: slot.kind,
+      launch: slot.launchSlots,
+      poll: slot.pollSlots ?? ''
+    })),
+    ['provider', 'kind', 'launch', 'poll']
+  )
 
 export const logSttProviderConcurrency = (
   logger: TableLogger,
   resolution: EffectiveSttProviderConcurrency,
   batchConcurrency: number,
   coordinatedAcrossBatch: boolean,
-  providerSlots: string
+  providerSlots: string,
+  providerSlotDetails: readonly SttProviderSlotSummary[]
 ): void => {
   const summary: SttProviderConcurrencySummary = {
     mode: coordinatedAcrossBatch ? 'batch_scheduler' : 'cloud_provider_concurrency',
@@ -197,10 +217,26 @@ export const logSttProviderConcurrency = (
     providerSlots
   }
 
-  logger.write('info', coordinatedAcrossBatch ? 'STT Batch Scheduler' : 'STT Provider Concurrency', {
+  const metadata = {
+    ...summary,
+    providerSlotDetails
+  }
+
+  const message = coordinatedAcrossBatch ? 'STT Batch Scheduler' : 'STT Provider Concurrency'
+
+  logger.write('info', message, {
     category: 'pipeline',
     humanTable: buildSttProviderConcurrencyTable(summary),
-    metadata: summary
+    metadata
+  })
+
+  logger.write('info', 'STT Provider Slots', {
+    category: 'pipeline',
+    humanTable: buildSttProviderSlotsTable(providerSlotDetails),
+    metadata: {
+      providerSlots,
+      providerSlotDetails
+    }
   })
 }
 
