@@ -94,6 +94,65 @@
 | 32 | `supadata-native` | 70.37 | 92.34 | 96.78 | 0.00 |
 | 33 | `happyscribe-auto` | 62.64 | 40.99 | 68.58 | 100.00 |
 
+## Tier Breakdown
+
+Tiers split the balanced overall ranking into equal thirds. When the provider count is not divisible by three, the remainder is assigned to Tier 3.
+
+### Tier 1 (overall ranks 1-11)
+
+Best balanced options across accuracy, processing speed, and cost efficiency.
+
+| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | `assemblyai-universal-3-pro` | 97.11 | 97.30 | 93.84 | 100.00 |
+| 2 | `openai-stt-gpt-4o-mini-transcribe` | 96.44 | 93.24 | 99.27 | 100.00 |
+| 3 | `groq-whisper-large-v3` | 96.34 | 93.24 | 98.86 | 100.00 |
+| 4 | `speechmatics-standard` | 96.33 | 95.95 | 93.44 | 100.00 |
+| 5 | `mistral-voxtral-mini-2602` | 96.21 | 93.69 | 97.44 | 100.00 |
+| 6 | `groq-whisper-large-v3-turbo` | 96.13 | 92.79 | 98.92 | 100.00 |
+| 7 | `gladia-default` | 95.86 | 95.50 | 92.47 | 100.00 |
+| 8 | `deepinfra-openai_whisper-large-v3-turbo` | 95.65 | 91.44 | 99.73 | 100.00 |
+| 9 | `soniox-stt-async-v4` | 95.64 | 94.14 | 94.25 | 100.00 |
+| 10 | `together-openai_whisper-large-v3` | 95.32 | 91.44 | 98.42 | 100.00 |
+| 11 | `elevenlabs-scribe_v2` | 95.22 | 92.79 | 95.29 | 100.00 |
+
+### Tier 2 (overall ranks 12-22)
+
+Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.
+
+| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 12 | `deepinfra-openai_whisper-large-v3` | 95.17 | 91.89 | 96.90 | 100.00 |
+| 13 | `gemini-stt-gemini-3-flash-preview` | 95.12 | 92.79 | 94.90 | 100.00 |
+| 14 | `openai-stt-gpt-4o-transcribe` | 95.08 | 91.44 | 97.44 | 100.00 |
+| 15 | `whisper-base` | 94.76 | 89.64 | 99.76 | 100.00 |
+| 16 | `deepgram-nova-3` | 94.75 | 89.64 | 99.72 | 100.00 |
+| 17 | `whisper-medium` | 94.39 | 90.99 | 95.58 | 100.00 |
+| 18 | `whisper-large-v3-turbo` | 94.29 | 90.09 | 96.98 | 100.00 |
+| 19 | `glm-stt-glm-asr-2512` | 94.11 | 90.54 | 95.38 | 100.00 |
+| 20 | `whisper-small` | 93.46 | 87.39 | 99.06 | 100.00 |
+| 21 | `speechmatics-enhanced` | 92.83 | 96.40 | 78.51 | 100.00 |
+| 22 | `whisper-tiny` | 92.12 | 84.23 | 100.00 | 100.00 |
+
+### Tier 3 (overall ranks 23-33)
+
+Lowest balanced options, generally weaker across the combined benchmark categories.
+
+| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 23 | `grok-speech-to-text` | 91.88 | 83.78 | 99.95 | 100.00 |
+| 24 | `rev-machine` | 90.77 | 90.99 | 81.08 | 100.00 |
+| 25 | `aws-standard` | 90.62 | 91.89 | 78.69 | 100.00 |
+| 26 | `rev-low_cost` | 88.62 | 90.99 | 72.48 | 100.00 |
+| 27 | `reverb-reverb` | 81.38 | 89.19 | 47.16 | 100.00 |
+| 28 | `deapi-WhisperLargeV3` | 79.97 | 69.82 | 91.97 | 88.29 |
+| 29 | `gcloud-chirp_3` | 72.75 | 95.50 | 0.00 | 100.00 |
+| 30 | `supadata-generate` | 71.04 | 92.34 | 99.46 | 0.00 |
+| 31 | `supadata-auto` | 70.84 | 92.34 | 98.66 | 0.00 |
+| 32 | `supadata-native` | 70.37 | 92.34 | 96.78 | 0.00 |
+| 33 | `happyscribe-auto` | 62.64 | 40.99 | 68.58 | 100.00 |
+
+
 ## Ranking
 
 | Rank | Provider | Score / 100 | Speaker-aware WER | Text-only WER | Processing Time | Actual Cost |

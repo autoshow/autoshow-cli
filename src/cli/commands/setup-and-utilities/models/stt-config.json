@@ -477,7 +477,8 @@
         "limits": {
           "effectiveBytes": 26214400,
           "directUploadBytes": 26214400,
-          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model."
+          "requestBudgetSeconds": 600,
+          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model, so AutoShow uses a conservative per-request audio budget to stay under model input limits."
         },
         "estimation": {
           "costMultiplier": 1,
@@ -491,7 +492,8 @@
         "limits": {
           "effectiveBytes": 26214400,
           "directUploadBytes": 26214400,
-          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model."
+          "requestBudgetSeconds": 600,
+          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model, so AutoShow uses a conservative per-request audio budget to stay under model input limits."
         },
         "estimation": {
           "costMultiplier": 1,

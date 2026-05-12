@@ -1,0 +1,4795 @@
+{
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/stt/2026-05-11_05-05-10-260_2023-04-05-jsjam-react-miami-2023-10-minutes",
+  "referenceTranscriptPath": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/stt/2026-05-11_05-05-10-260_2023-04-05-jsjam-react-miami-2023-10-minutes/consensus-transcription.txt",
+  "metric": "speaker-aware-wer",
+  "scoreFormula": "max(0, 100 * (1 - speakerAwareWER))",
+  "normalization": {
+    "lowercase": true,
+    "contractionsExpanded": true,
+    "abbreviationsExpanded": true,
+    "currencySymbolsExpanded": true,
+    "punctuationStripped": true,
+    "fillerWordsRemoved": true
+  },
+  "overallMetric": "balanced-overall",
+  "overallWeights": {
+    "accuracy": 0.5,
+    "processingSpeed": 0.25,
+    "costEfficiency": 0.25
+  },
+  "tierMetric": "balanced-overall",
+  "tierSplit": {
+    "method": "equal-thirds-by-overall-rank",
+    "remainderPolicy": "bottom-tier-extra",
+    "counts": {
+      "tier1": 10,
+      "tier2": 10,
+      "tier3": 11
+    }
+  },
+  "tiers": [
+    {
+      "tier": 1,
+      "label": "Tier 1",
+      "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
+      "rankRange": {
+        "start": 1,
+        "end": 10
+      },
+      "count": 10,
+      "providers": [
+        {
+          "provider": "deepinfra-openai_whisper-large-v3-turbo",
+          "providerKey": "deepinfra/openai/whisper-large-v3-turbo",
+          "overallRank": 1,
+          "overallScore": 97.0593515506433,
+          "overallComponents": {
+            "accuracy": {
+              "score": 94.8130277442702,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 99.44468404736611,
+              "source": "processing-time",
+              "processingTimeMs": 6230
+            },
+            "costEfficiency": {
+              "score": 99.16666666666667,
+              "source": "reported-cost",
+              "costCents": 0.19999999999999998
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "deepinfra-openai_whisper-large-v3",
+          "providerKey": "deepinfra/openai/whisper-large-v3",
+          "overallRank": 2,
+          "overallScore": 96.20171015037648,
+          "overallComponents": {
+            "accuracy": {
+              "score": 94.02895054282267,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 98.6239395158606,
+              "source": "processing-time",
+              "processingTimeMs": 11901
+            },
+            "costEfficiency": {
+              "score": 98.125,
+              "source": "reported-cost",
+              "costCents": 0.45
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "groq-whisper-large-v3-turbo",
+          "providerKey": "groq/whisper-large-v3-turbo",
+          "overallRank": 3,
+          "overallScore": 95.6537003217193,
+          "overallComponents": {
+            "accuracy": {
+              "score": 93.124246079614,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 99.14408690542696,
+              "source": "processing-time",
+              "processingTimeMs": 8307
+            },
+            "costEfficiency": {
+              "score": 97.22222222222221,
+              "source": "reported-cost",
+              "costCents": 0.6666666666666666
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "together-openai_whisper-large-v3",
+          "providerKey": "together/openai/whisper-large-v3",
+          "overallRank": 4,
+          "overallScore": 95.32322346177459,
+          "overallComponents": {
+            "accuracy": {
+              "score": 93.9686369119421,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 99.60562002321414,
+              "source": "processing-time",
+              "processingTimeMs": 5118
+            },
+            "costEfficiency": {
+              "score": 93.75,
+              "source": "reported-cost",
+              "costCents": 1.5
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "whisper-tiny",
+          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
+          "overallRank": 5,
+          "overallScore": 95.18615730881658,
+          "overallComponents": {
+            "accuracy": {
+              "score": 90.83232810615199,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 99.07997302296232,
+              "source": "processing-time",
+              "processingTimeMs": 8750
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "local-zero-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "mistral-voxtral-mini-2602",
+          "providerKey": "mistral/voxtral-mini-2602",
+          "overallRank": 6,
+          "overallScore": 94.86613678607884,
+          "overallComponents": {
+            "accuracy": {
+              "score": 96.68275030156815,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 98.59904654117906,
+              "source": "processing-time",
+              "processingTimeMs": 12073
+            },
+            "costEfficiency": {
+              "score": 87.5,
+              "source": "reported-cost",
+              "costCents": 3
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "whisper-large-v3-turbo",
+          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
+          "overallRank": 7,
+          "overallScore": 94.79970447387551,
+          "overallComponents": {
+            "accuracy": {
+              "score": 92.34016887816647,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 94.51848013916909,
+              "source": "processing-time",
+              "processingTimeMs": 40268
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "local-zero-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "groq-whisper-large-v3",
+          "providerKey": "groq/whisper-large-v3",
+          "overallRank": 8,
+          "overallScore": 94.73916224411253,
+          "overallComponents": {
+            "accuracy": {
+              "score": 93.9686369119421,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 98.72770848589929,
+              "source": "processing-time",
+              "processingTimeMs": 11184
+            },
+            "costEfficiency": {
+              "score": 92.29166666666667,
+              "source": "reported-cost",
+              "costCents": 1.8499999999999999
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "whisper-medium",
+          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
+          "overallRank": 9,
+          "overallScore": 94.67984745788746,
+          "overallComponents": {
+            "accuracy": {
+              "score": 92.88299155609168,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 92.95340671936646,
+              "source": "processing-time",
+              "processingTimeMs": 51082
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "local-zero-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 1
+        },
+        {
+          "provider": "whisper-small",
+          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
+          "overallRank": 10,
+          "overallScore": 94.66751204690053,
+          "overallComponents": {
+            "accuracy": {
+              "score": 90.77201447527142,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 97.12601923705927,
+              "source": "processing-time",
+              "processingTimeMs": 22251
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "local-zero-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 1
+        }
+      ]
+    },
+    {
+      "tier": 2,
+      "label": "Tier 2",
+      "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+      "rankRange": {
+        "start": 11,
+        "end": 20
+      },
+      "count": 10,
+      "providers": [
+        {
+          "provider": "happyscribe-auto",
+          "providerKey": "happyscribe/auto",
+          "overallRank": 11,
+          "overallScore": 94.58932668895913,
+          "overallComponents": {
+            "accuracy": {
+              "score": 94.14957780458384,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 90.05815114666883,
+              "source": "processing-time",
+              "processingTimeMs": 71087
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "reported-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "whisper-base",
+          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
+          "overallRank": 12,
+          "overallScore": 93.86048642710503,
+          "overallComponents": {
+            "accuracy": {
+              "score": 88.29915560916767,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 98.84363449008478,
+              "source": "processing-time",
+              "processingTimeMs": 10383
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "local-zero-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "assemblyai-universal-3-pro",
+          "providerKey": "assemblyai/universal-3-pro",
+          "overallRank": 13,
+          "overallScore": 92.77421480102194,
+          "overallComponents": {
+            "accuracy": {
+              "score": 93.90832328106153,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 97.86354597529807,
+              "source": "processing-time",
+              "processingTimeMs": 17155
+            },
+            "costEfficiency": {
+              "score": 85.41666666666666,
+              "source": "reported-cost",
+              "costCents": 3.5
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "soniox-stt-async-v4",
+          "providerKey": "soniox/stt-async-v4",
+          "overallRank": 14,
+          "overallScore": 92.53864677639328,
+          "overallComponents": {
+            "accuracy": {
+              "score": 91.01326899879373,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 95.0724935524301,
+              "source": "processing-time",
+              "processingTimeMs": 36440
+            },
+            "costEfficiency": {
+              "score": 93.05555555555556,
+              "source": "reported-cost",
+              "costCents": 1.6666666666666665
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "gemini-stt-gemini-3-flash-preview",
+          "providerKey": "gemini-stt/gemini-3-flash-preview",
+          "overallRank": 15,
+          "overallScore": 92.31736236869862,
+          "overallComponents": {
+            "accuracy": {
+              "score": 90.95295536791315,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 95.36353873896822,
+              "source": "processing-time",
+              "processingTimeMs": 34429
+            },
+            "costEfficiency": {
+              "score": 92,
+              "source": "reported-cost",
+              "costCents": 1.92
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "openai-stt-gpt-4o-mini-transcribe",
+          "providerKey": "openai-stt/gpt-4o-mini-transcribe",
+          "overallRank": 16,
+          "overallScore": 92.05219822618194,
+          "overallComponents": {
+            "accuracy": {
+              "score": 91.25452352231605,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 98.19974586009569,
+              "source": "processing-time",
+              "processingTimeMs": 14832
+            },
+            "costEfficiency": {
+              "score": 87.5,
+              "source": "reported-cost",
+              "costCents": 3
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "grok-speech-to-text",
+          "providerKey": "grok/speech-to-text",
+          "overallRank": 17,
+          "overallScore": 91.88203769982059,
+          "overallComponents": {
+            "accuracy": {
+              "score": 87.57539203860073,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 99.32181116652532,
+              "source": "processing-time",
+              "processingTimeMs": 7079
+            },
+            "costEfficiency": {
+              "score": 93.05555555555556,
+              "source": "reported-cost",
+              "costCents": 1.6666666666666665
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "glm-stt-glm-asr-2512",
+          "providerKey": "glm-stt/glm-asr-2512",
+          "overallRank": 18,
+          "overallScore": 91.62727912834967,
+          "overallComponents": {
+            "accuracy": {
+              "score": 91.25452352231605,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 94.00006946876655,
+              "source": "processing-time",
+              "processingTimeMs": 43850
+            },
+            "costEfficiency": {
+              "score": 90,
+              "source": "reported-cost",
+              "costCents": 2.4
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "rev-low_cost",
+          "providerKey": "rev/low_cost",
+          "overallRank": 19,
+          "overallScore": 90.88874960437856,
+          "overallComponents": {
+            "accuracy": {
+              "score": 90.59107358262968,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 89.31729569669936,
+              "source": "processing-time",
+              "processingTimeMs": 76206
+            },
+            "costEfficiency": {
+              "score": 93.05555555555556,
+              "source": "reported-cost",
+              "costCents": 1.6666666666666665
+            }
+          },
+          "overallTier": 2
+        },
+        {
+          "provider": "openai-stt-gpt-4o-transcribe",
+          "providerKey": "openai-stt/gpt-4o-transcribe",
+          "overallRank": 20,
+          "overallScore": 90.11226132685603,
+          "overallComponents": {
+            "accuracy": {
+              "score": 94.39083232810616,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 96.6673806512118,
+              "source": "processing-time",
+              "processingTimeMs": 25420
+            },
+            "costEfficiency": {
+              "score": 75,
+              "source": "reported-cost",
+              "costCents": 6
+            }
+          },
+          "overallTier": 2
+        }
+      ]
+    },
+    {
+      "tier": 3,
+      "label": "Tier 3",
+      "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
+      "rankRange": {
+        "start": 21,
+        "end": 31
+      },
+      "count": 11,
+      "providers": [
+        {
+          "provider": "deapi-WhisperLargeV3",
+          "providerKey": "deapi/WhisperLargeV3",
+          "overallRank": 21,
+          "overallScore": 90.10073630068538,
+          "overallComponents": {
+            "accuracy": {
+              "score": 84.74065138721352,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 93.08713409498117,
+              "source": "processing-time",
+              "processingTimeMs": 50158
+            },
+            "costEfficiency": {
+              "score": 97.83450833333333,
+              "source": "reported-cost",
+              "costCents": 0.519718
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "rev-machine",
+          "providerKey": "rev/machine",
+          "overallRank": 22,
+          "overallScore": 89.79029916593342,
+          "overallComponents": {
+            "accuracy": {
+              "score": 91.0735826296743,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 90.90292029327398,
+              "source": "processing-time",
+              "processingTimeMs": 65250
+            },
+            "costEfficiency": {
+              "score": 86.11111111111111,
+              "source": "reported-cost",
+              "costCents": 3.333333333333333
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "elevenlabs-scribe_v2",
+          "providerKey": "elevenlabs/scribe_v2",
+          "overallRank": 23,
+          "overallScore": 88.9814553140004,
+          "overallComponents": {
+            "accuracy": {
+              "score": 89.02291917973461,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 93.15776067431017,
+              "source": "processing-time",
+              "processingTimeMs": 49670
+            },
+            "costEfficiency": {
+              "score": 84.72222222222221,
+              "source": "reported-cost",
+              "costCents": 3.6666666666666665
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "speechmatics-standard",
+          "providerKey": "speechmatics/standard",
+          "overallRank": 24,
+          "overallScore": 87.55573144213706,
+          "overallComponents": {
+            "accuracy": {
+              "score": 91.85765983112184,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 97.75760610630458,
+              "source": "processing-time",
+              "processingTimeMs": 17887
+            },
+            "costEfficiency": {
+              "score": 68.75,
+              "source": "reported-cost",
+              "costCents": 7.5
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "gladia-default",
+          "providerKey": "gladia/default",
+          "overallRank": 25,
+          "overallScore": 85.49869312118119,
+          "overallComponents": {
+            "accuracy": {
+              "score": 93.60675512665863,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 97.14237334251865,
+              "source": "processing-time",
+              "processingTimeMs": 22138
+            },
+            "costEfficiency": {
+              "score": 57.638888888888886,
+              "source": "reported-cost",
+              "costCents": 10.166666666666666
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "deepgram-nova-3",
+          "providerKey": "deepgram/nova-3",
+          "overallRank": 26,
+          "overallScore": 85.01042923200643,
+          "overallComponents": {
+            "accuracy": {
+              "score": 90.2291917973462,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 100,
+              "source": "processing-time",
+              "processingTimeMs": 2393
+            },
+            "costEfficiency": {
+              "score": 59.58333333333334,
+              "source": "reported-cost",
+              "costCents": 9.7
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "speechmatics-enhanced",
+          "providerKey": "speechmatics/enhanced",
+          "overallRank": 27,
+          "overallScore": 82.73561188584631,
+          "overallComponents": {
+            "accuracy": {
+              "score": 93.4258142340169,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 96.17415240868475,
+              "source": "processing-time",
+              "processingTimeMs": 28828
+            },
+            "costEfficiency": {
+              "score": 47.916666666666664,
+              "source": "reported-cost",
+              "costCents": 12.5
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "supadata-auto",
+          "providerKey": "supadata/auto",
+          "overallRank": 28,
+          "overallScore": 76.73971995663025,
+          "overallComponents": {
+            "accuracy": {
+              "score": 95.29553679131485,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 99.70113957722467,
+              "source": "processing-time",
+              "processingTimeMs": 4458
+            },
+            "costEfficiency": {
+              "score": 16.666666666666664,
+              "source": "reported-cost",
+              "costCents": 20
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "gcloud-chirp_3",
+          "providerKey": "gcloud/chirp_3",
+          "overallRank": 29,
+          "overallScore": 74.83941066675615,
+          "overallComponents": {
+            "accuracy": {
+              "score": 91.6767189384801,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 82.67087145673109,
+              "source": "processing-time",
+              "processingTimeMs": 122130
+            },
+            "costEfficiency": {
+              "score": 33.333333333333336,
+              "source": "reported-cost",
+              "costCents": 16
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "reverb-reverb",
+          "providerKey": "reverb/reverb_asr_v1",
+          "overallRank": 30,
+          "overallScore": 71.07961399276236,
+          "overallComponents": {
+            "accuracy": {
+              "score": 92.15922798552472,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 0,
+              "source": "processing-time",
+              "processingTimeMs": 693351
+            },
+            "costEfficiency": {
+              "score": 100,
+              "source": "local-zero-cost",
+              "costCents": 0
+            }
+          },
+          "overallTier": 3
+        },
+        {
+          "provider": "aws-standard",
+          "providerKey": "aws/standard",
+          "overallRank": 31,
+          "overallScore": 67.8728556314905,
+          "overallComponents": {
+            "accuracy": {
+              "score": 89.98793727382389,
+              "source": "speaker-aware-wer"
+            },
+            "processingSpeed": {
+              "score": 91.51554797831417,
+              "source": "processing-time",
+              "processingTimeMs": 61017
+            },
+            "costEfficiency": {
+              "score": 0,
+              "source": "reported-cost",
+              "costCents": 24
+            }
+          },
+          "overallTier": 3
+        }
+      ]
+    }
+  ],
+  "overall": {
+    "count": 31,
+    "providers": [
+      {
+        "provider": "deepinfra-openai_whisper-large-v3-turbo",
+        "providerKey": "deepinfra/openai/whisper-large-v3-turbo",
+        "tokenCount": 1576,
+        "transcriptTextHash": "a50871aeb1a8caf6",
+        "segmentStats": {
+          "segmentCount": 22,
+          "timedSegmentCount": 22,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 586,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 94.8130277442702,
+        "speakerAwareWER": 0.05186972255729795,
+        "textOnlyWER": 0.04087858450274558,
+        "textOnlyBreakdown": {
+          "substitutions": 24,
+          "deletions": 19,
+          "insertions": 24,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 25,
+          "deletions": 37,
+          "insertions": 24,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 6230,
+        "actualCostCents": 0.19999999999999998,
+        "speakerPenalty": 0.010991138054552374,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 97.0593515506433,
+        "overallComponents": {
+          "accuracy": {
+            "score": 94.8130277442702,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 99.44468404736611,
+            "source": "processing-time",
+            "processingTimeMs": 6230
+          },
+          "costEfficiency": {
+            "score": 99.16666666666667,
+            "source": "reported-cost",
+            "costCents": 0.19999999999999998
+          }
+        },
+        "overallRank": 1,
+        "rank": 3,
+        "overallTier": 1
+      },
+      {
+        "provider": "deepinfra-openai_whisper-large-v3",
+        "providerKey": "deepinfra/openai/whisper-large-v3",
+        "tokenCount": 1573,
+        "transcriptTextHash": "484b043c81237d6e",
+        "segmentStats": {
+          "segmentCount": 22,
+          "timedSegmentCount": 22,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 586,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 94.02895054282267,
+        "speakerAwareWER": 0.05971049457177322,
+        "textOnlyWER": 0.048810250152532035,
+        "textOnlyBreakdown": {
+          "substitutions": 24,
+          "deletions": 26,
+          "insertions": 30,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 25,
+          "deletions": 44,
+          "insertions": 30,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 11901,
+        "actualCostCents": 0.45,
+        "speakerPenalty": 0.010900244419241187,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 96.20171015037648,
+        "overallComponents": {
+          "accuracy": {
+            "score": 94.02895054282267,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 98.6239395158606,
+            "source": "processing-time",
+            "processingTimeMs": 11901
+          },
+          "costEfficiency": {
+            "score": 98.125,
+            "source": "reported-cost",
+            "costCents": 0.45
+          }
+        },
+        "overallRank": 2,
+        "rank": 6,
+        "overallTier": 1
+      },
+      {
+        "provider": "groq-whisper-large-v3-turbo",
+        "providerKey": "groq/whisper-large-v3-turbo",
+        "tokenCount": 1579,
+        "transcriptTextHash": "47f778ff73db6c64",
+        "segmentStats": {
+          "segmentCount": 145,
+          "timedSegmentCount": 145,
+          "zeroDurationSegmentCount": 3,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 541,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 93.124246079614,
+        "speakerAwareWER": 0.06875753920386007,
+        "textOnlyWER": 0.057962172056131786,
+        "textOnlyBreakdown": {
+          "substitutions": 29,
+          "deletions": 29,
+          "insertions": 37,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 30,
+          "deletions": 47,
+          "insertions": 37,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 8307,
+        "actualCostCents": 0.6666666666666666,
+        "speakerPenalty": 0.010795367147728288,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 95.6537003217193,
+        "overallComponents": {
+          "accuracy": {
+            "score": 93.124246079614,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 99.14408690542696,
+            "source": "processing-time",
+            "processingTimeMs": 8307
+          },
+          "costEfficiency": {
+            "score": 97.22222222222221,
+            "source": "reported-cost",
+            "costCents": 0.6666666666666666
+          }
+        },
+        "overallRank": 3,
+        "rank": 12,
+        "overallTier": 1
+      },
+      {
+        "provider": "together-openai_whisper-large-v3",
+        "providerKey": "together/openai/whisper-large-v3",
+        "tokenCount": 1578,
+        "transcriptTextHash": "bb01ef877a1ede15",
+        "segmentStats": {
+          "segmentCount": 58,
+          "timedSegmentCount": 58,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 543,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 93.9686369119421,
+        "speakerAwareWER": 0.06031363088057901,
+        "textOnlyWER": 0.04942037827943868,
+        "textOnlyBreakdown": {
+          "substitutions": 27,
+          "deletions": 24,
+          "insertions": 30,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 28,
+          "deletions": 42,
+          "insertions": 30,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 5118,
+        "actualCostCents": 1.5,
+        "speakerPenalty": 0.010893252601140331,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 95.32322346177459,
+        "overallComponents": {
+          "accuracy": {
+            "score": 93.9686369119421,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 99.60562002321414,
+            "source": "processing-time",
+            "processingTimeMs": 5118
+          },
+          "costEfficiency": {
+            "score": 93.75,
+            "source": "reported-cost",
+            "costCents": 1.5
+          }
+        },
+        "overallRank": 4,
+        "rank": 8,
+        "overallTier": 1
+      },
+      {
+        "provider": "whisper-tiny",
+        "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
+        "tokenCount": 1552,
+        "transcriptTextHash": "a59a15fa7764a4e0",
+        "segmentStats": {
+          "segmentCount": 39,
+          "timedSegmentCount": 39,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 588,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": false
+        },
+        "score": 90.83232810615199,
+        "speakerAwareWER": 0.09167671893848009,
+        "textOnlyWER": 0.08236729713239781,
+        "textOnlyBreakdown": {
+          "substitutions": 72,
+          "deletions": 36,
+          "insertions": 27,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 75,
+          "deletions": 52,
+          "insertions": 25,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 8750,
+        "actualCostCents": null,
+        "speakerPenalty": 0.009309421806082283,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [
+          "Whisper timestamps exceeded the known audio duration and were clamped for normalized artifacts."
+        ],
+        "overallScore": 95.18615730881658,
+        "overallComponents": {
+          "accuracy": {
+            "score": 90.83232810615199,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 99.07997302296232,
+            "source": "processing-time",
+            "processingTimeMs": 8750
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 5,
+        "rank": 23,
+        "overallTier": 1
+      },
+      {
+        "provider": "mistral-voxtral-mini-2602",
+        "providerKey": "mistral/voxtral-mini-2602",
+        "tokenCount": 1571,
+        "transcriptTextHash": "7db3d44a21e3329f",
+        "segmentStats": {
+          "segmentCount": 141,
+          "timedSegmentCount": 141,
+          "zeroDurationSegmentCount": 8,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 507,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": true
+        },
+        "score": 96.68275030156815,
+        "speakerAwareWER": 0.033172496984318456,
+        "textOnlyWER": 0.03050640634533252,
+        "textOnlyBreakdown": {
+          "substitutions": 20,
+          "deletions": 8,
+          "insertions": 22,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 23,
+          "deletions": 10,
+          "insertions": 22,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 12073,
+        "actualCostCents": 3,
+        "speakerPenalty": 0.0026660906389859365,
+        "speakerMap": {
+          "speaker_1": "speaker-1",
+          "speaker_2": "speaker-2",
+          "speaker_3": "speaker-3",
+          "speaker_4": "speaker-4",
+          "speaker_5": "speaker-5",
+          "speaker_6": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 94.86613678607884,
+        "overallComponents": {
+          "accuracy": {
+            "score": 96.68275030156815,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 98.59904654117906,
+            "source": "processing-time",
+            "processingTimeMs": 12073
+          },
+          "costEfficiency": {
+            "score": 87.5,
+            "source": "reported-cost",
+            "costCents": 3
+          }
+        },
+        "overallRank": 6,
+        "rank": 1,
+        "overallTier": 1
+      },
+      {
+        "provider": "whisper-large-v3-turbo",
+        "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
+        "tokenCount": 1615,
+        "transcriptTextHash": "861f48d60a5cf4a7",
+        "segmentStats": {
+          "segmentCount": 39,
+          "timedSegmentCount": 39,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 589,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": false
+        },
+        "score": 92.34016887816647,
+        "speakerAwareWER": 0.07659831121833534,
+        "textOnlyWER": 0.06589383770591824,
+        "textOnlyBreakdown": {
+          "substitutions": 31,
+          "deletions": 21,
+          "insertions": 56,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 32,
+          "deletions": 39,
+          "insertions": 56,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 40268,
+        "actualCostCents": null,
+        "speakerPenalty": 0.010704473512417101,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 94.79970447387551,
+        "overallComponents": {
+          "accuracy": {
+            "score": 92.34016887816647,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 94.51848013916909,
+            "source": "processing-time",
+            "processingTimeMs": 40268
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 7,
+        "rank": 14,
+        "overallTier": 1
+      },
+      {
+        "provider": "groq-whisper-large-v3",
+        "providerKey": "groq/whisper-large-v3",
+        "tokenCount": 1588,
+        "transcriptTextHash": "f76bc78156368b01",
+        "segmentStats": {
+          "segmentCount": 131,
+          "timedSegmentCount": 131,
+          "zeroDurationSegmentCount": 5,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 555,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 93.9686369119421,
+        "speakerAwareWER": 0.06031363088057901,
+        "textOnlyWER": 0.04942037827943868,
+        "textOnlyBreakdown": {
+          "substitutions": 20,
+          "deletions": 26,
+          "insertions": 35,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 21,
+          "deletions": 44,
+          "insertions": 35,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 11184,
+        "actualCostCents": 1.8499999999999999,
+        "speakerPenalty": 0.010893252601140331,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 94.73916224411253,
+        "overallComponents": {
+          "accuracy": {
+            "score": 93.9686369119421,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 98.72770848589929,
+            "source": "processing-time",
+            "processingTimeMs": 11184
+          },
+          "costEfficiency": {
+            "score": 92.29166666666667,
+            "source": "reported-cost",
+            "costCents": 1.8499999999999999
+          }
+        },
+        "overallRank": 8,
+        "rank": 7,
+        "overallTier": 1
+      },
+      {
+        "provider": "whisper-medium",
+        "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
+        "tokenCount": 1572,
+        "transcriptTextHash": "28aee42bdb707906",
+        "segmentStats": {
+          "segmentCount": 39,
+          "timedSegmentCount": 39,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 595,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": false
+        },
+        "score": 92.88299155609168,
+        "speakerAwareWER": 0.07117008443908324,
+        "textOnlyWER": 0.06101281269066504,
+        "textOnlyBreakdown": {
+          "substitutions": 30,
+          "deletions": 33,
+          "insertions": 37,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 32,
+          "deletions": 50,
+          "insertions": 36,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 51082,
+        "actualCostCents": null,
+        "speakerPenalty": 0.010157271748418198,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [
+          "Whisper timestamps exceeded the known audio duration and were clamped for normalized artifacts."
+        ],
+        "overallScore": 94.67984745788746,
+        "overallComponents": {
+          "accuracy": {
+            "score": 92.88299155609168,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 92.95340671936646,
+            "source": "processing-time",
+            "processingTimeMs": 51082
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 9,
+        "rank": 13,
+        "overallTier": 1
+      },
+      {
+        "provider": "whisper-small",
+        "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
+        "tokenCount": 1681,
+        "transcriptTextHash": "99326195886519c0",
+        "segmentStats": {
+          "segmentCount": 39,
+          "timedSegmentCount": 39,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 599,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": false
+        },
+        "score": 90.77201447527142,
+        "speakerAwareWER": 0.09227985524728588,
+        "textOnlyWER": 0.08297742525930446,
+        "textOnlyBreakdown": {
+          "substitutions": 43,
+          "deletions": 15,
+          "insertions": 78,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 46,
+          "deletions": 31,
+          "insertions": 76,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 22251,
+        "actualCostCents": null,
+        "speakerPenalty": 0.00930242998798142,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 94.66751204690053,
+        "overallComponents": {
+          "accuracy": {
+            "score": 90.77201447527142,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 97.12601923705927,
+            "source": "processing-time",
+            "processingTimeMs": 22251
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 10,
+        "rank": 24,
+        "overallTier": 1
+      },
+      {
+        "provider": "happyscribe-auto",
+        "providerKey": "happyscribe/auto",
+        "tokenCount": 1595,
+        "transcriptTextHash": "bdf3061efaac2ce8",
+        "segmentStats": {
+          "segmentCount": 22,
+          "timedSegmentCount": 22,
+          "zeroDurationSegmentCount": 1,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 571,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 94.14957780458384,
+        "speakerAwareWER": 0.05850422195416164,
+        "textOnlyWER": 0.05308114704087859,
+        "textOnlyBreakdown": {
+          "substitutions": 27,
+          "deletions": 19,
+          "insertions": 41,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 31,
+          "deletions": 22,
+          "insertions": 44,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 71087,
+        "actualCostCents": 0,
+        "speakerPenalty": 0.005423074913283053,
+        "speakerMap": {
+          "speaker-1": "speaker-1",
+          "speaker-2": "speaker-2",
+          "speaker-3": "speaker-4",
+          "speaker-4": "speaker-3",
+          "speaker-5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 94.58932668895913,
+        "overallComponents": {
+          "accuracy": {
+            "score": 94.14957780458384,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 90.05815114666883,
+            "source": "processing-time",
+            "processingTimeMs": 71087
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "reported-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 11,
+        "rank": 5,
+        "overallTier": 2
+      },
+      {
+        "provider": "whisper-base",
+        "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
+        "tokenCount": 1675,
+        "transcriptTextHash": "87ebe0bfa2935691",
+        "segmentStats": {
+          "segmentCount": 38,
+          "timedSegmentCount": 38,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 599,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": false
+        },
+        "score": 88.29915560916767,
+        "speakerAwareWER": 0.11700844390832328,
+        "textOnlyWER": 0.10860280658938377,
+        "textOnlyBreakdown": {
+          "substitutions": 82,
+          "deletions": 23,
+          "insertions": 73,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 86,
+          "deletions": 38,
+          "insertions": 70,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 10383,
+        "actualCostCents": null,
+        "speakerPenalty": 0.008405637318939507,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 93.86048642710503,
+        "overallComponents": {
+          "accuracy": {
+            "score": 88.29915560916767,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 98.84363449008478,
+            "source": "processing-time",
+            "processingTimeMs": 10383
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 12,
+        "rank": 29,
+        "overallTier": 2
+      },
+      {
+        "provider": "assemblyai-universal-3-pro",
+        "providerKey": "assemblyai/universal-3-pro",
+        "tokenCount": 1596,
+        "transcriptTextHash": "548c73c59482a7af",
+        "segmentStats": {
+          "segmentCount": 19,
+          "timedSegmentCount": 19,
+          "zeroDurationSegmentCount": 1,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 573,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 93.90832328106153,
+        "speakerAwareWER": 0.0609167671893848,
+        "textOnlyWER": 0.05552165954850519,
+        "textOnlyBreakdown": {
+          "substitutions": 31,
+          "deletions": 19,
+          "insertions": 41,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 35,
+          "deletions": 22,
+          "insertions": 44,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 17155,
+        "actualCostCents": 3.5,
+        "speakerPenalty": 0.005395107640879616,
+        "speakerMap": {
+          "speaker-A": "speaker-1",
+          "speaker-B": "speaker-2",
+          "speaker-C": "speaker-4",
+          "speaker-D": "speaker-3",
+          "speaker-E": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 92.77421480102194,
+        "overallComponents": {
+          "accuracy": {
+            "score": 93.90832328106153,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 97.86354597529807,
+            "source": "processing-time",
+            "processingTimeMs": 17155
+          },
+          "costEfficiency": {
+            "score": 85.41666666666666,
+            "source": "reported-cost",
+            "costCents": 3.5
+          }
+        },
+        "overallRank": 13,
+        "rank": 9,
+        "overallTier": 2
+      },
+      {
+        "provider": "soniox-stt-async-v4",
+        "providerKey": "soniox/stt-async-v4",
+        "tokenCount": 1702,
+        "transcriptTextHash": "c515a78669e87f73",
+        "segmentStats": {
+          "segmentCount": 80,
+          "timedSegmentCount": 80,
+          "zeroDurationSegmentCount": 3,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 538,
+          "coverageSeconds": 598,
+          "durationCoverageRatio": 0.9966666666666667,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 91.01326899879373,
+        "speakerAwareWER": 0.08986731001206273,
+        "textOnlyWER": 0.0860280658938377,
+        "textOnlyBreakdown": {
+          "substitutions": 38,
+          "deletions": 16,
+          "insertions": 87,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 38,
+          "deletions": 17,
+          "insertions": 94,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 36440,
+        "actualCostCents": 1.6666666666666665,
+        "speakerPenalty": 0.0038392441182250325,
+        "speakerMap": {
+          "1": "speaker-1",
+          "2": "speaker-2",
+          "3": "speaker-3",
+          "4": "speaker-4",
+          "5": "speaker-5",
+          "6": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 92.53864677639328,
+        "overallComponents": {
+          "accuracy": {
+            "score": 91.01326899879373,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 95.0724935524301,
+            "source": "processing-time",
+            "processingTimeMs": 36440
+          },
+          "costEfficiency": {
+            "score": 93.05555555555556,
+            "source": "reported-cost",
+            "costCents": 1.6666666666666665
+          }
+        },
+        "overallRank": 14,
+        "rank": 21,
+        "overallTier": 2
+      },
+      {
+        "provider": "gemini-stt-gemini-3-flash-preview",
+        "providerKey": "gemini-stt/gemini-3-flash-preview",
+        "tokenCount": 1695,
+        "transcriptTextHash": "fe83a970b1091005",
+        "segmentStats": {
+          "segmentCount": 1,
+          "timedSegmentCount": 1,
+          "zeroDurationSegmentCount": 1,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 0,
+          "totalSegmentDurationSeconds": 0,
+          "coverageSeconds": 0,
+          "durationCoverageRatio": 0,
+          "timingQuality": "coarse",
+          "hasSpeakerLabels": false
+        },
+        "score": 90.95295536791315,
+        "speakerAwareWER": 0.09047044632086852,
+        "textOnlyWER": 0.08297742525930446,
+        "textOnlyBreakdown": {
+          "substitutions": 29,
+          "deletions": 9,
+          "insertions": 98,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 35,
+          "deletions": 22,
+          "insertions": 93,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 34429,
+        "actualCostCents": 1.92,
+        "speakerPenalty": 0.007493021061564062,
+        "speakerMap": {},
+        "qualityWarnings": [
+          "Gemini generated compressed timestamps relative to the known audio duration; timing should be treated as coarse/unreliable.",
+          "All provider segments have zero duration; timing is coarse for overlap-based speaker analysis."
+        ],
+        "overallScore": 92.31736236869862,
+        "overallComponents": {
+          "accuracy": {
+            "score": 90.95295536791315,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 95.36353873896822,
+            "source": "processing-time",
+            "processingTimeMs": 34429
+          },
+          "costEfficiency": {
+            "score": 92,
+            "source": "reported-cost",
+            "costCents": 1.92
+          }
+        },
+        "overallRank": 15,
+        "rank": 22,
+        "overallTier": 2
+      },
+      {
+        "provider": "openai-stt-gpt-4o-mini-transcribe",
+        "providerKey": "openai-stt/gpt-4o-mini-transcribe",
+        "tokenCount": 1673,
+        "transcriptTextHash": "ba63400c8f20fd45",
+        "segmentStats": {
+          "segmentCount": 1,
+          "timedSegmentCount": 1,
+          "zeroDurationSegmentCount": 1,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 0,
+          "totalSegmentDurationSeconds": 0,
+          "coverageSeconds": 0,
+          "durationCoverageRatio": 0,
+          "timingQuality": "coarse",
+          "hasSpeakerLabels": false
+        },
+        "score": 91.25452352231605,
+        "speakerAwareWER": 0.08745476477683957,
+        "textOnlyWER": 0.07809640024405125,
+        "textOnlyBreakdown": {
+          "substitutions": 34,
+          "deletions": 23,
+          "insertions": 71,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 37,
+          "deletions": 39,
+          "insertions": 69,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 14832,
+        "actualCostCents": 3,
+        "speakerPenalty": 0.009358364532788321,
+        "speakerMap": {},
+        "qualityWarnings": [
+          "OpenAI STT returned coarse single-speaker transcript output without reliable segment timing or speaker labels."
+        ],
+        "overallScore": 92.05219822618194,
+        "overallComponents": {
+          "accuracy": {
+            "score": 91.25452352231605,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 98.19974586009569,
+            "source": "processing-time",
+            "processingTimeMs": 14832
+          },
+          "costEfficiency": {
+            "score": 87.5,
+            "source": "reported-cost",
+            "costCents": 3
+          }
+        },
+        "overallRank": 16,
+        "rank": 19,
+        "overallTier": 2
+      },
+      {
+        "provider": "grok-speech-to-text",
+        "providerKey": "grok/speech-to-text",
+        "tokenCount": 1562,
+        "transcriptTextHash": "7f66d4d2617703af",
+        "segmentStats": {
+          "segmentCount": 65,
+          "timedSegmentCount": 65,
+          "zeroDurationSegmentCount": 2,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 535,
+          "coverageSeconds": 598,
+          "durationCoverageRatio": 0.9966666666666667,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 87.57539203860073,
+        "speakerAwareWER": 0.12424607961399277,
+        "textOnlyWER": 0.12263575350823673,
+        "textOnlyBreakdown": {
+          "substitutions": 52,
+          "deletions": 73,
+          "insertions": 76,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 51,
+          "deletions": 77,
+          "insertions": 78,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 7079,
+        "actualCostCents": 1.6666666666666665,
+        "speakerPenalty": 0.001610326105756038,
+        "speakerMap": {
+          "speaker-0": "speaker-1",
+          "speaker-1": "speaker-2",
+          "speaker-2": "speaker-3",
+          "speaker-3": "speaker-4",
+          "speaker-4": "speaker-5",
+          "speaker-5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 91.88203769982059,
+        "overallComponents": {
+          "accuracy": {
+            "score": 87.57539203860073,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 99.32181116652532,
+            "source": "processing-time",
+            "processingTimeMs": 7079
+          },
+          "costEfficiency": {
+            "score": 93.05555555555556,
+            "source": "reported-cost",
+            "costCents": 1.6666666666666665
+          }
+        },
+        "overallRank": 17,
+        "rank": 30,
+        "overallTier": 2
+      },
+      {
+        "provider": "glm-stt-glm-asr-2512",
+        "providerKey": "glm-stt/glm-asr-2512",
+        "tokenCount": 1589,
+        "transcriptTextHash": "bbdc40b3529a7296",
+        "segmentStats": {
+          "segmentCount": 21,
+          "timedSegmentCount": 21,
+          "zeroDurationSegmentCount": 21,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 579,
+          "totalSegmentDurationSeconds": 0,
+          "coverageSeconds": 579,
+          "durationCoverageRatio": 0.965,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 91.25452352231605,
+        "speakerAwareWER": 0.08745476477683957,
+        "textOnlyWER": 0.07687614399023796,
+        "textOnlyBreakdown": {
+          "substitutions": 52,
+          "deletions": 34,
+          "insertions": 40,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 53,
+          "deletions": 52,
+          "insertions": 40,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 43850,
+        "actualCostCents": 2.4,
+        "speakerPenalty": 0.010578620786601614,
+        "speakerMap": {},
+        "qualityWarnings": [
+          "GLM returned all-zero-duration segment timing."
+        ],
+        "overallScore": 91.62727912834967,
+        "overallComponents": {
+          "accuracy": {
+            "score": 91.25452352231605,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 94.00006946876655,
+            "source": "processing-time",
+            "processingTimeMs": 43850
+          },
+          "costEfficiency": {
+            "score": 90,
+            "source": "reported-cost",
+            "costCents": 2.4
+          }
+        },
+        "overallRank": 18,
+        "rank": 18,
+        "overallTier": 2
+      },
+      {
+        "provider": "rev-low_cost",
+        "providerKey": "rev/low_cost",
+        "tokenCount": 1609,
+        "transcriptTextHash": "b2dd45b1e9091ca7",
+        "segmentStats": {
+          "segmentCount": 20,
+          "timedSegmentCount": 20,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 559,
+          "coverageSeconds": 598,
+          "durationCoverageRatio": 0.9966666666666667,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 90.59107358262968,
+        "speakerAwareWER": 0.09408926417370325,
+        "textOnlyWER": 0.09273947528981086,
+        "textOnlyBreakdown": {
+          "substitutions": 52,
+          "deletions": 28,
+          "insertions": 72,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 54,
+          "deletions": 30,
+          "insertions": 72,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 76206,
+        "actualCostCents": 1.6666666666666665,
+        "speakerPenalty": 0.0013497888838923944,
+        "speakerMap": {
+          "speaker-0": "speaker-1",
+          "speaker-1": "speaker-2",
+          "speaker-2": "speaker-3",
+          "speaker-3": "speaker-4",
+          "speaker-4": "speaker-5",
+          "speaker-5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 90.88874960437856,
+        "overallComponents": {
+          "accuracy": {
+            "score": 90.59107358262968,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 89.31729569669936,
+            "source": "processing-time",
+            "processingTimeMs": 76206
+          },
+          "costEfficiency": {
+            "score": 93.05555555555556,
+            "source": "reported-cost",
+            "costCents": 1.6666666666666665
+          }
+        },
+        "overallRank": 19,
+        "rank": 25,
+        "overallTier": 2
+      },
+      {
+        "provider": "openai-stt-gpt-4o-transcribe",
+        "providerKey": "openai-stt/gpt-4o-transcribe",
+        "tokenCount": 1578,
+        "transcriptTextHash": "a7412c548a7cdae2",
+        "segmentStats": {
+          "segmentCount": 1,
+          "timedSegmentCount": 1,
+          "zeroDurationSegmentCount": 1,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 0,
+          "totalSegmentDurationSeconds": 0,
+          "coverageSeconds": 0,
+          "durationCoverageRatio": 0,
+          "timingQuality": "coarse",
+          "hasSpeakerLabels": false
+        },
+        "score": 94.39083232810616,
+        "speakerAwareWER": 0.05609167671893848,
+        "textOnlyWER": 0.04575960951799878,
+        "textOnlyBreakdown": {
+          "substitutions": 24,
+          "deletions": 21,
+          "insertions": 30,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 26,
+          "deletions": 38,
+          "insertions": 29,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 25420,
+        "actualCostCents": 6,
+        "speakerPenalty": 0.010332067200939696,
+        "speakerMap": {},
+        "qualityWarnings": [
+          "OpenAI STT returned coarse single-speaker transcript output without reliable segment timing or speaker labels."
+        ],
+        "overallScore": 90.11226132685603,
+        "overallComponents": {
+          "accuracy": {
+            "score": 94.39083232810616,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 96.6673806512118,
+            "source": "processing-time",
+            "processingTimeMs": 25420
+          },
+          "costEfficiency": {
+            "score": 75,
+            "source": "reported-cost",
+            "costCents": 6
+          }
+        },
+        "overallRank": 20,
+        "rank": 4,
+        "overallTier": 2
+      },
+      {
+        "provider": "deapi-WhisperLargeV3",
+        "providerKey": "deapi/WhisperLargeV3",
+        "tokenCount": 1634,
+        "transcriptTextHash": "1e9f361153bf2c05",
+        "segmentStats": {
+          "segmentCount": 43,
+          "timedSegmentCount": 43,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 600,
+          "totalSegmentDurationSeconds": 571,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "segment_interpolated",
+          "hasSpeakerLabels": false
+        },
+        "score": 84.74065138721352,
+        "speakerAwareWER": 0.15259348612786489,
+        "textOnlyWER": 0.14338010982306285,
+        "textOnlyBreakdown": {
+          "substitutions": 28,
+          "deletions": 71,
+          "insertions": 136,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 30,
+          "deletions": 88,
+          "insertions": 135,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 50158,
+        "actualCostCents": 0.519718,
+        "speakerPenalty": 0.00921337630480204,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [
+          "deAPI raw response used bracket timestamp blocks; report uses cleaned parsed transcript text."
+        ],
+        "overallScore": 90.10073630068538,
+        "overallComponents": {
+          "accuracy": {
+            "score": 84.74065138721352,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 93.08713409498117,
+            "source": "processing-time",
+            "processingTimeMs": 50158
+          },
+          "costEfficiency": {
+            "score": 97.83450833333333,
+            "source": "reported-cost",
+            "costCents": 0.519718
+          }
+        },
+        "overallRank": 21,
+        "rank": 31,
+        "overallTier": 3
+      },
+      {
+        "provider": "rev-machine",
+        "providerKey": "rev/machine",
+        "tokenCount": 1617,
+        "transcriptTextHash": "eae92e1ec055ace9",
+        "segmentStats": {
+          "segmentCount": 20,
+          "timedSegmentCount": 20,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 560,
+          "coverageSeconds": 598,
+          "durationCoverageRatio": 0.9966666666666667,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 91.0735826296743,
+        "speakerAwareWER": 0.08926417370325694,
+        "textOnlyWER": 0.08785845027455766,
+        "textOnlyBreakdown": {
+          "substitutions": 47,
+          "deletions": 22,
+          "insertions": 75,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 49,
+          "deletions": 24,
+          "insertions": 75,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 65250,
+        "actualCostCents": 3.333333333333333,
+        "speakerPenalty": 0.001405723428699282,
+        "speakerMap": {
+          "speaker-0": "speaker-1",
+          "speaker-1": "speaker-2",
+          "speaker-2": "speaker-3",
+          "speaker-3": "speaker-4",
+          "speaker-4": "speaker-5",
+          "speaker-5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 89.79029916593342,
+        "overallComponents": {
+          "accuracy": {
+            "score": 91.0735826296743,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 90.90292029327398,
+            "source": "processing-time",
+            "processingTimeMs": 65250
+          },
+          "costEfficiency": {
+            "score": 86.11111111111111,
+            "source": "reported-cost",
+            "costCents": 3.333333333333333
+          }
+        },
+        "overallRank": 22,
+        "rank": 20,
+        "overallTier": 3
+      },
+      {
+        "provider": "elevenlabs-scribe_v2",
+        "providerKey": "elevenlabs/scribe_v2",
+        "tokenCount": 1722,
+        "transcriptTextHash": "7f969a0933e2608b",
+        "segmentStats": {
+          "segmentCount": 64,
+          "timedSegmentCount": 64,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 581,
+          "coverageSeconds": 598,
+          "durationCoverageRatio": 0.9966666666666667,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 89.02291917973461,
+        "speakerAwareWER": 0.1097708082026538,
+        "textOnlyWER": 0.09762050030506407,
+        "textOnlyBreakdown": {
+          "substitutions": 40,
+          "deletions": 18,
+          "insertions": 102,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 45,
+          "deletions": 27,
+          "insertions": 110,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 49670,
+        "actualCostCents": 3.6666666666666665,
+        "speakerPenalty": 0.012150307897589724,
+        "speakerMap": {
+          "speaker_0": "speaker-1",
+          "speaker_1": "speaker-2",
+          "speaker_2": "speaker-3",
+          "speaker_3": "speaker-4",
+          "speaker_4": "speaker-5",
+          "speaker_5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 88.9814553140004,
+        "overallComponents": {
+          "accuracy": {
+            "score": 89.02291917973461,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 93.15776067431017,
+            "source": "processing-time",
+            "processingTimeMs": 49670
+          },
+          "costEfficiency": {
+            "score": 84.72222222222221,
+            "source": "reported-cost",
+            "costCents": 3.6666666666666665
+          }
+        },
+        "overallRank": 23,
+        "rank": 28,
+        "overallTier": 3
+      },
+      {
+        "provider": "speechmatics-standard",
+        "providerKey": "speechmatics/standard",
+        "tokenCount": 1683,
+        "transcriptTextHash": "f90624d88213d086",
+        "segmentStats": {
+          "segmentCount": 158,
+          "timedSegmentCount": 158,
+          "zeroDurationSegmentCount": 12,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 548,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 91.85765983112184,
+        "speakerAwareWER": 0.08142340168878166,
+        "textOnlyWER": 0.0774862721171446,
+        "textOnlyBreakdown": {
+          "substitutions": 41,
+          "deletions": 10,
+          "insertions": 76,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 45,
+          "deletions": 11,
+          "insertions": 79,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 17887,
+        "actualCostCents": 7.5,
+        "speakerPenalty": 0.0039371295716370686,
+        "speakerMap": {
+          "S1": "speaker-1",
+          "S2": "speaker-2",
+          "S3": "speaker-3",
+          "S4": "speaker-4",
+          "S5": "speaker-5",
+          "S6": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 87.55573144213706,
+        "overallComponents": {
+          "accuracy": {
+            "score": 91.85765983112184,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 97.75760610630458,
+            "source": "processing-time",
+            "processingTimeMs": 17887
+          },
+          "costEfficiency": {
+            "score": 68.75,
+            "source": "reported-cost",
+            "costCents": 7.5
+          }
+        },
+        "overallRank": 24,
+        "rank": 16,
+        "overallTier": 3
+      },
+      {
+        "provider": "gladia-default",
+        "providerKey": "gladia/default",
+        "tokenCount": 1599,
+        "transcriptTextHash": "ad713f8bfa41e760",
+        "segmentStats": {
+          "segmentCount": 215,
+          "timedSegmentCount": 215,
+          "zeroDurationSegmentCount": 51,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 478,
+          "coverageSeconds": 598,
+          "durationCoverageRatio": 0.9966666666666667,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 93.60675512665863,
+        "speakerAwareWER": 0.06393244873341375,
+        "textOnlyWER": 0.05979255643685174,
+        "textOnlyBreakdown": {
+          "substitutions": 31,
+          "deletions": 22,
+          "insertions": 45,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 34,
+          "deletions": 25,
+          "insertions": 47,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 22138,
+        "actualCostCents": 10.166666666666666,
+        "speakerPenalty": 0.00413989229656201,
+        "speakerMap": {
+          "speaker-0": "speaker-1",
+          "speaker-1": "speaker-2",
+          "speaker-2": "speaker-3",
+          "speaker-3": "speaker-4",
+          "speaker-4": "speaker-5",
+          "speaker-5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 85.49869312118119,
+        "overallComponents": {
+          "accuracy": {
+            "score": 93.60675512665863,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 97.14237334251865,
+            "source": "processing-time",
+            "processingTimeMs": 22138
+          },
+          "costEfficiency": {
+            "score": 57.638888888888886,
+            "source": "reported-cost",
+            "costCents": 10.166666666666666
+          }
+        },
+        "overallRank": 25,
+        "rank": 10,
+        "overallTier": 3
+      },
+      {
+        "provider": "deepgram-nova-3",
+        "providerKey": "deepgram/nova-3",
+        "tokenCount": 1606,
+        "transcriptTextHash": "7782d943f44c3fa2",
+        "segmentStats": {
+          "segmentCount": 112,
+          "timedSegmentCount": 112,
+          "zeroDurationSegmentCount": 3,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 601,
+          "totalSegmentDurationSeconds": 518,
+          "coverageSeconds": 600,
+          "durationCoverageRatio": 1,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 90.2291917973462,
+        "speakerAwareWER": 0.097708082026538,
+        "textOnlyWER": 0.09395973154362416,
+        "textOnlyBreakdown": {
+          "substitutions": 43,
+          "deletions": 32,
+          "insertions": 79,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 45,
+          "deletions": 35,
+          "insertions": 82,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 2393,
+        "actualCostCents": 9.7,
+        "speakerPenalty": 0.0037483504829138314,
+        "speakerMap": {
+          "speaker-0": "speaker-1",
+          "speaker-1": "speaker-2",
+          "speaker-2": "speaker-3",
+          "speaker-3": "speaker-4",
+          "speaker-4": "speaker-5",
+          "speaker-5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 85.01042923200643,
+        "overallComponents": {
+          "accuracy": {
+            "score": 90.2291917973462,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 100,
+            "source": "processing-time",
+            "processingTimeMs": 2393
+          },
+          "costEfficiency": {
+            "score": 59.58333333333334,
+            "source": "reported-cost",
+            "costCents": 9.7
+          }
+        },
+        "overallRank": 26,
+        "rank": 26,
+        "overallTier": 3
+      },
+      {
+        "provider": "speechmatics-enhanced",
+        "providerKey": "speechmatics/enhanced",
+        "tokenCount": 1679,
+        "transcriptTextHash": "76354e5e448f222c",
+        "segmentStats": {
+          "segmentCount": 147,
+          "timedSegmentCount": 147,
+          "zeroDurationSegmentCount": 15,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 532,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 93.4258142340169,
+        "speakerAwareWER": 0.06574185765983112,
+        "textOnlyWER": 0.06345332519829164,
+        "textOnlyBreakdown": {
+          "substitutions": 25,
+          "deletions": 11,
+          "insertions": 68,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 26,
+          "deletions": 12,
+          "insertions": 71,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 28828,
+        "actualCostCents": 12.5,
+        "speakerPenalty": 0.002288532461539483,
+        "speakerMap": {
+          "S1": "speaker-1",
+          "S2": "speaker-2",
+          "S3": "speaker-3",
+          "S4": "speaker-4",
+          "S5": "speaker-5",
+          "S6": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 82.73561188584631,
+        "overallComponents": {
+          "accuracy": {
+            "score": 93.4258142340169,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 96.17415240868475,
+            "source": "processing-time",
+            "processingTimeMs": 28828
+          },
+          "costEfficiency": {
+            "score": 47.916666666666664,
+            "source": "reported-cost",
+            "costCents": 12.5
+          }
+        },
+        "overallRank": 27,
+        "rank": 11,
+        "overallTier": 3
+      },
+      {
+        "provider": "supadata-auto",
+        "providerKey": "supadata/auto",
+        "tokenCount": 1572,
+        "transcriptTextHash": "cf286ecc035ba821",
+        "segmentStats": {
+          "segmentCount": 113,
+          "timedSegmentCount": 113,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 1,
+          "lastEndSeconds": 598,
+          "totalSegmentDurationSeconds": 545,
+          "coverageSeconds": 597,
+          "durationCoverageRatio": 0.995,
+          "timingQuality": "coarse",
+          "hasSpeakerLabels": false
+        },
+        "score": 95.29553679131485,
+        "speakerAwareWER": 0.047044632086851626,
+        "textOnlyWER": 0.03599755948749237,
+        "textOnlyBreakdown": {
+          "substitutions": 24,
+          "deletions": 16,
+          "insertions": 19,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 25,
+          "deletions": 34,
+          "insertions": 19,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 4458,
+        "actualCostCents": 20,
+        "speakerPenalty": 0.011047072599359255,
+        "speakerMap": {
+          "speaker-unknown": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 76.73971995663025,
+        "overallComponents": {
+          "accuracy": {
+            "score": 95.29553679131485,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 99.70113957722467,
+            "source": "processing-time",
+            "processingTimeMs": 4458
+          },
+          "costEfficiency": {
+            "score": 16.666666666666664,
+            "source": "reported-cost",
+            "costCents": 20
+          }
+        },
+        "overallRank": 28,
+        "rank": 2,
+        "overallTier": 3
+      },
+      {
+        "provider": "gcloud-chirp_3",
+        "providerKey": "gcloud/chirp_3",
+        "tokenCount": 1644,
+        "transcriptTextHash": "047babfd7e87c0d4",
+        "segmentStats": {
+          "segmentCount": 73,
+          "timedSegmentCount": 73,
+          "zeroDurationSegmentCount": 1,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 546,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 91.6767189384801,
+        "speakerAwareWER": 0.08323281061519903,
+        "textOnlyWER": 0.0726052471018914,
+        "textOnlyBreakdown": {
+          "substitutions": 31,
+          "deletions": 16,
+          "insertions": 72,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 42,
+          "deletions": 18,
+          "insertions": 78,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 122130,
+        "actualCostCents": 16,
+        "speakerPenalty": 0.010627563513307639,
+        "speakerMap": {
+          "spk_1": "speaker-4",
+          "spk_2": "speaker-1",
+          "spk_3": "speaker-4",
+          "spk_4": "speaker-4"
+        },
+        "qualityWarnings": [],
+        "overallScore": 74.83941066675615,
+        "overallComponents": {
+          "accuracy": {
+            "score": 91.6767189384801,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 82.67087145673109,
+            "source": "processing-time",
+            "processingTimeMs": 122130
+          },
+          "costEfficiency": {
+            "score": 33.333333333333336,
+            "source": "reported-cost",
+            "costCents": 16
+          }
+        },
+        "overallRank": 29,
+        "rank": 17,
+        "overallTier": 3
+      },
+      {
+        "provider": "reverb-reverb",
+        "providerKey": "reverb/reverb_asr_v1",
+        "tokenCount": 1565,
+        "transcriptTextHash": "52b269859098742d",
+        "segmentStats": {
+          "segmentCount": 24,
+          "timedSegmentCount": 24,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 560,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 92.15922798552472,
+        "speakerAwareWER": 0.07840772014475271,
+        "textOnlyWER": 0.0762660158633313,
+        "textOnlyBreakdown": {
+          "substitutions": 51,
+          "deletions": 39,
+          "insertions": 35,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 50,
+          "deletions": 44,
+          "insertions": 36,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 693351,
+        "actualCostCents": 0,
+        "speakerPenalty": 0.0021417042814214082,
+        "speakerMap": {
+          "SPEAKER_04": "speaker-1",
+          "SPEAKER_00": "speaker-2",
+          "SPEAKER_03": "speaker-3",
+          "SPEAKER_01": "speaker-4",
+          "SPEAKER_02": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 71.07961399276236,
+        "overallComponents": {
+          "accuracy": {
+            "score": 92.15922798552472,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 0,
+            "source": "processing-time",
+            "processingTimeMs": 693351
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "local-zero-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 30,
+        "rank": 15,
+        "overallTier": 3
+      },
+      {
+        "provider": "aws-standard",
+        "providerKey": "aws/standard",
+        "tokenCount": 1688,
+        "transcriptTextHash": "129b85ba71f4b4d9",
+        "segmentStats": {
+          "segmentCount": 61,
+          "timedSegmentCount": 61,
+          "zeroDurationSegmentCount": 0,
+          "negativeDurationSegmentCount": 0,
+          "monotonicStarts": true,
+          "firstStartSeconds": 0,
+          "lastEndSeconds": 599,
+          "totalSegmentDurationSeconds": 564,
+          "coverageSeconds": 599,
+          "durationCoverageRatio": 0.9983333333333333,
+          "timingQuality": "native_word",
+          "hasSpeakerLabels": true
+        },
+        "score": 89.98793727382389,
+        "speakerAwareWER": 0.10012062726176116,
+        "textOnlyWER": 0.09029896278218426,
+        "textOnlyBreakdown": {
+          "substitutions": 49,
+          "deletions": 22,
+          "insertions": 77,
+          "referenceWordCount": 1639
+        },
+        "speakerAwareBreakdown": {
+          "substitutions": 51,
+          "deletions": 32,
+          "insertions": 83,
+          "referenceWordCount": 1658
+        },
+        "actualProcessingTimeMs": 61017,
+        "actualCostCents": 24,
+        "speakerPenalty": 0.0098216644795769,
+        "speakerMap": {
+          "spk_0": "speaker-1",
+          "spk_1": "speaker-2",
+          "spk_2": "speaker-3",
+          "spk_3": "speaker-4",
+          "spk_4": "speaker-5",
+          "spk_5": "speaker-6"
+        },
+        "qualityWarnings": [],
+        "overallScore": 67.8728556314905,
+        "overallComponents": {
+          "accuracy": {
+            "score": 89.98793727382389,
+            "source": "speaker-aware-wer"
+          },
+          "processingSpeed": {
+            "score": 91.51554797831417,
+            "source": "processing-time",
+            "processingTimeMs": 61017
+          },
+          "costEfficiency": {
+            "score": 0,
+            "source": "reported-cost",
+            "costCents": 24
+          }
+        },
+        "overallRank": 31,
+        "rank": 27,
+        "overallTier": 3
+      }
+    ]
+  },
+  "duplicateGroups": [],
+  "providers": [
+    {
+      "provider": "mistral-voxtral-mini-2602",
+      "providerKey": "mistral/voxtral-mini-2602",
+      "tokenCount": 1571,
+      "transcriptTextHash": "7db3d44a21e3329f",
+      "segmentStats": {
+        "segmentCount": 141,
+        "timedSegmentCount": 141,
+        "zeroDurationSegmentCount": 8,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 507,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": true
+      },
+      "score": 96.68275030156815,
+      "speakerAwareWER": 0.033172496984318456,
+      "textOnlyWER": 0.03050640634533252,
+      "textOnlyBreakdown": {
+        "substitutions": 20,
+        "deletions": 8,
+        "insertions": 22,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 23,
+        "deletions": 10,
+        "insertions": 22,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 12073,
+      "actualCostCents": 3,
+      "speakerPenalty": 0.0026660906389859365,
+      "speakerMap": {
+        "speaker_1": "speaker-1",
+        "speaker_2": "speaker-2",
+        "speaker_3": "speaker-3",
+        "speaker_4": "speaker-4",
+        "speaker_5": "speaker-5",
+        "speaker_6": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 94.86613678607884,
+      "overallComponents": {
+        "accuracy": {
+          "score": 96.68275030156815,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 98.59904654117906,
+          "source": "processing-time",
+          "processingTimeMs": 12073
+        },
+        "costEfficiency": {
+          "score": 87.5,
+          "source": "reported-cost",
+          "costCents": 3
+        }
+      },
+      "overallRank": 6,
+      "rank": 1,
+      "overallTier": 1
+    },
+    {
+      "provider": "supadata-auto",
+      "providerKey": "supadata/auto",
+      "tokenCount": 1572,
+      "transcriptTextHash": "cf286ecc035ba821",
+      "segmentStats": {
+        "segmentCount": 113,
+        "timedSegmentCount": 113,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 598,
+        "totalSegmentDurationSeconds": 545,
+        "coverageSeconds": 597,
+        "durationCoverageRatio": 0.995,
+        "timingQuality": "coarse",
+        "hasSpeakerLabels": false
+      },
+      "score": 95.29553679131485,
+      "speakerAwareWER": 0.047044632086851626,
+      "textOnlyWER": 0.03599755948749237,
+      "textOnlyBreakdown": {
+        "substitutions": 24,
+        "deletions": 16,
+        "insertions": 19,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 25,
+        "deletions": 34,
+        "insertions": 19,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 4458,
+      "actualCostCents": 20,
+      "speakerPenalty": 0.011047072599359255,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 76.73971995663025,
+      "overallComponents": {
+        "accuracy": {
+          "score": 95.29553679131485,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 99.70113957722467,
+          "source": "processing-time",
+          "processingTimeMs": 4458
+        },
+        "costEfficiency": {
+          "score": 16.666666666666664,
+          "source": "reported-cost",
+          "costCents": 20
+        }
+      },
+      "overallRank": 28,
+      "rank": 2,
+      "overallTier": 3
+    },
+    {
+      "provider": "deepinfra-openai_whisper-large-v3-turbo",
+      "providerKey": "deepinfra/openai/whisper-large-v3-turbo",
+      "tokenCount": 1576,
+      "transcriptTextHash": "a50871aeb1a8caf6",
+      "segmentStats": {
+        "segmentCount": 22,
+        "timedSegmentCount": 22,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 586,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 94.8130277442702,
+      "speakerAwareWER": 0.05186972255729795,
+      "textOnlyWER": 0.04087858450274558,
+      "textOnlyBreakdown": {
+        "substitutions": 24,
+        "deletions": 19,
+        "insertions": 24,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 25,
+        "deletions": 37,
+        "insertions": 24,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 6230,
+      "actualCostCents": 0.19999999999999998,
+      "speakerPenalty": 0.010991138054552374,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 97.0593515506433,
+      "overallComponents": {
+        "accuracy": {
+          "score": 94.8130277442702,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 99.44468404736611,
+          "source": "processing-time",
+          "processingTimeMs": 6230
+        },
+        "costEfficiency": {
+          "score": 99.16666666666667,
+          "source": "reported-cost",
+          "costCents": 0.19999999999999998
+        }
+      },
+      "overallRank": 1,
+      "rank": 3,
+      "overallTier": 1
+    },
+    {
+      "provider": "openai-stt-gpt-4o-transcribe",
+      "providerKey": "openai-stt/gpt-4o-transcribe",
+      "tokenCount": 1578,
+      "transcriptTextHash": "a7412c548a7cdae2",
+      "segmentStats": {
+        "segmentCount": 1,
+        "timedSegmentCount": 1,
+        "zeroDurationSegmentCount": 1,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 0,
+        "totalSegmentDurationSeconds": 0,
+        "coverageSeconds": 0,
+        "durationCoverageRatio": 0,
+        "timingQuality": "coarse",
+        "hasSpeakerLabels": false
+      },
+      "score": 94.39083232810616,
+      "speakerAwareWER": 0.05609167671893848,
+      "textOnlyWER": 0.04575960951799878,
+      "textOnlyBreakdown": {
+        "substitutions": 24,
+        "deletions": 21,
+        "insertions": 30,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 26,
+        "deletions": 38,
+        "insertions": 29,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 25420,
+      "actualCostCents": 6,
+      "speakerPenalty": 0.010332067200939696,
+      "speakerMap": {},
+      "qualityWarnings": [
+        "OpenAI STT returned coarse single-speaker transcript output without reliable segment timing or speaker labels."
+      ],
+      "overallScore": 90.11226132685603,
+      "overallComponents": {
+        "accuracy": {
+          "score": 94.39083232810616,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 96.6673806512118,
+          "source": "processing-time",
+          "processingTimeMs": 25420
+        },
+        "costEfficiency": {
+          "score": 75,
+          "source": "reported-cost",
+          "costCents": 6
+        }
+      },
+      "overallRank": 20,
+      "rank": 4,
+      "overallTier": 2
+    },
+    {
+      "provider": "happyscribe-auto",
+      "providerKey": "happyscribe/auto",
+      "tokenCount": 1595,
+      "transcriptTextHash": "bdf3061efaac2ce8",
+      "segmentStats": {
+        "segmentCount": 22,
+        "timedSegmentCount": 22,
+        "zeroDurationSegmentCount": 1,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 571,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 94.14957780458384,
+      "speakerAwareWER": 0.05850422195416164,
+      "textOnlyWER": 0.05308114704087859,
+      "textOnlyBreakdown": {
+        "substitutions": 27,
+        "deletions": 19,
+        "insertions": 41,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 31,
+        "deletions": 22,
+        "insertions": 44,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 71087,
+      "actualCostCents": 0,
+      "speakerPenalty": 0.005423074913283053,
+      "speakerMap": {
+        "speaker-1": "speaker-1",
+        "speaker-2": "speaker-2",
+        "speaker-3": "speaker-4",
+        "speaker-4": "speaker-3",
+        "speaker-5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 94.58932668895913,
+      "overallComponents": {
+        "accuracy": {
+          "score": 94.14957780458384,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 90.05815114666883,
+          "source": "processing-time",
+          "processingTimeMs": 71087
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "reported-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 11,
+      "rank": 5,
+      "overallTier": 2
+    },
+    {
+      "provider": "deepinfra-openai_whisper-large-v3",
+      "providerKey": "deepinfra/openai/whisper-large-v3",
+      "tokenCount": 1573,
+      "transcriptTextHash": "484b043c81237d6e",
+      "segmentStats": {
+        "segmentCount": 22,
+        "timedSegmentCount": 22,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 586,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 94.02895054282267,
+      "speakerAwareWER": 0.05971049457177322,
+      "textOnlyWER": 0.048810250152532035,
+      "textOnlyBreakdown": {
+        "substitutions": 24,
+        "deletions": 26,
+        "insertions": 30,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 25,
+        "deletions": 44,
+        "insertions": 30,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 11901,
+      "actualCostCents": 0.45,
+      "speakerPenalty": 0.010900244419241187,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 96.20171015037648,
+      "overallComponents": {
+        "accuracy": {
+          "score": 94.02895054282267,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 98.6239395158606,
+          "source": "processing-time",
+          "processingTimeMs": 11901
+        },
+        "costEfficiency": {
+          "score": 98.125,
+          "source": "reported-cost",
+          "costCents": 0.45
+        }
+      },
+      "overallRank": 2,
+      "rank": 6,
+      "overallTier": 1
+    },
+    {
+      "provider": "groq-whisper-large-v3",
+      "providerKey": "groq/whisper-large-v3",
+      "tokenCount": 1588,
+      "transcriptTextHash": "f76bc78156368b01",
+      "segmentStats": {
+        "segmentCount": 131,
+        "timedSegmentCount": 131,
+        "zeroDurationSegmentCount": 5,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 555,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 93.9686369119421,
+      "speakerAwareWER": 0.06031363088057901,
+      "textOnlyWER": 0.04942037827943868,
+      "textOnlyBreakdown": {
+        "substitutions": 20,
+        "deletions": 26,
+        "insertions": 35,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 21,
+        "deletions": 44,
+        "insertions": 35,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 11184,
+      "actualCostCents": 1.8499999999999999,
+      "speakerPenalty": 0.010893252601140331,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 94.73916224411253,
+      "overallComponents": {
+        "accuracy": {
+          "score": 93.9686369119421,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 98.72770848589929,
+          "source": "processing-time",
+          "processingTimeMs": 11184
+        },
+        "costEfficiency": {
+          "score": 92.29166666666667,
+          "source": "reported-cost",
+          "costCents": 1.8499999999999999
+        }
+      },
+      "overallRank": 8,
+      "rank": 7,
+      "overallTier": 1
+    },
+    {
+      "provider": "together-openai_whisper-large-v3",
+      "providerKey": "together/openai/whisper-large-v3",
+      "tokenCount": 1578,
+      "transcriptTextHash": "bb01ef877a1ede15",
+      "segmentStats": {
+        "segmentCount": 58,
+        "timedSegmentCount": 58,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 543,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 93.9686369119421,
+      "speakerAwareWER": 0.06031363088057901,
+      "textOnlyWER": 0.04942037827943868,
+      "textOnlyBreakdown": {
+        "substitutions": 27,
+        "deletions": 24,
+        "insertions": 30,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 28,
+        "deletions": 42,
+        "insertions": 30,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 5118,
+      "actualCostCents": 1.5,
+      "speakerPenalty": 0.010893252601140331,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 95.32322346177459,
+      "overallComponents": {
+        "accuracy": {
+          "score": 93.9686369119421,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 99.60562002321414,
+          "source": "processing-time",
+          "processingTimeMs": 5118
+        },
+        "costEfficiency": {
+          "score": 93.75,
+          "source": "reported-cost",
+          "costCents": 1.5
+        }
+      },
+      "overallRank": 4,
+      "rank": 8,
+      "overallTier": 1
+    },
+    {
+      "provider": "assemblyai-universal-3-pro",
+      "providerKey": "assemblyai/universal-3-pro",
+      "tokenCount": 1596,
+      "transcriptTextHash": "548c73c59482a7af",
+      "segmentStats": {
+        "segmentCount": 19,
+        "timedSegmentCount": 19,
+        "zeroDurationSegmentCount": 1,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 573,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 93.90832328106153,
+      "speakerAwareWER": 0.0609167671893848,
+      "textOnlyWER": 0.05552165954850519,
+      "textOnlyBreakdown": {
+        "substitutions": 31,
+        "deletions": 19,
+        "insertions": 41,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 35,
+        "deletions": 22,
+        "insertions": 44,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 17155,
+      "actualCostCents": 3.5,
+      "speakerPenalty": 0.005395107640879616,
+      "speakerMap": {
+        "speaker-A": "speaker-1",
+        "speaker-B": "speaker-2",
+        "speaker-C": "speaker-4",
+        "speaker-D": "speaker-3",
+        "speaker-E": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 92.77421480102194,
+      "overallComponents": {
+        "accuracy": {
+          "score": 93.90832328106153,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 97.86354597529807,
+          "source": "processing-time",
+          "processingTimeMs": 17155
+        },
+        "costEfficiency": {
+          "score": 85.41666666666666,
+          "source": "reported-cost",
+          "costCents": 3.5
+        }
+      },
+      "overallRank": 13,
+      "rank": 9,
+      "overallTier": 2
+    },
+    {
+      "provider": "gladia-default",
+      "providerKey": "gladia/default",
+      "tokenCount": 1599,
+      "transcriptTextHash": "ad713f8bfa41e760",
+      "segmentStats": {
+        "segmentCount": 215,
+        "timedSegmentCount": 215,
+        "zeroDurationSegmentCount": 51,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 478,
+        "coverageSeconds": 598,
+        "durationCoverageRatio": 0.9966666666666667,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 93.60675512665863,
+      "speakerAwareWER": 0.06393244873341375,
+      "textOnlyWER": 0.05979255643685174,
+      "textOnlyBreakdown": {
+        "substitutions": 31,
+        "deletions": 22,
+        "insertions": 45,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 34,
+        "deletions": 25,
+        "insertions": 47,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 22138,
+      "actualCostCents": 10.166666666666666,
+      "speakerPenalty": 0.00413989229656201,
+      "speakerMap": {
+        "speaker-0": "speaker-1",
+        "speaker-1": "speaker-2",
+        "speaker-2": "speaker-3",
+        "speaker-3": "speaker-4",
+        "speaker-4": "speaker-5",
+        "speaker-5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 85.49869312118119,
+      "overallComponents": {
+        "accuracy": {
+          "score": 93.60675512665863,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 97.14237334251865,
+          "source": "processing-time",
+          "processingTimeMs": 22138
+        },
+        "costEfficiency": {
+          "score": 57.638888888888886,
+          "source": "reported-cost",
+          "costCents": 10.166666666666666
+        }
+      },
+      "overallRank": 25,
+      "rank": 10,
+      "overallTier": 3
+    },
+    {
+      "provider": "speechmatics-enhanced",
+      "providerKey": "speechmatics/enhanced",
+      "tokenCount": 1679,
+      "transcriptTextHash": "76354e5e448f222c",
+      "segmentStats": {
+        "segmentCount": 147,
+        "timedSegmentCount": 147,
+        "zeroDurationSegmentCount": 15,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 532,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 93.4258142340169,
+      "speakerAwareWER": 0.06574185765983112,
+      "textOnlyWER": 0.06345332519829164,
+      "textOnlyBreakdown": {
+        "substitutions": 25,
+        "deletions": 11,
+        "insertions": 68,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 26,
+        "deletions": 12,
+        "insertions": 71,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 28828,
+      "actualCostCents": 12.5,
+      "speakerPenalty": 0.002288532461539483,
+      "speakerMap": {
+        "S1": "speaker-1",
+        "S2": "speaker-2",
+        "S3": "speaker-3",
+        "S4": "speaker-4",
+        "S5": "speaker-5",
+        "S6": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 82.73561188584631,
+      "overallComponents": {
+        "accuracy": {
+          "score": 93.4258142340169,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 96.17415240868475,
+          "source": "processing-time",
+          "processingTimeMs": 28828
+        },
+        "costEfficiency": {
+          "score": 47.916666666666664,
+          "source": "reported-cost",
+          "costCents": 12.5
+        }
+      },
+      "overallRank": 27,
+      "rank": 11,
+      "overallTier": 3
+    },
+    {
+      "provider": "groq-whisper-large-v3-turbo",
+      "providerKey": "groq/whisper-large-v3-turbo",
+      "tokenCount": 1579,
+      "transcriptTextHash": "47f778ff73db6c64",
+      "segmentStats": {
+        "segmentCount": 145,
+        "timedSegmentCount": 145,
+        "zeroDurationSegmentCount": 3,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 541,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 93.124246079614,
+      "speakerAwareWER": 0.06875753920386007,
+      "textOnlyWER": 0.057962172056131786,
+      "textOnlyBreakdown": {
+        "substitutions": 29,
+        "deletions": 29,
+        "insertions": 37,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 30,
+        "deletions": 47,
+        "insertions": 37,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 8307,
+      "actualCostCents": 0.6666666666666666,
+      "speakerPenalty": 0.010795367147728288,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 95.6537003217193,
+      "overallComponents": {
+        "accuracy": {
+          "score": 93.124246079614,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 99.14408690542696,
+          "source": "processing-time",
+          "processingTimeMs": 8307
+        },
+        "costEfficiency": {
+          "score": 97.22222222222221,
+          "source": "reported-cost",
+          "costCents": 0.6666666666666666
+        }
+      },
+      "overallRank": 3,
+      "rank": 12,
+      "overallTier": 1
+    },
+    {
+      "provider": "whisper-medium",
+      "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
+      "tokenCount": 1572,
+      "transcriptTextHash": "28aee42bdb707906",
+      "segmentStats": {
+        "segmentCount": 39,
+        "timedSegmentCount": 39,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 595,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": false
+      },
+      "score": 92.88299155609168,
+      "speakerAwareWER": 0.07117008443908324,
+      "textOnlyWER": 0.06101281269066504,
+      "textOnlyBreakdown": {
+        "substitutions": 30,
+        "deletions": 33,
+        "insertions": 37,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 32,
+        "deletions": 50,
+        "insertions": 36,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 51082,
+      "actualCostCents": null,
+      "speakerPenalty": 0.010157271748418198,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [
+        "Whisper timestamps exceeded the known audio duration and were clamped for normalized artifacts."
+      ],
+      "overallScore": 94.67984745788746,
+      "overallComponents": {
+        "accuracy": {
+          "score": 92.88299155609168,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 92.95340671936646,
+          "source": "processing-time",
+          "processingTimeMs": 51082
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 9,
+      "rank": 13,
+      "overallTier": 1
+    },
+    {
+      "provider": "whisper-large-v3-turbo",
+      "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
+      "tokenCount": 1615,
+      "transcriptTextHash": "861f48d60a5cf4a7",
+      "segmentStats": {
+        "segmentCount": 39,
+        "timedSegmentCount": 39,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 589,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": false
+      },
+      "score": 92.34016887816647,
+      "speakerAwareWER": 0.07659831121833534,
+      "textOnlyWER": 0.06589383770591824,
+      "textOnlyBreakdown": {
+        "substitutions": 31,
+        "deletions": 21,
+        "insertions": 56,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 32,
+        "deletions": 39,
+        "insertions": 56,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 40268,
+      "actualCostCents": null,
+      "speakerPenalty": 0.010704473512417101,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 94.79970447387551,
+      "overallComponents": {
+        "accuracy": {
+          "score": 92.34016887816647,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 94.51848013916909,
+          "source": "processing-time",
+          "processingTimeMs": 40268
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 7,
+      "rank": 14,
+      "overallTier": 1
+    },
+    {
+      "provider": "reverb-reverb",
+      "providerKey": "reverb/reverb_asr_v1",
+      "tokenCount": 1565,
+      "transcriptTextHash": "52b269859098742d",
+      "segmentStats": {
+        "segmentCount": 24,
+        "timedSegmentCount": 24,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 560,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 92.15922798552472,
+      "speakerAwareWER": 0.07840772014475271,
+      "textOnlyWER": 0.0762660158633313,
+      "textOnlyBreakdown": {
+        "substitutions": 51,
+        "deletions": 39,
+        "insertions": 35,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 50,
+        "deletions": 44,
+        "insertions": 36,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 693351,
+      "actualCostCents": 0,
+      "speakerPenalty": 0.0021417042814214082,
+      "speakerMap": {
+        "SPEAKER_04": "speaker-1",
+        "SPEAKER_00": "speaker-2",
+        "SPEAKER_03": "speaker-3",
+        "SPEAKER_01": "speaker-4",
+        "SPEAKER_02": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 71.07961399276236,
+      "overallComponents": {
+        "accuracy": {
+          "score": 92.15922798552472,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 0,
+          "source": "processing-time",
+          "processingTimeMs": 693351
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 30,
+      "rank": 15,
+      "overallTier": 3
+    },
+    {
+      "provider": "speechmatics-standard",
+      "providerKey": "speechmatics/standard",
+      "tokenCount": 1683,
+      "transcriptTextHash": "f90624d88213d086",
+      "segmentStats": {
+        "segmentCount": 158,
+        "timedSegmentCount": 158,
+        "zeroDurationSegmentCount": 12,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 548,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 91.85765983112184,
+      "speakerAwareWER": 0.08142340168878166,
+      "textOnlyWER": 0.0774862721171446,
+      "textOnlyBreakdown": {
+        "substitutions": 41,
+        "deletions": 10,
+        "insertions": 76,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 45,
+        "deletions": 11,
+        "insertions": 79,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 17887,
+      "actualCostCents": 7.5,
+      "speakerPenalty": 0.0039371295716370686,
+      "speakerMap": {
+        "S1": "speaker-1",
+        "S2": "speaker-2",
+        "S3": "speaker-3",
+        "S4": "speaker-4",
+        "S5": "speaker-5",
+        "S6": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 87.55573144213706,
+      "overallComponents": {
+        "accuracy": {
+          "score": 91.85765983112184,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 97.75760610630458,
+          "source": "processing-time",
+          "processingTimeMs": 17887
+        },
+        "costEfficiency": {
+          "score": 68.75,
+          "source": "reported-cost",
+          "costCents": 7.5
+        }
+      },
+      "overallRank": 24,
+      "rank": 16,
+      "overallTier": 3
+    },
+    {
+      "provider": "gcloud-chirp_3",
+      "providerKey": "gcloud/chirp_3",
+      "tokenCount": 1644,
+      "transcriptTextHash": "047babfd7e87c0d4",
+      "segmentStats": {
+        "segmentCount": 73,
+        "timedSegmentCount": 73,
+        "zeroDurationSegmentCount": 1,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 546,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 91.6767189384801,
+      "speakerAwareWER": 0.08323281061519903,
+      "textOnlyWER": 0.0726052471018914,
+      "textOnlyBreakdown": {
+        "substitutions": 31,
+        "deletions": 16,
+        "insertions": 72,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 42,
+        "deletions": 18,
+        "insertions": 78,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 122130,
+      "actualCostCents": 16,
+      "speakerPenalty": 0.010627563513307639,
+      "speakerMap": {
+        "spk_1": "speaker-4",
+        "spk_2": "speaker-1",
+        "spk_3": "speaker-4",
+        "spk_4": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 74.83941066675615,
+      "overallComponents": {
+        "accuracy": {
+          "score": 91.6767189384801,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 82.67087145673109,
+          "source": "processing-time",
+          "processingTimeMs": 122130
+        },
+        "costEfficiency": {
+          "score": 33.333333333333336,
+          "source": "reported-cost",
+          "costCents": 16
+        }
+      },
+      "overallRank": 29,
+      "rank": 17,
+      "overallTier": 3
+    },
+    {
+      "provider": "glm-stt-glm-asr-2512",
+      "providerKey": "glm-stt/glm-asr-2512",
+      "tokenCount": 1589,
+      "transcriptTextHash": "bbdc40b3529a7296",
+      "segmentStats": {
+        "segmentCount": 21,
+        "timedSegmentCount": 21,
+        "zeroDurationSegmentCount": 21,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 579,
+        "totalSegmentDurationSeconds": 0,
+        "coverageSeconds": 579,
+        "durationCoverageRatio": 0.965,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 91.25452352231605,
+      "speakerAwareWER": 0.08745476477683957,
+      "textOnlyWER": 0.07687614399023796,
+      "textOnlyBreakdown": {
+        "substitutions": 52,
+        "deletions": 34,
+        "insertions": 40,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 53,
+        "deletions": 52,
+        "insertions": 40,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 43850,
+      "actualCostCents": 2.4,
+      "speakerPenalty": 0.010578620786601614,
+      "speakerMap": {},
+      "qualityWarnings": [
+        "GLM returned all-zero-duration segment timing."
+      ],
+      "overallScore": 91.62727912834967,
+      "overallComponents": {
+        "accuracy": {
+          "score": 91.25452352231605,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 94.00006946876655,
+          "source": "processing-time",
+          "processingTimeMs": 43850
+        },
+        "costEfficiency": {
+          "score": 90,
+          "source": "reported-cost",
+          "costCents": 2.4
+        }
+      },
+      "overallRank": 18,
+      "rank": 18,
+      "overallTier": 2
+    },
+    {
+      "provider": "openai-stt-gpt-4o-mini-transcribe",
+      "providerKey": "openai-stt/gpt-4o-mini-transcribe",
+      "tokenCount": 1673,
+      "transcriptTextHash": "ba63400c8f20fd45",
+      "segmentStats": {
+        "segmentCount": 1,
+        "timedSegmentCount": 1,
+        "zeroDurationSegmentCount": 1,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 0,
+        "totalSegmentDurationSeconds": 0,
+        "coverageSeconds": 0,
+        "durationCoverageRatio": 0,
+        "timingQuality": "coarse",
+        "hasSpeakerLabels": false
+      },
+      "score": 91.25452352231605,
+      "speakerAwareWER": 0.08745476477683957,
+      "textOnlyWER": 0.07809640024405125,
+      "textOnlyBreakdown": {
+        "substitutions": 34,
+        "deletions": 23,
+        "insertions": 71,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 37,
+        "deletions": 39,
+        "insertions": 69,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 14832,
+      "actualCostCents": 3,
+      "speakerPenalty": 0.009358364532788321,
+      "speakerMap": {},
+      "qualityWarnings": [
+        "OpenAI STT returned coarse single-speaker transcript output without reliable segment timing or speaker labels."
+      ],
+      "overallScore": 92.05219822618194,
+      "overallComponents": {
+        "accuracy": {
+          "score": 91.25452352231605,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 98.19974586009569,
+          "source": "processing-time",
+          "processingTimeMs": 14832
+        },
+        "costEfficiency": {
+          "score": 87.5,
+          "source": "reported-cost",
+          "costCents": 3
+        }
+      },
+      "overallRank": 16,
+      "rank": 19,
+      "overallTier": 2
+    },
+    {
+      "provider": "rev-machine",
+      "providerKey": "rev/machine",
+      "tokenCount": 1617,
+      "transcriptTextHash": "eae92e1ec055ace9",
+      "segmentStats": {
+        "segmentCount": 20,
+        "timedSegmentCount": 20,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 560,
+        "coverageSeconds": 598,
+        "durationCoverageRatio": 0.9966666666666667,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 91.0735826296743,
+      "speakerAwareWER": 0.08926417370325694,
+      "textOnlyWER": 0.08785845027455766,
+      "textOnlyBreakdown": {
+        "substitutions": 47,
+        "deletions": 22,
+        "insertions": 75,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 49,
+        "deletions": 24,
+        "insertions": 75,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 65250,
+      "actualCostCents": 3.333333333333333,
+      "speakerPenalty": 0.001405723428699282,
+      "speakerMap": {
+        "speaker-0": "speaker-1",
+        "speaker-1": "speaker-2",
+        "speaker-2": "speaker-3",
+        "speaker-3": "speaker-4",
+        "speaker-4": "speaker-5",
+        "speaker-5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 89.79029916593342,
+      "overallComponents": {
+        "accuracy": {
+          "score": 91.0735826296743,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 90.90292029327398,
+          "source": "processing-time",
+          "processingTimeMs": 65250
+        },
+        "costEfficiency": {
+          "score": 86.11111111111111,
+          "source": "reported-cost",
+          "costCents": 3.333333333333333
+        }
+      },
+      "overallRank": 22,
+      "rank": 20,
+      "overallTier": 3
+    },
+    {
+      "provider": "soniox-stt-async-v4",
+      "providerKey": "soniox/stt-async-v4",
+      "tokenCount": 1702,
+      "transcriptTextHash": "c515a78669e87f73",
+      "segmentStats": {
+        "segmentCount": 80,
+        "timedSegmentCount": 80,
+        "zeroDurationSegmentCount": 3,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 538,
+        "coverageSeconds": 598,
+        "durationCoverageRatio": 0.9966666666666667,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 91.01326899879373,
+      "speakerAwareWER": 0.08986731001206273,
+      "textOnlyWER": 0.0860280658938377,
+      "textOnlyBreakdown": {
+        "substitutions": 38,
+        "deletions": 16,
+        "insertions": 87,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 38,
+        "deletions": 17,
+        "insertions": 94,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 36440,
+      "actualCostCents": 1.6666666666666665,
+      "speakerPenalty": 0.0038392441182250325,
+      "speakerMap": {
+        "1": "speaker-1",
+        "2": "speaker-2",
+        "3": "speaker-3",
+        "4": "speaker-4",
+        "5": "speaker-5",
+        "6": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 92.53864677639328,
+      "overallComponents": {
+        "accuracy": {
+          "score": 91.01326899879373,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 95.0724935524301,
+          "source": "processing-time",
+          "processingTimeMs": 36440
+        },
+        "costEfficiency": {
+          "score": 93.05555555555556,
+          "source": "reported-cost",
+          "costCents": 1.6666666666666665
+        }
+      },
+      "overallRank": 14,
+      "rank": 21,
+      "overallTier": 2
+    },
+    {
+      "provider": "gemini-stt-gemini-3-flash-preview",
+      "providerKey": "gemini-stt/gemini-3-flash-preview",
+      "tokenCount": 1695,
+      "transcriptTextHash": "fe83a970b1091005",
+      "segmentStats": {
+        "segmentCount": 1,
+        "timedSegmentCount": 1,
+        "zeroDurationSegmentCount": 1,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 0,
+        "totalSegmentDurationSeconds": 0,
+        "coverageSeconds": 0,
+        "durationCoverageRatio": 0,
+        "timingQuality": "coarse",
+        "hasSpeakerLabels": false
+      },
+      "score": 90.95295536791315,
+      "speakerAwareWER": 0.09047044632086852,
+      "textOnlyWER": 0.08297742525930446,
+      "textOnlyBreakdown": {
+        "substitutions": 29,
+        "deletions": 9,
+        "insertions": 98,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 35,
+        "deletions": 22,
+        "insertions": 93,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 34429,
+      "actualCostCents": 1.92,
+      "speakerPenalty": 0.007493021061564062,
+      "speakerMap": {},
+      "qualityWarnings": [
+        "Gemini generated compressed timestamps relative to the known audio duration; timing should be treated as coarse/unreliable.",
+        "All provider segments have zero duration; timing is coarse for overlap-based speaker analysis."
+      ],
+      "overallScore": 92.31736236869862,
+      "overallComponents": {
+        "accuracy": {
+          "score": 90.95295536791315,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 95.36353873896822,
+          "source": "processing-time",
+          "processingTimeMs": 34429
+        },
+        "costEfficiency": {
+          "score": 92,
+          "source": "reported-cost",
+          "costCents": 1.92
+        }
+      },
+      "overallRank": 15,
+      "rank": 22,
+      "overallTier": 2
+    },
+    {
+      "provider": "whisper-tiny",
+      "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
+      "tokenCount": 1552,
+      "transcriptTextHash": "a59a15fa7764a4e0",
+      "segmentStats": {
+        "segmentCount": 39,
+        "timedSegmentCount": 39,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 588,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": false
+      },
+      "score": 90.83232810615199,
+      "speakerAwareWER": 0.09167671893848009,
+      "textOnlyWER": 0.08236729713239781,
+      "textOnlyBreakdown": {
+        "substitutions": 72,
+        "deletions": 36,
+        "insertions": 27,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 75,
+        "deletions": 52,
+        "insertions": 25,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 8750,
+      "actualCostCents": null,
+      "speakerPenalty": 0.009309421806082283,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [
+        "Whisper timestamps exceeded the known audio duration and were clamped for normalized artifacts."
+      ],
+      "overallScore": 95.18615730881658,
+      "overallComponents": {
+        "accuracy": {
+          "score": 90.83232810615199,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 99.07997302296232,
+          "source": "processing-time",
+          "processingTimeMs": 8750
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 5,
+      "rank": 23,
+      "overallTier": 1
+    },
+    {
+      "provider": "whisper-small",
+      "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
+      "tokenCount": 1681,
+      "transcriptTextHash": "99326195886519c0",
+      "segmentStats": {
+        "segmentCount": 39,
+        "timedSegmentCount": 39,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 599,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": false
+      },
+      "score": 90.77201447527142,
+      "speakerAwareWER": 0.09227985524728588,
+      "textOnlyWER": 0.08297742525930446,
+      "textOnlyBreakdown": {
+        "substitutions": 43,
+        "deletions": 15,
+        "insertions": 78,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 46,
+        "deletions": 31,
+        "insertions": 76,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 22251,
+      "actualCostCents": null,
+      "speakerPenalty": 0.00930242998798142,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 94.66751204690053,
+      "overallComponents": {
+        "accuracy": {
+          "score": 90.77201447527142,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 97.12601923705927,
+          "source": "processing-time",
+          "processingTimeMs": 22251
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 10,
+      "rank": 24,
+      "overallTier": 1
+    },
+    {
+      "provider": "rev-low_cost",
+      "providerKey": "rev/low_cost",
+      "tokenCount": 1609,
+      "transcriptTextHash": "b2dd45b1e9091ca7",
+      "segmentStats": {
+        "segmentCount": 20,
+        "timedSegmentCount": 20,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 559,
+        "coverageSeconds": 598,
+        "durationCoverageRatio": 0.9966666666666667,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 90.59107358262968,
+      "speakerAwareWER": 0.09408926417370325,
+      "textOnlyWER": 0.09273947528981086,
+      "textOnlyBreakdown": {
+        "substitutions": 52,
+        "deletions": 28,
+        "insertions": 72,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 54,
+        "deletions": 30,
+        "insertions": 72,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 76206,
+      "actualCostCents": 1.6666666666666665,
+      "speakerPenalty": 0.0013497888838923944,
+      "speakerMap": {
+        "speaker-0": "speaker-1",
+        "speaker-1": "speaker-2",
+        "speaker-2": "speaker-3",
+        "speaker-3": "speaker-4",
+        "speaker-4": "speaker-5",
+        "speaker-5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 90.88874960437856,
+      "overallComponents": {
+        "accuracy": {
+          "score": 90.59107358262968,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 89.31729569669936,
+          "source": "processing-time",
+          "processingTimeMs": 76206
+        },
+        "costEfficiency": {
+          "score": 93.05555555555556,
+          "source": "reported-cost",
+          "costCents": 1.6666666666666665
+        }
+      },
+      "overallRank": 19,
+      "rank": 25,
+      "overallTier": 2
+    },
+    {
+      "provider": "deepgram-nova-3",
+      "providerKey": "deepgram/nova-3",
+      "tokenCount": 1606,
+      "transcriptTextHash": "7782d943f44c3fa2",
+      "segmentStats": {
+        "segmentCount": 112,
+        "timedSegmentCount": 112,
+        "zeroDurationSegmentCount": 3,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 601,
+        "totalSegmentDurationSeconds": 518,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 90.2291917973462,
+      "speakerAwareWER": 0.097708082026538,
+      "textOnlyWER": 0.09395973154362416,
+      "textOnlyBreakdown": {
+        "substitutions": 43,
+        "deletions": 32,
+        "insertions": 79,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 45,
+        "deletions": 35,
+        "insertions": 82,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 2393,
+      "actualCostCents": 9.7,
+      "speakerPenalty": 0.0037483504829138314,
+      "speakerMap": {
+        "speaker-0": "speaker-1",
+        "speaker-1": "speaker-2",
+        "speaker-2": "speaker-3",
+        "speaker-3": "speaker-4",
+        "speaker-4": "speaker-5",
+        "speaker-5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 85.01042923200643,
+      "overallComponents": {
+        "accuracy": {
+          "score": 90.2291917973462,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 100,
+          "source": "processing-time",
+          "processingTimeMs": 2393
+        },
+        "costEfficiency": {
+          "score": 59.58333333333334,
+          "source": "reported-cost",
+          "costCents": 9.7
+        }
+      },
+      "overallRank": 26,
+      "rank": 26,
+      "overallTier": 3
+    },
+    {
+      "provider": "aws-standard",
+      "providerKey": "aws/standard",
+      "tokenCount": 1688,
+      "transcriptTextHash": "129b85ba71f4b4d9",
+      "segmentStats": {
+        "segmentCount": 61,
+        "timedSegmentCount": 61,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 564,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 89.98793727382389,
+      "speakerAwareWER": 0.10012062726176116,
+      "textOnlyWER": 0.09029896278218426,
+      "textOnlyBreakdown": {
+        "substitutions": 49,
+        "deletions": 22,
+        "insertions": 77,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 51,
+        "deletions": 32,
+        "insertions": 83,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 61017,
+      "actualCostCents": 24,
+      "speakerPenalty": 0.0098216644795769,
+      "speakerMap": {
+        "spk_0": "speaker-1",
+        "spk_1": "speaker-2",
+        "spk_2": "speaker-3",
+        "spk_3": "speaker-4",
+        "spk_4": "speaker-5",
+        "spk_5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 67.8728556314905,
+      "overallComponents": {
+        "accuracy": {
+          "score": 89.98793727382389,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 91.51554797831417,
+          "source": "processing-time",
+          "processingTimeMs": 61017
+        },
+        "costEfficiency": {
+          "score": 0,
+          "source": "reported-cost",
+          "costCents": 24
+        }
+      },
+      "overallRank": 31,
+      "rank": 27,
+      "overallTier": 3
+    },
+    {
+      "provider": "elevenlabs-scribe_v2",
+      "providerKey": "elevenlabs/scribe_v2",
+      "tokenCount": 1722,
+      "transcriptTextHash": "7f969a0933e2608b",
+      "segmentStats": {
+        "segmentCount": 64,
+        "timedSegmentCount": 64,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 581,
+        "coverageSeconds": 598,
+        "durationCoverageRatio": 0.9966666666666667,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 89.02291917973461,
+      "speakerAwareWER": 0.1097708082026538,
+      "textOnlyWER": 0.09762050030506407,
+      "textOnlyBreakdown": {
+        "substitutions": 40,
+        "deletions": 18,
+        "insertions": 102,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 45,
+        "deletions": 27,
+        "insertions": 110,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 49670,
+      "actualCostCents": 3.6666666666666665,
+      "speakerPenalty": 0.012150307897589724,
+      "speakerMap": {
+        "speaker_0": "speaker-1",
+        "speaker_1": "speaker-2",
+        "speaker_2": "speaker-3",
+        "speaker_3": "speaker-4",
+        "speaker_4": "speaker-5",
+        "speaker_5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 88.9814553140004,
+      "overallComponents": {
+        "accuracy": {
+          "score": 89.02291917973461,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 93.15776067431017,
+          "source": "processing-time",
+          "processingTimeMs": 49670
+        },
+        "costEfficiency": {
+          "score": 84.72222222222221,
+          "source": "reported-cost",
+          "costCents": 3.6666666666666665
+        }
+      },
+      "overallRank": 23,
+      "rank": 28,
+      "overallTier": 3
+    },
+    {
+      "provider": "whisper-base",
+      "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
+      "tokenCount": 1675,
+      "transcriptTextHash": "87ebe0bfa2935691",
+      "segmentStats": {
+        "segmentCount": 38,
+        "timedSegmentCount": 38,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 599,
+        "coverageSeconds": 599,
+        "durationCoverageRatio": 0.9983333333333333,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": false
+      },
+      "score": 88.29915560916767,
+      "speakerAwareWER": 0.11700844390832328,
+      "textOnlyWER": 0.10860280658938377,
+      "textOnlyBreakdown": {
+        "substitutions": 82,
+        "deletions": 23,
+        "insertions": 73,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 86,
+        "deletions": 38,
+        "insertions": 70,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 10383,
+      "actualCostCents": null,
+      "speakerPenalty": 0.008405637318939507,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [],
+      "overallScore": 93.86048642710503,
+      "overallComponents": {
+        "accuracy": {
+          "score": 88.29915560916767,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 98.84363449008478,
+          "source": "processing-time",
+          "processingTimeMs": 10383
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 12,
+      "rank": 29,
+      "overallTier": 2
+    },
+    {
+      "provider": "grok-speech-to-text",
+      "providerKey": "grok/speech-to-text",
+      "tokenCount": 1562,
+      "transcriptTextHash": "7f66d4d2617703af",
+      "segmentStats": {
+        "segmentCount": 65,
+        "timedSegmentCount": 65,
+        "zeroDurationSegmentCount": 2,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 1,
+        "lastEndSeconds": 599,
+        "totalSegmentDurationSeconds": 535,
+        "coverageSeconds": 598,
+        "durationCoverageRatio": 0.9966666666666667,
+        "timingQuality": "native_word",
+        "hasSpeakerLabels": true
+      },
+      "score": 87.57539203860073,
+      "speakerAwareWER": 0.12424607961399277,
+      "textOnlyWER": 0.12263575350823673,
+      "textOnlyBreakdown": {
+        "substitutions": 52,
+        "deletions": 73,
+        "insertions": 76,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 51,
+        "deletions": 77,
+        "insertions": 78,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 7079,
+      "actualCostCents": 1.6666666666666665,
+      "speakerPenalty": 0.001610326105756038,
+      "speakerMap": {
+        "speaker-0": "speaker-1",
+        "speaker-1": "speaker-2",
+        "speaker-2": "speaker-3",
+        "speaker-3": "speaker-4",
+        "speaker-4": "speaker-5",
+        "speaker-5": "speaker-6"
+      },
+      "qualityWarnings": [],
+      "overallScore": 91.88203769982059,
+      "overallComponents": {
+        "accuracy": {
+          "score": 87.57539203860073,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 99.32181116652532,
+          "source": "processing-time",
+          "processingTimeMs": 7079
+        },
+        "costEfficiency": {
+          "score": 93.05555555555556,
+          "source": "reported-cost",
+          "costCents": 1.6666666666666665
+        }
+      },
+      "overallRank": 17,
+      "rank": 30,
+      "overallTier": 2
+    },
+    {
+      "provider": "deapi-WhisperLargeV3",
+      "providerKey": "deapi/WhisperLargeV3",
+      "tokenCount": 1634,
+      "transcriptTextHash": "1e9f361153bf2c05",
+      "segmentStats": {
+        "segmentCount": 43,
+        "timedSegmentCount": 43,
+        "zeroDurationSegmentCount": 0,
+        "negativeDurationSegmentCount": 0,
+        "monotonicStarts": true,
+        "firstStartSeconds": 0,
+        "lastEndSeconds": 600,
+        "totalSegmentDurationSeconds": 571,
+        "coverageSeconds": 600,
+        "durationCoverageRatio": 1,
+        "timingQuality": "segment_interpolated",
+        "hasSpeakerLabels": false
+      },
+      "score": 84.74065138721352,
+      "speakerAwareWER": 0.15259348612786489,
+      "textOnlyWER": 0.14338010982306285,
+      "textOnlyBreakdown": {
+        "substitutions": 28,
+        "deletions": 71,
+        "insertions": 136,
+        "referenceWordCount": 1639
+      },
+      "speakerAwareBreakdown": {
+        "substitutions": 30,
+        "deletions": 88,
+        "insertions": 135,
+        "referenceWordCount": 1658
+      },
+      "actualProcessingTimeMs": 50158,
+      "actualCostCents": 0.519718,
+      "speakerPenalty": 0.00921337630480204,
+      "speakerMap": {
+        "speaker-unknown": "speaker-4"
+      },
+      "qualityWarnings": [
+        "deAPI raw response used bracket timestamp blocks; report uses cleaned parsed transcript text."
+      ],
+      "overallScore": 90.10073630068538,
+      "overallComponents": {
+        "accuracy": {
+          "score": 84.74065138721352,
+          "source": "speaker-aware-wer"
+        },
+        "processingSpeed": {
+          "score": 93.08713409498117,
+          "source": "processing-time",
+          "processingTimeMs": 50158
+        },
+        "costEfficiency": {
+          "score": 97.83450833333333,
+          "source": "reported-cost",
+          "costCents": 0.519718
+        }
+      },
+      "overallRank": 21,
+      "rank": 31,
+      "overallTier": 3
+    }
+  ],
+  "notes": [
+    "`mistral-voxtral-mini-2602` was the most accurate provider on strict speaker-aware WER, scoring 96.68/100.",
+    "Best overall provider: `deepinfra-openai_whisper-large-v3-turbo` scored 97.06/100 using balanced overall weighting.",
+    "Worst overall provider: `aws-standard` scored 67.87/100 using balanced overall weighting.",
+    "The cheapest providers were `happyscribe-auto` and `reverb-reverb` at 0.0000¢ ($0.0000).",
+    "`deepgram-nova-3` was the fastest provider in this set at 2.39s.",
+    "`elevenlabs-scribe_v2` lost the most ground once speaker changes were counted, with 1.22 percentage-point gap between text-only and speaker-aware WER."
+  ]
+}

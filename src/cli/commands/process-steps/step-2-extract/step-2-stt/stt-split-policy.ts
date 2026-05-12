@@ -34,6 +34,9 @@ export const resolveSttSplitPolicy = (
       : {}),
     ...(limits.durationSeconds !== undefined
       ? { maxDurationSeconds: limits.durationSeconds }
+      : {}),
+    ...(limits.requestBudgetSeconds !== undefined
+      ? { requestBudgetSeconds: limits.requestBudgetSeconds }
       : {})
   }
 }
@@ -60,6 +63,10 @@ export const resolveEffectiveSplitSegmentDurationMinutes = (
     const safeMaxDurationSeconds = Math.max(1, policy.maxDurationSeconds - SPLIT_DURATION_SAFETY_SECONDS)
     const durationLimitedSegmentMinutes = safeMaxDurationSeconds / 60
     effectiveSegmentMinutes = Math.min(effectiveSegmentMinutes, durationLimitedSegmentMinutes)
+  }
+
+  if (policy.requestBudgetSeconds !== undefined) {
+    effectiveSegmentMinutes = Math.min(effectiveSegmentMinutes, policy.requestBudgetSeconds / 60)
   }
 
   if (policy.attachmentCapBytes !== undefined && audioFileSizeBytes !== undefined && audioDurationSeconds !== undefined) {
@@ -106,6 +113,19 @@ export const resolveTranscriptionSplitDecision = (
     reasons.push({
       kind: 'duration_cap',
       maxDurationSeconds: policy.maxDurationSeconds,
+      audioDurationSeconds: options.audioDurationSeconds
+    })
+  }
+
+  if (
+    policy.requestBudgetSeconds !== undefined
+    && typeof options.audioDurationSeconds === 'number'
+    && Number.isFinite(options.audioDurationSeconds)
+    && options.audioDurationSeconds > policy.requestBudgetSeconds
+  ) {
+    reasons.push({
+      kind: 'request_budget',
+      requestBudgetSeconds: policy.requestBudgetSeconds,
       audioDurationSeconds: options.audioDurationSeconds
     })
   }

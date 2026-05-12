@@ -824,6 +824,7 @@ export type SupadataJobStatus = {
 export type SttSplitPolicy = {
   attachmentCapBytes?: number | undefined
   maxDurationSeconds?: number | undefined
+  requestBudgetSeconds?: number | undefined
   preferredSegmentDurationMinutes?: number | undefined
 }
 
@@ -831,6 +832,7 @@ export type SttSplitDecisionReason =
   | { kind: 'explicit' }
   | { kind: 'attachment_cap', attachmentCapBytes: number, audioFileSizeBytes: number }
   | { kind: 'duration_cap', maxDurationSeconds: number, audioDurationSeconds: number }
+  | { kind: 'request_budget', requestBudgetSeconds: number, audioDurationSeconds: number }
 
 export type SttSplitDecision = {
   shouldSplit: boolean

@@ -8,6 +8,7 @@ import type {
   TranscriptionResult,
   WhisperProgressWindow
 } from '~/types'
+import { mkdir } from 'node:fs/promises'
 import { mergeStep2TimingMetadata } from './stt-timing-metadata'
 import * as l from '~/utils/logger'
 import { runWhisperTranscribe } from './stt-local/whisper/run-whisper'
@@ -41,6 +42,7 @@ import { writeSttResultArtifact } from './stt-utils/stt-result-artifacts'
 import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from './bootstrap'
 import {
   DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
+  SPLIT_DURATION_SAFETY_SECONDS,
   resolveEffectiveSplitSegmentDurationMinutes,
   resolveSttSplitPolicy,
   resolveTranscriptionSplitDecision
@@ -83,6 +85,14 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'together'
 ])
 
+const MAX_ADAPTIVE_SPLIT_PASSES = 4
+const MIN_ADAPTIVE_SPLIT_SEGMENT_SECONDS = 60
+type SplitRetryReason = 'attachment_cap' | 'duration_cap' | 'request_budget'
+type SplitLimitClassification = {
+  reason: SplitRetryReason
+  durationCapSeconds?: number | undefined
+}
+
 const toErrorMessage = (error: unknown): string | undefined => {
   if (error instanceof Error) {
     return error.message
@@ -95,44 +105,71 @@ const toErrorMessage = (error: unknown): string | undefined => {
   return undefined
 }
 
-const isDurationLimitedTranscriptionError = (
-  target: SplitPolicyTarget,
-  error: unknown
-): boolean => {
-  const maxDurationSeconds = resolveSttSplitPolicy(target).maxDurationSeconds
+export const extractSttSplitDurationCapSecondsFromError = (error: unknown): number | undefined => {
   const message = toErrorMessage(error)
-  if (maxDurationSeconds === undefined || !message) {
-    return false
-  }
-
-  const match = message.match(/audio duration\s+[\d.]+\s+seconds is longer than\s+([\d.]+)\s+seconds which is the maximum for this model/i)
-  if (!match) {
-    return false
-  }
-
-  const capFromError = Number.parseFloat(match[1] ?? '')
-  return !Number.isFinite(capFromError) || Math.abs(capFromError - maxDurationSeconds) < 1
-}
-
-const resolveSplitRetryReason = (
-  target: SplitPolicyTarget,
-  splitRequested: boolean,
-  error: unknown
-): 'attachment_cap' | 'duration_cap' | undefined => {
-  if (splitRequested) {
+  if (!message) {
     return undefined
   }
 
-  if (SPLIT_RETRY_ON_TOO_LARGE_ENGINES.has(target.service) && isPayloadTooLargeTranscriptionError(error)) {
-    return 'attachment_cap'
-  }
+  const patterns = [
+    /audio duration\s+[\d.]+\s+seconds is longer than\s+([\d.]+)\s+seconds which is the maximum for this model/i,
+    /audio duration\s+[\d.]+\s+seconds is longer than\s+([\d.]+)\s+seconds/i,
+    /maximum(?: audio)? duration(?: is| of)?\s+([\d.]+)\s*seconds/i
+  ]
 
-  if (isDurationLimitedTranscriptionError(target, error)) {
-    return 'duration_cap'
+  for (const pattern of patterns) {
+    const match = message.match(pattern)
+    if (!match) {
+      continue
+    }
+    const capFromError = Number.parseFloat(match[1] ?? '')
+    if (Number.isFinite(capFromError) && capFromError > 0) {
+      return capFromError
+    }
   }
 
   return undefined
 }
+
+const isRequestBudgetTranscriptionError = (error: unknown): boolean => {
+  const message = toErrorMessage(error)
+  if (!message) {
+    return false
+  }
+
+  return /\binput_too_large\b|input too large|maximum context length|context length|too many input tokens|exceeds? .*token/i.test(message)
+}
+
+export const classifySttSplitLimitError = (
+  target: SplitPolicyTarget,
+  error: unknown
+): SplitLimitClassification | undefined => {
+  const durationCapSeconds = extractSttSplitDurationCapSecondsFromError(error)
+  if (durationCapSeconds !== undefined) {
+    return {
+      reason: 'duration_cap',
+      durationCapSeconds
+    }
+  }
+
+  const policy = resolveSttSplitPolicy(target)
+  if (policy.requestBudgetSeconds !== undefined && isRequestBudgetTranscriptionError(error)) {
+    return { reason: 'request_budget' }
+  }
+
+  if (SPLIT_RETRY_ON_TOO_LARGE_ENGINES.has(target.service) && isPayloadTooLargeTranscriptionError(error)) {
+    return { reason: 'attachment_cap' }
+  }
+
+  return undefined
+}
+
+const resolveSplitRetryReason = (
+  target: SplitPolicyTarget,
+  _splitRequested: boolean,
+  error: unknown
+): SplitRetryReason | undefined =>
+  classifySttSplitLimitError(target, error)?.reason
 
 const logAutoSplitDecision = (
   target: SplitPolicyTarget,
@@ -165,11 +202,11 @@ export const shouldSplitTranscriptionInput = (
 
 export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
   if (error instanceof Error) {
-    return error.message.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds/i.test(error.message)
+    return error.message.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds|\binput_too_large\b|input too large/i.test(error.message)
   }
 
   if (typeof error === 'string') {
-    return error.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds/i.test(error)
+    return error.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds|\binput_too_large\b|input too large/i.test(error)
   }
 
   return false
@@ -181,6 +218,28 @@ export const shouldRetrySplitTranscriptionAfterError = (
   error: unknown
 ): boolean => {
   return resolveSplitRetryReason(target, splitRequested, error) !== undefined
+}
+
+export const resolveAdaptiveSplitSegmentDurationMinutes = (
+  previousSegmentDurationMinutes: number,
+  error: unknown
+): number | undefined => {
+  const previousSegmentSeconds = Math.floor(previousSegmentDurationMinutes * 60)
+  if (!Number.isFinite(previousSegmentSeconds) || previousSegmentSeconds <= MIN_ADAPTIVE_SPLIT_SEGMENT_SECONDS) {
+    return undefined
+  }
+
+  const parsedDurationCapSeconds = extractSttSplitDurationCapSecondsFromError(error)
+  const proposedSeconds = parsedDurationCapSeconds !== undefined
+    ? Math.min(previousSegmentSeconds - 1, Math.floor(parsedDurationCapSeconds) - SPLIT_DURATION_SAFETY_SECONDS)
+    : Math.floor(previousSegmentSeconds / 2)
+  const nextSegmentSeconds = Math.max(MIN_ADAPTIVE_SPLIT_SEGMENT_SECONDS, proposedSeconds)
+
+  if (nextSegmentSeconds >= previousSegmentSeconds) {
+    return undefined
+  }
+
+  return Number((nextSegmentSeconds / 60).toFixed(3))
 }
 
 const persistTranscriptionStructuredArtifact = async (
@@ -540,14 +599,20 @@ const runSplitTranscription = async (
   audioPath: string,
   outputDir: string,
   options: SttTargetOptions,
-  splitSegmentDurationMinutes?: number
+  splitSegmentDurationMinutes?: number,
+  workingOutputDir?: string
 ): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  const segmentOutputDir = workingOutputDir ?? outputDir
+  if (workingOutputDir !== undefined) {
+    await mkdir(workingOutputDir, { recursive: true })
+  }
+
   const effectiveSegmentDurationMinutes = splitSegmentDurationMinutes
     ?? resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(target), DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES, {
       audioFileSizeBytes: Bun.file(audioPath).size,
       audioDurationSeconds: options.audioDurationSeconds
     })
-  const segmentDescriptors = await splitAudioFile(audioPath, outputDir, effectiveSegmentDurationMinutes)
+  const segmentDescriptors = await splitAudioFile(audioPath, segmentOutputDir, effectiveSegmentDurationMinutes)
   const totalDurationSeconds = segmentDescriptors.reduce((sum, segment) => sum + segment.durationSeconds, 0)
   const segmentConcurrency = resolveEffectiveSegmentConcurrency(target, options.sttSegmentConcurrency)
   const results: IndexedTranscriptionChunk[] = []
@@ -569,7 +634,7 @@ const runSplitTranscription = async (
         const data = await dispatchStt(
           target,
           segmentDescriptor.path,
-          outputDir,
+          segmentOutputDir,
           offsetMinutes,
           {
             ...options,
@@ -605,6 +670,121 @@ const runSplitTranscription = async (
   await Bun.write(`${outputDir}/transcription.txt`, formatTranscriptText(combined.result.segments))
   await persistTranscriptionStructuredArtifact(outputDir, combined.result, combined.metadata)
   return combined
+}
+
+const buildSplitRetryDecision = (
+  target: SplitPolicyTarget,
+  classification: SplitLimitClassification,
+  segmentDurationMinutes: number,
+  audioFileSizeBytes: number,
+  audioDurationSeconds: number | undefined
+): Pick<ReturnType<typeof resolveTranscriptionSplitDecision>, 'reasons' | 'segmentDurationMinutes'> => {
+  const policy = resolveSttSplitPolicy(target)
+  const reasons = classification.reason === 'attachment_cap' && policy.attachmentCapBytes !== undefined
+    ? [{
+        kind: 'attachment_cap' as const,
+        attachmentCapBytes: policy.attachmentCapBytes,
+        audioFileSizeBytes
+      }]
+    : classification.reason === 'duration_cap' && classification.durationCapSeconds !== undefined && audioDurationSeconds !== undefined
+      ? [{
+          kind: 'duration_cap' as const,
+          maxDurationSeconds: classification.durationCapSeconds,
+          audioDurationSeconds
+        }]
+      : classification.reason === 'request_budget' && policy.requestBudgetSeconds !== undefined && audioDurationSeconds !== undefined
+        ? [{
+            kind: 'request_budget' as const,
+            requestBudgetSeconds: policy.requestBudgetSeconds,
+            audioDurationSeconds
+          }]
+        : []
+
+  return {
+    reasons,
+    segmentDurationMinutes
+  }
+}
+
+const logAdaptiveSplitRetryDecision = (
+  target: SplitPolicyTarget,
+  audioPath: string,
+  classification: SplitLimitClassification,
+  segmentDurationMinutes: number,
+  audioFileSizeBytes: number,
+  audioDurationSeconds: number | undefined
+): void => {
+  logSttSplitDecision(l, target, buildSplitRetryDecision(
+    target,
+    classification,
+    segmentDurationMinutes,
+    audioFileSizeBytes,
+    audioDurationSeconds
+  ), {
+    trigger: 'retry',
+    retryReason: classification.reason,
+    audioPath,
+    audioFileSizeBytes,
+    audioDurationSeconds
+  })
+}
+
+const runAdaptiveSplitTranscription = async (
+  target: SttTarget,
+  audioPath: string,
+  outputDir: string,
+  options: SttTargetOptions,
+  initialSegmentDurationMinutes: number,
+  audioFileSizeBytes: number,
+  initialRetryClassification?: SplitLimitClassification | undefined
+): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  let segmentDurationMinutes = initialSegmentDurationMinutes
+  if (initialRetryClassification !== undefined) {
+    logAdaptiveSplitRetryDecision(
+      target,
+      audioPath,
+      initialRetryClassification,
+      segmentDurationMinutes,
+      audioFileSizeBytes,
+      options.audioDurationSeconds
+    )
+  }
+
+  for (let pass = 1; pass <= MAX_ADAPTIVE_SPLIT_PASSES; pass += 1) {
+    const workingOutputDir = `${outputDir}/split-attempts/pass_${String(pass).padStart(3, '0')}`
+
+    try {
+      return await runSplitTranscription(target, audioPath, outputDir, {
+        ...options,
+        asyncLifecycle: undefined
+      }, segmentDurationMinutes, workingOutputDir)
+    } catch (error) {
+      const classification = classifySttSplitLimitError(target, error)
+      const nextSegmentDurationMinutes = classification !== undefined
+        ? resolveAdaptiveSplitSegmentDurationMinutes(segmentDurationMinutes, error)
+        : undefined
+
+      if (
+        classification === undefined
+        || nextSegmentDurationMinutes === undefined
+        || pass >= MAX_ADAPTIVE_SPLIT_PASSES
+      ) {
+        throw error
+      }
+
+      segmentDurationMinutes = nextSegmentDurationMinutes
+      logAdaptiveSplitRetryDecision(
+        target,
+        audioPath,
+        classification,
+        segmentDurationMinutes,
+        audioFileSizeBytes,
+        options.audioDurationSeconds
+      )
+    }
+  }
+
+  throw new Error('Adaptive split transcription ended without a result')
 }
 
 export const sttTarget = async (
@@ -647,10 +827,14 @@ export const sttTarget = async (
     if (effectiveOptions.split !== true) {
       logAutoSplitDecision(target, audioPath, splitDecision)
     }
-    return await runSplitTranscription(target, audioPath, outputDir, {
-      ...effectiveOptions,
-      asyncLifecycle: undefined
-    }, splitDecision.segmentDurationMinutes)
+    return await runAdaptiveSplitTranscription(
+      target,
+      audioPath,
+      outputDir,
+      effectiveOptions,
+      splitDecision.segmentDurationMinutes,
+      audioFileSize
+    )
   }
 
   try {
@@ -658,27 +842,22 @@ export const sttTarget = async (
     await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
     return transcription
   } catch (error) {
-    const splitRetryReason = resolveSplitRetryReason(target, effectiveOptions.split === true, error)
-    if (splitRetryReason !== undefined) {
+    const splitLimitClassification = classifySttSplitLimitError(target, error)
+    if (splitLimitClassification !== undefined) {
       const splitSegmentDurationMinutes = resolveEffectiveSplitSegmentDurationMinutes(resolveSttSplitPolicy(target), DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES, {
         audioFileSizeBytes: audioFileSize,
         audioDurationSeconds: effectiveOptions.audioDurationSeconds
       })
-      logSttSplitDecision(l, target, {
-        reasons: [],
-        segmentDurationMinutes: splitSegmentDurationMinutes
-      }, {
-        trigger: 'retry',
-        retryReason: splitRetryReason,
-        audioPath,
-        audioFileSizeBytes: audioFileSize,
-        audioDurationSeconds: effectiveOptions.audioDurationSeconds
-      })
 
-      return await runSplitTranscription(target, audioPath, outputDir, {
-        ...effectiveOptions,
-        asyncLifecycle: undefined
-      }, splitSegmentDurationMinutes)
+      return await runAdaptiveSplitTranscription(
+        target,
+        audioPath,
+        outputDir,
+        effectiveOptions,
+        splitSegmentDurationMinutes,
+        audioFileSize,
+        splitLimitClassification
+      )
     }
 
     throw error

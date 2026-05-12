@@ -423,6 +423,26 @@ describe('logging contracts', () => {
       }]
     })
 
+    expect(buildSttSplitDecisionTable(
+      { service: 'openai-stt', model: 'gpt-4o-transcribe' },
+      {
+        reasons: [{ kind: 'request_budget', requestBudgetSeconds: 600, audioDurationSeconds: 2423 }],
+        segmentDurationMinutes: 10
+      }
+    )).toEqual({
+      columns: ['provider', 'model', 'trigger', 'reason', 'cap', 'inputSize', 'inputDuration', 'segmentDuration'],
+      rows: [{
+        provider: 'openai-stt',
+        model: 'gpt-4o-transcribe',
+        trigger: 'auto',
+        reason: 'request_budget',
+        cap: '600s',
+        inputSize: '',
+        inputDuration: '2423s',
+        segmentDuration: '10m'
+      }]
+    })
+
     expect(buildRetryAttemptTable({
       operation: 'supadata-poll-transcript',
       attempt: 2,

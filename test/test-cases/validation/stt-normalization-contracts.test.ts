@@ -193,8 +193,12 @@ describe('STT normalization contracts', () => {
 
     const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
       duplicateGroups: Array<{ providers: string[] }>
+      tierMetric: string
+      tierSplit: { counts: { tier1: number, tier2: number, tier3: number } }
+      tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, overallTier: number }> }>
       providers: Array<{
         provider: string
+        overallTier: number
         qualityWarnings: string[]
         segmentStats: { segmentCount: number }
         duplicateGroupId?: string
@@ -205,8 +209,14 @@ describe('STT normalization contracts', () => {
     expect(report.providers.find((provider) => provider.provider === 'openai-stt-gpt-4o-transcribe')?.qualityWarnings.join(' ')).toContain('coarse')
     expect(report.providers.find((provider) => provider.provider === 'supadata-auto')?.duplicateGroupId).toBeDefined()
     expect(report.providers[0]?.segmentStats.segmentCount).toBeGreaterThan(0)
+    expect(report.tierMetric).toBe('balanced-overall')
+    expect(report.tierSplit.counts).toEqual({ tier1: 1, tier2: 1, tier3: 2 })
+    expect(report.tiers.map((tier) => tier.count)).toEqual([1, 1, 2])
+    expect(report.tiers.flatMap((tier) => tier.providers).map((provider) => provider.overallTier)).toEqual([1, 2, 3, 3])
+    expect(report.providers.every((provider) => [1, 2, 3].includes(provider.overallTier))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
+    expect(markdown).toContain('## Tier Breakdown')
     expect(markdown).toContain('## Quality Flags')
   })
 })

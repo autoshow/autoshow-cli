@@ -41,7 +41,9 @@ const formatMinutes = (minutes: number | undefined): string => {
   return `${rounded}m`
 }
 
-const describeSplitReason = (reason: SttSplitDecisionReason | { kind: 'attachment_cap' | 'duration_cap' }): string => {
+type SttSplitRetryReason = Exclude<SttSplitDecisionReason['kind'], 'explicit'>
+
+const describeSplitReason = (reason: SttSplitDecisionReason | { kind: SttSplitRetryReason }): string => {
   if (reason.kind === 'explicit') {
     return 'explicit'
   }
@@ -49,12 +51,15 @@ const describeSplitReason = (reason: SttSplitDecisionReason | { kind: 'attachmen
   return reason.kind
 }
 
-const getSplitReasonCap = (reason: SttSplitDecisionReason | { kind: 'attachment_cap' | 'duration_cap' }): string => {
+const getSplitReasonCap = (reason: SttSplitDecisionReason | { kind: SttSplitRetryReason }): string => {
   if (reason.kind === 'attachment_cap' && 'attachmentCapBytes' in reason) {
     return formatBytes(reason.attachmentCapBytes)
   }
   if (reason.kind === 'duration_cap' && 'maxDurationSeconds' in reason) {
     return formatSeconds(reason.maxDurationSeconds)
+  }
+  if (reason.kind === 'request_budget' && 'requestBudgetSeconds' in reason) {
+    return formatSeconds(reason.requestBudgetSeconds)
   }
   return ''
 }
@@ -63,7 +68,9 @@ const getSplitReasonInputSize = (reason: SttSplitDecisionReason): string =>
   reason.kind === 'attachment_cap' ? formatBytes(reason.audioFileSizeBytes) : ''
 
 const getSplitReasonInputDuration = (reason: SttSplitDecisionReason): string =>
-  reason.kind === 'duration_cap' ? formatSeconds(reason.audioDurationSeconds) : ''
+  reason.kind === 'duration_cap' || reason.kind === 'request_budget'
+    ? formatSeconds(reason.audioDurationSeconds)
+    : ''
 
 export const buildSttDiarizationConfigTable = (
   summary: {
@@ -121,7 +128,7 @@ export const buildSttSplitDecisionTable = (
   decision: Pick<SttSplitDecision, 'reasons' | 'segmentDurationMinutes'>,
   options: {
     trigger?: 'auto' | 'retry' | 'explicit' | undefined
-    retryReason?: 'attachment_cap' | 'duration_cap' | undefined
+    retryReason?: SttSplitRetryReason | undefined
     audioFileSizeBytes?: number | undefined
     audioDurationSeconds?: number | undefined
   } = {}
@@ -142,7 +149,7 @@ export const buildSttSplitDecisionTable = (
       inputSize: reason.kind === 'attachment_cap'
         ? getSplitReasonInputSize(reason as SttSplitDecisionReason)
         : formatBytes(options.audioFileSizeBytes),
-      inputDuration: reason.kind === 'duration_cap'
+      inputDuration: reason.kind === 'duration_cap' || reason.kind === 'request_budget'
         ? getSplitReasonInputDuration(reason as SttSplitDecisionReason)
         : formatSeconds(options.audioDurationSeconds),
       segmentDuration: formatMinutes(decision.segmentDurationMinutes)
@@ -157,7 +164,7 @@ export const logSttSplitDecision = (
   decision: Pick<SttSplitDecision, 'reasons' | 'segmentDurationMinutes'>,
   options: {
     trigger?: 'auto' | 'retry' | 'explicit' | undefined
-    retryReason?: 'attachment_cap' | 'duration_cap' | undefined
+    retryReason?: SttSplitRetryReason | undefined
     audioPath?: string | undefined
     audioFileSizeBytes?: number | undefined
     audioDurationSeconds?: number | undefined

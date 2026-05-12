@@ -31,6 +31,7 @@ export const SttLimitsSchema = v.object({
   directUploadBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   remoteUrlBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   durationSeconds: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
+  requestBudgetSeconds: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   notes: v.optional(v.string(), undefined)
 })
 
@@ -319,6 +320,7 @@ export const getSttLimits = (service: string, model: string): SttLimits => {
     ...(limits?.directUploadBytes !== undefined ? { directUploadBytes: limits.directUploadBytes } : {}),
     ...(limits?.remoteUrlBytes !== undefined ? { remoteUrlBytes: limits.remoteUrlBytes } : {}),
     ...(limits?.durationSeconds !== undefined ? { durationSeconds: limits.durationSeconds } : {}),
+    ...(limits?.requestBudgetSeconds !== undefined ? { requestBudgetSeconds: limits.requestBudgetSeconds } : {}),
     ...(limits?.notes !== undefined ? { notes: limits.notes } : {})
   }
 }
