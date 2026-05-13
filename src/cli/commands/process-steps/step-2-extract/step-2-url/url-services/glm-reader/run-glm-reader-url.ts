@@ -1,7 +1,18 @@
 import * as v from 'valibot'
+import * as l from '~/utils/logger'
 import type { WebArticleMetadata } from '~/types'
 import { validateData } from '~/utils/validate/validation'
 import { ensureGlmApiKey, resolveGlmBaseUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
+import {
+  byteLength,
+  cleanString,
+  countWords,
+  ensureMeaningfulMarkdown,
+  fallbackTitleFromSource,
+  isRecord,
+  tryFetchRemoteHtml,
+  type UrlArticleRunResult
+} from '../../url-utils'
 
 const GlmReaderResponseSchema = v.looseObject({
   reader_result: v.looseObject({
@@ -12,22 +23,7 @@ const GlmReaderResponseSchema = v.looseObject({
   })
 })
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const cleanString = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') {
-    return undefined
-  }
-  const normalized = value.trim()
-  return normalized.length > 0 ? normalized : undefined
-}
-
-const countWords = (text: string): number => {
-  return text.split(/\s+/).filter(Boolean).length
-}
-
-export const runGlmReader = async (
+const runGlmReader = async (
   source: string
 ): Promise<{ preparedMarkdown: string, web: WebArticleMetadata }> => {
   const apiKey = ensureGlmApiKey('GLM Reader')
@@ -83,5 +79,25 @@ export const runGlmReader = async (
   return {
     preparedMarkdown: content,
     web
+  }
+}
+
+export const runGlmReaderUrl = async (
+  source: string,
+  sourceUrl: string | undefined
+): Promise<UrlArticleRunResult> => {
+  l.write('info', 'Using GLM Reader backend for article extraction')
+  const glmResult = await runGlmReader(source)
+  const htmlFallback = await tryFetchRemoteHtml(source)
+
+  const markdown = ensureMeaningfulMarkdown(glmResult.preparedMarkdown, 'glm-reader')
+  const web = { ...glmResult.web }
+  if (sourceUrl) web.sourceUrl = sourceUrl
+
+  return {
+    markdown,
+    web,
+    fileSize: htmlFallback?.fileSize ?? byteLength(markdown),
+    title: glmResult.web.title ?? fallbackTitleFromSource(source)
   }
 }

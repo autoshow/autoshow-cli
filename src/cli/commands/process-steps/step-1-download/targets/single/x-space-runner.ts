@@ -20,7 +20,7 @@ export const processXSpace = async (
     )
   }
 
-  const { parseSpaceInput, XApiClient, collectSpaces, renderSpacesJson, renderSpacesMarkdown } = await import('~/cli/commands/process-steps/step-2-extract/spaces')
+  const { parseSpaceInput, XApiClient, collectSpaces, renderSpacesJson, renderSpacesMarkdown } = await import('~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/x-spaces')
 
   const parsedInput = parseSpaceInput(target)
   const client = new XApiClient({ bearerToken })

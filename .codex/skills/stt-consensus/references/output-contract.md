@@ -46,7 +46,8 @@ Scoring rules:
 5. Overall score formula: `50% accuracy + 25% processing speed + 25% cost efficiency`, exposed as `overallMetric: "balanced-overall"` with `overallWeights: { accuracy: 0.5, processingSpeed: 0.25, costEfficiency: 0.25 }`.
 6. Overall accuracy uses `max(0, 100 * (1 - speakerAwareWER))`, processing speed and cost are min/max normalized across available provider values with lower values better, whisper and reverb are treated as local zero-cost providers, and missing timing or missing cloud cost receives a neutral 50/100 component score.
 7. Overall ranking sorts by `overallScore` descending, then accuracy component, speed component, cost component, and provider key ascending. The markdown report identifies both best and worst overall providers.
-8. Text normalization expands contractions, abbreviations, and currency symbols, removes filler words, and strips punctuation before tokenization to avoid penalizing formatting differences as recognition errors.
+8. Tier breakdown uses `tiering.metric: "balanced-overall"` and `tiering.method: "equal-thirds-by-group-overall-rank"` to split local, diarization-capable third-party, and non-diarization third-party overall rankings independently; if a group count is not divisible by three, the remainder is assigned to that group's Tier 3.
+9. Text normalization expands contractions, abbreviations, and currency symbols, removes filler words, and strips punctuation before tokenization to avoid penalizing formatting differences as recognition errors.
 
 The report script intentionally uses only:
 
@@ -54,7 +55,7 @@ The report script intentionally uses only:
 2. `providers/*/result.json`
 3. `run.json` cost and timing metadata
 
-JSON report includes `overallMetric`, `overallWeights`, and `overall` top-level fields. Each provider object includes backward-compatible `score` fields plus `overallScore`, `overallRank`, and `overallComponents`.
+JSON report includes `overallMetric`, `overallWeights`, `overall`, and `tiering` top-level fields. `tiering.groups` contains `local`, `thirdPartyDiarization`, and `thirdPartyNonDiarization`. Each provider object includes backward-compatible `score` fields plus `overallScore`, `overallRank`, `overallComponents`, `supportsDiarization`, `diarizationSupport`, `tierGroup`, `groupOverallRank`, and `groupTier`.
 
 It ignores:
 

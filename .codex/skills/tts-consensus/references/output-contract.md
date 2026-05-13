@@ -49,8 +49,9 @@ Scoring rules:
 6. Overall accuracy uses roundtrip WER when available; providers missing roundtrip accuracy receive a neutral 50/100 accuracy component marked as `missing-roundtrip-accuracy`.
 7. Overall processing speed and cost are min/max normalized across available provider values with lower values better, local providers score as zero monetary cost, and missing timing or missing cloud cost receives a neutral 50/100 component score.
 8. Overall ranking sorts by `overallScore` descending, then accuracy component, speed component, cost component, and provider key ascending. The markdown report identifies both best and worst overall providers.
+9. Tier breakdown uses `tiering.metric: "balanced-overall"` and `tiering.method: "equal-thirds-by-group-overall-rank"` to split local and third-party overall rankings independently; if a group count is not divisible by three, the remainder is assigned to that group's Tier 3.
 
-The JSON report uses `overall`, `local`, and `cloud` top-level keys instead of a flat `providers` array. Each provider object includes backward-compatible `score` fields plus `overallScore`, `overallRank`, and `overallComponents`.
+The JSON report uses `overall`, `local`, and `cloud` top-level keys instead of a flat `providers` array. It also includes a `tiering` top-level object with `local` and `thirdParty` groups. Each provider object includes backward-compatible `score` fields plus `overallScore`, `overallRank`, `overallComponents`, `tierGroup`, `groupOverallRank`, and `groupTier`.
 
 The report script uses only:
 

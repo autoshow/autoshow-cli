@@ -26,6 +26,9 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 }
 
+const deprecatedTierSplitKey = 'tier' + 'Split'
+const deprecatedOverallTierKey = 'overall' + 'Tier'
+
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
@@ -193,12 +196,23 @@ describe('STT normalization contracts', () => {
 
     const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
       duplicateGroups: Array<{ providers: string[] }>
-      tierMetric: string
-      tierSplit: { counts: { tier1: number, tier2: number, tier3: number } }
-      tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, overallTier: number }> }>
+      tiering: {
+        metric: string
+        method: string
+        remainderPolicy: string
+        groups: {
+          local: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
+          thirdPartyDiarization: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
+          thirdPartyNonDiarization: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
+        }
+      }
       providers: Array<{
         provider: string
-        overallTier: number
+        supportsDiarization: boolean
+        diarizationSupport: string
+        tierGroup: string
+        groupOverallRank: number
+        groupTier: number
         qualityWarnings: string[]
         segmentStats: { segmentCount: number }
         duplicateGroupId?: string
@@ -209,14 +223,24 @@ describe('STT normalization contracts', () => {
     expect(report.providers.find((provider) => provider.provider === 'openai-stt-gpt-4o-transcribe')?.qualityWarnings.join(' ')).toContain('coarse')
     expect(report.providers.find((provider) => provider.provider === 'supadata-auto')?.duplicateGroupId).toBeDefined()
     expect(report.providers[0]?.segmentStats.segmentCount).toBeGreaterThan(0)
-    expect(report.tierMetric).toBe('balanced-overall')
-    expect(report.tierSplit.counts).toEqual({ tier1: 1, tier2: 1, tier3: 2 })
-    expect(report.tiers.map((tier) => tier.count)).toEqual([1, 1, 2])
-    expect(report.tiers.flatMap((tier) => tier.providers).map((provider) => provider.overallTier)).toEqual([1, 2, 3, 3])
-    expect(report.providers.every((provider) => [1, 2, 3].includes(provider.overallTier))).toBe(true)
+    expect(deprecatedTierSplitKey in report).toBe(false)
+    expect('tiers' in report).toBe(false)
+    expect(report.tiering.metric).toBe('balanced-overall')
+    expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
+    expect(report.tiering.groups.local.tiers).toHaveLength(3)
+    expect(report.tiering.groups.local.tiers.map((tier) => tier.count)).toEqual([0, 0, 0])
+    expect(report.tiering.groups.thirdPartyDiarization.tiers.map((tier) => tier.count)).toEqual([0, 0, 0])
+    expect(report.tiering.groups.thirdPartyNonDiarization.tiers.map((tier) => tier.count)).toEqual([1, 1, 2])
+    expect(report.tiering.groups.thirdPartyNonDiarization.tiers.flatMap((tier) => tier.providers).map((provider) => provider.groupTier)).toEqual([1, 2, 3, 3])
+    expect(report.providers.every((provider) => provider.tierGroup === 'thirdPartyNonDiarization')).toBe(true)
+    expect(report.providers.every((provider) => provider.supportsDiarization === false && provider.diarizationSupport === 'not-supported')).toBe(true)
+    expect(report.providers.every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
+    expect(report.providers.every((provider) => !(deprecatedOverallTierKey in provider))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
     expect(markdown).toContain('## Tier Breakdown')
+    expect(markdown).toContain('### Third-Party Diarization Group')
+    expect(markdown).toContain('### Third-Party Non-Diarization Group')
     expect(markdown).toContain('## Quality Flags')
   })
 })

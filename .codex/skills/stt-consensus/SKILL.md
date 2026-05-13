@@ -90,6 +90,7 @@ The report script:
 6. Reports WER breakdown with substitutions, deletions, and insertions: `WER = (S + D + I) / N`.
 7. Pulls actual cost and processing time from `run.json` when available.
 8. Adds a combined overall leaderboard using `overallScore = 50% accuracy + 25% processing speed + 25% cost efficiency`, treats whisper and reverb as local/free for cost scoring, and reports the best and worst overall providers.
+9. Splits STT tier breakdowns into local, diarization-capable third-party, and non-diarization third-party three-tier groups using balanced overall group rank.
 9. Ignores `transcription.txt` files and any pre-existing comparison reports.
 
 ## Validation Checklist
@@ -98,11 +99,12 @@ The report script:
 2. Confirm the providers counted in the report are the providers that actually exist under `providers/`.
 3. Confirm `reference-comparison-report.md` and `.json` were regenerated after the consensus transcript changed.
 4. Confirm the markdown report contains an `Overall Ranking` section with best and worst overall notes.
-5. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, and per-provider `overallComponents`.
-6. Confirm speaker labels are stable across the transcript and the report speaker maps are non-empty for diarized providers.
-7. Confirm the final segment in the consensus transcript does not extend past the run duration in `run.json`.
-8. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
-9. If a script fails, report the exact command, the run directory, and the first actionable error line.
+5. Confirm the markdown report contains a `Tier Breakdown` section for local, third-party diarization, and third-party non-diarization groups.
+6. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, `tiering`, and per-provider `overallComponents`, `supportsDiarization`, `diarizationSupport`, `tierGroup`, `groupOverallRank`, and `groupTier`.
+7. Confirm speaker labels are stable across the transcript and the report speaker maps are non-empty for diarized providers.
+8. Confirm the final segment in the consensus transcript does not extend past the run duration in `run.json`.
+9. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
+10. If a script fails, report the exact command, the run directory, and the first actionable error line.
 
 ## Gotchas
 

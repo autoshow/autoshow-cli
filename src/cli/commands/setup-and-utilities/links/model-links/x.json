@@ -1,0 +1,37 @@
+{
+  "X": {
+    "General": [
+      "https://docs.x.com/x-api/introduction.md",
+      "https://docs.x.com/make-your-first-request.md",
+      "https://docs.x.com/x-api/getting-started/pricing.md",
+      "https://docs.x.com/x-api/getting-started/getting-access.md"
+    ],
+    "URL": [
+      "https://docs.x.com/x-api/spaces/introduction.md",
+      "https://docs.x.com/x-api/spaces/lookup/introduction.md",
+      "https://docs.x.com/x-api/spaces/lookup/quickstart.md",
+      "https://docs.x.com/x-api/spaces/get-spaces-by-ids.md",
+      "https://docs.x.com/x-api/spaces/get-spaces-by-creator-ids.md",
+      "https://docs.x.com/x-api/spaces/get-space-by-id.md",
+      "https://docs.x.com/x-api/spaces/get-space-posts.md",
+      "https://docs.x.com/x-api/spaces/get-space-ticket-buyers.md",
+      "https://docs.x.com/x-api/spaces/search/introduction.md",
+      "https://docs.x.com/x-api/spaces/search/quickstart.md",
+      "https://docs.x.com/x-api/spaces/search-spaces.md",
+      "https://docs.x.com/x-api/users/lookup/introduction.md",
+      "https://docs.x.com/x-api/users/lookup/quickstart/user-lookup.md",
+      "https://docs.x.com/x-api/users/lookup/quickstart/authenticated-lookup.md",
+      "https://docs.x.com/x-api/users/lookup/integrate.md",
+      "https://docs.x.com/x-api/users/get-user-by-id.md",
+      "https://docs.x.com/x-api/users/get-users-by-ids.md",
+      "https://docs.x.com/x-api/users/get-users-by-usernames.md",
+      "https://docs.x.com/x-api/users/get-user-by-username.md",
+      "https://docs.x.com/x-api/users/get-my-user.md",
+      "https://docs.x.com/x-api/posts/lookup/introduction.md",
+      "https://docs.x.com/x-api/posts/lookup/quickstart.md",
+      "https://docs.x.com/x-api/posts/lookup/integrate.md",
+      "https://docs.x.com/x-api/posts/get-posts-by-ids.md",
+      "https://docs.x.com/x-api/posts/get-post-by-id.md"
+    ]
+  }
+}

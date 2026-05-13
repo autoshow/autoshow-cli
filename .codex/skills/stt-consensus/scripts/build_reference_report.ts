@@ -256,7 +256,7 @@ const OVERALL_WEIGHTS = {
 
 const TIER_METRIC = "balanced-overall";
 const TIER_REMAINDER_POLICY = "bottom-tier-extra";
-const TIER_METHOD = "equal-thirds-by-overall-rank";
+const TIER_METHOD = "equal-thirds-by-group-overall-rank";
 const TIER_DESCRIPTIONS = {
   1: "Best balanced options across accuracy, processing speed, and cost efficiency.",
   2: "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
@@ -264,6 +264,9 @@ const TIER_DESCRIPTIONS = {
 } as const;
 
 const LOCAL_STT_SERVICES = new Set(["whisper", "reverb"]);
+type ProviderGroup = "local" | "cloud";
+type TierGroupName = "local" | "thirdPartyDiarization" | "thirdPartyNonDiarization";
+type DiarizationSupport = "supported" | "not-supported";
 
 function buildQualityWarnings(
   provider: {
@@ -353,12 +356,6 @@ interface TierCounts {
   tier3: number;
 }
 
-interface TierSplit {
-  method: typeof TIER_METHOD;
-  remainderPolicy: typeof TIER_REMAINDER_POLICY;
-  counts: TierCounts;
-}
-
 interface TierRankRange {
   start: number | null;
   end: number | null;
@@ -367,6 +364,11 @@ interface TierRankRange {
 interface TierBreakdownProvider {
   provider: string;
   providerKey: string;
+  tierGroup: TierGroupName;
+  groupOverallRank: number;
+  groupTier: TierNumber;
+  supportsDiarization: boolean;
+  diarizationSupport: DiarizationSupport;
   overallRank: number;
   overallScore: number;
   overallComponents: OverallComponents;
@@ -378,7 +380,26 @@ interface TierBreakdown {
   description: string;
   rankRange: TierRankRange;
   count: number;
-  providers: Array<TierBreakdownProvider & { overallTier: TierNumber }>;
+  providers: TierBreakdownProvider[];
+}
+
+interface TierGroup {
+  count: number;
+  counts: TierCounts;
+  tiers: TierBreakdown[];
+}
+
+interface Tiering {
+  metric: typeof TIER_METRIC;
+  method: typeof TIER_METHOD;
+  remainderPolicy: typeof TIER_REMAINDER_POLICY;
+  groups: Record<TierGroupName, TierGroup>;
+}
+
+interface TierAnnotation {
+  tierGroup: TierGroupName;
+  groupOverallRank: number;
+  groupTier: TierNumber;
 }
 
 function isFiniteNumber(value: number | null | undefined): value is number {
@@ -405,6 +426,32 @@ function isLocalSttProvider(provider: string, providerKey: string): boolean {
   const providerName = provider.toLowerCase();
   const serviceName = providerKey.split("/")[0]?.toLowerCase() ?? providerName;
   return LOCAL_STT_SERVICES.has(serviceName) || [...LOCAL_STT_SERVICES].some((service) => providerName === service || providerName.startsWith(`${service}-`));
+}
+
+function isKnownUnknownSpeakerLabel(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return normalized === "" || normalized === "speaker-unknown" || normalized === "unknown" || normalized === "unk";
+}
+
+function supportsDiarization(provider: { hasSpeakerLabels: boolean | null; segments: Array<{ speaker: string }> }): boolean {
+  if (provider.hasSpeakerLabels === true) {
+    return true;
+  }
+  if (provider.hasSpeakerLabels === false) {
+    return false;
+  }
+  return provider.segments.some((segment) => !isKnownUnknownSpeakerLabel(segment.speaker));
+}
+
+function diarizationSupportFor(supports: boolean): DiarizationSupport {
+  return supports ? "supported" : "not-supported";
+}
+
+function tierGroupForProvider(provider: { group: ProviderGroup; supportsDiarization: boolean }): TierGroupName {
+  if (provider.group === "local") {
+    return "local";
+  }
+  return provider.supportsDiarization ? "thirdPartyDiarization" : "thirdPartyNonDiarization";
 }
 
 function addOverallScores<T extends {
@@ -509,18 +556,12 @@ function tierCountForNumber(counts: TierCounts, tier: TierNumber): number {
   return counts.tier3;
 }
 
-function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[]): {
-  tierSplit: TierSplit;
-  tiers: TierBreakdown[];
-  providerTiers: Map<string, TierNumber>;
-} {
-  const counts = tierCountsForProviderCount(rankedOverall.length);
-  const tierSplit: TierSplit = {
-    method: TIER_METHOD,
-    remainderPolicy: TIER_REMAINDER_POLICY,
-    counts,
-  };
-  const providerTiers = new Map<string, TierNumber>();
+function buildTierGroup<T extends Omit<TierBreakdownProvider, keyof TierAnnotation>>(
+  tierGroup: TierGroupName,
+  rankedProviders: T[],
+): { group: TierGroup; providerAnnotations: Map<string, TierAnnotation> } {
+  const counts = tierCountsForProviderCount(rankedProviders.length);
+  const providerAnnotations = new Map<string, TierAnnotation>();
   const tiers: TierBreakdown[] = [];
   let nextRank = 1;
 
@@ -528,17 +569,21 @@ function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[])
     const count = tierCountForNumber(counts, tier);
     const start = count > 0 ? nextRank : null;
     const end = count > 0 ? nextRank + count - 1 : null;
-    const providers = rankedOverall
+    const providers = rankedProviders
       .slice(nextRank - 1, nextRank - 1 + count)
-      .map((provider) => {
-        providerTiers.set(provider.providerKey, tier);
+      .map((provider, index) => {
+        const groupOverallRank = nextRank + index;
+        const annotation = { tierGroup, groupOverallRank, groupTier: tier };
+        providerAnnotations.set(provider.providerKey, annotation);
         return {
           provider: provider.provider,
           providerKey: provider.providerKey,
+          ...annotation,
+          supportsDiarization: provider.supportsDiarization,
+          diarizationSupport: provider.diarizationSupport,
           overallRank: provider.overallRank,
           overallScore: provider.overallScore,
           overallComponents: provider.overallComponents,
-          overallTier: tier,
         };
       });
 
@@ -553,17 +598,67 @@ function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[])
     nextRank += count;
   }
 
-  return { tierSplit, tiers, providerTiers };
+  return { group: { count: rankedProviders.length, counts, tiers }, providerAnnotations };
+}
+
+function buildTiering<T extends Omit<TierBreakdownProvider, keyof TierAnnotation> & { group: ProviderGroup }>(
+  rankedOverall: T[],
+): {
+  tiering: Tiering;
+  providerAnnotations: Map<string, TierAnnotation>;
+} {
+  const local = buildTierGroup(
+    "local",
+    rankedOverall.filter((provider) => tierGroupForProvider(provider) === "local"),
+  );
+  const thirdPartyDiarization = buildTierGroup(
+    "thirdPartyDiarization",
+    rankedOverall.filter((provider) => tierGroupForProvider(provider) === "thirdPartyDiarization"),
+  );
+  const thirdPartyNonDiarization = buildTierGroup(
+    "thirdPartyNonDiarization",
+    rankedOverall.filter((provider) => tierGroupForProvider(provider) === "thirdPartyNonDiarization"),
+  );
+  const providerAnnotations = new Map<string, TierAnnotation>([
+    ...local.providerAnnotations,
+    ...thirdPartyDiarization.providerAnnotations,
+    ...thirdPartyNonDiarization.providerAnnotations,
+  ]);
+  const tiering: Tiering = {
+    metric: TIER_METRIC,
+    method: TIER_METHOD,
+    remainderPolicy: TIER_REMAINDER_POLICY,
+    groups: {
+      local: local.group,
+      thirdPartyDiarization: thirdPartyDiarization.group,
+      thirdPartyNonDiarization: thirdPartyNonDiarization.group,
+    },
+  };
+  return { tiering, providerAnnotations };
 }
 
 function formatRankRange(range: TierRankRange): string {
   if (range.start === null || range.end === null) {
-    return "no overall ranks";
+    return "no group ranks";
   }
   if (range.start === range.end) {
-    return `overall rank ${range.start}`;
+    return `group rank ${range.start}`;
   }
-  return `overall ranks ${range.start}-${range.end}`;
+  return `group ranks ${range.start}-${range.end}`;
+}
+
+function formatTierGroupName(group: TierGroupName): string {
+  if (group === "local") {
+    return "Local";
+  }
+  if (group === "thirdPartyDiarization") {
+    return "Third-Party Diarization";
+  }
+  return "Third-Party Non-Diarization";
+}
+
+function formatDiarizationSupport(support: DiarizationSupport): string {
+  return support === "supported" ? "supported" : "not supported";
 }
 
 export function buildReport(runDir: string, referencePath: string) {
@@ -582,9 +677,13 @@ export function buildReport(runDir: string, referencePath: string) {
       const textOnlyWer = textOnlyDetailed.wer;
       const speakerAwareWer = speakerAwareDetailed.wer;
       const segmentStats = computeProviderSegmentStats(provider, runDurationSeconds);
+      const providerSupportsDiarization = supportsDiarization(provider);
       return {
         provider: provider.directoryName,
         providerKey: provider.providerKey,
+        group: isLocalSttProvider(provider.directoryName, provider.providerKey) ? "local" : "cloud",
+        supportsDiarization: providerSupportsDiarization,
+        diarizationSupport: diarizationSupportFor(providerSupportsDiarization),
         text: provider.text,
         rawResponse: provider.rawResponse,
         tokenCount: provider.tokenCount,
@@ -653,14 +752,22 @@ export function buildReport(runDir: string, referencePath: string) {
     }
     return left.providerKey.localeCompare(right.providerKey);
   });
-  const { tierSplit, tiers, providerTiers } = buildTierBreakdown(rankedOverallWithoutTiers);
+  const { tiering, providerAnnotations } = buildTiering(rankedOverallWithoutTiers);
   const rankedProviders = rankedProvidersWithoutTiers.map((provider) => ({
     ...provider,
-    overallTier: providerTiers.get(provider.providerKey) ?? 3,
+    ...(providerAnnotations.get(provider.providerKey) ?? {
+      tierGroup: tierGroupForProvider(provider),
+      groupOverallRank: 0,
+      groupTier: 3,
+    }),
   }));
   const rankedOverall = rankedOverallWithoutTiers.map((provider) => ({
     ...provider,
-    overallTier: providerTiers.get(provider.providerKey) ?? 3,
+    ...(providerAnnotations.get(provider.providerKey) ?? {
+      tierGroup: tierGroupForProvider(provider),
+      groupOverallRank: 0,
+      groupTier: 3,
+    }),
   }));
 
   const bestProvider = rankedProviders[0];
@@ -740,9 +847,7 @@ export function buildReport(runDir: string, referencePath: string) {
     },
     overallMetric: "balanced-overall",
     overallWeights: OVERALL_WEIGHTS,
-    tierMetric: TIER_METRIC,
-    tierSplit,
-    tiers,
+    tiering,
     overall: { count: rankedOverall.length, providers: rankedOverall },
     duplicateGroups,
     providers: rankedProviders,
@@ -753,27 +858,35 @@ export function buildReport(runDir: string, referencePath: string) {
   const overallRankingRows = rankedOverall
     .map(
       (provider) =>
-        `| ${provider.overallRank} | \`${provider.provider}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
+        `| ${provider.overallRank} | \`${provider.provider}\` | ${provider.tierGroup} | ${provider.groupOverallRank} | ${provider.groupTier} | ${formatDiarizationSupport(provider.diarizationSupport)} | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
     )
     .join("\n");
   const tierBreakdownBlock = [
-    "Tiers split the balanced overall ranking into equal thirds. When the provider count is not divisible by three, the remainder is assigned to Tier 3.",
+    "Tiers split local providers, diarization-capable third-party providers, and non-diarization third-party providers separately. When a group count is not divisible by three, the remainder is assigned to Tier 3 for that group.",
     "",
-    ...tiers.flatMap((tier) => {
-      const providerRows = tier.providers
-        .map(
-          (provider) =>
-            `| ${provider.overallRank} | \`${provider.provider}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
-        )
-        .join("\n");
+    ...(["local", "thirdPartyDiarization", "thirdPartyNonDiarization"] as const).flatMap((groupName) => {
+      const group = tiering.groups[groupName];
       return [
-        `### ${tier.label} (${formatRankRange(tier.rankRange)})`,
+        `### ${formatTierGroupName(groupName)} Group (${group.count})`,
         "",
-        tier.description,
-        "",
-        "| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |",
-        "| ---: | --- | ---: | ---: | ---: | ---: |",
-        providerRows || "| n/a | n/a | n/a | n/a | n/a | n/a |",
+        ...group.tiers.flatMap((tier) => {
+          const providerRows = tier.providers
+            .map(
+              (provider) =>
+                `| ${provider.groupOverallRank} | ${provider.overallRank} | \`${provider.provider}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
+            )
+            .join("\n");
+          return [
+            `#### ${tier.label} (${formatRankRange(tier.rankRange)})`,
+            "",
+            tier.description,
+            "",
+            "| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |",
+            "| ---: | ---: | --- | ---: | ---: | ---: | ---: |",
+            providerRows || "| n/a | n/a | n/a | n/a | n/a | n/a | n/a |",
+            "",
+          ];
+        }),
         "",
       ];
     }),
@@ -825,11 +938,12 @@ ${providerList}
 - Speaker-aware WER compares those same ordered word streams after inserting synthetic speaker-change tokens and mapping provider speaker IDs onto canonical gold speakers by overlap.
 - Ranking uses exact unrounded speaker-aware WER, with text-only WER included for context.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score; whisper and reverb are treated as local zero-cost providers.
+- Tier breakdown assigns local providers, diarization-capable third-party providers, and non-diarization third-party providers independently using balanced overall group rank.
 
 ## Overall Ranking
 
-| Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
-| --- | --- | ---: | ---: | ---: | ---: |
+| Rank | Provider | Tier Group | Group Rank | Group Tier | Diarization | Overall / 100 | Accuracy | Speed | Cost |
+| --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |
 ${overallRankingRows}
 
 ## Tier Breakdown

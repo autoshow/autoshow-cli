@@ -74,6 +74,15 @@ const GCLOUD_OCR_LINKS = [
   'https://docs.cloud.google.com/document-ai/docs/reference/rest.md.txt'
 ]
 
+const GLM_OCR_LINKS = [
+  'https://docs.z.ai/guides/vlm/glm-ocr.md',
+  'https://docs.z.ai/api-reference/tools/layout-parsing.md'
+]
+
+const GLM_URL_LINKS = [
+  'https://docs.z.ai/api-reference/tools/web-reader.md'
+]
+
 const GROK_GENERAL_LINKS = [
   'https://docs.x.ai/developers/rate-limits.md',
   'https://docs.x.ai/developers/models.md'
@@ -87,6 +96,109 @@ const GROK_TTS_LINKS = [
 const GROK_STT_LINKS = [
   'https://docs.x.ai/developers/model-capabilities/audio/speech-to-text.md',
   'https://docs.x.ai/developers/rest-api-reference/inference/voice.md'
+]
+
+const X_GENERAL_LINKS = [
+  'https://docs.x.com/x-api/introduction.md',
+  'https://docs.x.com/make-your-first-request.md',
+  'https://docs.x.com/x-api/getting-started/pricing.md',
+  'https://docs.x.com/x-api/getting-started/getting-access.md'
+]
+
+const X_URL_LINKS = [
+  'https://docs.x.com/x-api/spaces/introduction.md',
+  'https://docs.x.com/x-api/spaces/lookup/introduction.md',
+  'https://docs.x.com/x-api/spaces/lookup/quickstart.md',
+  'https://docs.x.com/x-api/spaces/get-spaces-by-ids.md',
+  'https://docs.x.com/x-api/spaces/get-spaces-by-creator-ids.md',
+  'https://docs.x.com/x-api/spaces/get-space-by-id.md',
+  'https://docs.x.com/x-api/spaces/get-space-posts.md',
+  'https://docs.x.com/x-api/spaces/get-space-ticket-buyers.md',
+  'https://docs.x.com/x-api/spaces/search/introduction.md',
+  'https://docs.x.com/x-api/spaces/search/quickstart.md',
+  'https://docs.x.com/x-api/spaces/search-spaces.md',
+  'https://docs.x.com/x-api/users/lookup/introduction.md',
+  'https://docs.x.com/x-api/users/lookup/quickstart/user-lookup.md',
+  'https://docs.x.com/x-api/users/lookup/quickstart/authenticated-lookup.md',
+  'https://docs.x.com/x-api/users/lookup/integrate.md',
+  'https://docs.x.com/x-api/users/get-user-by-id.md',
+  'https://docs.x.com/x-api/users/get-users-by-ids.md',
+  'https://docs.x.com/x-api/users/get-users-by-usernames.md',
+  'https://docs.x.com/x-api/users/get-user-by-username.md',
+  'https://docs.x.com/x-api/users/get-my-user.md',
+  'https://docs.x.com/x-api/posts/lookup/introduction.md',
+  'https://docs.x.com/x-api/posts/lookup/quickstart.md',
+  'https://docs.x.com/x-api/posts/lookup/integrate.md',
+  'https://docs.x.com/x-api/posts/get-posts-by-ids.md',
+  'https://docs.x.com/x-api/posts/get-post-by-id.md'
+]
+
+const SCRAPECREATORS_STT_LINK = 'blob:https://docs.scrapecreators.com/de495975-7e82-4fd9-953a-2fe2c257845e'
+const SCRAPECREATORS_FETCH_STT_LINK = 'https://docs.scrapecreators.com/de495975-7e82-4fd9-953a-2fe2c257845e'
+const SCRAPECREATORS_GENERAL_LINKS = [
+  'blob:https://docs.scrapecreators.com/087703a1-b172-471d-a400-6bad935f510d'
+]
+
+const SCRAPECREATORS_STT_LINKS = [
+  SCRAPECREATORS_STT_LINK
+]
+
+const SCRAPECREATORS_URL_LINKS = [
+  'blob:https://docs.scrapecreators.com/ff1a7d46-8bbb-4538-bc30-492e94f9c773',
+  'blob:https://docs.scrapecreators.com/1abff375-a55d-4913-ba54-46955737340a',
+  'blob:https://docs.scrapecreators.com/7b29bf5a-59ad-4626-a633-ca43104366c7',
+  'blob:https://docs.scrapecreators.com/c4c8f88d-ed85-40d0-a9fc-b33f0fb72a1e',
+  'blob:https://docs.scrapecreators.com/ddec819d-87c4-45e1-b602-e552c5de4fd8',
+  'blob:https://docs.scrapecreators.com/bdc7fb25-6ba7-4992-8d07-dd5edf4a3d6c'
+]
+
+const ZYTE_GENERAL_LINKS = [
+  'https://docs.zyte.com/zyte-api/get-started.md',
+  'https://docs.zyte.com/zyte-api/usage/http.md',
+  'https://docs.zyte.com/zyte-api/usage/features.md',
+  'https://docs.zyte.com/zyte-api/usage/rate-limit.md',
+  'https://docs.zyte.com/zyte-api/usage/optimize.md',
+  'https://docs.zyte.com/zyte-api/usage/errors.md',
+  'https://docs.zyte.com/zyte-api/usage/reference.md',
+  'https://docs.zyte.com/zyte-api/usage/stats.md',
+  'https://docs.zyte.com/zyte-api/usage/examples.md'
+]
+
+const ZYTE_URL_LINKS = [
+  'https://docs.zyte.com/zyte-api/usage/extract/index.md',
+  'https://docs.zyte.com/zyte-api/usage/extract/custom-attributes.md',
+  'https://docs.zyte.com/web-scraping/get-started.md',
+  'https://docs.zyte.com/web-scraping/tutorials/main/index.md',
+  'https://docs.zyte.com/web-scraping/guides/export/index.md'
+]
+
+const FIRECRAWL_GENERAL_LINKS = [
+  'https://docs.firecrawl.dev/api-reference/introduction.md',
+  'https://docs.firecrawl.dev/introduction.md',
+  'https://docs.firecrawl.dev/sdks/cli.md',
+  'https://docs.firecrawl.dev/ai-onboarding.md',
+  'https://docs.firecrawl.dev/mcp-server.md',
+  'https://docs.firecrawl.dev/advanced-scraping-guide.md',
+  'https://docs.firecrawl.dev/billing.md',
+  'https://docs.firecrawl.dev/rate-limits.md',
+  'https://docs.firecrawl.dev/partner-credits.md'
+]
+
+const FIRECRAWL_URL_LINKS = [
+  'https://docs.firecrawl.dev/features/scrape.md',
+  'https://docs.firecrawl.dev/features/fast-scraping.md',
+  'https://docs.firecrawl.dev/features/batch-scrape.md',
+  'https://docs.firecrawl.dev/features/llm-extract.md',
+  'https://docs.firecrawl.dev/features/change-tracking.md',
+  'https://docs.firecrawl.dev/features/enhanced-mode.md',
+  'https://docs.firecrawl.dev/features/lockdown.md',
+  'https://docs.firecrawl.dev/features/proxies.md',
+  'https://docs.firecrawl.dev/features/document-parsing.md',
+  'https://docs.firecrawl.dev/api-reference/endpoint/scrape.md',
+  'https://docs.firecrawl.dev/api-reference/endpoint/batch-scrape.md',
+  'https://docs.firecrawl.dev/api-reference/endpoint/batch-scrape-get.md',
+  'https://docs.firecrawl.dev/api-reference/endpoint/batch-scrape-delete.md',
+  'https://docs.firecrawl.dev/api-reference/endpoint/batch-scrape-get-errors.md'
 ]
 
 const KIMI_GENERAL_LINKS = [
@@ -309,6 +421,68 @@ test('links does not retry non-retryable HTTP status failures', async () => {
   expect(attempts.get(LINKS_RETRY_TEST_URL)).toBe(1)
   expect(output).toContain(`<!-- Failed to fetch ${LINKS_RETRY_TEST_URL} -->`)
   expect(output).not.toContain(`<!-- Source: ${LINKS_RETRY_TEST_URL} -->`)
+})
+
+test('links strips blob prefix when fetching scrapecreators documentation', async () => {
+  const outputPath = linksTestOutputPath('scrapecreators-blob')
+  const fetchedUrls: string[] = []
+
+  const fetchImpl = async (input: string | URL | Request): Promise<Response> => {
+    const url = String(input)
+    fetchedUrls.push(url)
+
+    return new Response(`# docs for ${url}\n`, {
+      headers: { 'content-type': 'text/markdown' }
+    })
+  }
+
+  const result = await runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--scrapecreators',
+    'stt'
+  ], { outputPath, fetchImpl })
+
+  const output = await Bun.file(outputPath).text()
+  expect(result.urlCount).toBe(1)
+  expect(fetchedUrls).toEqual([SCRAPECREATORS_FETCH_STT_LINK])
+  expect(output).toContain(`<!-- Source: ${SCRAPECREATORS_STT_LINK} -->`)
+  expect(output).toContain(`# docs for ${SCRAPECREATORS_FETCH_STT_LINK}`)
+  expect(output).not.toContain(`<!-- Source: ${SCRAPECREATORS_FETCH_STT_LINK} -->`)
+})
+
+test('links suppresses recoverable defuddle diagnostics for scrapecreators html', async () => {
+  const outputPath = linksTestOutputPath('scrapecreators-defuddle-diagnostic')
+  const words = Array.from({ length: 40 }, (_, index) => `word${index}`).join(' ')
+  const html = `<!doctype html><html><body><div class="hidden bad[">${words}</div></body></html>`
+  const consoleErrors: string[] = []
+  const originalConsoleError = console.error
+  console.error = (...args: Parameters<typeof console.error>): void => {
+    consoleErrors.push(args.map(String).join(' '))
+  }
+
+  try {
+    await runLinksWithArgv([
+      'bun',
+      'src/cli/create-cli.ts',
+      'links',
+      '--scrapecreators',
+      'stt'
+    ], {
+      outputPath,
+      fetchImpl: async (): Promise<Response> => new Response(html, {
+        headers: { 'content-type': 'text/html' }
+      })
+    })
+  } finally {
+    console.error = originalConsoleError
+  }
+
+  const output = await Bun.file(outputPath).text()
+  expect(output).toContain(`<!-- Source: ${SCRAPECREATORS_STT_LINK} -->`)
+  expect(output).toContain('word0 word1 word2')
+  expect(consoleErrors.join('\n')).not.toContain('Defuddle Error processing document')
 })
 
 test('links selector errors distinguish dashed global sections from valid providers', () => {
@@ -578,6 +752,247 @@ test('links selector accepts grok provider with stt and tts sections', () => {
     grokTtsSelection.serviceSelections,
     grokTtsSelection.globalSections
   )).toEqual(GROK_TTS_LINKS)
+})
+
+test('links selector accepts glm provider with separate ocr and url sections', () => {
+  const glmOcrSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--glm',
+    'ocr'
+  ])
+
+  expect(collectLinks(
+    glmOcrSelection.serviceSelections,
+    glmOcrSelection.globalSections
+  )).toEqual(GLM_OCR_LINKS)
+
+  const glmUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--glm',
+    'url'
+  ])
+
+  expect(collectLinks(
+    glmUrlSelection.serviceSelections,
+    glmUrlSelection.globalSections
+  )).toEqual(GLM_URL_LINKS)
+
+  const globalUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'url'
+  ])
+
+  expect(collectLinks(
+    globalUrlSelection.serviceSelections,
+    globalUrlSelection.globalSections
+  )).toEqual([...GLM_URL_LINKS, ...X_URL_LINKS, ...SCRAPECREATORS_URL_LINKS, ...ZYTE_URL_LINKS, ...FIRECRAWL_URL_LINKS])
+})
+
+test('links selector accepts x provider with general and url sections', () => {
+  const xSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--x'
+  ])
+
+  expect(xSelection.serviceSelections.get('x')).toEqual([])
+  expect(collectLinks(
+    xSelection.serviceSelections,
+    xSelection.globalSections
+  )).toEqual([...X_GENERAL_LINKS, ...X_URL_LINKS])
+
+  const xGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--x',
+    'general'
+  ])
+
+  expect(collectLinks(
+    xGeneralSelection.serviceSelections,
+    xGeneralSelection.globalSections
+  )).toEqual(X_GENERAL_LINKS)
+
+  const xUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--x',
+    'url'
+  ])
+
+  expect(collectLinks(
+    xUrlSelection.serviceSelections,
+    xUrlSelection.globalSections
+  )).toEqual(X_URL_LINKS)
+})
+
+test('links selector accepts scrapecreators provider with general stt and url sections', async () => {
+  const scrapecreatorsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--scrapecreators'
+  ])
+
+  expect(scrapecreatorsSelection.serviceSelections.get('scrapecreators')).toEqual([])
+  expect(collectLinks(
+    scrapecreatorsSelection.serviceSelections,
+    scrapecreatorsSelection.globalSections
+  )).toEqual([...SCRAPECREATORS_GENERAL_LINKS, ...SCRAPECREATORS_STT_LINKS, ...SCRAPECREATORS_URL_LINKS])
+
+  const scrapecreatorsGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--scrapecreators',
+    'general'
+  ])
+
+  expect(collectLinks(
+    scrapecreatorsGeneralSelection.serviceSelections,
+    scrapecreatorsGeneralSelection.globalSections
+  )).toEqual(SCRAPECREATORS_GENERAL_LINKS)
+
+  const scrapecreatorsSttSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--scrapecreators',
+    'stt'
+  ])
+
+  expect(collectLinks(
+    scrapecreatorsSttSelection.serviceSelections,
+    scrapecreatorsSttSelection.globalSections
+  )).toEqual(SCRAPECREATORS_STT_LINKS)
+
+  const scrapecreatorsUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--scrapecreators',
+    'url'
+  ])
+
+  expect(collectLinks(
+    scrapecreatorsUrlSelection.serviceSelections,
+    scrapecreatorsUrlSelection.globalSections
+  )).toEqual(SCRAPECREATORS_URL_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--scrapecreators',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --scrapecreators: tts')
+})
+
+test('links selector accepts zyte provider with general and url sections', async () => {
+  const zyteSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--zyte'
+  ])
+
+  expect(zyteSelection.serviceSelections.get('zyte')).toEqual([])
+  expect(collectLinks(
+    zyteSelection.serviceSelections,
+    zyteSelection.globalSections
+  )).toEqual([...ZYTE_GENERAL_LINKS, ...ZYTE_URL_LINKS])
+
+  const zyteGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--zyte',
+    'general'
+  ])
+
+  expect(collectLinks(
+    zyteGeneralSelection.serviceSelections,
+    zyteGeneralSelection.globalSections
+  )).toEqual(ZYTE_GENERAL_LINKS)
+
+  const zyteUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--zyte',
+    'url'
+  ])
+
+  expect(collectLinks(
+    zyteUrlSelection.serviceSelections,
+    zyteUrlSelection.globalSections
+  )).toEqual(ZYTE_URL_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--zyte',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --zyte: tts')
+})
+
+test('links selector accepts firecrawl provider with general and url sections', async () => {
+  const firecrawlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--firecrawl'
+  ])
+
+  expect(firecrawlSelection.serviceSelections.get('firecrawl')).toEqual([])
+  expect(collectLinks(
+    firecrawlSelection.serviceSelections,
+    firecrawlSelection.globalSections
+  )).toEqual([...FIRECRAWL_GENERAL_LINKS, ...FIRECRAWL_URL_LINKS])
+
+  const firecrawlGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--firecrawl',
+    'general'
+  ])
+
+  expect(collectLinks(
+    firecrawlGeneralSelection.serviceSelections,
+    firecrawlGeneralSelection.globalSections
+  )).toEqual(FIRECRAWL_GENERAL_LINKS)
+
+  const firecrawlUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--firecrawl',
+    'url'
+  ])
+
+  expect(collectLinks(
+    firecrawlUrlSelection.serviceSelections,
+    firecrawlUrlSelection.globalSections
+  )).toEqual(FIRECRAWL_URL_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--firecrawl',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --firecrawl: tts')
 })
 
 test('links selector accepts kimi provider with general text and ocr sections', async () => {

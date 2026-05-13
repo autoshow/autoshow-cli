@@ -24,6 +24,7 @@ interface ParsedArgs {
 }
 
 type ProviderGroup = "local" | "cloud";
+type TierGroupName = "local" | "thirdParty";
 
 interface WerBreakdownData {
   substitutions: number;
@@ -49,7 +50,9 @@ interface RankedProvider {
   overallRank: number;
   overallScore: number;
   overallComponents: OverallComponents;
-  overallTier: TierNumber;
+  tierGroup: TierGroupName;
+  groupOverallRank: number;
+  groupTier: TierNumber;
 }
 
 interface OverallComponents {
@@ -77,7 +80,7 @@ const OVERALL_WEIGHTS = {
 
 const TIER_METRIC = "balanced-overall";
 const TIER_REMAINDER_POLICY = "bottom-tier-extra";
-const TIER_METHOD = "equal-thirds-by-overall-rank";
+const TIER_METHOD = "equal-thirds-by-group-overall-rank";
 const TIER_DESCRIPTIONS = {
   1: "Best balanced options across accuracy, processing speed, and cost efficiency.",
   2: "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
@@ -92,12 +95,6 @@ interface TierCounts {
   tier3: number;
 }
 
-interface TierSplit {
-  method: typeof TIER_METHOD;
-  remainderPolicy: typeof TIER_REMAINDER_POLICY;
-  counts: TierCounts;
-}
-
 interface TierRankRange {
   start: number | null;
   end: number | null;
@@ -106,6 +103,9 @@ interface TierRankRange {
 interface TierBreakdownProvider {
   provider: string;
   providerKey: string;
+  tierGroup: TierGroupName;
+  groupOverallRank: number;
+  groupTier: TierNumber;
   overallRank: number;
   overallScore: number;
   overallComponents: OverallComponents;
@@ -117,11 +117,30 @@ interface TierBreakdown {
   description: string;
   rankRange: TierRankRange;
   count: number;
-  providers: Array<TierBreakdownProvider & { overallTier: TierNumber }>;
+  providers: TierBreakdownProvider[];
 }
 
-type RankedProviderWithoutTier = Omit<RankedProvider, "overallTier">;
-type ProviderData = Omit<RankedProvider, "rank" | "overallRank" | "overallScore" | "overallComponents" | "overallTier">;
+interface TierGroup {
+  count: number;
+  counts: TierCounts;
+  tiers: TierBreakdown[];
+}
+
+interface Tiering {
+  metric: typeof TIER_METRIC;
+  method: typeof TIER_METHOD;
+  remainderPolicy: typeof TIER_REMAINDER_POLICY;
+  groups: Record<TierGroupName, TierGroup>;
+}
+
+interface TierAnnotation {
+  tierGroup: TierGroupName;
+  groupOverallRank: number;
+  groupTier: TierNumber;
+}
+
+type RankedProviderWithoutTier = Omit<RankedProvider, "tierGroup" | "groupOverallRank" | "groupTier">;
+type ProviderData = Omit<RankedProviderWithoutTier, "rank" | "overallRank" | "overallScore" | "overallComponents">;
 type OverallScoredProvider = ProviderData & Pick<RankedProvider, "overallRank" | "overallScore" | "overallComponents">;
 
 function helpText(): string {
@@ -338,18 +357,16 @@ function tierCountForNumber(counts: TierCounts, tier: TierNumber): number {
   return counts.tier3;
 }
 
-function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[]): {
-  tierSplit: TierSplit;
-  tiers: TierBreakdown[];
-  providerTiers: Map<string, TierNumber>;
-} {
-  const counts = tierCountsForProviderCount(rankedOverall.length);
-  const tierSplit: TierSplit = {
-    method: TIER_METHOD,
-    remainderPolicy: TIER_REMAINDER_POLICY,
-    counts,
-  };
-  const providerTiers = new Map<string, TierNumber>();
+function tierGroupForProviderGroup(group: ProviderGroup): TierGroupName {
+  return group === "local" ? "local" : "thirdParty";
+}
+
+function buildTierGroup<T extends Omit<TierBreakdownProvider, keyof TierAnnotation>>(
+  tierGroup: TierGroupName,
+  rankedProviders: T[],
+): { group: TierGroup; providerAnnotations: Map<string, TierAnnotation> } {
+  const counts = tierCountsForProviderCount(rankedProviders.length);
+  const providerAnnotations = new Map<string, TierAnnotation>();
   const tiers: TierBreakdown[] = [];
   let nextRank = 1;
 
@@ -357,17 +374,19 @@ function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[])
     const count = tierCountForNumber(counts, tier);
     const start = count > 0 ? nextRank : null;
     const end = count > 0 ? nextRank + count - 1 : null;
-    const providers = rankedOverall
+    const providers = rankedProviders
       .slice(nextRank - 1, nextRank - 1 + count)
-      .map((provider) => {
-        providerTiers.set(provider.providerKey, tier);
+      .map((provider, index) => {
+        const groupOverallRank = nextRank + index;
+        const annotation = { tierGroup, groupOverallRank, groupTier: tier };
+        providerAnnotations.set(provider.providerKey, annotation);
         return {
           provider: provider.provider,
           providerKey: provider.providerKey,
+          ...annotation,
           overallRank: provider.overallRank,
           overallScore: provider.overallScore,
           overallComponents: provider.overallComponents,
-          overallTier: tier,
         };
       });
 
@@ -382,27 +401,65 @@ function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[])
     nextRank += count;
   }
 
-  return { tierSplit, tiers, providerTiers };
+  return { group: { count: rankedProviders.length, counts, tiers }, providerAnnotations };
 }
 
-function addOverallTiers(
+function buildTiering<T extends Omit<TierBreakdownProvider, keyof TierAnnotation> & { group: ProviderGroup }>(
+  rankedOverall: T[],
+): {
+  tiering: Tiering;
+  providerAnnotations: Map<string, TierAnnotation>;
+} {
+  const local = buildTierGroup(
+    "local",
+    rankedOverall.filter((provider) => tierGroupForProviderGroup(provider.group) === "local"),
+  );
+  const thirdParty = buildTierGroup(
+    "thirdParty",
+    rankedOverall.filter((provider) => tierGroupForProviderGroup(provider.group) === "thirdParty"),
+  );
+  const providerAnnotations = new Map<string, TierAnnotation>([
+    ...local.providerAnnotations,
+    ...thirdParty.providerAnnotations,
+  ]);
+  const tiering: Tiering = {
+    metric: TIER_METRIC,
+    method: TIER_METHOD,
+    remainderPolicy: TIER_REMAINDER_POLICY,
+    groups: {
+      local: local.group,
+      thirdParty: thirdParty.group,
+    },
+  };
+  return { tiering, providerAnnotations };
+}
+
+function addTierAnnotations(
   rankedProviders: RankedProviderWithoutTier[],
-  providerTiers: Map<string, TierNumber>,
+  providerAnnotations: Map<string, TierAnnotation>,
 ): RankedProvider[] {
   return rankedProviders.map((provider) => ({
     ...provider,
-    overallTier: providerTiers.get(provider.providerKey) ?? 3,
+    ...(providerAnnotations.get(provider.providerKey) ?? {
+      tierGroup: tierGroupForProviderGroup(provider.group),
+      groupOverallRank: 0,
+      groupTier: 3,
+    }),
   }));
 }
 
 function formatRankRange(range: TierRankRange): string {
   if (range.start === null || range.end === null) {
-    return "no overall ranks";
+    return "no group ranks";
   }
   if (range.start === range.end) {
-    return `overall rank ${range.start}`;
+    return `group rank ${range.start}`;
   }
-  return `overall ranks ${range.start}-${range.end}`;
+  return `group ranks ${range.start}-${range.end}`;
+}
+
+function formatTierGroupName(group: TierGroupName): string {
+  return group === "local" ? "Local" : "Third-Party";
 }
 
 export function buildReport(runDir: string, consensusPath: string) {
@@ -479,10 +536,10 @@ export function buildReport(runDir: string, consensusPath: string) {
     }
     return left.providerKey.localeCompare(right.providerKey);
   });
-  const { tierSplit, tiers, providerTiers } = buildTierBreakdown(rankedOverallWithoutTiers);
-  const rankedLocal = addOverallTiers(rankedLocalWithoutTiers, providerTiers);
-  const rankedCloud = addOverallTiers(rankedCloudWithoutTiers, providerTiers);
-  const rankedOverall = addOverallTiers(rankedOverallWithoutTiers, providerTiers);
+  const { tiering, providerAnnotations } = buildTiering(rankedOverallWithoutTiers);
+  const rankedLocal = addTierAnnotations(rankedLocalWithoutTiers, providerAnnotations);
+  const rankedCloud = addTierAnnotations(rankedCloudWithoutTiers, providerAnnotations);
+  const rankedOverall = addTierAnnotations(rankedOverallWithoutTiers, providerAnnotations);
 
   const notes: string[] = [];
 
@@ -559,9 +616,7 @@ export function buildReport(runDir: string, consensusPath: string) {
     },
     overallMetric: "balanced-overall",
     overallWeights: OVERALL_WEIGHTS,
-    tierMetric: TIER_METRIC,
-    tierSplit,
-    tiers,
+    tiering,
     overall: { count: rankedOverall.length, providers: rankedOverall },
     local: { count: rankedLocal.length, providers: rankedLocal },
     cloud: { count: rankedCloud.length, providers: rankedCloud },
@@ -596,7 +651,7 @@ export function buildReport(runDir: string, consensusPath: string) {
   }
 
   function buildOverallRankingTable(rankedProviders: RankedProvider[]): string {
-    const headerCols = ["Rank", "Provider", "Group", "Overall / 100", "Accuracy", "Speed", "Cost"];
+    const headerCols = ["Rank", "Provider", "Group", "Group Rank", "Group Tier", "Overall / 100", "Accuracy", "Speed", "Cost"];
     const headerRow = `| ${headerCols.join(" | ")} |`;
     const separatorRow = `| ${headerCols.map(() => "---:").join(" | ")} |`;
     const rows = rankedProviders
@@ -605,6 +660,8 @@ export function buildReport(runDir: string, consensusPath: string) {
           String(p.overallRank),
           `\`${p.providerKey}\``,
           p.group,
+          String(p.groupOverallRank),
+          String(p.groupTier),
           p.overallScore.toFixed(2),
           p.overallComponents.accuracy.score.toFixed(2),
           p.overallComponents.processingSpeed.score.toFixed(2),
@@ -616,25 +673,33 @@ export function buildReport(runDir: string, consensusPath: string) {
     return `${headerRow}\n${separatorRow}\n${rows}`;
   }
 
-  function buildTierBreakdownBlock(tierBreakdowns: TierBreakdown[]): string {
+  function buildTierBreakdownBlock(groups: Tiering["groups"]): string {
     return [
-      "Tiers split the balanced overall ranking into equal thirds. When the provider count is not divisible by three, the remainder is assigned to Tier 3.",
+      "Tiers split local and third-party balanced overall rankings separately. When a group count is not divisible by three, the remainder is assigned to Tier 3 for that group.",
       "",
-      ...tierBreakdowns.flatMap((tier) => {
-        const providerRows = tier.providers
-          .map(
-            (provider) =>
-              `| ${provider.overallRank} | \`${provider.providerKey}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
-          )
-          .join("\n");
+      ...(["local", "thirdParty"] as const).flatMap((groupName) => {
+        const group = groups[groupName];
         return [
-          `### ${tier.label} (${formatRankRange(tier.rankRange)})`,
+          `### ${formatTierGroupName(groupName)} Group (${group.count})`,
           "",
-          tier.description,
-          "",
-          "| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |",
-          "| ---: | --- | ---: | ---: | ---: | ---: |",
-          providerRows || "| n/a | n/a | n/a | n/a | n/a | n/a |",
+          ...group.tiers.flatMap((tier) => {
+            const providerRows = tier.providers
+              .map(
+                (provider) =>
+                  `| ${provider.groupOverallRank} | ${provider.overallRank} | \`${provider.providerKey}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
+              )
+              .join("\n");
+            return [
+              `#### ${tier.label} (${formatRankRange(tier.rankRange)})`,
+              "",
+              tier.description,
+              "",
+              "| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |",
+              "| ---: | ---: | --- | ---: | ---: | ---: | ---: |",
+              providerRows || "| n/a | n/a | n/a | n/a | n/a | n/a | n/a |",
+              "",
+            ];
+          }),
           "",
         ];
       }),
@@ -693,7 +758,7 @@ ${buildRankingTable(rankedCloud, true)}
 - CER compares normalized character sequences for finer-grained accuracy.
 - Providers are separated into local models and cloud services for independent comparison.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
-- Tier breakdown splits the balanced overall ranking into equal thirds.
+- Tier breakdown assigns local and third-party providers independently using balanced overall group rank.
 
 ## Overall Ranking
 
@@ -701,7 +766,7 @@ ${buildOverallRankingTable(rankedOverall)}
 
 ## Tier Breakdown
 
-${buildTierBreakdownBlock(tiers)}
+${buildTierBreakdownBlock(tiering.groups)}
 
 ## Ranking
 

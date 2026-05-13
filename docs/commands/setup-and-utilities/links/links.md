@@ -56,8 +56,9 @@ Accepted provider selectors are the lowercase names below.
 | `--openai` | `general`, `text`, `ocr`, `stt`, `tts`, `image` |
 | `--gemini` | `general`, `text`, `ocr`, `stt`, `tts`, `image`, `video`, `music` |
 | `--gladia` | `general`, `stt` |
-| `--glm` | `general`, `text`, `ocr`, `image`, `video`, `stt` |
+| `--glm` | `general`, `text`, `ocr`, `url`, `image`, `video`, `stt` |
 | `--grok` | `general`, `text`, `image`, `video`, `tts`, `stt` |
+| `--x` | `general`, `url` |
 | `--kimi` | `general`, `text`, `ocr` |
 | `--mistral` | `general`, `stt`, `ocr`, `tts` |
 | `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
@@ -77,6 +78,9 @@ Accepted provider selectors are the lowercase names below.
 | `--happyscribe` | `stt` |
 | `--deapi` | `general`, `image`, `ocr`, `video`, `tts`, `music`, `stt` |
 | `--supadata` | `stt` |
+| `--scrapecreators` | `general`, `stt`, `url` |
+| `--zyte` | `general`, `url` |
+| `--firecrawl` | `general`, `url` |
 
 ## Global sections
 
@@ -89,6 +93,7 @@ Accepted section tokens outside provider selectors:
 - `stt`
 - `text`
 - `tts`
+- `url`
 - `video`
 
 Section availability depends on the provider.
@@ -154,5 +159,6 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 - Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
 - Curated `.md` / `.txt` endpoints and normal HTML docs pages can be mixed in the same provider/section selection. HTML pages are converted locally first; if that extraction fails, the command falls back to Firecrawl article extraction before marking the URL failed.
+- Documentation links with a `blob:https://` or `blob:http://` wrapper are fetched through the underlying HTTP URL while preserving the original source marker in the output.
 - The filename is derived from the normalized provider and section selections, lowercased, deduped, and sorted into a stable order.
 - Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.

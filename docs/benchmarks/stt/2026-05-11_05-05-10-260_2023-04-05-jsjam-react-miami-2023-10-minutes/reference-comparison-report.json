@@ -17,767 +17,6 @@
     "processingSpeed": 0.25,
     "costEfficiency": 0.25
   },
-  "tierMetric": "balanced-overall",
-  "tierSplit": {
-    "method": "equal-thirds-by-overall-rank",
-    "remainderPolicy": "bottom-tier-extra",
-    "counts": {
-      "tier1": 10,
-      "tier2": 10,
-      "tier3": 11
-    }
-  },
-  "tiers": [
-    {
-      "tier": 1,
-      "label": "Tier 1",
-      "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
-      "rankRange": {
-        "start": 1,
-        "end": 10
-      },
-      "count": 10,
-      "providers": [
-        {
-          "provider": "deepinfra-openai_whisper-large-v3-turbo",
-          "providerKey": "deepinfra/openai/whisper-large-v3-turbo",
-          "overallRank": 1,
-          "overallScore": 97.0593515506433,
-          "overallComponents": {
-            "accuracy": {
-              "score": 94.8130277442702,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 99.44468404736611,
-              "source": "processing-time",
-              "processingTimeMs": 6230
-            },
-            "costEfficiency": {
-              "score": 99.16666666666667,
-              "source": "reported-cost",
-              "costCents": 0.19999999999999998
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "deepinfra-openai_whisper-large-v3",
-          "providerKey": "deepinfra/openai/whisper-large-v3",
-          "overallRank": 2,
-          "overallScore": 96.20171015037648,
-          "overallComponents": {
-            "accuracy": {
-              "score": 94.02895054282267,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 98.6239395158606,
-              "source": "processing-time",
-              "processingTimeMs": 11901
-            },
-            "costEfficiency": {
-              "score": 98.125,
-              "source": "reported-cost",
-              "costCents": 0.45
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "groq-whisper-large-v3-turbo",
-          "providerKey": "groq/whisper-large-v3-turbo",
-          "overallRank": 3,
-          "overallScore": 95.6537003217193,
-          "overallComponents": {
-            "accuracy": {
-              "score": 93.124246079614,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 99.14408690542696,
-              "source": "processing-time",
-              "processingTimeMs": 8307
-            },
-            "costEfficiency": {
-              "score": 97.22222222222221,
-              "source": "reported-cost",
-              "costCents": 0.6666666666666666
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "together-openai_whisper-large-v3",
-          "providerKey": "together/openai/whisper-large-v3",
-          "overallRank": 4,
-          "overallScore": 95.32322346177459,
-          "overallComponents": {
-            "accuracy": {
-              "score": 93.9686369119421,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 99.60562002321414,
-              "source": "processing-time",
-              "processingTimeMs": 5118
-            },
-            "costEfficiency": {
-              "score": 93.75,
-              "source": "reported-cost",
-              "costCents": 1.5
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "whisper-tiny",
-          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
-          "overallRank": 5,
-          "overallScore": 95.18615730881658,
-          "overallComponents": {
-            "accuracy": {
-              "score": 90.83232810615199,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 99.07997302296232,
-              "source": "processing-time",
-              "processingTimeMs": 8750
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "mistral-voxtral-mini-2602",
-          "providerKey": "mistral/voxtral-mini-2602",
-          "overallRank": 6,
-          "overallScore": 94.86613678607884,
-          "overallComponents": {
-            "accuracy": {
-              "score": 96.68275030156815,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 98.59904654117906,
-              "source": "processing-time",
-              "processingTimeMs": 12073
-            },
-            "costEfficiency": {
-              "score": 87.5,
-              "source": "reported-cost",
-              "costCents": 3
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "whisper-large-v3-turbo",
-          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
-          "overallRank": 7,
-          "overallScore": 94.79970447387551,
-          "overallComponents": {
-            "accuracy": {
-              "score": 92.34016887816647,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 94.51848013916909,
-              "source": "processing-time",
-              "processingTimeMs": 40268
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "groq-whisper-large-v3",
-          "providerKey": "groq/whisper-large-v3",
-          "overallRank": 8,
-          "overallScore": 94.73916224411253,
-          "overallComponents": {
-            "accuracy": {
-              "score": 93.9686369119421,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 98.72770848589929,
-              "source": "processing-time",
-              "processingTimeMs": 11184
-            },
-            "costEfficiency": {
-              "score": 92.29166666666667,
-              "source": "reported-cost",
-              "costCents": 1.8499999999999999
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "whisper-medium",
-          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
-          "overallRank": 9,
-          "overallScore": 94.67984745788746,
-          "overallComponents": {
-            "accuracy": {
-              "score": 92.88299155609168,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 92.95340671936646,
-              "source": "processing-time",
-              "processingTimeMs": 51082
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 1
-        },
-        {
-          "provider": "whisper-small",
-          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
-          "overallRank": 10,
-          "overallScore": 94.66751204690053,
-          "overallComponents": {
-            "accuracy": {
-              "score": 90.77201447527142,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 97.12601923705927,
-              "source": "processing-time",
-              "processingTimeMs": 22251
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 1
-        }
-      ]
-    },
-    {
-      "tier": 2,
-      "label": "Tier 2",
-      "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
-      "rankRange": {
-        "start": 11,
-        "end": 20
-      },
-      "count": 10,
-      "providers": [
-        {
-          "provider": "happyscribe-auto",
-          "providerKey": "happyscribe/auto",
-          "overallRank": 11,
-          "overallScore": 94.58932668895913,
-          "overallComponents": {
-            "accuracy": {
-              "score": 94.14957780458384,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 90.05815114666883,
-              "source": "processing-time",
-              "processingTimeMs": 71087
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "reported-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "whisper-base",
-          "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
-          "overallRank": 12,
-          "overallScore": 93.86048642710503,
-          "overallComponents": {
-            "accuracy": {
-              "score": 88.29915560916767,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 98.84363449008478,
-              "source": "processing-time",
-              "processingTimeMs": 10383
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "assemblyai-universal-3-pro",
-          "providerKey": "assemblyai/universal-3-pro",
-          "overallRank": 13,
-          "overallScore": 92.77421480102194,
-          "overallComponents": {
-            "accuracy": {
-              "score": 93.90832328106153,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 97.86354597529807,
-              "source": "processing-time",
-              "processingTimeMs": 17155
-            },
-            "costEfficiency": {
-              "score": 85.41666666666666,
-              "source": "reported-cost",
-              "costCents": 3.5
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "soniox-stt-async-v4",
-          "providerKey": "soniox/stt-async-v4",
-          "overallRank": 14,
-          "overallScore": 92.53864677639328,
-          "overallComponents": {
-            "accuracy": {
-              "score": 91.01326899879373,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 95.0724935524301,
-              "source": "processing-time",
-              "processingTimeMs": 36440
-            },
-            "costEfficiency": {
-              "score": 93.05555555555556,
-              "source": "reported-cost",
-              "costCents": 1.6666666666666665
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "gemini-stt-gemini-3-flash-preview",
-          "providerKey": "gemini-stt/gemini-3-flash-preview",
-          "overallRank": 15,
-          "overallScore": 92.31736236869862,
-          "overallComponents": {
-            "accuracy": {
-              "score": 90.95295536791315,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 95.36353873896822,
-              "source": "processing-time",
-              "processingTimeMs": 34429
-            },
-            "costEfficiency": {
-              "score": 92,
-              "source": "reported-cost",
-              "costCents": 1.92
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "openai-stt-gpt-4o-mini-transcribe",
-          "providerKey": "openai-stt/gpt-4o-mini-transcribe",
-          "overallRank": 16,
-          "overallScore": 92.05219822618194,
-          "overallComponents": {
-            "accuracy": {
-              "score": 91.25452352231605,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 98.19974586009569,
-              "source": "processing-time",
-              "processingTimeMs": 14832
-            },
-            "costEfficiency": {
-              "score": 87.5,
-              "source": "reported-cost",
-              "costCents": 3
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "grok-speech-to-text",
-          "providerKey": "grok/speech-to-text",
-          "overallRank": 17,
-          "overallScore": 91.88203769982059,
-          "overallComponents": {
-            "accuracy": {
-              "score": 87.57539203860073,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 99.32181116652532,
-              "source": "processing-time",
-              "processingTimeMs": 7079
-            },
-            "costEfficiency": {
-              "score": 93.05555555555556,
-              "source": "reported-cost",
-              "costCents": 1.6666666666666665
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "glm-stt-glm-asr-2512",
-          "providerKey": "glm-stt/glm-asr-2512",
-          "overallRank": 18,
-          "overallScore": 91.62727912834967,
-          "overallComponents": {
-            "accuracy": {
-              "score": 91.25452352231605,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 94.00006946876655,
-              "source": "processing-time",
-              "processingTimeMs": 43850
-            },
-            "costEfficiency": {
-              "score": 90,
-              "source": "reported-cost",
-              "costCents": 2.4
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "rev-low_cost",
-          "providerKey": "rev/low_cost",
-          "overallRank": 19,
-          "overallScore": 90.88874960437856,
-          "overallComponents": {
-            "accuracy": {
-              "score": 90.59107358262968,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 89.31729569669936,
-              "source": "processing-time",
-              "processingTimeMs": 76206
-            },
-            "costEfficiency": {
-              "score": 93.05555555555556,
-              "source": "reported-cost",
-              "costCents": 1.6666666666666665
-            }
-          },
-          "overallTier": 2
-        },
-        {
-          "provider": "openai-stt-gpt-4o-transcribe",
-          "providerKey": "openai-stt/gpt-4o-transcribe",
-          "overallRank": 20,
-          "overallScore": 90.11226132685603,
-          "overallComponents": {
-            "accuracy": {
-              "score": 94.39083232810616,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 96.6673806512118,
-              "source": "processing-time",
-              "processingTimeMs": 25420
-            },
-            "costEfficiency": {
-              "score": 75,
-              "source": "reported-cost",
-              "costCents": 6
-            }
-          },
-          "overallTier": 2
-        }
-      ]
-    },
-    {
-      "tier": 3,
-      "label": "Tier 3",
-      "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
-      "rankRange": {
-        "start": 21,
-        "end": 31
-      },
-      "count": 11,
-      "providers": [
-        {
-          "provider": "deapi-WhisperLargeV3",
-          "providerKey": "deapi/WhisperLargeV3",
-          "overallRank": 21,
-          "overallScore": 90.10073630068538,
-          "overallComponents": {
-            "accuracy": {
-              "score": 84.74065138721352,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 93.08713409498117,
-              "source": "processing-time",
-              "processingTimeMs": 50158
-            },
-            "costEfficiency": {
-              "score": 97.83450833333333,
-              "source": "reported-cost",
-              "costCents": 0.519718
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "rev-machine",
-          "providerKey": "rev/machine",
-          "overallRank": 22,
-          "overallScore": 89.79029916593342,
-          "overallComponents": {
-            "accuracy": {
-              "score": 91.0735826296743,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 90.90292029327398,
-              "source": "processing-time",
-              "processingTimeMs": 65250
-            },
-            "costEfficiency": {
-              "score": 86.11111111111111,
-              "source": "reported-cost",
-              "costCents": 3.333333333333333
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "elevenlabs-scribe_v2",
-          "providerKey": "elevenlabs/scribe_v2",
-          "overallRank": 23,
-          "overallScore": 88.9814553140004,
-          "overallComponents": {
-            "accuracy": {
-              "score": 89.02291917973461,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 93.15776067431017,
-              "source": "processing-time",
-              "processingTimeMs": 49670
-            },
-            "costEfficiency": {
-              "score": 84.72222222222221,
-              "source": "reported-cost",
-              "costCents": 3.6666666666666665
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "speechmatics-standard",
-          "providerKey": "speechmatics/standard",
-          "overallRank": 24,
-          "overallScore": 87.55573144213706,
-          "overallComponents": {
-            "accuracy": {
-              "score": 91.85765983112184,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 97.75760610630458,
-              "source": "processing-time",
-              "processingTimeMs": 17887
-            },
-            "costEfficiency": {
-              "score": 68.75,
-              "source": "reported-cost",
-              "costCents": 7.5
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "gladia-default",
-          "providerKey": "gladia/default",
-          "overallRank": 25,
-          "overallScore": 85.49869312118119,
-          "overallComponents": {
-            "accuracy": {
-              "score": 93.60675512665863,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 97.14237334251865,
-              "source": "processing-time",
-              "processingTimeMs": 22138
-            },
-            "costEfficiency": {
-              "score": 57.638888888888886,
-              "source": "reported-cost",
-              "costCents": 10.166666666666666
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "deepgram-nova-3",
-          "providerKey": "deepgram/nova-3",
-          "overallRank": 26,
-          "overallScore": 85.01042923200643,
-          "overallComponents": {
-            "accuracy": {
-              "score": 90.2291917973462,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 100,
-              "source": "processing-time",
-              "processingTimeMs": 2393
-            },
-            "costEfficiency": {
-              "score": 59.58333333333334,
-              "source": "reported-cost",
-              "costCents": 9.7
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "speechmatics-enhanced",
-          "providerKey": "speechmatics/enhanced",
-          "overallRank": 27,
-          "overallScore": 82.73561188584631,
-          "overallComponents": {
-            "accuracy": {
-              "score": 93.4258142340169,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 96.17415240868475,
-              "source": "processing-time",
-              "processingTimeMs": 28828
-            },
-            "costEfficiency": {
-              "score": 47.916666666666664,
-              "source": "reported-cost",
-              "costCents": 12.5
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "supadata-auto",
-          "providerKey": "supadata/auto",
-          "overallRank": 28,
-          "overallScore": 76.73971995663025,
-          "overallComponents": {
-            "accuracy": {
-              "score": 95.29553679131485,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 99.70113957722467,
-              "source": "processing-time",
-              "processingTimeMs": 4458
-            },
-            "costEfficiency": {
-              "score": 16.666666666666664,
-              "source": "reported-cost",
-              "costCents": 20
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "gcloud-chirp_3",
-          "providerKey": "gcloud/chirp_3",
-          "overallRank": 29,
-          "overallScore": 74.83941066675615,
-          "overallComponents": {
-            "accuracy": {
-              "score": 91.6767189384801,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 82.67087145673109,
-              "source": "processing-time",
-              "processingTimeMs": 122130
-            },
-            "costEfficiency": {
-              "score": 33.333333333333336,
-              "source": "reported-cost",
-              "costCents": 16
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "reverb-reverb",
-          "providerKey": "reverb/reverb_asr_v1",
-          "overallRank": 30,
-          "overallScore": 71.07961399276236,
-          "overallComponents": {
-            "accuracy": {
-              "score": 92.15922798552472,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 0,
-              "source": "processing-time",
-              "processingTimeMs": 693351
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          },
-          "overallTier": 3
-        },
-        {
-          "provider": "aws-standard",
-          "providerKey": "aws/standard",
-          "overallRank": 31,
-          "overallScore": 67.8728556314905,
-          "overallComponents": {
-            "accuracy": {
-              "score": 89.98793727382389,
-              "source": "speaker-aware-wer"
-            },
-            "processingSpeed": {
-              "score": 91.51554797831417,
-              "source": "processing-time",
-              "processingTimeMs": 61017
-            },
-            "costEfficiency": {
-              "score": 0,
-              "source": "reported-cost",
-              "costCents": 24
-            }
-          },
-          "overallTier": 3
-        }
-      ]
-    }
-  ],
   "overall": {
     "count": 31,
     "providers": [
@@ -841,7 +80,12 @@
         },
         "overallRank": 1,
         "rank": 3,
-        "overallTier": 1
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 1,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "deepinfra-openai_whisper-large-v3",
@@ -903,7 +147,12 @@
         },
         "overallRank": 2,
         "rank": 6,
-        "overallTier": 1
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 2,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "groq-whisper-large-v3-turbo",
@@ -965,7 +214,12 @@
         },
         "overallRank": 3,
         "rank": 12,
-        "overallTier": 1
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 3,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "together-openai_whisper-large-v3",
@@ -1027,7 +281,12 @@
         },
         "overallRank": 4,
         "rank": 8,
-        "overallTier": 1
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 4,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "whisper-tiny",
@@ -1091,7 +350,12 @@
         },
         "overallRank": 5,
         "rank": 23,
-        "overallTier": 1
+        "tierGroup": "local",
+        "groupOverallRank": 1,
+        "groupTier": 1,
+        "group": "local",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "mistral-voxtral-mini-2602",
@@ -1158,7 +422,12 @@
         },
         "overallRank": 6,
         "rank": 1,
-        "overallTier": 1
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 1,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "whisper-large-v3-turbo",
@@ -1220,7 +489,12 @@
         },
         "overallRank": 7,
         "rank": 14,
-        "overallTier": 1
+        "tierGroup": "local",
+        "groupOverallRank": 2,
+        "groupTier": 1,
+        "group": "local",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "groq-whisper-large-v3",
@@ -1282,7 +556,12 @@
         },
         "overallRank": 8,
         "rank": 7,
-        "overallTier": 1
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 5,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "whisper-medium",
@@ -1346,7 +625,12 @@
         },
         "overallRank": 9,
         "rank": 13,
-        "overallTier": 1
+        "tierGroup": "local",
+        "groupOverallRank": 3,
+        "groupTier": 2,
+        "group": "local",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "whisper-small",
@@ -1408,7 +692,12 @@
         },
         "overallRank": 10,
         "rank": 24,
-        "overallTier": 1
+        "tierGroup": "local",
+        "groupOverallRank": 4,
+        "groupTier": 2,
+        "group": "local",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "happyscribe-auto",
@@ -1474,7 +763,12 @@
         },
         "overallRank": 11,
         "rank": 5,
-        "overallTier": 2
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 2,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "whisper-base",
@@ -1536,7 +830,12 @@
         },
         "overallRank": 12,
         "rank": 29,
-        "overallTier": 2
+        "tierGroup": "local",
+        "groupOverallRank": 5,
+        "groupTier": 3,
+        "group": "local",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "assemblyai-universal-3-pro",
@@ -1602,7 +901,12 @@
         },
         "overallRank": 13,
         "rank": 9,
-        "overallTier": 2
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 3,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "soniox-stt-async-v4",
@@ -1669,7 +973,12 @@
         },
         "overallRank": 14,
         "rank": 21,
-        "overallTier": 2
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 4,
+        "groupTier": 1,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "gemini-stt-gemini-3-flash-preview",
@@ -1732,7 +1041,12 @@
         },
         "overallRank": 15,
         "rank": 22,
-        "overallTier": 2
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 6,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "openai-stt-gpt-4o-mini-transcribe",
@@ -1794,7 +1108,12 @@
         },
         "overallRank": 16,
         "rank": 19,
-        "overallTier": 2
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 7,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "grok-speech-to-text",
@@ -1861,7 +1180,12 @@
         },
         "overallRank": 17,
         "rank": 30,
-        "overallTier": 2
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 5,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "glm-stt-glm-asr-2512",
@@ -1923,7 +1247,12 @@
         },
         "overallRank": 18,
         "rank": 18,
-        "overallTier": 2
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 8,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "rev-low_cost",
@@ -1990,7 +1319,12 @@
         },
         "overallRank": 19,
         "rank": 25,
-        "overallTier": 2
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 6,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "openai-stt-gpt-4o-transcribe",
@@ -2052,7 +1386,12 @@
         },
         "overallRank": 20,
         "rank": 4,
-        "overallTier": 2
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 9,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "deapi-WhisperLargeV3",
@@ -2116,7 +1455,12 @@
         },
         "overallRank": 21,
         "rank": 31,
-        "overallTier": 3
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 10,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "rev-machine",
@@ -2183,7 +1527,12 @@
         },
         "overallRank": 22,
         "rank": 20,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 7,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "elevenlabs-scribe_v2",
@@ -2250,7 +1599,12 @@
         },
         "overallRank": 23,
         "rank": 28,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 8,
+        "groupTier": 2,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "speechmatics-standard",
@@ -2317,7 +1671,12 @@
         },
         "overallRank": 24,
         "rank": 16,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 9,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "gladia-default",
@@ -2384,7 +1743,12 @@
         },
         "overallRank": 25,
         "rank": 10,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 10,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "deepgram-nova-3",
@@ -2451,7 +1815,12 @@
         },
         "overallRank": 26,
         "rank": 26,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 11,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "speechmatics-enhanced",
@@ -2518,7 +1887,12 @@
         },
         "overallRank": 27,
         "rank": 11,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 12,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "supadata-auto",
@@ -2580,7 +1954,12 @@
         },
         "overallRank": 28,
         "rank": 2,
-        "overallTier": 3
+        "tierGroup": "thirdPartyNonDiarization",
+        "groupOverallRank": 11,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": false,
+        "diarizationSupport": "not-supported"
       },
       {
         "provider": "gcloud-chirp_3",
@@ -2645,7 +2024,12 @@
         },
         "overallRank": 29,
         "rank": 17,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 13,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "reverb-reverb",
@@ -2711,7 +2095,12 @@
         },
         "overallRank": 30,
         "rank": 15,
-        "overallTier": 3
+        "tierGroup": "local",
+        "groupOverallRank": 6,
+        "groupTier": 3,
+        "group": "local",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       },
       {
         "provider": "aws-standard",
@@ -2778,7 +2167,12 @@
         },
         "overallRank": 31,
         "rank": 27,
-        "overallTier": 3
+        "tierGroup": "thirdPartyDiarization",
+        "groupOverallRank": 14,
+        "groupTier": 3,
+        "group": "cloud",
+        "supportsDiarization": true,
+        "diarizationSupport": "supported"
       }
     ]
   },
@@ -2849,7 +2243,12 @@
       },
       "overallRank": 6,
       "rank": 1,
-      "overallTier": 1
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 1,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "supadata-auto",
@@ -2911,7 +2310,12 @@
       },
       "overallRank": 28,
       "rank": 2,
-      "overallTier": 3
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 11,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "deepinfra-openai_whisper-large-v3-turbo",
@@ -2973,7 +2377,12 @@
       },
       "overallRank": 1,
       "rank": 3,
-      "overallTier": 1
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 1,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "openai-stt-gpt-4o-transcribe",
@@ -3035,7 +2444,12 @@
       },
       "overallRank": 20,
       "rank": 4,
-      "overallTier": 2
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 9,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "happyscribe-auto",
@@ -3101,7 +2515,12 @@
       },
       "overallRank": 11,
       "rank": 5,
-      "overallTier": 2
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 2,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "deepinfra-openai_whisper-large-v3",
@@ -3163,7 +2582,12 @@
       },
       "overallRank": 2,
       "rank": 6,
-      "overallTier": 1
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 2,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "groq-whisper-large-v3",
@@ -3225,7 +2649,12 @@
       },
       "overallRank": 8,
       "rank": 7,
-      "overallTier": 1
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 5,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "together-openai_whisper-large-v3",
@@ -3287,7 +2716,12 @@
       },
       "overallRank": 4,
       "rank": 8,
-      "overallTier": 1
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 4,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "assemblyai-universal-3-pro",
@@ -3353,7 +2787,12 @@
       },
       "overallRank": 13,
       "rank": 9,
-      "overallTier": 2
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 3,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "gladia-default",
@@ -3420,7 +2859,12 @@
       },
       "overallRank": 25,
       "rank": 10,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 10,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "speechmatics-enhanced",
@@ -3487,7 +2931,12 @@
       },
       "overallRank": 27,
       "rank": 11,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 12,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "groq-whisper-large-v3-turbo",
@@ -3549,7 +2998,12 @@
       },
       "overallRank": 3,
       "rank": 12,
-      "overallTier": 1
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 3,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "whisper-medium",
@@ -3613,7 +3067,12 @@
       },
       "overallRank": 9,
       "rank": 13,
-      "overallTier": 1
+      "tierGroup": "local",
+      "groupOverallRank": 3,
+      "groupTier": 2,
+      "group": "local",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "whisper-large-v3-turbo",
@@ -3675,7 +3134,12 @@
       },
       "overallRank": 7,
       "rank": 14,
-      "overallTier": 1
+      "tierGroup": "local",
+      "groupOverallRank": 2,
+      "groupTier": 1,
+      "group": "local",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "reverb-reverb",
@@ -3741,7 +3205,12 @@
       },
       "overallRank": 30,
       "rank": 15,
-      "overallTier": 3
+      "tierGroup": "local",
+      "groupOverallRank": 6,
+      "groupTier": 3,
+      "group": "local",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "speechmatics-standard",
@@ -3808,7 +3277,12 @@
       },
       "overallRank": 24,
       "rank": 16,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 9,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "gcloud-chirp_3",
@@ -3873,7 +3347,12 @@
       },
       "overallRank": 29,
       "rank": 17,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 13,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "glm-stt-glm-asr-2512",
@@ -3935,7 +3414,12 @@
       },
       "overallRank": 18,
       "rank": 18,
-      "overallTier": 2
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 8,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "openai-stt-gpt-4o-mini-transcribe",
@@ -3997,7 +3481,12 @@
       },
       "overallRank": 16,
       "rank": 19,
-      "overallTier": 2
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 7,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "rev-machine",
@@ -4064,7 +3553,12 @@
       },
       "overallRank": 22,
       "rank": 20,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 7,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "soniox-stt-async-v4",
@@ -4131,7 +3625,12 @@
       },
       "overallRank": 14,
       "rank": 21,
-      "overallTier": 2
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 4,
+      "groupTier": 1,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "gemini-stt-gemini-3-flash-preview",
@@ -4194,7 +3693,12 @@
       },
       "overallRank": 15,
       "rank": 22,
-      "overallTier": 2
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 6,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "whisper-tiny",
@@ -4258,7 +3762,12 @@
       },
       "overallRank": 5,
       "rank": 23,
-      "overallTier": 1
+      "tierGroup": "local",
+      "groupOverallRank": 1,
+      "groupTier": 1,
+      "group": "local",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "whisper-small",
@@ -4320,7 +3829,12 @@
       },
       "overallRank": 10,
       "rank": 24,
-      "overallTier": 1
+      "tierGroup": "local",
+      "groupOverallRank": 4,
+      "groupTier": 2,
+      "group": "local",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "rev-low_cost",
@@ -4387,7 +3901,12 @@
       },
       "overallRank": 19,
       "rank": 25,
-      "overallTier": 2
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 6,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "deepgram-nova-3",
@@ -4454,7 +3973,12 @@
       },
       "overallRank": 26,
       "rank": 26,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 11,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "aws-standard",
@@ -4521,7 +4045,12 @@
       },
       "overallRank": 31,
       "rank": 27,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 14,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "elevenlabs-scribe_v2",
@@ -4588,7 +4117,12 @@
       },
       "overallRank": 23,
       "rank": 28,
-      "overallTier": 3
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 8,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "whisper-base",
@@ -4650,7 +4184,12 @@
       },
       "overallRank": 12,
       "rank": 29,
-      "overallTier": 2
+      "tierGroup": "local",
+      "groupOverallRank": 5,
+      "groupTier": 3,
+      "group": "local",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     },
     {
       "provider": "grok-speech-to-text",
@@ -4717,7 +4256,12 @@
       },
       "overallRank": 17,
       "rank": 30,
-      "overallTier": 2
+      "tierGroup": "thirdPartyDiarization",
+      "groupOverallRank": 5,
+      "groupTier": 2,
+      "group": "cloud",
+      "supportsDiarization": true,
+      "diarizationSupport": "supported"
     },
     {
       "provider": "deapi-WhisperLargeV3",
@@ -4781,7 +4325,12 @@
       },
       "overallRank": 21,
       "rank": 31,
-      "overallTier": 3
+      "tierGroup": "thirdPartyNonDiarization",
+      "groupOverallRank": 10,
+      "groupTier": 3,
+      "group": "cloud",
+      "supportsDiarization": false,
+      "diarizationSupport": "not-supported"
     }
   ],
   "notes": [
@@ -4791,5 +4340,987 @@
     "The cheapest providers were `happyscribe-auto` and `reverb-reverb` at 0.0000¢ ($0.0000).",
     "`deepgram-nova-3` was the fastest provider in this set at 2.39s.",
     "`elevenlabs-scribe_v2` lost the most ground once speaker changes were counted, with 1.22 percentage-point gap between text-only and speaker-aware WER."
-  ]
+  ],
+  "tiering": {
+    "metric": "balanced-overall",
+    "method": "equal-thirds-by-group-overall-rank",
+    "remainderPolicy": "bottom-tier-extra",
+    "groups": {
+      "local": {
+        "count": 6,
+        "counts": {
+          "tier1": 2,
+          "tier2": 2,
+          "tier3": 2
+        },
+        "tiers": [
+          {
+            "tier": 1,
+            "label": "Tier 1",
+            "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
+            "rankRange": {
+              "start": 1,
+              "end": 2
+            },
+            "count": 2,
+            "providers": [
+              {
+                "provider": "whisper-tiny",
+                "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-tiny-encoder.mlmodelc",
+                "tierGroup": "local",
+                "groupOverallRank": 1,
+                "groupTier": 1,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 5,
+                "overallScore": 95.18615730881658,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 90.83232810615199,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 99.07997302296232,
+                    "source": "processing-time",
+                    "processingTimeMs": 8750
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "local-zero-cost",
+                    "costCents": 0
+                  }
+                }
+              },
+              {
+                "provider": "whisper-large-v3-turbo",
+                "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-large-v3-turbo-encoder.mlmodelc",
+                "tierGroup": "local",
+                "groupOverallRank": 2,
+                "groupTier": 1,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 7,
+                "overallScore": 94.79970447387551,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 92.34016887816647,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 94.51848013916909,
+                    "source": "processing-time",
+                    "processingTimeMs": 40268
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "local-zero-cost",
+                    "costCents": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Tier 2",
+            "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+            "rankRange": {
+              "start": 3,
+              "end": 4
+            },
+            "count": 2,
+            "providers": [
+              {
+                "provider": "whisper-medium",
+                "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-medium-encoder.mlmodelc",
+                "tierGroup": "local",
+                "groupOverallRank": 3,
+                "groupTier": 2,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 9,
+                "overallScore": 94.67984745788746,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 92.88299155609168,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 92.95340671936646,
+                    "source": "processing-time",
+                    "processingTimeMs": 51082
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "local-zero-cost",
+                    "costCents": 0
+                  }
+                }
+              },
+              {
+                "provider": "whisper-small",
+                "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-small-encoder.mlmodelc",
+                "tierGroup": "local",
+                "groupOverallRank": 4,
+                "groupTier": 2,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 10,
+                "overallScore": 94.66751204690053,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 90.77201447527142,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 97.12601923705927,
+                    "source": "processing-time",
+                    "processingTimeMs": 22251
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "local-zero-cost",
+                    "costCents": 0
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "Tier 3",
+            "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
+            "rankRange": {
+              "start": 5,
+              "end": 6
+            },
+            "count": 2,
+            "providers": [
+              {
+                "provider": "whisper-base",
+                "providerKey": "whisper//Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base.bin | coreml:/Users/ajc/c/as/autoshow-cli/runtime/models/whisper/ggml-base-encoder.mlmodelc",
+                "tierGroup": "local",
+                "groupOverallRank": 5,
+                "groupTier": 3,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 12,
+                "overallScore": 93.86048642710503,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 88.29915560916767,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 98.84363449008478,
+                    "source": "processing-time",
+                    "processingTimeMs": 10383
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "local-zero-cost",
+                    "costCents": 0
+                  }
+                }
+              },
+              {
+                "provider": "reverb-reverb",
+                "providerKey": "reverb/reverb_asr_v1",
+                "tierGroup": "local",
+                "groupOverallRank": 6,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 30,
+                "overallScore": 71.07961399276236,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 92.15922798552472,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 0,
+                    "source": "processing-time",
+                    "processingTimeMs": 693351
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "local-zero-cost",
+                    "costCents": 0
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "thirdPartyDiarization": {
+        "count": 14,
+        "counts": {
+          "tier1": 4,
+          "tier2": 4,
+          "tier3": 6
+        },
+        "tiers": [
+          {
+            "tier": 1,
+            "label": "Tier 1",
+            "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
+            "rankRange": {
+              "start": 1,
+              "end": 4
+            },
+            "count": 4,
+            "providers": [
+              {
+                "provider": "mistral-voxtral-mini-2602",
+                "providerKey": "mistral/voxtral-mini-2602",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 1,
+                "groupTier": 1,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 6,
+                "overallScore": 94.86613678607884,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 96.68275030156815,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 98.59904654117906,
+                    "source": "processing-time",
+                    "processingTimeMs": 12073
+                  },
+                  "costEfficiency": {
+                    "score": 87.5,
+                    "source": "reported-cost",
+                    "costCents": 3
+                  }
+                }
+              },
+              {
+                "provider": "happyscribe-auto",
+                "providerKey": "happyscribe/auto",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 2,
+                "groupTier": 1,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 11,
+                "overallScore": 94.58932668895913,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 94.14957780458384,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 90.05815114666883,
+                    "source": "processing-time",
+                    "processingTimeMs": 71087
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "reported-cost",
+                    "costCents": 0
+                  }
+                }
+              },
+              {
+                "provider": "assemblyai-universal-3-pro",
+                "providerKey": "assemblyai/universal-3-pro",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 3,
+                "groupTier": 1,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 13,
+                "overallScore": 92.77421480102194,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 93.90832328106153,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 97.86354597529807,
+                    "source": "processing-time",
+                    "processingTimeMs": 17155
+                  },
+                  "costEfficiency": {
+                    "score": 85.41666666666666,
+                    "source": "reported-cost",
+                    "costCents": 3.5
+                  }
+                }
+              },
+              {
+                "provider": "soniox-stt-async-v4",
+                "providerKey": "soniox/stt-async-v4",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 4,
+                "groupTier": 1,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 14,
+                "overallScore": 92.53864677639328,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 91.01326899879373,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 95.0724935524301,
+                    "source": "processing-time",
+                    "processingTimeMs": 36440
+                  },
+                  "costEfficiency": {
+                    "score": 93.05555555555556,
+                    "source": "reported-cost",
+                    "costCents": 1.6666666666666665
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Tier 2",
+            "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+            "rankRange": {
+              "start": 5,
+              "end": 8
+            },
+            "count": 4,
+            "providers": [
+              {
+                "provider": "grok-speech-to-text",
+                "providerKey": "grok/speech-to-text",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 5,
+                "groupTier": 2,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 17,
+                "overallScore": 91.88203769982059,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 87.57539203860073,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 99.32181116652532,
+                    "source": "processing-time",
+                    "processingTimeMs": 7079
+                  },
+                  "costEfficiency": {
+                    "score": 93.05555555555556,
+                    "source": "reported-cost",
+                    "costCents": 1.6666666666666665
+                  }
+                }
+              },
+              {
+                "provider": "rev-low_cost",
+                "providerKey": "rev/low_cost",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 6,
+                "groupTier": 2,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 19,
+                "overallScore": 90.88874960437856,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 90.59107358262968,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 89.31729569669936,
+                    "source": "processing-time",
+                    "processingTimeMs": 76206
+                  },
+                  "costEfficiency": {
+                    "score": 93.05555555555556,
+                    "source": "reported-cost",
+                    "costCents": 1.6666666666666665
+                  }
+                }
+              },
+              {
+                "provider": "rev-machine",
+                "providerKey": "rev/machine",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 7,
+                "groupTier": 2,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 22,
+                "overallScore": 89.79029916593342,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 91.0735826296743,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 90.90292029327398,
+                    "source": "processing-time",
+                    "processingTimeMs": 65250
+                  },
+                  "costEfficiency": {
+                    "score": 86.11111111111111,
+                    "source": "reported-cost",
+                    "costCents": 3.333333333333333
+                  }
+                }
+              },
+              {
+                "provider": "elevenlabs-scribe_v2",
+                "providerKey": "elevenlabs/scribe_v2",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 8,
+                "groupTier": 2,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 23,
+                "overallScore": 88.9814553140004,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 89.02291917973461,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 93.15776067431017,
+                    "source": "processing-time",
+                    "processingTimeMs": 49670
+                  },
+                  "costEfficiency": {
+                    "score": 84.72222222222221,
+                    "source": "reported-cost",
+                    "costCents": 3.6666666666666665
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "Tier 3",
+            "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
+            "rankRange": {
+              "start": 9,
+              "end": 14
+            },
+            "count": 6,
+            "providers": [
+              {
+                "provider": "speechmatics-standard",
+                "providerKey": "speechmatics/standard",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 9,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 24,
+                "overallScore": 87.55573144213706,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 91.85765983112184,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 97.75760610630458,
+                    "source": "processing-time",
+                    "processingTimeMs": 17887
+                  },
+                  "costEfficiency": {
+                    "score": 68.75,
+                    "source": "reported-cost",
+                    "costCents": 7.5
+                  }
+                }
+              },
+              {
+                "provider": "gladia-default",
+                "providerKey": "gladia/default",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 10,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 25,
+                "overallScore": 85.49869312118119,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 93.60675512665863,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 97.14237334251865,
+                    "source": "processing-time",
+                    "processingTimeMs": 22138
+                  },
+                  "costEfficiency": {
+                    "score": 57.638888888888886,
+                    "source": "reported-cost",
+                    "costCents": 10.166666666666666
+                  }
+                }
+              },
+              {
+                "provider": "deepgram-nova-3",
+                "providerKey": "deepgram/nova-3",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 11,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 26,
+                "overallScore": 85.01042923200643,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 90.2291917973462,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 100,
+                    "source": "processing-time",
+                    "processingTimeMs": 2393
+                  },
+                  "costEfficiency": {
+                    "score": 59.58333333333334,
+                    "source": "reported-cost",
+                    "costCents": 9.7
+                  }
+                }
+              },
+              {
+                "provider": "speechmatics-enhanced",
+                "providerKey": "speechmatics/enhanced",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 12,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 27,
+                "overallScore": 82.73561188584631,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 93.4258142340169,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 96.17415240868475,
+                    "source": "processing-time",
+                    "processingTimeMs": 28828
+                  },
+                  "costEfficiency": {
+                    "score": 47.916666666666664,
+                    "source": "reported-cost",
+                    "costCents": 12.5
+                  }
+                }
+              },
+              {
+                "provider": "gcloud-chirp_3",
+                "providerKey": "gcloud/chirp_3",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 13,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 29,
+                "overallScore": 74.83941066675615,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 91.6767189384801,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 82.67087145673109,
+                    "source": "processing-time",
+                    "processingTimeMs": 122130
+                  },
+                  "costEfficiency": {
+                    "score": 33.333333333333336,
+                    "source": "reported-cost",
+                    "costCents": 16
+                  }
+                }
+              },
+              {
+                "provider": "aws-standard",
+                "providerKey": "aws/standard",
+                "tierGroup": "thirdPartyDiarization",
+                "groupOverallRank": 14,
+                "groupTier": 3,
+                "supportsDiarization": true,
+                "diarizationSupport": "supported",
+                "overallRank": 31,
+                "overallScore": 67.8728556314905,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 89.98793727382389,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 91.51554797831417,
+                    "source": "processing-time",
+                    "processingTimeMs": 61017
+                  },
+                  "costEfficiency": {
+                    "score": 0,
+                    "source": "reported-cost",
+                    "costCents": 24
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "thirdPartyNonDiarization": {
+        "count": 11,
+        "counts": {
+          "tier1": 3,
+          "tier2": 3,
+          "tier3": 5
+        },
+        "tiers": [
+          {
+            "tier": 1,
+            "label": "Tier 1",
+            "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
+            "rankRange": {
+              "start": 1,
+              "end": 3
+            },
+            "count": 3,
+            "providers": [
+              {
+                "provider": "deepinfra-openai_whisper-large-v3-turbo",
+                "providerKey": "deepinfra/openai/whisper-large-v3-turbo",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 1,
+                "groupTier": 1,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 1,
+                "overallScore": 97.0593515506433,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 94.8130277442702,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 99.44468404736611,
+                    "source": "processing-time",
+                    "processingTimeMs": 6230
+                  },
+                  "costEfficiency": {
+                    "score": 99.16666666666667,
+                    "source": "reported-cost",
+                    "costCents": 0.19999999999999998
+                  }
+                }
+              },
+              {
+                "provider": "deepinfra-openai_whisper-large-v3",
+                "providerKey": "deepinfra/openai/whisper-large-v3",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 2,
+                "groupTier": 1,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 2,
+                "overallScore": 96.20171015037648,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 94.02895054282267,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 98.6239395158606,
+                    "source": "processing-time",
+                    "processingTimeMs": 11901
+                  },
+                  "costEfficiency": {
+                    "score": 98.125,
+                    "source": "reported-cost",
+                    "costCents": 0.45
+                  }
+                }
+              },
+              {
+                "provider": "groq-whisper-large-v3-turbo",
+                "providerKey": "groq/whisper-large-v3-turbo",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 3,
+                "groupTier": 1,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 3,
+                "overallScore": 95.6537003217193,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 93.124246079614,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 99.14408690542696,
+                    "source": "processing-time",
+                    "processingTimeMs": 8307
+                  },
+                  "costEfficiency": {
+                    "score": 97.22222222222221,
+                    "source": "reported-cost",
+                    "costCents": 0.6666666666666666
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Tier 2",
+            "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+            "rankRange": {
+              "start": 4,
+              "end": 6
+            },
+            "count": 3,
+            "providers": [
+              {
+                "provider": "together-openai_whisper-large-v3",
+                "providerKey": "together/openai/whisper-large-v3",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 4,
+                "groupTier": 2,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 4,
+                "overallScore": 95.32322346177459,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 93.9686369119421,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 99.60562002321414,
+                    "source": "processing-time",
+                    "processingTimeMs": 5118
+                  },
+                  "costEfficiency": {
+                    "score": 93.75,
+                    "source": "reported-cost",
+                    "costCents": 1.5
+                  }
+                }
+              },
+              {
+                "provider": "groq-whisper-large-v3",
+                "providerKey": "groq/whisper-large-v3",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 5,
+                "groupTier": 2,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 8,
+                "overallScore": 94.73916224411253,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 93.9686369119421,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 98.72770848589929,
+                    "source": "processing-time",
+                    "processingTimeMs": 11184
+                  },
+                  "costEfficiency": {
+                    "score": 92.29166666666667,
+                    "source": "reported-cost",
+                    "costCents": 1.8499999999999999
+                  }
+                }
+              },
+              {
+                "provider": "gemini-stt-gemini-3-flash-preview",
+                "providerKey": "gemini-stt/gemini-3-flash-preview",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 6,
+                "groupTier": 2,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 15,
+                "overallScore": 92.31736236869862,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 90.95295536791315,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 95.36353873896822,
+                    "source": "processing-time",
+                    "processingTimeMs": 34429
+                  },
+                  "costEfficiency": {
+                    "score": 92,
+                    "source": "reported-cost",
+                    "costCents": 1.92
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "Tier 3",
+            "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
+            "rankRange": {
+              "start": 7,
+              "end": 11
+            },
+            "count": 5,
+            "providers": [
+              {
+                "provider": "openai-stt-gpt-4o-mini-transcribe",
+                "providerKey": "openai-stt/gpt-4o-mini-transcribe",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 7,
+                "groupTier": 3,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 16,
+                "overallScore": 92.05219822618194,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 91.25452352231605,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 98.19974586009569,
+                    "source": "processing-time",
+                    "processingTimeMs": 14832
+                  },
+                  "costEfficiency": {
+                    "score": 87.5,
+                    "source": "reported-cost",
+                    "costCents": 3
+                  }
+                }
+              },
+              {
+                "provider": "glm-stt-glm-asr-2512",
+                "providerKey": "glm-stt/glm-asr-2512",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 8,
+                "groupTier": 3,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 18,
+                "overallScore": 91.62727912834967,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 91.25452352231605,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 94.00006946876655,
+                    "source": "processing-time",
+                    "processingTimeMs": 43850
+                  },
+                  "costEfficiency": {
+                    "score": 90,
+                    "source": "reported-cost",
+                    "costCents": 2.4
+                  }
+                }
+              },
+              {
+                "provider": "openai-stt-gpt-4o-transcribe",
+                "providerKey": "openai-stt/gpt-4o-transcribe",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 9,
+                "groupTier": 3,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 20,
+                "overallScore": 90.11226132685603,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 94.39083232810616,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 96.6673806512118,
+                    "source": "processing-time",
+                    "processingTimeMs": 25420
+                  },
+                  "costEfficiency": {
+                    "score": 75,
+                    "source": "reported-cost",
+                    "costCents": 6
+                  }
+                }
+              },
+              {
+                "provider": "deapi-WhisperLargeV3",
+                "providerKey": "deapi/WhisperLargeV3",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 10,
+                "groupTier": 3,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 21,
+                "overallScore": 90.10073630068538,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 84.74065138721352,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 93.08713409498117,
+                    "source": "processing-time",
+                    "processingTimeMs": 50158
+                  },
+                  "costEfficiency": {
+                    "score": 97.83450833333333,
+                    "source": "reported-cost",
+                    "costCents": 0.519718
+                  }
+                }
+              },
+              {
+                "provider": "supadata-auto",
+                "providerKey": "supadata/auto",
+                "tierGroup": "thirdPartyNonDiarization",
+                "groupOverallRank": 11,
+                "groupTier": 3,
+                "supportsDiarization": false,
+                "diarizationSupport": "not-supported",
+                "overallRank": 28,
+                "overallScore": 76.73971995663025,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 95.29553679131485,
+                    "source": "speaker-aware-wer"
+                  },
+                  "processingSpeed": {
+                    "score": 99.70113957722467,
+                    "source": "processing-time",
+                    "processingTimeMs": 4458
+                  },
+                  "costEfficiency": {
+                    "score": 16.666666666666664,
+                    "source": "reported-cost",
+                    "costCents": 20
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
 }

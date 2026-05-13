@@ -15,7 +15,9 @@
     ],
     "OCR": [
       "https://docs.z.ai/guides/vlm/glm-ocr.md",
-      "https://docs.z.ai/api-reference/tools/layout-parsing.md",
+      "https://docs.z.ai/api-reference/tools/layout-parsing.md"
+    ],
+    "URL": [
       "https://docs.z.ai/api-reference/tools/web-reader.md"
     ],
     "Image": [

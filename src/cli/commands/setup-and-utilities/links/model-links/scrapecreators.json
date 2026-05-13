@@ -1,0 +1,18 @@
+{
+  "ScrapeCreators": {
+    "General": [
+      "blob:https://docs.scrapecreators.com/087703a1-b172-471d-a400-6bad935f510d"
+    ],
+    "STT": [
+      "blob:https://docs.scrapecreators.com/de495975-7e82-4fd9-953a-2fe2c257845e"
+    ],
+    "URL": [
+      "blob:https://docs.scrapecreators.com/ff1a7d46-8bbb-4538-bc30-492e94f9c773",
+      "blob:https://docs.scrapecreators.com/1abff375-a55d-4913-ba54-46955737340a",
+      "blob:https://docs.scrapecreators.com/7b29bf5a-59ad-4626-a633-ca43104366c7",
+      "blob:https://docs.scrapecreators.com/c4c8f88d-ed85-40d0-a9fc-b33f0fb72a1e",
+      "blob:https://docs.scrapecreators.com/ddec819d-87c4-45e1-b602-e552c5de4fd8",
+      "blob:https://docs.scrapecreators.com/bdc7fb25-6ba7-4992-8d07-dd5edf4a3d6c"
+    ]
+  }
+}

@@ -7,6 +7,7 @@ import deepgramLinks from './model-links/deepgram.json'
 import deepinfraLinks from './model-links/deepinfra.json'
 import driveLinks from './model-links/drive.json'
 import elevenlabsLinks from './model-links/elevenlabs.json'
+import firecrawlLinks from './model-links/firecrawl.json'
 import gcloudLinks from './model-links/gcloud.json'
 import geminiLinks from './model-links/gemini.json'
 import gladiaLinks from './model-links/gladia.json'
@@ -21,11 +22,14 @@ import openaiLinks from './model-links/openai.json'
 import resendLinks from './model-links/resend.json'
 import revLinks from './model-links/rev.json'
 import runwayLinks from './model-links/runway.json'
+import scrapecreatorsLinks from './model-links/scrapecreators.json'
 import sonioxLinks from './model-links/soniox.json'
 import speechifyLinks from './model-links/speechify.json'
 import speechmaticsLinks from './model-links/speechmatics.json'
 import supadataLinks from './model-links/supadata.json'
 import togetherLinks from './model-links/together.json'
+import xLinks from './model-links/x.json'
+import zyteLinks from './model-links/zyte.json'
 import type { ModelLinksData } from '~/types'
 
 const providerLinks = [
@@ -38,6 +42,7 @@ const providerLinks = [
   gladiaLinks,
   glmLinks,
   grokLinks,
+  xLinks,
   kimiLinks,
   mistralLinks,
   minimaxLinks,
@@ -56,7 +61,10 @@ const providerLinks = [
   resendLinks,
   happyscribeLinks,
   deapiLinks,
-  supadataLinks
+  supadataLinks,
+  scrapecreatorsLinks,
+  zyteLinks,
+  firecrawlLinks
 ] as const satisfies readonly ModelLinksData[]
 
 const modelLinks = Object.assign({}, ...providerLinks) satisfies ModelLinksData

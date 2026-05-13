@@ -162,6 +162,7 @@ The report script:
 5. Classifies providers as local or cloud and ranks each group independently.
 6. Ranks providers within each group by roundtrip WER (if available) or a composite score.
 7. Adds a combined overall leaderboard using `overallScore = 50% accuracy + 25% processing speed + 25% cost efficiency`, with neutral 50/100 accuracy for providers missing roundtrip data, and reports the best and worst overall providers.
+8. Adds grouped tiering for local and third-party providers using balanced overall group rank.
 
 ## Validation Checklist
 
@@ -170,8 +171,8 @@ The report script:
 3. Confirm `provider-comparison-report.md` and `.json` were generated after the evaluation.
 4. Confirm audio files referenced in the report exist on disk.
 5. Confirm scoring method (roundtrip-wer or composite) is correctly stated.
-6. Confirm the markdown report contains an `Overall Ranking` section with best and worst overall notes.
-7. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, and per-provider `overallComponents`.
+6. Confirm the markdown report contains `Overall Ranking` and `Tier Breakdown` sections with best and worst overall notes.
+7. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, `tiering`, and per-provider `overallComponents`, `tierGroup`, `groupOverallRank`, and `groupTier`.
 8. Delete temporary helper files such as the evaluation packet unless the user explicitly wants to keep them.
 9. If a script fails, report the exact command, the run directory, and the first actionable error line.
 

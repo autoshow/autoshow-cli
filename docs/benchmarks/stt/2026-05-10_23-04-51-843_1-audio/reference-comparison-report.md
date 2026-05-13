@@ -55,102 +55,154 @@
 - Speaker-aware WER compares those same ordered word streams after inserting synthetic speaker-change tokens and mapping provider speaker IDs onto canonical gold speakers by overlap.
 - Ranking uses exact unrounded speaker-aware WER, with text-only WER included for context.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score; whisper and reverb are treated as local zero-cost providers.
+- Tier breakdown assigns local providers, diarization-capable third-party providers, and non-diarization third-party providers independently using balanced overall group rank.
 
 ## Overall Ranking
 
-| Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
-| --- | --- | ---: | ---: | ---: | ---: |
-| 1 | `assemblyai-universal-3-pro` | 97.11 | 97.30 | 93.84 | 100.00 |
-| 2 | `openai-stt-gpt-4o-mini-transcribe` | 96.44 | 93.24 | 99.27 | 100.00 |
-| 3 | `groq-whisper-large-v3` | 96.34 | 93.24 | 98.86 | 100.00 |
-| 4 | `speechmatics-standard` | 96.33 | 95.95 | 93.44 | 100.00 |
-| 5 | `mistral-voxtral-mini-2602` | 96.21 | 93.69 | 97.44 | 100.00 |
-| 6 | `groq-whisper-large-v3-turbo` | 96.13 | 92.79 | 98.92 | 100.00 |
-| 7 | `gladia-default` | 95.86 | 95.50 | 92.47 | 100.00 |
-| 8 | `deepinfra-openai_whisper-large-v3-turbo` | 95.65 | 91.44 | 99.73 | 100.00 |
-| 9 | `soniox-stt-async-v4` | 95.64 | 94.14 | 94.25 | 100.00 |
-| 10 | `together-openai_whisper-large-v3` | 95.32 | 91.44 | 98.42 | 100.00 |
-| 11 | `elevenlabs-scribe_v2` | 95.22 | 92.79 | 95.29 | 100.00 |
-| 12 | `deepinfra-openai_whisper-large-v3` | 95.17 | 91.89 | 96.90 | 100.00 |
-| 13 | `gemini-stt-gemini-3-flash-preview` | 95.12 | 92.79 | 94.90 | 100.00 |
-| 14 | `openai-stt-gpt-4o-transcribe` | 95.08 | 91.44 | 97.44 | 100.00 |
-| 15 | `whisper-base` | 94.76 | 89.64 | 99.76 | 100.00 |
-| 16 | `deepgram-nova-3` | 94.75 | 89.64 | 99.72 | 100.00 |
-| 17 | `whisper-medium` | 94.39 | 90.99 | 95.58 | 100.00 |
-| 18 | `whisper-large-v3-turbo` | 94.29 | 90.09 | 96.98 | 100.00 |
-| 19 | `glm-stt-glm-asr-2512` | 94.11 | 90.54 | 95.38 | 100.00 |
-| 20 | `whisper-small` | 93.46 | 87.39 | 99.06 | 100.00 |
-| 21 | `speechmatics-enhanced` | 92.83 | 96.40 | 78.51 | 100.00 |
-| 22 | `whisper-tiny` | 92.12 | 84.23 | 100.00 | 100.00 |
-| 23 | `grok-speech-to-text` | 91.88 | 83.78 | 99.95 | 100.00 |
-| 24 | `rev-machine` | 90.77 | 90.99 | 81.08 | 100.00 |
-| 25 | `aws-standard` | 90.62 | 91.89 | 78.69 | 100.00 |
-| 26 | `rev-low_cost` | 88.62 | 90.99 | 72.48 | 100.00 |
-| 27 | `reverb-reverb` | 81.38 | 89.19 | 47.16 | 100.00 |
-| 28 | `deapi-WhisperLargeV3` | 79.97 | 69.82 | 91.97 | 88.29 |
-| 29 | `gcloud-chirp_3` | 72.75 | 95.50 | 0.00 | 100.00 |
-| 30 | `supadata-generate` | 71.04 | 92.34 | 99.46 | 0.00 |
-| 31 | `supadata-auto` | 70.84 | 92.34 | 98.66 | 0.00 |
-| 32 | `supadata-native` | 70.37 | 92.34 | 96.78 | 0.00 |
-| 33 | `happyscribe-auto` | 62.64 | 40.99 | 68.58 | 100.00 |
+| Rank | Provider | Tier Group | Group Rank | Group Tier | Diarization | Overall / 100 | Accuracy | Speed | Cost |
+| --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | `assemblyai-universal-3-pro` | thirdPartyDiarization | 1 | 1 | supported | 97.11 | 97.30 | 93.84 | 100.00 |
+| 2 | `openai-stt-gpt-4o-mini-transcribe` | thirdPartyNonDiarization | 1 | 1 | not supported | 96.44 | 93.24 | 99.27 | 100.00 |
+| 3 | `groq-whisper-large-v3` | thirdPartyNonDiarization | 2 | 1 | not supported | 96.34 | 93.24 | 98.86 | 100.00 |
+| 4 | `speechmatics-standard` | thirdPartyDiarization | 2 | 1 | supported | 96.33 | 95.95 | 93.44 | 100.00 |
+| 5 | `mistral-voxtral-mini-2602` | thirdPartyDiarization | 3 | 1 | supported | 96.21 | 93.69 | 97.44 | 100.00 |
+| 6 | `groq-whisper-large-v3-turbo` | thirdPartyNonDiarization | 3 | 1 | not supported | 96.13 | 92.79 | 98.92 | 100.00 |
+| 7 | `gladia-default` | thirdPartyDiarization | 4 | 1 | supported | 95.86 | 95.50 | 92.47 | 100.00 |
+| 8 | `deepinfra-openai_whisper-large-v3-turbo` | thirdPartyNonDiarization | 4 | 1 | not supported | 95.65 | 91.44 | 99.73 | 100.00 |
+| 9 | `soniox-stt-async-v4` | thirdPartyDiarization | 5 | 2 | supported | 95.64 | 94.14 | 94.25 | 100.00 |
+| 10 | `together-openai_whisper-large-v3` | thirdPartyNonDiarization | 5 | 2 | not supported | 95.32 | 91.44 | 98.42 | 100.00 |
+| 11 | `elevenlabs-scribe_v2` | thirdPartyDiarization | 6 | 2 | supported | 95.22 | 92.79 | 95.29 | 100.00 |
+| 12 | `deepinfra-openai_whisper-large-v3` | thirdPartyNonDiarization | 6 | 2 | not supported | 95.17 | 91.89 | 96.90 | 100.00 |
+| 13 | `gemini-stt-gemini-3-flash-preview` | thirdPartyNonDiarization | 7 | 2 | not supported | 95.12 | 92.79 | 94.90 | 100.00 |
+| 14 | `openai-stt-gpt-4o-transcribe` | thirdPartyNonDiarization | 8 | 2 | not supported | 95.08 | 91.44 | 97.44 | 100.00 |
+| 15 | `whisper-base` | local | 1 | 1 | not supported | 94.76 | 89.64 | 99.76 | 100.00 |
+| 16 | `deepgram-nova-3` | thirdPartyDiarization | 7 | 2 | supported | 94.75 | 89.64 | 99.72 | 100.00 |
+| 17 | `whisper-medium` | local | 2 | 1 | not supported | 94.39 | 90.99 | 95.58 | 100.00 |
+| 18 | `whisper-large-v3-turbo` | local | 3 | 2 | not supported | 94.29 | 90.09 | 96.98 | 100.00 |
+| 19 | `glm-stt-glm-asr-2512` | thirdPartyNonDiarization | 9 | 3 | not supported | 94.11 | 90.54 | 95.38 | 100.00 |
+| 20 | `whisper-small` | local | 4 | 2 | not supported | 93.46 | 87.39 | 99.06 | 100.00 |
+| 21 | `speechmatics-enhanced` | thirdPartyDiarization | 8 | 2 | supported | 92.83 | 96.40 | 78.51 | 100.00 |
+| 22 | `whisper-tiny` | local | 5 | 3 | not supported | 92.12 | 84.23 | 100.00 | 100.00 |
+| 23 | `grok-speech-to-text` | thirdPartyDiarization | 9 | 3 | supported | 91.88 | 83.78 | 99.95 | 100.00 |
+| 24 | `rev-machine` | thirdPartyDiarization | 10 | 3 | supported | 90.77 | 90.99 | 81.08 | 100.00 |
+| 25 | `aws-standard` | thirdPartyDiarization | 11 | 3 | supported | 90.62 | 91.89 | 78.69 | 100.00 |
+| 26 | `rev-low_cost` | thirdPartyDiarization | 12 | 3 | supported | 88.62 | 90.99 | 72.48 | 100.00 |
+| 27 | `reverb-reverb` | local | 6 | 3 | supported | 81.38 | 89.19 | 47.16 | 100.00 |
+| 28 | `deapi-WhisperLargeV3` | thirdPartyNonDiarization | 10 | 3 | not supported | 79.97 | 69.82 | 91.97 | 88.29 |
+| 29 | `gcloud-chirp_3` | thirdPartyDiarization | 13 | 3 | supported | 72.75 | 95.50 | 0.00 | 100.00 |
+| 30 | `supadata-generate` | thirdPartyNonDiarization | 11 | 3 | not supported | 71.04 | 92.34 | 99.46 | 0.00 |
+| 31 | `supadata-auto` | thirdPartyNonDiarization | 12 | 3 | not supported | 70.84 | 92.34 | 98.66 | 0.00 |
+| 32 | `supadata-native` | thirdPartyNonDiarization | 13 | 3 | not supported | 70.37 | 92.34 | 96.78 | 0.00 |
+| 33 | `happyscribe-auto` | thirdPartyDiarization | 14 | 3 | supported | 62.64 | 40.99 | 68.58 | 100.00 |
 
 ## Tier Breakdown
 
-Tiers split the balanced overall ranking into equal thirds. When the provider count is not divisible by three, the remainder is assigned to Tier 3.
+Tiers split local providers, diarization-capable third-party providers, and non-diarization third-party providers separately. When a group count is not divisible by three, the remainder is assigned to Tier 3 for that group.
 
-### Tier 1 (overall ranks 1-11)
+### Local Group (6)
+
+#### Tier 1 (group ranks 1-2)
 
 Best balanced options across accuracy, processing speed, and cost efficiency.
 
-| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
-| ---: | --- | ---: | ---: | ---: | ---: |
-| 1 | `assemblyai-universal-3-pro` | 97.11 | 97.30 | 93.84 | 100.00 |
-| 2 | `openai-stt-gpt-4o-mini-transcribe` | 96.44 | 93.24 | 99.27 | 100.00 |
-| 3 | `groq-whisper-large-v3` | 96.34 | 93.24 | 98.86 | 100.00 |
-| 4 | `speechmatics-standard` | 96.33 | 95.95 | 93.44 | 100.00 |
-| 5 | `mistral-voxtral-mini-2602` | 96.21 | 93.69 | 97.44 | 100.00 |
-| 6 | `groq-whisper-large-v3-turbo` | 96.13 | 92.79 | 98.92 | 100.00 |
-| 7 | `gladia-default` | 95.86 | 95.50 | 92.47 | 100.00 |
-| 8 | `deepinfra-openai_whisper-large-v3-turbo` | 95.65 | 91.44 | 99.73 | 100.00 |
-| 9 | `soniox-stt-async-v4` | 95.64 | 94.14 | 94.25 | 100.00 |
-| 10 | `together-openai_whisper-large-v3` | 95.32 | 91.44 | 98.42 | 100.00 |
-| 11 | `elevenlabs-scribe_v2` | 95.22 | 92.79 | 95.29 | 100.00 |
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | 15 | `whisper-base` | 94.76 | 89.64 | 99.76 | 100.00 |
+| 2 | 17 | `whisper-medium` | 94.39 | 90.99 | 95.58 | 100.00 |
 
-### Tier 2 (overall ranks 12-22)
+#### Tier 2 (group ranks 3-4)
 
 Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.
 
-| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
-| ---: | --- | ---: | ---: | ---: | ---: |
-| 12 | `deepinfra-openai_whisper-large-v3` | 95.17 | 91.89 | 96.90 | 100.00 |
-| 13 | `gemini-stt-gemini-3-flash-preview` | 95.12 | 92.79 | 94.90 | 100.00 |
-| 14 | `openai-stt-gpt-4o-transcribe` | 95.08 | 91.44 | 97.44 | 100.00 |
-| 15 | `whisper-base` | 94.76 | 89.64 | 99.76 | 100.00 |
-| 16 | `deepgram-nova-3` | 94.75 | 89.64 | 99.72 | 100.00 |
-| 17 | `whisper-medium` | 94.39 | 90.99 | 95.58 | 100.00 |
-| 18 | `whisper-large-v3-turbo` | 94.29 | 90.09 | 96.98 | 100.00 |
-| 19 | `glm-stt-glm-asr-2512` | 94.11 | 90.54 | 95.38 | 100.00 |
-| 20 | `whisper-small` | 93.46 | 87.39 | 99.06 | 100.00 |
-| 21 | `speechmatics-enhanced` | 92.83 | 96.40 | 78.51 | 100.00 |
-| 22 | `whisper-tiny` | 92.12 | 84.23 | 100.00 | 100.00 |
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 3 | 18 | `whisper-large-v3-turbo` | 94.29 | 90.09 | 96.98 | 100.00 |
+| 4 | 20 | `whisper-small` | 93.46 | 87.39 | 99.06 | 100.00 |
 
-### Tier 3 (overall ranks 23-33)
+#### Tier 3 (group ranks 5-6)
 
 Lowest balanced options, generally weaker across the combined benchmark categories.
 
-| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
-| ---: | --- | ---: | ---: | ---: | ---: |
-| 23 | `grok-speech-to-text` | 91.88 | 83.78 | 99.95 | 100.00 |
-| 24 | `rev-machine` | 90.77 | 90.99 | 81.08 | 100.00 |
-| 25 | `aws-standard` | 90.62 | 91.89 | 78.69 | 100.00 |
-| 26 | `rev-low_cost` | 88.62 | 90.99 | 72.48 | 100.00 |
-| 27 | `reverb-reverb` | 81.38 | 89.19 | 47.16 | 100.00 |
-| 28 | `deapi-WhisperLargeV3` | 79.97 | 69.82 | 91.97 | 88.29 |
-| 29 | `gcloud-chirp_3` | 72.75 | 95.50 | 0.00 | 100.00 |
-| 30 | `supadata-generate` | 71.04 | 92.34 | 99.46 | 0.00 |
-| 31 | `supadata-auto` | 70.84 | 92.34 | 98.66 | 0.00 |
-| 32 | `supadata-native` | 70.37 | 92.34 | 96.78 | 0.00 |
-| 33 | `happyscribe-auto` | 62.64 | 40.99 | 68.58 | 100.00 |
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 5 | 22 | `whisper-tiny` | 92.12 | 84.23 | 100.00 | 100.00 |
+| 6 | 27 | `reverb-reverb` | 81.38 | 89.19 | 47.16 | 100.00 |
+
+
+### Third-Party Diarization Group (14)
+
+#### Tier 1 (group ranks 1-4)
+
+Best balanced options across accuracy, processing speed, and cost efficiency.
+
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | 1 | `assemblyai-universal-3-pro` | 97.11 | 97.30 | 93.84 | 100.00 |
+| 2 | 4 | `speechmatics-standard` | 96.33 | 95.95 | 93.44 | 100.00 |
+| 3 | 5 | `mistral-voxtral-mini-2602` | 96.21 | 93.69 | 97.44 | 100.00 |
+| 4 | 7 | `gladia-default` | 95.86 | 95.50 | 92.47 | 100.00 |
+
+#### Tier 2 (group ranks 5-8)
+
+Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.
+
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 5 | 9 | `soniox-stt-async-v4` | 95.64 | 94.14 | 94.25 | 100.00 |
+| 6 | 11 | `elevenlabs-scribe_v2` | 95.22 | 92.79 | 95.29 | 100.00 |
+| 7 | 16 | `deepgram-nova-3` | 94.75 | 89.64 | 99.72 | 100.00 |
+| 8 | 21 | `speechmatics-enhanced` | 92.83 | 96.40 | 78.51 | 100.00 |
+
+#### Tier 3 (group ranks 9-14)
+
+Lowest balanced options, generally weaker across the combined benchmark categories.
+
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 9 | 23 | `grok-speech-to-text` | 91.88 | 83.78 | 99.95 | 100.00 |
+| 10 | 24 | `rev-machine` | 90.77 | 90.99 | 81.08 | 100.00 |
+| 11 | 25 | `aws-standard` | 90.62 | 91.89 | 78.69 | 100.00 |
+| 12 | 26 | `rev-low_cost` | 88.62 | 90.99 | 72.48 | 100.00 |
+| 13 | 29 | `gcloud-chirp_3` | 72.75 | 95.50 | 0.00 | 100.00 |
+| 14 | 33 | `happyscribe-auto` | 62.64 | 40.99 | 68.58 | 100.00 |
+
+
+### Third-Party Non-Diarization Group (13)
+
+#### Tier 1 (group ranks 1-4)
+
+Best balanced options across accuracy, processing speed, and cost efficiency.
+
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | 2 | `openai-stt-gpt-4o-mini-transcribe` | 96.44 | 93.24 | 99.27 | 100.00 |
+| 2 | 3 | `groq-whisper-large-v3` | 96.34 | 93.24 | 98.86 | 100.00 |
+| 3 | 6 | `groq-whisper-large-v3-turbo` | 96.13 | 92.79 | 98.92 | 100.00 |
+| 4 | 8 | `deepinfra-openai_whisper-large-v3-turbo` | 95.65 | 91.44 | 99.73 | 100.00 |
+
+#### Tier 2 (group ranks 5-8)
+
+Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.
+
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 5 | 10 | `together-openai_whisper-large-v3` | 95.32 | 91.44 | 98.42 | 100.00 |
+| 6 | 12 | `deepinfra-openai_whisper-large-v3` | 95.17 | 91.89 | 96.90 | 100.00 |
+| 7 | 13 | `gemini-stt-gemini-3-flash-preview` | 95.12 | 92.79 | 94.90 | 100.00 |
+| 8 | 14 | `openai-stt-gpt-4o-transcribe` | 95.08 | 91.44 | 97.44 | 100.00 |
+
+#### Tier 3 (group ranks 9-13)
+
+Lowest balanced options, generally weaker across the combined benchmark categories.
+
+| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | --- | ---: | ---: | ---: | ---: |
+| 9 | 19 | `glm-stt-glm-asr-2512` | 94.11 | 90.54 | 95.38 | 100.00 |
+| 10 | 28 | `deapi-WhisperLargeV3` | 79.97 | 69.82 | 91.97 | 88.29 |
+| 11 | 30 | `supadata-generate` | 71.04 | 92.34 | 99.46 | 0.00 |
+| 12 | 31 | `supadata-auto` | 70.84 | 92.34 | 98.66 | 0.00 |
+| 13 | 32 | `supadata-native` | 70.37 | 92.34 | 96.78 | 0.00 |
+
 
 
 ## Ranking

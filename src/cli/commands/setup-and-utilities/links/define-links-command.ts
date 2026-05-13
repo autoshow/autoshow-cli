@@ -1,10 +1,8 @@
 import { defineCommand } from 'clerc'
 import modelLinks from './model-links'
 import * as l from '~/utils/logger'
-import {
-  extractHtmlToMarkdown,
-  extractRemoteArticleWithFirecrawl
-} from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
+import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/run-defuddle-url'
+import { runFirecrawlUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/firecrawl/run-firecrawl-url'
 import { CLIUsageError } from '~/utils/error-handler'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import { LINKS_FETCH_TIMEOUT_MS } from '~/utils/timeouts'
@@ -30,11 +28,40 @@ const looksLikeHtmlDocument = (content: string): boolean =>
   /^(?:<!doctype html\b|<html\b|<head\b|<body\b)/i.test(content.trimStart())
 const formatErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
+const getFetchableDocumentationUrl = (url: string): string => {
+  const match = /^blob:(https?:\/\/.+)$/i.exec(url)
+  return match?.[1] ?? url
+}
 const createHttpFetchError = (response: Response): Error & { status: number, headers: Headers } => {
   const error = new Error(`HTTP ${response.status} ${response.statusText}`) as Error & { status: number, headers: Headers }
   error.status = response.status
   error.headers = response.headers
   return error
+}
+let defuddleConsoleErrorQueue: Promise<void> = Promise.resolve()
+const isDefuddleConsoleError = (args: Parameters<typeof console.error>): boolean =>
+  typeof args[0] === 'string' && args[0].startsWith('Defuddle')
+const withSuppressedDefuddleConsoleErrors = async <T>(operation: () => Promise<T>): Promise<T> => {
+  const previousExtraction = defuddleConsoleErrorQueue
+  let releaseExtraction: () => void = () => {}
+  defuddleConsoleErrorQueue = new Promise<void>((resolve) => {
+    releaseExtraction = resolve
+  })
+
+  await previousExtraction
+
+  const originalConsoleError = console.error
+  console.error = (...args: Parameters<typeof console.error>): void => {
+    if (isDefuddleConsoleError(args)) return
+    originalConsoleError(...args)
+  }
+
+  try {
+    return await operation()
+  } finally {
+    console.error = originalConsoleError
+    releaseExtraction()
+  }
 }
 
 export const getDefaultLinksOutputFileName = (
@@ -170,14 +197,15 @@ export const collectLinks = (
 const downloadUrl = async (
   url: string,
   fetchImpl: FetchFn
-): Promise<{ contentType: string, finalUrl: string, fetchedText: string }> => withRetry(
+): Promise<{ contentType: string, finalUrl: string, fetchedText: string, requestUrl: string }> => withRetry(
   {
     retryClass: 'runtime_http_read',
     operationName: `links fetch ${url}`,
     timeoutMs: LINKS_FETCH_TIMEOUT_MS
   },
   async (signal) => {
-    const response = await fetchImpl(url, signal ? { signal } : undefined)
+    const requestUrl = getFetchableDocumentationUrl(url)
+    const response = await fetchImpl(requestUrl, signal ? { signal } : undefined)
     if (!response.ok) {
       throw createHttpFetchError(response)
     }
@@ -187,8 +215,9 @@ const downloadUrl = async (
 
     return {
       contentType,
-      finalUrl: response.url || url,
-      fetchedText
+      finalUrl: response.url || requestUrl,
+      fetchedText,
+      requestUrl
     }
   },
   (error) => classifyFetchRetry(error, 'runtime_http_read')
@@ -196,7 +225,7 @@ const downloadUrl = async (
 
 const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<FetchUrlResult> => {
   try {
-    const { contentType, finalUrl, fetchedText } = await downloadUrl(url, fetchImpl)
+    const { contentType, finalUrl, fetchedText, requestUrl } = await downloadUrl(url, fetchImpl)
     if (fetchedText.length === 0) {
       l.warn(`Fetched empty response from ${url}`)
       return { content: `<!-- Empty response from ${url} -->` }
@@ -205,16 +234,18 @@ const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<FetchUrlResult
     let content: string
     if (isHtmlContentType(contentType) || looksLikeHtmlDocument(fetchedText)) {
       try {
-        content = (await extractHtmlToMarkdown({
-          html: fetchedText,
-          documentUrl: finalUrl,
-          sourceUrl: url,
-          finalUrl
-        })).markdown
+        content = (await withSuppressedDefuddleConsoleErrors(async () =>
+          await extractHtmlToMarkdown({
+            html: fetchedText,
+            documentUrl: finalUrl,
+            sourceUrl: url,
+            finalUrl
+          })
+        )).markdown
       } catch (defuddleError) {
         l.warn(`Defuddle failed for ${url}; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
         try {
-          content = (await extractRemoteArticleWithFirecrawl(url, url)).markdown
+          content = (await runFirecrawlUrl(requestUrl, url)).markdown
         } catch (firecrawlError) {
           throw new Error(
             `Defuddle failed and Firecrawl fallback failed. ` +

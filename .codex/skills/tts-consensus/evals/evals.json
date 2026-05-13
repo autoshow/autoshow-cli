@@ -12,8 +12,8 @@
         "provider-comparison-report.json exists and is valid JSON",
         "The report provider count matches the number of entries in metadata.tts[]",
         "consensus-evaluation.txt states which metrics were and were not available",
-        "provider-comparison-report.md contains an Overall Ranking section with best overall and worst overall notes",
-        "provider-comparison-report.json has overallMetric, overallWeights, overall.count, and provider overallComponents fields"
+        "provider-comparison-report.md contains Overall Ranking and Tier Breakdown sections with best overall and worst overall notes",
+        "provider-comparison-report.json has overallMetric, overallWeights, overall.count, tiering.groups.local, tiering.groups.thirdParty, and provider overallComponents fields"
       ],
       "files": [
         "evals/files/run.json",

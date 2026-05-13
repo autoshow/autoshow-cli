@@ -183,7 +183,7 @@ export const processSingleTarget = async (
   const exists = await fileExists(item)
 
   if (!exists) {
-    const { isSpaceId } = await import('~/cli/commands/process-steps/step-2-extract/spaces/input')
+    const { isSpaceId } = await import('~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/x-spaces/input')
     if (isSpaceId(item) && isExtractCommand(command)) {
       return await processXSpace(item, baseDir, opts, batchChildContext)
     }

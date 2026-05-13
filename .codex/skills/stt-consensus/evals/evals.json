@@ -13,7 +13,7 @@
         "Timestamps are monotonically increasing",
         "The report provider count matches the number of providers/*/result.json directories",
         "reference-comparison-report.md contains an Overall Ranking section with best overall and worst overall notes",
-        "reference-comparison-report.json has overallMetric, overallWeights, overall.count, and provider overallComponents fields"
+        "reference-comparison-report.json has overallMetric, overallWeights, overall.count, tiering.groups.local, tiering.groups.thirdPartyDiarization, tiering.groups.thirdPartyNonDiarization, and provider overallComponents and supportsDiarization fields"
       ],
       "files": [
         "evals/files/run.json",
