@@ -15,6 +15,8 @@ import { normalizeDeapiMusicParams, resolveDeapiMusicPrice } from './deapi-music
 
 const MIN_CAPTION_CHARS = 3
 const MAX_CAPTION_CHARS = 300
+const DEAPI_MUSIC_SEED = -1
+const DEAPI_MUSIC_OUTPUT_FORMAT = 'mp3'
 
 const normalizeCaption = (prompt: string): string => {
   const caption = prompt.trim()
@@ -42,7 +44,10 @@ const resolveLyrics = async (
   return { lyrics, lyricsSource: 'provided' }
 }
 
-const downloadResultAudio = async (resultUrl: string, outputPath: string): Promise<void> => {
+const downloadResultAudio = async (
+  resultUrl: string,
+  outputPath: string
+): Promise<{ byteLength: number, mimeType?: string | undefined }> => {
   const response = await fetch(resultUrl, {
     method: 'GET',
     headers: { accept: 'audio/mpeg,audio/*;q=0.9,*/*;q=0.8' }
@@ -56,6 +61,10 @@ const downloadResultAudio = async (resultUrl: string, outputPath: string): Promi
     throw new Error('deAPI music generation returned empty audio')
   }
   await Bun.write(outputPath, bytes)
+  return {
+    byteLength: bytes.byteLength,
+    mimeType: response.headers.get('content-type')?.split(';')[0]?.trim() || undefined
+  }
 }
 
 export const runDeapiMusicGen = async (
@@ -94,8 +103,8 @@ export const runDeapiMusicGen = async (
   body.append('duration', String(params.duration))
   body.append('inference_steps', String(params.inferenceSteps))
   body.append('guidance_scale', String(params.guidanceScale))
-  body.append('seed', '-1')
-  body.append('format', 'mp3')
+  body.append('seed', String(DEAPI_MUSIC_SEED))
+  body.append('format', DEAPI_MUSIC_OUTPUT_FORMAT)
 
   const createResponse = await deapiFetch('/api/v2/audio/music', {
     apiKey,
@@ -122,7 +131,7 @@ export const runDeapiMusicGen = async (
     throw new Error('deAPI music completed without result_url')
   }
 
-  await downloadResultAudio(resultUrl, musicPath)
+  const downloadedAudio = await downloadResultAudio(resultUrl, musicPath)
 
   const processingTime = Date.now() - startTime
   const musicFile = Bun.file(musicPath)
@@ -146,7 +155,14 @@ export const runDeapiMusicGen = async (
     musicDurationMs: params.duration * 1000,
     lyricsSource,
     providerCostCents: price.totalCost,
-    providerCostSource: price.source
+    providerCostSource: price.source,
+    providerRequestId: requestId,
+    audioMimeType: downloadedAudio.mimeType ?? 'audio/mpeg',
+    providerAudioByteSize: downloadedAudio.byteLength,
+    inferenceSteps: params.inferenceSteps,
+    guidanceScale: params.guidanceScale,
+    seed: DEAPI_MUSIC_SEED,
+    outputFormat: DEAPI_MUSIC_OUTPUT_FORMAT
   }
 
   return { musicPath, metadata }

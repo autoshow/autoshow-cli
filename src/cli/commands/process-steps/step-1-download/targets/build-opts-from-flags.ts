@@ -3,18 +3,24 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { isStep2BooleanProviderSelected } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import {
   validateDeepgramTtsVoice,
+  validateElevenLabsTtsTextNormalization,
   validateGcloudTtsVoice,
+  validateGrokTtsLanguage,
   validateGrokTtsVoice,
   validateGroqTtsVoice,
   validateKittenTtsModel,
+  validateMinimaxTtsEmotion,
+  validateMinimaxTtsLanguageBoost,
   validateKittenTtsSpeaker,
   validateRunwayTtsVoice,
+  validateSpeechifyTtsAudioFormat,
   validateSpeechifyTtsVoice
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { BuildOptsDefaults, OutputFormat, RuntimeOptions } from '~/types'
 import {
   parseFloatWithDefault,
   parseIntWithDefault,
+  parseOptionalNumberFlag,
   parseOptionalPositiveIntFlag,
   parsePdfChapterMode,
   parseTtsDialogueFormat,
@@ -476,10 +482,17 @@ export const buildOptsFromFlags = (
       if (grokTtsModels === undefined) return v
       return validateCliValue(validateGrokTtsVoice, v)
     })(),
+    grokTtsLanguage: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'grok-tts-language')
+      if (v === undefined) return undefined
+      return validateCliValue(validateGrokTtsLanguage, v)
+    })(),
+    grokTtsTextNormalization: readBooleanFlag(mergedFlags, 'grok-tts-text-normalization'),
     mistralTtsModels,
     mistralTtsModel,
     mistralTtsVoice: readOptionalStringFlag(mergedFlags, 'mistral-tts-voice'),
     mistralTtsRefAudio: readOptionalStringFlag(mergedFlags, 'mistral-tts-ref-audio'),
+    mistralTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'mistral-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'mistral-tts-voice-name'),
     ttsDialogueFormat: parseTtsDialogueFormat(readOptionalStringFlag(mergedFlags, 'tts-dialogue-format')),
     ttsSpeakerRefAudios: readOptionalStringListFlag(mergedFlags, 'tts-speaker-ref-audio'),
     openaiTtsModels,
@@ -504,6 +517,12 @@ export const buildOptsFromFlags = (
       if (speechifyTtsModels === undefined) return v
       return validateCliValue(validateSpeechifyTtsVoice, v)
     })(),
+    speechifyTtsAudioFormat: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'speechify-tts-audio-format')
+      if (v === undefined) return undefined
+      return validateCliValue(validateSpeechifyTtsAudioFormat, v)
+    })(),
+    speechifyTtsLanguage: readOptionalStringFlag(mergedFlags, 'speechify-tts-language'),
     speechifyTtsRefAudio: readOptionalStringFlag(mergedFlags, 'speechify-tts-ref-audio'),
     speechifyTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'speechify-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-voice-name'),
     speechifyTtsConsentName: readOptionalRawStringFlag(rawFlagArgs, 'speechify-tts-consent-name') ?? readOptionalStringFlag(mergedFlags, 'speechify-tts-consent-name'),
@@ -529,6 +548,11 @@ export const buildOptsFromFlags = (
     deapiTtsVoice: readOptionalStringFlag(mergedFlags, 'deapi-tts-voice'),
     deapiTtsRefAudio: readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-audio'),
     deapiTtsRefText: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-ref-text') ?? readOptionalStringFlag(mergedFlags, 'deapi-tts-ref-text'),
+    deapiTtsLanguage: readOptionalStringFlag(mergedFlags, 'deapi-tts-language'),
+    deapiTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'deapi-tts-speed'), 'deapi-tts-speed', { min: 0.5, max: 2 }),
+    deapiTtsFormat: readOptionalStringFlag(mergedFlags, 'deapi-tts-format'),
+    deapiTtsSampleRate: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'deapi-tts-sample-rate'), 'deapi-tts-sample-rate', { min: 1, max: 192000, integer: true }),
+    deapiTtsInstruction: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-instruction') ?? readOptionalStringFlag(mergedFlags, 'deapi-tts-instruction'),
     groqVoiceId: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'groq-voice')
       if (v === undefined) return undefined
@@ -536,6 +560,8 @@ export const buildOptsFromFlags = (
       return validateCliValue(validateGroqTtsVoice, v)
     })(),
     openaiVoiceId: readOptionalStringFlag(mergedFlags, 'openai-voice'),
+    openaiTtsInstructions: readOptionalRawStringFlag(rawFlagArgs, 'openai-tts-instructions') ?? readOptionalStringFlag(mergedFlags, 'openai-tts-instructions'),
+    openaiTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'openai-tts-speed'), 'openai-tts-speed', { min: 0.25, max: 4 }),
     openaiTtsRefAudio: readOptionalStringFlag(mergedFlags, 'openai-tts-ref-audio'),
     openaiTtsConsentId: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-id'),
     openaiTtsConsentAudio: readOptionalStringFlag(mergedFlags, 'openai-tts-consent-audio'),
@@ -549,6 +575,11 @@ export const buildOptsFromFlags = (
       if (deepgramTtsModels === undefined) return v
       return validateCliValue(validateDeepgramTtsVoice, v)
     })(),
+    deepgramTtsEncoding: readOptionalStringFlag(mergedFlags, 'deepgram-tts-encoding'),
+    deepgramTtsContainer: readOptionalStringFlag(mergedFlags, 'deepgram-tts-container'),
+    deepgramTtsBitRate: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'deepgram-tts-bit-rate'), 'deepgram-tts-bit-rate', { min: 1, max: 1000000, integer: true }),
+    deepgramTtsSampleRate: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'deepgram-tts-sample-rate'), 'deepgram-tts-sample-rate', { min: 1, max: 192000, integer: true }),
+    deepgramTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'deepgram-tts-speed'), 'deepgram-tts-speed', { min: 0.5, max: 2 }),
     geminiSpeaker1Name: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-1-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-name'),
     geminiSpeaker1Voice: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-1-voice') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-1-voice'),
     geminiSpeaker2Name: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-2-name') ?? readOptionalStringFlag(mergedFlags, 'gemini-speaker-2-name'),
@@ -559,6 +590,22 @@ export const buildOptsFromFlags = (
     elevenlabsTtsRefAudio: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-ref-audio'),
     elevenlabsTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'elevenlabs-tts-voice-name') ?? readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-voice-name'),
     elevenlabsTtsCloneRemoveBackgroundNoise: readBooleanFlag(mergedFlags, 'elevenlabs-tts-clone-remove-background-noise'),
+    elevenlabsTtsOutputFormat: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-output-format'),
+    elevenlabsTtsLanguageCode: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-language-code'),
+    elevenlabsTtsStability: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-stability'), 'elevenlabs-tts-stability', { min: 0, max: 1 }),
+    elevenlabsTtsSimilarityBoost: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-similarity-boost'), 'elevenlabs-tts-similarity-boost', { min: 0, max: 1 }),
+    elevenlabsTtsStyle: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-style'), 'elevenlabs-tts-style', { min: 0, max: 1 }),
+    elevenlabsTtsUseSpeakerBoost: readBooleanFlag(mergedFlags, 'elevenlabs-tts-use-speaker-boost'),
+    elevenlabsTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-speed'), 'elevenlabs-tts-speed', { min: 0.7, max: 1.2 }),
+    elevenlabsTtsSeed: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-seed'), 'elevenlabs-tts-seed', { min: 0, max: 4294967295, integer: true }),
+    elevenlabsTtsTextNormalization: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-text-normalization')
+      if (v === undefined) return undefined
+      return validateCliValue(validateElevenLabsTtsTextNormalization, v)
+    })(),
+    elevenlabsTtsPronunciationDictionaryLocators: readOptionalStringListFlag(mergedFlags, 'elevenlabs-tts-pronunciation-dictionary-locator'),
+    elevenlabsTtsOptimizeStreamingLatency: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-optimize-streaming-latency'), 'elevenlabs-tts-optimize-streaming-latency', { min: 0, max: 4, integer: true }),
+    elevenlabsTtsPvcAsIvc: readBooleanFlag(mergedFlags, 'elevenlabs-tts-pvc-as-ivc'),
     elevenlabsTtsPvcSamples: readOptionalStringListFlag(mergedFlags, 'elevenlabs-tts-pvc-sample'),
     elevenlabsTtsPvcSampleDir: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-sample-dir'),
     elevenlabsTtsPvcLanguage: readOptionalStringFlag(mergedFlags, 'elevenlabs-tts-pvc-language'),
@@ -574,6 +621,21 @@ export const buildOptsFromFlags = (
     minimaxTtsPromptText: readOptionalRawStringFlag(rawFlagArgs, 'minimax-tts-prompt-text') ?? readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-text'),
     minimaxTtsCloneNoiseReduction: readBooleanFlag(mergedFlags, 'minimax-tts-clone-noise-reduction'),
     minimaxTtsCloneVolumeNormalization: readBooleanFlag(mergedFlags, 'minimax-tts-clone-volume-normalization'),
+    minimaxTtsLanguageBoost: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'minimax-tts-language-boost')
+      if (v === undefined) return undefined
+      return validateCliValue(validateMinimaxTtsLanguageBoost, v)
+    })(),
+    minimaxTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'minimax-tts-speed'), 'minimax-tts-speed', { min: 0.5, max: 2 }),
+    minimaxTtsVolume: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'minimax-tts-volume'), 'minimax-tts-volume', { min: 0, max: 10, exclusiveMin: true }),
+    minimaxTtsPitch: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'minimax-tts-pitch'), 'minimax-tts-pitch', { min: -12, max: 12, integer: true }),
+    minimaxTtsEmotion: (() => {
+      const v = readOptionalStringFlag(mergedFlags, 'minimax-tts-emotion')
+      if (v === undefined) return undefined
+      return validateCliValue(validateMinimaxTtsEmotion, v)
+    })(),
+    minimaxTtsEnglishNormalization: readBooleanFlag(mergedFlags, 'minimax-tts-english-normalization'),
+    minimaxTtsPronunciations: readOptionalStringListFlag(mergedFlags, 'minimax-tts-pronunciation'),
     elevenlabsVoiceId: readOptionalStringFlag(mergedFlags, 'elevenlabs-voice'),
     geminiImageModels,
     geminiImageModel,

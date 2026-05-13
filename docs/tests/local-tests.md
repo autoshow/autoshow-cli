@@ -4,6 +4,17 @@ Shared `bun t` runner behavior plus the local/runtime-heavy test paths for Whisp
 
 For API-backed and networked coverage, see [Service Tests](service-tests.md).
 
+Default agent/contributor verification is `bun run check`. For smoke coverage that avoids third-party APIs and provider costs, use only targeted local/no-cost tests:
+
+```bash
+bun test test/test-cases/validation/cli-help-contracts.test.ts
+bun test test/test-cases/validation/cli-usage-errors.test.ts
+bun test test/test-cases/validation/option-resolution-contracts.test.ts
+bun test test/test-cases/smoke/sample/sample-command.test.ts
+```
+
+The `bun t` commands below document the full project runner for humans. Do not use `bun t`, `bun run t`, or `AGENT=1 bun test/test-runner.ts` as a default verification pass, and do not run e2e/provider-cost tests without explicit approval.
+
 ## Outline
 
 - [Quick Start](#quick-start)

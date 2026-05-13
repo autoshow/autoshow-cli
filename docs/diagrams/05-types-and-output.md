@@ -108,8 +108,8 @@ src/types/
 │                                                                              │
 │  RuntimeOptions includes normalized provider selections for:                 │
 │    STT/OCR provider models and local booleans, LLM provider models,          │
-│    TTS/image/video/music provider models, provider-specific voice and        │
-│    generation options, batch controls, cost controls, and prompt controls.   │
+│    TTS/image/video/music provider models, provider-specific voice,           │
+│    synthesis, generation, concurrency, batch, cost, and prompt controls.     │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -170,6 +170,11 @@ src/types/
 │  Step 7 (Music Gen):                                                         │
 │  └── Step7MusicMetadata   musicService (MusicProvider), musicModel,          │
 │       processingTime, musicFileName, musicFileSize, musicDurationMs,         │
-│       lyricsSource: 'provided'|'generated'|'none'                            │
+│       lyricsSource: 'provided'|'generated'|'none', providerCost*,            │
+│       providerRequestId?, providerTraceId?, audioMimeType?,                  │
+│       audioSampleRate?, audioChannelCount?, audioBitrate?,                   │
+│       providerAudioByteSize?, inferenceSteps?, guidanceScale?, seed?,        │
+│       outputFormat?, generatedLyrics?, generatedSongTitle?,                  │
+│       generatedStyleTags?, generatedText?                                    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```

@@ -108,12 +108,20 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --elevenlabs-tts-pvc-voice,│
                                         │   --minimax-tts,             │
                                         │   --minimax-tts-ref-audio,   │
-                                        │   --groq-tts, --mistral-tts, │
+                                        │   --groq-tts, --grok-tts,    │
+                                        │   --mistral-tts,             │
                                         │   --openai-tts,              │
                                         │   --openai-tts-ref-audio,    │
-                                        │   --gemini-tts, --runway-tts)│
+                                        │   --gemini-tts,              │
+                                        │   --deepgram-tts,            │
+                                        │   --runway-tts,              │
+                                        │   --speechify-tts,           │
+                                        │   --gcloud-tts, --deapi-tts) │
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image,     │
+                                        │   --minimax-image,           │
+                                        │   --glm-image, --grok-image, │
+                                        │   --runway-image,            │
                                         │   --bfl-image, --deapi-image)│
                                         │  Step 6: Video (--gemini-    │
                                         │   video, --minimax-video,    │

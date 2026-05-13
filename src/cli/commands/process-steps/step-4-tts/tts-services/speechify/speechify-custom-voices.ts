@@ -207,16 +207,14 @@ const createSpeechifyTtsCustomVoice = async (
   const voiceName = options.voiceName?.trim() || defaultSpeechifyTtsCustomVoiceName()
   const locale = resolveSpeechifyTtsCustomVoiceLocale(options.locale)
   const gender = validateSpeechifyTtsCustomVoiceGender(options.gender)
-  const consent = resolveSpeechifyTtsCustomVoiceConsent(options.consentName, options.consentEmail)
+  resolveSpeechifyTtsCustomVoiceConsent(options.consentName, options.consentEmail)
 
   const data = await withRetry(
     { retryClass: 'runtime_http_create_conservative', operationName: 'speechify-tts-custom-voice-create' },
     async (signal) => {
       const form = new FormData()
       form.append('name', voiceName)
-      form.append('locale', locale)
-      form.append('gender', gender)
-      form.append('consent', JSON.stringify(consent))
+      form.append('consent', 'true')
       appendAudioFile(form, 'sample', sourceAudio)
 
       const response = await fetch(`${baseURL}/v1/voices`, {

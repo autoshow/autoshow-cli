@@ -133,6 +133,7 @@ bun as setup --step write
 bun as setup --step tts
 
 # Image providers are API-based, so this checks hosted provider API-key readiness
+# for providers with setup hooks; MiniMax image uses MINIMAX_API_KEY at runtime.
 bun as setup --step image
 
 # Video providers are API-based, so this checks hosted provider API-key readiness

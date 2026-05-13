@@ -50,7 +50,13 @@ export const collectOpenAITtsTargets = (
         : {}),
       run: async (text, outputDir) => {
         await ensureOpenAITtsSetup()
-        return await runOpenAITts(text, outputDir, { model, voiceId, clone })
+        return await runOpenAITts(text, outputDir, {
+          model,
+          voiceId,
+          clone,
+          instructions: selection.openaiInstructions,
+          speed: selection.openaiSpeed
+        })
       }
     })
   }

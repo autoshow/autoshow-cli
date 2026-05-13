@@ -21,7 +21,12 @@ export const collectGrokTtsTargets = (
       ...(voiceId ? { voice: voiceId } : {}),
       run: async (text, outputDir) => {
         await ensureGrokTtsSetup()
-        return await runGrokTts(text, outputDir, { model, voiceId })
+        return await runGrokTts(text, outputDir, {
+          model,
+          voiceId,
+          language: selection.grokLanguage,
+          textNormalization: selection.grokTextNormalization
+        })
       }
     })
   }

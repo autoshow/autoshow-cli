@@ -131,11 +131,16 @@ export const mergeConfigIntoRawFlags = (
     inject('kitten-voice', d.post.tts.ttsSpeaker)
     inject('groq-voice', d.post.tts.groqVoice)
     inject('grok-tts-voice', d.post.tts.grokTtsVoice)
+    inject('grok-tts-language', d.post.tts.grokTtsLanguage)
+    inject('grok-tts-text-normalization', d.post.tts.grokTtsTextNormalization)
     inject('mistral-tts-voice', d.post.tts.mistralTtsVoice)
     inject('mistral-tts-ref-audio', d.post.tts.mistralTtsRefAudio)
+    inject('mistral-tts-voice-name', d.post.tts.mistralTtsVoiceName)
     inject('tts-dialogue-format', d.post.tts.ttsDialogueFormat)
     inject('tts-speaker-ref-audio', d.post.tts.ttsSpeakerRefAudio)
     inject('openai-voice', d.post.tts.openaiVoice)
+    inject('openai-tts-instructions', d.post.tts.openaiTtsInstructions)
+    inject('openai-tts-speed', d.post.tts.openaiTtsSpeed)
     inject('openai-tts-ref-audio', d.post.tts.openaiTtsRefAudio)
     inject('openai-tts-consent-id', d.post.tts.openaiTtsConsentId)
     inject('openai-tts-consent-audio', d.post.tts.openaiTtsConsentAudio)
@@ -143,6 +148,11 @@ export const mergeConfigIntoRawFlags = (
     inject('openai-tts-consent-name', d.post.tts.openaiTtsConsentName)
     inject('openai-tts-voice-name', d.post.tts.openaiTtsVoiceName)
     inject('gemini-voice', d.post.tts.geminiVoice)
+    inject('deepgram-tts-encoding', d.post.tts.deepgramTtsEncoding)
+    inject('deepgram-tts-container', d.post.tts.deepgramTtsContainer)
+    inject('deepgram-tts-bit-rate', d.post.tts.deepgramTtsBitRate)
+    inject('deepgram-tts-sample-rate', d.post.tts.deepgramTtsSampleRate)
+    inject('deepgram-tts-speed', d.post.tts.deepgramTtsSpeed)
     inject('gemini-speaker-1-name', d.post.tts.geminiSpeaker1Name)
     inject('gemini-speaker-1-voice', d.post.tts.geminiSpeaker1Voice)
     inject('gemini-speaker-2-name', d.post.tts.geminiSpeaker2Name)
@@ -152,15 +162,36 @@ export const mergeConfigIntoRawFlags = (
     inject('elevenlabs-tts-ref-audio', d.post.tts.elevenlabsTtsRefAudio)
     inject('elevenlabs-tts-voice-name', d.post.tts.elevenlabsTtsVoiceName)
     inject('elevenlabs-tts-clone-remove-background-noise', d.post.tts.elevenlabsTtsCloneRemoveBackgroundNoise)
+    inject('elevenlabs-tts-output-format', d.post.tts.elevenlabsTtsOutputFormat)
+    inject('elevenlabs-tts-language-code', d.post.tts.elevenlabsTtsLanguageCode)
+    inject('elevenlabs-tts-stability', d.post.tts.elevenlabsTtsStability)
+    inject('elevenlabs-tts-similarity-boost', d.post.tts.elevenlabsTtsSimilarityBoost)
+    inject('elevenlabs-tts-style', d.post.tts.elevenlabsTtsStyle)
+    inject('elevenlabs-tts-use-speaker-boost', d.post.tts.elevenlabsTtsUseSpeakerBoost)
+    inject('elevenlabs-tts-speed', d.post.tts.elevenlabsTtsSpeed)
+    inject('elevenlabs-tts-seed', d.post.tts.elevenlabsTtsSeed)
+    inject('elevenlabs-tts-text-normalization', d.post.tts.elevenlabsTtsTextNormalization)
+    inject('elevenlabs-tts-pronunciation-dictionary-locator', d.post.tts.elevenlabsTtsPronunciationDictionaryLocators)
+    inject('elevenlabs-tts-optimize-streaming-latency', d.post.tts.elevenlabsTtsOptimizeStreamingLatency)
+    inject('elevenlabs-tts-pvc-as-ivc', d.post.tts.elevenlabsTtsPvcAsIvc)
     inject('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
     inject('minimax-tts-ref-audio', d.post.tts.minimaxTtsRefAudio)
     inject('minimax-tts-prompt-audio', d.post.tts.minimaxTtsPromptAudio)
     inject('minimax-tts-prompt-text', d.post.tts.minimaxTtsPromptText)
     inject('minimax-tts-clone-noise-reduction', d.post.tts.minimaxTtsCloneNoiseReduction)
     inject('minimax-tts-clone-volume-normalization', d.post.tts.minimaxTtsCloneVolumeNormalization)
+    inject('minimax-tts-language-boost', d.post.tts.minimaxTtsLanguageBoost)
+    inject('minimax-tts-speed', d.post.tts.minimaxTtsSpeed)
+    inject('minimax-tts-volume', d.post.tts.minimaxTtsVolume)
+    inject('minimax-tts-pitch', d.post.tts.minimaxTtsPitch)
+    inject('minimax-tts-emotion', d.post.tts.minimaxTtsEmotion)
+    inject('minimax-tts-english-normalization', d.post.tts.minimaxTtsEnglishNormalization)
+    inject('minimax-tts-pronunciation', d.post.tts.minimaxTtsPronunciations)
     inject('deepgram-voice', d.post.tts.deepgramVoice)
     inject('runway-tts-voice', d.post.tts.runwayTtsVoice)
     inject('speechify-voice', d.post.tts.speechifyVoice)
+    inject('speechify-tts-audio-format', d.post.tts.speechifyTtsAudioFormat)
+    inject('speechify-tts-language', d.post.tts.speechifyTtsLanguage)
     inject('gcloud-tts-voice', d.post.tts.gcloudTtsVoice)
     inject('gcloud-tts-language', d.post.tts.gcloudTtsLanguage)
     inject('gcloud-tts-ref-audio', d.post.tts.gcloudTtsRefAudio)
@@ -169,6 +200,11 @@ export const mergeConfigIntoRawFlags = (
     inject('deapi-tts-voice', d.post.tts.deapiTtsVoice)
     inject('deapi-tts-ref-audio', d.post.tts.deapiTtsRefAudio)
     inject('deapi-tts-ref-text', d.post.tts.deapiTtsRefText)
+    inject('deapi-tts-language', d.post.tts.deapiTtsLanguage)
+    inject('deapi-tts-speed', d.post.tts.deapiTtsSpeed)
+    inject('deapi-tts-format', d.post.tts.deapiTtsFormat)
+    inject('deapi-tts-sample-rate', d.post.tts.deapiTtsSampleRate)
+    inject('deapi-tts-instruction', d.post.tts.deapiTtsInstruction)
     inject('tts-provider-concurrency', d.post.tts.providerConcurrency)
     inject('tts-local-concurrency', d.post.tts.localConcurrency)
   }
@@ -293,11 +329,16 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
   'grok-tts-voice':    ['defaults', 'post', 'tts', 'grokTtsVoice'],
+  'grok-tts-language': ['defaults', 'post', 'tts', 'grokTtsLanguage'],
+  'grok-tts-text-normalization': ['defaults', 'post', 'tts', 'grokTtsTextNormalization'],
   'mistral-tts-voice': ['defaults', 'post', 'tts', 'mistralTtsVoice'],
   'mistral-tts-ref-audio': ['defaults', 'post', 'tts', 'mistralTtsRefAudio'],
+  'mistral-tts-voice-name': ['defaults', 'post', 'tts', 'mistralTtsVoiceName'],
   'tts-dialogue-format': ['defaults', 'post', 'tts', 'ttsDialogueFormat'],
   'tts-speaker-ref-audio': ['defaults', 'post', 'tts', 'ttsSpeakerRefAudio'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
+  'openai-tts-instructions': ['defaults', 'post', 'tts', 'openaiTtsInstructions'],
+  'openai-tts-speed': ['defaults', 'post', 'tts', 'openaiTtsSpeed'],
   'openai-tts-ref-audio': ['defaults', 'post', 'tts', 'openaiTtsRefAudio'],
   'openai-tts-consent-id': ['defaults', 'post', 'tts', 'openaiTtsConsentId'],
   'openai-tts-consent-audio': ['defaults', 'post', 'tts', 'openaiTtsConsentAudio'],
@@ -305,6 +346,11 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'openai-tts-consent-name': ['defaults', 'post', 'tts', 'openaiTtsConsentName'],
   'openai-tts-voice-name': ['defaults', 'post', 'tts', 'openaiTtsVoiceName'],
   'gemini-voice':      ['defaults', 'post', 'tts', 'geminiVoice'],
+  'deepgram-tts-encoding': ['defaults', 'post', 'tts', 'deepgramTtsEncoding'],
+  'deepgram-tts-container': ['defaults', 'post', 'tts', 'deepgramTtsContainer'],
+  'deepgram-tts-bit-rate': ['defaults', 'post', 'tts', 'deepgramTtsBitRate'],
+  'deepgram-tts-sample-rate': ['defaults', 'post', 'tts', 'deepgramTtsSampleRate'],
+  'deepgram-tts-speed': ['defaults', 'post', 'tts', 'deepgramTtsSpeed'],
   'gemini-speaker-1-name': ['defaults', 'post', 'tts', 'geminiSpeaker1Name'],
   'gemini-speaker-1-voice': ['defaults', 'post', 'tts', 'geminiSpeaker1Voice'],
   'gemini-speaker-2-name': ['defaults', 'post', 'tts', 'geminiSpeaker2Name'],
@@ -314,15 +360,36 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'elevenlabs-tts-ref-audio': ['defaults', 'post', 'tts', 'elevenlabsTtsRefAudio'],
   'elevenlabs-tts-voice-name': ['defaults', 'post', 'tts', 'elevenlabsTtsVoiceName'],
   'elevenlabs-tts-clone-remove-background-noise': ['defaults', 'post', 'tts', 'elevenlabsTtsCloneRemoveBackgroundNoise'],
+  'elevenlabs-tts-output-format': ['defaults', 'post', 'tts', 'elevenlabsTtsOutputFormat'],
+  'elevenlabs-tts-language-code': ['defaults', 'post', 'tts', 'elevenlabsTtsLanguageCode'],
+  'elevenlabs-tts-stability': ['defaults', 'post', 'tts', 'elevenlabsTtsStability'],
+  'elevenlabs-tts-similarity-boost': ['defaults', 'post', 'tts', 'elevenlabsTtsSimilarityBoost'],
+  'elevenlabs-tts-style': ['defaults', 'post', 'tts', 'elevenlabsTtsStyle'],
+  'elevenlabs-tts-use-speaker-boost': ['defaults', 'post', 'tts', 'elevenlabsTtsUseSpeakerBoost'],
+  'elevenlabs-tts-speed': ['defaults', 'post', 'tts', 'elevenlabsTtsSpeed'],
+  'elevenlabs-tts-seed': ['defaults', 'post', 'tts', 'elevenlabsTtsSeed'],
+  'elevenlabs-tts-text-normalization': ['defaults', 'post', 'tts', 'elevenlabsTtsTextNormalization'],
+  'elevenlabs-tts-pronunciation-dictionary-locator': ['defaults', 'post', 'tts', 'elevenlabsTtsPronunciationDictionaryLocators'],
+  'elevenlabs-tts-optimize-streaming-latency': ['defaults', 'post', 'tts', 'elevenlabsTtsOptimizeStreamingLatency'],
+  'elevenlabs-tts-pvc-as-ivc': ['defaults', 'post', 'tts', 'elevenlabsTtsPvcAsIvc'],
   'minimax-tts-voice': ['defaults', 'post', 'tts', 'minimaxTtsVoice'],
   'minimax-tts-ref-audio': ['defaults', 'post', 'tts', 'minimaxTtsRefAudio'],
   'minimax-tts-prompt-audio': ['defaults', 'post', 'tts', 'minimaxTtsPromptAudio'],
   'minimax-tts-prompt-text': ['defaults', 'post', 'tts', 'minimaxTtsPromptText'],
   'minimax-tts-clone-noise-reduction': ['defaults', 'post', 'tts', 'minimaxTtsCloneNoiseReduction'],
   'minimax-tts-clone-volume-normalization': ['defaults', 'post', 'tts', 'minimaxTtsCloneVolumeNormalization'],
+  'minimax-tts-language-boost': ['defaults', 'post', 'tts', 'minimaxTtsLanguageBoost'],
+  'minimax-tts-speed': ['defaults', 'post', 'tts', 'minimaxTtsSpeed'],
+  'minimax-tts-volume': ['defaults', 'post', 'tts', 'minimaxTtsVolume'],
+  'minimax-tts-pitch': ['defaults', 'post', 'tts', 'minimaxTtsPitch'],
+  'minimax-tts-emotion': ['defaults', 'post', 'tts', 'minimaxTtsEmotion'],
+  'minimax-tts-english-normalization': ['defaults', 'post', 'tts', 'minimaxTtsEnglishNormalization'],
+  'minimax-tts-pronunciation': ['defaults', 'post', 'tts', 'minimaxTtsPronunciations'],
   'deepgram-voice':    ['defaults', 'post', 'tts', 'deepgramVoice'],
   'runway-tts-voice':  ['defaults', 'post', 'tts', 'runwayTtsVoice'],
   'speechify-voice':   ['defaults', 'post', 'tts', 'speechifyVoice'],
+  'speechify-tts-audio-format': ['defaults', 'post', 'tts', 'speechifyTtsAudioFormat'],
+  'speechify-tts-language': ['defaults', 'post', 'tts', 'speechifyTtsLanguage'],
   'gcloud-tts-voice':  ['defaults', 'post', 'tts', 'gcloudTtsVoice'],
   'gcloud-tts-language': ['defaults', 'post', 'tts', 'gcloudTtsLanguage'],
   'gcloud-tts-ref-audio': ['defaults', 'post', 'tts', 'gcloudTtsRefAudio'],
@@ -331,6 +398,11 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'deapi-tts-voice':   ['defaults', 'post', 'tts', 'deapiTtsVoice'],
   'deapi-tts-ref-audio': ['defaults', 'post', 'tts', 'deapiTtsRefAudio'],
   'deapi-tts-ref-text': ['defaults', 'post', 'tts', 'deapiTtsRefText'],
+  'deapi-tts-language': ['defaults', 'post', 'tts', 'deapiTtsLanguage'],
+  'deapi-tts-speed': ['defaults', 'post', 'tts', 'deapiTtsSpeed'],
+  'deapi-tts-format': ['defaults', 'post', 'tts', 'deapiTtsFormat'],
+  'deapi-tts-sample-rate': ['defaults', 'post', 'tts', 'deapiTtsSampleRate'],
+  'deapi-tts-instruction': ['defaults', 'post', 'tts', 'deapiTtsInstruction'],
   'tts-provider-concurrency': ['defaults', 'post', 'tts', 'providerConcurrency'],
   'tts-local-concurrency': ['defaults', 'post', 'tts', 'localConcurrency'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
@@ -432,7 +504,7 @@ const readConfigFlagValue = (
 }
 
 const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
-  if (flagName === 'tts-speaker-ref-audio' && typeof rawValue === 'string') {
+  if ((flagName === 'tts-speaker-ref-audio' || flagName === 'minimax-tts-pronunciation' || flagName === 'elevenlabs-tts-pronunciation-dictionary-locator') && typeof rawValue === 'string') {
     return [rawValue]
   }
   if (typeof rawValue !== 'string') return rawValue
@@ -446,7 +518,12 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
     'tts-provider-concurrency', 'tts-local-concurrency',
     'image-provider-concurrency', 'image-local-concurrency',
     'video-provider-concurrency', 'video-local-concurrency',
-    'music-provider-concurrency', 'music-local-concurrency'
+    'music-provider-concurrency', 'music-local-concurrency',
+    'openai-tts-speed', 'minimax-tts-speed', 'minimax-tts-volume', 'minimax-tts-pitch',
+    'deepgram-tts-bit-rate', 'deepgram-tts-sample-rate', 'deepgram-tts-speed',
+    'deapi-tts-speed', 'deapi-tts-sample-rate',
+    'elevenlabs-tts-stability', 'elevenlabs-tts-similarity-boost', 'elevenlabs-tts-style',
+    'elevenlabs-tts-speed', 'elevenlabs-tts-seed', 'elevenlabs-tts-optimize-streaming-latency'
   ])
   if (numericFlags.has(flagName)) {
     const n = Number(rawValue)

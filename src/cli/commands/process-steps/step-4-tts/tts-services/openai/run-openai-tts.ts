@@ -18,7 +18,13 @@ const MAX_CHARS_PER_CHUNK = 4000
 export const runOpenAITts = async (
   text: string,
   outputDir: string,
-  options: { model: OpenAITtsModel, voiceId?: string | undefined, clone?: OpenAITtsCustomVoiceOptions | undefined }
+  options: {
+    model: OpenAITtsModel
+    voiceId?: string | undefined
+    clone?: OpenAITtsCustomVoiceOptions | undefined
+    instructions?: string | undefined
+    speed?: number | undefined
+  }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const config = getOpenAIClientConfig()
   const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
@@ -40,6 +46,8 @@ export const runOpenAITts = async (
     { label: 'model', value: options.model },
     { label: cloneResult ? 'reference audio' : 'voice', value: cloneResult ? cloneResult.sampleAudio.basename : voiceId },
     ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : []),
+    ...(options.instructions ? [{ label: 'instructions', value: 'configured' }] : []),
+    ...(typeof options.speed === 'number' ? [{ label: 'speed', value: options.speed }] : []),
     { label: 'chunk count', value: chunks.length }
   ])
 
@@ -47,12 +55,15 @@ export const runOpenAITts = async (
 
   for (let i = 0; i < chunks.length; i++) {
     const chunkPath = `${outputDir}/speech-openai-chunk-${String(i + 1).padStart(3, '0')}.wav`
-    const response = await client.audio.speech.create({
+    const requestBody = {
       model: options.model,
       voice: speechVoice,
       input: chunks[i] as string,
-      response_format: 'wav'
-    })
+      response_format: 'wav' as const,
+      ...(options.instructions ? { instructions: options.instructions } : {}),
+      ...(typeof options.speed === 'number' ? { speed: options.speed } : {})
+    }
+    const response = await client.audio.speech.create(requestBody)
     const bytes = new Uint8Array(await response.arrayBuffer())
     if (bytes.byteLength === 0) {
       throw new Error('OpenAI TTS returned empty audio')

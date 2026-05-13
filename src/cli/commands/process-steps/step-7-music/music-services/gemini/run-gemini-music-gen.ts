@@ -8,6 +8,79 @@ import * as l from '~/utils/logger'
 const GEMINI_CLIP_DURATION_SECONDS = 30
 const GEMINI_PRO_DEFAULT_DURATION_SECONDS = 120
 
+type GeminiMusicResponsePart = {
+  thought?: boolean | undefined
+  text?: string | undefined
+  inlineData?: {
+    data?: string | undefined
+    mimeType?: string | undefined
+  } | undefined
+}
+
+export const collectGeminiMusicTextParts = (
+  parts: GeminiMusicResponsePart[]
+): string | undefined => {
+  const text = parts
+    .filter((part) => part.thought !== true)
+    .map((part) => part.text?.trim())
+    .filter((part): part is string => part !== undefined && part.length > 0)
+
+  return text.length > 0 ? text.join('\n\n') : undefined
+}
+
+const outputFormatFromAudioMimeType = (mimeType: string | undefined): string | undefined => {
+  if (!mimeType) {
+    return undefined
+  }
+  const normalized = mimeType.toLowerCase().split(';')[0]?.trim()
+  switch (normalized) {
+    case 'audio/mpeg':
+    case 'audio/mp3':
+      return 'mp3'
+    case 'audio/wav':
+    case 'audio/wave':
+    case 'audio/x-wav':
+      return 'wav'
+    default:
+      return normalized?.startsWith('audio/') ? normalized.slice('audio/'.length) : undefined
+  }
+}
+
+export const writeGeminiMusicInlineAudio = async (
+  parts: GeminiMusicResponsePart[],
+  musicPath: string
+): Promise<{
+  audioMimeType?: string | undefined
+  outputFormat?: string | undefined
+  generatedText?: string | undefined
+}> => {
+  const generatedText = collectGeminiMusicTextParts(parts)
+  for (const part of parts) {
+    const audioData = part.inlineData?.data
+    const mimeType = part.inlineData?.mimeType
+    if (!audioData || part.thought === true) {
+      continue
+    }
+    if (mimeType && !mimeType.startsWith('audio/')) {
+      continue
+    }
+
+    const audioBytes = Buffer.from(audioData, 'base64')
+    if (audioBytes.byteLength === 0) {
+      continue
+    }
+
+    await Bun.write(musicPath, audioBytes)
+    return {
+      audioMimeType: mimeType,
+      outputFormat: outputFormatFromAudioMimeType(mimeType),
+      ...(generatedText ? { generatedText } : {})
+    }
+  }
+
+  throw new Error('Gemini music generation completed without audio inline data')
+}
+
 const readProvidedLyrics = async (lyricsFile: string): Promise<string> => {
   const file = Bun.file(lyricsFile)
   if (!await file.exists()) {
@@ -118,47 +191,30 @@ export const runGeminiMusicGen = async (
   })
 
   const parts = response.candidates?.flatMap((candidate) => candidate.content?.parts ?? []) ?? []
-  for (const part of parts) {
-    const audioData = part.inlineData?.data
-    const mimeType = part.inlineData?.mimeType
-    if (!audioData || part.thought === true) {
-      continue
-    }
-    if (mimeType && !mimeType.startsWith('audio/')) {
-      continue
-    }
+  const audioResult = await writeGeminiMusicInlineAudio(parts, musicPath)
+  const processingTime = Date.now() - startTime
+  const musicFile = Bun.file(musicPath)
 
-    const audioBytes = Buffer.from(audioData, 'base64')
-    if (audioBytes.byteLength === 0) {
-      continue
-    }
+  logMediaGenerationStatus(l, {
+    mediaType: 'music',
+    provider: 'gemini',
+    model: options.model,
+    status: 'completed',
+    processingTimeMs: processingTime,
+    outputCount: 1
+  })
+  logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
-    await Bun.write(musicPath, audioBytes)
-    const processingTime = Date.now() - startTime
-    const musicFile = Bun.file(musicPath)
-
-    logMediaGenerationStatus(l, {
-      mediaType: 'music',
-      provider: 'gemini',
-      model: options.model,
-      status: 'completed',
-      processingTimeMs: processingTime,
-      outputCount: 1
-    })
-    logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
-
-    const metadata: Step7MusicMetadata = {
-      musicService: 'gemini',
-      musicModel: options.model,
-      processingTime,
-      musicFileName: 'generated-music.mp3',
-      musicFileSize: musicFile.size,
-      musicDurationMs: intendedDurationSeconds * 1000,
-      lyricsSource
-    }
-
-    return { musicPath, metadata }
+  const metadata: Step7MusicMetadata = {
+    musicService: 'gemini',
+    musicModel: options.model,
+    processingTime,
+    musicFileName: 'generated-music.mp3',
+    musicFileSize: musicFile.size,
+    musicDurationMs: intendedDurationSeconds * 1000,
+    lyricsSource,
+    ...audioResult
   }
 
-  throw new Error('Gemini music generation completed without audio inline data')
+  return { musicPath, metadata }
 }

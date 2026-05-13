@@ -49,7 +49,7 @@ If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the
 - Explicit provider flags narrow the rerun set, but they must be a subset of the original requested providers for that run or batch.
 - `extract` media-route runs accept STT provider/runtime flags.
 - `extract` document-route runs accept OCR provider/runtime flags.
-- TTS runs accept TTS provider/voice flags.
+- TTS runs accept the resume-specific TTS provider/voice flags listed below. Omitting explicit provider flags still uses the original requested providers stored in the manifest.
 - Image runs accept image provider/option flags.
 - Video runs accept video provider/option flags.
 - Music runs accept music provider/option flags.
@@ -108,7 +108,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-image Flux1schnell
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5
 
 # Resume missing MiniMax music outputs
-bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.5
+bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.6
 
 # Resume missing Gemini Lyria music outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-preview
@@ -198,6 +198,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 ### TTS
 
+The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, Groq, Mistral, OpenAI, Gemini, Runway, and Deepgram TTS. It does not expose newer standalone TTS-only flags for Grok, Speechify, Google Cloud, deAPI, MiniMax synthesis controls, OpenAI instructions/speed, or Grok language/normalization.
+
 | Flag | Description |
 |------|-------------|
 | `--kitten-tts <model>` | Select one or more Kitten TTS models |
@@ -209,6 +211,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
 | `--runway-tts <model>` | Select one or more Runway TTS models |
+| `--tts-provider-concurrency <n>` | Max hosted TTS providers/models running in parallel for one item |
+| `--tts-local-concurrency <n>` | Max local TTS providers running in parallel for one item |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
 | `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
 | `--elevenlabs-tts-pvc-voice <id>` | Trained ElevenLabs PVC voice ID for resumed synthesis |
@@ -257,6 +261,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--image-format <format>` | Image output format (OpenAI/BFL) |
 | `--image-background <bg>` | Image background (OpenAI) |
 | `--imagen-count <n>` | Number of images to generate (Imagen 4) |
+| `--image-provider-concurrency <n>` | Max hosted image providers/models running in parallel for one item |
+| `--image-local-concurrency <n>` | Max local image providers running in parallel for one item |
 
 ### Video
 
@@ -267,10 +273,13 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--glm-video <model>` | Select one or more GLM video models |
 | `--grok-video <model>` | Select one or more Grok video models |
 | `--runway-video <model>` | Select one or more Runway video models |
+| `--deapi-video <model>` | Select one or more deAPI video models |
 | `--video-duration <seconds>` | Video duration in seconds |
 | `--video-size <size>` | Video size |
 | `--video-aspect-ratio <ratio>` | Video aspect ratio |
 | `--video-resolution <res>` | Video resolution (Gemini) |
+| `--video-provider-concurrency <n>` | Max hosted video providers/models running in parallel for one item |
+| `--video-local-concurrency <n>` | Max local video providers running in parallel for one item |
 
 ### Music
 
@@ -283,6 +292,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--music-duration <seconds>` | Music duration in seconds |
 | `--music-lyrics-file <path>` | Lyrics file path for MiniMax, deAPI, and Gemini |
 | `--music-instrumental` | Force instrumental generation where supported |
+| `--music-provider-concurrency <n>` | Max hosted music providers/models running in parallel for one item |
+| `--music-local-concurrency <n>` | Max local music providers running in parallel for one item |
 
 ## Notes
 

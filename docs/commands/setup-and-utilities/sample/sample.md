@@ -165,5 +165,5 @@ Skipped fixtures are recorded in `manifest.json` under `skipped[]`.
 
 - Determinism is enforced at file-set/name/structure level; byte-level hashes are not enforced across platforms.
 - Every fixture must be structurally valid for its declared format (no placeholder stubs).
-- `bun t` automatically runs `bun as setup --step sample` and then `bun as setup --sample` as preflight before executing tests.
+- The full `bun t` runner automatically runs `bun as setup --step sample` and then `bun as setup --sample` as preflight before executing tests; this is an opt-in runner, not the default no-cost verification path.
 - See [`sample-tests.md`](./sample-tests.md) for test coverage.

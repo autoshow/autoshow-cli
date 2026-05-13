@@ -1,10 +1,10 @@
 # Sample Tests
 
 ```bash
-bun t \
-  test/test-cases/smoke/sample/sample-command.test.ts \
-  test/test-cases/local/sample/sample-generate.test.ts
+bun test test/test-cases/smoke/sample/sample-command.test.ts
 ```
+
+Use the smoke command above for no-cost verification. The local fixture-generation runner below is heavier and should be run intentionally; the full `bun t` runner is not the default agent verification path.
 
 ## Outline
 
@@ -14,7 +14,7 @@ bun t \
 ## Validation / Price / Non-E2E
 
 ```bash
-bun t test/test-cases/smoke/sample/sample-command.test.ts
+bun test test/test-cases/smoke/sample/sample-command.test.ts
 ```
 
 Coverage (no tools required):

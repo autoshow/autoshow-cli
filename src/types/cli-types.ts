@@ -173,15 +173,20 @@ export type RuntimeOptions = {
   grokTtsModels: string[] | undefined
   grokTtsModel: string | undefined
   grokTtsVoice: string | undefined
+  grokTtsLanguage: string | undefined
+  grokTtsTextNormalization: boolean
   mistralTtsModels: string[] | undefined
   mistralTtsModel: string | undefined
   mistralTtsVoice: string | undefined
   mistralTtsRefAudio: string | undefined
+  mistralTtsVoiceName: string | undefined
   ttsDialogueFormat: 'screenplay' | 'labeled' | undefined
   ttsSpeakerRefAudios: string[] | undefined
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined
+  openaiTtsInstructions: string | undefined
+  openaiTtsSpeed: number | undefined
   openaiTtsRefAudio: string | undefined
   openaiTtsConsentId: string | undefined
   openaiTtsConsentAudio: string | undefined
@@ -202,6 +207,18 @@ export type RuntimeOptions = {
   elevenlabsTtsRefAudio: string | undefined
   elevenlabsTtsVoiceName: string | undefined
   elevenlabsTtsCloneRemoveBackgroundNoise: boolean
+  elevenlabsTtsOutputFormat: string | undefined
+  elevenlabsTtsLanguageCode: string | undefined
+  elevenlabsTtsStability: number | undefined
+  elevenlabsTtsSimilarityBoost: number | undefined
+  elevenlabsTtsStyle: number | undefined
+  elevenlabsTtsUseSpeakerBoost: boolean
+  elevenlabsTtsSpeed: number | undefined
+  elevenlabsTtsSeed: number | undefined
+  elevenlabsTtsTextNormalization: string | undefined
+  elevenlabsTtsPronunciationDictionaryLocators: string[] | undefined
+  elevenlabsTtsOptimizeStreamingLatency: number | undefined
+  elevenlabsTtsPvcAsIvc: boolean
   elevenlabsTtsPvcSamples: string[] | undefined
   elevenlabsTtsPvcSampleDir: string | undefined
   elevenlabsTtsPvcLanguage: string | undefined
@@ -212,12 +229,19 @@ export type RuntimeOptions = {
   deepgramTtsModels: string[] | undefined
   deepgramTtsModel: string | undefined
   deepgramVoiceId: string | undefined
+  deepgramTtsEncoding: string | undefined
+  deepgramTtsContainer: string | undefined
+  deepgramTtsBitRate: number | undefined
+  deepgramTtsSampleRate: number | undefined
+  deepgramTtsSpeed: number | undefined
   runwayTtsModels: string[] | undefined
   runwayTtsModel: string | undefined
   runwayTtsVoice: string | undefined
   speechifyTtsModels: string[] | undefined
   speechifyTtsModel: string | undefined
   speechifyVoice: string | undefined
+  speechifyTtsAudioFormat: string | undefined
+  speechifyTtsLanguage: string | undefined
   speechifyTtsRefAudio: string | undefined
   speechifyTtsVoiceName: string | undefined
   speechifyTtsConsentName: string | undefined
@@ -241,11 +265,23 @@ export type RuntimeOptions = {
   minimaxTtsPromptText: string | undefined
   minimaxTtsCloneNoiseReduction: boolean
   minimaxTtsCloneVolumeNormalization: boolean
+  minimaxTtsLanguageBoost: string | undefined
+  minimaxTtsSpeed: number | undefined
+  minimaxTtsVolume: number | undefined
+  minimaxTtsPitch: number | undefined
+  minimaxTtsEmotion: string | undefined
+  minimaxTtsEnglishNormalization: boolean
+  minimaxTtsPronunciations: string[] | undefined
   deapiTtsModels: string[] | undefined
   deapiTtsModel: string | undefined
   deapiTtsVoice: string | undefined
   deapiTtsRefAudio: string | undefined
   deapiTtsRefText: string | undefined
+  deapiTtsLanguage: string | undefined
+  deapiTtsSpeed: number | undefined
+  deapiTtsFormat: string | undefined
+  deapiTtsSampleRate: number | undefined
+  deapiTtsInstruction: string | undefined
   geminiImageModels: string[] | undefined
   geminiImageModel: string | undefined
   openaiImageModels: string[] | undefined

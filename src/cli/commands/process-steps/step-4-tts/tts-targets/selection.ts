@@ -22,6 +22,13 @@ export type TtsTargetSelection = {
   minimaxClonePromptAudioPath: string | undefined
   minimaxClonePromptText: string | undefined
   minimaxVoiceId: string | undefined
+  minimaxLanguageBoost: string | undefined
+  minimaxSpeed: number | undefined
+  minimaxVolume: number | undefined
+  minimaxPitch: number | undefined
+  minimaxEmotion: string | undefined
+  minimaxEnglishNormalization: boolean
+  minimaxPronunciations: string[] | undefined
   openaiCloneRefAudioPath: string | undefined
   openaiCloneConsentId: string | undefined
   openaiCloneConsentAudioPath: string | undefined
@@ -29,11 +36,30 @@ export type TtsTargetSelection = {
   openaiCloneConsentName: string | undefined
   openaiCloneVoiceName: string | undefined
   openaiVoiceId: string | undefined
+  openaiInstructions: string | undefined
+  openaiSpeed: number | undefined
+  deepgramEncoding: string | undefined
+  deepgramContainer: string | undefined
+  deepgramBitRate: number | undefined
+  deepgramSampleRate: number | undefined
+  deepgramSpeed: number | undefined
   elevenLabsCloneRefAudioPath: string | undefined
   elevenLabsCloneVoiceName: string | undefined
   elevenLabsCloneRemoveBackgroundNoise: boolean
   elevenLabsVoiceId: string | undefined
   elevenLabsPvcVoiceId: string | undefined
+  elevenLabsOutputFormat: string | undefined
+  elevenLabsLanguageCode: string | undefined
+  elevenLabsStability: number | undefined
+  elevenLabsSimilarityBoost: number | undefined
+  elevenLabsStyle: number | undefined
+  elevenLabsUseSpeakerBoost: boolean
+  elevenLabsSpeed: number | undefined
+  elevenLabsSeed: number | undefined
+  elevenLabsTextNormalization: string | undefined
+  elevenLabsPronunciationDictionaryLocators: string[] | undefined
+  elevenLabsOptimizeStreamingLatency: number | undefined
+  elevenLabsPvcAsIvc: boolean
   elevenLabsPvcSamplePaths: string[] | undefined
   elevenLabsPvcSampleDir: string | undefined
   elevenLabsPvcLanguage: string | undefined
@@ -48,6 +74,8 @@ export type TtsTargetSelection = {
   speechifyCustomVoiceLocale: string | undefined
   speechifyCustomVoiceGender: string | undefined
   speechifyVoiceId: string | undefined
+  speechifyAudioFormat: string | undefined
+  speechifyLanguage: string | undefined
   gcloudVoiceCloningKey: string | undefined
   gcloudRefAudioPath: string | undefined
   gcloudConsentAudioPath: string | undefined
@@ -57,14 +85,22 @@ export type TtsTargetSelection = {
   gcloudLanguage: string | undefined
   groqVoiceId: string | undefined
   grokVoiceId: string | undefined
+  grokLanguage: string | undefined
+  grokTextNormalization: boolean
   mistralVoiceId: string | undefined
   mistralRefAudioPath: string | undefined
+  mistralVoiceName: string | undefined
   geminiVoiceId: string | undefined
   deepgramVoiceId: string | undefined
   runwayVoiceId: string | undefined
   deapiVoiceId: string | undefined
   deapiRefAudioPath: string | undefined
   deapiRefText: string | undefined
+  deapiLanguage: string | undefined
+  deapiSpeed: number | undefined
+  deapiFormat: string | undefined
+  deapiSampleRate: number | undefined
+  deapiInstruction: string | undefined
   hasElevenLabsPvcActionFlags: boolean
   hasElevenLabsPvcSetupFlags: boolean
   hasMinimaxCloneFlags: boolean
@@ -102,6 +138,7 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
   const elevenLabsPvcDescription = trimmed(options.elevenlabsTtsPvcDescription)
   const elevenLabsPvcCaptchaOut = trimmed(options.elevenlabsTtsPvcCaptchaOut)
   const elevenLabsPvcVerifyAudio = trimmed(options.elevenlabsTtsPvcVerifyAudio)
+  const elevenLabsPronunciationDictionaryLocators = options.elevenlabsTtsPronunciationDictionaryLocators?.map((item) => item.trim()).filter(Boolean)
   const speechifyCustomVoiceRefAudioPath = trimmed(options.speechifyTtsRefAudio)
   const speechifyCustomVoiceName = trimmed(options.speechifyTtsVoiceName)
   const speechifyCustomVoiceConsentName = trimmed(options.speechifyTtsConsentName)
@@ -178,6 +215,13 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     minimaxClonePromptAudioPath,
     minimaxClonePromptText,
     minimaxVoiceId: trimmed(options.minimaxTtsVoice),
+    minimaxLanguageBoost: trimmed(options.minimaxTtsLanguageBoost),
+    minimaxSpeed: options.minimaxTtsSpeed,
+    minimaxVolume: options.minimaxTtsVolume,
+    minimaxPitch: options.minimaxTtsPitch,
+    minimaxEmotion: trimmed(options.minimaxTtsEmotion),
+    minimaxEnglishNormalization: options.minimaxTtsEnglishNormalization === true,
+    minimaxPronunciations: options.minimaxTtsPronunciations?.map((item) => item.trim()).filter(Boolean),
     openaiCloneRefAudioPath,
     openaiCloneConsentId,
     openaiCloneConsentAudioPath,
@@ -185,11 +229,30 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     openaiCloneConsentName,
     openaiCloneVoiceName,
     openaiVoiceId: trimmed(options.openaiVoiceId),
+    openaiInstructions: trimmed(options.openaiTtsInstructions),
+    openaiSpeed: options.openaiTtsSpeed,
+    deepgramEncoding: trimmed(options.deepgramTtsEncoding),
+    deepgramContainer: trimmed(options.deepgramTtsContainer),
+    deepgramBitRate: options.deepgramTtsBitRate,
+    deepgramSampleRate: options.deepgramTtsSampleRate,
+    deepgramSpeed: options.deepgramTtsSpeed,
     elevenLabsCloneRefAudioPath,
     elevenLabsCloneVoiceName,
     elevenLabsCloneRemoveBackgroundNoise: options.elevenlabsTtsCloneRemoveBackgroundNoise === true,
     elevenLabsVoiceId: trimmed(options.elevenlabsVoiceId),
     elevenLabsPvcVoiceId,
+    elevenLabsOutputFormat: trimmed(options.elevenlabsTtsOutputFormat),
+    elevenLabsLanguageCode: trimmed(options.elevenlabsTtsLanguageCode),
+    elevenLabsStability: options.elevenlabsTtsStability,
+    elevenLabsSimilarityBoost: options.elevenlabsTtsSimilarityBoost,
+    elevenLabsStyle: options.elevenlabsTtsStyle,
+    elevenLabsUseSpeakerBoost: options.elevenlabsTtsUseSpeakerBoost === true,
+    elevenLabsSpeed: options.elevenlabsTtsSpeed,
+    elevenLabsSeed: options.elevenlabsTtsSeed,
+    elevenLabsTextNormalization: trimmed(options.elevenlabsTtsTextNormalization),
+    elevenLabsPronunciationDictionaryLocators,
+    elevenLabsOptimizeStreamingLatency: options.elevenlabsTtsOptimizeStreamingLatency,
+    elevenLabsPvcAsIvc: options.elevenlabsTtsPvcAsIvc === true,
     elevenLabsPvcSamplePaths,
     elevenLabsPvcSampleDir,
     elevenLabsPvcLanguage,
@@ -204,6 +267,8 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     speechifyCustomVoiceLocale,
     speechifyCustomVoiceGender,
     speechifyVoiceId: trimmed(options.speechifyVoice),
+    speechifyAudioFormat: trimmed(options.speechifyTtsAudioFormat),
+    speechifyLanguage: trimmed(options.speechifyTtsLanguage),
     gcloudVoiceCloningKey,
     gcloudRefAudioPath,
     gcloudConsentAudioPath,
@@ -213,14 +278,22 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     gcloudLanguage: trimmed(options.gcloudTtsLanguage),
     groqVoiceId: trimmed(options.groqVoiceId),
     grokVoiceId: trimmed(options.grokTtsVoice),
+    grokLanguage: trimmed(options.grokTtsLanguage),
+    grokTextNormalization: options.grokTtsTextNormalization === true,
     mistralVoiceId: trimmed(options.mistralTtsVoice),
     mistralRefAudioPath: trimmed(options.mistralTtsRefAudio),
+    mistralVoiceName: trimmed(options.mistralTtsVoiceName),
     geminiVoiceId: trimmed(options.geminiVoiceId),
     deepgramVoiceId: trimmed(options.deepgramVoiceId),
     runwayVoiceId: trimmed(options.runwayTtsVoice),
     deapiVoiceId: trimmed(options.deapiTtsVoice),
     deapiRefAudioPath: trimmed(options.deapiTtsRefAudio),
     deapiRefText: trimmed(options.deapiTtsRefText),
+    deapiLanguage: trimmed(options.deapiTtsLanguage),
+    deapiSpeed: options.deapiTtsSpeed,
+    deapiFormat: trimmed(options.deapiTtsFormat),
+    deapiSampleRate: options.deapiTtsSampleRate,
+    deapiInstruction: trimmed(options.deapiTtsInstruction),
     hasElevenLabsPvcActionFlags,
     hasElevenLabsPvcSetupFlags,
     hasMinimaxCloneFlags,

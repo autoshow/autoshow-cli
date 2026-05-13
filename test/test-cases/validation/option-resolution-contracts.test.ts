@@ -48,6 +48,7 @@ import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/
 import {
   DEEPGRAM_DEFAULT_VOICE,
   GCLOUD_DEFAULT_TTS_VOICES,
+  getGroqDefaultTtsVoiceForModel,
   GROK_DEFAULT_TTS_VOICE,
   SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS
@@ -70,13 +71,40 @@ describe('option resolution contracts', () => {
       'grok-tts-voice': 'EVE',
       'mistral-tts': 'voxtral-mini-tts-2603',
       'mistral-tts-voice': 'voice_abc123',
+      'mistral-tts-voice-name': 'Saved Voice Name',
+      'deepgram-tts': 'aura-2-athena-ja',
+      'deepgram-tts-encoding': 'linear16',
+      'deepgram-tts-container': 'wav',
+      'deepgram-tts-bit-rate': '128000',
+      'deepgram-tts-sample-rate': '24000',
+      'deepgram-tts-speed': '1.1',
       'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
       'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
       'deapi-tts-ref-text': 'Reference transcript.',
+      'deapi-tts-language': 'English',
+      'deapi-tts-speed': '1.25',
+      'deapi-tts-format': 'mp3',
+      'deapi-tts-sample-rate': '24000',
+      'deapi-tts-instruction': 'A documentary narrator.',
       'runway-tts': 'eleven_multilingual_v2',
       'runway-tts-voice': 'Leslie',
       'speechify-tts': 'simba-english',
       'speechify-voice': 'narrator_voice',
+      'speechify-tts-audio-format': 'wav',
+      'speechify-tts-language': 'en-US',
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-tts-output-format': 'mp3_22050_32',
+      'elevenlabs-tts-language-code': 'en',
+      'elevenlabs-tts-stability': '0.4',
+      'elevenlabs-tts-similarity-boost': '0.8',
+      'elevenlabs-tts-style': '0.2',
+      'elevenlabs-tts-use-speaker-boost': true,
+      'elevenlabs-tts-speed': '1.1',
+      'elevenlabs-tts-seed': '12345',
+      'elevenlabs-tts-text-normalization': 'ON',
+      'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2', 'dict_3'],
+      'elevenlabs-tts-optimize-streaming-latency': '2',
+      'elevenlabs-tts-pvc-as-ivc': true,
       'gcloud-tts': 'neural2',
       'gcloud-tts-voice': 'en-US-Neural2-C',
       'gcloud-tts-language': 'en-US',
@@ -112,14 +140,41 @@ describe('option resolution contracts', () => {
     expect(opts.grokTtsVoice).toBe('eve')
     expect(opts.mistralTtsModel).toBe('voxtral-mini-tts-2603')
     expect(opts.mistralTtsVoice).toBe('voice_abc123')
+    expect(opts.mistralTtsVoiceName).toBe('Saved Voice Name')
+    expect(opts.deepgramTtsModel).toBe('aura-2-athena-ja')
+    expect(opts.deepgramTtsEncoding).toBe('linear16')
+    expect(opts.deepgramTtsContainer).toBe('wav')
+    expect(opts.deepgramTtsBitRate).toBe(128000)
+    expect(opts.deepgramTtsSampleRate).toBe(24000)
+    expect(opts.deepgramTtsSpeed).toBe(1.1)
     expect(opts.minimaxTtsRefAudio).toBeUndefined()
     expect(opts.deapiTtsModel).toBe('Qwen3_TTS_12Hz_1_7B_Base')
     expect(opts.deapiTtsRefAudio).toBe('input/examples/audio/0-audio-short.mp3')
     expect(opts.deapiTtsRefText).toBe('Reference transcript.')
+    expect(opts.deapiTtsLanguage).toBe('English')
+    expect(opts.deapiTtsSpeed).toBe(1.25)
+    expect(opts.deapiTtsFormat).toBe('mp3')
+    expect(opts.deapiTtsSampleRate).toBe(24000)
+    expect(opts.deapiTtsInstruction).toBe('A documentary narrator.')
     expect(opts.runwayTtsModel).toBe('eleven_multilingual_v2')
     expect(opts.runwayTtsVoice).toBe('Leslie')
     expect(opts.speechifyTtsModel).toBe('simba-english')
     expect(opts.speechifyVoice).toBe('narrator_voice')
+    expect(opts.speechifyTtsAudioFormat).toBe('wav')
+    expect(opts.speechifyTtsLanguage).toBe('en-US')
+    expect(opts.elevenlabsTtsModel).toBe('eleven_flash_v2_5')
+    expect(opts.elevenlabsTtsOutputFormat).toBe('mp3_22050_32')
+    expect(opts.elevenlabsTtsLanguageCode).toBe('en')
+    expect(opts.elevenlabsTtsStability).toBe(0.4)
+    expect(opts.elevenlabsTtsSimilarityBoost).toBe(0.8)
+    expect(opts.elevenlabsTtsStyle).toBe(0.2)
+    expect(opts.elevenlabsTtsUseSpeakerBoost).toBe(true)
+    expect(opts.elevenlabsTtsSpeed).toBe(1.1)
+    expect(opts.elevenlabsTtsSeed).toBe(12345)
+    expect(opts.elevenlabsTtsTextNormalization).toBe('on')
+    expect(opts.elevenlabsTtsPronunciationDictionaryLocators).toEqual(['dict_1:version_2', 'dict_3'])
+    expect(opts.elevenlabsTtsOptimizeStreamingLatency).toBe(2)
+    expect(opts.elevenlabsTtsPvcAsIvc).toBe(true)
     expect(opts.gcloudTtsModel).toBe('neural2')
     expect(opts.gcloudTtsVoice).toBe('en-US-Neural2-C')
     expect(opts.gcloudTtsLanguage).toBe('en-US')
@@ -229,6 +284,135 @@ describe('option resolution contracts', () => {
       'DUCO=input/examples/audio/anthony-voice.mp3',
       'CHAT=input/examples/audio/0-audio-short.mp3'
     ])
+  })
+
+  test('buildOptsFromFlags maps and validates provider-specific TTS request controls', () => {
+    const opts = buildOptsFromFlags(false, {
+      'grok-tts': 'grok-tts',
+      'grok-tts-voice': 'AB12CD34',
+      'grok-tts-language': 'pt-br',
+      'grok-tts-text-normalization': true,
+      'openai-tts': 'gpt-4o-mini-tts',
+      'openai-tts-instructions': 'Speak with calm narration.',
+      'openai-tts-speed': '1.25',
+      'minimax-tts': 'speech-2.6-hd',
+      'minimax-tts-language-boost': 'english',
+      'minimax-tts-speed': '1.2',
+      'minimax-tts-volume': '2.5',
+      'minimax-tts-pitch': '-2',
+      'minimax-tts-emotion': 'CALM',
+      'minimax-tts-english-normalization': true,
+      'minimax-tts-pronunciation': ['AutoShow/auto show', 'TTS/tee tee ess'],
+      'deepgram-tts': 'aura-2-thalia-en',
+      'deepgram-tts-encoding': 'linear16',
+      'deepgram-tts-container': 'wav',
+      'deepgram-tts-bit-rate': '128000',
+      'deepgram-tts-sample-rate': '24000',
+      'deepgram-tts-speed': '1.1',
+      'speechify-tts': 'simba-multilingual',
+      'speechify-tts-audio-format': 'PCM',
+      'speechify-tts-language': 'es-ES',
+      'elevenlabs-tts': 'eleven_flash_v2_5',
+      'elevenlabs-tts-output-format': 'mp3_22050_32',
+      'elevenlabs-tts-language-code': 'en',
+      'elevenlabs-tts-stability': '0.4',
+      'elevenlabs-tts-similarity-boost': '0.8',
+      'elevenlabs-tts-style': '0.2',
+      'elevenlabs-tts-use-speaker-boost': true,
+      'elevenlabs-tts-speed': '1.1',
+      'elevenlabs-tts-seed': '12345',
+      'elevenlabs-tts-text-normalization': 'AUTO',
+      'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2'],
+      'elevenlabs-tts-optimize-streaming-latency': '2',
+      'elevenlabs-tts-pvc-as-ivc': true,
+      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
+      'deapi-tts-language': 'English',
+      'deapi-tts-speed': '1.2',
+      'deapi-tts-format': 'mp3',
+      'deapi-tts-sample-rate': '24000',
+      'deapi-tts-instruction': 'A calm narrator.'
+    })
+
+    expect(opts.grokTtsVoice).toBe('ab12cd34')
+    expect(opts.grokTtsLanguage).toBe('pt-BR')
+    expect(opts.grokTtsTextNormalization).toBe(true)
+    expect(opts.openaiTtsInstructions).toBe('Speak with calm narration.')
+    expect(opts.openaiTtsSpeed).toBe(1.25)
+    expect(opts.minimaxTtsModel).toBe('speech-2.6-hd')
+    expect(opts.minimaxTtsLanguageBoost).toBe('English')
+    expect(opts.minimaxTtsSpeed).toBe(1.2)
+    expect(opts.minimaxTtsVolume).toBe(2.5)
+    expect(opts.minimaxTtsPitch).toBe(-2)
+    expect(opts.minimaxTtsEmotion).toBe('calm')
+    expect(opts.minimaxTtsEnglishNormalization).toBe(true)
+    expect(opts.minimaxTtsPronunciations).toEqual(['AutoShow/auto show', 'TTS/tee tee ess'])
+    expect(opts.deepgramTtsEncoding).toBe('linear16')
+    expect(opts.deepgramTtsContainer).toBe('wav')
+    expect(opts.deepgramTtsBitRate).toBe(128000)
+    expect(opts.deepgramTtsSampleRate).toBe(24000)
+    expect(opts.deepgramTtsSpeed).toBe(1.1)
+    expect(opts.speechifyTtsAudioFormat).toBe('pcm')
+    expect(opts.speechifyTtsLanguage).toBe('es-ES')
+    expect(opts.elevenlabsTtsOutputFormat).toBe('mp3_22050_32')
+    expect(opts.elevenlabsTtsLanguageCode).toBe('en')
+    expect(opts.elevenlabsTtsStability).toBe(0.4)
+    expect(opts.elevenlabsTtsSimilarityBoost).toBe(0.8)
+    expect(opts.elevenlabsTtsStyle).toBe(0.2)
+    expect(opts.elevenlabsTtsUseSpeakerBoost).toBe(true)
+    expect(opts.elevenlabsTtsSpeed).toBe(1.1)
+    expect(opts.elevenlabsTtsSeed).toBe(12345)
+    expect(opts.elevenlabsTtsTextNormalization).toBe('auto')
+    expect(opts.elevenlabsTtsPronunciationDictionaryLocators).toEqual(['dict_1:version_2'])
+    expect(opts.elevenlabsTtsOptimizeStreamingLatency).toBe(2)
+    expect(opts.elevenlabsTtsPvcAsIvc).toBe(true)
+    expect(opts.deapiTtsLanguage).toBe('English')
+    expect(opts.deapiTtsSpeed).toBe(1.2)
+    expect(opts.deapiTtsFormat).toBe('mp3')
+    expect(opts.deapiTtsSampleRate).toBe(24000)
+    expect(opts.deapiTtsInstruction).toBe('A calm narrator.')
+
+    expect(() => buildOptsFromFlags(false, { 'grok-tts-language': 'xx' })).toThrow('Invalid --grok-tts-language "xx"')
+    expect(() => buildOptsFromFlags(false, { 'openai-tts-speed': '0.1' })).toThrow('Invalid --openai-tts-speed value "0.1"')
+    expect(() => buildOptsFromFlags(false, { 'minimax-tts-language-boost': 'Klingon' })).toThrow('Invalid --minimax-tts-language-boost "Klingon"')
+    expect(() => buildOptsFromFlags(false, { 'minimax-tts-speed': '0.4' })).toThrow('Invalid --minimax-tts-speed value "0.4"')
+    expect(() => buildOptsFromFlags(false, { 'minimax-tts-volume': '0' })).toThrow('Invalid --minimax-tts-volume value "0"')
+    expect(() => buildOptsFromFlags(false, { 'minimax-tts-pitch': '1.5' })).toThrow('Invalid --minimax-tts-pitch value "1.5"')
+    expect(() => buildOptsFromFlags(false, { 'minimax-tts-emotion': 'bored' })).toThrow('Invalid --minimax-tts-emotion "bored"')
+    expect(() => buildOptsFromFlags(false, { 'speechify-tts-audio-format': 'flac' })).toThrow('Invalid --speechify-tts-audio-format "flac"')
+    expect(() => buildOptsFromFlags(false, { 'deepgram-tts-sample-rate': '1.5' })).toThrow('Invalid --deepgram-tts-sample-rate value "1.5"')
+    expect(() => buildOptsFromFlags(false, { 'deapi-tts-speed': '0.4' })).toThrow('Invalid --deapi-tts-speed value "0.4"')
+    expect(() => buildOptsFromFlags(false, { 'elevenlabs-tts-text-normalization': 'always' })).toThrow('Invalid --elevenlabs-tts-text-normalization "always"')
+    expect(() => buildOptsFromFlags(false, { 'elevenlabs-tts-optimize-streaming-latency': '5' })).toThrow('Invalid --elevenlabs-tts-optimize-streaming-latency value "5"')
+  })
+
+  test('TTS request control flags require their matching provider selection', () => {
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'openai-tts-speed': '1.1'
+    }))).toThrow('OpenAI TTS request control flags require --openai-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'grok-tts-text-normalization': true
+    }))).toThrow('Grok TTS request control flags require --grok-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'minimax-tts-emotion': 'calm'
+    }))).toThrow('MiniMax TTS request control flags require --minimax-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'deepgram-tts-speed': '1.1'
+    }))).toThrow('Deepgram TTS request control flags require --deepgram-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'elevenlabs-tts-output-format': 'mp3_22050_32'
+    }))).toThrow('ElevenLabs TTS request control flags require --elevenlabs-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'speechify-tts-audio-format': 'wav'
+    }))).toThrow('Speechify TTS request control flags require --speechify-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'deapi-tts-language': 'English'
+    }))).toThrow('deAPI TTS request control flags require --deapi-tts <model> or --all-tts')
   })
 
   test('LLM provider concurrency defaults, falls back, and clamps like STT/OCR concurrency flags', () => {
@@ -453,6 +637,33 @@ describe('option resolution contracts', () => {
       SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS.map((model) => GCLOUD_DEFAULT_TTS_VOICES[model])
     )
     expect(gcloudTargets.map((target) => target.model)).not.toContain('instant-custom-voice')
+  })
+
+  test('Groq TTS voices are validated by selected Orpheus model', () => {
+    const englishTargets = collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': 'canopylabs/orpheus-v1-english'
+    })).filter((target) => target.service === 'groq')
+    const arabicTargets = collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': 'canopylabs/orpheus-arabic-saudi'
+    })).filter((target) => target.service === 'groq')
+    const explicitArabicTargets = collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': 'canopylabs/orpheus-arabic-saudi',
+      'groq-voice': 'NOURA'
+    })).filter((target) => target.service === 'groq')
+
+    expect(getGroqDefaultTtsVoiceForModel('canopylabs/orpheus-v1-english')).toBe('troy')
+    expect(getGroqDefaultTtsVoiceForModel('canopylabs/orpheus-arabic-saudi')).toBe('fahad')
+    expect(englishTargets.map((target) => target.voice)).toEqual(['troy'])
+    expect(arabicTargets.map((target) => target.voice)).toEqual(['fahad'])
+    expect(explicitArabicTargets.map((target) => target.voice)).toEqual(['noura'])
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': 'canopylabs/orpheus-v1-english',
+      'groq-voice': 'noura'
+    }))).toThrow('Invalid --groq-voice "noura" for canopylabs/orpheus-v1-english')
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': 'canopylabs/orpheus-arabic-saudi',
+      'groq-voice': 'troy'
+    }))).toThrow('Invalid --groq-voice "troy" for canopylabs/orpheus-arabic-saudi')
   })
 
   test('Google Cloud instant custom voice flags validate model and key generation mode', () => {
@@ -1243,6 +1454,28 @@ describe('option resolution contracts', () => {
     expect(() => collectTtsTargets(opts)).toThrow('Use either --mistral-tts-voice or --mistral-tts-ref-audio, not both')
   })
 
+  test('mistral tts voice name creates a saved-voice target from reference audio', () => {
+    const opts = buildOptsFromFlags(false, {
+      'mistral-tts': 'voxtral-mini-tts-2603',
+      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'mistral-tts-voice-name': 'AutoShow Saved Voice'
+    })
+    const targets = collectTtsTargets(opts).filter((target) => target.service === 'mistral')
+
+    expect(opts.mistralTtsVoiceName).toBe('AutoShow Saved Voice')
+    expect(targets.map((target) => ({
+      model: target.model,
+      voice: target.voice
+    }))).toEqual([{
+      model: 'voxtral-mini-tts-2603',
+      voice: 'saved_voice:AutoShow Saved Voice'
+    }])
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'mistral-tts': 'voxtral-mini-tts-2603',
+      'mistral-tts-voice-name': 'AutoShow Saved Voice'
+    }))).toThrow('requires --mistral-tts-ref-audio')
+  })
+
   test('deapi voice clone target records reference audio speaker', () => {
     const opts = buildOptsFromFlags(false, {
       'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
@@ -1256,6 +1489,23 @@ describe('option resolution contracts', () => {
     }))).toEqual([{
       model: 'Qwen3_TTS_12Hz_1_7B_Base',
       voice: 'ref_audio:0-audio-short.mp3'
+    }])
+  })
+
+  test('deapi VoiceDesign target requires and records an instruction', () => {
+    const opts = buildOptsFromFlags(false, {
+      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
+      'deapi-tts-instruction': 'A calm documentary narrator.'
+    })
+    const targets = collectTtsTargets(opts).filter((target) => target.service === 'deapi')
+
+    expect(opts.deapiTtsInstruction).toBe('A calm documentary narrator.')
+    expect(targets.map((target) => ({
+      model: target.model,
+      voice: target.voice
+    }))).toEqual([{
+      model: 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
+      voice: 'voice_design'
     }])
   })
 
@@ -1711,7 +1961,7 @@ describe('option resolution contracts', () => {
 
     expect(() => collectTtsTargets(cloneWithPresetModel)).toThrow('voice cloning is only supported for Qwen3_TTS_12Hz_1_7B_Base')
     expect(() => collectTtsTargets(cloneWithoutAudio)).toThrow('requires --deapi-tts-ref-audio')
-    expect(() => collectTtsTargets(voiceDesign)).toThrow('requires voice design instruction inputs')
+    expect(() => collectTtsTargets(voiceDesign)).toThrow('requires --deapi-tts-instruction')
   })
 
   test('deapi tts reference audio validation enforces file, extension, size, and duration', async () => {

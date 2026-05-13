@@ -12,6 +12,43 @@ import {
 } from './elevenlabs-ivc'
 import { pollElevenLabsTtsPvcTraining } from './elevenlabs-pvc'
 
+type ElevenLabsTtsVoiceSettings = {
+  stability?: number | undefined
+  similarity_boost?: number | undefined
+  style?: number | undefined
+  use_speaker_boost?: boolean | undefined
+  speed?: number | undefined
+}
+
+type ElevenLabsTtsRequestControls = {
+  outputFormat?: string | undefined
+  languageCode?: string | undefined
+  voiceSettings?: ElevenLabsTtsVoiceSettings | undefined
+  seed?: number | undefined
+  textNormalization?: string | undefined
+  pronunciationDictionaryLocators?: string[] | undefined
+  optimizeStreamingLatency?: number | undefined
+  pvcAsIvc?: boolean | undefined
+}
+
+const parsePronunciationDictionaryLocator = (
+  value: string
+): { pronunciation_dictionary_id: string, version_id?: string | undefined } => {
+  const [rawId, rawVersion] = value.split(':', 2)
+  const id = rawId?.trim()
+  const version = rawVersion?.trim()
+  if (!id) {
+    throw new Error('Invalid --elevenlabs-tts-pronunciation-dictionary-locator value. Expected dictionary_id or dictionary_id:version_id.')
+  }
+  return {
+    pronunciation_dictionary_id: id,
+    ...(version ? { version_id: version } : {})
+  }
+}
+
+const hasVoiceSettings = (settings: ElevenLabsTtsVoiceSettings | undefined): settings is ElevenLabsTtsVoiceSettings =>
+  Boolean(settings && Object.values(settings).some((value) => value !== undefined))
+
 export const runElevenLabsTts = async (
   text: string,
   outputDir: string,
@@ -21,6 +58,7 @@ export const runElevenLabsTts = async (
     pvcVoiceId?: string | undefined
     pvcWait?: boolean | undefined
     clone?: ElevenLabsTtsIvcOptions | undefined
+    controls?: ElevenLabsTtsRequestControls | undefined
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('ELEVENLABS_API_KEY')
@@ -40,6 +78,12 @@ export const runElevenLabsTts = async (
     await pollElevenLabsTtsPvcTraining(baseURL, apiKey, pvcVoiceId, options.model)
   }
   const voiceId = cloneResult?.voiceId ?? pvcVoiceId ?? options.voiceId?.trim() ?? readEnv('ELEVENLABS_VOICE_ID') ?? ELEVENLABS_DEFAULT_VOICE_ID
+  const outputFormat = options.controls?.outputFormat?.trim() || 'mp3_44100_128'
+  const languageCode = options.controls?.languageCode?.trim() || undefined
+  const pronunciationDictionaryLocators = options.controls?.pronunciationDictionaryLocators
+    ?.map((item) => item.trim())
+    .filter(Boolean)
+    .map(parsePronunciationDictionaryLocator)
   const speaker = cloneResult
     ? `ref_audio:${cloneResult.sourceAudio.basename}`
     : pvcVoiceId
@@ -52,23 +96,39 @@ export const runElevenLabsTts = async (
       label: cloneResult ? 'reference audio' : pvcVoiceId ? 'PVC voice' : 'voice',
       value: cloneResult ? cloneResult.sourceAudio.basename : voiceId
     },
+    { label: 'output format', value: outputFormat },
+    { label: 'language', value: languageCode },
     ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : [])
   ])
 
   const audioBytes = await withRetry(
     { retryClass: 'runtime_http_create_conservative', operationName: 'elevenlabs-tts' },
     async () => {
-      const response = await fetch(`${baseURL}/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+      const params = new URLSearchParams({ output_format: outputFormat })
+      if (typeof options.controls?.optimizeStreamingLatency === 'number') {
+        params.set('optimize_streaming_latency', String(options.controls.optimizeStreamingLatency))
+      }
+      const voiceSettings = options.controls?.voiceSettings
+      const requestBody = {
+        text,
+        model_id: options.model,
+        ...(languageCode ? { language_code: languageCode } : {}),
+        ...(hasVoiceSettings(voiceSettings) ? { voice_settings: voiceSettings } : {}),
+        ...(typeof options.controls?.seed === 'number' ? { seed: options.controls.seed } : {}),
+        ...(options.controls?.textNormalization ? { apply_text_normalization: options.controls.textNormalization } : {}),
+        ...(pronunciationDictionaryLocators && pronunciationDictionaryLocators.length > 0
+          ? { pronunciation_dictionary_locators: pronunciationDictionaryLocators }
+          : {}),
+        ...(options.controls?.pvcAsIvc ? { use_pvc_as_ivc: true } : {})
+      }
+      const response = await fetch(`${baseURL}/text-to-speech/${encodeURIComponent(voiceId)}?${params.toString()}`, {
         method: 'POST',
         headers: {
           'xi-api-key': apiKey,
           'Content-Type': 'application/json',
           Accept: 'audio/mpeg'
         },
-        body: JSON.stringify({
-          text,
-          model_id: options.model
-        })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {

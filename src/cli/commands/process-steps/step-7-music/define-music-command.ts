@@ -144,10 +144,10 @@ export const musicCommand = defineCommand({
   help: {
     examples: [
       ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
-      ['bun as music "an ambient piano instrumental" --minimax-music music-2.5 --music-duration 30', 'Generate 30s music with MiniMax'],
+      ['bun as music "an ambient piano instrumental" --minimax-music music-2.6 --music-instrumental', 'Generate instrumental music with MiniMax'],
       ['bun as music "upbeat electronic dance music" --deapi-music AceStep_1_5_Turbo --music-duration 30', 'Generate music with deAPI'],
       ['bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
-      ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.5', 'Use a local markdown file as the prompt body'],
+      ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.6', 'Use a local markdown file as the prompt body'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
       ['bun as music --batch --model small', 'Render lyric videos for every supported audio file under input']

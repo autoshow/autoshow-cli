@@ -76,6 +76,7 @@ Project lyric draft mode is enabled only when the input is `./output/<name>/text
 | Flag | Description |
 |------|-------------|
 | `--all-llm` | Enable every supported LLM provider/model for this command |
+| `--batch-concurrency <n>` | Batch items to process concurrently; default `1` |
 | `--llm-provider-concurrency <n>` | Hosted LLM providers/models to run concurrently per write item; default `2` |
 | `--llm-local-concurrency <n>` | Local llama.cpp models to run concurrently per write item; default `1` |
 | `--prompt <name...>` | Select prompt presets |
@@ -287,7 +288,7 @@ Prompt names are assembled at runtime from JSON files discovered recursively und
 
 ## Notes
 
-- `write` accepts the same step-2 STT flags documented in [`extract STT`](../step-2-extract/02-extract-stt.md#shared-stt-options) and provider sections, plus the same step-2 OCR flags documented in [`extract OCR`](../step-2-extract/03-extract-ocr.md#shared-ocr-options) and provider sections. Each `write` run may select at most one STT provider and at most one OCR provider.
+- `write` accepts the same step-2 STT flags documented in [`extract STT`](../step-2-extract/02-extract-stt.md#shared-stt-options) and provider sections, plus the same step-2 OCR flags documented in [`extract OCR`](../step-2-extract/03-extract-ocr.md#shared-ocr-options) and provider sections. Provider/model flags are repeatable, so routed step-2 media and document work can fan out across multiple selected providers.
 - `write` also accepts `--epub-bun` and `--epub-calibre`; when `--out` is set alongside either flag, it must be `json`.
 - Resume is exposed as the top-level `resume` command for extract media/document outputs, not as a `write` flag.
 - `write` also accepts post-generation flags for [`tts`](../step-4-tts/text-to-speech.md), [`image`](../step-5-image/text-to-image.md), [`video`](../step-6-video/text-to-video-services.md), and [`music`](../step-7-music/text-to-music-services.md). Those options are documented on their own command pages instead of being repeated here.

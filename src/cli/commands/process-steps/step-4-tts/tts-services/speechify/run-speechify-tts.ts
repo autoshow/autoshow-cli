@@ -36,7 +36,13 @@ const readSpeechifyError = async (response: Response): Promise<string> => {
 export const runSpeechifyTts = async (
   text: string,
   outputDir: string,
-  options: { model: SpeechifyTtsModel, voiceId?: string | undefined, customVoice?: SpeechifyTtsCustomVoiceOptions | undefined }
+  options: {
+    model: SpeechifyTtsModel
+    voiceId?: string | undefined
+    customVoice?: SpeechifyTtsCustomVoiceOptions | undefined
+    audioFormat?: string | undefined
+    language?: string | undefined
+  }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('SPEECHIFY_API_KEY')
   if (!apiKey) {
@@ -55,11 +61,15 @@ export const runSpeechifyTts = async (
     ? await ensureSpeechifyTtsCustomVoice(baseURL, apiKey, options.customVoice)
     : undefined
   const voice = validateSpeechifyTtsVoice(customVoiceResult?.voiceId || options.voiceId?.trim() || readEnv('SPEECHIFY_TTS_VOICE') || SPEECHIFY_DEFAULT_TTS_VOICE)
+  const audioFormat = options.audioFormat?.trim() || 'mp3'
+  const language = options.language?.trim() || undefined
   const speaker = customVoiceResult ? `ref_audio:${customVoiceResult.sourceAudio.basename}` : voice
 
   logTtsConfig('Speechify', [
     { label: 'model', value: options.model },
     { label: customVoiceResult ? 'reference audio' : 'voice', value: customVoiceResult ? customVoiceResult.sourceAudio.basename : voice },
+    { label: 'audio format', value: audioFormat },
+    { label: 'language', value: language },
     ...(customVoiceResult ? [{ label: 'created voice_id', value: customVoiceResult.voiceId }] : []),
     { label: 'chunk count', value: chunks.length }
   ])
@@ -69,7 +79,7 @@ export const runSpeechifyTts = async (
   try {
     for (let i = 0; i < chunks.length; i++) {
       const chunkIndex = i + 1
-      const chunkPath = `${outputDir}/speech-speechify-chunk-${String(chunkIndex).padStart(3, '0')}.mp3`
+      const chunkPath = `${outputDir}/speech-speechify-chunk-${String(chunkIndex).padStart(3, '0')}.${audioFormat}`
       const audioBytes = await withRetry(
         { retryClass: 'runtime_http_create_conservative', operationName: `speechify-tts-chunk-${chunkIndex}` },
         async (signal) => {
@@ -83,8 +93,9 @@ export const runSpeechifyTts = async (
             body: JSON.stringify({
               input: chunks[i] as string,
               voice_id: voice,
-              audio_format: 'mp3',
-              model: options.model
+              audio_format: audioFormat,
+              model: options.model,
+              ...(language ? { language } : {})
             }),
             ...(signal ? { signal } : {})
           })

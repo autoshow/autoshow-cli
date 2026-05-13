@@ -101,8 +101,46 @@ const writeTtsFlags = {
     default: false,
     negatable: false
   },
+  'minimax-tts-language-boost': {
+    description: 'MiniMax TTS language boost: auto|English|Chinese|Chinese,Yue|Arabic|Spanish|French|German|Japanese|Korean|...',
+    type: String
+  },
+  'minimax-tts-speed': {
+    description: 'MiniMax TTS speech speed from 0.5 to 2.0',
+    type: String
+  },
+  'minimax-tts-volume': {
+    description: 'MiniMax TTS speech volume greater than 0 and up to 10',
+    type: String
+  },
+  'minimax-tts-pitch': {
+    description: 'MiniMax TTS pitch adjustment from -12 to 12',
+    type: String
+  },
+  'minimax-tts-emotion': {
+    description: 'MiniMax TTS emotion: happy|sad|angry|fearful|disgusted|surprised|calm|fluent|whisper',
+    type: String
+  },
+  'minimax-tts-english-normalization': {
+    description: 'Enable MiniMax English text normalization',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'minimax-tts-pronunciation': {
+    description: 'MiniMax pronunciation rule for pronunciation_dict.tone; repeatable, e.g. "omg/oh my god"',
+    type: [String] as [StringConstructor]
+  },
   'openai-voice': {
     description: 'OpenAI TTS voice ID override, including existing custom voice_ IDs (default: alloy)',
+    type: String
+  },
+  'openai-tts-instructions': {
+    description: 'OpenAI TTS voice/style instructions',
+    type: String
+  },
+  'openai-tts-speed': {
+    description: 'OpenAI TTS speed from 0.25 to 4.0',
     type: String
   },
   'openai-tts-ref-audio': {
@@ -154,7 +192,7 @@ const writeTtsFlags = {
     type: String
   },
   'groq-voice': {
-    description: 'Groq TTS voice ID override (default: troy)',
+    description: 'Groq TTS voice ID override (default depends on --groq-tts model)',
     type: String
   },
   'mistral-tts-voice': {
@@ -234,7 +272,7 @@ const writeMusicModelFlags = {
     type: String
   },
   'music-instrumental': {
-    description: 'Force instrumental generation (ElevenLabs prompt mode)',
+    description: 'Force instrumental generation for providers that support prompt/instrumental mode',
     type: Boolean,
     default: false,
     negatable: false

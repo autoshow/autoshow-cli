@@ -10,6 +10,15 @@ import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 const ELEVENLABS_MIN_DURATION_MS = 3000
 const ELEVENLABS_MAX_DURATION_MS = 600000
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
+const ELEVENLABS_MUSIC_OUTPUT_FORMAT = 'mp3_44100_128'
+const ELEVENLABS_MUSIC_SAMPLE_RATE = 44100
+const ELEVENLABS_MUSIC_BITRATE = 128000
+
+type ElevenLabsMusicResponseAudio = {
+  bytes: Uint8Array
+  mimeType?: string | undefined
+  requestId?: string | undefined
+}
 
 const normalizeMusicDurationMs = (durationSeconds: number | undefined): number | undefined => {
   if (durationSeconds === undefined) {
@@ -27,6 +36,12 @@ const normalizeMusicDurationMs = (durationSeconds: number | undefined): number |
 
   return durationMs
 }
+
+const readElevenLabsRequestId = (headers: Headers): string | undefined =>
+  headers.get('request-id')
+  ?? headers.get('x-request-id')
+  ?? headers.get('xi-request-id')
+  ?? undefined
 
 export const runElevenLabsMusicGen = async (
   prompt: string,
@@ -56,13 +71,13 @@ export const runElevenLabsMusicGen = async (
 
   const startTime = Date.now()
 
-  const audioBytes = await withRetry(
+  const audioResponse = await withRetry(
     { retryClass: 'runtime_http_create_conservative', operationName: 'elevenlabs-music' },
     async (signal) => {
       const timeoutSignal = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
       const combined = AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
 
-      const response = await fetch(`${baseURL}/music?output_format=mp3_44100_128`, {
+      const response = await fetch(`${baseURL}/music?output_format=${ELEVENLABS_MUSIC_OUTPUT_FORMAT}`, {
         method: 'POST',
         headers: {
           'xi-api-key': apiKey,
@@ -85,10 +100,15 @@ export const runElevenLabsMusicGen = async (
         throw err
       }
 
-      return new Uint8Array(await response.arrayBuffer())
+      return {
+        bytes: new Uint8Array(await response.arrayBuffer()),
+        mimeType: response.headers.get('content-type')?.split(';')[0]?.trim() || undefined,
+        requestId: readElevenLabsRequestId(response.headers)
+      } satisfies ElevenLabsMusicResponseAudio
     },
     (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
   )
+  const audioBytes = audioResponse.bytes
   if (audioBytes.byteLength === 0) {
     throw new Error('ElevenLabs music generation returned empty audio')
   }
@@ -115,7 +135,13 @@ export const runElevenLabsMusicGen = async (
     musicFileName: 'generated-music.mp3',
     musicFileSize: musicFile.size,
     musicDurationMs,
-    lyricsSource: forceInstrumental ? 'none' : 'generated'
+    lyricsSource: forceInstrumental ? 'none' : 'generated',
+    providerRequestId: audioResponse.requestId,
+    audioMimeType: audioResponse.mimeType ?? 'audio/mpeg',
+    audioSampleRate: ELEVENLABS_MUSIC_SAMPLE_RATE,
+    audioBitrate: ELEVENLABS_MUSIC_BITRATE,
+    providerAudioByteSize: audioBytes.byteLength,
+    outputFormat: ELEVENLABS_MUSIC_OUTPUT_FORMAT
   }
 
   return { musicPath, metadata }

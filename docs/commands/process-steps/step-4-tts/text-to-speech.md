@@ -84,6 +84,8 @@ bun as tts <input> [flags]
 | Flag | Description |
 |------|-------------|
 | `--all-tts` | Select every supported TTS provider/model |
+| `--tts-provider-concurrency <n>` | Hosted TTS providers/models to run concurrently per item; default `2`, or up to `8` for `--all-tts` |
+| `--tts-local-concurrency <n>` | Local TTS providers to run concurrently per item; default `1` |
 | `--price` | Show the aggregated estimate and exit |
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file. Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider.
@@ -144,14 +146,16 @@ PVC samples must be local, non-empty audio files with supported extensions. Auto
 | Option | Value |
 |--------|-------|
 | Selector | `--minimax-tts <model>` |
-| Models | `speech-2.8-hd`, `speech-2.8-turbo` |
+| Models | `speech-2.8-hd`, `speech-2.8-turbo`, `speech-2.6-hd`, `speech-2.6-turbo`, `speech-02-hd`, `speech-02-turbo` |
 | Voice | `--minimax-tts-voice <id>`, default `English_expressive_narrator` |
+| Synthesis controls | `--minimax-tts-language-boost <language>`, `--minimax-tts-speed <0.5..2>`, `--minimax-tts-volume <greater-than-0..10>`, `--minimax-tts-pitch <-12..12>`, `--minimax-tts-emotion <emotion>`, `--minimax-tts-english-normalization`, repeatable `--minimax-tts-pronunciation <rule>` |
 | Rapid clone | `--minimax-tts-ref-audio <path>` |
 | Clone prompt | `--minimax-tts-prompt-audio <path>` plus `--minimax-tts-prompt-text <text>` |
 | Clone tuning | `--minimax-tts-clone-noise-reduction`, `--minimax-tts-clone-volume-normalization` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.6-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15 --minimax-tts-emotion calm
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3 --minimax-tts-voice AutoShowAnthony01 --price
 ```
@@ -163,12 +167,15 @@ MiniMax TTS uses existing/preset voices by default. Add `--minimax-tts-ref-audio
 | Option | Value |
 |--------|-------|
 | Selector | `--groq-tts <model>` |
-| Models | `canopylabs/orpheus-v1-english` |
-| Voice | `--groq-voice <id>`, default `troy` |
+| Models | `canopylabs/orpheus-v1-english`, `canopylabs/orpheus-arabic-saudi` |
+| Voice | `--groq-voice <id>`; English voices `autumn`, `diana`, `hannah`, `austin`, `daniel`, `troy`; Arabic voices `abdullah`, `fahad`, `sultan`, `lulwa`, `noura`, `aisha` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --groq-voice troy
+bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-arabic-saudi --groq-voice fahad
 ```
+
+Groq voices are validated against the selected model. English defaults to `troy`; Arabic Saudi defaults to `fahad`.
 
 ### Grok
 
@@ -176,10 +183,13 @@ bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english 
 |--------|-------|
 | Selector | `--grok-tts <model>` |
 | Models | `grok-tts` |
-| Voice | `--grok-tts-voice <id>`, default `eve`; voices `eve`, `ara`, `rex`, `sal`, `leo` |
+| Voice | `--grok-tts-voice <id>`, default `eve`; built-ins `eve`, `ara`, `rex`, `sal`, `leo`, or an 8-character custom voice ID |
+| Language | `--grok-tts-language <code>`, default `auto` |
+| Text normalization | `--grok-tts-text-normalization` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
+bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice ab12cd34 --grok-tts-language ar-SA --grok-tts-text-normalization
 ```
 
 ### Mistral
@@ -212,11 +222,13 @@ Dialogue mode is Mistral-only in v1 and uses per-speaker reference audio mapping
 | Selector | `--openai-tts <model>` |
 | Models | `gpt-4o-mini-tts` |
 | Voice | `--openai-voice <id>`, default `alloy`; existing `voice_...` custom IDs are supported |
+| Synthesis controls | `--openai-tts-instructions <text>`, `--openai-tts-speed <0.25..4>` |
 | Custom voice creation | `--openai-tts-ref-audio <path>` plus exactly one of `--openai-tts-consent-id <id>` or `--openai-tts-consent-audio <path>` |
 | Consent metadata | `--openai-tts-consent-language <tag>`, `--openai-tts-consent-name <name>`, `--openai-tts-voice-name <name>` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice alloy
+bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-voice voice_existing123
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --openai-tts-voice-name AutoShowAnthony
 ```
@@ -335,8 +347,9 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 
 - Runway `eleven_multilingual_v2` is priced at 1 credit per 50 input characters. AutoShow treats 1 credit as 1 cent, so the equivalent rate is 20 cents per 1K characters. Estimates use exact block rounding: `ceil(characterCount / 50) * 1¢`.
 - ElevenLabs API pricing is 5 cents / 1K characters for `eleven_flash_v2_5` and `eleven_turbo_v2_5`, and 10 cents / 1K characters for `eleven_v3`. IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate. PVC setup adds a 0 cent setup estimate; training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used.
-- MiniMax synthesis estimates stay at 6 cents / 1K characters for `speech-2.8-turbo` and 10 cents / 1K characters for `speech-2.8-hd`. Clone mode adds a one-time 150 cents rapid clone setup cost per `tts` run.
-- Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a provisional 6000 ms / 1K characters timing heuristic until benchmarked.
+- MiniMax synthesis estimates are 6 cents / 1K characters for `speech-2.8-turbo`, `speech-2.6-turbo`, and `speech-02-turbo`; HD variants are 10 cents / 1K characters. Clone mode adds a one-time 150 cents rapid clone setup cost per `tts` run.
+- Groq English Orpheus estimates use $10 / 1M input characters plus $22 / 1M output characters. Groq Arabic Saudi uses $0 input plus $40 / 1M output characters.
+- Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a 9000 ms / 1K characters timing heuristic.
 - OpenAI `gpt-4o-mini-tts` estimates use 60 cents / 1M input characters plus 1200 cents / 1M output characters, equivalent to 1.26 cents per 1K characters in AutoShow's character estimator. OpenAI custom voice creation adds a one-time 0 cent setup estimate and a 15000 ms setup timing estimate.
 - Speechify Simba estimates use 1 cent / 1K characters for both `simba-english` and `simba-multilingual`, with a 3000 ms / 1K characters timing heuristic. Custom voice creation adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate.
 - Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Standard and WaveNet 0.4 cents / 1K characters, Neural2 1.6 cents / 1K, Chirp 3 HD 3 cents / 1K, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics range from 6000 ms / 1K characters for Standard to 12000 ms / 1K for Instant Custom Voice.

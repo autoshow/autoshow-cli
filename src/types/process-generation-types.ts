@@ -55,6 +55,21 @@ export type Step7MusicMetadata = {
   lyricsSource: 'provided' | 'generated' | 'none'
   providerCostCents?: number | undefined
   providerCostSource?: 'provider_quote' | 'registry_fallback' | undefined
+  providerRequestId?: string | undefined
+  providerTraceId?: string | undefined
+  audioMimeType?: string | undefined
+  audioSampleRate?: number | undefined
+  audioChannelCount?: number | undefined
+  audioBitrate?: number | undefined
+  providerAudioByteSize?: number | undefined
+  inferenceSteps?: number | undefined
+  guidanceScale?: number | undefined
+  seed?: number | undefined
+  outputFormat?: string | undefined
+  generatedLyrics?: string | undefined
+  generatedSongTitle?: string | undefined
+  generatedStyleTags?: string | undefined
+  generatedText?: string | undefined
 }
 
 export type TimingStepEntry = {

@@ -51,6 +51,8 @@ DEAPI_BASE_URL=...
 | Flag | Description |
 |------|-------------|
 | `--all-video` | Run every supported video provider/model |
+| `--video-provider-concurrency <n>` | Hosted video providers/models to run concurrently per item; default `2`, or up to `8` for `--all-video` |
+| `--video-local-concurrency <n>` | Local video providers to run concurrently per item; default `1` |
 | `--video-duration <seconds>` | Requested video duration |
 | `--video-size <size>` | Provider-dependent size control |
 | `--video-aspect-ratio <ratio>` | Provider-dependent aspect ratio |

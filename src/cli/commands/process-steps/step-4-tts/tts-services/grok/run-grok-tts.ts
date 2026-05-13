@@ -3,7 +3,7 @@ import type { GrokTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
-import { GROK_DEFAULT_TTS_VOICE, validateGrokTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { GROK_DEFAULT_TTS_VOICE, validateGrokTtsLanguage, validateGrokTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
@@ -48,7 +48,12 @@ const readGrokError = async (response: Response): Promise<string> => {
 export const runGrokTts = async (
   text: string,
   outputDir: string,
-  options: { model: GrokTtsModel, voiceId?: string | undefined }
+  options: {
+    model: GrokTtsModel
+    voiceId?: string | undefined
+    language?: string | undefined
+    textNormalization?: boolean | undefined
+  }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('XAI_API_KEY')
   if (!apiKey) {
@@ -58,6 +63,7 @@ export const runGrokTts = async (
   const baseURL = trimTrailingSlash(readEnv('XAI_BASE_URL') ?? GROK_DEFAULT_BASE_URL)
   const rawVoice = options.voiceId?.trim() || readEnv('XAI_TTS_VOICE') || GROK_DEFAULT_TTS_VOICE
   const voice = validateGrokTtsVoice(rawVoice)
+  const language = validateGrokTtsLanguage(options.language?.trim() || 'auto')
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
 
   if (chunks.length === 0) {
@@ -67,6 +73,8 @@ export const runGrokTts = async (
   logTtsConfig('Grok', [
     { label: 'model', value: options.model },
     { label: 'voice', value: voice },
+    { label: 'language', value: language },
+    ...(options.textNormalization === true ? [{ label: 'text normalization', value: 'enabled' }] : []),
     { label: 'chunk count', value: chunks.length }
   ])
 
@@ -90,7 +98,8 @@ export const runGrokTts = async (
             body: JSON.stringify({
               text: chunks[i] as string,
               voice_id: voice,
-              language: 'auto',
+              language,
+              text_normalization: options.textNormalization === true,
               output_format: {
                 codec: 'wav',
                 sample_rate: 24000

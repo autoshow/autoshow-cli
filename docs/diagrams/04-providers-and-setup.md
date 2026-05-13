@@ -126,11 +126,12 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra
 
   Hosted TTS readiness
-    ElevenLabs, Groq, Grok, OpenAI, Gemini, Deepgram, Runway, Speechify,
-    Google Cloud, deAPI
+    ElevenLabs, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway,
+    Speechify, Google Cloud, deAPI
+    MiniMax TTS uses MINIMAX_API_KEY but has no dedicated TTS setup hook
 
   Hosted image/video/music readiness
-    Image: Gemini, OpenAI, GLM key, Grok, Runway, BFL, deAPI
+    Image: Gemini, OpenAI, GLM, Grok, Runway, BFL, deAPI
     MiniMax image uses MINIMAX_API_KEY but has no dedicated setup hook
     Video in full setup: deAPI, MiniMax
     Video in `setup --step video`: Gemini, MiniMax, GLM, Grok, Runway, deAPI

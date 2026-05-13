@@ -35,6 +35,37 @@ export const parseOptionalPositiveIntFlag = (
   return parsed
 }
 
+export const parseOptionalNumberFlag = (
+  value: string | undefined,
+  flagName: string,
+  options: {
+    min: number
+    max: number
+    exclusiveMin?: boolean
+    integer?: boolean
+  }
+): number | undefined => {
+  if (value === undefined) {
+    return undefined
+  }
+
+  const parsed = Number(value)
+  const tooSmall = options.exclusiveMin === true ? parsed <= options.min : parsed < options.min
+  const invalid = !Number.isFinite(parsed)
+    || (options.integer === true && !Number.isInteger(parsed))
+    || tooSmall
+    || parsed > options.max
+
+  if (invalid) {
+    const minLabel = options.exclusiveMin === true ? `>${options.min}` : `${options.min}`
+    throw CLIUsageError(
+      `Invalid --${flagName} value "${value}". Expected ${options.integer === true ? 'an integer' : 'a number'} from ${minLabel} to ${options.max}.`
+    )
+  }
+
+  return parsed
+}
+
 export const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
   return flags[key]
 }

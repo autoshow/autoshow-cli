@@ -64,6 +64,19 @@ export type MinimaxTtsCloneOptions = {
   context?: MinimaxTtsCloneContext | undefined
 }
 
+export type MinimaxTtsOptions = {
+  model: MinimaxTtsModel
+  voiceId?: string | undefined
+  clone?: MinimaxTtsCloneOptions | undefined
+  languageBoost?: string | undefined
+  speed?: number | undefined
+  volume?: number | undefined
+  pitch?: number | undefined
+  emotion?: string | undefined
+  englishNormalization?: boolean | undefined
+  pronunciations?: string[] | undefined
+}
+
 export const createMinimaxTtsCloneContext = (): MinimaxTtsCloneContext => ({
   cloneCostReported: false
 })
@@ -408,7 +421,7 @@ const concatAndConvertToWav = async (chunkPaths: string[], outputDir: string): P
 export const runMinimaxTts = async (
   text: string,
   outputDir: string,
-  options: { model: MinimaxTtsModel, voiceId?: string | undefined, clone?: MinimaxTtsCloneOptions | undefined }
+  options: MinimaxTtsOptions
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('MINIMAX_API_KEY')
   if (!apiKey) {
@@ -432,6 +445,13 @@ export const runMinimaxTts = async (
     { label: 'model', value: options.model },
     { label: cloneResult ? 'reference audio' : 'voice', value: cloneResult ? cloneResult.sourceAudio.basename : voiceId },
     ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : []),
+    ...(options.languageBoost ? [{ label: 'language boost', value: options.languageBoost }] : []),
+    ...(typeof options.speed === 'number' ? [{ label: 'speed', value: options.speed }] : []),
+    ...(typeof options.volume === 'number' ? [{ label: 'volume', value: options.volume }] : []),
+    ...(typeof options.pitch === 'number' ? [{ label: 'pitch', value: options.pitch }] : []),
+    ...(options.emotion ? [{ label: 'emotion', value: options.emotion }] : []),
+    ...(options.englishNormalization === true ? [{ label: 'English normalization', value: 'enabled' }] : []),
+    ...(options.pronunciations && options.pronunciations.length > 0 ? [{ label: 'pronunciation rules', value: options.pronunciations.length }] : []),
     { label: 'chunk count', value: chunks.length }
   ])
 
@@ -441,6 +461,27 @@ export const runMinimaxTts = async (
     const chunk = chunks[i] as string
     const chunkIndex = i + 1
     l.debug(`Submitting MiniMax TTS chunk ${chunkIndex}/${chunks.length}`)
+    const voiceSetting = {
+      voice_id: voiceId,
+      ...(typeof options.speed === 'number' ? { speed: options.speed } : {}),
+      ...(typeof options.volume === 'number' ? { vol: options.volume } : {}),
+      ...(typeof options.pitch === 'number' ? { pitch: options.pitch } : {}),
+      ...(options.emotion ? { emotion: options.emotion } : {}),
+      ...(options.englishNormalization === true ? { english_normalization: true } : {})
+    }
+    const pronunciationRules = options.pronunciations?.map(item => item.trim()).filter(Boolean)
+    const requestBody = {
+      model: options.model,
+      text: chunk,
+      voice_setting: voiceSetting,
+      audio_setting: {
+        format: 'mp3',
+        audio_sample_rate: 32000,
+        channel: 1
+      },
+      ...(options.languageBoost ? { language_boost: options.languageBoost } : {}),
+      ...(pronunciationRules && pronunciationRules.length > 0 ? { pronunciation_dict: { tone: pronunciationRules } } : {})
+    }
 
     const createTaskResponse = await fetch(`${baseURL}/v1/t2a_async_v2`, {
       method: 'POST',
@@ -448,18 +489,7 @@ export const runMinimaxTts = async (
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: options.model,
-        text: chunk,
-        voice_setting: {
-          voice_id: voiceId
-        },
-        audio_setting: {
-          format: 'mp3',
-          audio_sample_rate: 32000,
-          channel: 1
-        }
-      })
+      body: JSON.stringify(requestBody)
     })
 
     if (!createTaskResponse.ok) {

@@ -3,7 +3,10 @@ import type { GroqTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
-import { GROQ_DEFAULT_TTS_VOICE, validateGroqTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
+import {
+  getGroqDefaultTtsVoiceForModel,
+  validateGroqTtsVoiceForModel
+} from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
 
@@ -53,8 +56,8 @@ export const runGroqTts = async (
   }
 
   const baseURL = readEnv('GROQ_BASE_URL') ?? GROQ_DEFAULT_BASE_URL
-  const rawVoice = options.voiceId?.trim() || readEnv('GROQ_TTS_VOICE') || GROQ_DEFAULT_TTS_VOICE
-  const voice = validateGroqTtsVoice(rawVoice)
+  const rawVoice = options.voiceId?.trim() || readEnv('GROQ_TTS_VOICE') || getGroqDefaultTtsVoiceForModel(options.model)
+  const voice = validateGroqTtsVoiceForModel(options.model, rawVoice)
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
   if (chunks.length === 0) {
     throw new Error('Groq TTS input text is empty')

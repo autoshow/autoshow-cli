@@ -53,7 +53,13 @@ export const collectSpeechifyTtsTargets = (
         : {}),
       run: async (text, outputDir) => {
         await ensureSpeechifyTtsSetup()
-        return await runSpeechifyTts(text, outputDir, { model, voiceId, customVoice })
+        return await runSpeechifyTts(text, outputDir, {
+          model,
+          voiceId,
+          customVoice,
+          audioFormat: selection.speechifyAudioFormat,
+          language: selection.speechifyLanguage
+        })
       }
     })
   }

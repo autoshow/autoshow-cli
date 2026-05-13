@@ -23,7 +23,15 @@ export const collectDeepgramTtsTargets = (
       ...(voiceId ? { voice: voiceId } : {}),
       run: async (text, outputDir) => {
         await ensureDeepgramTtsSetup()
-        return await runDeepgramTts(text, outputDir, { model, voiceId })
+        return await runDeepgramTts(text, outputDir, {
+          model,
+          voiceId,
+          encoding: selection.deepgramEncoding,
+          container: selection.deepgramContainer,
+          bitRate: selection.deepgramBitRate,
+          sampleRate: selection.deepgramSampleRate,
+          speed: selection.deepgramSpeed
+        })
       }
     })
   }

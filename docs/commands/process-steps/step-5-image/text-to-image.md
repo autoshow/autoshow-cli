@@ -29,6 +29,8 @@ There are no local image-generation models in this project.
 bun as setup --step image
 ```
 
+`setup --step image` checks API-key readiness for Gemini, OpenAI, GLM, Grok, Runway, BFL, and deAPI image providers. MiniMax image generation uses `MINIMAX_API_KEY` at runtime, but the image setup step does not have a dedicated MiniMax image hook today.
+
 ### Environment
 
 ```bash
@@ -57,6 +59,8 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | Flag | Description |
 |------|-------------|
 | `--all-image` | Select every supported image provider/model |
+| `--image-provider-concurrency <n>` | Hosted image providers/models to run concurrently per item; default `2`, or up to `8` for `--all-image` |
+| `--image-local-concurrency <n>` | Local image providers to run concurrently per item; default `1` |
 | `--image-aspect-ratio <ratio>` | Provider-dependent aspect ratio control |
 | `--image-size <size>` | Provider-dependent size or resolution control |
 | `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |

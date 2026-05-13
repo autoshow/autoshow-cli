@@ -22,6 +22,7 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 - ElevenLabs Instant Voice Cloning has mocked validation coverage for IVC creation, shared clone reuse across selected ElevenLabs models, verification-required failures, metadata, API error handling, and setup estimates.
 - ElevenLabs PVC has mocked validation coverage for ready-PVC synthesis, create/upload/CAPTCHA setup, verification/train/poll, failed training, setup artifacts, metadata, and price/timing estimates.
 - OpenAI custom voice creation has mocked validation coverage for consent upload, voice creation, speech synthesis with `{ id: "voice_..." }`, metadata, and setup estimates. Live coverage is opt-in only: set `OPENAI_API_KEY`, `OPENAI_TTS_CUSTOM_VOICE_TEST=1`, `OPENAI_TTS_CONSENT_ID`, and `OPENAI_TTS_REF_AUDIO`.
+- `test/test-cases/validation/tts-provider-contracts.test.ts` covers OpenAI instructions/speed, Grok language/text-normalization and custom voice IDs, Groq Arabic default voice selection, MiniMax synthesis controls, and provider-specific mocked request metadata.
 - Mistral live coverage is gated by `MISTRAL_API_KEY`; the saved-voice test also requires `MISTRAL_TTS_VOICE`, and the reference-audio test uses `input/examples/audio/anthony-voice.mp3`.
 - MiniMax rapid voice-clone live coverage is gated by `MINIMAX_API_KEY`, uses `input/examples/audio/anthony-voice.mp3`, and carries a 150 cent provider clone fee.
 - Speechify live coverage is gated by `SPEECHIFY_API_KEY`; the expected speaker is `SPEECHIFY_TTS_VOICE` or `george`.

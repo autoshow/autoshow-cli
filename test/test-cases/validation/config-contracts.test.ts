@@ -216,6 +216,8 @@ describe('config contracts', () => {
     const patch = buildConfigPatchFromFlags({
       'speechify-tts': ['simba-english', 'simba-multilingual'],
       'speechify-voice': 'narrator_voice',
+      'speechify-tts-audio-format': 'wav',
+      'speechify-tts-language': 'en-US',
       'gcloud-tts': ['neural2'],
       'gcloud-tts-voice': 'en-US-Neural2-C',
       'gcloud-tts-language': 'en-US',
@@ -225,6 +227,8 @@ describe('config contracts', () => {
     }, new Set([
       'speechify-tts',
       'speechify-voice',
+      'speechify-tts-audio-format',
+      'speechify-tts-language',
       'gcloud-tts',
       'gcloud-tts-voice',
       'gcloud-tts-language',
@@ -239,6 +243,8 @@ describe('config contracts', () => {
           tts: {
             speechifyTts: ['simba-english', 'simba-multilingual'],
             speechifyVoice: 'narrator_voice',
+            speechifyTtsAudioFormat: 'wav',
+            speechifyTtsLanguage: 'en-US',
             gcloudTts: ['neural2'],
             gcloudTtsVoice: 'en-US-Neural2-C',
             gcloudTtsLanguage: 'en-US',
@@ -253,6 +259,8 @@ describe('config contracts', () => {
     expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
       'speechify-tts': ['simba-english', 'simba-multilingual'],
       'speechify-voice': 'narrator_voice',
+      'speechify-tts-audio-format': 'wav',
+      'speechify-tts-language': 'en-US',
       'gcloud-tts': ['neural2'],
       'gcloud-tts-voice': 'en-US-Neural2-C',
       'gcloud-tts-language': 'en-US',
@@ -266,8 +274,9 @@ describe('config contracts', () => {
     const patch = buildConfigPatchFromFlags({
       'mistral-tts': ['voxtral-mini-tts-2603'],
       'mistral-tts-voice': 'voice_abc123',
-      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
-    }, new Set(['mistral-tts', 'mistral-tts-voice', 'mistral-tts-ref-audio']))
+      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'mistral-tts-voice-name': 'AutoShow Saved Voice'
+    }, new Set(['mistral-tts', 'mistral-tts-voice', 'mistral-tts-ref-audio', 'mistral-tts-voice-name']))
 
     expect(patch).toEqual({
       defaults: {
@@ -275,7 +284,8 @@ describe('config contracts', () => {
           tts: {
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
-            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
+            mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            mistralTtsVoiceName: 'AutoShow Saved Voice'
           }
         }
       }
@@ -284,7 +294,8 @@ describe('config contracts', () => {
     expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
       'mistral-tts': ['voxtral-mini-tts-2603'],
       'mistral-tts-voice': 'voice_abc123',
-      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3'
+      'mistral-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
+      'mistral-tts-voice-name': 'AutoShow Saved Voice'
     })
   })
 
@@ -331,6 +342,156 @@ describe('config contracts', () => {
       'minimax-tts-prompt-text': 'Reference transcript.',
       'minimax-tts-clone-noise-reduction': true,
       'minimax-tts-clone-volume-normalization': true
+    })
+  })
+
+  test('buildConfigPatchFromFlags saves and merges TTS request-control defaults', () => {
+    const patch = buildConfigPatchFromFlags({
+      'grok-tts-language': 'ar-SA',
+      'grok-tts-text-normalization': true,
+      'openai-tts-instructions': 'Speak with calm narration.',
+      'openai-tts-speed': '1.25',
+      'minimax-tts-language-boost': 'English',
+      'minimax-tts-speed': '1.2',
+      'minimax-tts-volume': '2.5',
+      'minimax-tts-pitch': '-2',
+      'minimax-tts-emotion': 'calm',
+      'minimax-tts-english-normalization': true,
+      'minimax-tts-pronunciation': ['AutoShow/auto show', 'TTS/tee tee ess'],
+      'deepgram-tts-encoding': 'linear16',
+      'deepgram-tts-container': 'wav',
+      'deepgram-tts-bit-rate': '128000',
+      'deepgram-tts-sample-rate': '24000',
+      'deepgram-tts-speed': '1.1',
+      'deapi-tts-language': 'English',
+      'deapi-tts-speed': '1.2',
+      'deapi-tts-format': 'mp3',
+      'deapi-tts-sample-rate': '24000',
+      'deapi-tts-instruction': 'A calm narrator.',
+      'elevenlabs-tts-output-format': 'mp3_22050_32',
+      'elevenlabs-tts-language-code': 'en',
+      'elevenlabs-tts-stability': '0.4',
+      'elevenlabs-tts-similarity-boost': '0.8',
+      'elevenlabs-tts-style': '0.2',
+      'elevenlabs-tts-use-speaker-boost': true,
+      'elevenlabs-tts-speed': '1.1',
+      'elevenlabs-tts-seed': '12345',
+      'elevenlabs-tts-text-normalization': 'on',
+      'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2', 'dict_3'],
+      'elevenlabs-tts-optimize-streaming-latency': '2',
+      'elevenlabs-tts-pvc-as-ivc': true
+    }, new Set([
+      'grok-tts-language',
+      'grok-tts-text-normalization',
+      'openai-tts-instructions',
+      'openai-tts-speed',
+      'minimax-tts-language-boost',
+      'minimax-tts-speed',
+      'minimax-tts-volume',
+      'minimax-tts-pitch',
+      'minimax-tts-emotion',
+      'minimax-tts-english-normalization',
+      'minimax-tts-pronunciation',
+      'deepgram-tts-encoding',
+      'deepgram-tts-container',
+      'deepgram-tts-bit-rate',
+      'deepgram-tts-sample-rate',
+      'deepgram-tts-speed',
+      'deapi-tts-language',
+      'deapi-tts-speed',
+      'deapi-tts-format',
+      'deapi-tts-sample-rate',
+      'deapi-tts-instruction',
+      'elevenlabs-tts-output-format',
+      'elevenlabs-tts-language-code',
+      'elevenlabs-tts-stability',
+      'elevenlabs-tts-similarity-boost',
+      'elevenlabs-tts-style',
+      'elevenlabs-tts-use-speaker-boost',
+      'elevenlabs-tts-speed',
+      'elevenlabs-tts-seed',
+      'elevenlabs-tts-text-normalization',
+      'elevenlabs-tts-pronunciation-dictionary-locator',
+      'elevenlabs-tts-optimize-streaming-latency',
+      'elevenlabs-tts-pvc-as-ivc'
+    ]))
+
+    expect(patch).toEqual({
+      defaults: {
+        post: {
+          tts: {
+            grokTtsLanguage: 'ar-SA',
+            grokTtsTextNormalization: true,
+            openaiTtsInstructions: 'Speak with calm narration.',
+            openaiTtsSpeed: 1.25,
+            minimaxTtsLanguageBoost: 'English',
+            minimaxTtsSpeed: 1.2,
+            minimaxTtsVolume: 2.5,
+            minimaxTtsPitch: -2,
+            minimaxTtsEmotion: 'calm',
+            minimaxTtsEnglishNormalization: true,
+            minimaxTtsPronunciations: ['AutoShow/auto show', 'TTS/tee tee ess'],
+            deepgramTtsEncoding: 'linear16',
+            deepgramTtsContainer: 'wav',
+            deepgramTtsBitRate: 128000,
+            deepgramTtsSampleRate: 24000,
+            deepgramTtsSpeed: 1.1,
+            deapiTtsLanguage: 'English',
+            deapiTtsSpeed: 1.2,
+            deapiTtsFormat: 'mp3',
+            deapiTtsSampleRate: 24000,
+            deapiTtsInstruction: 'A calm narrator.',
+            elevenlabsTtsOutputFormat: 'mp3_22050_32',
+            elevenlabsTtsLanguageCode: 'en',
+            elevenlabsTtsStability: 0.4,
+            elevenlabsTtsSimilarityBoost: 0.8,
+            elevenlabsTtsStyle: 0.2,
+            elevenlabsTtsUseSpeakerBoost: true,
+            elevenlabsTtsSpeed: 1.1,
+            elevenlabsTtsSeed: 12345,
+            elevenlabsTtsTextNormalization: 'on',
+            elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2', 'dict_3'],
+            elevenlabsTtsOptimizeStreamingLatency: 2,
+            elevenlabsTtsPvcAsIvc: true
+          }
+        }
+      }
+    })
+
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'grok-tts-language': 'ar-SA',
+      'grok-tts-text-normalization': true,
+      'openai-tts-instructions': 'Speak with calm narration.',
+      'openai-tts-speed': '1.25',
+      'minimax-tts-language-boost': 'English',
+      'minimax-tts-speed': '1.2',
+      'minimax-tts-volume': '2.5',
+      'minimax-tts-pitch': '-2',
+      'minimax-tts-emotion': 'calm',
+      'minimax-tts-english-normalization': true,
+      'minimax-tts-pronunciation': ['AutoShow/auto show', 'TTS/tee tee ess'],
+      'deepgram-tts-encoding': 'linear16',
+      'deepgram-tts-container': 'wav',
+      'deepgram-tts-bit-rate': '128000',
+      'deepgram-tts-sample-rate': '24000',
+      'deepgram-tts-speed': '1.1',
+      'deapi-tts-language': 'English',
+      'deapi-tts-speed': '1.2',
+      'deapi-tts-format': 'mp3',
+      'deapi-tts-sample-rate': '24000',
+      'deapi-tts-instruction': 'A calm narrator.',
+      'elevenlabs-tts-output-format': 'mp3_22050_32',
+      'elevenlabs-tts-language-code': 'en',
+      'elevenlabs-tts-stability': '0.4',
+      'elevenlabs-tts-similarity-boost': '0.8',
+      'elevenlabs-tts-style': '0.2',
+      'elevenlabs-tts-use-speaker-boost': true,
+      'elevenlabs-tts-speed': '1.1',
+      'elevenlabs-tts-seed': '12345',
+      'elevenlabs-tts-text-normalization': 'on',
+      'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2', 'dict_3'],
+      'elevenlabs-tts-optimize-streaming-latency': '2',
+      'elevenlabs-tts-pvc-as-ivc': true
     })
   })
 
@@ -497,6 +658,8 @@ describe('config contracts', () => {
             runwayTtsVoice: 'Leslie',
             speechifyTts: ['simba-english'],
             speechifyVoice: 'narrator_voice',
+            speechifyTtsAudioFormat: 'wav',
+            speechifyTtsLanguage: 'en-US',
             gcloudTts: ['standard'],
             gcloudTtsVoice: 'en-US-Standard-J',
             gcloudTtsLanguage: 'en-US',
@@ -506,6 +669,12 @@ describe('config contracts', () => {
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
             mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            mistralTtsVoiceName: 'AutoShow Saved Voice',
+            deepgramTtsEncoding: 'linear16',
+            deepgramTtsContainer: 'wav',
+            deepgramTtsBitRate: 128000,
+            deepgramTtsSampleRate: 24000,
+            deepgramTtsSpeed: 1.1,
             openaiTts: ['gpt-4o-mini-tts'],
             openaiVoice: 'voice_existing123',
             openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -519,6 +688,18 @@ describe('config contracts', () => {
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTtsCloneRemoveBackgroundNoise: true,
+            elevenlabsTtsOutputFormat: 'mp3_22050_32',
+            elevenlabsTtsLanguageCode: 'en',
+            elevenlabsTtsStability: 0.4,
+            elevenlabsTtsSimilarityBoost: 0.8,
+            elevenlabsTtsStyle: 0.2,
+            elevenlabsTtsUseSpeakerBoost: true,
+            elevenlabsTtsSpeed: 1.1,
+            elevenlabsTtsSeed: 12345,
+            elevenlabsTtsTextNormalization: 'on',
+            elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2'],
+            elevenlabsTtsOptimizeStreamingLatency: 2,
+            elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
             minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -528,7 +709,12 @@ describe('config contracts', () => {
             minimaxTtsCloneVolumeNormalization: true,
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
             deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
-            deapiTtsRefText: 'Reference transcript.'
+            deapiTtsRefText: 'Reference transcript.',
+            deapiTtsLanguage: 'English',
+            deapiTtsSpeed: 1.2,
+            deapiTtsFormat: 'mp3',
+            deapiTtsSampleRate: 24000,
+            deapiTtsInstruction: 'A calm narrator.'
           },
           image: {
             bflImage: ['flux-2-pro-preview'],
@@ -568,6 +754,8 @@ describe('config contracts', () => {
             runwayTtsVoice: 'Leslie',
             speechifyTts: ['simba-english'],
             speechifyVoice: 'narrator_voice',
+            speechifyTtsAudioFormat: 'wav',
+            speechifyTtsLanguage: 'en-US',
             gcloudTts: ['standard'],
             gcloudTtsVoice: 'en-US-Standard-J',
             gcloudTtsLanguage: 'en-US',
@@ -577,6 +765,12 @@ describe('config contracts', () => {
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
             mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
+            mistralTtsVoiceName: 'AutoShow Saved Voice',
+            deepgramTtsEncoding: 'linear16',
+            deepgramTtsContainer: 'wav',
+            deepgramTtsBitRate: 128000,
+            deepgramTtsSampleRate: 24000,
+            deepgramTtsSpeed: 1.1,
             openaiTts: ['gpt-4o-mini-tts'],
             openaiVoice: 'voice_existing123',
             openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -590,6 +784,18 @@ describe('config contracts', () => {
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTtsCloneRemoveBackgroundNoise: true,
+            elevenlabsTtsOutputFormat: 'mp3_22050_32',
+            elevenlabsTtsLanguageCode: 'en',
+            elevenlabsTtsStability: 0.4,
+            elevenlabsTtsSimilarityBoost: 0.8,
+            elevenlabsTtsStyle: 0.2,
+            elevenlabsTtsUseSpeakerBoost: true,
+            elevenlabsTtsSpeed: 1.1,
+            elevenlabsTtsSeed: 12345,
+            elevenlabsTtsTextNormalization: 'on',
+            elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2'],
+            elevenlabsTtsOptimizeStreamingLatency: 2,
+            elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
             minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -599,7 +805,12 @@ describe('config contracts', () => {
             minimaxTtsCloneVolumeNormalization: true,
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
             deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
-            deapiTtsRefText: 'Reference transcript.'
+            deapiTtsRefText: 'Reference transcript.',
+            deapiTtsLanguage: 'English',
+            deapiTtsSpeed: 1.2,
+            deapiTtsFormat: 'mp3',
+            deapiTtsSampleRate: 24000,
+            deapiTtsInstruction: 'A calm narrator.'
           },
           image: {
             bflImage: ['flux-2-pro-preview'],

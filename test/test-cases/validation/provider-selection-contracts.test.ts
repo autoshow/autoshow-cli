@@ -188,6 +188,8 @@ describe('provider selection contracts', () => {
     expect(collectMusicTargets(allOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'elevenlabs:music_v1',
       'minimax:music-2.5',
+      'minimax:music-2.6',
+      'minimax:music-2.6-free',
       'deapi:AceStep_1_5_Turbo',
       'deapi:AceStep_1_5_Base',
       'deapi:AceStep_1_5_XL_Turbo_INT8',

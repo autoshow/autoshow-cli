@@ -1,4 +1,5 @@
 import {
+  isMinimaxInstrumentalMusicModel,
   validateDeapiMusicModel,
   validateElevenlabsMusicModel,
   validateGeminiMusicModel,
@@ -57,7 +58,10 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
     const modelMeta = getMusicModelMeta('minimax', model)
     const baseCost = modelMeta?.costPerTrackCents
     const lyricsAddonCost = modelMeta?.lyricsCostPerTrackCents ?? 0
-    const lyricsSource: MusicCostEstimate['lyricsSource'] = options.musicLyricsFile ? 'provided' : 'generated'
+    const supportsInstrumental = isMinimaxInstrumentalMusicModel(model)
+    const lyricsSource: MusicCostEstimate['lyricsSource'] = options.musicInstrumental && supportsInstrumental
+      ? 'none'
+      : options.musicLyricsFile ? 'provided' : 'generated'
 
     if (baseCost === undefined) {
       throw new Error(`Rate unavailable in model registry for MiniMax music model: ${model}`)
@@ -71,7 +75,9 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
       lyricsSource,
       note: lyricsSource === 'generated'
         ? `Includes ${formatRate(lyricsAddonCost)} lyrics generation add-on`
-        : 'Assumes provided lyrics; no lyrics-generation add-on'
+        : lyricsSource === 'none'
+          ? 'Instrumental mode omits lyrics generation'
+          : 'Assumes provided lyrics; no lyrics-generation add-on'
     })
   }
 

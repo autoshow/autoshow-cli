@@ -1,7 +1,9 @@
 import type { GroqTtsModel, TtsTarget } from '~/types'
 import {
+  getGroqDefaultTtsVoiceForModel,
   validateGroqTtsModel,
-  validateGroqTtsVoice
+  validateGroqTtsVoice,
+  validateGroqTtsVoiceForModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureGroqTtsSetup } from '../../tts-services/groq/groq-tts'
 import { runGroqTts } from '../../tts-services/groq/run-groq-tts'
@@ -14,11 +16,14 @@ export const collectGroqTtsTargets = (
   for (const rawModel of selection.groqModels) {
     const model: GroqTtsModel = validateGroqTtsModel(rawModel)
     const voiceId = selection.groqVoiceId ? validateGroqTtsVoice(selection.groqVoiceId) : undefined
+    const targetVoice = voiceId
+      ? validateGroqTtsVoiceForModel(model, voiceId)
+      : getGroqDefaultTtsVoiceForModel(model)
 
     targets.push({
       service: 'groq',
       model,
-      ...(voiceId ? { voice: voiceId } : {}),
+      voice: targetVoice,
       run: async (text, outputDir) => {
         await ensureGroqTtsSetup()
         return await runGroqTts(text, outputDir, { model, voiceId })

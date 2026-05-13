@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import type { MinimaxMusicModel, MinimaxMusicResponse, Step7MusicMetadata } from '~/types'
+import { isMinimaxInstrumentalMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import * as l from '~/utils/logger'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
@@ -16,6 +17,28 @@ const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const INCOMPLETE_RESPONSE_RETRY_DELAY_MS = 3_000
 const MINIMAX_MUSIC_PROMPT_MAX_CHARS = 2000
+const MINIMAX_MUSIC_LYRICS_MAX_CHARS = 3500
+const MINIMAX_MUSIC_OUTPUT_FORMAT = 'hex'
+const MINIMAX_MUSIC_AUDIO_SETTING = {
+  sample_rate: 44100,
+  bitrate: 256000,
+  format: 'mp3'
+} as const
+const MINIMAX_MUSIC_AUDIO_MIME_TYPE = 'audio/mpeg'
+
+type MinimaxLyricsGenerationResult = {
+  lyrics: string
+  songTitle?: string | undefined
+  styleTags?: string | undefined
+}
+
+type MinimaxMusicGenerationPayload = {
+  model: MinimaxMusicModel
+  prompt: string
+} & (
+  | { lyrics: string, isInstrumental?: false | undefined }
+  | { lyrics?: undefined, isInstrumental: true }
+)
 
 const MinimaxLyricsResponseSchema = v.object({
   song_title: v.optional(v.string(), undefined),
@@ -30,33 +53,45 @@ const MinimaxMusicDataSchema = v.object({
 })
 
 const MinimaxMusicExtraInfoSchema = v.object({
-  music_duration: v.optional(v.number(), undefined)
+  music_duration: v.optional(v.number(), undefined),
+  music_sample_rate: v.optional(v.number(), undefined),
+  music_channel: v.optional(v.number(), undefined),
+  bitrate: v.optional(v.number(), undefined),
+  music_size: v.optional(v.number(), undefined)
 })
 
 export const MinimaxMusicResponseSchema = v.object({
   data: v.optional(v.nullable(MinimaxMusicDataSchema), undefined),
   extra_info: v.optional(v.nullable(MinimaxMusicExtraInfoSchema), undefined),
+  trace_id: v.optional(v.string(), undefined),
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
 
-const clampMinimaxMusicPrompt = (
+const validateMinimaxMusicPrompt = (
   prompt: string
-): { prompt: string, truncated: boolean } => {
+): string => {
   const trimmed = prompt.trim()
-  if (trimmed.length <= MINIMAX_MUSIC_PROMPT_MAX_CHARS) {
-    return { prompt: trimmed, truncated: false }
+  if (trimmed.length === 0) {
+    throw new Error('MiniMax music prompt must not be empty')
   }
-
-  const candidate = trimmed.slice(0, MINIMAX_MUSIC_PROMPT_MAX_CHARS)
-  const boundaryMatch = /^(.*)\s+\S*$/s.exec(candidate)
-  const truncatedPrompt = boundaryMatch?.[1]?.trimEnd().length
-    ? boundaryMatch[1].trimEnd()
-    : candidate.trimEnd()
-
-  return {
-    prompt: truncatedPrompt,
-    truncated: true
+  if (trimmed.length > MINIMAX_MUSIC_PROMPT_MAX_CHARS) {
+    throw new Error(`MiniMax music prompt must be ${MINIMAX_MUSIC_PROMPT_MAX_CHARS} characters or fewer. Received ${trimmed.length} characters.`)
   }
+  return trimmed
+}
+
+const validateMinimaxMusicLyrics = (
+  lyrics: string,
+  source: string
+): string => {
+  const trimmed = lyrics.trim()
+  if (trimmed.length === 0) {
+    throw new Error(`${source} must not be empty`)
+  }
+  if (trimmed.length > MINIMAX_MUSIC_LYRICS_MAX_CHARS) {
+    throw new Error(`${source} must be ${MINIMAX_MUSIC_LYRICS_MAX_CHARS} characters or fewer. Received ${trimmed.length} characters.`)
+  }
+  return trimmed
 }
 
 const readProvidedLyrics = async (lyricsFile: string): Promise<string> => {
@@ -65,19 +100,14 @@ const readProvidedLyrics = async (lyricsFile: string): Promise<string> => {
     throw new Error(`Music lyrics file not found: ${lyricsFile}`)
   }
 
-  const text = (await file.text()).trim()
-  if (text.length === 0) {
-    throw new Error(`Music lyrics file is empty: ${lyricsFile}`)
-  }
-
-  return text
+  return validateMinimaxMusicLyrics(await file.text(), `MiniMax music lyrics file ${lyricsFile}`)
 }
 
 const generateLyrics = async (
   baseURL: string,
   apiKey: string,
   prompt: string
-): Promise<string> => {
+): Promise<MinimaxLyricsGenerationResult> => {
   const response = await fetch(`${baseURL}/v1/lyrics_generation`, {
     method: 'POST',
     headers: {
@@ -102,23 +132,26 @@ const generateLyrics = async (
   )
   ensureMinimaxBaseRespSuccess(parsed.base_resp, 'MiniMax lyrics generation')
 
-  const lyrics = parsed.lyrics?.trim()
-  if (!lyrics) {
-    throw new Error('MiniMax lyrics generation succeeded but no lyrics were returned')
+  return {
+    lyrics: validateMinimaxMusicLyrics(parsed.lyrics ?? '', 'MiniMax generated lyrics'),
+    ...(parsed.song_title?.trim() ? { songTitle: parsed.song_title.trim() } : {}),
+    ...(parsed.style_tags?.trim() ? { styleTags: parsed.style_tags.trim() } : {})
   }
-
-  return lyrics
 }
 
 const requestMusicGeneration = async (
   baseURL: string,
   apiKey: string,
-  payload: {
-    model: MinimaxMusicModel
-    prompt: string
-    lyrics: string
-  }
+  payload: MinimaxMusicGenerationPayload
 ): Promise<MinimaxMusicResponse> => {
+  const body = {
+    model: payload.model,
+    prompt: payload.prompt,
+    ...(payload.isInstrumental ? { is_instrumental: true } : { lyrics: payload.lyrics }),
+    output_format: MINIMAX_MUSIC_OUTPUT_FORMAT,
+    audio_setting: MINIMAX_MUSIC_AUDIO_SETTING
+  }
+
   let response: Response
   try {
     response = await fetch(`${baseURL}/v1/music_generation`, {
@@ -127,17 +160,7 @@ const requestMusicGeneration = async (
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: payload.model,
-        prompt: payload.prompt,
-        lyrics: payload.lyrics,
-        output_format: 'hex',
-        audio_setting: {
-          sample_rate: 44100,
-          bitrate: 256000,
-          format: 'mp3'
-        }
-      }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     })
   } catch (error) {
@@ -183,11 +206,7 @@ const formatMusicResponseDetails = (payload: MinimaxMusicResponse): string => {
 const requestMusicGenerationWithIncompleteRetry = async (
   baseURL: string,
   apiKey: string,
-  payload: {
-    model: MinimaxMusicModel
-    prompt: string
-    lyrics: string
-  }
+  payload: MinimaxMusicGenerationPayload
 ): Promise<MinimaxMusicResponse> => {
   const result = await requestMusicGeneration(baseURL, apiKey, payload)
   if (!isIncompleteSuccessEnvelope(result)) {
@@ -226,20 +245,28 @@ export const runMinimaxMusicGen = async (
   if (options.durationSeconds !== undefined) {
     l.warn('MiniMax music generation currently ignores --music-duration')
   }
-  if (options.forceInstrumental) {
-    l.warn('MiniMax music generation currently ignores --music-instrumental')
+  const supportsInstrumental = isMinimaxInstrumentalMusicModel(options.model)
+  const useInstrumental = options.forceInstrumental === true && supportsInstrumental
+  if (options.forceInstrumental && !supportsInstrumental) {
+    l.warn(`MiniMax music model ${options.model} does not support --music-instrumental; generating with lyrics`)
+  }
+  if (useInstrumental && options.lyricsFile) {
+    l.warn('Ignoring --music-lyrics-file because --music-instrumental was provided for MiniMax music generation')
   }
 
   const startTime = Date.now()
-  const lyrics = options.lyricsFile
-    ? await readProvidedLyrics(options.lyricsFile)
-    : await generateLyrics(baseURL, apiKey, prompt)
-  const lyricsSource: Step7MusicMetadata['lyricsSource'] = options.lyricsFile ? 'provided' : 'generated'
-  const promptForMusic = clampMinimaxMusicPrompt(prompt)
-
-  if (promptForMusic.truncated) {
-    l.warn(`MiniMax music prompt exceeded ${MINIMAX_MUSIC_PROMPT_MAX_CHARS} characters; truncating to fit provider limit`)
-  }
+  const promptForMusic = validateMinimaxMusicPrompt(prompt)
+  const generatedLyrics = useInstrumental || options.lyricsFile
+    ? undefined
+    : await generateLyrics(baseURL, apiKey, promptForMusic)
+  const lyrics = useInstrumental
+    ? undefined
+    : options.lyricsFile
+      ? await readProvidedLyrics(options.lyricsFile)
+      : generatedLyrics?.lyrics
+  const lyricsSource: Step7MusicMetadata['lyricsSource'] = useInstrumental
+    ? 'none'
+    : options.lyricsFile ? 'provided' : 'generated'
 
   logMediaGenerationStatus(l, {
     mediaType: 'music',
@@ -248,10 +275,22 @@ export const runMinimaxMusicGen = async (
     status: 'started'
   })
 
-  const payload = {
-    model: options.model,
-    prompt: promptForMusic.prompt,
-    lyrics
+  let payload: MinimaxMusicGenerationPayload
+  if (useInstrumental) {
+    payload = {
+      model: options.model,
+      prompt: promptForMusic,
+      isInstrumental: true
+    }
+  } else {
+    if (lyrics === undefined) {
+      throw new Error('MiniMax music lyrics were not resolved')
+    }
+    payload = {
+      model: options.model,
+      prompt: promptForMusic,
+      lyrics
+    }
   }
   const generated = await requestMusicGenerationWithIncompleteRetry(baseURL, apiKey, payload)
   const hexAudio = generated.data?.audio
@@ -288,7 +327,17 @@ export const runMinimaxMusicGen = async (
     musicFileName: 'generated-music.mp3',
     musicFileSize: musicFile.size,
     musicDurationMs,
-    lyricsSource
+    lyricsSource,
+    audioMimeType: MINIMAX_MUSIC_AUDIO_MIME_TYPE,
+    audioSampleRate: generated.extra_info?.music_sample_rate ?? MINIMAX_MUSIC_AUDIO_SETTING.sample_rate,
+    audioChannelCount: generated.extra_info?.music_channel,
+    audioBitrate: generated.extra_info?.bitrate ?? MINIMAX_MUSIC_AUDIO_SETTING.bitrate,
+    providerAudioByteSize: generated.extra_info?.music_size,
+    outputFormat: MINIMAX_MUSIC_AUDIO_SETTING.format,
+    providerTraceId: generated.trace_id,
+    ...(generatedLyrics?.lyrics ? { generatedLyrics: generatedLyrics.lyrics } : {}),
+    ...(generatedLyrics?.songTitle ? { generatedSongTitle: generatedLyrics.songTitle } : {}),
+    ...(generatedLyrics?.styleTags ? { generatedStyleTags: generatedLyrics.styleTags } : {})
   }
 
   return { musicPath, metadata }

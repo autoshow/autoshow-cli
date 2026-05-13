@@ -36,12 +36,6 @@
       "https://elevenlabs.io/docs/api-reference/music/compose-detailed.md",
       "https://elevenlabs.io/docs/api-reference/music/create-composition-plan.md",
       "https://elevenlabs.io/docs/api-reference/music/separate-stems.md"
-    ],
-    "Image": [
-      "https://elevenlabs.io/docs/overview/capabilities/image-video.md"
-    ],
-    "Video": [
-      "https://elevenlabs.io/docs/overview/capabilities/image-video.md"
     ]
   }
 }

@@ -79,7 +79,23 @@ export const collectElevenLabsTtsTargets = (
           voiceId,
           pvcVoiceId,
           pvcWait: selection.elevenLabsPvcWait,
-          clone
+          clone,
+          controls: {
+            outputFormat: selection.elevenLabsOutputFormat,
+            languageCode: selection.elevenLabsLanguageCode,
+            voiceSettings: {
+              stability: selection.elevenLabsStability,
+              similarity_boost: selection.elevenLabsSimilarityBoost,
+              style: selection.elevenLabsStyle,
+              ...(selection.elevenLabsUseSpeakerBoost ? { use_speaker_boost: true } : {}),
+              speed: selection.elevenLabsSpeed
+            },
+            seed: selection.elevenLabsSeed,
+            textNormalization: selection.elevenLabsTextNormalization,
+            pronunciationDictionaryLocators: selection.elevenLabsPronunciationDictionaryLocators,
+            optimizeStreamingLatency: selection.elevenLabsOptimizeStreamingLatency,
+            pvcAsIvc: selection.elevenLabsPvcAsIvc
+          }
         })
       }
     })

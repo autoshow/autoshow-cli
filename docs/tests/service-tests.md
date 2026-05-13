@@ -4,6 +4,8 @@ Service-backed, networked, and setup-adjacent test coverage for provider integra
 
 Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are documented in [Local Tests](local-tests.md).
 
+These commands are opt-in service coverage. They may reach OpenAI, Anthropic, Gemini, Mistral, AWS, Google Cloud, ElevenLabs, MiniMax, deAPI, Deepgram, Groq, Grok, Firecrawl, or other paid providers when credentials are present. Agents should use `bun run check` plus the no-cost targeted tests in [Local Tests](local-tests.md) unless the user explicitly approves live or full-suite testing.
+
 ## Outline
 
 - [Service Quick Start](#service-quick-start)

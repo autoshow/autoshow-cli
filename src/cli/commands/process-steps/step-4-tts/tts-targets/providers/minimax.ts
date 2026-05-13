@@ -52,7 +52,18 @@ export const collectMinimaxTtsTargets = (
           }
         : {}),
       run: async (text, outputDir) => {
-        return await runMinimaxTts(text, outputDir, { model, voiceId, clone })
+        return await runMinimaxTts(text, outputDir, {
+          model,
+          voiceId,
+          clone,
+          languageBoost: selection.minimaxLanguageBoost,
+          speed: selection.minimaxSpeed,
+          volume: selection.minimaxVolume,
+          pitch: selection.minimaxPitch,
+          emotion: selection.minimaxEmotion,
+          englishNormalization: selection.minimaxEnglishNormalization,
+          pronunciations: selection.minimaxPronunciations
+        })
       }
     })
   }

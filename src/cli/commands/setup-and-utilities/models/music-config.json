@@ -28,6 +28,28 @@
           "costMultiplier": 1,
           "msPerSecond": 2015
         }
+      },
+      "music-2.6": {
+        "description": "music-2.6 — full song generation from prompt and lyrics with instrumental mode",
+        "costPerTrackUSD": 0.15,
+        "costPerTrackCents": 15,
+        "lyricsCostPerTrackUSD": 0.01,
+        "lyricsCostPerTrackCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 2015
+        }
+      },
+      "music-2.6-free": {
+        "description": "music-2.6-free — free-tier full song generation from prompt and lyrics with lower rate limits",
+        "costPerTrackUSD": 0,
+        "costPerTrackCents": 0,
+        "lyricsCostPerTrackUSD": 0.01,
+        "lyricsCostPerTrackCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 2015
+        }
       }
     }
   },

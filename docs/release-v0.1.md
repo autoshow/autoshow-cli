@@ -21,9 +21,26 @@ The v0.1 release puts those workflows behind one command-first entrypoint:
 bun as <command> [input] [flags]
 ```
 
-It supports local and service-backed engines across STT, OCR, LLM, TTS, image, video, and music; persistent CLI defaults in `config/autoshow.json`; automatic cost preflight and budget enforcement for hosted or mixed-provider runs; persistent STT media cache management; and utility commands for setup, config, provider docs, benchmarking, and resumable output backfills.
+It supports:
 
-AutoShow classifies each target as media, document, article/HTML, image, X Space input, batch source, raw text, or direct prompt input.
+- local and service-backed engines across STT, OCR, LLM, TTS, image, video, and music
+- persistent CLI defaults in `config/autoshow.json`
+- automatic cost preflight and budget enforcement for hosted or mixed-provider runs
+- persistent STT media cache management
+- configurable provider/local concurrency
+- setup, config, provider docs, benchmarking, and resumable output utilities
+
+AutoShow classifies targets as:
+
+- media
+- document
+- article/HTML
+- image
+- X Space input
+- batch source
+- raw text
+- direct prompt input
+
 Artifact-producing runs write a timestamped output directory with files from each step plus run metadata for provider/model choices, timing, estimated cost, and actual cost when available.
 
 ## Workflow Coverage
@@ -45,116 +62,111 @@ Artifact-producing runs write a timestamped output directory with files from eac
 
 High-value v0.1 behaviors:
 
-- Hosted and mixed-provider runnable commands run an automatic cost preflight before execution.
-- `--price` provides estimate-only previews for hosted or mixed-provider runs.
-- Batch processing supports `--batch-limit`, `--batch-all`, `--batch-order`, and configurable `--batch-concurrency`, defaulting to `1`.
-- `write` can fan out across multiple LLM providers and writes provider-specific JSON artifacts for each result.
-- `write` accepts at most one STT provider and at most one OCR provider per pipeline run; `extract` supports multi-provider STT and OCR runs.
-- Existing STT, OCR, TTS, image, video, and music outputs can be filled in with `resume`.
-- HTML/article inputs can use `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` via `--url-backend`.
-- X Space extraction accepts X/Twitter Space URLs, X post URLs that reference Spaces, and raw Space IDs.
-- The persistent STT cache is managed with `bun as cache prune` and `bun as cache clear`; runs can force refresh or bypass it with `--refresh-cache` and `--no-cache`.
-- Global runtime flags include `--config-path`, `--verbose`, `--quiet/-q`, and `--json`.
+- Hosted and mixed-provider runs get cost preflight, `--price` estimate-only mode, and budget enforcement.
+- Batch runs support limits, ordering, and configurable item concurrency.
+- Provider/model flags are repeatable across STT, OCR, LLM, TTS, image, video, and music.
+- Per-step provider/local concurrency controls provider fan-out.
+- `write` coordinates routed STT/OCR, LLM fan-out, and optional post-generation from a single final text result.
+- `resume` backfills missing STT, OCR, TTS, image, video, and music outputs in existing runs or batches.
+- Global runtime flags include:
+  - `--config-path`
+  - `--allow-over-budget`
+  - `--verbose`
+  - `--quiet/-q`
+  - `--json`
 
 Quick start:
 
 ```bash
-# check prerequisites without installing
 bun as setup --doctor
-
-# install local runtimes and verify core tools
-bun as setup
-
-# inspect metadata
-bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
-
-# extract media through the STT route
 bun as extract input/examples/audio/1-audio.mp3
-
-# run the full media pipeline with a service LLM
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
-
-# extract documents, articles, and X Spaces
 bun as extract input/examples/document/1-document.pdf --out json
 bun as extract https://ajcwebdev.com --url-backend firecrawl
-bun as extract https://ajcwebdev.com --url-backend spider
 bun as extract https://x.com/i/spaces/1DXxyRYNejbKM
-
-# process raw source text instead of treating .md/.txt as URL lists
 bun as write ./notes/source.md --text-input --openai gpt-5.4 --prompt folkSong
-
-# standalone generation
 bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
 bun as image "a clean product photo of a red enamel camping mug" --openai-image gpt-image-2 --image-size 1024x1024
 bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview
 bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
-
-# fill missing provider outputs from an existing run or batch
 bun as resume ./output/<run-or-batch-dir> --deepinfra-stt
-
-# fetch curated provider docs
-bun as links stt
 ```
 
-`write` is the central orchestration command.
-It can summarize media transcripts, extracted documents, and article content; process raw `.md` or `.txt` files with `--text-input`; process project text directories under `output/<project>/text` into `output/<project>/lyrics`; fan out across multiple LLM providers; and pass final text into TTS, image, video, or music generation.
-
-STT is not a standalone top-level command in v0.1.
-It is the media route inside `extract` and `write`.
+`write` is the central orchestration command. STT is not a standalone top-level command in v0.1; it is the media route inside `extract` and `write`.
 
 ## Inputs And Providers
 
-| Input kind | Supported workflows |
-|------------|---------------------|
-| Media URLs and local media files | `metadata`, `download`, `extract` media STT route, `write` media route |
-| Document URLs and local document/image files | `metadata`, `download`, `extract`, `write` |
-| HTML/article URLs and local `.html` / `.htm` files | `metadata`, `download`, `extract`, `write` |
-| X/Twitter Space URLs, X posts that reference Spaces, and raw Space IDs | `extract` X Space metadata route |
-| Directories, `.md` / `.txt` URL lists, YouTube channels/playlists, and RSS/Atom podcast feeds | batch media/document/article workflows |
-| Local `.md` / `.txt` content files | `tts`, `write --text-input`, hosted `music` prompt body |
-| Project text directories under `output/<project>/text` | `write` project lyric draft mode |
-| Prompt strings | `image`, `video`, hosted `music` |
+AutoShow routes:
 
-For `.md` and `.txt` inputs, `write` normally treats files as URL lists.
-Use `write --text-input` for raw source text outside the project-text convention.
+- media files and URLs through metadata, download, STT extraction, or write workflows
+- documents, images, and articles through extraction or write workflows
+- X Space URLs, X posts, and raw Space IDs through X metadata extraction
+- text files and prompt strings through write and generation commands
+- directories, URL-list files, YouTube channels/playlists, and RSS/Atom feeds as batches
 
-Document and image extraction covers PDFs; ebook and comic formats such as EPUB, MOBI/AZW variants, FB2, LIT, and CBZ; Office and OpenDocument files; RTF and CSV; HTML/article content; and common raster image formats.
-EPUB can use cleaned native text extraction, EPUB/PDF chapter extraction can write `chapters/`, and Office formats attempt native ZIP/XML extraction before falling back to OCR when quality heuristics fail.
-OCR flags are ignored for HTML/article inputs because those inputs use the article extraction path.
+For `.md` and `.txt` inputs, `write` normally treats files as URL lists. Use `write --text-input` for raw source text outside the project-text convention.
 
-Local engines include Whisper.cpp, Reverb, YouTube caption preference, MuPDF/Tesseract, OCRmyPDF, PaddleOCR, EPUB/native office extraction, Defuddle article extraction, llama.cpp, Kitten TTS, and local FFmpeg/Whisper lyric-video tooling.
-Service integrations cover providers across STT, OCR/article extraction, LLM writing, TTS, image, video, and music generation, including Google Cloud, AWS, OpenAI, Gemini, Anthropic, Groq, Grok, GLM, Kimi, MiniMax, Mistral, DeepInfra, Deepgram, ElevenLabs, Runway, deAPI, BFL, Firecrawl, and others.
+Local engines include:
+
+- Whisper.cpp and Reverb
+- OCR tooling and native document extraction
+- Defuddle article extraction
+- llama.cpp
+- Kitten TTS
+- local FFmpeg/Whisper lyric-video tooling
+
+Service integrations span:
+
+- STT
+- OCR/article extraction
+- LLM writing
+- TTS
+- image generation
+- video generation
+- music generation
 
 The live flag registry is the source of truth for supported model IDs.
-Use `bun as help <command>` or `docs/commands/` for current model lists, option details, and provider setup notes.
+Use these references for current model lists, option details, and provider setup notes:
+
+- `bun as help <command>`
+- [command overview](./commands.md)
+- [write](./commands/process-steps/step-3-write/write-text.md)
+- [TTS](./commands/process-steps/step-4-tts/text-to-speech.md)
+- [image](./commands/process-steps/step-5-image/text-to-image.md)
+- [video](./commands/process-steps/step-6-video/text-to-video-services.md)
+- [music](./commands/process-steps/step-7-music/text-to-music-services.md)
 
 ## Prompts, Config, Pricing, And Output
 
 Prompts live in JSON files discovered recursively under `src/prompts/entries/`.
-The library includes summary, chapter, marketing, social, creative-writing, and song-lyric prompts.
-The `default` prompt expands to:
+The library includes:
 
-```text
-shortSummary + longSummary + longChapters
-```
+- summary prompts
+- chapter prompts
+- marketing prompts
+- social prompts
+- creative-writing prompts
+- song-lyric prompts
 
-`write` is JSON-only in the current runtime contract:
+`write` produces JSON output (`text.json` or `text-<model>.json`) and can optionally render markdown alongside it. See the [write command docs](./commands/process-steps/step-3-write/write-text.md) for prompt and output details.
 
-- single-provider runs write `text.json`
-- multi-provider runs write `text-<model>.json`
-- local llama output is also written as `text.json`
-- prompt artifacts remain `prompt.md`
-- `--rendered-text` can save rendered markdown alongside JSON output
-- run-level metadata is always recorded in `run.json`
+Persistent config lives in `config/autoshow.json` and can store selected defaults for:
 
-Persistent config lives in `config/autoshow.json`. An empty config is:
+- providers and prompts
+- batch controls
+- generation options
+- concurrency
+- cache behavior
+- cloud staging
+- pricing thresholds
 
-```json
-{}
-```
+Runtime-only flags are intentionally not persisted, including:
 
-Config can persist selected defaults for provider/model choices, prompts, batch controls, STT/OCR/TTS/image/video/music options, cache behavior, cloud staging, and pricing thresholds.
-The same global `--config-path` override works on every command, not just `config`.
+- `--price`
+- `--allow-over-budget`
+- setup-only verification fields
+- `--music-lyrics-file`
+- `--music-instrumental`
 
 ```bash
 bun as config --show
@@ -164,10 +176,15 @@ bun as config --reset
 ```
 
 Hosted or mixed-provider runnable commands perform preflight cost estimation.
-`--price` prints an estimate and exits, configured `max-cents` values act as hard budgets, and `--allow-over-budget` provides a one-off override.
-`music --audio` and `music --batch` are local lyric-video modes: they do not run cost preflight and reject hosted music-generation flags, including `--price`.
+Pricing controls:
 
-`bun as setup` orchestrates local prerequisites such as `uv`, `yt-dlp`, FFmpeg/ffprobe, Whisper.cpp, llama.cpp, Reverb, Calibre, local OCR dependencies, Kitten TTS, and provider-specific setup hooks.
+- `--price` prints an estimate and exits
+- configured `max-cents` values act as hard budgets
+- `--allow-over-budget` provides a one-off override
+
+See [Pricing Preflight](./commands.md#pricing-preflight) and the individual command docs for provider-specific pricing behavior.
+
+`bun as setup` orchestrates local prerequisites and provider-specific setup hooks. See the [setup docs](./commands/process-steps/step-0-setup/setup.md) for step-specific setup and doctor checks.
 Common setup modes include:
 
 ```bash
@@ -180,5 +197,15 @@ bun as setup --sample --verify-only
 ```
 
 Most artifact-producing runs write a timestamped directory under `output/`.
-Common artifacts include downloaded or normalized inputs, `prompt.md`, `transcription.txt`, extracted text or OCR output, X Space `extraction.md` reports, `text.json` or `text-<model>.json`, generated media files, and `run.json`.
-Batch runs also write a parent batch manifest, and `extract` batches route mixed inputs under media, document, and X Space child batches.
+Common artifacts include:
+
+- downloaded or normalized inputs
+- `prompt.md`
+- `transcription.txt`
+- extracted text or OCR output
+- X Space `extraction.md` reports
+- `text.json` or `text-<model>.json`
+- generated media files
+- `run.json`
+
+Batch runs also write parent manifests, and generation commands write provider-specific files when multiple targets are selected. See [Types, Metadata & Output Layout](./diagrams/05-types-and-output.md) for the full manifest shape.
