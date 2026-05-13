@@ -30,6 +30,7 @@ describe('provider selection contracts', () => {
       'gladia-stt',
       'happyscribe-stt',
       'supadata-stt',
+      'scrapecreators-stt',
       'openai-stt',
       'gemini-stt',
       'glm-stt',
@@ -85,13 +86,24 @@ describe('provider selection contracts', () => {
     ])
   })
 
-  test('--all-stt expands Supadata to auto only', () => {
+  test('--all-stt expands Supadata to auto only and excludes ScrapeCreators', () => {
     const opts = buildOptsFromFlags(false, { 'all-stt': true })
     const supadataTargets = collectSttTargets(opts).filter((target) => target.service === 'supadata')
+    const scrapeCreatorsTargets = collectSttTargets(opts).filter((target) => target.service === 'scrapecreators')
 
     expect(supadataTargets).toEqual([{
       service: 'supadata',
       model: 'auto',
+      local: false
+    }])
+    expect(scrapeCreatorsTargets).toEqual([])
+
+    const explicitOpts = buildOptsFromFlags(false, {
+      'scrapecreators-stt': 'youtube-transcript'
+    })
+    expect(collectSttTargets(explicitOpts).filter((target) => target.service === 'scrapecreators')).toEqual([{
+      service: 'scrapecreators',
+      model: 'youtube-transcript',
       local: false
     }])
   })

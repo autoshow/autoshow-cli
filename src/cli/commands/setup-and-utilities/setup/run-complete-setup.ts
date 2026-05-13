@@ -27,6 +27,7 @@ import { setupTogetherStt } from '~/cli/commands/process-steps/step-2-extract/st
 import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/assemblyai/assemblyai'
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
 import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
+import { setupScrapeCreatorsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/scrapecreators/scrapecreators'
 import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 import { setupCalibreDocumentTools } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 import { setupTesseractOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/tesseract-setup'
@@ -310,6 +311,8 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupGladiaStt)
 
   await withCompactSetup(setupSupadataStt)
+
+  await withCompactSetup(setupScrapeCreatorsStt)
 
   await withCompactSetup(async () => {
     await setupAwsStt({

@@ -67,6 +67,8 @@ export type RuntimeOptions = {
   happyscribeOrganizationId: string | undefined
   supadataSttModels: string[] | undefined
   supadataSttModel: string | undefined
+  scrapecreatorsSttModels: string[] | undefined
+  scrapecreatorsSttModel: string | undefined
   openaiSttModels: string[] | undefined
   openaiSttModel: string | undefined
   geminiSttModels: string[] | undefined
@@ -76,6 +78,7 @@ export type RuntimeOptions = {
   togetherSttModels: string[] | undefined
   togetherSttModel: string | undefined
   supadataLang: string | undefined
+  scrapecreatorsLang: string | undefined
   speechmaticsSttModels: string[] | undefined
   speechmaticsSttModel: string | undefined
   deepgramSttModels: string[] | undefined

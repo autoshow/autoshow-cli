@@ -165,7 +165,7 @@ Most hosted or mixed-provider runtime commands support `--price` to print estima
 ```bash
 bun as extract input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --price
 bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt openai/whisper-large-v3-turbo --price
-bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi-stt WhisperLargeV3 --price
 bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto --price
 bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3 --price
 bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --price

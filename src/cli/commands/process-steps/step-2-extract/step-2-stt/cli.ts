@@ -19,6 +19,7 @@ export const STT_ENGINE_CAPABILITIES = {
   gladia: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   happyscribe: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   supadata: { diarizationByDefault: false, supportsSpeakerCountHint: false },
+  scrapecreators: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'openai-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'gemini-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
   'glm-stt': { diarizationByDefault: false, supportsSpeakerCountHint: false },
@@ -92,6 +93,8 @@ export const collectSttProviderSpecs = (
     | 'happyscribeSttModels'
     | 'supadataSttModel'
     | 'supadataSttModels'
+    | 'scrapecreatorsSttModel'
+    | 'scrapecreatorsSttModels'
     | 'openaiSttModel'
     | 'openaiSttModels'
     | 'geminiSttModel'

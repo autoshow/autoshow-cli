@@ -86,7 +86,10 @@ const getCacheLockWaitTimeoutMs = (): number =>
   Math.max(getCacheLockStaleMs(), parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_WAIT_MS', DEFAULT_LOCK_WAIT_TIMEOUT_MS))
 
 const isHostedSttTarget = (target: SttTarget): boolean =>
-  !target.local && target.service !== 'youtube-captions' && target.service !== 'supadata'
+  !target.local
+  && target.service !== 'youtube-captions'
+  && target.service !== 'supadata'
+  && target.service !== 'scrapecreators'
 
 const resolveSourceMediaProfile = (targets: SttTarget[]): AudioNormalizationProfile => {
   const hostedTargets = targets.filter(isHostedSttTarget)

@@ -25,10 +25,10 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 
 ## Overview
 
-`links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links.json`, fetches every matched page, and concatenates the results into a single local file.
+`links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links/`, fetches every matched page, and concatenates the results into a single local file.
 
 - Output path: `project/links/<normalized-selection>-links.md`
-- Examples: `project/links/all-all-links.md`, `project/links/all-stt-links.md`, `project/links/gemini-all-links.md`, `project/links/gemini-general-tts-links.md`
+- Examples: `project/links/all-all-links.md`, `project/links/all-stt-links.md`, `project/links/gemini-all-links.md`, `project/links/gemini-general-tts-links.md`, `project/links/spider-all-links.md`, `project/links/spider-url-links.md`
 - Existing output is overwritten on each run
 - Duplicate URLs are removed before fetching, so overlapping selections only fetch once
 - Raw markdown/text docs are appended as-is; HTML docs pages are converted to markdown locally before they are appended
@@ -81,6 +81,7 @@ Accepted provider selectors are the lowercase names below.
 | `--scrapecreators` | `general`, `stt`, `url` |
 | `--zyte` | `general`, `url` |
 | `--firecrawl` | `general`, `url` |
+| `--spider` | `general`, `url` |
 
 ## Global sections
 
@@ -122,6 +123,9 @@ bun as links --mistral stt ocr tts
 # Fetch only OpenAI general and text docs
 bun as links --openai general text
 
+# Fetch Spider URL scraping and crawling docs
+bun as links --spider url
+
 # Mix a global section with provider-specific sections
 bun as links tts --openai general text --minimax video
 ```
@@ -156,7 +160,7 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 
 ## Notes
 
-- Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links.json`.
+- Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links/`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
 - Curated `.md` / `.txt` endpoints and normal HTML docs pages can be mixed in the same provider/section selection. HTML pages are converted locally first; if that extraction fails, the command falls back to Firecrawl article extraction before marking the URL failed.
 - Documentation links with a `blob:https://` or `blob:http://` wrapper are fetched through the underlying HTTP URL while preserving the original source marker in the output.

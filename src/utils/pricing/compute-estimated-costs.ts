@@ -29,6 +29,7 @@ import {
   computeTtsCost
 } from './cost-helpers'
 import { estimateSupadataCost } from './supadata-pricing'
+import { estimateScrapeCreatorsCost } from './scrapecreators-pricing'
 
 const estimateImageTargetCost = (
   target: NonNullable<ComputeEstimatedCostsInput['imageTargets']>[number],
@@ -103,6 +104,23 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         continue
       }
 
+      if (target.service === 'scrapecreators') {
+        const estimation = getSttEstimation(target.service, target.model)
+        const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
+        const scrapeCreatorsEstimate = estimateScrapeCreatorsCost()
+        const cost = applyCostMultiplier(scrapeCreatorsEstimate.totalCost, costMultiplier)
+        totalCost += cost
+        steps.push({
+          step: 'stt',
+          provider: target.service,
+          model: target.model,
+          cost,
+          costMultiplier,
+          durationSeconds: 0
+        })
+        continue
+      }
+
       const estimation = getSttEstimation(target.service, target.model)
       const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
       const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), costMultiplier)
@@ -129,6 +147,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'gladiaSttModel' as const, provider: 'gladia' },
       { field: 'happyscribeSttModel' as const, provider: 'happyscribe' },
       { field: 'supadataSttModel' as const, provider: 'supadata' },
+      { field: 'scrapecreatorsSttModel' as const, provider: 'scrapecreators' },
       { field: 'openaiSttModel' as const, provider: 'openai-stt' },
       { field: 'geminiSttModel' as const, provider: 'gemini-stt' },
       { field: 'glmSttModel' as const, provider: 'glm-stt' },
@@ -151,6 +170,21 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
             cost,
             costMultiplier,
             durationSeconds
+          })
+          break
+        }
+
+        if (provider === 'scrapecreators') {
+          const scrapeCreatorsEstimate = estimateScrapeCreatorsCost()
+          const cost = applyCostMultiplier(scrapeCreatorsEstimate.totalCost, costMultiplier)
+          totalCost += cost
+          steps.push({
+            step: 'stt',
+            provider,
+            model,
+            cost,
+            costMultiplier,
+            durationSeconds: 0
           })
           break
         }

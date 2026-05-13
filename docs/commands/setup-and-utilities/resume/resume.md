@@ -152,6 +152,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |
 | `--supadata-stt auto` | Select Supadata STT auto mode |
 | `--supadata-lang <code>` | Supadata preferred transcript language |
+| `--scrapecreators-stt youtube-transcript` | Select ScrapeCreators YouTube transcript retrieval |
+| `--scrapecreators-lang <code>` | ScrapeCreators transcript language; defaults to `en` |
 | `--mistral-stt <model>` | Select one or more Mistral STT models |
 | `--assemblyai-stt <model>` | Select one or more AssemblyAI STT models |
 | `--gladia-stt <model>` | Select one or more Gladia STT models |

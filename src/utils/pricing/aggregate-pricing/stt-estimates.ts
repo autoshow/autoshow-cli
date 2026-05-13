@@ -19,6 +19,7 @@ import {
 import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
 import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { estimateSupadataCost } from '~/utils/pricing/supadata-pricing'
+import { estimateScrapeCreatorsCost } from '~/utils/pricing/scrapecreators-pricing'
 
 const buildCloudSttEstimate = async (
   provider: string,
@@ -42,6 +43,22 @@ const buildSupadataSttEstimate = (
     provider: 'supadata',
     model,
     durationSeconds,
+    totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
+    costMultiplier: estimation.costMultiplier,
+    note: cost.note
+  }
+}
+
+const buildScrapeCreatorsSttEstimate = (
+  model: string
+): SttStepEstimate => {
+  const estimation = getSttEstimation('scrapecreators', model)
+  const cost = estimateScrapeCreatorsCost()
+  return {
+    step: 'stt',
+    provider: 'scrapecreators',
+    model,
+    durationSeconds: 0,
     totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
     costMultiplier: estimation.costMultiplier,
     note: cost.note
@@ -106,7 +123,11 @@ export const buildSttEstimates = async (
     return []
   }
 
-  const needsDuration = targets.some((target) => target.service !== 'whisper' && target.service !== 'reverb')
+  const needsDuration = targets.some((target) =>
+    target.service !== 'whisper'
+    && target.service !== 'reverb'
+    && target.service !== 'scrapecreators'
+  )
   const durationSeconds = needsDuration ? await resolveSttInputDurationSeconds(resolvedTarget, targets) : 0
   const estimates: SttStepEstimate[] = []
 
@@ -146,6 +167,11 @@ export const buildSttEstimates = async (
 
     if (target.service === 'supadata') {
       estimates.push(buildSupadataSttEstimate(target.model, durationSeconds, resolvedTarget))
+      continue
+    }
+
+    if (target.service === 'scrapecreators') {
+      estimates.push(buildScrapeCreatorsSttEstimate(target.model))
       continue
     }
 

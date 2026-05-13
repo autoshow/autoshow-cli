@@ -466,6 +466,24 @@
       }
     }
   },
+  "scrapecreators": {
+    "description": "ScrapeCreators YouTube transcript retrieval from public YouTube URLs",
+    "type": "api",
+    "models": {
+      "youtube-transcript": {
+        "description": "YouTube transcript retrieval through ScrapeCreators; does not generate transcripts from audio",
+        "costPerHourUSD": 0,
+        "costPerHourCents": 0,
+        "limits": {
+          "notes": "ScrapeCreators YouTube transcript retrieval accepts youtube.com and youtu.be URLs only. Pricing is credit-based rather than duration-based: AutoShow estimates one credit per transcript request using the published Freelance reference rate."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 0
+        }
+      }
+    }
+  },
   "openai-stt": {
     "description": "OpenAI cloud speech-to-text",
     "type": "api",

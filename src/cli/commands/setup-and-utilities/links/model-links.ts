@@ -24,6 +24,7 @@ import revLinks from './model-links/rev.json'
 import runwayLinks from './model-links/runway.json'
 import scrapecreatorsLinks from './model-links/scrapecreators.json'
 import sonioxLinks from './model-links/soniox.json'
+import spiderLinks from './model-links/spider.json'
 import speechifyLinks from './model-links/speechify.json'
 import speechmaticsLinks from './model-links/speechmatics.json'
 import supadataLinks from './model-links/supadata.json'
@@ -64,7 +65,8 @@ const providerLinks = [
   supadataLinks,
   scrapecreatorsLinks,
   zyteLinks,
-  firecrawlLinks
+  firecrawlLinks,
+  spiderLinks
 ] as const satisfies readonly ModelLinksData[]
 
 const modelLinks = Object.assign({}, ...providerLinks) satisfies ModelLinksData

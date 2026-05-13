@@ -30,6 +30,10 @@ import {
   computeSupadataActualCost,
   getSupadataCreditRateCents
 } from './supadata-pricing'
+import {
+  computeScrapeCreatorsActualCost,
+  getScrapeCreatorsCreditRateCents
+} from './scrapecreators-pricing'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
@@ -133,6 +137,18 @@ const computeActualSttCharge = (
       metadata.billing?.creditsUsed,
       metadata.billing?.creditRateCents ?? getSupadataCreditRateCents(),
       { sourceUrl }
+    )
+    return {
+      cost: actual.totalCost,
+      inputMetric: 'credits',
+      inputValue: actual.creditsUsed
+    }
+  }
+
+  if (service === 'scrapecreators') {
+    const actual = computeScrapeCreatorsActualCost(
+      metadata.billing?.creditsUsed,
+      metadata.billing?.creditRateCents ?? getScrapeCreatorsCreditRateCents()
     )
     return {
       cost: actual.totalCost,

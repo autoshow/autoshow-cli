@@ -130,6 +130,7 @@ export type ComputeEstimatedCostsInput = {
   gladiaSttModel?: string | undefined
   happyscribeSttModel?: string | undefined
   supadataSttModel?: string | undefined
+  scrapecreatorsSttModel?: string | undefined
   openaiSttModel?: string | undefined
   geminiSttModel?: string | undefined
   glmSttModel?: string | undefined

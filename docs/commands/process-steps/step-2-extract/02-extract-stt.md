@@ -11,6 +11,7 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
   - [deAPI](#deapi)
   - [Happy Scribe](#happy-scribe)
   - [Supadata](#supadata)
+  - [ScrapeCreators](#scrapecreators)
   - [Gladia](#gladia)
 - [Non-diarized STT](#non-diarized-stt)
   - [Whisper.cpp](#whispercpp)
@@ -90,6 +91,7 @@ bun as setup --step reverb
 | deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
 | Happy Scribe | `HAPPYSCRIBE_API_KEY` | `HAPPYSCRIBE_BASE_URL`, `HAPPYSCRIBE_ORGANIZATION_ID` |
 | Supadata | `SUPADATA_API_KEY` | `SUPADATA_BASE_URL` |
+| ScrapeCreators | `SCRAPECREATORS_API_KEY` | `SCRAPECREATORS_BASE_URL` |
 | ElevenLabs | `ELEVENLABS_API_KEY` | - |
 | Deepgram | `DEEPGRAM_API_KEY` | `DEEPGRAM_BASE_URL` |
 | Soniox | `SONIOX_API_KEY` | `SONIOX_BASE_URL` |
@@ -108,7 +110,7 @@ bun as setup --step reverb
 
 | Flag | Description |
 |------|-------------|
-| `--all-stt` | Enable every supported STT provider/model for this command |
+| `--all-stt` | Enable every broadly applicable STT provider/model for this command; YouTube-only ScrapeCreators is excluded |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available; falls back to the selected STT provider path |
 | `--speaker-count <n>` | Diarization speaker-count hint for supported services |
 | `--split` | Split audio into 30-minute segments before transcription |
@@ -128,7 +130,7 @@ bun as setup --step reverb
 
 ```bash
 # Prefer YouTube captions, then fall back to STT
-bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --youtube-captions --deepgram-stt nova-3
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --youtube-captions --deepgram-stt nova-3
 
 # Split a long file before transcription
 bun as extract input/examples/video/2-video.mp4 --whisper-stt large-v3-turbo --split
@@ -137,7 +139,7 @@ bun as extract input/examples/video/2-video.mp4 --whisper-stt large-v3-turbo --s
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
 ```
 
-`--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Supadata, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
+`--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Supadata, ScrapeCreators, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
 
 ## URL/streaming/source-URL STT
 
@@ -154,7 +156,7 @@ These services either work best with provider-side URLs or have source-URL-speci
 
 ```bash
 bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
-bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --deapi-stt WhisperLargeV3 --price
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi-stt WhisperLargeV3 --price
 ```
 
 Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
@@ -187,12 +189,32 @@ Organization resolution order is CLI `--happyscribe-organization-id`, config def
 | Input support | Public YouTube, TikTok, Instagram, X/Twitter, Facebook, or direct media/file URLs |
 
 ```bash
-bun as extract https://www.youtube.com/watch?v=dQw4w9WgXcQ --supadata-stt auto --supadata-lang en
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --supadata-stt auto --supadata-lang en
 bun as extract https://www.tiktok.com/@example/video/1234567890 --supadata-stt auto
 bun as extract https://example.com/audio/interview.mp3 --supadata-stt auto --price
 ```
 
 Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. AutoShow exposes only Supadata `auto` mode: it tries provider-native transcripts first and generates a transcript when needed. Supadata treats direct media/file URLs as generated transcripts. `--supadata-lang` is sent with the auto request, but generated transcripts ignore that flag.
+
+### ScrapeCreators
+
+| Option | Value |
+|--------|-------|
+| Selector | `--scrapecreators-stt youtube-transcript` |
+| Language | `--scrapecreators-lang <code>`, default `en` |
+| Required env | `SCRAPECREATORS_API_KEY` |
+| Optional env | `SCRAPECREATORS_BASE_URL` |
+| Input support | Public `youtube.com` and `youtu.be` URLs only |
+
+```bash
+bun as extract "https://www.youtube.com/watch?v=MORMZXEaONk" --scrapecreators-stt youtube-transcript
+bun as extract https://youtu.be/dQw4w9WgXcQ --scrapecreators-stt youtube-transcript --scrapecreators-lang es
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --scrapecreators-stt youtube-transcript --deapi-stt WhisperLargeV3
+```
+
+ScrapeCreators is transcript retrieval, not general audio transcription. AutoShow calls `GET /v1/youtube/video/transcript` with the source URL and requested language, then normalizes returned timed transcript entries into `transcription.txt` and structured STT artifacts. It does not replace `--youtube-captions`; use ScrapeCreators when you want it as an explicit paid provider in the same target set as other STT providers.
+
+ScrapeCreators skips local files, direct media URLs, and non-YouTube URLs as non-retryable provider skips so multi-provider runs can fall back. A `transcript: null` response means the requested language is unavailable and is also treated as a skipped, non-retryable provider result. Pair it with a generating provider such as `--deapi-stt WhisperLargeV3` or `--happyscribe-stt auto` when a missing YouTube transcript should still produce an STT result. `--split` has no effect because ScrapeCreators uses the source URL directly.
 
 ### Gladia
 
@@ -457,10 +479,17 @@ Supadata price estimates use provider credits.
 - Published credit pricing can vary by plan, billing setup, promotions, or enterprise terms; AutoShow's preflight uses the Basic/Pro auto-recharge reference rate for consistency.
 - During execution, Supadata billing metadata records credit counts from provider response headers when available.
 
+ScrapeCreators price estimates use one fixed transcript-request credit.
+
+- `--price` uses the published Freelance reference rate of `$47 / 25,000 credits`, or `0.188` cents per YouTube transcript request.
+- Business pricing is lower at `$497 / 500,000 credits`, or `0.0994` cents per request, but AutoShow does not use that as the default estimator.
+- Estimates and actual fallback billing ignore media duration because ScrapeCreators charges the retrieval request, not transcription minutes.
+- This makes ScrapeCreators cheaper than duration-priced STT providers for YouTube URLs when the requested transcript exists. Gladia, Happy Scribe, deAPI, and Supadata generation can still be the right fallback when YouTube has no transcript in the requested language.
+
 ## STT Notes
 
-- Before any hosted STT provider upload, AutoShow stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode. Supadata uses public source URLs instead of local uploads.
-- Single-provider STT runs write root `transcription.txt` plus root `result.json`.
+- Before any hosted STT provider upload, AutoShow stages one shared stripped audio-only artifact. The default hosted artifact is mono AAC-LC in `.m4a` capped at 96 kbps, preserves the original sample rate, and drops cover art/chapters/metadata/extra streams. Low-bitrate mono `.m4a`/AAC and `.mp3` inputs stay on a stream-copy cleanup path instead of taking a second lossy encode. Supadata and ScrapeCreators use public source URLs instead of local uploads.
+- Single-provider local/upload STT runs write root `transcription.txt` plus root `result.json`; URL transcript retrieval providers write under their provider directory.
 - Hosted multi-provider runs write one transcript and one canonical structured artifact per provider under `providers/<service>-<model>/`.
 - `--youtube-captions` is English-only in v1 and only applies to YouTube inputs.
 - For YouTube channels and playlists, `--youtube-captions` is evaluated per selected video in the batch. Use `--batch-all` when you want the full channel or playlist instead of the default batch limit.

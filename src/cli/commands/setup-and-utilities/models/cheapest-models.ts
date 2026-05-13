@@ -302,6 +302,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('happyscribe')
     case 'supadata-stt':
       return 'auto'
+    case 'scrapecreators-stt':
+      return 'youtube-transcript'
     case 'openai-stt':
       return selectCheapestSttModel('openai-stt')
     case 'gemini-stt':

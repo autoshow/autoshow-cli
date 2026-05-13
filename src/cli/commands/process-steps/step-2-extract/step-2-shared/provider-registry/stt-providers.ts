@@ -16,6 +16,7 @@ import {
   SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_HAPPYSCRIBE_STT_MODELS,
   SUPPORTED_SUPADATA_STT_MODELS,
+  SUPPORTED_SCRAPECREATORS_STT_MODELS,
   SUPPORTED_OPENAI_STT_MODELS,
   SUPPORTED_GEMINI_STT_MODELS,
   SUPPORTED_GLM_STT_MODELS,
@@ -37,6 +38,7 @@ import {
   validateGladiaSttModel,
   validateHappyscribeSttModel,
   validateSupadataSttModel,
+  validateScrapeCreatorsSttModel,
   validateOpenaiSttModel,
   validateGeminiSttModel,
   validateGlmSttModel,
@@ -299,6 +301,20 @@ export const STEP2_STT_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_SUPADATA_STT_MODELS,
     validateModel: validateSupadataSttModel,
     description: buildModelDescription('Supadata STT mode', SUPPORTED_SUPADATA_STT_MODELS)
+  }),
+  modelProvider({
+    step: 'stt',
+    modality: 'media',
+    flagName: 'scrapecreators-stt',
+    targetService: 'scrapecreators',
+    providerSpecProvider: 'scrapecreators',
+    bootstrapProviderId: 'scrapecreators-stt',
+    configKey: 'scrapecreatorsStt',
+    runtimeModelsKey: 'scrapecreatorsSttModels',
+    runtimeModelKey: 'scrapecreatorsSttModel',
+    supportedModels: SUPPORTED_SCRAPECREATORS_STT_MODELS,
+    validateModel: validateScrapeCreatorsSttModel,
+    description: buildModelDescription('ScrapeCreators YouTube transcript retrieval mode', SUPPORTED_SCRAPECREATORS_STT_MODELS)
   }),
   modelProvider({
     step: 'stt',

@@ -284,6 +284,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
     expect(resolveCheapestModelForFlag('supadata-stt')).toBe('auto')
+    expect(resolveCheapestModelForFlag('scrapecreators-stt')).toBe('youtube-transcript')
     expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
@@ -732,7 +733,7 @@ describe('price mode contracts', () => {
 
     const platformAuto = computeEstimatedCosts({
       applyCostMultipliers: false,
-      sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      sourceUrl: 'https://www.youtube.com/watch?v=MORMZXEaONk',
       audioDurationSeconds,
       sttTargets: [{ service: 'supadata', model: 'auto' }]
     })
@@ -759,6 +760,52 @@ describe('price mode contracts', () => {
     })
     expect(actual.steps[0]?.cost).toBeCloseTo(expectedCredits)
     expect(actual.steps[0]?.inputValue).toBeCloseTo(expectedCredits)
+  })
+
+  test('ScrapeCreators STT estimates and actuals use a fixed one-credit request', () => {
+    const audioDurationSeconds = 9999
+    const estimated = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      audioDurationSeconds,
+      sttTargets: [
+        { service: 'scrapecreators', model: 'youtube-transcript' }
+      ]
+    })
+
+    expect(estimated.steps[0]).toMatchObject({
+      step: 'stt',
+      provider: 'scrapecreators',
+      model: 'youtube-transcript',
+      cost: 0.188,
+      durationSeconds: 0
+    })
+    expect(estimated.totalCost).toBe(0.188)
+
+    const actual = computeActualCosts({
+      step1: buildHostedStep1(),
+      step2: buildSttMetadata({
+        transcriptionService: 'scrapecreators',
+        transcriptionModel: 'youtube-transcript',
+        billing: {
+          creditsUsed: 1,
+          creditRateCents: 0.188,
+          totalCost: 0.188,
+          source: 'fallback-estimate',
+          mode: 'url'
+        }
+      }),
+      audioDurationSeconds
+    })
+
+    expect(actual.steps[0]).toMatchObject({
+      step: 'stt',
+      provider: 'scrapecreators',
+      model: 'youtube-transcript',
+      cost: 0.188,
+      inputMetric: 'credits',
+      inputValue: 1
+    })
+    expect(actual.totalCost).toBe(0.188)
   })
 
   test('Gemini music estimates use per-song Lyria 3 pricing', () => {

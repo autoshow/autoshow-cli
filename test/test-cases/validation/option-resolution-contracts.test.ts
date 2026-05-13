@@ -64,6 +64,8 @@ describe('option resolution contracts', () => {
       'grok-stt': 'speech-to-text',
       'together-stt': 'openai/whisper-large-v3',
       'deepgram-stt': 'nova-3',
+      'scrapecreators-stt': 'youtube-transcript',
+      'scrapecreators-lang': 'fr',
       'grok-tts': 'grok-tts',
       'grok-tts-voice': 'EVE',
       'mistral-tts': 'voxtral-mini-tts-2603',
@@ -104,6 +106,8 @@ describe('option resolution contracts', () => {
     expect(opts.grokSttModel).toBe('speech-to-text')
     expect(opts.togetherSttModel).toBe('openai/whisper-large-v3')
     expect(opts.deepgramSttModel).toBe('nova-3')
+    expect(opts.scrapecreatorsSttModel).toBe('youtube-transcript')
+    expect(opts.scrapecreatorsLang).toBe('fr')
     expect(opts.grokTtsModel).toBe('grok-tts')
     expect(opts.grokTtsVoice).toBe('eve')
     expect(opts.mistralTtsModel).toBe('voxtral-mini-tts-2603')
@@ -288,6 +292,7 @@ describe('option resolution contracts', () => {
     const glmDefault = resolveCheapestModelForFlag('glm')
     const kimiDefault = resolveCheapestModelForFlag('kimi')
     const deepgramDefault = resolveCheapestModelForFlag('deepgram-stt')
+    const scrapeCreatorsDefault = resolveCheapestModelForFlag('scrapecreators-stt')
     const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
     const kimiOcrDefault = resolveCheapestModelForFlag('kimi-ocr')
     const speechifyTtsDefault = resolveCheapestModelForFlag('speechify-tts')
@@ -297,6 +302,7 @@ describe('option resolution contracts', () => {
       glm: true,
       kimi: true,
       'deepgram-stt': true,
+      'scrapecreators-stt': true,
       'deepinfra-ocr': true,
       'kimi-ocr': true,
       'speechify-tts': true,
@@ -307,6 +313,7 @@ describe('option resolution contracts', () => {
     expect(glmDefault).toBeDefined()
     expect(kimiDefault).toBe('kimi-k2.6')
     expect(deepgramDefault).toBeDefined()
+    expect(scrapeCreatorsDefault).toBe('youtube-transcript')
     expect(deepinfraOcrDefault).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
     expect(speechifyTtsDefault).toBe('simba-english')
@@ -315,6 +322,7 @@ describe('option resolution contracts', () => {
     expect(opts.glmModel).toBe(glmDefault)
     expect(opts.kimiModel).toBe(kimiDefault)
     expect(opts.deepgramSttModel).toBe(deepgramDefault)
+    expect(opts.scrapecreatorsSttModel).toBe(scrapeCreatorsDefault)
     expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
     expect(opts.kimiOcrModel).toBe(kimiOcrDefault)
     expect(opts.speechifyTtsModel).toBe(speechifyTtsDefault)
@@ -359,6 +367,7 @@ describe('option resolution contracts', () => {
     expect(expansions['deepgram-stt']?.shortcut).toBe('all-stt')
     expect(expansions['grok-stt']?.shortcut).toBe('all-stt')
     expect(expansions['openai-stt']?.shortcut).toBe('all-stt')
+    expect(expansions['scrapecreators-stt']).toBeUndefined()
     expect(expansions['cloudflare-stt']).toBeUndefined()
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['kimi-ocr']?.shortcut).toBe('all-ocr')
@@ -372,6 +381,7 @@ describe('option resolution contracts', () => {
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
+    expect(collectSttTargets(sttOpts).map((target) => target.service)).not.toContain('scrapecreators')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).not.toContain('cloudflare')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('whisper')
     const ocrTargets = collectExplicitOcrTargets(ocrOpts)

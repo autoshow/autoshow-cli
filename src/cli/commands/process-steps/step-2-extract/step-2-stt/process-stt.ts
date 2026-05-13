@@ -298,7 +298,11 @@ export const processStt = async (
       }
     }
 
-    if (requestedTargets.length === 1 && requestedTargets[0]?.service !== 'supadata') {
+    if (
+      requestedTargets.length === 1
+      && requestedTargets[0]?.service !== 'supadata'
+      && requestedTargets[0]?.service !== 'scrapecreators'
+    ) {
       const target = requestedTargets[0] as SttTarget
       const audioPath = resolveTargetAudioPath(target, preparedStepMedia)
       const audioDurationSeconds = preparedStepMedia.durationSeconds
@@ -309,7 +313,7 @@ export const processStt = async (
           sttSegmentConcurrency: options.sttSegmentConcurrency,
           audioDurationSeconds,
           sourceUrl: preparedStepMedia.step1Metadata.url,
-          language: options.supadataLang,
+          language: target.service === 'scrapecreators' ? options.scrapecreatorsLang : options.supadataLang,
           happyscribeOrganizationId: options.happyscribeOrganizationId,
           ...(mistralPassController ? { mistralPassController } : {})
         })
@@ -508,7 +512,7 @@ export const processStt = async (
             sttSegmentConcurrency: options.sttSegmentConcurrency,
             audioDurationSeconds: preparedMedia.durationSeconds,
             sourceUrl: preparedMedia.step1Metadata.url,
-            language: options.supadataLang,
+            language: target.service === 'scrapecreators' ? options.scrapecreatorsLang : options.supadataLang,
             happyscribeOrganizationId: options.happyscribeOrganizationId,
             runMode: runOptions.outputDir ? 'backfill' : 'initial',
             ...(mistralPassController ? { mistralPassController } : {}),

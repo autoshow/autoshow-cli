@@ -30,6 +30,7 @@ const toBootstrapProviderId = (
     case 'gladia':
     case 'happyscribe':
     case 'supadata':
+    case 'scrapecreators':
     case 'openai-stt':
     case 'gemini-stt':
     case 'glm-stt':

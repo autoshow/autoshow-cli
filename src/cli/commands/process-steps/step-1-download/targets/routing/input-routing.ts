@@ -60,6 +60,8 @@ export const resolveInputRoutingForCommand = async (
     | 'happyscribeSttModels'
     | 'supadataSttModel'
     | 'supadataSttModels'
+    | 'scrapecreatorsSttModel'
+    | 'scrapecreatorsSttModels'
     | 'useTesseract'
     | 'useOcrmypdf'
     | 'usePaddleOcr'

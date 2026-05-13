@@ -141,6 +141,8 @@ export type SttStep2ResolutionOptions = Pick<
   | 'happyscribeSttModels'
   | 'supadataSttModel'
   | 'supadataSttModels'
+  | 'scrapecreatorsSttModel'
+  | 'scrapecreatorsSttModels'
 >
 
 export type OcrStep2ResolutionOptions = Pick<

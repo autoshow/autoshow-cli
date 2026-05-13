@@ -37,6 +37,7 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'gladia',
   'happyscribe',
   'supadata',
+  'scrapecreators',
   'openai-stt',
   'gemini-stt',
   'glm-stt',

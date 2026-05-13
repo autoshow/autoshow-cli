@@ -255,7 +255,7 @@ The benchmark automatically detects which STT services are available based on en
 | gcloud        | `gcloud` CLI                |
 | aws           | `aws` CLI                   |
 
-Services that require URLs (`youtube-captions`, `supadata`) are excluded since the benchmark works with locally-generated audio files.
+Services that require URLs (`youtube-captions`, `supadata`, `scrapecreators`) are excluded since the benchmark works with locally-generated audio files.
 
 Use `--stt-services` to restrict to a subset (e.g., `--stt-services whisper,deepgram,groq`).
 

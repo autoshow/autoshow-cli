@@ -94,6 +94,7 @@ export const mergeConfigIntoRawFlags = (
     injectProviderGroup(STT_PROVIDER_FLAGS, resolveStep2ProviderDefaults(config, 'stt'))
     inject('happyscribe-organization-id', d.extract.stt.happyscribeOrganizationId)
     inject('supadata-lang', d.extract.stt.supadataLang)
+    inject('scrapecreators-lang', d.extract.stt.scrapecreatorsLang)
     inject('aws-region', d.extract.stt.awsRegion)
     inject('aws-bucket', d.extract.stt.awsBucket)
     inject('speaker-count', d.extract.stt.speakerCount)
@@ -253,6 +254,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'youtube-captions':  ['defaults', 'extract', 'stt', 'youtubeCaptions'],
   'happyscribe-organization-id': ['defaults', 'extract', 'stt', 'happyscribeOrganizationId'],
   'supadata-lang':     ['defaults', 'extract', 'stt', 'supadataLang'],
+  'scrapecreators-lang': ['defaults', 'extract', 'stt', 'scrapecreatorsLang'],
   'aws-region':        ['defaults', 'extract', 'stt', 'awsRegion'],
   'aws-bucket':        ['defaults', 'extract', 'stt', 'awsBucket'],
   'speaker-count':     ['defaults', 'extract', 'stt', 'speakerCount'],

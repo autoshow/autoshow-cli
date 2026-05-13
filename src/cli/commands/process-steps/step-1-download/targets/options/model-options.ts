@@ -26,6 +26,7 @@ import {
   validateGladiaSttModel,
   validateHappyscribeSttModel,
   validateSupadataSttModel,
+  validateScrapeCreatorsSttModel,
   validateOpenaiSttModel,
   validateGeminiSttModel,
   validateGlmSttModel,
@@ -128,6 +129,7 @@ export const readRuntimeModelOptions = (
   const gladiaSttModels = readValidatedMany('gladia-stt', validateGladiaSttModel)
   const happyscribeSttModels = readValidatedMany('happyscribe-stt', validateHappyscribeSttModel)
   const supadataSttModels = readValidatedMany('supadata-stt', validateSupadataSttModel)
+  const scrapecreatorsSttModels = readValidatedMany('scrapecreators-stt', validateScrapeCreatorsSttModel)
   const openaiSttModels = readValidatedMany('openai-stt', validateOpenaiSttModel)
   const geminiSttModels = readValidatedMany('gemini-stt', validateGeminiSttModel)
   const glmSttModels = readValidatedMany('glm-stt', validateGlmSttModel)
@@ -166,6 +168,7 @@ export const readRuntimeModelOptions = (
   const gladiaSttModel = first(gladiaSttModels)
   const happyscribeSttModel = first(happyscribeSttModels)
   const supadataSttModel = first(supadataSttModels)
+  const scrapecreatorsSttModel = first(scrapecreatorsSttModels)
   const openaiSttModel = first(openaiSttModels)
   const geminiSttModel = first(geminiSttModels)
   const glmSttModel = first(glmSttModels)
@@ -274,6 +277,8 @@ export const readRuntimeModelOptions = (
     happyscribeSttModel,
     supadataSttModels,
     supadataSttModel,
+    scrapecreatorsSttModels,
+    scrapecreatorsSttModel,
     openaiSttModels,
     openaiSttModel,
     geminiSttModels,

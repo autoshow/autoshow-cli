@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
+import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, ScrapecreatorsSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -77,6 +77,10 @@ export const SUPPORTED_SUPADATA_STT_MODELS = [
   'auto'
 ] as const satisfies readonly string[]
 
+export const SUPPORTED_SCRAPECREATORS_STT_MODELS = [
+  'youtube-transcript'
+] as const satisfies readonly string[]
+
 export const SUPPORTED_OPENAI_STT_MODELS = [
   'gpt-4o-mini-transcribe',
   'gpt-4o-transcribe'
@@ -111,6 +115,7 @@ export const validateAssemblyaiSttModel = createModelValidator<AssemblyaiSttMode
 export const validateGladiaSttModel = createModelValidator<GladiaSttModel>(SUPPORTED_GLADIA_STT_MODELS, 'gladia-stt')
 export const validateHappyscribeSttModel = createModelValidator<HappyscribeSttModel>(SUPPORTED_HAPPYSCRIBE_STT_MODELS, 'happyscribe-stt')
 export const validateSupadataSttModel = createModelValidator<SupadataSttModel>(SUPPORTED_SUPADATA_STT_MODELS, 'supadata-stt')
+export const validateScrapeCreatorsSttModel = createModelValidator<ScrapecreatorsSttModel>(SUPPORTED_SCRAPECREATORS_STT_MODELS, 'scrapecreators-stt')
 export const validateOpenaiSttModel = createModelValidator<OpenaiSttModel>(SUPPORTED_OPENAI_STT_MODELS, 'openai-stt')
 export const validateGeminiSttModel = createModelValidator<GeminiSttModel>(SUPPORTED_GEMINI_STT_MODELS, 'gemini-stt')
 export const validateGlmSttModel = createModelValidator<GlmSttModel>(SUPPORTED_GLM_STT_MODELS, 'glm-stt')

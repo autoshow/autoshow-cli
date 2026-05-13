@@ -81,6 +81,13 @@ test('extract rejects removed Supadata STT modes', async () => {
   )
 })
 
+test('extract rejects unsupported ScrapeCreators STT modes', async () => {
+  await expectUsageExit(
+    ['extract', 'https://www.youtube.com/watch?v=MORMZXEaONk', '--scrapecreators-stt', 'auto', '--price'],
+    'Invalid --scrapecreators-stt model "auto". Allowed values: youtube-transcript'
+  )
+})
+
 test('music lyric-video mode rejects missing audio or batch', async () => {
   await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
 })

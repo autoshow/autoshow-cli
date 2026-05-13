@@ -19,6 +19,7 @@ import {
   SUPPORTED_GROK_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
   SUPPORTED_HAPPYSCRIBE_STT_MODELS,
+  SUPPORTED_SCRAPECREATORS_STT_MODELS,
   SUPPORTED_MISTRAL_STT_MODELS,
   SUPPORTED_REV_STT_MODELS,
   SUPPORTED_SONIOX_STT_MODELS,
@@ -174,6 +175,7 @@ export type AssemblyaiSttModel = typeof SUPPORTED_ASSEMBLYAI_STT_MODELS[number]
 export type GladiaSttModel = typeof SUPPORTED_GLADIA_STT_MODELS[number]
 export type HappyscribeSttModel = typeof SUPPORTED_HAPPYSCRIBE_STT_MODELS[number]
 export type SupadataSttModel = typeof SUPPORTED_SUPADATA_STT_MODELS[number]
+export type ScrapecreatorsSttModel = typeof SUPPORTED_SCRAPECREATORS_STT_MODELS[number]
 export type OpenaiSttModel = typeof SUPPORTED_OPENAI_STT_MODELS[number]
 export type GeminiSttModel = typeof SUPPORTED_GEMINI_STT_MODELS[number]
 export type GlmSttModel = typeof SUPPORTED_GLM_STT_MODELS[number]

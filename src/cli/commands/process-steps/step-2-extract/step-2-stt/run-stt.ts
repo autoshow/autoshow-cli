@@ -29,6 +29,8 @@ import { runHappyScribeStt } from './stt-services/happyscribe/run-happyscribe-st
 import { isDeapiSupportedSourceUrl } from './stt-services/deapi/deapi'
 import { isSupadataSupportedSourceUrl } from './stt-services/supadata/supadata'
 import { runSupadataStt } from './stt-services/supadata/run-supadata-stt'
+import { isScrapeCreatorsSupportedSourceUrl } from './stt-services/scrapecreators/scrapecreators'
+import { runScrapeCreatorsStt } from './stt-services/scrapecreators/run-scrapecreators-stt'
 import { runOpenaiStt } from './stt-services/openai-stt/run-openai-stt'
 import { runGeminiStt } from './stt-services/gemini-stt/run-gemini-stt'
 import { runGlmStt } from './stt-services/glm-stt/run-glm-stt'
@@ -477,6 +479,17 @@ const dispatchStt = async (
     })
   }
 
+  if (target.service === 'scrapecreators') {
+    return await runScrapeCreatorsStt(audioPath, outputDir, {
+      model: target.model,
+      sourceUrl: options.sourceUrl,
+      language: options.language,
+      segmentOffsetMinutes,
+      segmentNumber,
+      totalSegments
+    })
+  }
+
   if (target.service === 'openai-stt') {
     return await runOpenaiStt(audioPath, outputDir, {
       model: target.model,
@@ -797,6 +810,10 @@ export const sttTarget = async (
     return await dispatchStt(target, audioPath, outputDir, 0, options)
   }
 
+  if (target.service === 'scrapecreators' && !isScrapeCreatorsSupportedSourceUrl(options.sourceUrl)) {
+    return await dispatchStt(target, audioPath, outputDir, 0, options)
+  }
+
   await ensureSttTargetSetup(target)
   const effectiveOptions = target.service === 'mistral' && options.mistralPassController === undefined
     ? {
@@ -806,6 +823,12 @@ export const sttTarget = async (
     : options
 
   if (target.service === 'supadata') {
+    const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
+    await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
+    return transcription
+  }
+
+  if (target.service === 'scrapecreators') {
     const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
     await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
     return transcription
@@ -885,7 +908,9 @@ export const stt = async (
     sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,
     audioDurationSeconds: (options as ProcessingOptions & { audioDurationSeconds?: number }).audioDurationSeconds,
     sourceUrl: options.url,
-    language: (options as ProcessingOptions & { supadataLang?: string }).supadataLang,
+    language: target.service === 'scrapecreators'
+      ? (options as ProcessingOptions & { scrapecreatorsLang?: string }).scrapecreatorsLang
+      : (options as ProcessingOptions & { supadataLang?: string }).supadataLang,
     happyscribeOrganizationId: (options as ProcessingOptions & { happyscribeOrganizationId?: string }).happyscribeOrganizationId,
     runMode: 'initial'
   })

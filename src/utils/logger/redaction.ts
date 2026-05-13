@@ -22,6 +22,7 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
   'gladia-api-key',
   'happyscribe-api-key',
   'supadata-api-key',
+  'scrapecreators-api-key',
   'elevenlabs-api-key',
   'minimax-api-key',
   'gcloud-tts-voice-cloning-key',

@@ -44,6 +44,8 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--all-stt')
   expect(result.stdout).toContain('--all-ocr')
   expect(result.stdout).toContain('--grok-stt')
+  expect(result.stdout).toContain('--scrapecreators-stt')
+  expect(result.stdout).toContain('--scrapecreators-lang')
   expect(result.stdout).not.toContain('--cloudflare-stt')
   expect(result.stdout).toContain('--ocr-provider-concurrency')
   expect(result.stdout).toContain('--ocr-local-concurrency')

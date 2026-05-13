@@ -225,6 +225,7 @@ export type RepeatableModelFlag =
   | 'gladia-stt'
   | 'happyscribe-stt'
   | 'supadata-stt'
+  | 'scrapecreators-stt'
   | 'openai-stt'
   | 'gemini-stt'
   | 'glm-stt'

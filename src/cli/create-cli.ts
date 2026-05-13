@@ -64,7 +64,8 @@ const cliErrorHandler = (error: unknown): void => {
     'REVAI_ACCESS_TOKEN': 'Set REVAI_ACCESS_TOKEN environment variable to use Rev transcription',
     'GLADIA_API_KEY': 'Set GLADIA_API_KEY environment variable to use Gladia transcription',
     'HAPPYSCRIBE_API_KEY': 'Set HAPPYSCRIBE_API_KEY environment variable to use Happy Scribe transcription',
-    'SUPADATA_API_KEY': 'Set SUPADATA_API_KEY environment variable to use Supadata transcription'
+    'SUPADATA_API_KEY': 'Set SUPADATA_API_KEY environment variable to use Supadata transcription',
+    'SCRAPECREATORS_API_KEY': 'Set SCRAPECREATORS_API_KEY environment variable to use ScrapeCreators YouTube transcript retrieval'
   }
 
   if (error instanceof Error) {

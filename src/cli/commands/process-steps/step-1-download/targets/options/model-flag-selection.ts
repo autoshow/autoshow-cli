@@ -67,6 +67,7 @@ export const REPEATABLE_MODEL_FLAGS = [
   'gladia-stt',
   'happyscribe-stt',
   'supadata-stt',
+  'scrapecreators-stt',
   'openai-stt',
   'gemini-stt',
   'glm-stt',

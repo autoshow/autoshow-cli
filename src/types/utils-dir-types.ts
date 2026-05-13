@@ -22,6 +22,7 @@ export type {
   GladiaSttModel,
   HappyscribeSttModel,
   SupadataSttModel,
+  ScrapecreatorsSttModel,
   MistralOcrModel,
   GlmOcrModel,
   KimiOcrModel,

@@ -17,6 +17,7 @@ import { ensureTogetherSttSetup } from '~/cli/commands/process-steps/step-2-extr
 import { ensureRevSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/rev/rev'
 import { ensureSonioxSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/soniox/soniox'
 import { ensureSupadataSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
+import { ensureScrapeCreatorsSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/scrapecreators/scrapecreators'
 import { ensureSpeechmaticsSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/speechmatics/speechmatics'
 import { ensureReverbRuntimeSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb'
 import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/whisper'
@@ -116,6 +117,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'supadata-stt': {
     ensure: async () => await ensureSupadataSttSetup()
+  },
+  'scrapecreators-stt': {
+    ensure: async () => await ensureScrapeCreatorsSttSetup()
   },
   'openai-stt': {
     ensure: async () => await ensureOpenaiSttSetup()

@@ -74,6 +74,11 @@ export const transcriptionFlags = {
     description: 'Supadata preferred transcript language (ISO 639-1); used with auto mode when a native transcript is available',
     type: String
   },
+  'scrapecreators-lang': {
+    description: 'ScrapeCreators YouTube transcript language code (default en)',
+    type: String,
+    default: 'en'
+  },
   'speaker-count': {
     description: 'Optional diarization speaker-count hint for supported STT services; unsupported providers report one aggregated warning at runtime',
     type: String

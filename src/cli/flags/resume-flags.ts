@@ -34,6 +34,7 @@ const resumeSttFlags = pickFlags(transcriptionFlags, [
   'aws-bucket',
   'happyscribe-organization-id',
   'supadata-lang',
+  'scrapecreators-lang',
   'speaker-count',
   'split',
   'stt-provider-concurrency',

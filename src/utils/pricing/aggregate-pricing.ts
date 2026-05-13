@@ -3,6 +3,7 @@ import { isExtractCommand } from '~/cli/commands/process-steps/process-command-k
 import { resolveInputRoutingForCommand } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import { SUPADATA_STT_AGGREGATE_NOTE } from '~/utils/pricing/supadata-pricing'
+import { SCRAPECREATORS_STT_AGGREGATE_NOTE } from '~/utils/pricing/scrapecreators-pricing'
 import { buildArticleEstimates } from './aggregate-pricing/article-estimates'
 import { buildExtractEstimates } from './aggregate-pricing/extract-estimates'
 import { buildImageEstimates, buildMusicEstimates, buildVideoEstimates } from './aggregate-pricing/generation-estimates'
@@ -123,6 +124,10 @@ export const buildAggregatedPriceEstimate = async (
 
   if (steps.some((step) => step.step === 'stt' && step.provider === 'supadata')) {
     notes.push(SUPADATA_STT_AGGREGATE_NOTE)
+  }
+
+  if (steps.some((step) => step.step === 'stt' && step.provider === 'scrapecreators')) {
+    notes.push(SCRAPECREATORS_STT_AGGREGATE_NOTE)
   }
 
   const timing = buildAggregateTiming(steps, ttsTimingCharacterCount)

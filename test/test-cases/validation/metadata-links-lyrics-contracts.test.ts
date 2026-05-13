@@ -201,6 +201,26 @@ const FIRECRAWL_URL_LINKS = [
   'https://docs.firecrawl.dev/api-reference/endpoint/batch-scrape-get-errors.md'
 ]
 
+const SPIDER_GENERAL_LINKS = [
+  'https://spider.cloud/docs/overview',
+  'https://spider.cloud/api-keys',
+  'https://spider.cloud/docs/api',
+  'https://spider.cloud/docs/quickstart',
+  'https://spider.cloud/docs/concepts',
+  'https://spider.cloud/docs/core/authentication',
+  'https://spider.cloud/docs/core/rate-limits',
+  'https://spider.cloud/docs/core/error-codes',
+  'https://spider.cloud/docs/core/reliability'
+]
+
+const SPIDER_URL_LINKS = [
+  'https://spider.cloud/docs/core/scraping-crawling',
+  'https://spider.cloud/docs/core/efficient-scraping',
+  'https://spider.cloud/docs/core/spider-browser',
+  'https://spider.cloud/docs/advanced/json-scraping',
+  'https://spider.cloud/docs/guides/recipes'
+]
+
 const KIMI_GENERAL_LINKS = [
   'https://platform.kimi.ai/docs/overview.md',
   'https://platform.kimi.ai/docs/api/models-overview.md',
@@ -791,7 +811,7 @@ test('links selector accepts glm provider with separate ocr and url sections', (
   expect(collectLinks(
     globalUrlSelection.serviceSelections,
     globalUrlSelection.globalSections
-  )).toEqual([...GLM_URL_LINKS, ...X_URL_LINKS, ...SCRAPECREATORS_URL_LINKS, ...ZYTE_URL_LINKS, ...FIRECRAWL_URL_LINKS])
+  )).toEqual([...GLM_URL_LINKS, ...X_URL_LINKS, ...SCRAPECREATORS_URL_LINKS, ...ZYTE_URL_LINKS, ...FIRECRAWL_URL_LINKS, ...SPIDER_URL_LINKS])
 })
 
 test('links selector accepts x provider with general and url sections', () => {
@@ -993,6 +1013,55 @@ test('links selector accepts firecrawl provider with general and url sections', 
     '--firecrawl',
     'tts'
   ])).rejects.toThrow('Unknown links section(s) for --firecrawl: tts')
+})
+
+test('links selector accepts spider provider with general and url sections', async () => {
+  const spiderSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--spider'
+  ])
+
+  expect(spiderSelection.serviceSelections.get('spider')).toEqual([])
+  expect(collectLinks(
+    spiderSelection.serviceSelections,
+    spiderSelection.globalSections
+  )).toEqual([...SPIDER_GENERAL_LINKS, ...SPIDER_URL_LINKS])
+
+  const spiderGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--spider',
+    'general'
+  ])
+
+  expect(collectLinks(
+    spiderGeneralSelection.serviceSelections,
+    spiderGeneralSelection.globalSections
+  )).toEqual(SPIDER_GENERAL_LINKS)
+
+  const spiderUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--spider',
+    'url'
+  ])
+
+  expect(collectLinks(
+    spiderUrlSelection.serviceSelections,
+    spiderUrlSelection.globalSections
+  )).toEqual(SPIDER_URL_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--spider',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --spider: tts')
 })
 
 test('links selector accepts kimi provider with general text and ocr sections', async () => {
