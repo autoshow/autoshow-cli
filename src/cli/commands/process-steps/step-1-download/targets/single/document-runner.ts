@@ -5,7 +5,7 @@ import { ensureDirectory } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { downloadDocument, prepareDocumentMetadata } from '~/cli/commands/process-steps/step-1-download/document/dl-document'
-import { prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
+import { getHtmlArticleBackendDisplayName, prepareHtmlArticle } from '~/cli/commands/process-steps/step-1-download/document/prepare-html-article'
 import { processOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import type { AggregatedPriceEstimate, BatchChildRunContext, BatchItemProcessResult, PreparedDocument, RuntimeOptions, Step1SourceRef } from '~/types'
@@ -17,10 +17,8 @@ const warnHtmlArticleFlagBehavior = (target: string, opts: RuntimeOptions, backe
   if (hasConfiguredOcrProviderSelection(opts)) {
     l.warn(formatHtmlArticleOcrFlagsIgnoredWarning(target))
   }
-  if (backend === 'firecrawl') {
-    l.write('info', 'Article extraction backend: firecrawl')
-  } else if (backend === 'glm-reader') {
-    l.write('info', 'Article extraction backend: glm-reader')
+  if (backend && backend !== 'defuddle') {
+    l.write('info', `Article extraction backend: ${getHtmlArticleBackendDisplayName(backend)}`)
   }
 }
 

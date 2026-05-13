@@ -7,7 +7,7 @@ export type DetectResult =
   | 'html'
   | null
 
-export type HtmlArticleBackend = 'defuddle' | 'firecrawl' | 'glm-reader'
+export type HtmlArticleBackend = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
 
 export type WebArticleMetadata = {
   sourceUrl?: string
@@ -74,7 +74,8 @@ export const ExtractionOptionsSchema = v.object({
     v.picklist(['default', 'explicit', 'all-shortcut'])
   ), undefined),
   preparedMarkdown: v.optional(v.string(), undefined),
-  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader']), undefined)
+  htmlArticleProcessingTimeMs: v.optional(v.number(), undefined),
+  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader', 'spider', 'zyte']), undefined)
 })
 
 export const PageResultSchema = v.object({
@@ -128,7 +129,7 @@ export const ExtractionMetadataSchema = v.object({
     'deepinfra-ocr',
     'aws-textract',
     'gcloud-docai',
-    'html+defuddle', 'html+firecrawl', 'html+glm-reader'
+    'html+defuddle', 'html+firecrawl', 'html+glm-reader', 'html+spider', 'html+zyte'
   ]),
   totalPages: v.number(),
   ocrPages: v.number(),
@@ -182,6 +183,7 @@ export type PreparedDocument = {
   effectiveFilePath?: string
   tempCleanup?: () => Promise<void>
   preparedMarkdown?: string
+  htmlArticleProcessingTimeMs?: number
   htmlArticleBackend?: HtmlArticleBackend
   web?: WebArticleMetadata
 }

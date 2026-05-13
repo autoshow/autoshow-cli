@@ -13,6 +13,17 @@ import {
   tryFetchRemoteHtml,
   type UrlArticleRunResult
 } from '../../url-utils'
+import {
+  assertUrlArticleOptionsSupported,
+  type UrlArticleProviderAdapter,
+  type UrlArticleRunOptions
+} from '../../url-provider-adapter'
+
+const GLM_READER_CAPABILITIES = [
+  'remote-html',
+  'main-content',
+  'timeout'
+] as const
 
 const GlmReaderResponseSchema = v.looseObject({
   reader_result: v.looseObject({
@@ -24,8 +35,14 @@ const GlmReaderResponseSchema = v.looseObject({
 })
 
 const runGlmReader = async (
-  source: string
+  source: string,
+  options?: UrlArticleRunOptions
 ): Promise<{ preparedMarkdown: string, web: WebArticleMetadata }> => {
+  assertUrlArticleOptionsSupported({
+    displayName: 'GLM Reader',
+    capabilities: GLM_READER_CAPABILITIES
+  }, options)
+
   const apiKey = ensureGlmApiKey('GLM Reader')
   const response = await fetch(`${resolveGlmBaseUrl()}/reader`, {
     method: 'POST',
@@ -36,13 +53,13 @@ const runGlmReader = async (
     body: JSON.stringify({
       url: source,
       return_format: 'markdown',
-      timeout: 20,
       no_cache: false,
       retain_images: false,
       no_gfm: false,
       keep_img_data_url: false,
       with_images_summary: false,
-      with_links_summary: false
+      with_links_summary: false,
+      timeout: typeof options?.timeoutMs === 'number' ? Math.ceil(options.timeoutMs / 1000) : 20
     })
   })
 
@@ -84,10 +101,11 @@ const runGlmReader = async (
 
 export const runGlmReaderUrl = async (
   source: string,
-  sourceUrl: string | undefined
+  sourceUrl: string | undefined,
+  options?: UrlArticleRunOptions
 ): Promise<UrlArticleRunResult> => {
   l.write('info', 'Using GLM Reader backend for article extraction')
-  const glmResult = await runGlmReader(source)
+  const glmResult = await runGlmReader(source, options)
   const htmlFallback = await tryFetchRemoteHtml(source)
 
   const markdown = ensureMeaningfulMarkdown(glmResult.preparedMarkdown, 'glm-reader')
@@ -100,4 +118,11 @@ export const runGlmReaderUrl = async (
     fileSize: htmlFallback?.fileSize ?? byteLength(markdown),
     title: glmResult.web.title ?? fallbackTitleFromSource(source)
   }
+}
+
+export const glmReaderArticleAdapter: UrlArticleProviderAdapter = {
+  id: 'glm-reader',
+  displayName: 'GLM Reader',
+  capabilities: GLM_READER_CAPABILITIES,
+  run: runGlmReaderUrl
 }

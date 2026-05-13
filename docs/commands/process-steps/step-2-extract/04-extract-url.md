@@ -11,6 +11,8 @@ Remote article URLs and local HTML files use article extraction, while X/Twitter
   - [Defuddle](#defuddle)
   - [Firecrawl](#firecrawl)
   - [GLM Reader](#glm-reader)
+  - [Spider](#spider)
+  - [Zyte](#zyte)
 - [URL Notes](#url-notes)
 - [X Space Path](#x-space-path)
   - [X API](#x-api)
@@ -28,10 +30,10 @@ Article-style HTML inputs route through article extraction rather than OCR provi
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| Remote article URL | `html+defuddle` | `--url-backend firecrawl` or `--url-backend glm-reader` |
+| Remote article URL | `html+defuddle` | `--url-backend firecrawl`, `--url-backend glm-reader`, `--url-backend spider`, or `--url-backend zyte` |
 | Local `.html` / `.htm` | `html+defuddle` | Hosted article backends are ignored with a warning |
 
-OCR engine flags do not apply to article extraction. If `defuddle` cannot extract meaningful content from a remote URL, the command suggests retrying with `--url-backend firecrawl`.
+OCR engine flags do not apply to article extraction. If `defuddle` cannot extract meaningful content from a remote URL, the command suggests retrying with a remote backend such as `--url-backend firecrawl`, `--url-backend spider`, or `--url-backend zyte`.
 
 ## URL Environment
 
@@ -42,18 +44,26 @@ GLM_API_KEY=...
 ZAI_BASE_URL=https://api.z.ai/api/paas/v4
 FIRECRAWL_API_KEY=...
 FIRECRAWL_API_URL=http://localhost:3002
+SPIDER_API_KEY=...
+SPIDER_API_URL=https://api.spider.cloud
+ZYTE_API_KEY=...
+ZYTE_API_URL=https://api.zyte.com
 AUTOSHOW_URL_BACKEND=firecrawl
 # or
 AUTOSHOW_URL_BACKEND=glm-reader
+# or
+AUTOSHOW_URL_BACKEND=spider
+# or
+AUTOSHOW_URL_BACKEND=zyte
 ```
 
-`FIRECRAWL_API_KEY` is optional when `FIRECRAWL_API_URL` points at a self-hosted Firecrawl instance.
+`FIRECRAWL_API_KEY`, `SPIDER_API_KEY`, and `ZYTE_API_KEY` are required for the hosted APIs. Their matching `*_API_URL` variables can point at compatible local or mock endpoints for development.
 
 ## Shared URL Options
 
 | Flag | Description |
 |------|-------------|
-| `--url-backend <backend>` | Article backend for remote article URLs: `defuddle`, `firecrawl`, or `glm-reader` |
+| `--url-backend <backend>` | Article backend for remote article URLs: `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` |
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
@@ -90,6 +100,7 @@ Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend i
 | Inputs | Remote article URLs |
 | Required env | `FIRECRAWL_API_KEY` unless `FIRECRAWL_API_URL` points at a self-hosted instance |
 | Optional env | `FIRECRAWL_API_URL` |
+| Endpoint | `POST /v2/scrape` |
 
 ```bash
 bun as extract https://ajcwebdev.com --url-backend firecrawl
@@ -108,11 +119,39 @@ bun as extract https://ajcwebdev.com --url-backend firecrawl
 bun as extract https://ajcwebdev.com --url-backend glm-reader
 ```
 
+### Spider
+
+| Option | Value |
+|--------|-------|
+| Selector | `--url-backend spider` |
+| Inputs | Remote article URLs |
+| Required env | `SPIDER_API_KEY` unless `SPIDER_API_URL` points at a compatible mock endpoint |
+| Optional env | `SPIDER_API_URL` |
+| Endpoint | `POST /scrape` with `return_format: "markdown"` |
+
+```bash
+bun as extract https://ajcwebdev.com --url-backend spider
+```
+
+### Zyte
+
+| Option | Value |
+|--------|-------|
+| Selector | `--url-backend zyte` |
+| Inputs | Remote article URLs |
+| Required env | `ZYTE_API_KEY` unless `ZYTE_API_URL` points at a compatible mock endpoint |
+| Optional env | `ZYTE_API_URL` |
+| Endpoint | `POST /v1/extract` with `article: true` |
+
+```bash
+bun as extract https://ajcwebdev.com --url-backend zyte
+```
+
 ## URL Notes
 
-- Remote article URLs use `defuddle` unless you pass `--url-backend firecrawl`, `--url-backend glm-reader`, or set `AUTOSHOW_URL_BACKEND`.
+- Remote article URLs use `defuddle` unless you pass `--url-backend firecrawl`, `--url-backend glm-reader`, `--url-backend spider`, `--url-backend zyte`, or set `AUTOSHOW_URL_BACKEND`.
 - OCR engine flags do not apply to article extraction.
-- No numeric Firecrawl file-size/page-count caps were found in `project/links/all-all-links.md`, so this CLI does not enforce any new numeric limits for that backend from that source.
+- Public URL flags are intentionally generic. Provider-specific browser actions, crawl/map/search, screenshots, and structured extraction controls are not exposed as article flags yet.
 
 ## X Space Path
 

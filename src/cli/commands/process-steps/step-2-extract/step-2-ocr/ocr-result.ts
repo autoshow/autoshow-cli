@@ -53,6 +53,12 @@ export const buildOcrOutput = (
     : input.pages.length > 0
       ? input.pages.length
       : input.step1Metadata.pageCount
+  const localProcessingTime = Date.now() - input.start
+  const processingTime = typeof input.opts.preparedMarkdown === 'string'
+    && input.opts.preparedMarkdown.trim().length > 0
+    && typeof input.opts.htmlArticleProcessingTimeMs === 'number'
+    ? input.opts.htmlArticleProcessingTimeMs + localProcessingTime
+    : localProcessingTime
 
   const result = validateData(ExtractionResultSchema, {
     text,
@@ -67,7 +73,7 @@ export const buildOcrOutput = (
     totalPages,
     ocrPages,
     textPages,
-    processingTime: Date.now() - input.start,
+    processingTime,
     dpi: input.opts.dpi,
     languages: input.opts.languages,
     tokenEstimate: estimateTokens(result.text)

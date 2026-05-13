@@ -10,9 +10,7 @@ import {
   type HtmlArticleBackend,
   type PreparedDocument
 } from '~/types'
-import { runDefuddleUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/run-defuddle-url'
-import { runFirecrawlUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/firecrawl/run-firecrawl-url'
-import { runGlmReaderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/glm-reader/run-glm-reader-url'
+import { getUrlArticleProviderAdapter, runUrlArticleProvider } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
 import {
   fallbackTitleFromSource,
   formatErrorMessage,
@@ -66,25 +64,24 @@ export async function prepareHtmlArticle(
   let resolvedBackend = backend
 
   if (!remote) {
-    if (backend === 'firecrawl') {
-      l.warn('Ignoring --url-backend firecrawl for local HTML inputs; using defuddle instead')
-    } else if (backend === 'glm-reader') {
-      l.warn('Ignoring --url-backend glm-reader for local HTML inputs; using defuddle instead')
+    if (backend !== 'defuddle') {
+      l.warn(`Ignoring --url-backend ${backend} for local HTML inputs; using defuddle instead`)
     }
     resolvedBackend = 'defuddle'
   }
 
   const sourceUrl = remote ? source : undefined
+  const articleStartedAt = Date.now()
   let article: UrlArticleRunResult
 
   if (resolvedBackend === 'defuddle') {
     if (remote) {
       try {
-        article = await runDefuddleUrl(source, sourceUrl)
+        article = await runUrlArticleProvider('defuddle', source, sourceUrl)
       } catch (defuddleError) {
         l.warn(`Defuddle article extraction failed; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
         try {
-          article = await runFirecrawlUrl(source, sourceUrl)
+          article = await runUrlArticleProvider('firecrawl', source, sourceUrl)
           resolvedBackend = 'firecrawl'
         } catch (firecrawlError) {
           throw new Error(
@@ -94,13 +91,12 @@ export async function prepareHtmlArticle(
         }
       }
     } else {
-      article = await runDefuddleUrl(source)
+      article = await runUrlArticleProvider('defuddle', source, undefined)
     }
-  } else if (resolvedBackend === 'firecrawl') {
-    article = await runFirecrawlUrl(source, sourceUrl)
   } else {
-    article = await runGlmReaderUrl(source, sourceUrl)
+    article = await runUrlArticleProvider(resolvedBackend, source, sourceUrl)
   }
+  const htmlArticleProcessingTimeMs = Date.now() - articleStartedAt
 
   const step1Title = article.title ?? fallbackTitleFromSource(source)
   const step1Slug = buildArticleSlug(remote ? (article.web.finalUrl ?? source) : source, step1Title)
@@ -125,7 +121,11 @@ export async function prepareHtmlArticle(
     outputDir: preparedOutputDir,
     step1Metadata,
     preparedMarkdown: article.markdown,
+    htmlArticleProcessingTimeMs,
     htmlArticleBackend: resolvedBackend,
     web: article.web
   }
 }
+
+export const getHtmlArticleBackendDisplayName = (backend: HtmlArticleBackend): string =>
+  getUrlArticleProviderAdapter(backend).displayName

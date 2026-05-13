@@ -182,12 +182,18 @@ export const ensureMeaningfulMarkdown = (
   if (backend === 'defuddle') {
     throw new Error(
       'Defuddle could not extract meaningful article content. ' +
-      'The page may require client-side rendering. Retry with --url-backend firecrawl.'
+      'The page may require client-side rendering. Retry with a remote --url-backend such as firecrawl, spider, or zyte.'
     )
   }
 
   if (backend === 'glm-reader') {
     throw new Error('GLM Reader returned empty article markdown.')
+  }
+  if (backend === 'spider') {
+    throw new Error('Spider returned empty article markdown.')
+  }
+  if (backend === 'zyte') {
+    throw new Error('Zyte returned empty article markdown.')
   }
 
   throw new Error('Firecrawl returned empty article markdown.')

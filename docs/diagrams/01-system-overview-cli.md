@@ -163,7 +163,7 @@ src/cli/flags/
 │  ├── --aws-textract MODEL AWS Textract                     │
 │  ├── --gcloud-docai MODEL Google Cloud Document AI         │
 │  ├── --primary-ocr NAME  top-level artifact provider       │
-│  └── --url-backend NAME  defuddle|firecrawl|glm-reader     │
+│  └── --url-backend NAME  defuddle|firecrawl|glm-reader|spider|zyte │
 │                                                            │
 │  advancedExtractFlags                                      │
 │  ├── --dpi NUMBER        Render DPI (default: 300)         │

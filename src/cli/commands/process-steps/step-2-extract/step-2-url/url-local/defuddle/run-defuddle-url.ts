@@ -16,6 +16,17 @@ import {
   readLocalHtml,
   type UrlArticleRunResult
 } from '../../url-utils'
+import {
+  assertUrlArticleOptionsSupported,
+  type UrlArticleProviderAdapter,
+  type UrlArticleRunOptions
+} from '../../url-provider-adapter'
+
+const DEFUDDLE_CAPABILITIES = [
+  'local-html',
+  'remote-html',
+  'main-content'
+] as const
 
 export const extractHtmlToMarkdown = async (
   input: ExtractHtmlToMarkdownInput
@@ -69,8 +80,14 @@ const buildDefuddleWebMetadata = (
 
 export const runDefuddleUrl = async (
   source: string,
-  sourceUrl?: string
+  sourceUrl?: string,
+  options?: UrlArticleRunOptions
 ): Promise<UrlArticleRunResult> => {
+  assertUrlArticleOptionsSupported({
+    displayName: 'Defuddle',
+    capabilities: DEFUDDLE_CAPABILITIES
+  }, options)
+
   if (isRemoteSource(source)) {
     const htmlInput = await fetchRemoteHtml(source)
     const extracted = await extractHtmlToMarkdown({
@@ -102,4 +119,11 @@ export const runDefuddleUrl = async (
     title: extracted.title ?? fallbackTitleFromSource(source),
     ...(extracted.author ? { author: extracted.author } : {})
   }
+}
+
+export const defuddleArticleAdapter: UrlArticleProviderAdapter = {
+  id: 'defuddle',
+  displayName: 'Defuddle',
+  capabilities: DEFUDDLE_CAPABILITIES,
+  run: runDefuddleUrl
 }

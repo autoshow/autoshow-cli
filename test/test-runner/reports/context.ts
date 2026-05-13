@@ -191,6 +191,10 @@ const buildPairsFromMetricArgs = (metric: ParsedCommandMetric): ServiceModelPair
         pushPair(pairs, 'extract', 'firecrawl', 'firecrawl')
       } else if (next === 'glm-reader') {
         pushPair(pairs, 'extract', 'glm', 'glm-reader')
+      } else if (next === 'spider') {
+        pushPair(pairs, 'extract', 'spider', 'spider')
+      } else if (next === 'zyte') {
+        pushPair(pairs, 'extract', 'zyte', 'zyte')
       }
       continue
     }

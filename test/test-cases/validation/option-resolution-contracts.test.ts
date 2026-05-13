@@ -187,6 +187,14 @@ describe('option resolution contracts', () => {
     expect(canonicalFlags.deepinfraOcrModel).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
   })
 
+  test('buildOptsFromFlags accepts URL article backend names', () => {
+    for (const backend of ['defuddle', 'firecrawl', 'glm-reader', 'spider', 'zyte'] as const) {
+      const opts = buildOptsFromFlags(false, { 'url-backend': backend })
+      expect(opts.urlBackend).toBe(backend)
+      expect(opts.urlBackendExplicit).toBe(true)
+    }
+  })
+
   test('OCR provider concurrency defaults, falls back, and clamps like STT concurrency flags', () => {
     const defaults = buildOptsFromFlags(false, {})
     const fallback = buildOptsFromFlags(false, {

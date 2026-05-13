@@ -1,5 +1,5 @@
 import { CLIUsageError } from '~/utils/error-handler'
-import type { BatchOrder } from '~/types'
+import type { BatchOrder, HtmlArticleBackend } from '~/types'
 
 export const parseIntWithDefault = (value: string | undefined, fallback: number): number => {
   if (!value) return fallback
@@ -75,7 +75,7 @@ export const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
   const v = readFlagValue(flags, 'batch-order')
   return v === 'oldest' ? 'oldest' : 'newest'
 }
-export const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecrawl' | 'glm-reader' => {
+export const parseUrlBackend = (value: string | undefined): HtmlArticleBackend => {
   const normalized = value?.trim().toLowerCase()
   if (!normalized || normalized === 'defuddle') {
     return 'defuddle'
@@ -86,7 +86,13 @@ export const parseUrlBackend = (value: string | undefined): 'defuddle' | 'firecr
   if (normalized === 'glm-reader') {
     return 'glm-reader'
   }
-  throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle", "firecrawl", or "glm-reader".`)
+  if (normalized === 'spider') {
+    return 'spider'
+  }
+  if (normalized === 'zyte') {
+    return 'zyte'
+  }
+  throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle", "firecrawl", "glm-reader", "spider", or "zyte".`)
 }
 
 export const parsePdfChapterMode = (value: string | undefined): 'local' | 'auto' | 'llm' => {

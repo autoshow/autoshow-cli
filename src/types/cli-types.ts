@@ -143,7 +143,7 @@ export type RuntimeOptions = {
   pdfChapterMode: 'local' | 'auto' | 'llm'
   useEpubBun: boolean
   useEpubCalibre: boolean
-  urlBackend: 'defuddle' | 'firecrawl' | 'glm-reader'
+  urlBackend: 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
   urlBackendExplicit: boolean
 
   batchLimit: number

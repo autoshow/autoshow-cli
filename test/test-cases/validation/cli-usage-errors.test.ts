@@ -28,6 +28,20 @@ test('extract rejects write LLM provider flags as unknown flags', async () => {
   await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--glm'], 'Unexpected flag: glm')
 })
 
+test('extract rejects unsupported URL article option flags', async () => {
+  await expectUsageExit(
+    ['extract', 'https://example.com/article', '--url-include-selector', 'article', '--price'],
+    'Unexpected flag: urlIncludeSelector'
+  )
+})
+
+test('extract rejects invalid URL article backend names', async () => {
+  await expectUsageExit(
+    ['extract', 'https://example.com/article', '--url-backend', 'browserless', '--price'],
+    'Invalid --url-backend value "browserless". Expected "defuddle", "firecrawl", "glm-reader", "spider", or "zyte".'
+  )
+})
+
 test('extract rejects removed OpenAI OCR models', async () => {
   await expectUsageExit(
     ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-mini', '--price'],

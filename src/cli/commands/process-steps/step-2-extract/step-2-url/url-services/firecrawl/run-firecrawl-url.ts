@@ -14,8 +14,23 @@ import {
   withTimeout,
   type UrlArticleRunResult
 } from '../../url-utils'
+import {
+  assertUrlArticleOptionsSupported,
+  type UrlArticleProviderAdapter,
+  type UrlArticleRunOptions
+} from '../../url-provider-adapter'
 
 const FIRECRAWL_DEFAULT_API_URL = 'https://api.firecrawl.dev'
+const FIRECRAWL_CAPABILITIES = [
+  'remote-html',
+  'main-content',
+  'full-content',
+  'selectors',
+  'wait',
+  'timeout',
+  'geo',
+  'locale'
+] as const
 
 const getFirecrawlMetadataValue = (
   metadata: Record<string, unknown>,
@@ -53,8 +68,8 @@ const parseFirecrawlResponse = (payload: unknown): { markdown: string, web: WebA
     : countWords(markdown)
 
   const web: WebArticleMetadata = {}
-  const sourceUrl = getFirecrawlMetadataValue(metadata, 'sourceURL', 'sourceUrl', 'url')
-  const finalUrl = getFirecrawlMetadataValue(metadata, 'finalURL', 'finalUrl')
+  const sourceUrl = getFirecrawlMetadataValue(metadata, 'sourceURL', 'sourceUrl')
+  const finalUrl = getFirecrawlMetadataValue(metadata, 'finalURL', 'finalUrl', 'url')
   const title = getFirecrawlMetadataValue(metadata, 'title')
   const author = getFirecrawlMetadataValue(metadata, 'author', 'byline')
   const site = getFirecrawlMetadataValue(metadata, 'site', 'siteName', 'ogSiteName')
@@ -79,8 +94,14 @@ const parseFirecrawlResponse = (payload: unknown): { markdown: string, web: WebA
 }
 
 const runFirecrawlScrape = async (
-  source: string
+  source: string,
+  options?: UrlArticleRunOptions
 ): Promise<{ markdown: string, web: WebArticleMetadata }> => {
+  assertUrlArticleOptionsSupported({
+    displayName: 'Firecrawl',
+    capabilities: FIRECRAWL_CAPABILITIES
+  }, options)
+
   const baseUrl = readEnv('FIRECRAWL_API_URL') ?? FIRECRAWL_DEFAULT_API_URL
   const apiKey = readEnv('FIRECRAWL_API_KEY')
   const usingHostedApi = baseUrl === FIRECRAWL_DEFAULT_API_URL
@@ -93,18 +114,14 @@ const runFirecrawlScrape = async (
   }
 
   const response = await withTimeout(HTML_FETCH_TIMEOUT_MS, async (signal) =>
-    await fetch(`${baseUrl.replace(/\/$/, '')}/v1/scrape`, {
+    await fetch(`${baseUrl.replace(/\/$/, '')}/v2/scrape`, {
       method: 'POST',
       signal,
       headers: {
         'Content-Type': 'application/json',
         ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
       },
-      body: JSON.stringify({
-        url: source,
-        formats: ['markdown'],
-        onlyMainContent: true
-      })
+      body: JSON.stringify(buildFirecrawlScrapeRequest(source, options))
     })
   )
 
@@ -125,12 +142,45 @@ const runFirecrawlScrape = async (
   return parseFirecrawlResponse(payload)
 }
 
+const buildFirecrawlScrapeRequest = (
+  source: string,
+  options: UrlArticleRunOptions | undefined
+): Record<string, unknown> => {
+  const body: Record<string, unknown> = {
+    url: source,
+    formats: ['markdown'],
+    onlyMainContent: options?.contentScope === 'full' ? false : true
+  }
+
+  if (options?.includeSelectors && options.includeSelectors.length > 0) {
+    body['includeTags'] = options.includeSelectors
+  }
+  if (options?.excludeSelectors && options.excludeSelectors.length > 0) {
+    body['excludeTags'] = options.excludeSelectors
+  }
+  if (typeof options?.waitMs === 'number') {
+    body['waitFor'] = options.waitMs
+  }
+  if (typeof options?.timeoutMs === 'number') {
+    body['timeout'] = options.timeoutMs
+  }
+  if (options?.geo?.country || options?.geo?.languages?.length) {
+    body['location'] = {
+      ...(options.geo.country ? { country: options.geo.country } : {}),
+      ...(options.geo.languages?.length ? { languages: options.geo.languages } : {})
+    }
+  }
+
+  return body
+}
+
 export const runFirecrawlUrl = async (
   source: string,
-  sourceUrl: string | undefined
+  sourceUrl: string | undefined,
+  options?: UrlArticleRunOptions
 ): Promise<UrlArticleRunResult> => {
   l.write('info', 'Using Firecrawl backend for article extraction')
-  const firecrawlResult = await runFirecrawlScrape(source)
+  const firecrawlResult = await runFirecrawlScrape(source, options)
   const htmlFallback = await tryFetchRemoteHtml(source)
 
   const markdown = ensureMeaningfulMarkdown(firecrawlResult.markdown, 'firecrawl')
@@ -145,4 +195,11 @@ export const runFirecrawlUrl = async (
     title: firecrawlResult.web.title ?? fallbackTitleFromSource(source),
     ...(firecrawlResult.web.author ? { author: firecrawlResult.web.author } : {})
   }
+}
+
+export const firecrawlArticleAdapter: UrlArticleProviderAdapter = {
+  id: 'firecrawl',
+  displayName: 'Firecrawl',
+  capabilities: FIRECRAWL_CAPABILITIES,
+  run: runFirecrawlUrl
 }

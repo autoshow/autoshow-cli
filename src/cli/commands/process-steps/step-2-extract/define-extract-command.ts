@@ -20,7 +20,7 @@ export const extractCommand = defineCommand({
       ['bun as extract https://youtube.com/watch?v=abc', 'Transcribe media with the default Whisper tiny STT model'],
       ['bun as extract file.mp3 --assemblyai-stt universal-3-pro', 'Transcribe media with AssemblyAI STT'],
       ['bun as extract document.pdf --mistral-ocr mistral-ocr-2512', 'Extract text from a document with Mistral OCR'],
-      ['bun as extract article.html --url-backend glm-reader', 'Extract article text from HTML inputs'],
+      ['bun as extract https://example.com/article --url-backend spider', 'Extract a remote article with a URL backend'],
       ['bun as extract input/examples/batch/2-urls.md --batch-all', 'Process every routed item from a mixed input list'],
       ['bun as extract https://x.com/i/spaces/1DXxyRYNejbKM', 'Extract X Space metadata via the X API']
     ]

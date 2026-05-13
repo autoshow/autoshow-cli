@@ -157,6 +157,12 @@ const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provide
   if (metadata.extractionMethod.includes('html+glm-reader')) {
     return { provider: 'glm', model: 'glm-reader' }
   }
+  if (metadata.extractionMethod.includes('html+spider')) {
+    return { provider: 'spider', model: 'spider' }
+  }
+  if (metadata.extractionMethod.includes('html+zyte')) {
+    return { provider: 'zyte', model: 'zyte' }
+  }
 
   if (typeof metadata.ocrService === 'string' && typeof metadata.ocrModel === 'string') {
     return { provider: metadata.ocrService, model: metadata.ocrModel }

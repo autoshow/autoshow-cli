@@ -25,7 +25,7 @@ bun t \
 - DeepInfra OCR tests are gated on `DEEPINFRA_API_KEY` and assert `ocrService: "deepinfra"`, the requested `ocrModel`, and recorded `promptTokens` / `completionTokens` when the provider returns usage.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts` covers remote article extraction with `--url-backend firecrawl`, writes `extraction.txt`, and records `step2.extractionMethod: "html+firecrawl"` in `run.json`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts` covers remote article extraction with `--url-backend glm-reader`, writes `extraction.txt`, and records `step2.extractionMethod: "html+glm-reader"` in `run.json`.
-- Hosted article and local HTML input validation also lives in `test/test-cases/validation/input-contracts.test.ts`.
+- Hosted article and local HTML input validation also lives in `test/test-cases/validation/input-contracts.test.ts`. Mocked URL backend contracts for Firecrawl v2, Spider, Zyte, GLM Reader, and Defuddle live in `test/test-cases/validation/html-url-backends-contracts.test.ts`.
 - Native EPUB cleanup and export validation lives in `test/test-cases/validation/epub-export-contracts.test.ts`.
 
 ## Price Preflight

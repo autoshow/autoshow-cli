@@ -235,7 +235,7 @@ export const ocrInputFlags = {
 
 export const articleFlags = {
   'url-backend': {
-    description: 'Article/HTML extraction backend: defuddle|firecrawl|glm-reader (default: defuddle; local .html/.htm always use defuddle)',
+    description: 'Article/HTML extraction backend: defuddle|firecrawl|glm-reader|spider|zyte (default: defuddle; local .html/.htm always use defuddle)',
     type: String
   }
 } as const satisfies ClercFlagsDefinition

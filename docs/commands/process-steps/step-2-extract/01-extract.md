@@ -42,7 +42,7 @@ Media inputs are downloaded, normalized when needed, and transcribed with local 
 
 Document and image inputs route through OCR or native text extraction depending on the file type. PDFs and images can use local or hosted OCR engines, EPUBs default to cleaned native text extraction, Office-style files use native ZIP/XML or text extraction, and CSV inputs are treated as raw text.
 
-Remote article URLs and local HTML files use article extraction instead of OCR engine flags. Remote URLs default to `defuddle` and can use `--url-backend firecrawl` or `--url-backend glm-reader`; local `.html` and `.htm` files always use `defuddle`.
+Remote article URLs and local HTML files use article extraction instead of OCR engine flags. Remote URLs default to `defuddle` and can use `--url-backend firecrawl`, `--url-backend glm-reader`, `--url-backend spider`, or `--url-backend zyte`; local `.html` and `.htm` files always use `defuddle`.
 
 X/Twitter Space URLs, post URLs, and raw Space IDs are auto-detected and processed through the X v2 API. They produce metadata artifacts rather than an STT transcript.
 

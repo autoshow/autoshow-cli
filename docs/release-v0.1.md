@@ -51,7 +51,7 @@ High-value v0.1 behaviors:
 - `write` can fan out across multiple LLM providers and writes provider-specific JSON artifacts for each result.
 - `write` accepts at most one STT provider and at most one OCR provider per pipeline run; `extract` supports multi-provider STT and OCR runs.
 - Existing STT, OCR, TTS, image, video, and music outputs can be filled in with `resume`.
-- HTML/article inputs can use `defuddle`, `firecrawl`, or `glm-reader` via `--url-backend`.
+- HTML/article inputs can use `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` via `--url-backend`.
 - X Space extraction accepts X/Twitter Space URLs, X post URLs that reference Spaces, and raw Space IDs.
 - The persistent STT cache is managed with `bun as cache prune` and `bun as cache clear`; runs can force refresh or bypass it with `--refresh-cache` and `--no-cache`.
 - Global runtime flags include `--config-path`, `--verbose`, `--quiet/-q`, and `--json`.
@@ -77,6 +77,7 @@ bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 # extract documents, articles, and X Spaces
 bun as extract input/examples/document/1-document.pdf --out json
 bun as extract https://ajcwebdev.com --url-backend firecrawl
+bun as extract https://ajcwebdev.com --url-backend spider
 bun as extract https://x.com/i/spaces/1DXxyRYNejbKM
 
 # process raw source text instead of treating .md/.txt as URL lists

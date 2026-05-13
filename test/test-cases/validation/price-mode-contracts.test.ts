@@ -10,7 +10,7 @@ import {
   ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
   ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
-import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
+import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts, resolveExtractionProviderModel } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -248,6 +248,38 @@ describe('price mode contracts', () => {
     expect(emittedResult).toBeDefined()
     expect(findPricingNoteKeys(emittedResult)).toEqual([])
     expect(JSON.stringify(emittedResult)).not.toContain('TTS estimate omitted')
+  })
+
+  test('URL article extraction methods resolve provider models consistently', () => {
+    const base: Omit<ExtractionMetadata, 'extractionMethod'> = {
+      totalPages: 1,
+      ocrPages: 0,
+      textPages: 1,
+      processingTime: 1234,
+      dpi: 300,
+      languages: 'eng',
+      tokenEstimate: 100
+    }
+
+    expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+spider' })).toEqual({
+      provider: 'spider',
+      model: 'spider'
+    })
+    expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+zyte' })).toEqual({
+      provider: 'zyte',
+      model: 'zyte'
+    })
+    expect(computeActualCosts({ step2: { ...base, extractionMethod: 'html+spider' } }).steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'spider',
+      model: 'spider',
+      cost: 0
+    })
+    expect(computeActualProcessingTimes({ step2: { ...base, extractionMethod: 'html+zyte' } }).steps[0]).toMatchObject({
+      provider: 'zyte',
+      model: 'zyte',
+      processingTimeMs: 1234
+    })
   })
 
   test('music lyric-video mode rejects --price', async () => {
