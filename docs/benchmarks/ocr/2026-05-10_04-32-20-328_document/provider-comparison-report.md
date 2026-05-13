@@ -17,6 +17,7 @@
 - CER compares normalized character sequences for finer-grained accuracy.
 - Providers are separated into local models and cloud services for independent comparison.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
+- Tier breakdown splits the balanced overall ranking into equal thirds.
 
 ## Overall Ranking
 
@@ -37,6 +38,47 @@
 | 13 | `paddle-ocr/paddle-ocr` | local | 66.05 | 69.69 | 24.84 | 100.00 |
 | 14 | `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct` | cloud | 64.84 | 86.81 | 0.00 | 85.73 |
 | 15 | `gemini/gemini-3.1-pro-preview` | cloud | 56.69 | 91.30 | 1.79 | 42.35 |
+
+## Tier Breakdown
+
+Tiers split the balanced overall ranking into equal thirds. When the provider count is not divisible by three, the remainder is assigned to Tier 3.
+
+### Tier 1 (overall ranks 1-5)
+
+Best balanced options across accuracy, processing speed, and cost efficiency.
+
+| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 1 | `gemini/gemini-3.1-flash-lite-preview` | 96.15 | 98.08 | 95.07 | 93.36 |
+| 2 | `mistral/mistral-ocr-2512` | 92.80 | 95.33 | 100.00 | 80.53 |
+| 3 | `tesseract/tesseract` | 87.78 | 76.47 | 98.18 | 100.00 |
+| 4 | `ocrmypdf/ocrmypdf` | 86.93 | 75.73 | 96.24 | 100.00 |
+| 5 | `glm/glm-ocr` | 85.68 | 80.95 | 81.50 | 99.33 |
+
+### Tier 2 (overall ranks 6-10)
+
+Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.
+
+| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 6 | `aws-textract/detect-text` | 83.89 | 78.48 | 93.21 | 85.40 |
+| 7 | `openai/gpt-5.4-nano` | 81.12 | 76.47 | 79.37 | 92.19 |
+| 8 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | 80.89 | 92.86 | 48.08 | 89.76 |
+| 9 | `gcloud-docai/ocr` | 76.08 | 77.75 | 63.41 | 85.40 |
+| 10 | `anthropic/claude-haiku-4-5` | 75.35 | 91.48 | 55.07 | 63.36 |
+
+### Tier 3 (overall ranks 11-15)
+
+Lowest balanced options, generally weaker across the combined benchmark categories.
+
+| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | --- | ---: | ---: | ---: | ---: |
+| 11 | `kimi/kimi-k2.6` | 67.44 | 89.01 | 45.92 | 45.82 |
+| 12 | `openai/gpt-5.4` | 66.64 | 96.34 | 73.88 | 0.00 |
+| 13 | `paddle-ocr/paddle-ocr` | 66.05 | 69.69 | 24.84 | 100.00 |
+| 14 | `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct` | 64.84 | 86.81 | 0.00 | 85.73 |
+| 15 | `gemini/gemini-3.1-pro-preview` | 56.69 | 91.30 | 1.79 | 42.35 |
+
 
 ## Ranking
 

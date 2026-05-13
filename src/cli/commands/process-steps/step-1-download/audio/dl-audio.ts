@@ -6,6 +6,7 @@ import * as l from '~/utils/logger'
 import { downloadVideo } from './yt-utils'
 import { commandExists, exec } from '~/utils/cli-utils'
 import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio'
+import { CLIUsageError } from '~/utils/error-handler'
 import { buildMediaStep1Slug, sanitizeTitleSlug } from './metadata-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import type { DownloadAudioOptions } from '~/types'
@@ -207,14 +208,19 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
   }
   
   const preserveOriginalMedia = options.keepOriginalMedia === true || options.bestQuality === true
+  const ytDlpPassthroughArgs = options.ytDlpPassthroughArgs ?? []
+  const hasYtDlpPassthroughArgs = ytDlpPassthroughArgs.length > 0
   let audioPath = ''
   if (options.filePath) {
+    if (hasYtDlpPassthroughArgs) {
+      throw CLIUsageError('yt-dlp passthrough args (--) are not supported for local file inputs')
+    }
     if (preserveOriginalMedia) {
       audioPath = await finalizeDownloadedMedia(options.filePath, options.outputDir, videoMetadata, { copy: true })
     } else {
       audioPath = await normalizeDownloadedAudio(options.filePath, options.outputDir, videoMetadata)
     }
-  } else if (options.directDownload) {
+  } else if (options.directDownload && !hasYtDlpPassthroughArgs) {
     logAudioDownload(l, {
       source: 'direct-audio-url',
       status: 'started',
@@ -229,7 +235,7 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     audioPath = preserveOriginalMedia
       ? await finalizeDownloadedMedia(rawPath, options.outputDir, videoMetadata)
       : await normalizeDownloadedAudio(rawPath, options.outputDir, videoMetadata, { removeOriginal: true })
-  } else if (isDirectMediaUrl(options.url as string)) {
+  } else if (!hasYtDlpPassthroughArgs && isDirectMediaUrl(options.url as string)) {
     logAudioDownload(l, {
       source: 'direct-media-url',
       status: 'started',
@@ -256,7 +262,10 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
     const videoPath = await downloadVideo(
       options.url as string,
       options.outputDir,
-      options.bestQuality === true ? { bestQuality: true } : {}
+      {
+        ...(options.bestQuality === true ? { bestQuality: true } : {}),
+        ...(hasYtDlpPassthroughArgs ? { ytDlpPassthroughArgs } : {})
+      }
     )
     const downloadedFile = Bun.file(videoPath)
     const fileSize = downloadedFile.size

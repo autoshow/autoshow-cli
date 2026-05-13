@@ -6,8 +6,10 @@ import { buildOptsFromFlags, isHtmlArticleTarget, resolveInputRoutingForCommand 
 import { handleSingleTarget } from './single-target'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import { runPreflight } from '~/utils/pricing/preflight'
+import { commandExists } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio'
 import { readPromptFileText, resolveWriteTextProjectDefaults } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNING } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/inactive-flag-warnings'
 import { executeBatchPlan } from './batch/batch-executor'
@@ -19,13 +21,79 @@ import { buildUnsupportedExtractInputMessage, validateWriteStep2ProviderSelectio
 export { buildExpectedFilesList } from './expected-output'
 export { shouldRunCommandPreflight } from './process-target-preflight'
 
+export type ResolvedProcessTargetDoubleDash =
+  | { kind: 'target', resolvedTarget: string, ytDlpPassthroughArgs?: string[] | undefined }
+  | { kind: 'raw-yt-dlp', ytDlpPassthroughArgs: string[] }
+
+const isDownloadCommand = (command: ProcessCommand): boolean => command === 'download'
+
+const buildPassthroughUnsupportedMessage = (): string =>
+  'yt-dlp passthrough (--) is only supported for the "download" command'
+
+export const resolveProcessTargetDoubleDash = (
+  command: ProcessCommand,
+  target: string | undefined,
+  doubleDash: string[] = []
+): ResolvedProcessTargetDoubleDash => {
+  const displayCommand = canonicalizeProcessCommand(command)
+
+  if (typeof target === 'string' && target.length > 0) {
+    if (doubleDash.length > 0) {
+      if (!isDownloadCommand(command)) {
+        throw CLIUsageError(buildPassthroughUnsupportedMessage())
+      }
+      return { kind: 'target', resolvedTarget: target, ytDlpPassthroughArgs: [...doubleDash] }
+    }
+    return { kind: 'target', resolvedTarget: target }
+  }
+
+  if (doubleDash.length > 0 && doubleDash[0]?.startsWith('-')) {
+    if (!isDownloadCommand(command)) {
+      throw CLIUsageError(buildPassthroughUnsupportedMessage())
+    }
+    return { kind: 'raw-yt-dlp', ytDlpPassthroughArgs: [...doubleDash] }
+  }
+
+  if (doubleDash.length === 1) {
+    return { kind: 'target', resolvedTarget: doubleDash[0] as string }
+  }
+
+  if (doubleDash.length > 1) {
+    throw CLIUsageError(`Too many positional inputs for "${displayCommand}": ${doubleDash.join(' ')}. Run: bun as help ${displayCommand}`)
+  }
+
+  throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
+}
+
+export const runRawYtDlp = async (args: string[]): Promise<void> => {
+  if (!commandExists('yt-dlp')) {
+    await setupYtDependencies()
+  }
+
+  const proc = Bun.spawn(['yt-dlp', ...args], {
+    stdin: 'inherit',
+    stdout: 'inherit',
+    stderr: 'inherit'
+  })
+  const exitCode = await proc.exited
+  if (exitCode !== 0) {
+    const error = new Error(`yt-dlp exited with code ${exitCode}`)
+    ;(error as Error & { exitCode?: number }).exitCode = exitCode
+    throw error
+  }
+}
+
 export const handleProcessTarget = async (
   command: ProcessCommand,
   target: string | undefined,
   rawFlags: Record<string, unknown>,
   doubleDash: string[] = []
 ): Promise<void> => {
-  const displayCommand = canonicalizeProcessCommand(command)
+  const resolvedDoubleDash = resolveProcessTargetDoubleDash(command, target, doubleDash)
+  if (resolvedDoubleDash.kind === 'raw-yt-dlp') {
+    await runRawYtDlp(resolvedDoubleDash.ytDlpPassthroughArgs)
+    return
+  }
 
   const configPathOverride = typeof rawFlags['config-path'] === 'string' ? rawFlags['config-path'] : undefined
   const resolvedConfigPath = await resolveConfigPath(configPathOverride)
@@ -47,15 +115,10 @@ export const handleProcessTarget = async (
 
   const maxCents = resolveMaxCents(config.pricing)
 
-  let resolvedTarget: string
-  if (typeof target === 'string' && target.length > 0) {
-    resolvedTarget = target
-  } else if (doubleDash.length === 1) {
-    resolvedTarget = doubleDash[0] as string
-  } else if (doubleDash.length > 1) {
-    throw CLIUsageError(`Too many positional inputs for "${displayCommand}": ${doubleDash.join(' ')}. Run: bun as help ${displayCommand}`)
-  } else {
-    throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
+  const resolvedTarget = resolvedDoubleDash.resolvedTarget
+  if (resolvedDoubleDash.ytDlpPassthroughArgs && resolvedDoubleDash.ytDlpPassthroughArgs.length > 0) {
+    opts.ytDlpPassthroughArgs = resolvedDoubleDash.ytDlpPassthroughArgs
+    l.write('info', `Forwarding ${resolvedDoubleDash.ytDlpPassthroughArgs.length} passthrough arg(s) to yt-dlp`)
   }
 
   const writeProjectDefaults = command === 'write'

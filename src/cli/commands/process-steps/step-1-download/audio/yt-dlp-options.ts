@@ -110,7 +110,11 @@ export const buildSharedYtDlpArgs = async (): Promise<string[]> => {
 export const buildYtDlpDownloadArgs = async (
   url: string,
   outputDir: string,
-  options: { bestQuality?: boolean } = {}
+  options: {
+    bestQuality?: boolean
+    ytDlpPassthroughArgs?: string[] | undefined
+    downloadedPathLogFile?: string | undefined
+  } = {}
 ): Promise<string[]> => {
   const sharedArgs = await buildSharedYtDlpArgs()
   const bestQuality = options.bestQuality === true
@@ -125,6 +129,8 @@ export const buildYtDlpDownloadArgs = async (
     '--no-playlist',
     '--no-progress',
     ...sharedArgs,
+    ...(options.ytDlpPassthroughArgs ?? []),
+    ...(options.downloadedPathLogFile ? ['--print-to-file', 'after_move:filepath', options.downloadedPathLogFile] : []),
     url
   ]
 }

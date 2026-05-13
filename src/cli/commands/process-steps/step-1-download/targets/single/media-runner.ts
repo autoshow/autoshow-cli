@@ -1,4 +1,4 @@
-import { ProcessingOptionsSchema, type AggregatedPriceEstimate, type BatchChildRunContext, type BatchItem, type BatchItemProcessResult, type ProcessingOptions, type RuntimeOptions, type VideoMetadata, type WebArticleMetadata } from '~/types'
+import { ProcessingOptionsSchema, type AggregatedPriceEstimate, type BatchChildRunContext, type BatchItem, type BatchItemProcessResult, type DownloadAudioOptions, type ProcessingOptions, type RuntimeOptions, type VideoMetadata, type WebArticleMetadata } from '~/types'
 import { validateData } from '~/utils/validate/validation'
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
@@ -325,6 +325,32 @@ const mergeBatchItemMetadata = (
   }
 }
 
+const hasYtDlpPassthroughArgs = (
+  opts: Pick<RuntimeOptions, 'ytDlpPassthroughArgs'>
+): opts is Pick<RuntimeOptions, 'ytDlpPassthroughArgs'> & { ytDlpPassthroughArgs: string[] } =>
+  Array.isArray(opts.ytDlpPassthroughArgs) && opts.ytDlpPassthroughArgs.length > 0
+
+export const buildDownloadMediaOptions = (
+  target: string,
+  outputDir: string,
+  opts: Pick<RuntimeOptions, 'keepOriginalMedia' | 'bestQuality' | 'ytDlpPassthroughArgs'>,
+  options: {
+    isUrl: boolean
+    exists: boolean
+    batchItem?: BatchItem | undefined
+  }
+): DownloadAudioOptions => {
+  const hasPassthrough = hasYtDlpPassthroughArgs(opts)
+  return {
+    ...(options.isUrl ? { url: target } : options.exists ? { filePath: target } : { url: target }),
+    outputDir,
+    ...(!hasPassthrough && options.batchItem?.directDownload ? { directDownload: true } : {}),
+    keepOriginalMedia: opts.keepOriginalMedia,
+    bestQuality: opts.bestQuality,
+    ...(hasPassthrough ? { ytDlpPassthroughArgs: opts.ytDlpPassthroughArgs } : {})
+  }
+}
+
 const buildDownloadManifestEntry = (
   step1Metadata: Record<string, unknown>,
   web?: WebArticleMetadata
@@ -410,13 +436,7 @@ export const processDownloadMedia = async (
       }) ?? `${effectiveBaseDir}/${createUniqueDirectoryName(meta.title)}`
   await ensureDirectory(outputDir)
 
-  const dlOpts = {
-    ...(isUrl ? { url: target } : exists ? { filePath: target } : { url: target }),
-    outputDir,
-    ...(batchItem?.directDownload ? { directDownload: true } : {}),
-    keepOriginalMedia: opts.keepOriginalMedia,
-    bestQuality: opts.bestQuality
-  }
+  const dlOpts = buildDownloadMediaOptions(target, outputDir, opts, { isUrl, exists, batchItem })
 
   const { metadata: step1Metadata } = await downloadAudio(dlOpts, meta)
   const manifestEntry = buildDownloadManifestEntry(step1Metadata)

@@ -440,6 +440,7 @@ export const buildOptsFromFlags = (
     keepOriginalMedia: readBooleanFlag(mergedFlags, 'keep-original-media'),
     bestQuality: readBooleanFlag(mergedFlags, 'best-quality'),
     flatBatch: readBooleanFlag(mergedFlags, 'flat-batch'),
+    ytDlpPassthroughArgs: undefined,
     prompts: (() => {
       const v = mergedFlags['prompt']
       if (Array.isArray(v)) return v.filter((s): s is string => typeof s === 'string' && s.length > 0)

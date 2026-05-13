@@ -150,6 +150,7 @@ export type RuntimeOptions = {
   keepOriginalMedia: boolean
   bestQuality: boolean
   flatBatch: boolean
+  ytDlpPassthroughArgs: string[] | undefined
 
   ttsSpeaker: string
 

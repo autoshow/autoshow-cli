@@ -23,6 +23,7 @@ export type DownloadAudioOptions = {
   directDownload?: boolean | undefined
   keepOriginalMedia?: boolean | undefined
   bestQuality?: boolean | undefined
+  ytDlpPassthroughArgs?: string[] | undefined
 }
 
 export type Step1SourceRef = {

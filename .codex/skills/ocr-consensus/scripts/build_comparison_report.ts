@@ -49,6 +49,7 @@ interface RankedProvider {
   overallRank: number;
   overallScore: number;
   overallComponents: OverallComponents;
+  overallTier: TierNumber;
 }
 
 interface OverallComponents {
@@ -74,7 +75,53 @@ const OVERALL_WEIGHTS = {
   costEfficiency: 0.25,
 } as const;
 
-type ProviderData = Omit<RankedProvider, "rank" | "overallRank" | "overallScore" | "overallComponents">;
+const TIER_METRIC = "balanced-overall";
+const TIER_REMAINDER_POLICY = "bottom-tier-extra";
+const TIER_METHOD = "equal-thirds-by-overall-rank";
+const TIER_DESCRIPTIONS = {
+  1: "Best balanced options across accuracy, processing speed, and cost efficiency.",
+  2: "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+  3: "Lowest balanced options, generally weaker across the combined benchmark categories.",
+} as const;
+
+type TierNumber = 1 | 2 | 3;
+
+interface TierCounts {
+  tier1: number;
+  tier2: number;
+  tier3: number;
+}
+
+interface TierSplit {
+  method: typeof TIER_METHOD;
+  remainderPolicy: typeof TIER_REMAINDER_POLICY;
+  counts: TierCounts;
+}
+
+interface TierRankRange {
+  start: number | null;
+  end: number | null;
+}
+
+interface TierBreakdownProvider {
+  provider: string;
+  providerKey: string;
+  overallRank: number;
+  overallScore: number;
+  overallComponents: OverallComponents;
+}
+
+interface TierBreakdown {
+  tier: TierNumber;
+  label: string;
+  description: string;
+  rankRange: TierRankRange;
+  count: number;
+  providers: Array<TierBreakdownProvider & { overallTier: TierNumber }>;
+}
+
+type RankedProviderWithoutTier = Omit<RankedProvider, "overallTier">;
+type ProviderData = Omit<RankedProvider, "rank" | "overallRank" | "overallScore" | "overallComponents" | "overallTier">;
 type OverallScoredProvider = ProviderData & Pick<RankedProvider, "overallRank" | "overallScore" | "overallComponents">;
 
 function helpText(): string {
@@ -263,6 +310,101 @@ function addOverallScores(providers: ProviderData[]): OverallScoredProvider[] {
   }));
 }
 
+function tierCountsForProviderCount(count: number): TierCounts {
+  if (count <= 0) {
+    return { tier1: 0, tier2: 0, tier3: 0 };
+  }
+  if (count === 1) {
+    return { tier1: 1, tier2: 0, tier3: 0 };
+  }
+  if (count === 2) {
+    return { tier1: 1, tier2: 1, tier3: 0 };
+  }
+  const base = Math.floor(count / 3);
+  return {
+    tier1: base,
+    tier2: base,
+    tier3: count - base * 2,
+  };
+}
+
+function tierCountForNumber(counts: TierCounts, tier: TierNumber): number {
+  if (tier === 1) {
+    return counts.tier1;
+  }
+  if (tier === 2) {
+    return counts.tier2;
+  }
+  return counts.tier3;
+}
+
+function buildTierBreakdown<T extends TierBreakdownProvider>(rankedOverall: T[]): {
+  tierSplit: TierSplit;
+  tiers: TierBreakdown[];
+  providerTiers: Map<string, TierNumber>;
+} {
+  const counts = tierCountsForProviderCount(rankedOverall.length);
+  const tierSplit: TierSplit = {
+    method: TIER_METHOD,
+    remainderPolicy: TIER_REMAINDER_POLICY,
+    counts,
+  };
+  const providerTiers = new Map<string, TierNumber>();
+  const tiers: TierBreakdown[] = [];
+  let nextRank = 1;
+
+  for (const tier of [1, 2, 3] as const) {
+    const count = tierCountForNumber(counts, tier);
+    const start = count > 0 ? nextRank : null;
+    const end = count > 0 ? nextRank + count - 1 : null;
+    const providers = rankedOverall
+      .slice(nextRank - 1, nextRank - 1 + count)
+      .map((provider) => {
+        providerTiers.set(provider.providerKey, tier);
+        return {
+          provider: provider.provider,
+          providerKey: provider.providerKey,
+          overallRank: provider.overallRank,
+          overallScore: provider.overallScore,
+          overallComponents: provider.overallComponents,
+          overallTier: tier,
+        };
+      });
+
+    tiers.push({
+      tier,
+      label: `Tier ${tier}`,
+      description: TIER_DESCRIPTIONS[tier],
+      rankRange: { start, end },
+      count,
+      providers,
+    });
+    nextRank += count;
+  }
+
+  return { tierSplit, tiers, providerTiers };
+}
+
+function addOverallTiers(
+  rankedProviders: RankedProviderWithoutTier[],
+  providerTiers: Map<string, TierNumber>,
+): RankedProvider[] {
+  return rankedProviders.map((provider) => ({
+    ...provider,
+    overallTier: providerTiers.get(provider.providerKey) ?? 3,
+  }));
+}
+
+function formatRankRange(range: TierRankRange): string {
+  if (range.start === null || range.end === null) {
+    return "no overall ranks";
+  }
+  if (range.start === range.end) {
+    return `overall rank ${range.start}`;
+  }
+  return `overall ranks ${range.start}-${range.end}`;
+}
+
 export function buildReport(runDir: string, consensusPath: string) {
   const consensus = parseConsensusExtraction(consensusPath);
   const consensusFullText = consensus.pages.map((p) => p.text).join("\n\n");
@@ -315,7 +457,7 @@ export function buildReport(runDir: string, consensusPath: string) {
   const localData = providerDataWithOverall.filter((p) => p.group === "local");
   const cloudData = providerDataWithOverall.filter((p) => p.group === "cloud");
 
-  function rankGroup(group: OverallScoredProvider[], groupLabel: ProviderGroup): RankedProvider[] {
+  function rankGroup(group: OverallScoredProvider[], groupLabel: ProviderGroup): RankedProviderWithoutTier[] {
     return [...group]
       .sort((left, right) => {
         if (left.wer !== right.wer) {
@@ -329,14 +471,18 @@ export function buildReport(runDir: string, consensusPath: string) {
       .map((provider, index) => ({ ...provider, group: groupLabel, rank: index + 1 }));
   }
 
-  const rankedLocal = rankGroup(localData, "local");
-  const rankedCloud = rankGroup(cloudData, "cloud");
-  const rankedOverall = [...rankedLocal, ...rankedCloud].sort((left, right) => {
+  const rankedLocalWithoutTiers = rankGroup(localData, "local");
+  const rankedCloudWithoutTiers = rankGroup(cloudData, "cloud");
+  const rankedOverallWithoutTiers = [...rankedLocalWithoutTiers, ...rankedCloudWithoutTiers].sort((left, right) => {
     if (left.overallRank !== right.overallRank) {
       return left.overallRank - right.overallRank;
     }
     return left.providerKey.localeCompare(right.providerKey);
   });
+  const { tierSplit, tiers, providerTiers } = buildTierBreakdown(rankedOverallWithoutTiers);
+  const rankedLocal = addOverallTiers(rankedLocalWithoutTiers, providerTiers);
+  const rankedCloud = addOverallTiers(rankedCloudWithoutTiers, providerTiers);
+  const rankedOverall = addOverallTiers(rankedOverallWithoutTiers, providerTiers);
 
   const notes: string[] = [];
 
@@ -413,6 +559,9 @@ export function buildReport(runDir: string, consensusPath: string) {
     },
     overallMetric: "balanced-overall",
     overallWeights: OVERALL_WEIGHTS,
+    tierMetric: TIER_METRIC,
+    tierSplit,
+    tiers,
     overall: { count: rankedOverall.length, providers: rankedOverall },
     local: { count: rankedLocal.length, providers: rankedLocal },
     cloud: { count: rankedCloud.length, providers: rankedCloud },
@@ -467,6 +616,31 @@ export function buildReport(runDir: string, consensusPath: string) {
     return `${headerRow}\n${separatorRow}\n${rows}`;
   }
 
+  function buildTierBreakdownBlock(tierBreakdowns: TierBreakdown[]): string {
+    return [
+      "Tiers split the balanced overall ranking into equal thirds. When the provider count is not divisible by three, the remainder is assigned to Tier 3.",
+      "",
+      ...tierBreakdowns.flatMap((tier) => {
+        const providerRows = tier.providers
+          .map(
+            (provider) =>
+              `| ${provider.overallRank} | \`${provider.providerKey}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
+          )
+          .join("\n");
+        return [
+          `### ${tier.label} (${formatRankRange(tier.rankRange)})`,
+          "",
+          tier.description,
+          "",
+          "| Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |",
+          "| ---: | --- | ---: | ---: | ---: | ---: |",
+          providerRows || "| n/a | n/a | n/a | n/a | n/a | n/a |",
+          "",
+        ];
+      }),
+    ].join("\n");
+  }
+
   const localList = rankedLocal.map((p) => `  - \`${p.providerKey}\``).join("\n");
   const cloudList = rankedCloud.map((p) => `  - \`${p.providerKey}\``).join("\n");
   const notesBlock = notes.map((note) => `- ${note}`).join("\n");
@@ -519,10 +693,15 @@ ${buildRankingTable(rankedCloud, true)}
 - CER compares normalized character sequences for finer-grained accuracy.
 - Providers are separated into local models and cloud services for independent comparison.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
+- Tier breakdown splits the balanced overall ranking into equal thirds.
 
 ## Overall Ranking
 
 ${buildOverallRankingTable(rankedOverall)}
+
+## Tier Breakdown
+
+${buildTierBreakdownBlock(tiers)}
 
 ## Ranking
 

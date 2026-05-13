@@ -6,6 +6,7 @@ Download media or documents and collect metadata without running transcription, 
 
 - [Supported Inputs](#supported-inputs)
 - [Flags](#flags)
+- [Advanced yt-dlp / FFmpeg Passthrough](#advanced-yt-dlp--ffmpeg-passthrough)
 - [Output](#output)
 - [Examples](#examples)
 - [Setup and Environment](#setup-and-environment)
@@ -54,6 +55,39 @@ Step-1 metadata in `run.json` also includes `slug`, which is derived from the or
 --batch-all          Batch: process all items
 --batch-order        Batch: item order newest|oldest (default newest)
 --batch-concurrency  Batch: number of items to process concurrently (default 1)
+```
+
+## Advanced yt-dlp / FFmpeg Passthrough
+
+Use `--` after the AutoShow input and flags to pass exact argv tokens to the per-item yt-dlp download call:
+
+```bash
+# Override yt-dlp format selection inside AutoShow's normal download workflow
+bun as download https://youtube.com/watch?v=abc -- --format bestvideo+bestaudio
+
+# Pass FFmpeg args through yt-dlp's native postprocessor mechanism
+bun as download https://youtube.com/watch?v=abc -- --postprocessor-args "ffmpeg:-vf scale=1280:720"
+
+# Compose passthrough with AutoShow batch flags
+bun as download input/examples/batch/2-urls.md --batch-limit 3 -- --format bestaudio
+bun as download https://example.com/feed --batch-all --keep-original-media --flat-batch -- --format bestaudio
+```
+
+Passthrough is supported only for media URL downloads. For direct media URLs and podcast feed items that would normally use HTTP fetch, AutoShow uses yt-dlp instead so the extra args are honored. Local files, documents, articles, and X Space inputs reject passthrough with a usage error.
+
+Without a positional AutoShow input, `download --` runs yt-dlp directly and skips AutoShow manifests, normalization, output directory management, pricing, and batch handling:
+
+```bash
+bun as download -- --list-extractors
+bun as download -- --flat-playlist --dump-json https://youtube.com/@channelname
+
+# Download separate highest-quality video and audio assets for a time range
+bun as download -- \
+  --download-sections '*14:30-14:45' \
+  --force-keyframes-at-cuts \
+  -f 'bestvideo,bestaudio' \
+  -o 'output/D3WD52pfM8I_14m30s-14m45s_%(format_id)s.%(ext)s' \
+  'https://www.youtube.com/watch?v=D3WD52pfM8I'
 ```
 
 ## Output
@@ -132,6 +166,12 @@ bun as download https://www.youtube.com/@channelname --batch-limit 2
 
 # Download all items from a URL list
 bun as download input/examples/batch/2-urls.md --batch-all
+
+# Download one item with extra yt-dlp flags
+bun as download https://youtube.com/watch?v=abc -- --write-thumbnail
+
+# Run yt-dlp directly
+bun as download -- --version
 ```
 
 ## Setup and Environment

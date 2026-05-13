@@ -1,4 +1,6 @@
-import { extname } from 'node:path'
+import { rm } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { extname, join } from 'node:path'
 import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
@@ -7,15 +9,66 @@ import { logAudioDownload } from './audio-logging'
 
 const DOWNLOADED_MEDIA_EXTENSIONS: ReadonlySet<string> = new Set(MEDIA_EXTENSIONS)
 
-const findDownloadedAudio = async (outputDir: string): Promise<string> => {
-  const files = await Bun.$`find ${outputDir} -type f`.text()
-  const list = files
+const getMediaFilePaths = (text: string): string[] =>
+  text
     .trim()
     .split('\n')
+    .map(filePath => filePath.trim())
     .filter(f => f.length > 0)
     .filter((filePath) => DOWNLOADED_MEDIA_EXTENSIONS.has(extname(filePath).toLowerCase()))
+
+const assertSingleDownloadedMedia = (
+  list: string[],
+  source: 'yt-dlp output tracking' | 'output directory scan',
+  strictSingleOutput: boolean
+): string | undefined => {
   const first = list[0]
   if (!first) {
+    return undefined
+  }
+  if (strictSingleOutput && list.length > 1) {
+    throw new Error(`${source} found multiple media files after yt-dlp passthrough. Use raw mode for multi-output yt-dlp workflows.`)
+  }
+  return first
+}
+
+const buildNoPrimaryMediaError = (
+  source: 'yt-dlp output tracking' | 'output directory scan'
+): Error =>
+  new Error(`${source} found no primary media file after yt-dlp passthrough. Use raw mode for yt-dlp workflows that do not produce exactly one media file.`)
+
+const findTrackedDownloadedAudio = async (
+  downloadedPathLogFile: string,
+  strictSingleOutput: boolean
+): Promise<string | undefined> => {
+  const logFile = Bun.file(downloadedPathLogFile)
+  if (!await logFile.exists()) {
+    return undefined
+  }
+
+  const trackedFiles = getMediaFilePaths(await logFile.text())
+  const trackedPath = assertSingleDownloadedMedia(trackedFiles, 'yt-dlp output tracking', strictSingleOutput)
+  if (!trackedPath) {
+    return undefined
+  }
+
+  if (await Bun.file(trackedPath).exists()) {
+    return trackedPath
+  }
+  return undefined
+}
+
+const findDownloadedAudio = async (
+  outputDir: string,
+  options: { strictSingleOutput?: boolean } = {}
+): Promise<string> => {
+  const files = await Bun.$`find ${outputDir} -type f`.text()
+  const list = getMediaFilePaths(files)
+  const first = assertSingleDownloadedMedia(list, 'output directory scan', options.strictSingleOutput === true)
+  if (!first) {
+    if (options.strictSingleOutput === true) {
+      throw buildNoPrimaryMediaError('output directory scan')
+    }
     l.error(`No files found in ${outputDir}`)
     throw new Error('No downloaded files found')
   }
@@ -25,10 +78,15 @@ const findDownloadedAudio = async (outputDir: string): Promise<string> => {
 export const downloadVideo = async (
   url: string,
   outputDir: string,
-  options: { bestQuality?: boolean } = {}
+  options: { bestQuality?: boolean, ytDlpPassthroughArgs?: string[] | undefined } = {}
 ): Promise<string> => {
+  const strictSingleOutput = (options.ytDlpPassthroughArgs?.length ?? 0) > 0
+  const downloadedPathLogFile = join(outputDir, `.autoshow-yt-dlp-files-${randomUUID()}.txt`)
   try {
-    const args = await buildYtDlpDownloadArgs(url, outputDir, options)
+    const args = await buildYtDlpDownloadArgs(url, outputDir, {
+      ...options,
+      downloadedPathLogFile
+    })
     logAudioDownload(l, {
       source: 'yt-dlp',
       status: 'started',
@@ -43,7 +101,8 @@ export const downloadVideo = async (
       throw new Error(message)
     }
 
-    const downloadedPath = await findDownloadedAudio(outputDir)
+    const downloadedPath = await findTrackedDownloadedAudio(downloadedPathLogFile, strictSingleOutput)
+      ?? await findDownloadedAudio(outputDir, { strictSingleOutput })
     logAudioDownload(l, {
       source: 'yt-dlp',
       status: 'downloaded',
@@ -56,5 +115,7 @@ export const downloadVideo = async (
       throw error instanceof Error ? error : new Error(details)
     }
     throw error instanceof Error ? error : new Error(details)
+  } finally {
+    await rm(downloadedPathLogFile, { force: true })
   }
 }

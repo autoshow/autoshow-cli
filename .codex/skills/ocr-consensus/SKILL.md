@@ -96,8 +96,8 @@ The report script:
 2. Confirm the providers counted in the report match the providers that actually exist under `providers/`.
 3. Confirm `provider-comparison-report.md` and `.json` were regenerated after the consensus extraction changed.
 4. Confirm local and cloud providers are ranked in separate groups.
-5. Confirm the markdown report contains an `Overall Ranking` section with best and worst overall notes.
-6. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, and per-provider `overallComponents`.
+5. Confirm the markdown report contains `Overall Ranking` and `Tier Breakdown` sections with best and worst overall notes.
+6. Confirm the JSON report contains `overallMetric`, `overallWeights`, `overall`, `tierMetric`, `tierSplit`, `tiers`, and per-provider `overallComponents` and `overallTier`.
 7. Confirm the local provider table does not include a Cost column.
 8. Delete temporary helper files such as the consensus packet unless the user explicitly wants to keep them.
 9. If a script fails, report the exact command, the run directory, and the first actionable error line.

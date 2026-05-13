@@ -14,6 +14,13 @@ import { prepareArticleDocument, processDownloadDocument, processDownloadPrepare
 import { runDocumentWrite } from './single/document-write'
 import { processXSpace } from './single/x-space-runner'
 
+const hasYtDlpPassthroughArgs = (opts: RuntimeOptions): boolean =>
+  (opts.ytDlpPassthroughArgs?.length ?? 0) > 0
+
+const throwUnsupportedDownloadPassthroughInput = (item: string): never => {
+  throw CLIUsageError(`yt-dlp passthrough args (--) are only supported for media URL downloads. Got: ${item}`)
+}
+
 export const processSingleTarget = async (
   command: ProcessCommand,
   item: string,
@@ -74,6 +81,9 @@ export const processSingleTarget = async (
   if (command === 'download') {
     if (isLikelyUrl(item)) {
       const kind = await classifyUrlInput(item, opts)
+      if (hasYtDlpPassthroughArgs(opts) && kind !== 'url_direct_media' && kind !== 'url_streaming') {
+        throwUnsupportedDownloadPassthroughInput(item)
+      }
       if (kind === 'url_x_space') {
         throwUnsupportedProcessInput(command, item, 'x_space')
       }
@@ -95,6 +105,9 @@ export const processSingleTarget = async (
     const exists = await fileExists(item)
     if (!exists) {
       throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help download`)
+    }
+    if (hasYtDlpPassthroughArgs(opts)) {
+      throwUnsupportedDownloadPassthroughInput(item)
     }
 
     if (isHtmlDocumentPath(item)) {
