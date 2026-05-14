@@ -18,9 +18,6 @@ export type TtsTargetSelection = {
   gcloudModels: string[]
   deapiModels: string[]
   geminiMultiSpeakerConfig: GeminiMultiSpeakerConfig | undefined
-  minimaxCloneRefAudioPath: string | undefined
-  minimaxClonePromptAudioPath: string | undefined
-  minimaxClonePromptText: string | undefined
   minimaxVoiceId: string | undefined
   minimaxLanguageBoost: string | undefined
   minimaxSpeed: number | undefined
@@ -103,7 +100,6 @@ export type TtsTargetSelection = {
   deapiInstruction: string | undefined
   hasElevenLabsPvcActionFlags: boolean
   hasElevenLabsPvcSetupFlags: boolean
-  hasMinimaxCloneFlags: boolean
   hasOpenAICloneFlags: boolean
   hasElevenLabsCloneFlags: boolean
   hasSpeechifyCustomVoiceFlags: boolean
@@ -120,9 +116,6 @@ const selectModels = (
 const trimmed = (value: string | undefined): string | undefined => value?.trim() || undefined
 
 export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelection => {
-  const minimaxCloneRefAudioPath = trimmed(options.minimaxTtsRefAudio)
-  const minimaxClonePromptAudioPath = trimmed(options.minimaxTtsPromptAudio)
-  const minimaxClonePromptText = trimmed(options.minimaxTtsPromptText)
   const openaiCloneRefAudioPath = trimmed(options.openaiTtsRefAudio)
   const openaiCloneConsentId = trimmed(options.openaiTtsConsentId)
   const openaiCloneConsentAudioPath = trimmed(options.openaiTtsConsentAudio)
@@ -155,13 +148,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     hasElevenLabsPvcActionFlags
     || elevenLabsPvcLanguage
     || elevenLabsPvcDescription
-  )
-  const hasMinimaxCloneFlags = Boolean(
-    minimaxCloneRefAudioPath
-    || minimaxClonePromptAudioPath
-    || minimaxClonePromptText
-    || options.minimaxTtsCloneNoiseReduction
-    || options.minimaxTtsCloneVolumeNormalization
   )
   const hasOpenAICloneFlags = Boolean(
     openaiCloneRefAudioPath
@@ -211,9 +197,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     gcloudModels: selectModels(options.gcloudTtsModels, options.gcloudTtsModel),
     deapiModels: selectModels(options.deapiTtsModels, options.deapiTtsModel),
     geminiMultiSpeakerConfig: resolveGeminiMultiSpeakerConfig(options),
-    minimaxCloneRefAudioPath,
-    minimaxClonePromptAudioPath,
-    minimaxClonePromptText,
     minimaxVoiceId: trimmed(options.minimaxTtsVoice),
     minimaxLanguageBoost: trimmed(options.minimaxTtsLanguageBoost),
     minimaxSpeed: options.minimaxTtsSpeed,
@@ -296,7 +279,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     deapiInstruction: trimmed(options.deapiTtsInstruction),
     hasElevenLabsPvcActionFlags,
     hasElevenLabsPvcSetupFlags,
-    hasMinimaxCloneFlags,
     hasOpenAICloneFlags,
     hasElevenLabsCloneFlags,
     hasSpeechifyCustomVoiceFlags,

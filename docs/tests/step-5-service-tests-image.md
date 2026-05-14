@@ -28,7 +28,7 @@ bun t test/test-cases/e2e/step-5-image-gen-e2e/
 ## Price Preflight
 
 ```bash
-bun t test/test-cases/e2e/step-5-image-gen-e2e/ --test-price
+bun t test/test-price/step-5-image --test-price
 bun t test/test-cases/e2e/step-5-image-gen-e2e/openai-image-gen.test.ts --budget 2500
 ```
 

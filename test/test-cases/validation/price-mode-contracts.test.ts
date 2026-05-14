@@ -82,12 +82,6 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
     expected: 'dialogue-normalized.txt'
   },
   {
-    label: 'MiniMax voice clone TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--minimax-tts', 'speech-2.8-turbo', '--minimax-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
-    expected: 'speech',
-    env: { MINIMAX_API_KEY: '', MINIMAX_BASE_URL: '' }
-  },
-  {
     label: 'OpenAI custom voice TTS',
     args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--openai-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
     expected: 'speech',
@@ -520,42 +514,6 @@ describe('price mode contracts', () => {
       elevenlabsTtsPvcWait: true
     } as Parameters<typeof estimateTtsCosts>[0], 1000)
     expect(pvcMultilingualSetupCosts[0]?.setupTimeMs).toBe(ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS)
-  })
-
-  test('MiniMax voice clone TTS estimates include one-time clone fee and setup timing', () => {
-    const opts = {
-      minimaxTtsModels: ['speech-2.8-turbo', 'speech-2.8-hd'],
-      minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
-    } as Parameters<typeof estimateTtsCosts>[0]
-
-    const costs = estimateTtsCosts(opts, 1000)
-    expect(costs.map((cost) => ({
-      model: cost.model,
-      setupCostCents: cost.setupCostCents,
-      totalCost: cost.totalCost
-    }))).toEqual([
-      { model: 'speech-2.8-turbo', setupCostCents: 150, totalCost: 156 },
-      { model: 'speech-2.8-hd', setupCostCents: undefined, totalCost: 10 }
-    ])
-    expect(estimateTtsCosts({
-      minimaxTtsModels: ['speech-2.8-turbo'],
-      minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
-    } as Parameters<typeof estimateTtsCosts>[0], 10_000)[0]?.totalCost).toBe(210)
-
-    const timing = computeEstimatedProcessingTimes({
-      ttsTargets: [
-        { service: 'minimax', model: 'speech-2.8-turbo', setupTimeMs: 15_000 },
-        { service: 'minimax', model: 'speech-2.8-hd' }
-      ],
-      ttsCharacterCount: 1000
-    })
-    expect(timing.steps.map((step) => ({
-      model: step.model,
-      processingTimeMs: step.processingTimeMs
-    }))).toEqual([
-      { model: 'speech-2.8-turbo', processingTimeMs: 133_008 },
-      { model: 'speech-2.8-hd', processingTimeMs: 94_592 }
-    ])
   })
 
   test('OpenAI custom voice TTS estimates include zero-cost setup and setup timing', () => {

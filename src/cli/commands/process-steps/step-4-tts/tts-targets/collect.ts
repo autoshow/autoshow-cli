@@ -22,7 +22,7 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   return [
     ...collectKittenTtsTargets(options, selection),
     ...collectElevenLabsTtsTargets(selection),
-    ...collectMinimaxTtsTargets(options, selection),
+    ...collectMinimaxTtsTargets(selection),
     ...collectGroqTtsTargets(selection),
     ...collectGrokTtsTargets(selection),
     ...collectMistralTtsTargets(selection),

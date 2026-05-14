@@ -32,14 +32,13 @@ bun t \
 ## Price Preflight
 
 ```bash
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts --test-price
+bun t test/test-price/step-2-ocr/services --test-price
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/service-models.test.ts --budget 2500
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --test-price
+bun t test/test-price/step-2-ocr/services/firecrawl --test-price
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts --budget 2500
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --test-price
 ```
 
-`ocr-glm-reader.test.ts` currently resolves a report-only price selector, so `--budget` does not skip it.
+`ocr-glm-reader.test.ts` currently has no standalone price selector, so `--budget` does not skip it.
 
 `extract <url> --all-url --price` is covered by the local validation suite. Do not run live `--all-url` e2e coverage unless hosted URL provider API usage has been explicitly approved.
 

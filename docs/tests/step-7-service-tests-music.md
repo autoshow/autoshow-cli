@@ -26,8 +26,8 @@ bun t test/test-cases/e2e/step-7-music-gen-e2e/
 ## Price Preflight
 
 ```bash
-bun t test/test-cases/e2e/step-7-music-gen-e2e/ --test-price
-bun t test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts --test-price
+bun t test/test-price/step-7-music --test-price
+bun t test/test-price/step-7-music/gemini --test-price
 bun t test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts --budget 2500
 ```
 

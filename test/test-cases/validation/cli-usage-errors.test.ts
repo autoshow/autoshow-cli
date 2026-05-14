@@ -91,6 +91,13 @@ test('extract rejects removed deAPI OCR flag', async () => {
   )
 })
 
+test('tts rejects removed MiniMax clone flags as unknown flags', async () => {
+  await expectUsageExit(
+    ['tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-turbo', '--minimax-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    'Unexpected flag: minimaxTtsRefAudio'
+  )
+})
+
 test('extract rejects removed Supadata STT modes', async () => {
   await expectUsageExit(
     ['extract', 'https://example.com/audio.mp3', '--supadata-stt', 'native', '--price'],

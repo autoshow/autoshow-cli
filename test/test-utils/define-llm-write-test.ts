@@ -35,12 +35,14 @@ export const defineLLMWriteTest = ({
   models,
   cliFlag,
   llmService,
-  requiresEnvVar
+  requiresEnvVar,
+  promptProfiles,
 }: {
   models: readonly string[]
   cliFlag: string
   llmService: string
   requiresEnvVar?: { key: string, description: string }
+  promptProfiles?: Partial<Record<string, string>>
 }): void => {
   withOutputLifecycle(STABLE_LOCAL_AUDIO_TITLE)
 
@@ -51,14 +53,20 @@ export const defineLLMWriteTest = ({
         return
       }
 
-      let result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
+      const commandArgs = ["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, cliFlag, model]
+      const promptProfile = promptProfiles?.[model]
+      if (promptProfile) {
+        commandArgs.push('--prompt', promptProfile)
+      }
+
+      let result = await runCommand(commandArgs)
 
       if (result.exitCode !== 0 && llmService === 'gemini') {
         const combinedOutput = `${result.stdout}\n${result.stderr}`
         if (isGeminiTransientUnavailable(combinedOutput)) {
           console.log(`Retrying once after transient Gemini availability error for ${model}`)
           await Bun.sleep(2_000)
-          result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
+          result = await runCommand(commandArgs)
 
           if (result.exitCode !== 0) {
             const retryOutput = `${result.stdout}\n${result.stderr}`
@@ -75,7 +83,7 @@ export const defineLLMWriteTest = ({
         if (isMinimaxTransientUnavailable(combinedOutput)) {
           console.log(`Retrying once after transient MiniMax availability error for ${model}`)
           await Bun.sleep(2_000)
-          result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, cliFlag, model])
+          result = await runCommand(commandArgs)
 
           if (result.exitCode !== 0) {
             const retryOutput = `${result.stdout}\n${result.stderr}`

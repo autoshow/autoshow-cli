@@ -6,10 +6,11 @@ import { parseRunnerArgs } from '../../test-runner/args'
 import { cleanupTestOutputRoot, createRunArtifacts, writeLatestRunLog } from '../../test-runner/artifacts'
 import { applyModelConfigCalibrations } from '../../test-runner/model-calibration'
 import { parseJunit } from '../../test-runner/parsers'
+import { EMPTY_PRICE_CONFIG_PATH, withEmptyPriceConfig } from '../../test-runner/price-command-config'
 import { resolvePriceSelection } from '../../test-runner/price-commands'
-import { PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
+import { BUDGET_PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
 import { evaluatePriceObservations } from '../../test-runner/price-evaluation'
-import { formatSelectedPathsLabel } from '../../test-runner/path-selection'
+import { formatSelectedPathsLabel, formatSelectedPriceSuitesLabel } from '../../test-runner/path-selection'
 import { parseCommandEstimatedTotal } from '../../test-runner/utils'
 import { shouldSkipBudgetKeys } from '../../test-utils/budget'
 
@@ -260,6 +261,57 @@ describe('test-runner contracts', () => {
     expect(parsed.preserveTestOutput).toBe(true)
   })
 
+  test('price config isolation appends empty config to mapped write price commands', () => {
+    const args = ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4', '--price']
+
+    expect(withEmptyPriceConfig(args)).toEqual([
+      ...args,
+      '--config-path',
+      EMPTY_PRICE_CONFIG_PATH,
+    ])
+  })
+
+  test('price config isolation appends empty config to mapped tts price commands', () => {
+    const args = ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai-tts', 'gpt-4o-mini-tts', '--price']
+
+    expect(withEmptyPriceConfig(args)).toEqual([
+      ...args,
+      '--config-path',
+      EMPTY_PRICE_CONFIG_PATH,
+    ])
+  })
+
+  test('price config isolation preserves explicit config paths', () => {
+    const separateConfigArgs = [
+      'src/cli/create-cli.ts',
+      'write',
+      'input/examples/audio/1-audio.mp3',
+      '--openai',
+      'gpt-5.4',
+      '--price',
+      '--config-path',
+      'config/custom-autoshow.json',
+    ]
+    const equalsConfigArgs = [
+      'src/cli/create-cli.ts',
+      'tts',
+      'input/examples/tts/1-tts.md',
+      '--openai-tts',
+      'gpt-4o-mini-tts',
+      '--price',
+      '--config-path=config/custom-autoshow.json',
+    ]
+
+    expect(withEmptyPriceConfig(separateConfigArgs)).toEqual(separateConfigArgs)
+    expect(withEmptyPriceConfig(equalsConfigArgs)).toEqual(equalsConfigArgs)
+  })
+
+  test('price config isolation leaves non-CLI runner commands unchanged', () => {
+    const args = ['test/test-runner.ts', 'test/test-cases/e2e/step-3-write-e2e', '--test-price']
+
+    expect(withEmptyPriceConfig(args)).toEqual(args)
+  })
+
   test('estimated-cost parser accepts readable totals and exact parenthetical cents', () => {
     expect(parseCommandEstimatedTotal('Total estimated cost: $3.59 (358.69030¢)')).toBe(358.69030)
     expect(parseCommandEstimatedTotal('Total estimated cost: free (0.00000¢)')).toBe(0)
@@ -283,6 +335,37 @@ describe('test-runner contracts', () => {
 
     expect((await readdir(dir)).sort()).toEqual(['latest.log'])
     expect(await readFile(join(dir, 'latest.log'), 'utf8')).toBe('previous run\n')
+  })
+
+  test('test-output cleanup can preserve active runner artifacts', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-test-output-active-cleanup-'))
+    tempDirs.push(dir)
+
+    const current = await createRunArtifacts(dir)
+    const activeRun = join(dir, 'active-run')
+    const staleRun = join(dir, 'stale-run')
+    const cacheDir = join(dir, '.test-cache')
+
+    await mkdir(activeRun, { recursive: true })
+    await mkdir(staleRun, { recursive: true })
+    await mkdir(cacheDir, { recursive: true })
+    await writeFile(join(activeRun, '.active-run.json'), `${JSON.stringify({
+      pid: process.pid,
+      startedAt: new Date().toISOString(),
+    })}\n`)
+    await writeFile(join(staleRun, 'report.json'), '{}\n')
+    await writeFile(join(cacheDir, 'cache.txt'), 'cache\n')
+
+    await cleanupTestOutputRoot(dir, {
+      keepRunDir: current.runDir,
+      preserveActiveRuns: true,
+    })
+
+    expect((await readdir(dir)).sort()).toEqual([
+      '.test-cache',
+      'active-run',
+      current.runId,
+    ].sort())
   })
 
   test('latest log captures failure diagnostics before cleanup', async () => {
@@ -330,6 +413,7 @@ describe('test-runner contracts', () => {
   test('path-selection labels strip the test/test-cases prefix for validation paths', () => {
     expect(formatSelectedPathsLabel(['test/test-cases/validation-next/'])).toBe('Selected paths: validation-next')
     expect(formatSelectedPathsLabel(['test/test-cases/validation/'])).toBe('Selected paths: validation')
+    expect(formatSelectedPriceSuitesLabel(['test/test-price/step-4-tts/services'])).toBe('Selected price suites: step-4-tts/services')
   })
 
   test('JUnit XML parsing returns pass, fail, and skip counts', async () => {
@@ -436,13 +520,30 @@ describe('test-runner contracts', () => {
     ]
 
     expect(resolvePriceSelection(allFiles, ['test/test-cases/validation-next/'])).toEqual({
-      suiteName: 'Selected paths: validation-next',
+      suiteName: 'Selected price suites: validation-next',
       commands: []
     })
     expect(resolvePriceSelection(allFiles, ['test/test-cases/validation/'])).toEqual({
-      suiteName: 'Selected paths: validation',
+      suiteName: 'Selected price suites: validation',
       commands: []
     })
+  })
+
+  test('price mode uses test-price selectors and rejects e2e selectors', () => {
+    const allFiles = [
+      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+    ]
+
+    const selected = resolvePriceSelection(allFiles, ['test/test-price/step-4-tts/services'])
+    const keys = selected.commands.map((command) => command.key)
+
+    expect(selected.suiteName).toBe('Selected price suites: step-4-tts/services')
+    expect(keys).toContain('tts-openai-gpt-4o-mini-tts')
+    expect(keys).toContain('tts-minimax-speech-2.8-turbo')
+    expect(keys).not.toContain('tts-minimax-speech-2.8-turbo-clone')
+    expect(() => resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+    ])).toThrow('Use --test-price test/test-price/step-4-tts/services instead')
   })
 
   test('budget-skip entries are emitted from skipped entry keys', () => {
@@ -526,7 +627,7 @@ describe('test-runner contracts', () => {
     const glob = new Bun.Glob('test/test-cases/e2e/**/*.test.ts')
     const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
     const budgetSkippableKeys = new Set(
-      PRICE_SELECTION_REGISTRY
+      BUDGET_PRICE_SELECTION_REGISTRY
         .filter((entry) => entry.budgetSkippable)
         .map((entry) => entry.key)
     )
@@ -574,7 +675,7 @@ describe('test-runner contracts', () => {
     expect(filesWithPriceFlag).toEqual([])
   })
 
-  test('TTS service budget preflight includes voice clone entries', () => {
+  test('TTS service budget preflight includes remaining voice clone entries', () => {
     const allFiles = [
       'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
     ]
@@ -584,7 +685,7 @@ describe('test-runner contracts', () => {
     ], true).commands.map((command) => command.key)
 
     expect(keys).toContain('tts-deapi-qwen3-voice-clone')
-    expect(keys).toContain('tts-minimax-speech-2.8-turbo-clone')
+    expect(keys).not.toContain('tts-minimax-speech-2.8-turbo-clone')
   })
 
   test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {

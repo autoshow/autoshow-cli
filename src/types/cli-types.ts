@@ -263,11 +263,6 @@ export type RuntimeOptions = {
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined
-  minimaxTtsRefAudio: string | undefined
-  minimaxTtsPromptAudio: string | undefined
-  minimaxTtsPromptText: string | undefined
-  minimaxTtsCloneNoiseReduction: boolean
-  minimaxTtsCloneVolumeNormalization: boolean
   minimaxTtsLanguageBoost: string | undefined
   minimaxTtsSpeed: number | undefined
   minimaxTtsVolume: number | undefined

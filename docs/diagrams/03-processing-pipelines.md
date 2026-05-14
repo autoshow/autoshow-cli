@@ -107,7 +107,6 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --elevenlabs-tts-ref-audio,│
                                         │   --elevenlabs-tts-pvc-voice,│
                                         │   --minimax-tts,             │
-                                        │   --minimax-tts-ref-audio,   │
                                         │   --groq-tts, --grok-tts,    │
                                         │   --mistral-tts,             │
                                         │   --openai-tts,              │

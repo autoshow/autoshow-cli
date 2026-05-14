@@ -168,7 +168,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
 | `tts --kitten-tts` | Kitten TTS Python venv + models |
 | `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY`; IVC/PVC setup flags also need local sample or verification audio |
-| `tts --minimax-tts` | `MINIMAX_API_KEY`; `--minimax-tts-ref-audio` also needs local `mp3`, `m4a`, or `wav` clone source audio |
+| `tts --minimax-tts` | `MINIMAX_API_KEY` |
 | `tts --groq-tts` | `GROQ_API_KEY` |
 | `tts --grok-tts` | `XAI_API_KEY` |
 | `tts --mistral-tts` | `MISTRAL_API_KEY`; reference audio is optional per run |

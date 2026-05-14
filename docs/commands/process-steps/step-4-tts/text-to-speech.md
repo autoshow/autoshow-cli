@@ -149,18 +149,14 @@ PVC samples must be local, non-empty audio files with supported extensions. Auto
 | Models | `speech-2.8-hd`, `speech-2.8-turbo`, `speech-2.6-hd`, `speech-2.6-turbo`, `speech-02-hd`, `speech-02-turbo` |
 | Voice | `--minimax-tts-voice <id>`, default `English_expressive_narrator` |
 | Synthesis controls | `--minimax-tts-language-boost <language>`, `--minimax-tts-speed <0.5..2>`, `--minimax-tts-volume <greater-than-0..10>`, `--minimax-tts-pitch <-12..12>`, `--minimax-tts-emotion <emotion>`, `--minimax-tts-english-normalization`, repeatable `--minimax-tts-pronunciation <rule>` |
-| Rapid clone | `--minimax-tts-ref-audio <path>` |
-| Clone prompt | `--minimax-tts-prompt-audio <path>` plus `--minimax-tts-prompt-text <text>` |
-| Clone tuning | `--minimax-tts-clone-noise-reduction`, `--minimax-tts-clone-volume-normalization` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.6-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15 --minimax-tts-emotion calm
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3 --minimax-tts-voice AutoShowAnthony01 --price
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator --price
 ```
 
-MiniMax TTS uses existing/preset voices by default. Add `--minimax-tts-ref-audio` to create one MiniMax rapid clone before synthesis and reuse the cloned `voice_id` for every selected MiniMax model in that run. `--minimax-tts-voice` becomes the custom clone `voice_id` in clone mode; omit it to let AutoShow generate one. Source audio must be local `mp3`, `m4a`, or `wav`, 10 seconds to 5 minutes, and at most 20 MB. Optional `--minimax-tts-prompt-audio` must be paired with `--minimax-tts-prompt-text`; prompt audio must be less than 8 seconds and at most 20 MB. `--all-tts` does not clone unless `--minimax-tts-ref-audio` is also set.
+MiniMax TTS uses existing/preset voices. Use `--minimax-tts-voice` to override the voice ID for the selected MiniMax model.
 
 ### Groq
 
@@ -347,7 +343,7 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 
 - Runway `eleven_multilingual_v2` is priced at 1 credit per 50 input characters. AutoShow treats 1 credit as 1 cent, so the equivalent rate is 20 cents per 1K characters. Estimates use exact block rounding: `ceil(characterCount / 50) * 1¢`.
 - ElevenLabs API pricing is 5 cents / 1K characters for `eleven_flash_v2_5` and `eleven_turbo_v2_5`, and 10 cents / 1K characters for `eleven_v3`. IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate. PVC setup adds a 0 cent setup estimate; training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used.
-- MiniMax synthesis estimates are 6 cents / 1K characters for `speech-2.8-turbo`, `speech-2.6-turbo`, and `speech-02-turbo`; HD variants are 10 cents / 1K characters. Clone mode adds a one-time 150 cents rapid clone setup cost per `tts` run.
+- MiniMax synthesis estimates are 6 cents / 1K characters for `speech-2.8-turbo`, `speech-2.6-turbo`, and `speech-02-turbo`; HD variants are 10 cents / 1K characters.
 - Groq English Orpheus estimates use $10 / 1M input characters plus $22 / 1M output characters. Groq Arabic Saudi uses $0 input plus $40 / 1M output characters.
 - Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a 9000 ms / 1K characters timing heuristic.
 - OpenAI `gpt-4o-mini-tts` estimates use 60 cents / 1M input characters plus 1200 cents / 1M output characters, equivalent to 1.26 cents per 1K characters in AutoShow's character estimator. OpenAI custom voice creation adds a one-time 0 cent setup estimate and a 15000 ms setup timing estimate.
@@ -362,7 +358,6 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - Dialogue runs also write `dialogue-normalized.txt` and per-turn WAVs under `segments/`.
 - ElevenLabs IVC runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
 - Ready ElevenLabs PVC synthesis records `speaker: "pvc:<voice_id>"` in Step 4 metadata. PVC setup-only runs write `elevenlabs-pvc-status.json`; when no wait is requested, no `speech.wav` is produced.
-- MiniMax clone runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and one `cloneCostCents: 150` entry in the Step 4 metadata.
 - OpenAI custom voice creation runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
 - Google Cloud Instant Custom Voice runs record `speaker: "instant-custom-voice"` and do not store the raw voice cloning key in `run.json`.
 - `run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.

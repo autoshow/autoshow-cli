@@ -74,32 +74,8 @@ const writeTtsFlags = {
     type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
-    description: 'MiniMax TTS voice ID override, or custom clone voice_id when --minimax-tts-ref-audio is set (default: English_expressive_narrator)',
+    description: 'MiniMax TTS voice ID override (default: English_expressive_narrator)',
     type: String
-  },
-  'minimax-tts-ref-audio': {
-    description: 'MiniMax TTS source audio path for rapid voice cloning',
-    type: String
-  },
-  'minimax-tts-prompt-audio': {
-    description: 'Optional MiniMax TTS prompt audio path for voice cloning quality',
-    type: String
-  },
-  'minimax-tts-prompt-text': {
-    description: 'Transcript for --minimax-tts-prompt-audio',
-    type: String
-  },
-  'minimax-tts-clone-noise-reduction': {
-    description: 'Enable MiniMax voice clone noise reduction',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'minimax-tts-clone-volume-normalization': {
-    description: 'Enable MiniMax voice clone volume normalization',
-    type: Boolean,
-    default: false,
-    negatable: false
   },
   'minimax-tts-language-boost': {
     description: 'MiniMax TTS language boost: auto|English|Chinese|Chinese,Yue|Arabic|Spanish|French|German|Japanese|Korean|...',

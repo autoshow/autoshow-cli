@@ -84,8 +84,8 @@ bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
 # Hosted Mistral Voxtral text-to-speech
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
-# MiniMax rapid voice cloning
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+# MiniMax hosted text-to-speech
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 
 # Runway-hosted text-to-speech
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
@@ -173,7 +173,7 @@ bun as config --show
 bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
 bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
-bun as config --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 bun as config --reset
 ```

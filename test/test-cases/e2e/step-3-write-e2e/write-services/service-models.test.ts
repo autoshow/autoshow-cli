@@ -9,6 +9,11 @@ defineLLMWriteTest({
   ],
   cliFlag: '--openai',
   llmService: 'openai',
+  promptProfiles: {
+    'gpt-5.4': 'shortSummary',
+    'gpt-5.4-pro': 'shortSummary',
+    'gpt-5.4-mini': 'shortSummary',
+  },
 })
 
 defineLLMWriteTest({
@@ -21,6 +26,11 @@ defineLLMWriteTest({
   cliFlag: '--anthropic',
   llmService: 'anthropic',
   requiresEnvVar: { key: 'ANTHROPIC_API_KEY', description: 'Anthropic Claude models' },
+  promptProfiles: {
+    'claude-opus-4-7': 'shortSummary',
+    'claude-sonnet-4-6': 'shortSummary',
+    'claude-opus-4-6': 'shortSummary',
+  },
 })
 
 defineLLMWriteTest({
@@ -31,6 +41,9 @@ defineLLMWriteTest({
   cliFlag: '--gemini',
   llmService: 'gemini',
   requiresEnvVar: { key: 'GEMINI_API_KEY', description: 'Gemini API' },
+  promptProfiles: {
+    'gemini-3.1-pro-preview': 'shortSummary',
+  },
 })
 
 defineLLMWriteTest({
@@ -41,6 +54,9 @@ defineLLMWriteTest({
   cliFlag: '--groq',
   llmService: 'groq',
   requiresEnvVar: { key: 'GROQ_API_KEY', description: 'Groq models' },
+  promptProfiles: {
+    'openai/gpt-oss-120b': 'shortSummary',
+  },
 })
 
 defineLLMWriteTest({
@@ -51,6 +67,9 @@ defineLLMWriteTest({
   cliFlag: '--minimax',
   llmService: 'minimax',
   requiresEnvVar: { key: 'MINIMAX_API_KEY', description: 'MiniMax models' },
+  promptProfiles: {
+    'MiniMax-M2.5-highspeed': 'shortSummary',
+  },
 })
 
 defineLLMWriteTest({
@@ -61,6 +80,9 @@ defineLLMWriteTest({
   cliFlag: '--grok',
   llmService: 'grok',
   requiresEnvVar: { key: 'XAI_API_KEY', description: 'Grok models' },
+  promptProfiles: {
+    'grok-4.20-reasoning': 'shortSummary',
+  },
 })
 
 defineLLMWriteTest({

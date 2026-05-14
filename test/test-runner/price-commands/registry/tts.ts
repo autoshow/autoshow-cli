@@ -21,7 +21,6 @@ export const ttsRegistry: PriceSelectionEntry[] = [
     command('tts-gcloud-standard', 'tts-gcloud-standard', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--gcloud-tts', 'standard', '--price']),
     command('tts-minimax-speech-2.8-turbo', 'tts-minimax-speech-2.8-turbo', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-turbo', '--price']),
     command('tts-minimax-speech-2.8-hd', 'tts-minimax-speech-2.8-hd', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-hd', '--price']),
-    command('tts-minimax-speech-2.8-turbo-clone', 'tts-minimax-speech-2.8-turbo-clone', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-turbo', '--minimax-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price']),
     command('tts-elevenlabs-eleven_v3', 'tts-elevenlabs-eleven_v3', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--elevenlabs-tts', 'eleven_v3', '--price']),
     command('tts-elevenlabs-eleven_flash_v2_5', 'tts-elevenlabs-eleven_flash_v2_5', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--elevenlabs-tts', 'eleven_flash_v2_5', '--price']),
     command('tts-elevenlabs-eleven_turbo_v2_5', 'tts-elevenlabs-eleven_turbo_v2_5', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--elevenlabs-tts', 'eleven_turbo_v2_5', '--price']),

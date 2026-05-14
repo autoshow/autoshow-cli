@@ -1,5 +1,4 @@
-import { stat } from 'node:fs/promises'
-import { basename, extname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import * as v from 'valibot'
 import type { MinimaxTtsModel, Step4Metadata } from '~/types'
 import * as l from '~/utils/logger'
@@ -10,7 +9,6 @@ import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'
-import { getAudioDuration } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/audio-splitter'
 import {
   MinimaxBaseRespSchema,
   ensureMinimaxBaseRespSuccess,
@@ -25,49 +23,10 @@ const MINIMAX_DEFAULT_VOICE_ID = 'English_expressive_narrator'
 const MAX_CHARS_PER_CHUNK = 50_000
 const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
-export const MINIMAX_TTS_CLONE_COST_CENTS = 150
-export const MINIMAX_TTS_CLONE_SETUP_MS = 15_000
-
-const MAX_MINIMAX_TTS_CLONE_AUDIO_BYTES = 20 * 1024 * 1024
-const MIN_MINIMAX_TTS_SOURCE_AUDIO_SECONDS = 10
-const MAX_MINIMAX_TTS_SOURCE_AUDIO_SECONDS = 5 * 60
-const MAX_MINIMAX_TTS_PROMPT_AUDIO_SECONDS = 8
-const MINIMAX_TTS_CLONE_AUDIO_EXTENSIONS = new Set(['.mp3', '.m4a', '.wav'])
-
-export type MinimaxTtsCloneAudioKind = 'source' | 'prompt'
-
-export type MinimaxTtsCloneAudio = {
-  path: string
-  basename: string
-  durationSeconds: number
-  sizeBytes: number
-}
-
-export type MinimaxTtsCloneResult = {
-  voiceId: string
-  sourceAudio: MinimaxTtsCloneAudio
-  promptAudio?: MinimaxTtsCloneAudio | undefined
-}
-
-export type MinimaxTtsCloneContext = {
-  clonePromise?: Promise<MinimaxTtsCloneResult> | undefined
-  cloneCostReported: boolean
-}
-
-export type MinimaxTtsCloneOptions = {
-  refAudioPath: string
-  voiceId?: string | undefined
-  promptAudioPath?: string | undefined
-  promptText?: string | undefined
-  needNoiseReduction?: boolean | undefined
-  needVolumeNormalization?: boolean | undefined
-  context?: MinimaxTtsCloneContext | undefined
-}
 
 export type MinimaxTtsOptions = {
   model: MinimaxTtsModel
   voiceId?: string | undefined
-  clone?: MinimaxTtsCloneOptions | undefined
   languageBoost?: string | undefined
   speed?: number | undefined
   volume?: number | undefined
@@ -76,10 +35,6 @@ export type MinimaxTtsOptions = {
   englishNormalization?: boolean | undefined
   pronunciations?: string[] | undefined
 }
-
-export const createMinimaxTtsCloneContext = (): MinimaxTtsCloneContext => ({
-  cloneCostReported: false
-})
 
 const MinimaxCreateResponseSchema = v.object({
   task_id: v.union([v.string(), v.number()]),
@@ -99,231 +54,6 @@ const MinimaxQueryResponseSchema = v.object({
   data: v.optional(MinimaxQueryDataSchema, undefined),
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
-
-const MinimaxUploadResponseSchema = v.object({
-  file: v.object({
-    file_id: v.union([v.string(), v.number()])
-  }),
-  base_resp: v.optional(MinimaxBaseRespSchema, undefined)
-})
-
-const MinimaxVoiceCloneResponseSchema = v.object({
-  demo_audio: v.optional(v.string(), undefined),
-  base_resp: v.optional(MinimaxBaseRespSchema, undefined)
-})
-
-const generateMinimaxCloneVoiceId = (): string => {
-  const suffix = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`
-  return `AutoShow_${suffix}`
-}
-
-export const validateMinimaxTtsCloneVoiceId = (voiceId: string): string => {
-  const normalized = voiceId.trim()
-  if (normalized.length < 8 || normalized.length > 256) {
-    throw new Error('MiniMax TTS clone voice_id must be 8-256 characters long.')
-  }
-  if (!/^[A-Za-z]/.test(normalized)) {
-    throw new Error('MiniMax TTS clone voice_id must start with an English letter.')
-  }
-  if (!/^[A-Za-z0-9_-]+$/.test(normalized)) {
-    throw new Error('MiniMax TTS clone voice_id can contain only letters, digits, "-", and "_".')
-  }
-  if (/[-_]$/.test(normalized)) {
-    throw new Error('MiniMax TTS clone voice_id cannot end with "-" or "_".')
-  }
-  return normalized
-}
-
-const resolveMinimaxCloneVoiceId = (voiceId: string | undefined): string =>
-  validateMinimaxTtsCloneVoiceId(voiceId?.trim() || generateMinimaxCloneVoiceId())
-
-export const validateMinimaxTtsCloneAudio = async (
-  audioPath: string,
-  kind: MinimaxTtsCloneAudioKind
-): Promise<MinimaxTtsCloneAudio> => {
-  const normalizedPath = audioPath.trim()
-  const label = kind === 'source' ? 'source audio' : 'prompt audio'
-  if (normalizedPath.length === 0) {
-    throw new Error(`MiniMax TTS clone ${label} path is empty.`)
-  }
-
-  const ext = extname(normalizedPath).toLowerCase()
-  if (!MINIMAX_TTS_CLONE_AUDIO_EXTENSIONS.has(ext)) {
-    throw new Error(`MiniMax TTS clone ${label} must be an mp3, m4a, or wav file.`)
-  }
-
-  let fileStats: Awaited<ReturnType<typeof stat>>
-  try {
-    fileStats = await stat(normalizedPath)
-  } catch {
-    throw new Error(`MiniMax TTS clone ${label} not found: ${normalizedPath}`)
-  }
-
-  if (!fileStats.isFile()) {
-    throw new Error(`MiniMax TTS clone ${label} is not a file: ${normalizedPath}`)
-  }
-  if (fileStats.size <= 0) {
-    throw new Error(`MiniMax TTS clone ${label} is empty: ${normalizedPath}`)
-  }
-  if (fileStats.size > MAX_MINIMAX_TTS_CLONE_AUDIO_BYTES) {
-    throw new Error(`MiniMax TTS clone ${label} exceeds 20 MB: ${normalizedPath}`)
-  }
-
-  let durationSeconds: number
-  try {
-    durationSeconds = await getAudioDuration(normalizedPath)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`Could not determine MiniMax TTS clone ${label} duration: ${message}`)
-  }
-
-  if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
-    throw new Error(`Could not determine MiniMax TTS clone ${label} duration: ${normalizedPath}`)
-  }
-
-  if (
-    kind === 'source'
-    && (
-      durationSeconds < MIN_MINIMAX_TTS_SOURCE_AUDIO_SECONDS
-      || durationSeconds > MAX_MINIMAX_TTS_SOURCE_AUDIO_SECONDS
-    )
-  ) {
-    throw new Error(`MiniMax TTS clone source audio must be 10 seconds to 5 minutes long. Received ${durationSeconds.toFixed(2)} seconds.`)
-  }
-  if (kind === 'prompt' && durationSeconds >= MAX_MINIMAX_TTS_PROMPT_AUDIO_SECONDS) {
-    throw new Error(`MiniMax TTS clone prompt audio must be less than 8 seconds long. Received ${durationSeconds.toFixed(2)} seconds.`)
-  }
-
-  return {
-    path: normalizedPath,
-    basename: basename(normalizedPath),
-    durationSeconds,
-    sizeBytes: fileStats.size
-  }
-}
-
-const uploadMinimaxCloneAudio = async (
-  baseURL: string,
-  apiKey: string,
-  audio: MinimaxTtsCloneAudio,
-  purpose: 'voice_clone' | 'prompt_audio'
-): Promise<string | number> => {
-  const form = new FormData()
-  form.append('purpose', purpose)
-  form.append('file', Bun.file(audio.path), audio.basename)
-
-  const response = await fetch(`${baseURL}/v1/files/upload`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: form
-  })
-
-  if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`MiniMax TTS clone audio upload failed (${response.status}): ${body || 'No response body'}`)
-  }
-
-  const data = validateData(
-    MinimaxUploadResponseSchema,
-    await parseMinimaxJsonResponse(response, 'MiniMax TTS clone audio upload response'),
-    'MiniMax TTS clone audio upload response'
-  )
-  ensureMinimaxBaseRespSuccess(data.base_resp, 'MiniMax TTS clone audio upload')
-  return data.file.file_id
-}
-
-const cloneMinimaxVoice = async (
-  baseURL: string,
-  apiKey: string,
-  options: MinimaxTtsCloneOptions
-): Promise<MinimaxTtsCloneResult> => {
-  const promptAudioPath = options.promptAudioPath?.trim() || undefined
-  const promptText = options.promptText?.trim() || undefined
-  if (promptAudioPath && !promptText) {
-    throw new Error('MiniMax TTS --minimax-tts-prompt-audio requires --minimax-tts-prompt-text.')
-  }
-  if (promptText && !promptAudioPath) {
-    throw new Error('MiniMax TTS --minimax-tts-prompt-text requires --minimax-tts-prompt-audio.')
-  }
-
-  const voiceId = resolveMinimaxCloneVoiceId(options.voiceId)
-  const sourceAudio = await validateMinimaxTtsCloneAudio(options.refAudioPath, 'source')
-  const sourceFileId = await uploadMinimaxCloneAudio(baseURL, apiKey, sourceAudio, 'voice_clone')
-
-  const promptAudio = promptAudioPath
-    ? await validateMinimaxTtsCloneAudio(promptAudioPath, 'prompt')
-    : undefined
-  const promptFileId = promptAudio
-    ? await uploadMinimaxCloneAudio(baseURL, apiKey, promptAudio, 'prompt_audio')
-    : undefined
-
-  const requestBody = {
-    file_id: sourceFileId,
-    voice_id: voiceId,
-    ...(promptAudio && promptFileId !== undefined && promptText
-      ? {
-          clone_prompt: {
-            prompt_audio: promptFileId,
-            prompt_text: promptText
-          }
-        }
-      : {}),
-    need_noise_reduction: options.needNoiseReduction === true,
-    need_volume_normalization: options.needVolumeNormalization === true
-  }
-
-  const response = await fetch(`${baseURL}/v1/voice_clone`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(requestBody)
-  })
-
-  if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`MiniMax TTS voice clone failed (${response.status}): ${body || 'No response body'}`)
-  }
-
-  const data = validateData(
-    MinimaxVoiceCloneResponseSchema,
-    await parseMinimaxJsonResponse(response, 'MiniMax TTS voice clone response'),
-    'MiniMax TTS voice clone response'
-  )
-  ensureMinimaxBaseRespSuccess(data.base_resp, 'MiniMax TTS voice clone')
-
-  return {
-    voiceId,
-    sourceAudio,
-    ...(promptAudio ? { promptAudio } : {})
-  }
-}
-
-export const ensureMinimaxTtsClone = async (
-  baseURL: string,
-  apiKey: string,
-  options: MinimaxTtsCloneOptions
-): Promise<MinimaxTtsCloneResult> => {
-  const context = options.context
-  if (context?.clonePromise) {
-    return await context.clonePromise
-  }
-
-  let clonePromise: Promise<MinimaxTtsCloneResult>
-  clonePromise = cloneMinimaxVoice(baseURL, apiKey, options).catch((error) => {
-    if (context?.clonePromise === clonePromise) {
-      context.clonePromise = undefined
-    }
-    throw error
-  })
-  if (context) {
-    context.clonePromise = clonePromise
-  }
-  return await clonePromise
-}
 
 const readTaskStatus = (query: v.InferOutput<typeof MinimaxQueryResponseSchema>): string | number | undefined => {
   return query.data?.status ?? query.status
@@ -435,16 +165,11 @@ export const runMinimaxTts = async (
   }
 
   const startTime = Date.now()
-  const cloneResult = options.clone
-    ? await ensureMinimaxTtsClone(baseURL, apiKey, options.clone)
-    : undefined
-  const voiceId = cloneResult?.voiceId ?? options.voiceId?.trim() ?? MINIMAX_DEFAULT_VOICE_ID
-  const speaker = cloneResult ? `ref_audio:${cloneResult.sourceAudio.basename}` : voiceId
+  const voiceId = options.voiceId?.trim() ?? MINIMAX_DEFAULT_VOICE_ID
 
   logTtsConfig('MiniMax', [
     { label: 'model', value: options.model },
-    { label: cloneResult ? 'reference audio' : 'voice', value: cloneResult ? cloneResult.sourceAudio.basename : voiceId },
-    ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : []),
+    { label: 'voice', value: voiceId },
     ...(options.languageBoost ? [{ label: 'language boost', value: options.languageBoost }] : []),
     ...(typeof options.speed === 'number' ? [{ label: 'speed', value: options.speed }] : []),
     ...(typeof options.volume === 'number' ? [{ label: 'volume', value: options.volume }] : []),
@@ -558,16 +283,10 @@ export const runMinimaxTts = async (
   }
   await Bun.$`rm -f ${outputDir}/speech-minimax-chunks.txt ${outputDir}/speech-minimax-merged.mp3`.quiet().nothrow()
 
-  const cloneContext = options.clone?.context
-  const shouldReportCloneCost = cloneResult !== undefined && (!cloneContext || !cloneContext.cloneCostReported)
-  if (shouldReportCloneCost && cloneContext) {
-    cloneContext.cloneCostReported = true
-  }
-
   const result = finalizeTtsRun({
     service: 'minimax',
     model: options.model,
-    speaker,
+    speaker: voiceId,
     audioPath,
     chunkCount: chunks.length,
     startTime
@@ -575,10 +294,6 @@ export const runMinimaxTts = async (
 
   return {
     audioPath: result.audioPath,
-    metadata: {
-      ...result.metadata,
-      ...(cloneResult ? { clonedVoiceId: cloneResult.voiceId } : {}),
-      ...(shouldReportCloneCost ? { cloneCostCents: MINIMAX_TTS_CLONE_COST_CENTS } : {})
-    }
+    metadata: result.metadata
   }
 }

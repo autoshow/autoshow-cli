@@ -42,9 +42,6 @@ export const validateTtsTargetSelection = (
     }
   }
 
-  if (selection.hasMinimaxCloneFlags && selection.minimaxModels.length === 0) {
-    throw new Error('MiniMax TTS clone flags require --minimax-tts <model> or --all-tts.')
-  }
   const hasMinimaxRequestControlFlags = Boolean(
     selection.minimaxLanguageBoost
     || typeof selection.minimaxSpeed === 'number'
@@ -56,21 +53,6 @@ export const validateTtsTargetSelection = (
   )
   if (hasMinimaxRequestControlFlags && selection.minimaxModels.length === 0) {
     throw new Error('MiniMax TTS request control flags require --minimax-tts <model> or --all-tts.')
-  }
-  if (
-    (selection.minimaxClonePromptAudioPath
-      || selection.minimaxClonePromptText
-      || options.minimaxTtsCloneNoiseReduction
-      || options.minimaxTtsCloneVolumeNormalization)
-    && !selection.minimaxCloneRefAudioPath
-  ) {
-    throw new Error('MiniMax TTS clone option requires --minimax-tts-ref-audio.')
-  }
-  if (selection.minimaxClonePromptAudioPath && !selection.minimaxClonePromptText) {
-    throw new Error('MiniMax TTS --minimax-tts-prompt-audio requires --minimax-tts-prompt-text.')
-  }
-  if (selection.minimaxClonePromptText && !selection.minimaxClonePromptAudioPath) {
-    throw new Error('MiniMax TTS --minimax-tts-prompt-text requires --minimax-tts-prompt-audio.')
   }
 
   if (selection.hasOpenAICloneFlags && selection.openaiModels.length === 0) {

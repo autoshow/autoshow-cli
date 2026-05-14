@@ -28,7 +28,6 @@ import {
 
 const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-2603'
 const MISTRAL_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
-const MINIMAX_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
 const DEAPI_TTS_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
 const DEAPI_REF_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
 
@@ -176,46 +175,6 @@ defineTTSServiceTest({
   extraArgs: ['--minimax-tts-voice', 'English_expressive_narrator'],
   resolveExpectedSpeaker: async () => 'English_expressive_narrator',
 })
-
-budgetedTest('tts-minimax-speech-2.8-turbo-clone', 'MiniMax voice clone generates speech.wav', async () => {
-  if (!await hasConfiguredEnvVar('MINIMAX_API_KEY')) {
-    console.log('Skipping: MINIMAX_API_KEY is required for MiniMax voice clone TTS test')
-    return
-  }
-
-  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
-
-  const voiceId = `AutoShow${Date.now().toString(36)}`
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--minimax-tts',
-    'speech-2.8-turbo',
-    '--minimax-tts-ref-audio',
-    MINIMAX_REF_AUDIO_PATH,
-    '--minimax-tts-voice',
-    voiceId
-  ])
-
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, clonedVoiceId?: string, cloneCostCents?: number }>
-    }
-    expect(metadata.tts?.[0]?.ttsService).toBe('minimax')
-    expect(metadata.tts?.[0]?.ttsModel).toBe('speech-2.8-turbo')
-    expect(metadata.tts?.[0]?.speaker).toBe('ref_audio:anthony-voice.mp3')
-    expect(metadata.tts?.[0]?.clonedVoiceId).toBe(voiceId)
-    expect(metadata.tts?.[0]?.cloneCostCents).toBe(150)
-  }
-}, E2E_TEST_TIMEOUT_MS)
 
 defineTTSServiceTest({
   models: ['eleven_v3', 'eleven_flash_v2_5', 'eleven_turbo_v2_5'],

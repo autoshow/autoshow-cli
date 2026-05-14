@@ -35,6 +35,7 @@ export type TestRunArtifacts = {
   runnerLogPath: string
   commandLogPath: string
   metricsLogPath: string
+  activeRunPath: string
   junitPath: string
   reportJsonPath: string
   e2eReportJsonPath: string

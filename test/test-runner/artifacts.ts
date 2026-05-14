@@ -1,9 +1,10 @@
 import { appendFile, mkdir, readdir, readFile, rm } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import type { TestRunArtifacts } from '~/types'
 import { formatTimestampForDir } from './utils'
 
 const LATEST_LOG_FILE = 'latest.log'
+const ACTIVE_RUN_FILE = '.active-run.json'
 
 export const TEST_OUTPUT_ROOT = resolve(process.cwd(), 'project/test-output')
 export const LATEST_TEST_LOG_PATH = resolve(TEST_OUTPUT_ROOT, LATEST_LOG_FILE)
@@ -31,6 +32,25 @@ const readJsonIfExists = async (path: string): Promise<Record<string, unknown> |
   } catch {
     return null
   }
+}
+
+const ensureParentDirectory = async (path: string): Promise<void> => {
+  await mkdir(dirname(path), { recursive: true })
+}
+
+const isPidAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const isActiveRunDir = async (dir: string): Promise<boolean> => {
+  const marker = await readJsonIfExists(resolve(dir, ACTIVE_RUN_FILE))
+  const pid = marker?.['pid']
+  return typeof pid === 'number' && Number.isInteger(pid) && pid > 0 && isPidAlive(pid)
 }
 
 const formatUnknown = (value: unknown): string | null => {
@@ -109,15 +129,43 @@ const appendFailures = (lines: string[], report: Record<string, unknown> | null)
   }
 }
 
-export const cleanupTestOutputRoot = async (rootDir = TEST_OUTPUT_ROOT): Promise<void> => {
+export const cleanupTestOutputRoot = async (
+  rootDir = TEST_OUTPUT_ROOT,
+  options: { keepRunDir?: string, preserveActiveRuns?: boolean } = {}
+): Promise<void> => {
   await mkdir(rootDir, { recursive: true })
 
   const entries = await readdir(rootDir, { withFileTypes: true })
-  await Promise.all(
-    entries
-      .filter(entry => entry.name !== LATEST_LOG_FILE)
-      .map(entry => rm(resolve(rootDir, entry.name), { recursive: true, force: true }))
-  )
+  const keepRunDir = options.keepRunDir ? resolve(options.keepRunDir) : null
+  const pathsToRemove: string[] = []
+
+  for (const entry of entries) {
+    if (entry.name === LATEST_LOG_FILE) {
+      continue
+    }
+
+    const entryPath = resolve(rootDir, entry.name)
+    if (keepRunDir && entryPath === keepRunDir) {
+      continue
+    }
+
+    if (options.preserveActiveRuns) {
+      if (entry.name === '.test-cache') {
+        continue
+      }
+      if (entry.isDirectory() && await isActiveRunDir(entryPath)) {
+        continue
+      }
+    }
+
+    pathsToRemove.push(entryPath)
+  }
+
+  await Promise.all(pathsToRemove.map(path => rm(path, { recursive: true, force: true })))
+}
+
+export const cleanupRunArtifacts = async (artifacts: TestRunArtifacts): Promise<void> => {
+  await rm(artifacts.runDir, { recursive: true, force: true })
 }
 
 export const createRunArtifacts = async (rootDir = TEST_OUTPUT_ROOT): Promise<TestRunArtifacts> => {
@@ -143,7 +191,12 @@ export const createRunArtifacts = async (rootDir = TEST_OUTPUT_ROOT): Promise<Te
   const runnerLogPath = resolve(runDir, 'runner.log')
   const commandLogPath = resolve(runDir, 'commands.log')
   const metricsLogPath = resolve(runDir, 'metrics.ndjson')
+  const activeRunPath = resolve(runDir, ACTIVE_RUN_FILE)
   const metadataDirPath = resolve(runDir, 'metadata')
+  await Bun.write(activeRunPath, `${JSON.stringify({
+    pid: process.pid,
+    startedAt: startedAtIso,
+  }, null, 2)}\n`)
   await Bun.write(runnerLogPath, '')
   await Bun.write(commandLogPath, '')
   await Bun.write(metricsLogPath, '')
@@ -156,6 +209,7 @@ export const createRunArtifacts = async (rootDir = TEST_OUTPUT_ROOT): Promise<Te
     runnerLogPath,
     commandLogPath,
     metricsLogPath,
+    activeRunPath,
     junitPath: resolve(runDir, 'junit.xml'),
     reportJsonPath: resolve(runDir, 'report.json'),
     e2eReportJsonPath: resolve(runDir, 'e2e-report.json'),
@@ -167,10 +221,12 @@ export const createRunArtifacts = async (rootDir = TEST_OUTPUT_ROOT): Promise<Te
 }
 
 export const appendRunnerLog = async (artifacts: TestRunArtifacts, text: string): Promise<void> => {
+  await ensureParentDirectory(artifacts.runnerLogPath)
   await appendFile(artifacts.runnerLogPath, text)
 }
 
 export const appendCommandLog = async (artifacts: TestRunArtifacts, text: string): Promise<void> => {
+  await ensureParentDirectory(artifacts.commandLogPath)
   await appendFile(artifacts.commandLogPath, text)
 }
 
@@ -178,6 +234,7 @@ export const writeReportJson = async (
   artifacts: TestRunArtifacts,
   json: Record<string, unknown>
 ): Promise<void> => {
+  await ensureParentDirectory(artifacts.reportJsonPath)
   await Bun.write(artifacts.reportJsonPath, JSON.stringify(json, null, 2))
 }
 

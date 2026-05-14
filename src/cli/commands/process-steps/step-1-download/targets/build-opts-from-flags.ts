@@ -635,11 +635,6 @@ export const buildOptsFromFlags = (
     minimaxTtsModels,
     minimaxTtsModel,
     minimaxTtsVoice: readOptionalStringFlag(mergedFlags, 'minimax-tts-voice'),
-    minimaxTtsRefAudio: readOptionalStringFlag(mergedFlags, 'minimax-tts-ref-audio'),
-    minimaxTtsPromptAudio: readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-audio'),
-    minimaxTtsPromptText: readOptionalRawStringFlag(rawFlagArgs, 'minimax-tts-prompt-text') ?? readOptionalStringFlag(mergedFlags, 'minimax-tts-prompt-text'),
-    minimaxTtsCloneNoiseReduction: readBooleanFlag(mergedFlags, 'minimax-tts-clone-noise-reduction'),
-    minimaxTtsCloneVolumeNormalization: readBooleanFlag(mergedFlags, 'minimax-tts-clone-volume-normalization'),
     minimaxTtsLanguageBoost: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'minimax-tts-language-boost')
       if (v === undefined) return undefined

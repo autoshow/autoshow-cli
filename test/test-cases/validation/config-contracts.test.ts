@@ -299,23 +299,13 @@ describe('config contracts', () => {
     })
   })
 
-  test('buildConfigPatchFromFlags saves and merges MiniMax TTS clone defaults', () => {
+  test('buildConfigPatchFromFlags saves and merges MiniMax TTS voice defaults', () => {
     const patch = buildConfigPatchFromFlags({
       'minimax-tts': ['speech-2.8-turbo'],
-      'minimax-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
-      'minimax-tts-voice': 'AutoShowTestVoice',
-      'minimax-tts-prompt-audio': 'input/examples/audio/0-audio-short.mp3',
-      'minimax-tts-prompt-text': 'Reference transcript.',
-      'minimax-tts-clone-noise-reduction': true,
-      'minimax-tts-clone-volume-normalization': true
+      'minimax-tts-voice': 'English_expressive_narrator'
     }, new Set([
       'minimax-tts',
-      'minimax-tts-ref-audio',
-      'minimax-tts-voice',
-      'minimax-tts-prompt-audio',
-      'minimax-tts-prompt-text',
-      'minimax-tts-clone-noise-reduction',
-      'minimax-tts-clone-volume-normalization'
+      'minimax-tts-voice'
     ]))
 
     expect(patch).toEqual({
@@ -323,12 +313,7 @@ describe('config contracts', () => {
         post: {
           tts: {
             minimaxTts: ['speech-2.8-turbo'],
-            minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
-            minimaxTtsVoice: 'AutoShowTestVoice',
-            minimaxTtsPromptAudio: 'input/examples/audio/0-audio-short.mp3',
-            minimaxTtsPromptText: 'Reference transcript.',
-            minimaxTtsCloneNoiseReduction: true,
-            minimaxTtsCloneVolumeNormalization: true
+            minimaxTtsVoice: 'English_expressive_narrator'
           }
         }
       }
@@ -336,12 +321,7 @@ describe('config contracts', () => {
 
     expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
       'minimax-tts': ['speech-2.8-turbo'],
-      'minimax-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
-      'minimax-tts-voice': 'AutoShowTestVoice',
-      'minimax-tts-prompt-audio': 'input/examples/audio/0-audio-short.mp3',
-      'minimax-tts-prompt-text': 'Reference transcript.',
-      'minimax-tts-clone-noise-reduction': true,
-      'minimax-tts-clone-volume-normalization': true
+      'minimax-tts-voice': 'English_expressive_narrator'
     })
   })
 
@@ -702,11 +682,6 @@ describe('config contracts', () => {
             elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
-            minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
-            minimaxTtsPromptAudio: 'input/examples/audio/0-audio-short.mp3',
-            minimaxTtsPromptText: 'Reference transcript.',
-            minimaxTtsCloneNoiseReduction: true,
-            minimaxTtsCloneVolumeNormalization: true,
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
             deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
             deapiTtsRefText: 'Reference transcript.',
@@ -798,11 +773,6 @@ describe('config contracts', () => {
             elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
-            minimaxTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
-            minimaxTtsPromptAudio: 'input/examples/audio/0-audio-short.mp3',
-            minimaxTtsPromptText: 'Reference transcript.',
-            minimaxTtsCloneNoiseReduction: true,
-            minimaxTtsCloneVolumeNormalization: true,
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
             deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
             deapiTtsRefText: 'Reference transcript.',

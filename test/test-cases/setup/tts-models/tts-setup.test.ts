@@ -1,6 +1,6 @@
 import { describe, test, expect } from "bun:test"
 import { join } from "node:path"
-import { runCommand, fileExists } from "../../../../test-utils/test-helpers"
+import { runCommand, fileExists } from "../../../test-utils/test-helpers"
 
 const TTS_ENGINES = [
   {
@@ -28,6 +28,21 @@ describe("tts model setup", () => {
       const importResult = Bun.spawnSync(
         [join(engine.envDir, "bin/python"), "-c", engine.importCheck],
       )
+      expect(importResult.exitCode).toBe(0)
+    })
+
+    test(`${engine.name} venv has required packages`, async () => {
+      const pythonPath = join(engine.envDir, "bin/python")
+      const pythonExists = await fileExists(pythonPath)
+      if (!pythonExists) {
+        console.log(`Skipping: ${engine.name} venv not set up (run: bun as setup)`)
+        return
+      }
+
+      expect(await fileExists(join(engine.envDir, `lib/python${engine.pythonVersion}/site-packages/kittentts`))).toBe(true)
+      expect(await fileExists(join(engine.envDir, `lib/python${engine.pythonVersion}/site-packages/soundfile.py`))).toBe(true)
+
+      const importResult = Bun.spawnSync([pythonPath, "-c", engine.importCheck])
       expect(importResult.exitCode).toBe(0)
     })
   }

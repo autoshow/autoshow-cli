@@ -220,11 +220,6 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--elevenlabs-tts-voice-name <name>` | Created ElevenLabs clone label |
 | `--elevenlabs-tts-clone-remove-background-noise` | Enable ElevenLabs IVC background noise removal |
 | `--minimax-tts-voice <id>` | MiniMax TTS voice ID override |
-| `--minimax-tts-ref-audio <path>` | MiniMax rapid voice clone source audio path |
-| `--minimax-tts-prompt-audio <path>` | Optional MiniMax clone prompt audio path |
-| `--minimax-tts-prompt-text <text>` | Transcript for the MiniMax clone prompt audio |
-| `--minimax-tts-clone-noise-reduction` | Enable MiniMax clone noise reduction |
-| `--minimax-tts-clone-volume-normalization` | Enable MiniMax clone volume normalization |
 | `--openai-voice <id>` | OpenAI TTS voice ID override |
 | `--openai-tts-ref-audio <path>` | OpenAI custom voice sample audio path |
 | `--openai-tts-consent-id <id>` | Existing OpenAI consent recording ID |

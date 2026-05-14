@@ -12,12 +12,12 @@ Setup coverage for model downloads and service-adjacent runtime bootstrap checks
 ## Quick Start
 
 ```bash
-bun t test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts
+bun t test/test-cases/setup/tts-models/tts-setup.test.ts
 ```
 
 ## Current Coverage
 
-- `test/test-cases/e2e/step-0-setup-e2e/tts-models/tts-setup.test.ts` validates the Kitten TTS setup module and runtime virtualenv checks.
+- `test/test-cases/setup/tts-models/tts-setup.test.ts` validates the Kitten TTS setup module and runtime virtualenv checks.
 - No standalone step 0 validation-only or price-only suites currently exist.
 - These setup files do not currently resolve mapped `--test-price` or `--budget` commands.
 

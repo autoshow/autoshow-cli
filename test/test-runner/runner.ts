@@ -4,6 +4,7 @@ import { parseRunnerArgs, type RunnerArgs } from './args'
 import {
   appendRunnerLog,
   appendCommandLog,
+  cleanupRunArtifacts,
   cleanupTestOutputRoot,
   createRunArtifacts,
   writeJsonFile,
@@ -23,6 +24,7 @@ import { buildPriceReportData, buildTestReportData, type BudgetPreflightSummary 
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
 import { applyModelConfigCalibrations } from './model-calibration'
 import { resolveSelectedFiles } from './path-selection'
+import { withEmptyPriceConfig } from './price-command-config'
 import { E2E_TEST_TIMEOUT_MS } from '../test-utils/timeouts'
 
 const formatCents = (cents: number): string => `${cents.toFixed(4)}¢`
@@ -65,6 +67,11 @@ type BudgetPreflightResult = {
 }
 
 type StreamLabel = 'STDOUT' | 'STDERR'
+
+const withPriceExecutionConfig = (entry: PriceCommandSpec): PriceCommandSpec => {
+  const args = withEmptyPriceConfig(entry.args)
+  return args === entry.args ? entry : { ...entry, args }
+}
 
 const originalConsole = {
   log: console.log.bind(console),
@@ -307,7 +314,9 @@ const runPriceSuite = async (
   artifacts: TestRunArtifacts,
   budgetHundredthCents?: number
 ): Promise<{ exitCode: number, results: PriceCommandResult[], budgetSummary: BudgetPreflightSummary | undefined }> => {
-  if (commands.length === 0) {
+  const executionCommands = commands.map(withPriceExecutionConfig)
+
+  if (executionCommands.length === 0) {
     console.log(`No ${suiteName} pricing commands resolved; treating selection as a zero-cost price pass`)
     return {
       exitCode: 0,
@@ -316,12 +325,12 @@ const runPriceSuite = async (
     }
   }
 
-  console.log(`Running ${suiteName} pricing preflight across ${commands.length} command(s)`)
+  console.log(`Running ${suiteName} pricing preflight across ${executionCommands.length} command(s)`)
   if (budgetHundredthCents !== undefined) {
     console.log(`Budget filter (per test key): ${formatBudgetHundredthCents(budgetHundredthCents)}`)
   }
 
-  const executedResults = await runWithConcurrency(commands, PRICE_CONCURRENCY, async (entry, _index) => {
+  const executedResults = await runWithConcurrency(executionCommands, PRICE_CONCURRENCY, async (entry, _index) => {
     const executed = await executePriceCommand(entry, artifacts, 'PRICE COMMAND')
     const observation = toObservation(entry, executed)
     return { entry, executed, observation }
@@ -330,7 +339,7 @@ const runPriceSuite = async (
   const observations: PriceCommandObservation[] = []
   for (const [index, { entry, executed, observation }] of executedResults.entries()) {
     observations.push(observation)
-    console.log(`[${index + 1}/${commands.length}] ${entry.name}`)
+    console.log(`[${index + 1}/${executionCommands.length}] ${entry.name}`)
     if (observation.failureMessage !== null) {
       logPriceCommandFailure(executed, `  FAIL exit=${executed.exitCode}`)
     } else {
@@ -344,7 +353,7 @@ const runPriceSuite = async (
   console.log('')
   console.log(`${suiteName} Pricing Summary`)
   console.log('------------------------------------------------------------')
-  console.log(`Commands checked: ${commands.length}`)
+  console.log(`Commands checked: ${executionCommands.length}`)
   console.log(`Commands failed: ${evaluation.failedCommands}`)
   if (evaluation.budgetSummary) {
     console.log(`Test keys checked: ${evaluation.budgetSummary.commandsChecked}`)
@@ -377,7 +386,8 @@ const runBudgetPreflight = async (
   budgetHundredthCents: number,
   artifacts: TestRunArtifacts
 ): Promise<BudgetPreflightResult> => {
-  const groupedCommands = groupCommandsByKey(commands)
+  const executionCommands = commands.map(withPriceExecutionConfig)
+  const groupedCommands = groupCommandsByKey(executionCommands)
 
   if (groupedCommands.length === 0) {
     return {
@@ -386,7 +396,7 @@ const runBudgetPreflight = async (
     }
   }
 
-  console.log(`Running ${suiteName} budget preflight across ${groupedCommands.length} test key(s) (${commands.length} command variant(s))`)
+  console.log(`Running ${suiteName} budget preflight across ${groupedCommands.length} test key(s) (${executionCommands.length} command variant(s))`)
   console.log(`Budget: ${formatBudgetHundredthCents(budgetHundredthCents)}`)
 
   // Execute all commands concurrently, preserving group/variant structure
@@ -456,7 +466,7 @@ const runBudgetPreflight = async (
   console.log(`${suiteName} Budget Preflight Summary`)
   console.log('------------------------------------------------------------')
   console.log(`Test keys checked: ${budgetSummary.commandsChecked}`)
-  console.log(`Command variants checked: ${commands.length}`)
+  console.log(`Command variants checked: ${executionCommands.length}`)
   console.log(`Commands runnable: ${budgetSummary.commandsRunnable}`)
   console.log(`Commands skipped: ${budgetSummary.commandsSkipped}`)
   console.log(`Commands failed: ${budgetSummary.commandsFailed}`)
@@ -497,7 +507,10 @@ const runStandardTestMode = async (
   let budgetSummary: BudgetPreflightSummary | undefined
   let budgetSkipKeys: string[] = []
   if (args.budgetHundredthCents !== undefined) {
-    const resolved = resolvePriceSelection(allFiles, args.pathFilters, true)
+    const resolved = resolvePriceSelection(allFiles, args.pathFilters, {
+      mode: 'budget',
+      budgetSkippableOnly: true
+    })
     if (resolved.commands.length === 0) {
       console.log('No budget-skippable pricing commands resolved for --budget preflight; proceeding without budget-based skips')
       budgetSummary = buildEmptyBudgetSummary(resolved.suiteName, args.budgetHundredthCents)
@@ -549,12 +562,12 @@ const runPriceMode = async (
   artifacts: TestRunArtifacts,
   argv: string[]
 ): Promise<number> => {
-  let suiteName = 'All mapped tests'
+  let suiteName = 'All mapped price suites'
   let results: PriceCommandResult[] = []
   let budgetSummary: BudgetPreflightSummary | undefined
   let exitCode = 0
 
-  const resolved = resolvePriceSelection(allFiles, args.pathFilters)
+  const resolved = resolvePriceSelection(allFiles, args.pathFilters, { mode: 'price' })
   suiteName = resolved.suiteName
 
   if (resolved.commands.length === 0) {
@@ -632,14 +645,17 @@ const runPreflight = async (): Promise<void> => {
 
 export const runTestRunner = async (argv: string[]): Promise<number> => {
   const args = parseRunnerArgs(argv)
-  if (!args.preserveTestOutput) {
-    await cleanupTestOutputRoot()
-  }
 
   const glob = new Bun.Glob('test/test-cases/**/*.test.ts')
   const allFiles = (await Array.fromAsync(glob.scan({ dot: false }))).sort()
 
   const artifacts = await createRunArtifacts()
+  if (!args.preserveTestOutput) {
+    await cleanupTestOutputRoot(artifacts.rootDir, {
+      keepRunDir: artifacts.runDir,
+      preserveActiveRuns: true,
+    })
+  }
   installTimestampedConsole(artifacts.startedAtMs)
   console.log(`Test run artifacts: ${normalizeRepoPath(artifacts.runDir)}`)
 
@@ -693,7 +709,7 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
     }
     await writeReportJson(artifacts, fallbackReport)
 
-    console.error(error)
+    console.error(error instanceof Error ? error.message : String(error))
   }
 
   const latestLogPath = await writeLatestRunLog(artifacts, exitCode)
@@ -706,7 +722,7 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
     }
     console.log(`Latest log: ${normalizeRepoPath(latestLogPath)}`)
   } else {
-    await cleanupTestOutputRoot(artifacts.rootDir)
+    await cleanupRunArtifacts(artifacts)
     console.log(`Test output cleaned up; latest log: ${normalizeRepoPath(latestLogPath)}`)
   }
 

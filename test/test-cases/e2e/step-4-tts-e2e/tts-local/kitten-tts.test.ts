@@ -1,5 +1,4 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { join } from 'node:path'
 import {
   runCommand,
   fileExists,
@@ -11,9 +10,6 @@ import {
 } from '../../../../test-utils/test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
-
-const KITTEN_TTS_ENV_DIR = 'runtime/bin/kitten-tts'
-const KITTEN_PYTHON_VERSION = '3.12'
 
 const hasOpenAiTtsEnv = async (): Promise<boolean> => {
   return await hasConfiguredEnvVar('OPENAI_API_KEY')
@@ -31,32 +27,6 @@ const toRecordArray = (value: unknown): Record<string, unknown>[] => {
 }
 
 describe('kitten-tts', () => {
-  describe('environment', () => {
-    test('venv is configured with required packages', async () => {
-      const pythonExists = await fileExists(join(KITTEN_TTS_ENV_DIR, 'bin/python'))
-      if (!pythonExists) {
-        console.log('Skipping: Kitten TTS venv not set up (run: bun as setup)')
-        return
-      }
-      expect(pythonExists).toBe(true)
-
-      const kittenTtsExists = await fileExists(
-        join(KITTEN_TTS_ENV_DIR, `lib/python${KITTEN_PYTHON_VERSION}/site-packages/kittentts`)
-      )
-      expect(kittenTtsExists).toBe(true)
-
-      const soundfileExists = await fileExists(
-        join(KITTEN_TTS_ENV_DIR, `lib/python${KITTEN_PYTHON_VERSION}/site-packages/soundfile.py`)
-      )
-      expect(soundfileExists).toBe(true)
-
-      const result = Bun.spawnSync(
-        [join(KITTEN_TTS_ENV_DIR, 'bin/python'), '-c', 'from kittentts import KittenTTS; import soundfile'],
-      )
-      expect(result.exitCode).toBe(0)
-    })
-  })
-
   describe('tts command', () => {
     beforeAll(async () => {
       await cleanupTestOutput(STABLE_TTS_MD_TITLE)

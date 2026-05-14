@@ -96,8 +96,8 @@ bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-arabic-saud
 # text-to-speech with Mistral Voxtral reference audio
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
-# text-to-speech with MiniMax rapid voice cloning
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3
+# text-to-speech with MiniMax hosted voices
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 
 # text-to-speech with Runway-hosted Eleven multilingual v2
 bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
@@ -190,7 +190,7 @@ bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english 
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-arabic-saudi --price
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --price
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --price
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price
