@@ -1,18 +1,15 @@
 import { basename, extname } from 'node:path'
-import { Mistral } from '@mistralai/mistralai'
-import { ConnectionError, MistralError, RequestAbortedError, RequestTimeoutError } from '@mistralai/mistralai/models/errors'
 import type { MistralTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav, convertAudioToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { MISTRAL_DEFAULT_BASE_URL, mistralJsonRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 
 const MAX_CHARS_PER_CHUNK = 4000
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const MISTRAL_REF_AUDIO_DIRECT_EXTENSIONS = new Set(['.mp3', '.mpeg', '.mpga', '.wav', '.wave'])
-
-const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
 
 type MistralVoiceSource =
   | { kind: 'voice', value: string, speaker: string }
@@ -27,6 +24,23 @@ type MistralReferenceAudio = {
 type MistralSavedVoiceResult = {
   voiceId: string
   voiceName: string
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
+const readStringField = (payload: unknown, field: string, label: string): string => {
+  if (isRecord(payload) && typeof payload[field] === 'string') {
+    return payload[field]
+  }
+  throw new Error(`${label} returned an invalid response: missing ${field}`)
+}
+
+const decodeMistralAudioData = (audioData: string): Uint8Array => {
+  const cleaned = audioData.includes(',')
+    ? audioData.slice(audioData.indexOf(',') + 1)
+    : audioData
+  return new Uint8Array(Buffer.from(cleaned, 'base64'))
 }
 
 const resolveVoiceSource = (
@@ -97,7 +111,8 @@ const prepareReferenceAudio = async (
 }
 
 const createMistralSavedVoice = async (
-  client: Mistral,
+  apiKey: string,
+  baseURL: string,
   referenceAudio: MistralReferenceAudio,
   voiceName: string
 ): Promise<MistralSavedVoiceResult> => {
@@ -106,35 +121,24 @@ const createMistralSavedVoice = async (
     throw new Error('Mistral TTS saved voice name is empty.')
   }
 
-  try {
-    const response = await client.audio.voices.create({
+  const response = await mistralJsonRequest({
+    apiKey,
+    baseURL,
+    path: '/audio/voices',
+    timeoutMs: REQUEST_TIMEOUT_MS,
+    errorMessagePrefix: 'Mistral TTS failed',
+    body: {
       name: normalizedName,
-      sampleAudio: referenceAudio.base64,
-      sampleFilename: basename(referenceAudio.uploadPath)
-    })
-    return {
-      voiceId: response.id,
-      voiceName: response.name
+      sample_audio: referenceAudio.base64,
+      sample_filename: basename(referenceAudio.uploadPath),
+      retention_notice: 30
     }
-  } catch (error) {
-    throw normalizeMistralError(error)
-  }
-}
+  })
 
-const normalizeMistralError = (error: unknown): Error => {
-  if (error instanceof MistralError) {
-    const message = error.body.length > 0 ? error.body : error.message
-    return new Error(`Mistral TTS failed (${error.statusCode}): ${message}`)
+  return {
+    voiceId: readStringField(response, 'id', 'Mistral saved voice creation'),
+    voiceName: readStringField(response, 'name', 'Mistral saved voice creation')
   }
-  if (error instanceof RequestAbortedError || error instanceof RequestTimeoutError) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-  if (error instanceof ConnectionError) {
-    return new TypeError(error.message)
-  }
-  return error instanceof Error ? error : new Error(String(error))
 }
 
 export const runMistralTts = async (
@@ -165,26 +169,20 @@ export const runMistralTts = async (
   const referenceAudio = voiceSource.kind === 'refAudio'
     ? await prepareReferenceAudio(voiceSource.path, outputDir)
     : undefined
-  const serverURL = normalizeMistralServerURL(readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1')
-  const client = new Mistral({
-    apiKey,
-    retryConfig: { strategy: 'none' },
-    timeoutMs: REQUEST_TIMEOUT_MS,
-    serverURL
-  })
+  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
   const savedVoice = referenceAudio && voiceName
-    ? await createMistralSavedVoice(client, referenceAudio, voiceName)
+    ? await createMistralSavedVoice(apiKey, baseURL, referenceAudio, voiceName)
     : undefined
-  let speechVoiceInput: { voiceId: string } | { refAudio: string }
+  let speechVoiceInput: { voice_id: string } | { ref_audio: string }
   if (voiceSource.kind === 'voice') {
-    speechVoiceInput = { voiceId: voiceSource.value }
+    speechVoiceInput = { voice_id: voiceSource.value }
   } else if (savedVoice) {
-    speechVoiceInput = { voiceId: savedVoice.voiceId }
+    speechVoiceInput = { voice_id: savedVoice.voiceId }
   } else {
     if (!referenceAudio) {
       throw new Error('Mistral TTS reference audio preparation failed')
     }
-    speechVoiceInput = { refAudio: referenceAudio.base64 }
+    speechVoiceInput = { ref_audio: referenceAudio.base64 }
   }
 
   logTtsConfig('Mistral', [
@@ -202,21 +200,23 @@ export const runMistralTts = async (
     for (let i = 0; i < chunks.length; i++) {
       const chunkIndex = i + 1
       const chunkPath = `${outputDir}/speech-mistral-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
-      let audioData: string
-      try {
-        const response = await client.audio.speech.complete({
+      const response = await mistralJsonRequest({
+        apiKey,
+        baseURL,
+        path: '/audio/speech',
+        timeoutMs: REQUEST_TIMEOUT_MS,
+        errorMessagePrefix: 'Mistral TTS failed',
+        body: {
           model: options.model,
           input: chunks[i] as string,
           stream: false,
-          responseFormat: 'wav',
+          response_format: 'wav',
           ...speechVoiceInput
-        })
-        audioData = response.audioData
-      } catch (error) {
-        throw normalizeMistralError(error)
-      }
+        }
+      })
+      const audioData = readStringField(response, 'audio_data', 'Mistral TTS')
 
-      const audioBytes = Buffer.from(audioData, 'base64')
+      const audioBytes = decodeMistralAudioData(audioData)
       if (audioBytes.byteLength === 0) {
         throw new Error(`Mistral TTS returned empty audio for chunk ${chunkIndex}`)
       }

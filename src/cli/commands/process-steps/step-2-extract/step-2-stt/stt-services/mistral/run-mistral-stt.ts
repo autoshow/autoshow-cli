@@ -1,12 +1,11 @@
 import { basename } from 'node:path'
-import { Mistral } from '@mistralai/mistralai'
-import { ConnectionError, MistralError, RequestAbortedError, RequestTimeoutError } from '@mistralai/mistralai/models/errors'
 import type { DiarizationOptions, MistralHttpError, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { MistralTranscriptionResponseSchema } from '~/types'
 import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
+import { MISTRAL_DEFAULT_BASE_URL, mistralMultipartRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { createMistralSttPassController } from './mistral-stt-pass-controller'
@@ -14,46 +13,10 @@ import { createMistralSttPassController } from './mistral-stt-pass-controller'
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 const MISTRAL_RATE_LIMIT_FALLBACK_COOLDOWN_MS = 60_000
 
-const toMistralHttpError = (status: number, headers: Headers, errText: string): MistralHttpError => {
-  return Object.assign(
-    new Error(`Mistral transcription failed (${status}): ${errText}`),
-    {
-      status,
-      headers,
-      stage: 'transcribe' as const,
-      retryClass: 'runtime_http_create_conservative' as const
-    }
-  )
-}
-
-const normalizeMistralServerURL = (serverURL: string): string => serverURL.replace(/\/v1\/?$/, '')
-
 const isMistralRetryWrapper = (error: unknown): error is Error & { cause: Error } =>
   error instanceof Error
   && error.cause instanceof Error
   && error.message.startsWith('mistral-stt failed after ')
-
-const toRetryableMistralError = (error: unknown): Error => {
-  if (error instanceof MistralError) {
-    if (error.statusCode < 400) {
-      return error
-    }
-    const errText = error.body.length > 0 ? error.body : error.message
-    return toMistralHttpError(error.statusCode, error.headers, errText)
-  }
-
-  if (error instanceof RequestAbortedError || error instanceof RequestTimeoutError) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  if (error instanceof ConnectionError) {
-    return new TypeError(error.message)
-  }
-
-  return error instanceof Error ? error : new Error(String(error))
-}
 
 const getErrorStatus = (error: unknown): number | undefined => {
   if (error && typeof error === 'object' && 'status' in error) {
@@ -164,13 +127,7 @@ export const runMistralStt = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
   const fileBytes = await Bun.file(audioPath).arrayBuffer()
-  const serverURL = normalizeMistralServerURL(readEnv('MISTRAL_BASE_URL') ?? 'https://api.mistral.ai/v1')
-  const client = new Mistral({
-    apiKey,
-    retryConfig: { strategy: 'none' },
-    timeoutMs: REQUEST_TIMEOUT_MS,
-    serverURL
-  })
+  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
   const passController = options.passController ?? createMistralSttPassController()
   let transcribeMs = 0
 
@@ -187,24 +144,24 @@ export const runMistralStt = async (
       async (signal) => {
         return await passController.withRequestSlot(async () => {
           try {
-            return await client.audio.transcriptions.complete(
-              {
-                model: modelName,
-                file: {
-                  fileName: basename(audioPath),
-                  content: fileBytes
-                },
-                diarize: true,
-                timestampGranularities: ['segment']
-              },
-              signal ? { signal } : undefined
-            )
+            const form = new FormData()
+            form.append('model', modelName)
+            form.append('file', new File([fileBytes], basename(audioPath)))
+            form.append('diarize', 'true')
+            form.append('timestamp_granularities', 'segment')
+            return await mistralMultipartRequest({
+              apiKey,
+              baseURL,
+              path: '/audio/transcriptions',
+              form,
+              signal,
+              errorMessagePrefix: 'Mistral transcription failed'
+            })
           } catch (error) {
-            const retryableError = toRetryableMistralError(error)
-            if (getErrorStatus(retryableError) === 429) {
-              passController.noteRateLimit(resolveMistralRateLimitCooldownMs(retryableError))
+            if (getErrorStatus(error) === 429) {
+              passController.noteRateLimit(resolveMistralRateLimitCooldownMs(error))
             }
-            throw retryableError
+            throw error
           }
         })
       },

@@ -600,6 +600,7 @@ describe('TTS provider service contracts', () => {
     expect(calls[0]?.body).toMatchObject({
       model: 'voxtral-mini-tts-2603',
       input: 'Mistral reference synthesis.',
+      stream: false,
       response_format: 'wav'
     })
 
@@ -666,7 +667,8 @@ describe('TTS provider service contracts', () => {
       authorization: 'Bearer mistral-key',
       body: {
         name: 'AutoShow Saved Voice',
-        sample_filename: '0-audio-short.mp3'
+        sample_filename: '0-audio-short.mp3',
+        retention_notice: 30
       }
     })
     expect(typeof calls[0]?.body['sample_audio']).toBe('string')
@@ -678,6 +680,7 @@ describe('TTS provider service contracts', () => {
       body: {
         model: 'voxtral-mini-tts-2603',
         input: 'Mistral saved voice synthesis.',
+        stream: false,
         response_format: 'wav',
         voice_id: 'mistral_saved_voice_123'
       }
