@@ -12,6 +12,10 @@ export const validateWriteStep2ProviderSelection = (command: ProcessCommand, opt
     return
   }
 
+  if (opts.urlBackends !== undefined) {
+    throw CLIUsageError('--all-url is only supported on extract for this release')
+  }
+
   const sttTargets = collectSttTargets(opts)
   if (sttTargets.length > 1) {
     throw CLIUsageError('write accepts at most one STT provider (--whisper-stt, --reverb-stt, --*-stt).')

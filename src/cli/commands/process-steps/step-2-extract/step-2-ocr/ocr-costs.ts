@@ -52,11 +52,14 @@ const toArray = <T,>(value: T | T[]): T[] => Array.isArray(value) ? value : [val
 export const resolveExtractionProviderModel = (
   metadata: ExtractionMetadata
 ): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('html+defuddle')) {
+    return { provider: 'defuddle', model: 'defuddle' }
+  }
   if (metadata.extractionMethod.includes('html+firecrawl')) {
     return { provider: 'firecrawl', model: 'firecrawl' }
   }
   if (metadata.extractionMethod.includes('html+glm-reader')) {
-    return { provider: 'glm', model: 'glm-reader' }
+    return { provider: 'glm-reader', model: 'glm-reader' }
   }
   if (metadata.extractionMethod.includes('html+spider')) {
     return { provider: 'spider', model: 'spider' }
@@ -103,13 +106,23 @@ export const collectEstimatedExtractTargets = (
   for (const entry of toArray(metadata)) {
     const pageCount = Math.max(1, entry.totalPages)
 
-    if (entry.extractionMethod === 'html+firecrawl') {
+    if (
+      entry.extractionMethod === 'html+defuddle'
+      || entry.extractionMethod === 'html+firecrawl'
+      || entry.extractionMethod === 'html+glm-reader'
+      || entry.extractionMethod === 'html+spider'
+      || entry.extractionMethod === 'html+zyte'
+    ) {
+      const { provider, model } = resolveExtractionProviderModel(entry) as {
+        provider: 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
+        model: string
+      }
       targets.push({
-        provider: 'firecrawl',
-        model: 'firecrawl',
+        provider,
+        model,
         pageCount,
         estimateType: 'exact',
-        note: FIRECRAWL_PRICE_NOTE
+        ...(provider === 'firecrawl' ? { note: FIRECRAWL_PRICE_NOTE } : {})
       })
       continue
     }

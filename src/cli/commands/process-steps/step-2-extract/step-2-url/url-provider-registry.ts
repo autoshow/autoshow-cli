@@ -7,6 +7,18 @@ import { zyteArticleAdapter } from './url-services/zyte/run-zyte-url'
 import type { UrlArticleProviderAdapter, UrlArticleRunOptions } from './url-provider-adapter'
 import type { UrlArticleRunResult } from './url-utils'
 
+export const URL_ARTICLE_BACKENDS = [
+  'defuddle',
+  'firecrawl',
+  'glm-reader',
+  'spider',
+  'zyte'
+] as const satisfies readonly HtmlArticleBackend[]
+
+export const HOSTED_URL_ARTICLE_BACKENDS = URL_ARTICLE_BACKENDS.filter(
+  (backend) => backend !== 'defuddle'
+) as Exclude<HtmlArticleBackend, 'defuddle'>[]
+
 export const URL_ARTICLE_PROVIDER_ADAPTERS: Record<HtmlArticleBackend, UrlArticleProviderAdapter> = {
   defuddle: defuddleArticleAdapter,
   firecrawl: firecrawlArticleAdapter,

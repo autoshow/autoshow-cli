@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm, truncate, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { buildExpectedFilesList } from '~/cli/commands/process-steps/step-1-download/targets/expected-output'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
 import { runOcrProviderTargetPools, isLocalOcrTarget } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-provider-pool'
 import { runLlmProviderTargetPools, isLocalLlmTarget } from '~/cli/commands/process-steps/step-3-write/llm-provider-pool'
@@ -43,6 +44,7 @@ import {
 import {
   SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
+import { URL_ARTICLE_BACKENDS } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
 import { getStep2AllShortcutModelExpansions } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import {
@@ -248,6 +250,40 @@ describe('option resolution contracts', () => {
       expect(opts.urlBackend).toBe(backend)
       expect(opts.urlBackendExplicit).toBe(true)
     }
+  })
+
+  test('--all-url expands URL article backends and defaults hosted concurrency', () => {
+    const opts = buildOptsFromFlags(false, { 'all-url': true })
+    const explicitConcurrency = buildOptsFromFlags(false, {
+      'all-url': true,
+      'url-provider-concurrency': '3'
+    }, [], {}, new Set(['url-provider-concurrency']))
+
+    expect(opts.urlBackends).toEqual([...URL_ARTICLE_BACKENDS])
+    expect(opts.urlProviderConcurrency).toBe(4)
+    expect(explicitConcurrency.urlBackends).toEqual([...URL_ARTICLE_BACKENDS])
+    expect(explicitConcurrency.urlProviderConcurrency).toBe(3)
+  })
+
+  test('--all-url conflicts with single URL backend selection', () => {
+    expect(() => buildOptsFromFlags(false, {
+      'all-url': true,
+      'url-backend': 'firecrawl'
+    })).toThrow('Cannot use --all-url with --url-backend')
+  })
+
+  test('--all-url article extraction reports provider artifact expectations', async () => {
+    const opts = buildOptsFromFlags(false, { 'all-url': true })
+
+    await expect(buildExpectedFilesList(
+      'extract',
+      opts,
+      'https://example.com/articles/story.html'
+    )).resolves.toEqual([
+      'providers/<backend>/result.json',
+      'providers/<backend>/extraction.txt',
+      'run.json'
+    ])
   })
 
   test('OCR provider concurrency defaults, falls back, and clamps like STT concurrency flags', () => {

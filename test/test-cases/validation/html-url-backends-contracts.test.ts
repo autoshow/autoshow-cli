@@ -1,13 +1,25 @@
 import { afterEach, expect, test } from 'bun:test'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/run-defuddle-url'
 import { assertUrlArticleOptionsSupported } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-adapter'
-import { getUrlArticleProviderAdapter } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
+import {
+  HOSTED_URL_ARTICLE_BACKENDS,
+  getUrlArticleProviderAdapter,
+  URL_ARTICLE_BACKENDS,
+  URL_ARTICLE_PROVIDER_ADAPTERS
+} from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
+import { processUrlArticle } from '~/cli/commands/process-steps/step-2-extract/step-2-url/process-url'
 import { runOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/run-ocr'
 import { runFirecrawlUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/firecrawl/run-firecrawl-url'
 import { runGlmReaderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/glm-reader/run-glm-reader-url'
 import { runSpiderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/spider/run-spider-url'
 import { runZyteUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/zyte/run-zyte-url'
-import type { DocumentMetadata, ExtractionOptions } from '~/types'
+import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import type { DocumentMetadata, ExtractionOptions, HtmlArticleBackend } from '~/types'
+import type { UrlArticleProviderAdapter } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-adapter'
+import type { UrlArticleRunResult } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-utils'
 
 const originalFetch = globalThis.fetch
 const envKeys = [
@@ -22,6 +34,9 @@ const envKeys = [
 ] as const
 const originalEnv = new Map<string, string | undefined>(
   envKeys.map(key => [key, process.env[key]])
+)
+const originalAdapterRuns = new Map<HtmlArticleBackend, UrlArticleProviderAdapter['run']>(
+  URL_ARTICLE_BACKENDS.map((backend) => [backend, URL_ARTICLE_PROVIDER_ADAPTERS[backend].run])
 )
 
 const longMarkdown = 'This article contains enough meaningful markdown content for the URL backend extraction contract to pass without reaching any hosted provider.'
@@ -41,6 +56,12 @@ const htmlDocument = `<!doctype html>
 
 afterEach(() => {
   globalThis.fetch = originalFetch
+  for (const backend of URL_ARTICLE_BACKENDS) {
+    const originalRun = originalAdapterRuns.get(backend)
+    if (originalRun) {
+      URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = originalRun
+    }
+  }
   for (const key of envKeys) {
     const originalValue = originalEnv.get(key)
     if (originalValue === undefined) {
@@ -50,6 +71,25 @@ afterEach(() => {
     }
   }
 })
+
+const buildMockArticle = (
+  backend: HtmlArticleBackend,
+  source: string,
+  sourceUrl: string | undefined
+): UrlArticleRunResult => {
+  const markdown = `# ${backend} Article\n\n${longMarkdown} Mock provider ${backend} returned canonical URL article markdown for comparison.`
+  return {
+    markdown,
+    title: `${backend} Article`,
+    fileSize: markdown.length,
+    web: {
+      sourceUrl: sourceUrl ?? source,
+      finalUrl: sourceUrl ? `https://article.test/final/${backend}` : `file://${source}`,
+      title: `${backend} Article`,
+      wordCount: markdown.split(/\s+/).filter(Boolean).length
+    }
+  }
+}
 
 test('defuddle URL backend extracts markdown from supplied HTML', async () => {
   const result = await extractHtmlToMarkdown({
@@ -366,4 +406,111 @@ test('Zyte URL backend posts article extract request and normalizes article meta
     }
   })
   expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
+})
+
+test('--all-url orchestrator writes provider artifacts and a multi-provider run manifest', async () => {
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-all-url-'))
+
+  try {
+    for (const backend of URL_ARTICLE_BACKENDS) {
+      URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async (source, sourceUrl) =>
+        buildMockArticle(backend, source, sourceUrl)
+    }
+
+    const opts = buildOptsFromFlags(false, { 'all-url': true })
+    const output = await processUrlArticle('https://article.test/story.html', tempRoot, opts)
+
+    expect(await Bun.file(join(output.outputDir, 'result.json')).exists()).toBe(false)
+    expect(await Bun.file(join(output.outputDir, 'extraction.txt')).exists()).toBe(false)
+
+    for (const backend of URL_ARTICLE_BACKENDS) {
+      const providerDir = join(output.outputDir, 'providers', backend)
+      const extractionText = await Bun.file(join(providerDir, 'extraction.txt')).text()
+      const providerResult = await Bun.file(join(providerDir, 'result.json')).json() as Record<string, unknown>
+
+      expect(extractionText).toContain(`${backend} Article`)
+      expect(providerResult).toMatchObject({
+        schemaVersion: 2,
+        kind: 'provider-result',
+        provider: backend,
+        model: backend
+      })
+      expect(providerResult['result']).toMatchObject({
+        text: expect.stringContaining(`${backend} Article`)
+      })
+    }
+
+    const manifest = await Bun.file(join(output.outputDir, 'run.json')).json() as {
+      kind: string
+      metadata: {
+        completionStatus: string
+        requestedProviders: Array<{ service: string, model: string }>
+        providerStates: Array<{ service: string, model: string, status: string }>
+        step2: unknown[]
+        resolvedStep2: { backends?: string[] }
+      }
+    }
+
+    expect(manifest.kind).toBe('extract')
+    expect(manifest.metadata.completionStatus).toBe('full')
+    expect(manifest.metadata.requestedProviders).toEqual(
+      URL_ARTICLE_BACKENDS.map((backend) => ({ service: backend, model: backend }))
+    )
+    expect(manifest.metadata.providerStates.map((state) => state.status)).toEqual([
+      'succeeded',
+      'succeeded',
+      'succeeded',
+      'succeeded',
+      'succeeded'
+    ])
+    expect(manifest.metadata.step2).toHaveLength(URL_ARTICLE_BACKENDS.length)
+    expect(manifest.metadata.resolvedStep2.backends).toEqual([...URL_ARTICLE_BACKENDS])
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true })
+  }
+})
+
+test('--all-url with local HTML runs defuddle and marks hosted backends skipped', async () => {
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-local-all-url-'))
+
+  try {
+    const localHtml = join(tempRoot, 'local-article.html')
+    await writeFile(localHtml, htmlDocument)
+
+    URL_ARTICLE_PROVIDER_ADAPTERS.defuddle.run = async (source, sourceUrl) =>
+      buildMockArticle('defuddle', source, sourceUrl)
+    for (const backend of HOSTED_URL_ARTICLE_BACKENDS) {
+      URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async () => {
+        throw new Error(`${backend} should not run for local HTML --all-url`)
+      }
+    }
+
+    const opts = buildOptsFromFlags(false, { 'all-url': true })
+    const output = await processUrlArticle(localHtml, tempRoot, opts)
+
+    expect(await Bun.file(join(output.outputDir, 'providers', 'defuddle', 'result.json')).exists()).toBe(true)
+    expect(await Bun.file(join(output.outputDir, 'providers', 'defuddle', 'extraction.txt')).exists()).toBe(true)
+    for (const backend of HOSTED_URL_ARTICLE_BACKENDS) {
+      expect(await Bun.file(join(output.outputDir, 'providers', backend, 'result.json')).exists()).toBe(false)
+      expect(await Bun.file(join(output.outputDir, 'providers', backend, 'extraction.txt')).exists()).toBe(false)
+    }
+
+    const manifest = await Bun.file(join(output.outputDir, 'run.json')).json() as {
+      metadata: {
+        completionStatus: string
+        providerStates: Array<{ service: string, status: string }>
+      }
+    }
+
+    expect(manifest.metadata.completionStatus).toBe('incomplete')
+    expect(manifest.metadata.providerStates).toEqual([
+      { service: 'defuddle', model: 'defuddle', artifactDir: 'providers/defuddle', status: 'succeeded', attempts: 1 },
+      expect.objectContaining({ service: 'firecrawl', status: 'skipped' }),
+      expect.objectContaining({ service: 'glm-reader', status: 'skipped' }),
+      expect.objectContaining({ service: 'spider', status: 'skipped' }),
+      expect.objectContaining({ service: 'zyte', status: 'skipped' })
+    ])
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true })
+  }
 })

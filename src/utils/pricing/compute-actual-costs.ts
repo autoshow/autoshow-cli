@@ -78,6 +78,12 @@ const resolveSttBillingDurationSeconds = (input: ComputeActualCostsInput): numbe
 const resolveExtractionProviderModel = (
   metadata: ExtractionMetadata
 ): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('html+defuddle')) {
+    return {
+      provider: 'defuddle',
+      model: 'defuddle'
+    }
+  }
   if (metadata.extractionMethod.includes('html+firecrawl')) {
     return {
       provider: 'firecrawl',
@@ -86,7 +92,7 @@ const resolveExtractionProviderModel = (
   }
   if (metadata.extractionMethod.includes('html+glm-reader')) {
     return {
-      provider: 'glm',
+      provider: 'glm-reader',
       model: 'glm-reader'
     }
   }
@@ -218,8 +224,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
-    } else if (provider === 'firecrawl') {
-      const extractPricing = getExtractPricing('firecrawl', model)
+    } else if (provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'zyte') {
+      const extractPricing = getExtractPricing(provider, model)
       const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
       const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
       steps.push({
@@ -377,8 +383,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       const completionTokens = step2Entry.completionTokens ?? 0
       const cost = provider === 'mistral'
         ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', model).costPer1kPagesCents ?? 0)
-        : provider === 'firecrawl'
-          ? (step2Entry.totalPages / 1000) * (getExtractPricing('firecrawl', model).costPer1kPagesCents ?? 0)
+        : provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'zyte'
+          ? (step2Entry.totalPages / 1000) * (getExtractPricing(provider, model).costPer1kPagesCents ?? 0)
         : provider === 'gcloud-docai'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('gcloud-docai', model).costPer1kPagesCents ?? 0)
         : provider === 'aws-textract'

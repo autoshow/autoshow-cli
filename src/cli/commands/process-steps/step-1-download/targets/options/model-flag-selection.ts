@@ -264,6 +264,7 @@ export const normalizeModelFlagOccurrences = (
 export const readAllShortcutFlags = (flags: Record<string, unknown>): Record<AllShortcutFlag, boolean> => ({
   'all-stt': readBooleanFlag(flags, 'all-stt'),
   'all-ocr': readBooleanFlag(flags, 'all-ocr'),
+  'all-url': readBooleanFlag(flags, 'all-url'),
   'all-llm': readBooleanFlag(flags, 'all-llm'),
   'all-tts': readBooleanFlag(flags, 'all-tts'),
   'all-image': readBooleanFlag(flags, 'all-image'),

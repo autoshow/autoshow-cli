@@ -13,6 +13,8 @@ bun test test/test-cases/validation/option-resolution-contracts.test.ts
 bun test test/test-cases/smoke/sample/sample-command.test.ts
 ```
 
+Additional no-cost URL article contract coverage lives in `test/test-cases/validation/html-url-backends-contracts.test.ts` and `test/test-cases/validation/price-mode-contracts.test.ts`; those suites mock provider calls and cover `--all-url` artifact and price-preflight behavior.
+
 The `bun t` commands below document the full project runner for humans. Do not use `bun t`, `bun run t`, or `AGENT=1 bun test/test-runner.ts` as a default verification pass, and do not run e2e/provider-cost tests without explicit approval.
 
 ## Outline

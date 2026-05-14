@@ -2,7 +2,7 @@
 
 Step-by-step diagrams for both media and document inputs, from initial intake through optional downstream generation.
 
-The `metadata` command (default) runs only the metadata extraction portion of Step 1 without downloading. The `download` command runs the full Step 1. The `extract` command runs Steps 1-2 and routes media to STT, documents/articles/images to OCR, or X/Twitter Space links to the X API for metadata extraction. The `write` command runs the full pipeline.
+The `metadata` command (default) runs only the metadata extraction portion of Step 1 without downloading. The `download` command runs the full Step 1. The `extract` command runs Steps 1-2 and routes media to STT, documents/images to OCR, article HTML to URL extraction, or X/Twitter Space links to the X API for metadata extraction. The `write` command runs the full pipeline.
 
 ## Outline
 
@@ -147,6 +147,8 @@ src/cli/commands/process-steps/process-video.ts
 ```
 
 ## Document Processing Pipeline
+
+Article URL and local HTML inputs share the document route until Step 2, then use `step-2-url/process-url.ts` instead of OCR. Single-backend article runs write a top-level extraction artifact; `--all-url` writes `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for each URL backend and summarizes provider status in `run.json`.
 
 ```
 src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts

@@ -1,4 +1,5 @@
 import { processStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/process-stt'
+import { processUrlArticle } from '~/cli/commands/process-steps/step-2-extract/step-2-url/process-url'
 import { downloadDocumentUrlToTempFile } from '~/cli/commands/process-steps/step-1-download/document/resolve-document-source'
 import { detectDocumentFormat } from '~/cli/commands/process-steps/step-1-download/document/detect-format'
 import { runTextWrite } from '~/cli/commands/process-steps/step-3-write/run-text-write'
@@ -159,10 +160,12 @@ export const processSingleTarget = async (
     }
 
     if (kind === 'url_html_article') {
-      const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       if (isExtractCommand(command)) {
-        return await processOcrSingle(item, baseDir, opts, { url: item }, prepared, preflightEstimate, batchChildContext)
+        return {
+          outputDir: (await processUrlArticle(item, baseDir, opts, preflightEstimate, batchChildContext)).outputDir
+        }
       }
+      const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
       return await runDocumentWrite(item, baseDir, opts, { url: item }, prepared, preflightEstimate, batchChildContext)
     }
 
@@ -191,12 +194,13 @@ export const processSingleTarget = async (
   }
 
   if (isHtmlDocumentPath(item)) {
-    const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
-
     if (isExtractCommand(command)) {
-      return await processOcrSingle(item, baseDir, opts, undefined, prepared, preflightEstimate, batchChildContext)
+      return {
+        outputDir: (await processUrlArticle(item, baseDir, opts, preflightEstimate, batchChildContext)).outputDir
+      }
     }
 
+    const prepared = await prepareArticleDocument(item, baseDir, opts, batchChildContext)
     if (command === 'write') {
       return await runDocumentWrite(item, baseDir, opts, undefined, prepared, preflightEstimate, batchChildContext)
     }

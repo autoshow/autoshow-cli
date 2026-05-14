@@ -34,10 +34,16 @@ export type HumanLogTableRow = Readonly<Record<string, HumanLogTableCell>>
 
 export type HumanLogTableAlign = 'left' | 'right'
 
+export type HumanLogTableDetail = {
+  label: string
+  value: HumanLogTableCell
+}
+
 export type HumanLogTable = {
   rows: readonly HumanLogTableRow[]
   columns?: readonly string[]
   align?: Readonly<Record<string, HumanLogTableAlign>>
+  details?: readonly HumanLogTableDetail[]
 }
 
 export type LogEvent = {

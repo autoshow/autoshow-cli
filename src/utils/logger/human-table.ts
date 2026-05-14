@@ -3,6 +3,7 @@ import type {
   HumanLogTable,
   HumanLogTableAlign,
   HumanLogTableCell,
+  HumanLogTableDetail,
   HumanLogTableRow,
   HumanTableLogOptions,
   KeyValueTableLogOptions,
@@ -15,8 +16,10 @@ import {
   colorizeHumanTableCell,
   colorizeHumanTableHeader
 } from '~/utils/logger/log-colors'
+import { stripAnsi } from '~/utils/terminal-colors'
 
 const tableIndent = '  '
+const widePathDetailVisibleLength = 56
 
 const tableChars = {
   topLeft: '\u250c',
@@ -60,6 +63,81 @@ const normalizeTableCell = (value: unknown): HumanLogTableCell => {
   return Bun.inspect(value)
 }
 
+const pathLikeColumnNames = new Set<string>([
+  'batchmanifest',
+  'cachedir',
+  'destination',
+  'dir',
+  'directory',
+  'file',
+  'filename',
+  'input',
+  'inputdir',
+  'inputpath',
+  'location',
+  'manifest',
+  'output',
+  'outputdir',
+  'outputpath',
+  'path',
+  'retryoutputdir',
+  'runmanifest',
+  'source',
+  'sourcemedia',
+  'sourcepath',
+  'target',
+  'targetpath',
+  'workdir'
+])
+
+const normalizeColumnName = (column: string): string =>
+  column.trim().replace(/[^a-z0-9]+/gi, '').toLowerCase()
+
+const isPathLikeColumnName = (column: string): boolean => {
+  const normalized = normalizeColumnName(column)
+  return pathLikeColumnNames.has(normalized)
+    || normalized.endsWith('path')
+    || normalized.endsWith('paths')
+    || normalized.endsWith('dir')
+    || normalized.endsWith('dirs')
+    || normalized.endsWith('directory')
+    || normalized.endsWith('directories')
+    || normalized.endsWith('manifest')
+    || normalized.endsWith('manifests')
+    || normalized.includes('manifest')
+}
+
+const isUrlLikeValue = (value: string): boolean =>
+  /^[a-z][a-z0-9+.-]*:\/\//i.test(value.trim())
+
+const hasFilesystemPathMarker = (value: string): boolean => {
+  const trimmed = value.trim()
+  return /^(?:\.{1,2}[\\/]|~[\\/]|[\\/]|[A-Za-z]:[\\/])/.test(trimmed)
+    || trimmed.includes('\\')
+    || trimmed.split('/').length > 2
+    || /^(?:build|cache|dist|docs|input|output|private|runtime|src|test|tmp|users|var)\//i.test(trimmed)
+    || /[\\/][^\\/]+\.[A-Za-z0-9]{1,12}(?:$|[?#])/.test(trimmed)
+}
+
+const isProviderOrModelId = (value: string): boolean => {
+  const trimmed = value.trim()
+  if (hasFilesystemPathMarker(trimmed)) {
+    return false
+  }
+
+  const slashCount = trimmed.split('/').length - 1
+  return slashCount === 1
+    && /^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._:@+-]*$/.test(trimmed)
+}
+
+const isLiftableWidePathValue = (value: HumanLogTableCell): boolean => {
+  const visibleValue = stripAnsi(formatTableCell(value))
+  return visibleValue.length > widePathDetailVisibleLength
+    && /[\\/]/.test(visibleValue)
+    && !isUrlLikeValue(visibleValue)
+    && !isProviderOrModelId(visibleValue)
+}
+
 const collectTableColumns = (rows: readonly HumanLogTableRow[]): string[] => {
   const columns = new Set<string>()
 
@@ -97,6 +175,126 @@ const shouldRenderHeader = (columns: readonly string[]): boolean =>
       || (columns[0] === 'artifact' && columns[1] === 'path')
     )
   )
+
+const nonEmptyTableCell = (value: HumanLogTableCell | undefined): boolean =>
+  value !== undefined && formatTableCell(value).length > 0
+
+type WidePathDetailContext = {
+  label: string
+  labelColumn?: string
+}
+
+const detailLabelFromCell = (value: HumanLogTableCell | undefined): string | undefined => {
+  const label = formatTableCell(value).trim()
+  return label.length > 0 ? label : undefined
+}
+
+const getWidePathDetailContext = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string
+): WidePathDetailContext | undefined => {
+  const normalizedColumn = normalizeColumnName(column)
+
+  if (normalizedColumn === 'path') {
+    const artifactLabel = detailLabelFromCell(row['artifact'])
+    if (artifactLabel) {
+      return { label: artifactLabel, labelColumn: 'artifact' }
+    }
+  }
+
+  if (columns.length === 2 && column === columns[1]) {
+    const labelColumn = columns[0] as string
+    const label = detailLabelFromCell(row[labelColumn])
+    if (label && isPathLikeColumnName(label)) {
+      return { label, labelColumn }
+    }
+  }
+
+  if (isPathLikeColumnName(column)) {
+    return { label: column }
+  }
+
+  return undefined
+}
+
+const shouldOmitLiftedLabelOnlyRow = (
+  remainingColumns: readonly string[],
+  liftedLabelColumns: ReadonlySet<string>
+): boolean =>
+  remainingColumns.length > 0
+  && remainingColumns.every(column => liftedLabelColumns.has(column))
+
+const extractWidePathDetails = (table: HumanLogTable): HumanLogTable => {
+  const columns = resolveTableColumns(table)
+  const rows = table.rows.map(row => ({ ...row }))
+  const details: HumanLogTableDetail[] = table.details ? [...table.details] : []
+  const liftedColumns = new Set<string>()
+  const liftedLabelColumnsByRow = new Map<number, Set<string>>()
+
+  for (const [rowIndex, row] of rows.entries()) {
+    for (const column of columns) {
+      const value = row[column]
+      if (value === undefined) {
+        continue
+      }
+
+      const detailContext = getWidePathDetailContext(row, columns, column)
+      if (!detailContext || !isLiftableWidePathValue(value)) {
+        continue
+      }
+
+      details.push({ label: detailContext.label, value })
+      delete row[column]
+      liftedColumns.add(column)
+
+      if (detailContext.labelColumn) {
+        const labelColumns = liftedLabelColumnsByRow.get(rowIndex) ?? new Set<string>()
+        labelColumns.add(detailContext.labelColumn)
+        liftedLabelColumnsByRow.set(rowIndex, labelColumns)
+      }
+    }
+  }
+
+  if (details.length === (table.details?.length ?? 0)) {
+    return table
+  }
+
+  const keptRows = rows.filter((row, rowIndex) => {
+    const remainingColumns = columns.filter(column => nonEmptyTableCell(row[column]))
+    if (remainingColumns.length === 0) {
+      return false
+    }
+
+    const liftedLabelColumns = liftedLabelColumnsByRow.get(rowIndex)
+    return liftedLabelColumns
+      ? !shouldOmitLiftedLabelOnlyRow(remainingColumns, liftedLabelColumns)
+      : true
+  })
+
+  const keptColumns = columns.filter((column) => {
+    if (!liftedColumns.has(column)) {
+      return true
+    }
+    return keptRows.some(row => nonEmptyTableCell(row[column]))
+  })
+  const keptColumnSet = new Set(keptColumns)
+
+  const out: HumanLogTable = {
+    rows: keptRows,
+    ...(keptColumns.length > 0 ? { columns: keptColumns } : {}),
+    ...(table.align
+      ? {
+          align: Object.fromEntries(
+            Object.entries(table.align).filter(([column]) => keptColumnSet.has(column))
+          )
+        }
+      : {}),
+    details
+  }
+
+  return out
+}
 
 const padColoredTableCell = (
   coloredValue: string,
@@ -156,11 +354,12 @@ export const createHumanTable = (
   rows: readonly HumanLogTableRow[],
   columns?: readonly string[],
   options: Pick<HumanLogTable, 'align'> = {}
-): HumanLogTable => ({
-  rows,
-  ...(columns ? { columns } : {}),
-  ...(options.align ? { align: options.align } : {})
-})
+): HumanLogTable =>
+  extractWidePathDetails({
+    rows,
+    ...(columns ? { columns } : {}),
+    ...(options.align ? { align: options.align } : {})
+  })
 
 export const createKeyValueTable = (
   entries: ReadonlyArray<readonly [string, unknown]>,
@@ -284,14 +483,34 @@ export const logBatchItemTable = (
   })
 }
 
+const renderHumanTableDetails = (details: readonly HumanLogTableDetail[] | undefined): string => {
+  if (!details || details.length === 0) {
+    return ''
+  }
+
+  return details
+    .map((detail) => {
+      const value = formatTableCell(detail.value)
+      const coloredValue = colorizeHumanTableCell({
+        column: detail.label,
+        value,
+        row: { [detail.label]: value }
+      })
+      return `${tableIndent}${detail.label}: ${coloredValue}`
+    })
+    .join('\n')
+}
+
 export const renderHumanTable = (table: HumanLogTable): string => {
+  const renderedDetails = renderHumanTableDetails(table.details)
+
   if (table.rows.length === 0) {
-    return `${tableIndent}(empty)`
+    return renderedDetails.length > 0 ? renderedDetails : `${tableIndent}(empty)`
   }
 
   const columns = resolveTableColumns(table)
   if (columns.length === 0) {
-    return `${tableIndent}(empty)`
+    return renderedDetails.length > 0 ? renderedDetails : `${tableIndent}(empty)`
   }
 
   const renderHeader = shouldRenderHeader(columns)
@@ -315,6 +534,7 @@ export const renderHumanTable = (table: HumanLogTable): string => {
   return lines
     .map(line => `${tableIndent}${line}`)
     .join('\n')
+    + (renderedDetails.length > 0 ? `\n${renderedDetails}` : '')
 }
 
 export const toHumanTableCell = normalizeTableCell

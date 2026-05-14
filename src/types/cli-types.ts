@@ -1,4 +1,5 @@
 import type { BatchOrder } from '../cli/commands/process-steps/step-1-download/download-types'
+import type { HtmlArticleBackend } from './process-extraction-types'
 
 export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'video', 'music'] as const
 
@@ -143,8 +144,10 @@ export type RuntimeOptions = {
   pdfChapterMode: 'local' | 'auto' | 'llm'
   useEpubBun: boolean
   useEpubCalibre: boolean
-  urlBackend: 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
+  urlBackend: HtmlArticleBackend
   urlBackendExplicit: boolean
+  urlBackends: HtmlArticleBackend[] | undefined
+  urlProviderConcurrency: number
 
   batchLimit: number
   batchAll: boolean

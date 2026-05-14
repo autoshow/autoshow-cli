@@ -93,6 +93,7 @@ export type ResolvedStep2Execution =
       route: 'article'
       sourceKind: 'article'
       backend: HtmlArticleBackend
+      backends?: HtmlArticleBackend[] | undefined
     }
   | {
       route: 'native-document'

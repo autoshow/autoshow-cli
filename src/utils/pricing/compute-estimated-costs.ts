@@ -263,7 +263,16 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   for (const target of extractTargets) {
     const estimation = getExtractEstimation(target.provider, target.model)
     const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
-    if (target.provider === 'mistral' || target.provider === 'firecrawl' || target.provider === 'gcloud-docai' || target.provider === 'aws-textract') {
+    if (
+      target.provider === 'defuddle'
+      || target.provider === 'mistral'
+      || target.provider === 'firecrawl'
+      || target.provider === 'glm-reader'
+      || target.provider === 'spider'
+      || target.provider === 'zyte'
+      || target.provider === 'gcloud-docai'
+      || target.provider === 'aws-textract'
+    ) {
       const extractPricing = getExtractPricing(target.provider, target.model)
       const cost = applyCostMultiplier(
         ((target.pageCount ?? input.extractPageCount ?? 0) / 1000) * (extractPricing.costPer1kPagesCents ?? 0),

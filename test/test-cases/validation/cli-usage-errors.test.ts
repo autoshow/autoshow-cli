@@ -42,6 +42,13 @@ test('extract rejects invalid URL article backend names', async () => {
   )
 })
 
+test('write rejects all URL article backend mode', async () => {
+  await expectUsageExit(
+    ['write', STABLE_LOCAL_AUDIO_PATH, '--all-url', '--price'],
+    '--all-url is only supported on extract for this release'
+  )
+})
+
 test('extract rejects removed OpenAI OCR models', async () => {
   await expectUsageExit(
     ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-mini', '--price'],

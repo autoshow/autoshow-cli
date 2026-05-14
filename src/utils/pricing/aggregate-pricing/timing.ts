@@ -4,6 +4,7 @@ import { computeEstimatedProcessingTimes } from '../compute-processing-time'
 type TimedExtractProvider = NonNullable<ComputeEstimatedProcessingTimesInput['extractTargets']>[number]['provider']
 
 const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
+  'defuddle',
   'mistral',
   'glm',
   'kimi',
@@ -12,6 +13,9 @@ const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
   'gemini',
   'deepinfra',
   'firecrawl',
+  'glm-reader',
+  'spider',
+  'zyte',
   'gcloud-docai',
   'aws-textract'
 ])

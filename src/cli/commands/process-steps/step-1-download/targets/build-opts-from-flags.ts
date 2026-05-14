@@ -1,6 +1,11 @@
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { readEnv } from '~/utils/validate/env-utils'
+import { CLIUsageError } from '~/utils/error-handler'
 import { isStep2BooleanProviderSelected } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
+import {
+  HOSTED_URL_ARTICLE_BACKENDS,
+  URL_ARTICLE_BACKENDS
+} from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
 import {
   validateDeepgramTtsVoice,
   validateElevenLabsTtsTextNormalization,
@@ -243,7 +248,12 @@ export const buildOptsFromFlags = (
   } = readRuntimeModelOptions(mergedFlags, rawModelOccurrences, allShortcutFlags, defaults)
   const urlBackendFlag = readOptionalStringFlag(mergedFlags, 'url-backend')
   const urlBackendEnv = readEnv('AUTOSHOW_URL_BACKEND')
+  const allUrlSelected = allShortcutFlags['all-url']
+  if (allUrlSelected && (urlBackendFlag !== undefined || urlBackendEnv !== undefined)) {
+    throw CLIUsageError('Cannot use --all-url with --url-backend')
+  }
   const urlBackend = parseUrlBackend(urlBackendFlag ?? urlBackendEnv)
+  const urlBackends = allUrlSelected ? [...URL_ARTICLE_BACKENDS] : undefined
   const useReverb = isStep2BooleanProviderSelected('reverb-stt', mergedFlags, allShortcutFlags)
   const step2SelectionOrigins = resolveStep2SelectionOrigins(mergedFlags, explicitFlags, rawModelOccurrences, allShortcutFlags)
   const whisperExplicit = step2SelectionOrigins['whisper-stt'] === 'explicit' || step2SelectionOrigins['whisper-stt'] === 'all-shortcut'
@@ -444,6 +454,15 @@ export const buildOptsFromFlags = (
     useEpubCalibre: readBooleanFlag(mergedFlags, 'epub-calibre'),
     urlBackend,
     urlBackendExplicit: urlBackendFlag !== undefined || urlBackendEnv !== undefined,
+    urlBackends,
+    urlProviderConcurrency: resolveProviderConcurrency(
+      mergedFlags,
+      'url-provider-concurrency',
+      allUrlSelected,
+      Math.min(4, HOSTED_URL_ARTICLE_BACKENDS.length),
+      explicitFlags,
+      configuredFlags
+    ),
     batchLimit: parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'batch-limit'), 5),
     batchAll: readBooleanFlag(mergedFlags, 'batch-all'),
     batchOrder: readBatchOrder(mergedFlags),

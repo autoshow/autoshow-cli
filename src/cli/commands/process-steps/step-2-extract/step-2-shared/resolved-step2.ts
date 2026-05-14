@@ -32,6 +32,27 @@ const resolveArticleBackend = (
 ): HtmlArticleBackend =>
   options.localHtmlDocument === true ? 'defuddle' : (options.urlBackend ?? 'defuddle')
 
+const resolveArticleBackends = (
+  options: Pick<OcrStep2ResolutionOptions, 'localHtmlDocument' | 'urlBackends' | 'urlBackend'>
+): HtmlArticleBackend[] | undefined => {
+  if (!Array.isArray(options.urlBackends) || options.urlBackends.length === 0) {
+    return undefined
+  }
+  return options.localHtmlDocument === true ? ['defuddle'] : [...options.urlBackends]
+}
+
+const resolveArticleStep2 = (
+  options: OcrStep2ResolutionOptions
+): Extract<ResolvedStep2Execution, { route: 'article' }> => {
+  const backends = resolveArticleBackends(options)
+  return {
+    route: 'article',
+    sourceKind: 'article',
+    backend: backends?.[0] ?? resolveArticleBackend(options),
+    ...(backends ? { backends } : {})
+  }
+}
+
 const resolveOcrProviders = (
   options: OcrStep2ResolutionOptions
 ): ResolvedStep2Provider[] =>
@@ -65,11 +86,7 @@ export const resolveOcrStep2ExecutionFromFormat = (
   options: OcrStep2ResolutionOptions
 ): ResolvedStep2Execution => {
   if (hasPreparedMarkdown(options.preparedMarkdown) || format === 'html') {
-    return {
-      route: 'article',
-      sourceKind: 'article',
-      backend: resolveArticleBackend(options)
-    }
+    return resolveArticleStep2(options)
   }
 
   if (!format) {
@@ -98,11 +115,7 @@ export const resolveOcrStep2ExecutionFromFormat = (
 
   switch (ocrSourceKind) {
     case 'article':
-      return {
-        route: 'article',
-        sourceKind: 'article',
-        backend: resolveArticleBackend(options)
-      }
+      return resolveArticleStep2(options)
     case 'epub-inspect':
       return {
         route: 'native-document',

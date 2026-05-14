@@ -25,7 +25,8 @@ bun t \
 - DeepInfra OCR tests are gated on `DEEPINFRA_API_KEY` and assert `ocrService: "deepinfra"`, the requested `ocrModel`, and recorded `promptTokens` / `completionTokens` when the provider returns usage.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts` covers remote article extraction with `--url-backend firecrawl`, writes `extraction.txt`, and records `step2.extractionMethod: "html+firecrawl"` in `run.json`.
 - `test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts` covers remote article extraction with `--url-backend glm-reader`, writes `extraction.txt`, and records `step2.extractionMethod: "html+glm-reader"` in `run.json`.
-- Hosted article and local HTML input validation also lives in `test/test-cases/validation/input-contracts.test.ts`. Mocked URL backend contracts for Firecrawl v2, Spider, Zyte, GLM Reader, and Defuddle live in `test/test-cases/validation/html-url-backends-contracts.test.ts`.
+- Hosted article and local HTML input validation also lives in `test/test-cases/validation/input-contracts.test.ts`. Mocked URL backend contracts for Firecrawl v2, Spider, Zyte, GLM Reader, Defuddle, and `--all-url` provider artifacts live in `test/test-cases/validation/html-url-backends-contracts.test.ts`.
+- `test/test-cases/validation/option-resolution-contracts.test.ts` covers `--all-url` backend expansion, URL concurrency defaults, conflict handling with `--url-backend`, and expected provider artifact paths without live API calls.
 - Native EPUB cleanup and export validation lives in `test/test-cases/validation/epub-export-contracts.test.ts`.
 
 ## Price Preflight
@@ -39,6 +40,8 @@ bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts --t
 ```
 
 `ocr-glm-reader.test.ts` currently resolves a report-only price selector, so `--budget` does not skip it.
+
+`extract <url> --all-url --price` is covered by the local validation suite. Do not run live `--all-url` e2e coverage unless hosted URL provider API usage has been explicitly approved.
 
 ## Related Docs
 

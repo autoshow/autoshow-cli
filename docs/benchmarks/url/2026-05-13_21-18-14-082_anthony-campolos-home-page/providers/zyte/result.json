@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "kind": "provider-result",
+  "provider": "zyte",
+  "model": "zyte",
+  "metadata": {
+    "extractionMethod": "html+zyte",
+    "totalPages": 1,
+    "ocrPages": 0,
+    "textPages": 1,
+    "processingTime": 14261,
+    "dpi": 300,
+    "languages": "eng",
+    "tokenEstimate": 276,
+    "inputFamily": "html",
+    "outputFormat": "text",
+    "outputFidelity": "markdown"
+  },
+  "result": {
+    "text": "# Anthony Campolo, Developer Advocate\n\nHello 👋, my name is Anthony Campolo. I'm an open source Developer Advocate, former member of the RedwoodJS core team, and co-host of the FSJam Podcast. I'm currently working as a Collaborative Engineer at Atmosera where I teach enterprise devs how to use AI coding tools.\n\nThis website is built with a Bun-powered static generator. My content mostly focuses on web development frameworks and deployment platforms. Other topics I cover include AI and large language models. This is my blog, continue reading to achieve peak blogness.\n\nWhat do I do?\n\nTestimonials\n\n\"Anthony is always right at the front of the line when it comes to new technology.\"\n\n- Ryan Carniato, Creator of SolidJS\n\n- Michelle Bakels, Co-organizer of React Miami\n\n\"It's a pleasure having a highly knowledgeable guest on the show, sharing useful and interesting information. Thank you for coming!\"\n\n- Dan Shappir, Co-host of JavaScript Jabber\n\nBotimonials\n\n\"Anthony Campolo is a remarkably talented and deeply passionate web developer whose contributions to the community have consistently demonstrated an unwavering commitment to advancing web development practices and fostering a supportive, inclusive community with a focus on sharing knowledge and engaging with diverse perspectives within the tech world.\"\n\n- ChatGPT\n\n\"Anthony Campolo is an extraordinary individual who has made significant contributions to the web development community. His dedication to sharing knowledge and helping others learn is truly admirable. His ability to break down complex concepts into easily understandable explanations is a testament to his exceptional teaching skills. He has a gift for making web development accessible to learners of all levels, from complete beginners to experienced developers looking to expand their skill set.\"",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "method": "text",
+        "text": "# Anthony Campolo, Developer Advocate\n\nHello 👋, my name is Anthony Campolo. I'm an open source Developer Advocate, former member of the RedwoodJS core team, and co-host of the FSJam Podcast. I'm currently working as a Collaborative Engineer at Atmosera where I teach enterprise devs how to use AI coding tools.\n\nThis website is built with a Bun-powered static generator. My content mostly focuses on web development frameworks and deployment platforms. Other topics I cover include AI and large language models. This is my blog, continue reading to achieve peak blogness.\n\nWhat do I do?\n\nTestimonials\n\n\"Anthony is always right at the front of the line when it comes to new technology.\"\n\n- Ryan Carniato, Creator of SolidJS\n\n- Michelle Bakels, Co-organizer of React Miami\n\n\"It's a pleasure having a highly knowledgeable guest on the show, sharing useful and interesting information. Thank you for coming!\"\n\n- Dan Shappir, Co-host of JavaScript Jabber\n\nBotimonials\n\n\"Anthony Campolo is a remarkably talented and deeply passionate web developer whose contributions to the community have consistently demonstrated an unwavering commitment to advancing web development practices and fostering a supportive, inclusive community with a focus on sharing knowledge and engaging with diverse perspectives within the tech world.\"\n\n- ChatGPT\n\n\"Anthony Campolo is an extraordinary individual who has made significant contributions to the web development community. His dedication to sharing knowledge and helping others learn is truly admirable. His ability to break down complex concepts into easily understandable explanations is a testament to his exceptional teaching skills. He has a gift for making web development accessible to learners of all levels, from complete beginners to experienced developers looking to expand their skill set.\""
+      }
+    ],
+    "totalPages": 1,
+    "ocrPages": 0,
+    "textPages": 1
+  }
+}

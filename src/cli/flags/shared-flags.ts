@@ -240,6 +240,21 @@ export const articleFlags = {
   }
 } as const satisfies ClercFlagsDefinition
 
+export const allArticleFlags = {
+  ...articleFlags,
+  'all-url': {
+    description: 'Article/HTML extraction: run every URL backend for extract',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'url-provider-concurrency': {
+    description: 'URL article extraction: max hosted URL backends running in parallel (default 2; --all-url defaults to up to 4)',
+    type: String,
+    default: '2'
+  }
+} as const satisfies ClercFlagsDefinition
+
 export const ocrTuningFlags = {
   dpi: {
     description: 'Render DPI for OCR pages (default: 300)',

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "skill": "url-consensus",
+  "cases": [
+    {
+      "name": "url provider comparison fixture",
+      "runDir": "evals/files",
+      "expectedOutputs": [
+        "consensus-extraction.txt",
+        "provider-comparison-report.md",
+        "provider-comparison-report.json"
+      ]
+    }
+  ]
+}

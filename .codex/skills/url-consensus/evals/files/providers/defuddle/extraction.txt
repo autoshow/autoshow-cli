@@ -1,0 +1,3 @@
+# Fixture Article
+
+This fixture article is used to validate URL consensus reports.

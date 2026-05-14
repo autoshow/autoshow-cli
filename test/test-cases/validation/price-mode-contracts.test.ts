@@ -42,6 +42,11 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
     expected: 'Total estimated cost'
   },
   {
+    label: 'all URL article extraction',
+    args: ['extract', 'https://example.com/articles/story.html', '--all-url', '--price'],
+    expected: 'providers/<backend>/result.json'
+  },
+  {
     label: 'tts',
     args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--price'],
     expected: 'speech'
@@ -261,6 +266,14 @@ describe('price mode contracts', () => {
       tokenEstimate: 100
     }
 
+    expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+defuddle' })).toEqual({
+      provider: 'defuddle',
+      model: 'defuddle'
+    })
+    expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+glm-reader' })).toEqual({
+      provider: 'glm-reader',
+      model: 'glm-reader'
+    })
     expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+spider' })).toEqual({
       provider: 'spider',
       model: 'spider'
@@ -269,11 +282,17 @@ describe('price mode contracts', () => {
       provider: 'zyte',
       model: 'zyte'
     })
+    expect(computeActualCosts({ step2: { ...base, extractionMethod: 'html+defuddle' } }).steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'defuddle',
+      model: 'defuddle',
+      cost: 0
+    })
     expect(computeActualCosts({ step2: { ...base, extractionMethod: 'html+spider' } }).steps[0]).toMatchObject({
       step: 'extract',
       provider: 'spider',
       model: 'spider',
-      cost: 0
+      cost: 0.12
     })
     expect(computeActualProcessingTimes({ step2: { ...base, extractionMethod: 'html+zyte' } }).steps[0]).toMatchObject({
       provider: 'zyte',

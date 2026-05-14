@@ -172,6 +172,7 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'useEpubBun'
   | 'useEpubCalibre'
   | 'urlBackend'
+  | 'urlBackends'
 > & {
   preparedMarkdown?: string | undefined
   localHtmlDocument?: boolean | undefined

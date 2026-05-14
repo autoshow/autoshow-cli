@@ -75,6 +75,9 @@ export const buildExpectedFilesList = async (
     if (opts.useEpubBun || opts.useEpubCalibre) {
       return ['run.json (includes EPUB inspection payload)', 'Extracted text (non-EPUB fallback inputs only)', ...ocrExportArtifacts]
     }
+    if (htmlArticleInput && opts.urlBackends) {
+      return ['providers/<backend>/result.json', 'providers/<backend>/extraction.txt', 'run.json']
+    }
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
       return [ocrArtifact, ...ocrExportArtifacts, 'providers/<service>-<model>/result.json', 'run.json']
     }

@@ -24,7 +24,7 @@ import {
   llmProviderFlags,
   ocrInputFlags,
   ocrTuningFlags,
-  articleFlags,
+  allArticleFlags,
   // Shared separately because write should still expose batch and EPUB inspect flags without resume-only surface area.
   batchFlags,
   promptFlag,
@@ -320,7 +320,7 @@ export const writeFlags = {
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
   ...withHelpGroup(ocrInputFlags, 'step-2-ocr'),
   ...withHelpGroup(ocrTuningFlags, 'step-2-ocr'),
-  ...withHelpGroup(articleFlags, 'step-2-ocr'),
+  ...withHelpGroup(allArticleFlags, 'step-2-ocr'),
   ...withHelpGroup(epubInspectFlags, 'step-2-ocr'),
   ...withHelpGroup(writeLlmShortcutFlags, 'step-3-write'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),

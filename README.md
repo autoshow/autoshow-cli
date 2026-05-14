@@ -39,11 +39,14 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 # Download only
 bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
-# Extraction only (media routes to STT, documents/articles route to OCR)
+# Extraction only (media routes to STT, documents to OCR, articles to URL extraction)
 bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Hosted Grok speech-to-text
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
+
+# Compare every URL article backend for one remote article
+bun as extract https://example.com/article --all-url
 
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
@@ -212,6 +215,7 @@ Typical artifacts include:
 - `prompt.md`
 - `transcription.txt`
 - extracted text or OCR output
+- `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for `extract <url> --all-url`
 - `text.json`
 - generated speech, image, video, or music files
 - `run.json`

@@ -122,8 +122,9 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     OpenAI, Gemini, GLM, Together, AssemblyAI, Gladia,
     Supadata, AWS
 
-  Hosted OCR/readiness
-    Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra
+  Hosted OCR/article readiness
+    OCR: Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra
+    URL article: Firecrawl, GLM Reader, Spider, Zyte
 
   Hosted TTS readiness
     ElevenLabs, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway,
@@ -155,6 +156,11 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
 | `extract --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
 | `extract --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
+| `extract --url-backend firecrawl` | `FIRECRAWL_API_KEY`, unless `FIRECRAWL_API_URL` points at a compatible self-hosted or mock endpoint |
+| `extract --url-backend glm-reader` | `GLM_API_KEY` |
+| `extract --url-backend spider` | `SPIDER_API_KEY`, unless `SPIDER_API_URL` points at a compatible mock endpoint |
+| `extract --url-backend zyte` | `ZYTE_API_KEY`, unless `ZYTE_API_URL` points at a compatible mock endpoint |
+| `extract --all-url` | Local Defuddle plus hosted URL backend readiness for Firecrawl, GLM Reader, Spider, and Zyte |
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
 | `write --grok` | `XAI_API_KEY` |
 | `write --glm` | `GLM_API_KEY` |

@@ -43,6 +43,16 @@ output/
     ├── run.json                    # { step1, step2 }
     │                               # EPUB inspect mode writes run.json only
     │
+    │  ── Article URL / HTML (extract command) ──
+    ├── extraction.txt              # single-backend --out text
+    ├── result.json                 # single-backend --out json
+    ├── extraction.tsv              # single-backend --out tsv
+    ├── extraction.hocr             # single-backend --out hocr
+    ├── providers/<backend>/        # --all-url provider artifacts
+    │   ├── extraction.txt
+    │   └── result.json
+    ├── run.json                    # { step1, step2, completionStatus?, providerStates? }
+    │
     │  ── Document (write command) ──
     ├── extraction.<requested-format>
     ├── prompt.md
@@ -108,8 +118,9 @@ src/types/
 │                                                                              │
 │  RuntimeOptions includes normalized provider selections for:                 │
 │    STT/OCR provider models and local booleans, LLM provider models,          │
-│    TTS/image/video/music provider models, provider-specific voice,           │
-│    synthesis, generation, concurrency, batch, cost, and prompt controls.     │
+│    URL article backends, TTS/image/video/music provider models,              │
+│    provider-specific voice, synthesis, generation, concurrency, batch,       │
+│    cost, and prompt controls.                                                │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐

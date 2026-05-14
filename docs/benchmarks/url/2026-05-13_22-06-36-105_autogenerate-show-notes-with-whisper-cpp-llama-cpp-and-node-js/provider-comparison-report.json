@@ -1,0 +1,428 @@
+{
+  "schemaVersion": 1,
+  "kind": "url-provider-comparison",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_22-06-36-105_autogenerate-show-notes-with-whisper-cpp-llama-cpp-and-node-js",
+  "runName": "2026-05-13_22-06-36-105_autogenerate-show-notes-with-whisper-cpp-llama-cpp-and-node-js",
+  "consensusPath": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_22-06-36-105_autogenerate-show-notes-with-whisper-cpp-llama-cpp-and-node-js/consensus-extraction.txt",
+  "generatedAt": "2026-05-14T03:14:26.736Z",
+  "providerCount": 5,
+  "overallMetric": "balanced-url-extraction",
+  "overallWeights": {
+    "accuracy": 0.5,
+    "processingSpeed": 0.25,
+    "costEfficiency": 0.25
+  },
+  "providers": [
+    {
+      "provider": "firecrawl",
+      "model": "firecrawl",
+      "providerKey": "firecrawl",
+      "group": "hosted",
+      "directoryName": "firecrawl",
+      "rank": 2,
+      "groupRank": 1,
+      "overallRank": 1,
+      "overallScore": 0.9596873623868172,
+      "groupTier": 1,
+      "wer": 0.016120365394948953,
+      "cer": 0.013848631239935587,
+      "contentCoverage": 0.9966996699669967,
+      "accuracyScore": 0.9876525769842908,
+      "wordBreakdown": {
+        "substitutions": 5,
+        "deletions": 36,
+        "insertions": 19,
+        "referenceCount": 3722
+      },
+      "characterBreakdown": {
+        "substitutions": -1,
+        "deletions": -1,
+        "insertions": -1,
+        "referenceCount": 18630
+      },
+      "tokenEstimate": 6913,
+      "processingTimeMs": 1820,
+      "actualCostCents": 0.083,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9876525769842908,
+          "source": "wer-cer-coverage",
+          "wer": 0.016120365394948953,
+          "cer": 0.013848631239935587,
+          "contentCoverage": 0.9966996699669967
+        },
+        "processingSpeed": {
+          "score": 0.863444295578687,
+          "source": "processing-time",
+          "processingTimeMs": 1820
+        },
+        "costEfficiency": {
+          "score": 1,
+          "source": "reported-cost",
+          "costCents": 0.083
+        }
+      }
+    },
+    {
+      "provider": "defuddle",
+      "model": "defuddle",
+      "providerKey": "defuddle",
+      "group": "local",
+      "directoryName": "defuddle",
+      "rank": 3,
+      "groupRank": 1,
+      "overallRank": 2,
+      "overallScore": 0.9556841578838163,
+      "groupTier": 1,
+      "wer": 0.08221386351423966,
+      "cer": 0.08888888888888889,
+      "contentCoverage": 0.8987898789878987,
+      "accuracyScore": 0.9113683157676327,
+      "wordBreakdown": {
+        "substitutions": 0,
+        "deletions": 290,
+        "insertions": 16,
+        "referenceCount": 3722
+      },
+      "characterBreakdown": {
+        "substitutions": -1,
+        "deletions": -1,
+        "insertions": -1,
+        "referenceCount": 18630
+      },
+      "tokenEstimate": 6912,
+      "processingTimeMs": 495,
+      "actualCostCents": 0,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9113683157676327,
+          "source": "wer-cer-coverage",
+          "wer": 0.08221386351423966,
+          "cer": 0.08888888888888889,
+          "contentCoverage": 0.8987898789878987
+        },
+        "processingSpeed": {
+          "score": 1,
+          "source": "processing-time",
+          "processingTimeMs": 495
+        },
+        "costEfficiency": {
+          "score": 1,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      }
+    },
+    {
+      "provider": "spider",
+      "model": "spider",
+      "providerKey": "spider",
+      "group": "hosted",
+      "directoryName": "spider",
+      "rank": 1,
+      "groupRank": 2,
+      "overallRank": 3,
+      "overallScore": 0.9547448525660736,
+      "groupTier": 1,
+      "wer": 0.013164965072541644,
+      "cer": 0.01261406333870102,
+      "contentCoverage": 1,
+      "accuracyScore": 0.9902640016290539,
+      "wordBreakdown": {
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 49,
+        "referenceCount": 3722
+      },
+      "characterBreakdown": {
+        "substitutions": -1,
+        "deletions": -1,
+        "insertions": -1,
+        "referenceCount": 18630
+      },
+      "tokenEstimate": 7047,
+      "processingTimeMs": 1671,
+      "actualCostCents": 0.12,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9902640016290539,
+          "source": "wer-cer-coverage",
+          "wer": 0.013164965072541644,
+          "cer": 0.01261406333870102,
+          "contentCoverage": 1
+        },
+        "processingSpeed": {
+          "score": 0.8788003710192724,
+          "source": "processing-time",
+          "processingTimeMs": 1671
+        },
+        "costEfficiency": {
+          "score": 0.9596510359869138,
+          "source": "reported-cost",
+          "costCents": 0.12
+        }
+      }
+    },
+    {
+      "provider": "glm-reader",
+      "model": "glm-reader",
+      "providerKey": "glm-reader",
+      "group": "hosted",
+      "directoryName": "glm-reader",
+      "rank": 4,
+      "groupRank": 3,
+      "overallRank": 4,
+      "overallScore": 0.6247273860046244,
+      "groupTier": 2,
+      "wer": 0.12278344975819452,
+      "cer": 0.1087493290391841,
+      "contentCoverage": 0.966996699669967,
+      "accuracyScore": 0.9031701177785985,
+      "wordBreakdown": {
+        "substitutions": 60,
+        "deletions": 35,
+        "insertions": 362,
+        "referenceCount": 3722
+      },
+      "characterBreakdown": {
+        "substitutions": -1,
+        "deletions": -1,
+        "insertions": -1,
+        "referenceCount": 18630
+      },
+      "tokenEstimate": 7154,
+      "processingTimeMs": 3478,
+      "actualCostCents": 1,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9031701177785985,
+          "source": "wer-cer-coverage",
+          "wer": 0.12278344975819452,
+          "cer": 0.1087493290391841,
+          "contentCoverage": 0.966996699669967
+        },
+        "processingSpeed": {
+          "score": 0.6925693084613006,
+          "source": "processing-time",
+          "processingTimeMs": 3478
+        },
+        "costEfficiency": {
+          "score": 0,
+          "source": "reported-cost",
+          "costCents": 1
+        }
+      }
+    },
+    {
+      "provider": "zyte",
+      "model": "zyte",
+      "providerKey": "zyte",
+      "group": "hosted",
+      "directoryName": "zyte",
+      "rank": 5,
+      "groupRank": 4,
+      "overallRank": 5,
+      "overallScore": 0.5310939228847377,
+      "groupTier": 2,
+      "wer": 0.46856528747984955,
+      "cer": 0.4943639291465378,
+      "contentCoverage": 0.8481848184818482,
+      "accuracyScore": 0.6041725785939028,
+      "wordBreakdown": {
+        "substitutions": 621,
+        "deletions": 225,
+        "insertions": 898,
+        "referenceCount": 3722
+      },
+      "characterBreakdown": {
+        "substitutions": -1,
+        "deletions": -1,
+        "insertions": -1,
+        "referenceCount": 18630
+      },
+      "tokenEstimate": 4055,
+      "processingTimeMs": 10198,
+      "actualCostCents": 0.16,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.6041725785939028,
+          "source": "wer-cer-coverage",
+          "wer": 0.46856528747984955,
+          "cer": 0.4943639291465378,
+          "contentCoverage": 0.8481848184818482
+        },
+        "processingSpeed": {
+          "score": 0,
+          "source": "processing-time",
+          "processingTimeMs": 10198
+        },
+        "costEfficiency": {
+          "score": 0.916030534351145,
+          "source": "reported-cost",
+          "costCents": 0.16
+        }
+      }
+    }
+  ],
+  "overall": [
+    {
+      "rank": 1,
+      "provider": "firecrawl",
+      "model": "firecrawl",
+      "providerKey": "firecrawl",
+      "group": "hosted",
+      "overallScore": 0.9596873623868172,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9876525769842908,
+          "source": "wer-cer-coverage",
+          "wer": 0.016120365394948953,
+          "cer": 0.013848631239935587,
+          "contentCoverage": 0.9966996699669967
+        },
+        "processingSpeed": {
+          "score": 0.863444295578687,
+          "source": "processing-time",
+          "processingTimeMs": 1820
+        },
+        "costEfficiency": {
+          "score": 1,
+          "source": "reported-cost",
+          "costCents": 0.083
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "provider": "defuddle",
+      "model": "defuddle",
+      "providerKey": "defuddle",
+      "group": "local",
+      "overallScore": 0.9556841578838163,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9113683157676327,
+          "source": "wer-cer-coverage",
+          "wer": 0.08221386351423966,
+          "cer": 0.08888888888888889,
+          "contentCoverage": 0.8987898789878987
+        },
+        "processingSpeed": {
+          "score": 1,
+          "source": "processing-time",
+          "processingTimeMs": 495
+        },
+        "costEfficiency": {
+          "score": 1,
+          "source": "local-zero-cost",
+          "costCents": 0
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "provider": "spider",
+      "model": "spider",
+      "providerKey": "spider",
+      "group": "hosted",
+      "overallScore": 0.9547448525660736,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9902640016290539,
+          "source": "wer-cer-coverage",
+          "wer": 0.013164965072541644,
+          "cer": 0.01261406333870102,
+          "contentCoverage": 1
+        },
+        "processingSpeed": {
+          "score": 0.8788003710192724,
+          "source": "processing-time",
+          "processingTimeMs": 1671
+        },
+        "costEfficiency": {
+          "score": 0.9596510359869138,
+          "source": "reported-cost",
+          "costCents": 0.12
+        }
+      }
+    },
+    {
+      "rank": 4,
+      "provider": "glm-reader",
+      "model": "glm-reader",
+      "providerKey": "glm-reader",
+      "group": "hosted",
+      "overallScore": 0.6247273860046244,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.9031701177785985,
+          "source": "wer-cer-coverage",
+          "wer": 0.12278344975819452,
+          "cer": 0.1087493290391841,
+          "contentCoverage": 0.966996699669967
+        },
+        "processingSpeed": {
+          "score": 0.6925693084613006,
+          "source": "processing-time",
+          "processingTimeMs": 3478
+        },
+        "costEfficiency": {
+          "score": 0,
+          "source": "reported-cost",
+          "costCents": 1
+        }
+      }
+    },
+    {
+      "rank": 5,
+      "provider": "zyte",
+      "model": "zyte",
+      "providerKey": "zyte",
+      "group": "hosted",
+      "overallScore": 0.5310939228847377,
+      "overallComponents": {
+        "accuracy": {
+          "score": 0.6041725785939028,
+          "source": "wer-cer-coverage",
+          "wer": 0.46856528747984955,
+          "cer": 0.4943639291465378,
+          "contentCoverage": 0.8481848184818482
+        },
+        "processingSpeed": {
+          "score": 0,
+          "source": "processing-time",
+          "processingTimeMs": 10198
+        },
+        "costEfficiency": {
+          "score": 0.916030534351145,
+          "source": "reported-cost",
+          "costCents": 0.16
+        }
+      }
+    }
+  ],
+  "tiering": {
+    "metric": "balanced-url-extraction",
+    "method": "equal-thirds-by-provider-group",
+    "groups": {
+      "local": {
+        "tier1": [
+          "defuddle"
+        ],
+        "tier2": [],
+        "tier3": []
+      },
+      "hosted": {
+        "tier1": [
+          "firecrawl",
+          "spider"
+        ],
+        "tier2": [
+          "glm-reader",
+          "zyte"
+        ],
+        "tier3": []
+      }
+    }
+  }
+}

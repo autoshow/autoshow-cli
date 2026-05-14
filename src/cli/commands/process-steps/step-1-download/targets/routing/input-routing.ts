@@ -24,6 +24,7 @@ export const resolveInputRoutingForCommand = async (
     RuntimeOptions,
     | 'urlBackendExplicit'
     | 'urlBackend'
+    | 'urlBackends'
     | 'step2SelectionOrigins'
     | 'useReverb'
     | 'whisperModel'

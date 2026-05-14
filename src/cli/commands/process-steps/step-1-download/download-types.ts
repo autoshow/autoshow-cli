@@ -285,6 +285,7 @@ export type FlagOccurrenceValue = string | boolean
 export type AllShortcutFlag =
   | 'all-stt'
   | 'all-ocr'
+  | 'all-url'
   | 'all-llm'
   | 'all-tts'
   | 'all-image'

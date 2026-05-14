@@ -151,11 +151,14 @@ const buildMatchKey = (step: WriteStepKind, provider: string, model: string): st
 }
 
 const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('html+defuddle')) {
+    return { provider: 'defuddle', model: 'defuddle' }
+  }
   if (metadata.extractionMethod.includes('html+firecrawl')) {
     return { provider: 'firecrawl', model: 'firecrawl' }
   }
   if (metadata.extractionMethod.includes('html+glm-reader')) {
-    return { provider: 'glm', model: 'glm-reader' }
+    return { provider: 'glm-reader', model: 'glm-reader' }
   }
   if (metadata.extractionMethod.includes('html+spider')) {
     return { provider: 'spider', model: 'spider' }

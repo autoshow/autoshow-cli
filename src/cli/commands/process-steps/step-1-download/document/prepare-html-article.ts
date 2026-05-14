@@ -19,7 +19,7 @@ import {
   type UrlArticleRunResult
 } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-utils'
 
-const buildArticleSlug = (
+export const buildArticleSlug = (
   source: string,
   fallbackTitle: string
 ): string => {

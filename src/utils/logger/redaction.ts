@@ -237,6 +237,14 @@ export const sanitizeHumanTable = (table: HumanLogTable): HumanLogTable => ({
     ) as HumanLogTable['rows'][number]
   ),
   ...(table.columns ? { columns: table.columns.map(column => sanitizeLogText(column)) } : {}),
+  ...(table.details
+    ? {
+        details: table.details.map(detail => ({
+          label: sanitizeLogText(detail.label),
+          value: sanitizeHumanTableCell(detail.value)
+        }))
+      }
+    : {}),
   ...(table.align
     ? {
         align: Object.fromEntries(

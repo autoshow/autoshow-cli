@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "kind": "provider-result",
+  "provider": "glm-reader",
+  "model": "glm-reader",
+  "metadata": {
+    "extractionMethod": "html+glm-reader",
+    "totalPages": 1,
+    "ocrPages": 0,
+    "textPages": 1,
+    "processingTime": 3004,
+    "dpi": 300,
+    "languages": "eng",
+    "tokenEstimate": 432,
+    "inputFamily": "html",
+    "outputFormat": "text",
+    "outputFidelity": "markdown"
+  },
+  "result": {
+    "text": "## Anthony Campolo, Developer Advocate\n\nHello 👋, my name is Anthony Campolo. I'm an open source Developer Advocate, member of theRedwoodJS core team, and co-host of the FSJam Podcast. This is my blog, continue reading to achieve peak blogness.\n\nThis website is built with SolidStart and modeled on theastro-theme-cactusstarter. My content mostly focuses on web development frameworks and deployment platforms. Other topics I cover include AI, large language models, cryptocurrency, and blockchain smart contracts.\n\n## What do I do?\n\n- 🤖 - Build AI Tooling\n- ✍️ - Write blog articles\n- 💬 - Give meetup talks\n- 🎥 - Code on livestreams\n- 🎙 - Speak on podcasts\n- 🐦 - Host Twitter Spaces\n\n## Testimonials\n\n> ___\"Anthony is always right at the front of the line when it comes to new technology.\"___\n>\n> - Ryan Carniato, Creator of SolidJS\n>\n>   \n> ___\"Thank you for all the wonderful conversations you've hosted around React Miami. Beyond anything I expected ✨🙏.\"___\n>\n> - Michelle Bakels, Co-organizer of React Miami\n>\n>   \n> ___\"It's a pleasure having a highly knowledgeable guest on the show, sharing useful and interesting information. Thank you for coming!\"___\n>\n> - Dan Shappir, Co-host of JavaScript Jabber\n\n## Botimonials\n\n> ___\"Anthony Campolo is a remarkably talented and deeply passionate web developer whose contributions to the community have consistently demonstrated an unwavering commitment to advancing web development practices and fostering a supportive, inclusive community with a focus on sharing knowledge and engaging with diverse perspectives within the tech world.\"___\n>\n> - ChatGPT\n>\n>   \n> ___\"Anthony Campolo is an extraordinary individual who has made significant contributions to the web development community. His dedication to sharing knowledge and helping others learn is truly admirable. His ability to break down complex concepts into easily understandable explanations is a testament to his exceptional teaching skills. He has a gift for making web development accessible to learners of all levels, from complete beginners to experienced developers looking to expand their skill set.\"___\n>\n> - Claude\n>\n>   \n> ___\"Anthony Campolo is a well-known web developer and online educator popular for creating high-quality tutorials, courses, and other web development content. Anthony is recognized for helping many individuals learn web development through his beginner-friendly material which often focuses on practical, real-world examples that make complex concepts more accessible to learners. His teaching style is engaging, and his enthusiasm for web development is contagious, which has earned him a loyal following in the web development community. Many developers, including beginners and experienced professionals, have benefited from Anthony's tutorials.\"___\n>\n> - Llama3",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "method": "text",
+        "text": "## Anthony Campolo, Developer Advocate\n\nHello 👋, my name is Anthony Campolo. I'm an open source Developer Advocate, member of theRedwoodJS core team, and co-host of the FSJam Podcast. This is my blog, continue reading to achieve peak blogness.\n\nThis website is built with SolidStart and modeled on theastro-theme-cactusstarter. My content mostly focuses on web development frameworks and deployment platforms. Other topics I cover include AI, large language models, cryptocurrency, and blockchain smart contracts.\n\n## What do I do?\n\n- 🤖 - Build AI Tooling\n- ✍️ - Write blog articles\n- 💬 - Give meetup talks\n- 🎥 - Code on livestreams\n- 🎙 - Speak on podcasts\n- 🐦 - Host Twitter Spaces\n\n## Testimonials\n\n> ___\"Anthony is always right at the front of the line when it comes to new technology.\"___\n>\n> - Ryan Carniato, Creator of SolidJS\n>\n>   \n> ___\"Thank you for all the wonderful conversations you've hosted around React Miami. Beyond anything I expected ✨🙏.\"___\n>\n> - Michelle Bakels, Co-organizer of React Miami\n>\n>   \n> ___\"It's a pleasure having a highly knowledgeable guest on the show, sharing useful and interesting information. Thank you for coming!\"___\n>\n> - Dan Shappir, Co-host of JavaScript Jabber\n\n## Botimonials\n\n> ___\"Anthony Campolo is a remarkably talented and deeply passionate web developer whose contributions to the community have consistently demonstrated an unwavering commitment to advancing web development practices and fostering a supportive, inclusive community with a focus on sharing knowledge and engaging with diverse perspectives within the tech world.\"___\n>\n> - ChatGPT\n>\n>   \n> ___\"Anthony Campolo is an extraordinary individual who has made significant contributions to the web development community. His dedication to sharing knowledge and helping others learn is truly admirable. His ability to break down complex concepts into easily understandable explanations is a testament to his exceptional teaching skills. He has a gift for making web development accessible to learners of all levels, from complete beginners to experienced developers looking to expand their skill set.\"___\n>\n> - Claude\n>\n>   \n> ___\"Anthony Campolo is a well-known web developer and online educator popular for creating high-quality tutorials, courses, and other web development content. Anthony is recognized for helping many individuals learn web development through his beginner-friendly material which often focuses on practical, real-world examples that make complex concepts more accessible to learners. His teaching style is engaging, and his enthusiasm for web development is contagious, which has earned him a loyal following in the web development community. Many developers, including beginners and experienced professionals, have benefited from Anthony's tutorials.\"___\n>\n> - Llama3"
+      }
+    ],
+    "totalPages": 1,
+    "ocrPages": 0,
+    "textPages": 1
+  }
+}

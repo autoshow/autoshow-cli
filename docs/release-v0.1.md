@@ -83,6 +83,7 @@ bun as extract input/examples/audio/1-audio.mp3
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
 bun as extract input/examples/document/1-document.pdf --out json
 bun as extract https://ajcwebdev.com --url-backend firecrawl
+bun as extract https://ajcwebdev.com --all-url
 bun as extract https://x.com/i/spaces/1DXxyRYNejbKM
 bun as write ./notes/source.md --text-input --openai gpt-5.4 --prompt folkSong
 bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
@@ -118,7 +119,7 @@ Local engines include:
 Service integrations span:
 
 - STT
-- OCR/article extraction
+- OCR/article extraction, including `extract <url> --all-url` provider comparison runs
 - LLM writing
 - TTS
 - image generation

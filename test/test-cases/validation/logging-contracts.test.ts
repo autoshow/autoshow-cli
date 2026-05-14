@@ -29,8 +29,9 @@ import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/res
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 import { buildProviderReadinessTable } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import { createLogger } from '~/utils/logger/core'
 import { createReporter } from '~/utils/logger/reporter'
-import { createHumanTable, createKeyValueTable, renderHumanTable } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable, createLocationsTable, renderHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
 import { buildRetryAttemptTable } from '~/utils/retries'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
@@ -298,6 +299,81 @@ describe('logging contracts', () => {
     expect(rendered).toContain('\u2502 provider  \u2502 gemini')
     expect(rendered).not.toContain('\u2502   \u2502 key')
     expect(rendered).not.toContain('\u2502 0 \u2502')
+  })
+
+  test('long Locations paths render as sidecar details outside the boxed table', () => {
+    const longPath = 'output/2026-05-13_22-39-03-656_ajcwebdevs-content-archive/run.json'
+    const table = createLocationsTable([{ artifact: 'runManifest', path: longPath }])
+    const rendered = stripAnsi(renderHumanTable(table))
+
+    expect(table.rows).toEqual([])
+    expect(table.details).toEqual([{ label: 'runManifest', value: longPath }])
+    expect(rendered).toBe(`  runManifest: ${longPath}`)
+    expect(rendered).not.toContain('\u250c')
+    expect(rendered).not.toContain(`\u2502 ${longPath}`)
+  })
+
+  test('completion provider table keeps counts inline and lifts long provider directory', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+    const outputDir = 'output/2026-05-13_22-39-03-656_ajcwebdevs-content-archive'
+
+    reporter.complete(outputDir, {
+      'result-openai': 'providers/openai/result.json',
+      'result-gemini': 'providers/gemini/result.json',
+      'result-anthropic': 'providers/anthropic/result.json',
+      'result-mistral': 'providers/mistral/result.json',
+      'result-groq': 'providers/groq/result.json'
+    })
+
+    const providersTable = writes.find(write => write.message === 'Providers')?.options?.humanTable
+    if (!providersTable) throw new Error('Expected Providers human table')
+
+    const rendered = stripAnsi(renderHumanTable(providersTable))
+    expect(providersTable.columns).toEqual(['transcripts', 'results'])
+    expect(providersTable.rows).toEqual([{ transcripts: 0, results: 5 }])
+    expect(providersTable.details).toEqual([{ label: 'dir', value: `${outputDir}/providers` }])
+    expect(rendered).toContain('\u2502 transcripts \u2502 results')
+    expect(rendered).toContain('\u2502 0           \u2502 5')
+    expect(rendered).toContain(`\n  dir: ${outputDir}/providers`)
+    expect(rendered).not.toContain('\u2502 dir ')
+    expect(rendered).not.toContain(`\u2502 ${outputDir}/providers`)
+  })
+
+  test('short filenames and short paths remain inline in human tables', () => {
+    const table = createHumanTable([
+      { artifact: 'run', path: 'output/run/run.json' },
+      { artifact: 'audio', path: 'speech.wav' }
+    ], ['artifact', 'path'])
+    const rendered = stripAnsi(renderHumanTable(table))
+
+    expect(table.details).toBeUndefined()
+    expect(rendered).toContain('\u2502 run   \u2502 output/run/run.json')
+    expect(rendered).toContain('\u2502 audio \u2502 speech.wav')
+  })
+
+  test('lifted path details are redacted like table cells', () => {
+    const secret = 'secret-value-123'
+    const longPath = `output/2026-05-13_12-34-56-789_process-video_with-a-very-long-title/OPENAI_API_KEY=${secret}/run.json`
+    const events: LogSinkEvent[] = []
+    const logger = createLogger({
+      runId: 'run-id',
+      sinks: [event => events.push(event)]
+    })
+
+    logger.write('info', 'Locations', {
+      humanTable: createLocationsTable([{ artifact: 'runManifest', path: longPath }])
+    })
+
+    const detailValue = events[0]?.humanTable?.details?.[0]?.value
+    expect(detailValue).toBe(`output/2026-05-13_12-34-56-789_process-video_with-a-very-long-title/OPENAI_API_KEY=REDACTED`)
+    expect(String(detailValue)).not.toContain(secret)
+
+    const captured = captureConsole(() => createJsonSink()(events[0] as LogSinkEvent))
+    expect(JSON.parse(captured.stdout[0] as string).humanTable.details[0]).toEqual({
+      label: 'runManifest',
+      value: detailValue
+    })
   })
 
   test('STT provider concurrency summary omits long provider slot details', () => {

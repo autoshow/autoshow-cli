@@ -55,6 +55,12 @@ const isExtractionMetadata = (value: unknown): value is ExtractionMetadata => {
 const resolveExtractionProviderModel = (
   metadata: ExtractionMetadata
 ): { provider: string, model: string } => {
+  if (metadata.extractionMethod.includes('html+defuddle')) {
+    return {
+      provider: 'defuddle',
+      model: 'defuddle'
+    }
+  }
   if (metadata.extractionMethod.includes('html+firecrawl')) {
     return {
       provider: 'firecrawl',
@@ -63,7 +69,7 @@ const resolveExtractionProviderModel = (
   }
   if (metadata.extractionMethod.includes('html+glm-reader')) {
     return {
-      provider: 'glm',
+      provider: 'glm-reader',
       model: 'glm-reader'
     }
   }

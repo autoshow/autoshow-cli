@@ -63,6 +63,9 @@ bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3
 # document OCR with Kimi
 bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
 
+# URL article extraction with every backend
+bun as extract https://example.com/article --all-url
+
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 
@@ -140,7 +143,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
 - `cache`: [cache](./commands/setup-and-utilities/cache/cache.md)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
-- `extract`: [extract](./commands/process-steps/step-2-extract/01-extract.md) — routes media to STT, documents/images to OCR, article HTML to article extraction, and X/Twitter Space or post links to the X API.
+- `extract`: [extract](./commands/process-steps/step-2-extract/01-extract.md) — routes media to STT, documents/images to OCR, article HTML to URL extraction, and X/Twitter Space or post links to the X API.
 - `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
 - `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
 - `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
@@ -175,6 +178,7 @@ bun as extract input/examples/audio/1-audio.mp3 --groq-stt whisper-large-v3 --pr
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text --price
 bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct --price
 bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6 --price
+bun as extract https://example.com/article --all-url --price
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
 bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
 bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6 --price
@@ -207,4 +211,4 @@ bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --v
 bun as video "a sunset timelapse" --all-video --price
 ```
 
-For token-priced hosted OCR providers, price preflight uses registry token rates with model-specific input/output token heuristics from recent OCR benchmark usage and adds page processing-time estimates. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0059/page`. For `extract --deapi-stt`, `tts --deapi-tts`, and `music --deapi-music`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. MiniMax music estimates use current model rates, including the `music-2.6-free` zero-cost track estimate and any generated-lyrics add-on. For `extract --happyscribe-stt`, price preflight is side-effect free and uses the published `$0.01/min` AI rate; exact billing is captured only during real runs with a resolvable USD organization. Supadata STT estimates use the Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, with plan-pricing variance possible.
+For token-priced hosted OCR providers, price preflight uses registry token rates with model-specific input/output token heuristics from recent OCR benchmark usage and adds page processing-time estimates. URL article estimates include the selected `--url-backend`, or every URL backend when `--all-url` is set. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0059/page`. For `extract --deapi-stt`, `tts --deapi-tts`, and `music --deapi-music`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. MiniMax music estimates use current model rates, including the `music-2.6-free` zero-cost track estimate and any generated-lyrics add-on. For `extract --happyscribe-stt`, price preflight is side-effect free and uses the published `$0.01/min` AI rate; exact billing is captured only during real runs with a resolvable USD organization. Supadata STT estimates use the Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, with plan-pricing variance possible.

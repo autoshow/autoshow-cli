@@ -208,6 +208,24 @@
       }
     }
   },
+  "defuddle": {
+    "description": "Local Defuddle article extraction",
+    "type": "local",
+    "models": {
+      "defuddle": {
+        "description": "Local Defuddle HTML-to-markdown extraction",
+        "costPer1kPagesUSD": 0,
+        "costPer1kPagesCents": 0,
+        "limits": {
+          "notes": "Defuddle runs locally and has no third-party API billing."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 500
+        }
+      }
+    }
+  },
   "firecrawl": {
     "description": "Firecrawl hosted article extraction",
     "type": "api",
@@ -222,6 +240,60 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerPage": 2
+        }
+      }
+    }
+  },
+  "glm-reader": {
+    "description": "Z.AI GLM Reader hosted article extraction",
+    "type": "api",
+    "models": {
+      "glm-reader": {
+        "description": "GLM Reader URL-to-markdown extraction estimated from Z.AI built-in web tool per-use pricing",
+        "costPer1kPagesUSD": 10,
+        "costPer1kPagesCents": 1000,
+        "limits": {
+          "notes": "Z.AI publishes built-in Web Search at $0.01/use; GLM Reader-specific request pricing was not listed in the local docs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
+        }
+      }
+    }
+  },
+  "spider": {
+    "description": "Spider hosted article extraction",
+    "type": "api",
+    "models": {
+      "spider": {
+        "description": "Spider /scrape markdown extraction heuristic estimate",
+        "costPer1kPagesUSD": 1.2,
+        "costPer1kPagesCents": 120,
+        "limits": {
+          "notes": "Spider publishes usage billing based on bandwidth and compute rather than a fixed per-page scrape price. AutoShow uses a conservative heuristic per-page estimate for dry-run totals."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
+        }
+      }
+    }
+  },
+  "zyte": {
+    "description": "Zyte API hosted article extraction",
+    "type": "api",
+    "models": {
+      "zyte": {
+        "description": "Zyte article automatic extraction add-on estimate; base request tier costs may also apply",
+        "costPer1kPagesUSD": 1.6,
+        "costPer1kPagesCents": 160,
+        "limits": {
+          "notes": "Zyte lists automatic extraction at $0.0004-$0.0016 per data type before volume discounts; article extraction uses the upper bound here and excludes variable base request tier costs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
         }
       }
     }
