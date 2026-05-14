@@ -1,5 +1,4 @@
 import { expect } from 'bun:test'
-import { defineMusicServiceTest } from '../../../test-utils/define-music-service-test'
 import {
   runCommand,
   fileExists,
@@ -11,54 +10,6 @@ import { budgetedTest } from '../../../test-utils/budget'
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
-
-defineMusicServiceTest({
-  models: [
-    { model: 'music-2.5', prompt: 'uplifting indie rock with bright guitars', extraArgs: ['--music-lyrics-file', 'input/examples/tts/0-tts-short.txt'] },
-  ],
-  cliFlag: '--minimax-music',
-  musicService: 'minimax',
-  envVarKey: 'MINIMAX_API_KEY',
-})
-
-budgetedTest('music-minimax-music-2.5', 'music-2.5 generates indie pop music', async () => {
-  const hasApiKey = await hasConfiguredEnvVar('MINIMAX_API_KEY')
-  if (!hasApiKey) {
-    console.log('Skipping: MINIMAX_API_KEY not configured')
-    return
-  }
-
-  await cleanupTestOutput(MUSIC_GEN_TITLE)
-
-  const result = await runCommand(
-    [
-      'src/cli/create-cli.ts',
-      'music',
-      'indie pop, nostalgic summer road trip vibe',
-      '--minimax-music',
-      'music-2.5',
-      '--music-lyrics-file',
-      'input/examples/tts/1-tts.md'
-    ],
-  )
-
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = await findLatestDirectory(MUSIC_GEN_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
-    expect(musicExists).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      music?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string }>
-    }
-    expect(metadata.music?.[0]?.musicService).toBe('minimax')
-    expect(metadata.music?.[0]?.musicModel).toBe('music-2.5')
-    expect(metadata.music?.[0]?.lyricsSource).toBe('provided')
-  }
-})
 
 budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and lyrics file', async () => {
   const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
@@ -90,11 +41,11 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
   }
 })
 
-budgetedTest(['music-elevenlabs-music_v1', 'music-minimax-music-2.5'], 'multi-provider run produces per-provider filenames and array metadata', async () => {
-  const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
+budgetedTest('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview', 'multi-provider run produces per-provider filenames and array metadata', async () => {
   const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
-  if (!hasElevenlabs || !hasMinimax) {
-    console.log('Skipping: ELEVENLABS_API_KEY and MINIMAX_API_KEY both required')
+  const hasGemini = await hasConfiguredEnvVar('GEMINI_API_KEY')
+  if (!hasMinimax || !hasGemini) {
+    console.log('Skipping: MINIMAX_API_KEY and GEMINI_API_KEY both required')
     return
   }
 
@@ -104,10 +55,10 @@ budgetedTest(['music-elevenlabs-music_v1', 'music-minimax-music-2.5'], 'multi-pr
     [
       'src/cli/create-cli.ts',
       'music',
-      'chill lo-fi beat',
-      '--elevenlabs-music', 'music_v1',
+      'bright acoustic pop with handclaps and a catchy chorus',
       '--minimax-music', 'music-2.5',
-      '--music-duration', '15',
+      '--gemini-music', 'lyria-3-clip-preview',
+      '--music-lyrics-file', 'input/examples/tts/1-tts.md',
     ],
   )
 
@@ -117,14 +68,22 @@ budgetedTest(['music-elevenlabs-music_v1', 'music-minimax-music-2.5'], 'multi-pr
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {
-    expect(await fileExists(`${outputDir}/generated-music-elevenlabs-music_v1.mp3`)).toBe(true)
     expect(await fileExists(`${outputDir}/generated-music-minimax-music-2.5.mp3`)).toBe(true)
+    expect(await fileExists(`${outputDir}/generated-music-gemini-lyria-3-clip-preview.mp3`)).toBe(true)
 
     const metadata = await readRunMetadata(outputDir) as {
-      music?: Array<{ musicService?: string; musicModel?: string }>
+      music?: Array<{ musicService?: string; musicModel?: string; lyricsSource?: string }>
     }
     const musicArr = metadata.music ?? []
-    expect(musicArr.some(m => m.musicService === 'elevenlabs')).toBe(true)
-    expect(musicArr.some(m => m.musicService === 'minimax')).toBe(true)
+    expect(musicArr.some(m =>
+      m.musicService === 'minimax'
+      && m.musicModel === 'music-2.5'
+      && m.lyricsSource === 'provided'
+    )).toBe(true)
+    expect(musicArr.some(m =>
+      m.musicService === 'gemini'
+      && m.musicModel === 'lyria-3-clip-preview'
+      && m.lyricsSource === 'provided'
+    )).toBe(true)
   }
 })

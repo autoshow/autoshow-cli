@@ -149,7 +149,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
     expect(step2).toBeDefined()
     expect(step2?.transcriptionModel).toContain('ggml-tiny')
 
-    const segmentsDirExists = await fileExists(`${outputDir}/segments`)
+    const segmentsDirExists = await fileExists(`${outputDir}/split-attempts/pass_001/segments`)
     expect(segmentsDirExists).toBe(true)
   }
 }, E2E_TEST_TIMEOUT_MS)

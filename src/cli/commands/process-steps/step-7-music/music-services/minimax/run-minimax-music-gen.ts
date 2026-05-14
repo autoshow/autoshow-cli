@@ -67,7 +67,7 @@ export const MinimaxMusicResponseSchema = v.object({
   base_resp: v.optional(MinimaxBaseRespSchema, undefined)
 })
 
-const validateMinimaxMusicPrompt = (
+const normalizeMinimaxMusicPrompt = (
   prompt: string
 ): string => {
   const trimmed = prompt.trim()
@@ -75,7 +75,8 @@ const validateMinimaxMusicPrompt = (
     throw new Error('MiniMax music prompt must not be empty')
   }
   if (trimmed.length > MINIMAX_MUSIC_PROMPT_MAX_CHARS) {
-    throw new Error(`MiniMax music prompt must be ${MINIMAX_MUSIC_PROMPT_MAX_CHARS} characters or fewer. Received ${trimmed.length} characters.`)
+    l.warn(`MiniMax music prompt is ${trimmed.length} characters; truncating to ${MINIMAX_MUSIC_PROMPT_MAX_CHARS} characters`)
+    return trimmed.slice(0, MINIMAX_MUSIC_PROMPT_MAX_CHARS).trimEnd()
   }
   return trimmed
 }
@@ -255,7 +256,7 @@ export const runMinimaxMusicGen = async (
   }
 
   const startTime = Date.now()
-  const promptForMusic = validateMinimaxMusicPrompt(prompt)
+  const promptForMusic = normalizeMinimaxMusicPrompt(prompt)
   const generatedLyrics = useInstrumental || options.lyricsFile
     ? undefined
     : await generateLyrics(baseURL, apiKey, promptForMusic)

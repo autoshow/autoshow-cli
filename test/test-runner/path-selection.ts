@@ -13,7 +13,7 @@ export const matchPathFilters = (file: string, pathFilters: string[]): boolean =
   return pathFilters.some(pathFilter => {
     const normalizedFilter = normalizePathFilter(pathFilter)
     const prefix = normalizedFilter.endsWith('/') ? normalizedFilter : `${normalizedFilter}/`
-    return file === normalizedFilter || file.startsWith(prefix) || file.startsWith(normalizedFilter)
+    return file === normalizedFilter || file.startsWith(prefix)
   })
 }
 

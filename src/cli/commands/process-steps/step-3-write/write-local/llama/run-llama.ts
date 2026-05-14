@@ -5,6 +5,7 @@ import { withProcessLock } from '~/utils/process-lock'
 import { requestLlamaCompletion } from './llama-client'
 import { LLAMA_PROCESS_LOCK_NAME } from './llama-constants'
 import { resolveLlamaRequestModel } from './llama-server-identity'
+import { stopDefaultLlamaServer as stopLlamaServerForRecovery } from './llama-server-process'
 import { ensureLlamaServerRunning } from './llama-server-runtime'
 
 export { LLAMA_PROCESS_LOCK_NAME } from './llama-constants'
@@ -23,6 +24,9 @@ export {
 const withLlamaServerLock = async <T,>(fn: () => Promise<T>): Promise<T> =>
   await withProcessLock(LLAMA_PROCESS_LOCK_NAME, fn)
 
+const isEmptyLlamaResponseError = (error: unknown): boolean =>
+  error instanceof Error && error.message === 'No response from llama.cpp model'
+
 export const runLlamaModel = async (
   prompt: string,
   model: string,
@@ -39,7 +43,19 @@ export const runLlamaModel = async (
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 1800000)
       try {
-        const completion = await requestLlamaCompletion(prompt, requestModel, controller.signal)
+        let completion: Awaited<ReturnType<typeof requestLlamaCompletion>>
+        try {
+          completion = await requestLlamaCompletion(prompt, requestModel, controller.signal)
+        } catch (error) {
+          if (!isEmptyLlamaResponseError(error)) {
+            throw error
+          }
+
+          l.warn('llama.cpp returned no completion after retries; restarting the local server once')
+          await stopLlamaServerForRecovery()
+          const recoveredIdentity = await ensureLlamaServerRunning(model)
+          completion = await requestLlamaCompletion(prompt, resolveLlamaRequestModel(recoveredIdentity), controller.signal)
+        }
         const processingTime = Date.now() - startTime
         const responseText = completion.responseText
         const outputTokenCount = completion.outputTokenCount

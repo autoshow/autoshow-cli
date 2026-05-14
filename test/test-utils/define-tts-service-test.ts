@@ -26,6 +26,9 @@ const isTransientMinimaxTtsFailure = (output: string): boolean => {
   )
 }
 
+const isRunwayInsufficientCreditsFailure = (output: string): boolean =>
+  output.includes('You do not have enough credits to run this task.')
+
 export const defineTTSServiceTest = ({
   models,
   cliFlag,
@@ -92,6 +95,13 @@ export const defineTTSServiceTest = ({
               return
             }
           }
+        }
+      }
+      if (result.exitCode !== 0 && ttsService === 'runway') {
+        const combinedOutput = `${result.stdout}\n${result.stderr}`
+        if (isRunwayInsufficientCreditsFailure(combinedOutput)) {
+          console.log('Skipping: Runway account does not have enough credits to run this task')
+          return
         }
       }
 

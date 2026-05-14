@@ -4,14 +4,15 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
-  type ImageProviderEvidence,
+  type VideoProviderEvidence,
   buildCostLookup,
   buildTimingLookup,
-  discoverImageFiles,
-  loadImageRunJson,
+  discoverVideoFiles,
+  entryProcessingTime,
+  loadVideoRunJson,
   makeProviderKey,
-  probeImage,
-} from "./image_eval_lib.ts";
+  nullableNumber,
+} from "./video_eval_lib.ts";
 
 interface ParsedArgs {
   runDir: string;
@@ -22,15 +23,15 @@ function helpText(): string {
   return [
     "Usage: bun build_evaluation_packet.ts <run_dir> [--out <path>]",
     "",
-    "Build an evaluation evidence packet from a multi-provider AutoShow image run.",
+    "Build an evaluation evidence packet from one multi-provider AutoShow video run.",
     "",
     "Options:",
     "  --out <path>  Write JSON packet to <path> instead of stdout",
     "  --help, -h    Show this help message",
     "",
     "Examples:",
-    "  bun build_evaluation_packet.ts ./runs/my-image-run",
-    '  bun build_evaluation_packet.ts ./runs/my-image-run --out /tmp/packet.json',
+    "  bun build_evaluation_packet.ts ./runs/my-video-run",
+    "  bun build_evaluation_packet.ts ./runs/my-video-run --out /tmp/packet.json",
   ].join("\n");
 }
 
@@ -69,47 +70,36 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 export async function buildPacket(runDir: string) {
-  const runJson = loadImageRunJson(runDir);
+  const runJson = loadVideoRunJson(runDir);
   const warnings: string[] = [];
 
-  const { found, missing } = discoverImageFiles(runDir, runJson.metadata.image);
+  const { found, missing } = discoverVideoFiles(runDir, runJson.metadata.video);
   if (missing.length > 0) {
-    warnings.push(`Missing image files: ${missing.join(", ")}`);
+    warnings.push(`Missing video files: ${missing.join(", ")}`);
   }
 
   const costLookup = buildCostLookup(runJson);
   const timingLookup = buildTimingLookup(runJson);
 
-  const providers: ImageProviderEvidence[] = [];
-  for (const entry of runJson.metadata.image) {
-    const providerKey = makeProviderKey(entry.imageService, entry.imageModel);
-    const imagePaths = found.get(providerKey) ?? [];
-    const allImagesExist = imagePaths.length === entry.imageFileNames.length;
-
-    const imageProperties = [];
-    for (const imagePath of imagePaths) {
-      try {
-        const props = await probeImage(imagePath);
-        imageProperties.push(props);
-      } catch (error) {
-        warnings.push(`Image probe failed for ${imagePath}: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    }
-
-    const totalFileSize = imageProperties.reduce((sum, props) => sum + props.fileSize, 0);
+  const providers: VideoProviderEvidence[] = [];
+  for (const entry of runJson.metadata.video) {
+    const providerKey = makeProviderKey(entry.videoGenService, entry.videoGenModel);
+    const videoPath = found.get(providerKey) ?? "";
+    const videoExists = videoPath.length > 0;
+    const artifactFileSize = videoExists ? Bun.file(videoPath).size : null;
     const costCents = costLookup.get(providerKey) ?? null;
-    const processingTimeMs = timingLookup.get(providerKey) ?? (typeof entry.processingTime === "number" ? entry.processingTime : null);
+    const processingTimeMs = timingLookup.get(providerKey) ?? entryProcessingTime(entry);
 
     providers.push({
       providerKey,
-      imageService: entry.imageService,
-      imageModel: entry.imageModel,
-      imageFileNames: entry.imageFileNames,
-      imageCount: entry.imageCount,
-      totalFileSize,
-      imagePaths,
-      allImagesExist,
-      imageProperties,
+      videoGenService: entry.videoGenService,
+      videoGenModel: entry.videoGenModel,
+      videoFileName: entry.videoFileName,
+      videoPath,
+      videoExists,
+      artifactFileSize,
+      metadataFileSize: nullableNumber(entry.videoFileSize),
+      videoDurationSeconds: nullableNumber(entry.videoDuration),
       processingTimeMs,
       costCents,
     });

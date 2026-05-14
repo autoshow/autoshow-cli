@@ -1,5 +1,5 @@
 import { mkdir, readdir, rm, appendFile, copyFile, stat } from 'node:fs/promises'
-import { basename, isAbsolute, join, normalize, relative, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import { parseCommandEstimatedTotal } from '../test-runner/utils'
 import { readOutputMetadataSummary } from './output-metadata-summary'
 import { E2E_TEST_TIMEOUT_MS } from './timeouts'
@@ -93,6 +93,8 @@ const parseCallerLocation = (): { file: string | null, line: number | null, colu
 const parseOutputDirFromText = (text: string): string | null => {
   const clean = stripAnsi(text)
   const patterns = [
+    /(?:^|\n)\s*(?:outputDir|retryOutputDir):\s*([^\n\r]+)/g,
+    /(?:^|\n)\s*(?:runManifest|batchManifest):\s*([^\n\r]+\/(?:run|batch)\.json)/g,
     /Locations[\s\S]*?│\s*(?:outputDir|retryOutputDir)\s*│\s*([^\n\r│]+?)\s*│/g,
     /Artifacts[\s\S]*?│\s*run\s*│\s*([^\n\r│]+\/run\.json)\s*│/g,
     /"artifact"\s*:\s*"outputDir"[\s\S]*?"path"\s*:\s*"([^"\n\r]+)"/g,
@@ -107,8 +109,8 @@ const parseOutputDirFromText = (text: string): string | null => {
     }
     const value = last[1]?.trim()
     if (value && value.length > 0) {
-      if (value.endsWith('/run.json')) {
-        return value.slice(0, -'/run.json'.length)
+      if (value.endsWith('/run.json') || value.endsWith('/batch.json')) {
+        return dirname(value)
       }
       return value
     }

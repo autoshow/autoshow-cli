@@ -14,100 +14,14 @@ import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 defineImageServiceTest({
   models: [
-    { model: 'gpt-image-1', prompt: 'a simple red circle on white background' },
-    { model: 'gpt-image-1-mini', prompt: 'a simple blue square on white background' },
+    { model: 'gpt-image-1', prompt: 'an oil painting of a lighthouse', extraArgs: ['--image-quality', 'high', '--image-size', '1536x1024'] },
+    { model: 'gpt-image-1-mini', prompt: 'a simple blue square on white background', extraArgs: ['--image-format', 'jpeg', '--image-size', '1024x1024', '--image-quality', 'low'], expectedExtension: 'jpg' },
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
-    { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1024', '--image-quality', 'low'] },
+    { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1536', '--image-quality', 'low'] },
   ],
   cliFlag: '--openai-image',
   imageService: 'openai',
   envVarKey: 'OPENAI_API_KEY',
-})
-
-describe('openai image format options', () => {
-  const IMAGE_GEN_TITLE = 'image-gen'
-
-  beforeAll(async () => {
-    await cleanupTestOutput(IMAGE_GEN_TITLE)
-  })
-
-  afterAll(async () => {
-    await cleanupTestOutput(IMAGE_GEN_TITLE)
-  })
-
-  budgetedTest('image-openai-gpt-image-1-mini', 'gpt-image-1-mini generates jpeg when --image-format jpeg', async () => {
-    await cleanupTestOutput(IMAGE_GEN_TITLE)
-
-    const hasKey = await hasConfiguredEnvVar('OPENAI_API_KEY')
-    if (!hasKey) {
-      console.log('Skipping: OPENAI_API_KEY not configured')
-      return
-    }
-
-    const result = await runCommand(
-      [
-        'src/cli/create-cli.ts', 'image',
-        'a simple blue square on white background',
-        '--openai-image', 'gpt-image-1-mini',
-        '--image-format', 'jpeg',
-        '--image-size', '1024x1024',
-        '--image-quality', 'low',
-      ],
-    )
-
-    expect(result.exitCode).toBe(0)
-
-    const outputDir = await findLatestDirectory(IMAGE_GEN_TITLE)
-    expect(outputDir).not.toBeNull()
-
-    if (outputDir) {
-      const imageExists = await fileExists(`${outputDir}/generated-image.jpg`)
-      expect(imageExists).toBe(true)
-
-      const metadata = await readRunMetadata(outputDir) as {
-        image?: Array<{ imageService?: string; imageModel?: string; imageFileNames?: string[] }>
-      }
-      expect(metadata.image?.[0]?.imageService).toBe('openai')
-      expect(metadata.image?.[0]?.imageModel).toBe('gpt-image-1-mini')
-      expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe('generated-image.jpg')
-    }
-  }, E2E_TEST_TIMEOUT_MS)
-
-  budgetedTest('image-openai-gpt-image-1', 'gpt-image-1 generates oil painting with high quality and custom size', async () => {
-    await cleanupTestOutput(IMAGE_GEN_TITLE)
-
-    const hasKey = await hasConfiguredEnvVar('OPENAI_API_KEY')
-    if (!hasKey) {
-      console.log('Skipping: OPENAI_API_KEY not configured')
-      return
-    }
-
-    const result = await runCommand(
-      [
-        'src/cli/create-cli.ts', 'image',
-        'an oil painting of a lighthouse',
-        '--openai-image', 'gpt-image-1',
-        '--image-quality', 'high',
-        '--image-size', '1536x1024'
-      ],
-    )
-
-    expect(result.exitCode).toBe(0)
-
-    const outputDir = await findLatestDirectory(IMAGE_GEN_TITLE)
-    expect(outputDir).not.toBeNull()
-
-    if (outputDir) {
-      const imageExists = await fileExists(`${outputDir}/generated-image.png`)
-      expect(imageExists).toBe(true)
-
-      const metadata = await readRunMetadata(outputDir) as {
-        image?: Array<{ imageService?: string; imageModel?: string }>
-      }
-      expect(metadata.image?.[0]?.imageService).toBe('openai')
-      expect(metadata.image?.[0]?.imageModel).toBe('gpt-image-1')
-    }
-  }, E2E_TEST_TIMEOUT_MS)
 })
 
 describe('write with image gen', () => {
@@ -119,7 +33,7 @@ describe('write with image gen', () => {
     await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
   })
 
-  budgetedTest(['write-llama-gemma-3-270m', 'image-openai-gpt-image-1'], 'gpt-image-1 runs in parallel with pipeline and produces generated-image.png', async () => {
+  budgetedTest(['write-llama-gemma-3-270m', 'image-openai-gpt-image-2'], 'gpt-image-2 runs in parallel with pipeline and produces generated-image.png', async () => {
     const hasKey = await hasConfiguredEnvVar('OPENAI_API_KEY')
     if (!hasKey) {
       console.log('Skipping: OPENAI_API_KEY not configured')
@@ -132,7 +46,9 @@ describe('write with image gen', () => {
         'write',
         STABLE_LOCAL_AUDIO_PATH,
         '--llama', 'ggml-org/gemma-3-270m-it-GGUF',
-        '--openai-image', 'gpt-image-1',
+        '--openai-image', 'gpt-image-2',
+        '--image-size', '1024x1536',
+        '--image-quality', 'low',
       ],
     )
 
@@ -159,7 +75,7 @@ describe('write with image gen', () => {
 
       expect(metadata.step3?.llmService).toBeDefined()
       expect(metadata.step5?.imageService).toBe('openai')
-      expect(metadata.step5?.imageModel).toBe('gpt-image-1')
+      expect(metadata.step5?.imageModel).toBe('gpt-image-2')
       expect(metadata.step5?.imageFileNames?.[0]).toBe('generated-image.png')
     }
   }, E2E_TEST_TIMEOUT_MS)

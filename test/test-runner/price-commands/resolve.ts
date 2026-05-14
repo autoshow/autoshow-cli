@@ -21,6 +21,7 @@ type ResolvePriceSelectionOptions = {
 }
 
 const E2E_PREFIX = 'test/test-cases/e2e/'
+const PRICE_CATALOG_PREFIX = 'test/test-price/catalog/'
 
 const parseResolveOptions = (
   optionsOrBudgetSkippableOnly: boolean | ResolvePriceSelectionOptions
@@ -61,7 +62,7 @@ const rejectE2eSelectorsInPriceMode = (pathFilters: string[]): void => {
 
 const resolvePriceSuiteEntries = (pathFilters: string[]) => {
   if (pathFilters.length === 0) {
-    return PRICE_SELECTION_REGISTRY
+    return PRICE_SELECTION_REGISTRY.filter(entry => !entry.selector.startsWith(PRICE_CATALOG_PREFIX))
   }
 
   rejectE2eSelectorsInPriceMode(pathFilters)

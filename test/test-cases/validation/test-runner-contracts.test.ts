@@ -546,6 +546,41 @@ describe('test-runner contracts', () => {
     ])).toThrow('Use --test-price test/test-price/step-4-tts/services instead')
   })
 
+  test('price selectors match path boundaries', () => {
+    const musicKeys = resolvePriceSelection([], ['test/test-price/step-7-music'])
+      .commands.map((command) => command.key)
+    const lyricsVideoKeys = resolvePriceSelection([], ['test/test-price/step-7-music-lyrics-video'])
+      .commands.map((command) => command.key)
+
+    expect(musicKeys).toContain('music-elevenlabs-music_v1')
+    expect(musicKeys).not.toContain('transcribe-whisper-large-v3-turbo')
+    expect(lyricsVideoKeys).toContain('transcribe-whisper-large-v3-turbo')
+    expect(lyricsVideoKeys).not.toContain('music-elevenlabs-music_v1')
+  })
+
+  test('catalog price selectors stay out of main e2e price suites', () => {
+    const defaultKeys = resolvePriceSelection([], [])
+      .commands.map((command) => command.key)
+    const imageKeys = resolvePriceSelection([], ['test/test-price/step-5-image'])
+      .commands.map((command) => command.key)
+    const bflCatalogKeys = resolvePriceSelection([], ['test/test-price/catalog/step-5-image/bfl'])
+      .commands.map((command) => command.key)
+    const videoKeys = resolvePriceSelection([], ['test/test-price/step-6-video'])
+      .commands.map((command) => command.key)
+    const deapiVideoCatalogKeys = resolvePriceSelection([], ['test/test-price/catalog/step-6-video/deapi'])
+      .commands.map((command) => command.key)
+
+    expect(defaultKeys).not.toContain('image-bfl-flux-2-max')
+    expect(defaultKeys).not.toContain('video-deapi-Ltx2_19B_Dist_FP8')
+    expect(imageKeys).toContain('image-bfl-flux-2-pro-preview')
+    expect(imageKeys).not.toContain('image-bfl-flux-2-max')
+    expect(bflCatalogKeys).toContain('image-bfl-flux-2-max')
+    expect(bflCatalogKeys).not.toContain('image-bfl-flux-2-pro-preview')
+    expect(videoKeys).toContain('video-multi-gemini-lite-deapi-ltxv')
+    expect(videoKeys).not.toContain('video-deapi-Ltx2_19B_Dist_FP8')
+    expect(deapiVideoCatalogKeys).toContain('video-deapi-Ltx2_19B_Dist_FP8')
+  })
+
   test('budget-skip entries are emitted from skipped entry keys', () => {
     const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/service-models.test.ts', [
       {
@@ -704,13 +739,14 @@ describe('test-runner contracts', () => {
     const minimaxKeys = resolvePriceSelection(allFiles, [
       'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
     ], true).commands.map((command) => command.key)
-    expect(minimaxKeys).toContain('music-elevenlabs-music_v1')
-    expect(minimaxKeys).toContain('music-minimax-music-2.5')
+    expect(minimaxKeys).toContain('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview')
+    expect(minimaxKeys).toContain('music-pipeline-minimax-music-2.5')
+    expect(minimaxKeys).not.toContain('music-minimax-music-2.5')
 
     const geminiKeys = resolvePriceSelection(allFiles, [
       'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts'
     ], true).commands.map((command) => command.key)
-    expect(geminiKeys).toContain('music-gemini-lyria-3-clip-preview')
     expect(geminiKeys).toContain('music-gemini-lyria-3-pro-preview')
+    expect(geminiKeys).not.toContain('music-gemini-lyria-3-clip-preview')
   })
 })

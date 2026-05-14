@@ -88,7 +88,7 @@ budgetedTest('transcribe-whisper-tiny-split', 'whisper tiny with split processes
     expect(step2).toBeDefined()
     expect(step2?.transcriptionModel).toContain('ggml-tiny')
 
-    const segmentsDirExists = await fileExists(`${outputDir}/segments`)
+    const segmentsDirExists = await fileExists(`${outputDir}/split-attempts/pass_001/segments`)
     expect(segmentsDirExists).toBe(true)
   }
 })

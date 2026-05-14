@@ -10,11 +10,9 @@ import {
 } from '../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
-const MUSIC_GEN_TITLE = 'music-gen'
-
 defineMusicServiceTest({
   models: [
-    { model: 'music_v1', prompt: 'upbeat electronic instrumental with warm synth pads', extraArgs: ['--music-duration', '12', '--music-instrumental'] },
+    { model: 'music_v1', prompt: 'upbeat electronic instrumental with warm synth pads', extraArgs: ['--music-duration', '3', '--music-instrumental'] },
   ],
   cliFlag: '--elevenlabs-music',
   musicService: 'elevenlabs',
@@ -29,78 +27,17 @@ test('requires a music provider flag', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Specify a music generation provider')
 })
 
-budgetedTest('music-elevenlabs-music_v1', 'music_v1 generates cinematic orchestral music', async () => {
-  const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
-  if (!hasApiKey) {
-    console.log('Skipping: ELEVENLABS_API_KEY not configured')
-    return
-  }
-
-  await cleanupTestOutput(MUSIC_GEN_TITLE)
-
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'cinematic orchestral trailer, dramatic strings and percussion', '--elevenlabs-music', 'music_v1', '--music-duration', '10'],
-  )
-
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = await findLatestDirectory(MUSIC_GEN_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
-    expect(musicExists).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      music?: Array<{ musicService?: string; musicModel?: string }>
-    }
-    expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
-    expect(metadata.music?.[0]?.musicModel).toBe('music_v1')
-  }
-}, E2E_TEST_TIMEOUT_MS)
-
-budgetedTest('music-elevenlabs-music_v1', 'music_v1 generates lo-fi with duration and instrumental flag', async () => {
-  const hasApiKey = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
-  if (!hasApiKey) {
-    console.log('Skipping: ELEVENLABS_API_KEY not configured')
-    return
-  }
-
-  await cleanupTestOutput(MUSIC_GEN_TITLE)
-
-  const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'lo-fi chillhop with soft piano and vinyl texture', '--elevenlabs-music', 'music_v1', '--music-duration', '20', '--music-instrumental'],
-  )
-
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = await findLatestDirectory(MUSIC_GEN_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
-    expect(musicExists).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      music?: Array<{ musicService?: string; lyricsSource?: string }>
-    }
-    expect(metadata.music?.[0]?.musicService).toBe('elevenlabs')
-    expect(metadata.music?.[0]?.lyricsSource).toBe('none')
-  }
-}, E2E_TEST_TIMEOUT_MS)
-
 budgetedTest('music-pipeline-elevenlabs-music_v1', 'write with elevenlabs music pipeline writes music artifacts and metadata', async () => {
-  const hasOpenai = await hasConfiguredEnvVar('OPENAI_API_KEY')
   const hasElevenlabs = await hasConfiguredEnvVar('ELEVENLABS_API_KEY')
-  if (!hasOpenai || !hasElevenlabs) {
-    console.log('Skipping: OPENAI_API_KEY and ELEVENLABS_API_KEY required')
+  if (!hasElevenlabs) {
+    console.log('Skipping: ELEVENLABS_API_KEY required')
     return
   }
 
   await cleanupTestOutput('1-audio')
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4', '--elevenlabs-music', 'music_v1', '--music-duration', '20'],
+    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--llama', 'ggml-org/gemma-3-270m-it-GGUF', '--elevenlabs-music', 'music_v1', '--music-duration', '3'],
   )
 
   expect(result.exitCode).toBe(0)

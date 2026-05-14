@@ -16,7 +16,6 @@ defineVideoServiceTest({
   models: [
     { model: 'veo-3.1-fast-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
     { model: 'veo-3.1-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
-    { model: 'veo-3.1-lite-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
   ],
   cliFlag: '--gemini-video',
   videoService: 'gemini',
@@ -37,16 +36,6 @@ defineVideoServiceTest({
   envVarDescription: 'MiniMax video generation',
 })
 
-defineVideoServiceTest({
-  models: [
-    { model: 'Ltxv_13B_0_9_8_Distilled_FP8', extraArgs: ['--video-duration', '2', '--video-size', '256x256'], expectedDuration: 2 },
-  ],
-  cliFlag: '--deapi-video',
-  videoService: 'deapi',
-  envVarKey: 'DEAPI_API_KEY',
-  envVarDescription: 'deAPI video generation',
-})
-
 test('requires a provider flag', async () => {
   const result = await runCommand(
     ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise'],
@@ -55,11 +44,11 @@ test('requires a provider flag', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Specify a video generation provider')
 })
 
-budgetedTest(['video-gemini-veo-3.1-fast-generate-preview', 'video-minimax-T2V-01'], 'live multi-provider run writes provider-specific video artifacts', async () => {
+budgetedTest('video-multi-gemini-lite-deapi-ltxv', 'live multi-provider run writes provider-specific video artifacts', async () => {
   const hasGemini = await hasConfiguredEnvVar('GEMINI_API_KEY')
-  const hasMinimax = await hasConfiguredEnvVar('MINIMAX_API_KEY')
-  if (!hasGemini || !hasMinimax) {
-    console.log('Skipping: GEMINI_API_KEY and MINIMAX_API_KEY are required for multi-provider video coverage')
+  const hasDeapi = await hasConfiguredEnvVar('DEAPI_API_KEY')
+  if (!hasGemini || !hasDeapi) {
+    console.log('Skipping: GEMINI_API_KEY and DEAPI_API_KEY are required for multi-provider video coverage')
     return
   }
 
@@ -70,11 +59,13 @@ budgetedTest(['video-gemini-veo-3.1-fast-generate-preview', 'video-minimax-T2V-0
     'video',
     'a static shot of a tiny red dot on white background',
     '--gemini-video',
-    'veo-3.1-fast-generate-preview',
-    '--minimax-video',
-    'T2V-01',
+    'veo-3.1-lite-generate-preview',
+    '--deapi-video',
+    'Ltxv_13B_0_9_8_Distilled_FP8',
     '--video-duration',
-    '4',
+    '1',
+    '--video-size',
+    '256x256',
   ])
 
   expect(result.exitCode).toBe(0)
@@ -83,8 +74,8 @@ budgetedTest(['video-gemini-veo-3.1-fast-generate-preview', 'video-minimax-T2V-0
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {
-    expect(await fileExists(`${outputDir}/generated-video-gemini-veo-3.1-fast-generate-preview.mp4`)).toBe(true)
-    expect(await fileExists(`${outputDir}/generated-video-minimax-T2V-01.mp4`)).toBe(true)
+    expect(await fileExists(`${outputDir}/generated-video-gemini-veo-3.1-lite-generate-preview.mp4`)).toBe(true)
+    expect(await fileExists(`${outputDir}/generated-video-deapi-Ltxv_13B_0_9_8_Distilled_FP8.mp4`)).toBe(true)
 
     const metadata = await readRunMetadata(outputDir) as {
       video?: Array<{
@@ -97,13 +88,13 @@ budgetedTest(['video-gemini-veo-3.1-fast-generate-preview', 'video-minimax-T2V-0
     expect(videoEntries).toHaveLength(2)
     expect(videoEntries.some((entry) =>
       entry.videoGenService === 'gemini'
-      && entry.videoGenModel === 'veo-3.1-fast-generate-preview'
-      && entry.videoFileName === 'generated-video-gemini-veo-3.1-fast-generate-preview.mp4'
+      && entry.videoGenModel === 'veo-3.1-lite-generate-preview'
+      && entry.videoFileName === 'generated-video-gemini-veo-3.1-lite-generate-preview.mp4'
     )).toBe(true)
     expect(videoEntries.some((entry) =>
-      entry.videoGenService === 'minimax'
-      && entry.videoGenModel === 'T2V-01'
-      && entry.videoFileName === 'generated-video-minimax-T2V-01.mp4'
+      entry.videoGenService === 'deapi'
+      && entry.videoGenModel === 'Ltxv_13B_0_9_8_Distilled_FP8'
+      && entry.videoFileName === 'generated-video-deapi-Ltxv_13B_0_9_8_Distilled_FP8.mp4'
     )).toBe(true)
   }
 }, E2E_TEST_TIMEOUT_MS)

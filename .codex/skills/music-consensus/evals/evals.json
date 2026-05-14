@@ -1,13 +1,13 @@
 {
-  "skill_name": "image-consensus",
+  "skill_name": "music-consensus",
   "evals": [
     {
-      "id": "multi-provider-image-run",
-      "prompt": "Run the image-consensus skill against the image run directory at ./evals/files/sample-run",
+      "id": "multi-provider-music-run",
+      "prompt": "Run the music-consensus skill against a music run directory with two providers and complete cost/timing metadata",
       "expected_output": "Three deliverables: consensus-evaluation.txt, provider-comparison-report.md, provider-comparison-report.json with correct provider count and price-speed scoring",
       "assertions": [
         "consensus-evaluation.txt exists and contains no markdown formatting",
-        "consensus-evaluation.txt does not claim to have viewed images",
+        "consensus-evaluation.txt does not claim to have listened to audio",
         "provider-comparison-report.md contains a ranking table with all providers",
         "provider-comparison-report.json contains a providers array with scores",
         "scoring method is price-speed",
@@ -16,19 +16,19 @@
       "files": []
     },
     {
-      "id": "missing-image-file",
-      "prompt": "Run the image-consensus skill against the image run directory where one provider's image file is missing from disk",
-      "expected_output": "Skill handles missing file gracefully with a warning, still evaluates remaining providers",
+      "id": "missing-music-file",
+      "prompt": "Run the music-consensus skill against a music run directory where one provider's music file is missing from disk",
+      "expected_output": "Skill handles missing file gracefully with a warning, still evaluates providers, and generates reports",
       "assertions": [
-        "warning about missing image file is reported",
-        "remaining providers are still scored and ranked",
+        "warning about missing music file is reported",
+        "providers are still scored and ranked",
         "reports are generated successfully despite the missing file"
       ],
       "files": []
     },
     {
       "id": "missing-cost-or-timing-neutral",
-      "prompt": "Run the image-consensus skill against an image run where one provider is missing cost or timing metadata",
+      "prompt": "Run the music-consensus skill against a music run where one provider is missing cost or timing metadata",
       "expected_output": "Reports are generated with missing cost or timing receiving neutral component scores",
       "assertions": [
         "missing cost receives a costEfficiencyScore of 50",

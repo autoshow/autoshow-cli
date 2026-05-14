@@ -22,7 +22,7 @@ export const defineImageServiceTest = ({
   envVarKey,
   imageExtension,
 }: {
-  models: Array<{ model: string, prompt: string, extraArgs?: string[] }>
+  models: Array<{ model: string, prompt: string, extraArgs?: string[], expectedExtension?: string }>
   cliFlag: string
   imageService: string
   envVarKey: string
@@ -40,7 +40,8 @@ export const defineImageServiceTest = ({
 
   withOutputLifecycle(IMAGE_GEN_TITLE)
 
-  for (const { model, prompt, extraArgs } of models) {
+  for (const { model, prompt, extraArgs, expectedExtension } of models) {
+    const modelExt = expectedExtension ?? ext
     const budgetKey = `image-${imageService}-${model}`
     budgetedTest(budgetKey, `${model} generates image and metadata`, async () => {
       await cleanupTestOutput(IMAGE_GEN_TITLE)
@@ -59,7 +60,7 @@ export const defineImageServiceTest = ({
       ])
 
       if (outputDir) {
-        const imageExists = await fileExists(`${outputDir}/generated-image.${ext}`)
+        const imageExists = await fileExists(`${outputDir}/generated-image.${modelExt}`)
         expect(imageExists).toBe(true)
 
         const metadata = await readRunMetadata(outputDir) as {
@@ -67,7 +68,7 @@ export const defineImageServiceTest = ({
         }
         expect(metadata.image?.[0]?.imageService).toBe(imageService)
         expect(metadata.image?.[0]?.imageModel).toBe(model)
-        expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe(`generated-image.${ext}`)
+        expect(metadata.image?.[0]?.imageFileNames?.[0]).toBe(`generated-image.${modelExt}`)
       }
     }, E2E_TEST_TIMEOUT_MS)
   }
@@ -78,7 +79,7 @@ export const defineImageServicePriceTests = ({
   cliFlag,
   imageService,
 }: {
-  models: Array<{ model: string, prompt: string, extraArgs?: string[] }>
+  models: Array<{ model: string, prompt: string, extraArgs?: string[], expectedExtension?: string }>
   cliFlag: string
   imageService: string
 }): void => {

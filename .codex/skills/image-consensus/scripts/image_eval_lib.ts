@@ -19,7 +19,7 @@ export interface ImageProperties {
 export interface ImageEntryMetadata {
   imageService: string;
   imageModel: string;
-  processingTime: number;
+  processingTime?: number;
   imageFileNames: string[];
   imageCount: number;
   imageFileSize: number;
@@ -71,7 +71,7 @@ export interface ImageProviderEvidence {
   imagePaths: string[];
   allImagesExist: boolean;
   imageProperties: ImageProperties[];
-  processingTimeMs: number;
+  processingTimeMs: number | null;
   costCents: number | null;
 }
 
@@ -257,8 +257,14 @@ export async function probeImage(imagePath: string): Promise<ImageProperties> {
 
 export function buildCostLookup(runJson: ImageRunJson): Map<string, number> {
   const lookup = new Map<string, number>();
-  const steps = runJson.metadata.cost?.actual?.steps ?? runJson.metadata.cost?.estimated?.steps ?? [];
-  for (const step of steps) {
+  const estimatedSteps = runJson.metadata.cost?.estimated?.steps ?? [];
+  const actualSteps = runJson.metadata.cost?.actual?.steps ?? [];
+  for (const step of estimatedSteps) {
+    if (step.provider && step.model && step.cost !== undefined) {
+      lookup.set(makeProviderKey(step.provider, step.model), Number(step.cost));
+    }
+  }
+  for (const step of actualSteps) {
     if (step.provider && step.model && step.cost !== undefined) {
       lookup.set(makeProviderKey(step.provider, step.model), Number(step.cost));
     }
@@ -268,8 +274,14 @@ export function buildCostLookup(runJson: ImageRunJson): Map<string, number> {
 
 export function buildTimingLookup(runJson: ImageRunJson): Map<string, number> {
   const lookup = new Map<string, number>();
-  const steps = runJson.metadata.timing?.actual?.steps ?? runJson.metadata.timing?.estimated?.steps ?? [];
-  for (const step of steps) {
+  const estimatedSteps = runJson.metadata.timing?.estimated?.steps ?? [];
+  const actualSteps = runJson.metadata.timing?.actual?.steps ?? [];
+  for (const step of estimatedSteps) {
+    if (step.provider && step.model && step.processingTimeMs !== undefined) {
+      lookup.set(makeProviderKey(step.provider, step.model), Number(step.processingTimeMs));
+    }
+  }
+  for (const step of actualSteps) {
     if (step.provider && step.model && step.processingTimeMs !== undefined) {
       lookup.set(makeProviderKey(step.provider, step.model), Number(step.processingTimeMs));
     }

@@ -316,16 +316,23 @@ const DRIVE_GENERAL_LINKS = [
 ]
 
 const SPEECHIFY_TTS_LINKS = [
-  'https://docs.sws.speechify.com/text-to-speech/get-started/overview.md',
-  'https://docs.sws.speechify.com/text-to-speech/get-started/quickstart.md',
-  'https://docs.sws.speechify.com/text-to-speech/get-started/authentication.md',
-  'https://docs.sws.speechify.com/text-to-speech/get-started/models.md',
-  'https://docs.sws.speechify.com/text-to-speech/get-started/api-limits.md',
-  'https://docs.sws.speechify.com/text-to-speech/get-started/official-sdks.md',
-  'https://docs.sws.speechify.com/text-to-speech/features/voice-cloning.md'
+  'https://docs.sws.speechify.com/tts/text-to-speech/get-started/overview.md',
+  'https://docs.sws.speechify.com/tts/text-to-speech/get-started/quickstart.md',
+  'https://docs.sws.speechify.com/tts/text-to-speech/get-started/authentication.md',
+  'https://docs.sws.speechify.com/tts/text-to-speech/get-started/models.md',
+  'https://docs.sws.speechify.com/tts/text-to-speech/get-started/api-limits.md',
+  'https://docs.sws.speechify.com/tts/text-to-speech/get-started/official-sdks.md',
+  'https://docs.sws.speechify.com/tts/text-to-speech/features/voice-cloning.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/introduction.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/authentication.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/audio/speech.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/list.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/create.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/delete.md',
+  'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/download-sample.md'
 ]
 
-const LINKS_RETRY_TEST_URL = 'https://elevenlabs.io/docs/overview/capabilities/image-video.md'
+const LINKS_RETRY_TEST_URL = 'https://elevenlabs.io/docs/overview/models.md'
 const linksTestOutputPath = (name: string): string =>
   `/tmp/autoshow-links-${name}-${Date.now()}-${Math.random().toString(16).slice(2)}.md`
 
@@ -371,7 +378,7 @@ test('links retries transient network failures before writing output', async () 
     'src/cli/create-cli.ts',
     'links',
     '--elevenlabs',
-    'image'
+    'general'
   ], { outputPath, fetchImpl })
 
   const output = await Bun.file(outputPath).text()
@@ -403,7 +410,7 @@ test('links retries retryable HTTP status failures before writing output', async
     'src/cli/create-cli.ts',
     'links',
     '--elevenlabs',
-    'image'
+    'general'
   ], { outputPath, fetchImpl })
 
   const output = await Bun.file(outputPath).text()
@@ -434,7 +441,7 @@ test('links does not retry non-retryable HTTP status failures', async () => {
     'src/cli/create-cli.ts',
     'links',
     '--elevenlabs',
-    'image'
+    'general'
   ], { outputPath, fetchImpl })
 
   const output = await Bun.file(outputPath).text()

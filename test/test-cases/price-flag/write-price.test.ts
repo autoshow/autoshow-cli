@@ -88,7 +88,7 @@ test('write project directory --price reports rendered lyric outputs without cre
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'write',
-    `./${project.textDir}`,
+    project.textDir,
     '--price'
   ])
 

@@ -14,8 +14,8 @@ The run directory does not use a `providers/` subdirectory. Each image entry is 
 Write `consensus-evaluation.txt` as plain text with these sections:
 
 1. **Run summary** -- provider count, prompt (if available from run.json)
-2. **Per-provider analysis** -- for each provider, report available metrics (dimensions, file size, format, processing time, cost, file size efficiency)
-3. **Recommendation** -- select best value, fastest provider, and best overall (if quality rankings provided)
+2. **Per-provider analysis** -- for each provider, report available metrics (artifact existence, dimensions, file size, format, processing time, cost)
+3. **Recommendation** -- select cheapest provider, fastest provider, and best overall by price-speed score
 4. **Caveats** -- state which metrics were and were not available; acknowledge that image quality cannot be directly assessed
 
 Rules:
@@ -36,18 +36,20 @@ All image providers are cloud APIs. There is no local/cloud split. Providers are
 
 Scoring rules:
 
-1. Without user quality rankings, score using a composite: 33% cost efficiency, 33% processing speed, 34% file size efficiency (bytes per megapixel -- lower is better).
-2. With user quality rankings, score using: 50% quality rank, 25% cost efficiency, 25% processing speed.
-3. Cost and processing time are extracted from `run.json` metadata (actual if available, estimated as fallback).
-4. File size efficiency uses bytes per pixel from probed image dimensions and file size. This measures compression, not visual quality.
+1. Score using price-speed only: 50% cost efficiency and 50% processing speed.
+2. Cost is extracted from `metadata.cost.actual.steps`, falling back to `metadata.cost.estimated.steps`.
+3. Processing time is extracted from `metadata.timing.actual.steps`, falling back to `metadata.timing.estimated.steps`, then entry `processingTime`.
+4. Lower cost and lower processing time are better.
+5. Missing cost or timing receives a neutral component score of 50.
+6. If all available values for a metric are equal, providers with that metric receive 100 for that component.
+7. Artifact files are verified and listed, but file size, dimensions, format, image count, and quality are not scoring inputs.
 
 The JSON report uses a flat `providers` array (no local/cloud grouping).
 
 The report script uses only:
 
 1. `run.json` metadata
-2. Image files on disk (for dimension probing and file size verification)
-3. Optional user quality rankings
+2. Image files on disk (for existence, dimension, and file size context)
 
 ## Helper Artifact Guidance
 

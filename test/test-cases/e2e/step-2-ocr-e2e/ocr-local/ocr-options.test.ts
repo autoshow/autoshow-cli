@@ -348,7 +348,7 @@ test('bun as extract https://ajcwebdev.com --url-backend defuddle', async () => 
       sourceKind: 'article',
       backend: 'defuddle'
     })
-    expect(metadata.requestedProviders).toBeUndefined()
+    expect(metadata.requestedProviders).toEqual([{ service: 'defuddle', model: 'defuddle' }])
   } finally {
     if (outputDir && process.env['AUTOSHOW_TEST_PRESERVE_ARTIFACTS'] === '0') {
       await rm(outputDir, { recursive: true, force: true }).catch(() => {})

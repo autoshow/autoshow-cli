@@ -6,15 +6,18 @@ import { resolve } from "node:path";
 import {
   buildCostLookup,
   buildTimingLookup,
-  discoverImageFiles,
+  discoverMusicFiles,
+  entryProcessingTime,
   formatCents,
-  formatDimensions,
+  formatDurationMs,
   formatFileSize,
   formatProcessingSeconds,
-  loadImageRunJson,
+  isFiniteNumber,
+  loadMusicRunJson,
   makeProviderKey,
-  probeImage,
-} from "./image_eval_lib.ts";
+  normalizeLowerIsBetter,
+  nullableNumber,
+} from "./music_eval_lib.ts";
 
 interface ParsedArgs {
   runDir: string;
@@ -22,19 +25,37 @@ interface ParsedArgs {
   jsonOut: string | null;
 }
 
+interface RankedProvider {
+  rank: number;
+  providerKey: string;
+  musicService: string;
+  musicModel: string;
+  score: number;
+  costEfficiencyScore: number;
+  processingSpeedScore: number;
+  musicFileName: string;
+  musicExists: boolean;
+  artifactFileSize: number | null;
+  metadataFileSize: number | null;
+  musicDurationMs: number | null;
+  lyricsSource: string | null;
+  processingTimeMs: number | null;
+  costCents: number | null;
+}
+
 function helpText(): string {
   return [
     "Usage: bun build_comparison_report.ts <run_dir> [--markdown-out <path>] [--json-out <path>]",
     "",
-    "Generate image provider comparison reports using price-speed scoring.",
+    "Generate music provider comparison reports using price-speed scoring.",
     "",
     "Options:",
-    "  --markdown-out <path>          Write markdown report to <path> (default: <run_dir>/provider-comparison-report.md)",
-    "  --json-out <path>              Write JSON report to <path> (default: <run_dir>/provider-comparison-report.json)",
-    "  --help, -h                     Show this help message",
+    "  --markdown-out <path>  Write markdown report to <path> (default: <run_dir>/provider-comparison-report.md)",
+    "  --json-out <path>      Write JSON report to <path> (default: <run_dir>/provider-comparison-report.json)",
+    "  --help, -h             Show this help message",
     "",
     "Examples:",
-    "  bun build_comparison_report.ts ./runs/my-image-run",
+    "  bun build_comparison_report.ts ./runs/my-music-run",
   ].join("\n");
 }
 
@@ -76,9 +97,7 @@ function parseArgs(argv: string[]): ParsedArgs {
 
   const runDir = positional[0];
   if (!runDir) {
-    throw new Error(
-      "Usage: bun build_comparison_report.ts <run_dir> [--markdown-out <path>] [--json-out <path>]",
-    );
+    throw new Error("Usage: bun build_comparison_report.ts <run_dir> [--markdown-out <path>] [--json-out <path>]");
   }
 
   return {
@@ -96,93 +115,39 @@ function joinProviderNames(providers: Array<{ providerKey: string }>): string {
   return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
-function isFiniteNumber(value: number | null | undefined): value is number {
-  return typeof value === "number" && Number.isFinite(value);
-}
-
-function normalizeLowerIsBetter(value: number | null, availableValues: number[]): number {
-  if (!isFiniteNumber(value)) {
-    return 50;
-  }
-  const finiteValues = availableValues.filter(isFiniteNumber);
-  if (finiteValues.length === 0) {
-    return 50;
-  }
-  const min = Math.min(...finiteValues);
-  const max = Math.max(...finiteValues);
-  if (min === max) {
-    return 100;
-  }
-  return Math.max(0, Math.min(100, 100 * (1 - (value - min) / (max - min))));
-}
-
-interface RankedProvider {
-  rank: number;
-  providerKey: string;
-  imageService: string;
-  imageModel: string;
-  score: number;
-  costEfficiencyScore: number;
-  processingSpeedScore: number;
-  width: number;
-  height: number;
-  totalFileSize: number;
-  imageCount: number;
-  processingTimeMs: number | null;
-  costCents: number | null;
-}
-
 export async function buildReport(runDir: string) {
-  const runJson = loadImageRunJson(runDir);
+  const runJson = loadMusicRunJson(runDir);
   const warnings: string[] = [];
 
-  const { found, missing } = discoverImageFiles(runDir, runJson.metadata.image);
+  const { found, missing } = discoverMusicFiles(runDir, runJson.metadata.music);
   if (missing.length > 0) {
-    warnings.push(`Missing image files: ${missing.join(", ")}`);
+    warnings.push(`Missing music files: ${missing.join(", ")}`);
   }
 
   const costLookup = buildCostLookup(runJson);
   const timingLookup = buildTimingLookup(runJson);
-
   const providerData: Array<Omit<RankedProvider, "rank">> = [];
 
-  for (const entry of runJson.metadata.image) {
-    const providerKey = makeProviderKey(entry.imageService, entry.imageModel);
-    const imagePaths = found.get(providerKey) ?? [];
-
-    let width = 0;
-    let height = 0;
-    let totalFileSize = 0;
-
-    if (imagePaths.length > 0) {
-      // Use the first image for representative dimensions
-      try {
-        const props = await probeImage(imagePaths[0]!);
-        width = props.width;
-        height = props.height;
-      } catch {
-        warnings.push(`Image probe failed for ${entry.imageFileNames[0]}`);
-      }
-      // Sum file sizes across all images
-      for (const imagePath of imagePaths) {
-        totalFileSize += Bun.file(imagePath).size;
-      }
-    }
-
+  for (const entry of runJson.metadata.music) {
+    const providerKey = makeProviderKey(entry.musicService, entry.musicModel);
+    const musicPath = found.get(providerKey) ?? "";
+    const musicExists = musicPath.length > 0;
     const costCents = costLookup.get(providerKey) ?? null;
-    const processingTimeMs = timingLookup.get(providerKey) ?? (typeof entry.processingTime === "number" ? entry.processingTime : null);
+    const processingTimeMs = timingLookup.get(providerKey) ?? entryProcessingTime(entry);
 
     providerData.push({
       providerKey,
-      imageService: entry.imageService,
-      imageModel: entry.imageModel,
-      score: 0, // computed below
+      musicService: entry.musicService,
+      musicModel: entry.musicModel,
+      score: 0,
       costEfficiencyScore: 50,
       processingSpeedScore: 50,
-      width,
-      height,
-      totalFileSize,
-      imageCount: entry.imageCount,
+      musicFileName: entry.musicFileName,
+      musicExists,
+      artifactFileSize: musicExists ? Bun.file(musicPath).size : null,
+      metadataFileSize: nullableNumber(entry.musicFileSize),
+      musicDurationMs: nullableNumber(entry.musicDurationMs),
+      lyricsSource: entry.lyricsSource ?? null,
       processingTimeMs,
       costCents,
     });
@@ -191,14 +156,12 @@ export async function buildReport(runDir: string) {
   const costValues = providerData.map((p) => p.costCents).filter(isFiniteNumber);
   const timingValues = providerData.map((p) => p.processingTimeMs).filter(isFiniteNumber);
 
-  // Score each provider
   for (const provider of providerData) {
     provider.costEfficiencyScore = normalizeLowerIsBetter(provider.costCents, costValues);
     provider.processingSpeedScore = normalizeLowerIsBetter(provider.processingTimeMs, timingValues);
     provider.score = (provider.costEfficiencyScore * 0.5) + (provider.processingSpeedScore * 0.5);
   }
 
-  // Rank providers by score descending
   const ranked: RankedProvider[] = [...providerData]
     .sort((left, right) => {
       if (left.score !== right.score) return right.score - left.score;
@@ -207,8 +170,6 @@ export async function buildReport(runDir: string) {
       return left.providerKey.localeCompare(right.providerKey);
     })
     .map((provider, index) => ({ ...provider, rank: index + 1 }));
-
-  const scoringMethod = "price-speed";
 
   const notes: string[] = [];
   if (ranked[0]) {
@@ -229,19 +190,13 @@ export async function buildReport(runDir: string) {
     notes.push(`Fastest provider: \`${fastest.providerKey}\` at ${formatProcessingSeconds(fastest.processingTimeMs)}.`);
   }
 
-  notes.push(
-    "Ranking used price-speed scoring: cost efficiency (50%) and processing speed (50%).",
-  );
-  notes.push(
-    "Image existence, dimensions, and file size are reported as evidence only; they are not scoring inputs.",
-  );
+  notes.push("Ranking used price-speed scoring: cost efficiency (50%) and processing speed (50%).");
+  notes.push("Music artifact existence, file size, duration, lyrics, and audio metadata are reported as evidence only; audio/music quality is not assessed or scored.");
 
-  // Build reports
   const scoreFormula = "50% cost-efficiency + 50% processing-speed";
-
   const reportJson = {
     runDir,
-    metric: scoringMethod,
+    metric: "price-speed",
     scoreFormula,
     weights: {
       costEfficiency: 0.5,
@@ -252,12 +207,9 @@ export async function buildReport(runDir: string) {
     notes,
   };
 
-  // Markdown report
-  const headerCols = ["Rank", "Provider", "Score / 100", "Cost Score", "Speed Score", "Dimensions", "File Size", "Images", "Processing Time", "Cost"];
-
+  const headerCols = ["Rank", "Provider", "Score / 100", "Cost Score", "Speed Score", "Artifact", "File Size", "Duration", "Processing Time", "Cost"];
   const headerRow = `| ${headerCols.join(" | ")} |`;
   const separatorRow = `| ${headerCols.map(() => "---:").join(" | ")} |`;
-
   const rows = ranked.map((p) => {
     const cols = [
       String(p.rank),
@@ -265,25 +217,20 @@ export async function buildReport(runDir: string) {
       p.score.toFixed(2),
       p.costEfficiencyScore.toFixed(2),
       p.processingSpeedScore.toFixed(2),
-    ];
-    cols.push(
-      formatDimensions(p.width, p.height),
-      formatFileSize(p.totalFileSize),
-      String(p.imageCount),
+      p.musicExists ? p.musicFileName : `${p.musicFileName} (missing)`,
+      formatFileSize(p.artifactFileSize ?? p.metadataFileSize),
+      formatDurationMs(p.musicDurationMs),
       formatProcessingSeconds(p.processingTimeMs),
       formatCents(p.costCents),
-    );
+    ];
     return `| ${cols.join(" | ")} |`;
   }).join("\n");
 
   const rankingTable = `${headerRow}\n${separatorRow}\n${rows}`;
-
   const providerList = ranked.map((p) => `  - \`${p.providerKey}\``).join("\n");
   const notesBlock = notes.map((note) => `- ${note}`).join("\n");
 
-  const methodDescription = "- Ranking uses price-speed scoring: 50% cost efficiency and 50% processing speed.\n- Lower cost and lower processing time are better; missing cost or timing receives a neutral component score of 50.\n- If all available values for a metric are equal, providers with that metric receive 100 for that component.\n- Image existence, dimensions, and file size are reported for context only.";
-
-  const markdown = `# Image Provider Comparison Report
+  const markdown = `# Music Provider Comparison Report
 
 ## Summary
 
@@ -293,10 +240,12 @@ export async function buildReport(runDir: string) {
 
 ## Method
 
-- Each provider in \`metadata.image[]\` was evaluated based on its image output.
-- Image dimensions were measured by probing file headers directly.
+- Each provider in \`metadata.music[]\` was evaluated from one AutoShow music run directory.
 - Cost and processing time were extracted from \`run.json\` metadata.
-${methodDescription}
+- Ranking uses price-speed scoring: 50% cost efficiency and 50% processing speed.
+- Lower cost and lower processing time are better; missing cost or timing receives a neutral component score of 50.
+- If all available values for a metric are equal, providers with that metric receive 100 for that component.
+- Artifact existence, file size, duration, lyrics, and audio metadata are reported for context only; audio/music quality is not assessed or scored.
 
 ## Providers (${ranked.length})
 

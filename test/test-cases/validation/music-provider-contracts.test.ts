@@ -188,30 +188,42 @@ describe('music provider contracts', () => {
     })
   })
 
-  test('MiniMax validates prompt and lyrics length before generation requests', async () => {
-    let fetchCalls = 0
+  test('MiniMax caps prompt length and validates lyrics length before generation requests', async () => {
+    const calls: Array<Record<string, unknown>> = []
 
     await withTempDir(async (dir) => {
       await withEnvAndFetch({
         MINIMAX_API_KEY: 'test-key',
         MINIMAX_BASE_URL: 'https://mock.minimax.local'
-      }, (async (_input: Parameters<typeof fetch>[0], _init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        fetchCalls += 1
-        throw new Error('MiniMax provider should not be called after validation failure')
+      }, (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        if (url.endsWith('/v1/music_generation')) {
+          calls.push(readJsonBody(init?.body))
+          return new Response(JSON.stringify({
+            data: { audio: audioHex, status: 2 },
+            base_resp: { status_code: 0, status_msg: 'success' }
+          }), { status: 200, headers: { 'content-type': 'application/json' } })
+        }
+        throw new Error(`Unexpected MiniMax mock fetch: ${init?.method ?? 'GET'} ${url}`)
       }) as typeof fetch, async () => {
-        await expect(runMinimaxMusicGen('x'.repeat(2001), dir, {
+        const longPrompt = 'x'.repeat(2001)
+        await runMinimaxMusicGen(longPrompt, dir, {
           model: 'music-2.6',
           forceInstrumental: true
-        })).rejects.toThrow('MiniMax music prompt must be 2000 characters or fewer')
+        })
+
+        expect(calls).toHaveLength(1)
+        expect(calls[0]?.['prompt']).toBe('x'.repeat(2000))
 
         const lyricsPath = join(dir, 'lyrics.txt')
         await writeFile(lyricsPath, 'y'.repeat(3501))
+        const callCountBeforeLyricsValidation = calls.length
         await expect(runMinimaxMusicGen('valid prompt', dir, {
           model: 'music-2.6',
           lyricsFile: lyricsPath
         })).rejects.toThrow('must be 3500 characters or fewer')
 
-        expect(fetchCalls).toBe(0)
+        expect(calls).toHaveLength(callCountBeforeLyricsValidation)
       })
     })
   })

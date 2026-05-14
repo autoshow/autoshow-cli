@@ -1,12 +1,12 @@
 import type { PriceSelectionEntry } from '~/types'
 import { matchPathFilters } from '../../path-selection'
 import { downloadRegistry } from './download'
-import { imageRegistry } from './image'
+import { imageCatalogRegistry, imageRegistry } from './image'
 import { musicRegistry } from './music'
 import { ocrRegistry } from './ocr'
 import { sttRegistry } from './stt'
 import { ttsRegistry } from './tts'
-import { videoRegistry } from './video'
+import { videoCatalogRegistry, videoRegistry } from './video'
 import { writeRegistry } from './write'
 
 export const BUDGET_PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
@@ -67,8 +67,11 @@ const toPriceSuiteEntry = (entry: PriceSelectionEntry): PriceSelectionEntry => (
   selector: BUDGET_TO_PRICE_SUITE_SELECTORS[entry.selector] ?? entry.selector,
 })
 
-export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] =
-  BUDGET_PRICE_SELECTION_REGISTRY.map(toPriceSuiteEntry)
+export const PRICE_SELECTION_REGISTRY: PriceSelectionEntry[] = [
+  ...BUDGET_PRICE_SELECTION_REGISTRY.map(toPriceSuiteEntry),
+  ...imageCatalogRegistry,
+  ...videoCatalogRegistry,
+]
 
 export const resolvePriceSuiteSelectorsForE2eSelector = (pathFilter: string): string[] => {
   const selectors = new Set<string>()

@@ -1,25 +1,25 @@
 ---
-name: image-consensus
-description: Use this skill when the user needs to compare and evaluate multiple image generation providers from a multi-provider AutoShow image run. Apply it to rank providers by price and processing speed only, and produce a consensus evaluation with comparison reports.
+name: music-consensus
+description: Use this skill when the user needs to compare and evaluate multiple music generation providers from one AutoShow music run directory. Apply it to rank providers by price and processing speed only, and produce a consensus evaluation with comparison reports.
 compatibility: Requires Bun
 allowed-tools: Bash Read Edit Write Glob Grep
 metadata:
-  short-description: Build image consensus evaluation and provider reports
+  short-description: Build music consensus evaluation and provider reports
   author: autoshow
   version: "1.0"
 ---
 
-# Build Image Consensus Report
+# Build Music Consensus Report
 
 ## Overview
 
-Turn a multi-provider AutoShow image run into three deliverables:
+Turn one multi-provider AutoShow music run into three deliverables:
 
 1. `consensus-evaluation.txt`
 2. `provider-comparison-report.md`
 3. `provider-comparison-report.json`
 
-Use the scripts in `scripts/` for the deterministic parts. Use agent judgment only for the evaluation-writing pass.
+Use the scripts in `scripts/` for deterministic data extraction and ranking. Use agent judgment only for the evaluation-writing pass.
 
 Read `references/output-contract.md` before writing outputs.
 
@@ -28,7 +28,7 @@ Read `references/output-contract.md` before writing outputs.
 Progress:
 
 - [ ] Set the run directory.
-- [ ] Verify image files from `metadata.image[]` exist on disk.
+- [ ] Verify music files from `metadata.music[]` exist on disk.
 - [ ] Build a temporary evaluation evidence packet.
 - [ ] Write `consensus-evaluation.txt`.
 - [ ] Generate both comparison reports.
@@ -39,9 +39,9 @@ Progress:
 Run commands from the skill directory so script paths stay relative to the skill root. The skill directory is the directory containing this SKILL.md file.
 
 ```bash
-RUN_DIR="/absolute/path/to/image-run"
-SKILL_DIR="/absolute/path/to/image-consensus"
-TMP_PACKET="$(mktemp -t image-eval-packet.XXXXXX.json)"
+RUN_DIR="/absolute/path/to/music-run"
+SKILL_DIR="/absolute/path/to/music-consensus"
+TMP_PACKET="$(mktemp -t music-eval-packet.XXXXXX.json)"
 
 cd "$SKILL_DIR"
 bun scripts/build_evaluation_packet.ts "$RUN_DIR" --out "$TMP_PACKET"
@@ -55,11 +55,11 @@ Use the evidence packet as the primary data source for writing the evaluation.
 
 Rules for `consensus-evaluation.txt`:
 
-1. Do not claim to have viewed or assessed image quality.
-2. Do not fabricate subjective quality assessments.
-3. Base all claims on evidence packet data (artifact existence, dimensions, file size, processing time, cost).
+1. Do not claim to have listened to audio.
+2. Do not fabricate subjective audio or music quality assessments.
+3. Base all claims on evidence packet data (artifact existence, file size, duration metadata, processing time, cost).
 4. Rank providers by price-speed scoring only: 50% cost efficiency and 50% processing speed.
-5. Treat file size, dimensions, format, and image count as context only, not scoring inputs.
+5. Treat file size, duration, MIME type, bitrate, lyrics, and quality as context only, not scoring inputs.
 6. Analyze each provider individually.
 7. State which metrics were and were not available.
 8. Plain text, no markdown formatting.
@@ -80,31 +80,29 @@ This writes:
 
 The report script:
 
-1. Reads `metadata.image[]` from `run.json` for the provider list.
-2. Probes image files for dimensions and file size.
+1. Reads `metadata.music[]` from `run.json` for the provider list.
+2. Verifies music artifact files in the run directory.
 3. Extracts cost and processing time from `run.json` metadata.
 4. Applies price-speed scoring: 50% cost efficiency and 50% processing speed.
-5. Ranks providers in a single flat list (all providers are cloud APIs).
+5. Ranks providers in a single flat list.
 
 ## Validation Checklist
 
-1. Confirm `consensus-evaluation.txt` exists and does not contain markdown formatting or claims of having viewed images.
-2. Confirm the provider count in the report matches `metadata.image[]` length in `run.json`.
+1. Confirm `consensus-evaluation.txt` exists and does not contain markdown formatting or claims of having listened to audio.
+2. Confirm the provider count in the report matches `metadata.music[]` length in `run.json`.
 3. Confirm `provider-comparison-report.md` and `.json` were generated after the evaluation.
-4. Confirm image files referenced in the report exist on disk.
+4. Confirm music files referenced in the report exist on disk or missing files are clearly warned.
 5. Confirm scoring method (`price-speed`) is correctly stated.
 6. Delete temporary helper files such as the evaluation packet unless the user explicitly wants to keep them.
 7. If a script fails, report the exact command, the run directory, and the first actionable error line.
 
 ## Gotchas
 
-1. Image files are in the run directory root, not in a `providers/` subdirectory.
-2. The agent cannot view image files. All assessments must come from measurable metrics.
+1. Music files are in the run directory root, not in a `providers/` subdirectory.
+2. The agent cannot listen to music files. All assessments must come from measurable metadata.
 3. Cost data may be in `metadata.cost.actual.steps` or `metadata.cost.estimated.steps`. The scripts prefer actual data when available.
-4. Multi-provider image naming: `generated-image-{service}-{model}.{ext}`.
-5. Some providers produce JPEG (minimax), others PNG or WebP. Format and file size are reported as context only.
-6. `imageWidth` and `imageHeight` in metadata may be `undefined`. The scripts probe files directly for dimensions.
-7. Some providers (Gemini with Imagen) can produce multiple images per request. The evidence packet and reports handle multi-image entries.
+4. Timing data may be in `metadata.timing.actual.steps` or `metadata.timing.estimated.steps`; entry `processingTime` is the final fallback.
+5. Single-provider runs can still be processed, but ranking is most useful with multiple `metadata.music[]` entries.
 
 ## Reporting
 
