@@ -9,7 +9,7 @@ export const epubInspectFlags = {
     negatable: false
   },
   'epub-calibre': {
-    description: 'EPUB inspect mode with Calibre CLI tools (writes structured EPUB data into run.json)',
+    description: 'Compatibility alias for Bun EPUB inspect mode (writes structured EPUB data into run.json)',
     type: Boolean,
     default: false,
     negatable: false

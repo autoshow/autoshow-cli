@@ -35,7 +35,7 @@ See the [`extract` overview](./01-extract.md) for input routing across STT, OCR,
 # full setup
 bun as setup
 
-# document foundations: mutool + Calibre CLI tools
+# document foundations: mutool + Calibre ebook-convert
 bun as setup --step calibre
 
 # verify fixture-generation prerequisites
@@ -48,7 +48,7 @@ PaddleOCR can also be prepared lazily on first use:
 bun as extract input/examples/document/1-document.pdf --paddle-ocr
 ```
 
-`--epub-calibre` can also trigger lazy Calibre setup on supported platforms when the Calibre CLI tools are missing.
+`--epub-calibre` is kept as a compatibility alias for the native Bun EPUB inspector and does not require Calibre.
 
 ## OCR Environment
 
@@ -124,7 +124,7 @@ For token-priced hosted OCR providers, `--price` uses model-specific input/outpu
 | Flag | Result |
 |------|--------|
 | `--epub-bun` | Inspect EPUB structure with the Bun ZIP/XML parser and write structured EPUB data into `run.json` |
-| `--epub-calibre` | Inspect EPUB structure with Calibre and write the same structured EPUB shape into `run.json` |
+| `--epub-calibre` | Compatibility alias for the Bun ZIP/XML parser that preserves the existing `epub-calibre` output method |
 
 ```bash
 bun as extract input/examples/document/1-epub.epub --epub-bun --out json

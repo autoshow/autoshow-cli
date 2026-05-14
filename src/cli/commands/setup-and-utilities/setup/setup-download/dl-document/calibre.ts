@@ -4,7 +4,7 @@ import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-
 import * as l from '~/utils/logger'
 import { setupDocumentTools } from './document'
 
-const CALIBRE_CLI_TOOLS = ['calibre-debug', 'ebook-meta', 'ebook-convert'] as const
+export const CALIBRE_REQUIRED_TOOLS = ['ebook-convert'] as const
 const MACOS_CALIBRE_BIN = '/Applications/calibre.app/Contents/MacOS'
 
 const shouldPrintCompletion = (): boolean => {
@@ -12,12 +12,12 @@ const shouldPrintCompletion = (): boolean => {
 }
 
 const hasCalibreCliTools = (): boolean => {
-  if (CALIBRE_CLI_TOOLS.every((tool) => commandExists(tool))) {
+  if (CALIBRE_REQUIRED_TOOLS.every((tool) => commandExists(tool))) {
     return true
   }
   // On macOS, Calibre installs CLI tools inside the app bundle which isn't on PATH
   if (detectPlatform() === 'darwin') {
-    return CALIBRE_CLI_TOOLS.every((tool) => existsSync(join(MACOS_CALIBRE_BIN, tool)))
+    return CALIBRE_REQUIRED_TOOLS.every((tool) => existsSync(join(MACOS_CALIBRE_BIN, tool)))
   }
   return false
 }
@@ -38,13 +38,13 @@ const installCalibreTools = async (): Promise<void> => {
     return
   }
 
-  l.write('info', 'Installing Calibre CLI tools')
+  l.write('info', 'Installing Calibre ebook-convert')
   const platform = detectPlatform()
 
   if (platform === 'darwin') {
     await runInherit('brew', ['install', '--cask', 'calibre'])
     if (hasCalibreCliTools()) {
-      l.write('success', 'Calibre CLI tools installed')
+      l.write('success', 'Calibre ebook-convert installed')
       return
     }
     // Homebrew may report "already installed" when the cask metadata exists
@@ -52,22 +52,22 @@ const installCalibreTools = async (): Promise<void> => {
     l.write('info', 'Calibre cask present but app missing, reinstalling...')
     await runInherit('brew', ['reinstall', '--cask', 'calibre'])
     if (hasCalibreCliTools()) {
-      l.write('success', 'Calibre CLI tools installed')
+      l.write('success', 'Calibre ebook-convert installed')
       return
     }
     throw new Error(
-      'Calibre install completed but CLI tools were not found. ' +
-      'Expected at: /Applications/calibre.app/Contents/MacOS/'
+      'Calibre install completed but ebook-convert was not found. ' +
+      'Expected at: /Applications/calibre.app/Contents/MacOS/ebook-convert'
     )
   }
 
   if (platform === 'linux') {
     await runInherit('sudo', ['apt', 'install', '-y', 'calibre'])
     if (hasCalibreCliTools()) {
-      l.write('success', 'Calibre CLI tools installed')
+      l.write('success', 'Calibre ebook-convert installed')
       return
     }
-    throw new Error('Calibre install completed but CLI tools were not found on PATH')
+    throw new Error('Calibre install completed but ebook-convert was not found on PATH')
   }
 
   l.error('Unsupported platform for calibre auto-install')
@@ -78,7 +78,7 @@ export const setupCalibreTools = async (): Promise<void> => {
   await installCalibreTools()
 
   if (shouldPrintCompletion()) {
-    l.write('success', 'Calibre tools setup complete')
+    l.write('success', 'Calibre ebook-convert setup complete')
   }
 }
 
@@ -95,6 +95,6 @@ export const ensureCalibreDocumentTools = async (): Promise<void> => {
   if (hasCalibreCliTools() && commandExists('mutool')) {
     return
   }
-  l.write('info', 'Calibre EPUB tools missing. Running setup step: calibre')
+  l.write('info', 'Document conversion tools missing. Running setup step: calibre')
   await setupCalibreDocumentTools()
 }

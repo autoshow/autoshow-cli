@@ -178,7 +178,7 @@ src/cli/flags/
 │  ├── --length N          Split long EPUB/PDF exports       │
 │  ├── --pdf-chapter-mode  local|auto|llm                    │
 │  ├── --epub-bun          EPUB ZIP/XML inspect mode         │
-│  └── --epub-calibre      EPUB Calibre inspect mode         │
+│  └── --epub-calibre      EPUB inspect compatibility alias  │
 └─────────────────────────────────────────────────────────────┘
 
 Command-to-flag mapping:

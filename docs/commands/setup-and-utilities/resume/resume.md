@@ -192,7 +192,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--preserve-spaces` | Enable Tesseract `preserve_interword_spaces=1` |
 | `--rotate <degrees>` | Rotate pages before OCR |
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
-| `--epub-calibre` | Inspect EPUB structure with Calibre |
+| `--epub-calibre` | Compatibility alias for the Bun EPUB parser |
 | `--ocr-provider-concurrency <n>` | Max hosted OCR providers/models running in parallel for one item |
 | `--ocr-local-concurrency <n>` | Max local OCR providers running in parallel for one item |
 

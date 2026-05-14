@@ -22,6 +22,7 @@ import {
 } from './llama-server-identity'
 import {
   checkLlamaHealthQuiet,
+  stopRecordedLlamaServerIfPresent,
   stopRunningLlamaServerForRestart,
   stopSpawnedLlamaServer,
   waitForLlamaHealth
@@ -41,6 +42,8 @@ const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> 
 
     l.write('info', `Stopping llama-server before model download (${describeLlamaServerIdentity(identity)})`)
     await stopRunningLlamaServerForRestart()
+  } else if (await stopRecordedLlamaServerIfPresent()) {
+    l.write('info', 'Stopped stale recorded llama-server before model download')
   }
 
   const proc = Bun.spawn([llamaServerPath, '-hf', modelRepo, '--host', '127.0.0.1', '--port', '8080', '--jinja'], {

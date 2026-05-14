@@ -139,7 +139,7 @@ export const runOcr = async (
       l.warn(EPUB_EXPORT_FLAGS_IGNORED_INSPECT_WARNING)
     }
     if (useEpubCalibre) {
-      l.write('info', 'Inspecting EPUB with Calibre tools')
+      l.write('info', 'Inspecting EPUB with Bun ZIP/XML parser (--epub-calibre compatibility alias)')
       const inspected = await runEpubCalibreInspect(filePath)
       pages = inspected.payload.chapters.map((chapter) => ({
         pageNumber: chapter.index,

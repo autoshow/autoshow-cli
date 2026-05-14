@@ -2,7 +2,6 @@ import { describe, expect, test } from 'bun:test'
 import { resolve } from 'node:path'
 import {
   evaluateLlamaServerIdentityMatch,
-  findLlamaServerPidsFromPsOutput,
   parseLlamaServerIdentityFromModels,
   parseLlamaServerIdentityFromProps
 } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
@@ -110,18 +109,11 @@ describe('llama local contracts', () => {
     })
   })
 
-  test('finds llama-server pids for port 8080 and excludes unrelated commands', () => {
-    const psOutput = `
-        101 /opt/llama/bin/llama-server --host 127.0.0.1 --port 8080 --jinja
-        102 /usr/local/bin/llama-server --port=8080 -hf Qwen/Qwen3-4B
-        103 /usr/local/bin/llama-server --port 8081
-        104 /usr/local/bin/not-llama-server --port 8080
-        105 /usr/local/bin/llama-server-helper --port 8080
-        106 /usr/local/bin/llama-server --api-port 8080
-        107 /usr/local/bin/llama-server --port 80800
-        108 llama-server --port 8080
-      `
+  test('llama server management does not inspect the process table', async () => {
+    const source = await Bun.file('src/cli/commands/process-steps/step-3-write/write-local/llama/llama-server-process.ts').text()
 
-    expect(findLlamaServerPidsFromPsOutput(psOutput)).toEqual([101, 102, 108])
+    expect(source).not.toContain("['ps'")
+    expect(source).not.toContain('pid=,command=')
+    expect(source).toContain('process.kill(pid, 0)')
   })
 })

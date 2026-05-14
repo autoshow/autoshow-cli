@@ -3,6 +3,7 @@ import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runCommand } from '../../test-utils/test-helpers'
+import { CALIBRE_REQUIRED_TOOLS } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 
 const tempDirs: string[] = []
 
@@ -109,5 +110,21 @@ describe('setup command contracts', () => {
     expect(source).toContain('makeExecutable(ytDlpManagedBinaryPath)')
     expect(source).not.toContain("runInherit('sudo', ['mv'")
     expect(source).not.toContain("runInherit('sudo', ['chmod'")
+  })
+
+  test('command existence checks use Bun APIs instead of shell test', async () => {
+    const setupSource = await Bun.file('src/cli/commands/setup-and-utilities/setup/run-complete-setup.ts').text()
+    const utilSource = await Bun.file('src/utils/cli-utils.ts').text()
+    const combinedSource = `${setupSource}\n${utilSource}`
+
+    expect(combinedSource).toContain('Bun.which(command)')
+    expect(combinedSource).not.toContain('test -x')
+  })
+
+  test('Calibre setup only requires ebook-convert for ebook normalization', () => {
+    const tools = [...CALIBRE_REQUIRED_TOOLS]
+    expect(tools).toEqual(['ebook-convert'])
+    expect(tools).not.toContain('calibre-debug')
+    expect(tools).not.toContain('ebook-meta')
   })
 })

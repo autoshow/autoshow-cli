@@ -12,56 +12,8 @@ import {
   type LlamaServerResourceOptions
 } from './llama-server-state'
 
-const readPsOutput = (): string => {
-  const proc = Bun.spawnSync(['ps', '-ax', '-o', 'pid=,command='], {
-    stdout: 'pipe',
-    stderr: 'pipe'
-  })
-
-  if (proc.exitCode !== 0) {
-    const stderr = proc.stderr.toString().trim()
-    throw new Error(stderr ? `Failed to inspect running processes: ${stderr}` : 'Failed to inspect running processes')
-  }
-
-  return proc.stdout.toString()
-}
-
 const getErrorCode = (error: unknown): string | undefined =>
   error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
-
-const LLAMA_SERVER_PORT_PATTERN = /(?:^|\s)--port(?:=|\s+)8080(?:\s|$)/
-const LLAMA_SERVER_COMMAND_PATTERN = /(?:^|\s)(?:\S+\/)?llama-server(?:\s|$)/
-
-export const findLlamaServerPidsFromPsOutput = (psOutput: string): number[] => {
-  const pids: number[] = []
-
-  for (const rawLine of psOutput.split('\n')) {
-    const line = rawLine.trim()
-    if (!line) continue
-
-    const match = line.match(/^(\d+)\s+(.*)$/)
-    if (!match) continue
-
-    const pid = Number.parseInt(match[1] || '', 10)
-    const command = match[2] || ''
-    if (!Number.isFinite(pid)) continue
-    if (!LLAMA_SERVER_COMMAND_PATTERN.test(command)) continue
-    if (!LLAMA_SERVER_PORT_PATTERN.test(command)) continue
-
-    pids.push(pid)
-  }
-
-  return pids
-}
-
-export const tryFindLlamaServerPids = (): number[] => {
-  try {
-    return findLlamaServerPidsFromPsOutput(readPsOutput())
-  } catch (error) {
-    l.debug(`Unable to inspect llama-server processes: ${error instanceof Error ? error.message : String(error)}`)
-    return []
-  }
-}
 
 export const checkLlamaHealthQuiet = async (): Promise<boolean> => {
   try {
@@ -208,21 +160,12 @@ export const stopDefaultLlamaServer = async (
     return
   }
 
-  const pids = tryFindLlamaServerPids()
   if (!await checkLlamaHealthQuiet()) {
-    if (pids.length > 0) {
-      await stopLlamaServerPids(pids, options)
-      return
-    }
     await clearLlamaServerState(undefined, options)
     return
   }
 
-  if (pids.length === 0) {
-    return
-  }
-
-  await stopLlamaServerPids(pids, options)
+  l.debug('A healthy unrecorded llama-server is running on localhost:8080; leaving it untouched')
 }
 
 export const stopRunningLlamaServerForRestart = async (): Promise<void> => {
@@ -230,14 +173,11 @@ export const stopRunningLlamaServerForRestart = async (): Promise<void> => {
     return
   }
 
-  const pids = findLlamaServerPidsFromPsOutput(readPsOutput())
-
-  if (pids.length === 0) {
-    throw new Error('A healthy service is already running on localhost:8080, but no restartable llama-server process targeting --port 8080 was found.')
-  }
-
-  await stopLlamaServerPids(pids)
+  throw new Error('A healthy service is already running on localhost:8080, but no recorded AutoShow-managed llama-server state was found. Stop that service manually before restarting with a different model.')
 }
+
+export const stopRecordedLlamaServerIfPresent = async (): Promise<boolean> =>
+  await stopRecordedDefaultLlamaServer()
 
 export const waitForLlamaHealth = async (
   timeoutMs: number,

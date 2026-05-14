@@ -97,7 +97,7 @@ uv | yt-dlp | defuddle | whisper-binary | whisper-model | llama-binary | reverb 
 Isolated steps assume their prerequisites are already present. On a clean machine, prefer `bun as setup`.
 
 ```bash
-# Document foundations: mutool + Calibre CLI tools
+# Document foundations: mutool + Calibre ebook-convert
 bun as setup --step calibre
 
 # Local URL article extraction

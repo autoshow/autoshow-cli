@@ -20,9 +20,8 @@ import {
 } from './llama-server-identity'
 import {
   checkLlamaHealthQuiet,
-  stopLlamaServerPids,
+  stopRecordedLlamaServerIfPresent,
   stopRunningLlamaServerForRestart,
-  tryFindLlamaServerPids,
   waitForLlamaHealth
 } from './llama-server-process'
 import { writeLlamaServerState } from './llama-server-state'
@@ -129,10 +128,8 @@ export const ensureLlamaServerRunning = async (model: string): Promise<LlamaServ
     await stopRunningLlamaServerForRestart()
   }
 
-  const stalePids = tryFindLlamaServerPids()
-  if (stalePids.length > 0) {
-    l.write('info', `Stopping stale llama-server process before startup (pids: ${stalePids.join(', ')})`)
-    await stopLlamaServerPids(stalePids)
+  if (await stopRecordedLlamaServerIfPresent()) {
+    l.write('info', 'Stopped stale recorded llama-server process before startup')
   }
 
   return await startLlamaServer(target)

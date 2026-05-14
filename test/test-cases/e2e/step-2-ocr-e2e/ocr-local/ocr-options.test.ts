@@ -376,10 +376,6 @@ test('extract EPUB with --epub-bun writes structured data into run.json only', a
 })
 
 test('extract EPUB with --epub-calibre', async () => {
-  if (!Bun.which('calibre-debug') || !Bun.which('ebook-meta') || !Bun.which('ebook-convert')) {
-    return
-  }
-
   await cleanupTestOutput('1-epub')
 
   const result = await runCommand(['src/cli/create-cli.ts', 'extract', epubInput, '--epub-calibre'], { testName: 'extract EPUB with --epub-calibre' })

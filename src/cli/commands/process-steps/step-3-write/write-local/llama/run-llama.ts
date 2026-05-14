@@ -17,7 +17,6 @@ export {
   parseLlamaServerIdentityFromProps
 } from './llama-server-identity'
 export {
-  findLlamaServerPidsFromPsOutput,
   stopDefaultLlamaServer
 } from './llama-server-process'
 

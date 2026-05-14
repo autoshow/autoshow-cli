@@ -1,6 +1,6 @@
 import { inflateRawSync } from 'node:zlib'
 import { inspectEpubWithReader, normalizeEntryPath } from './inspect-core'
-import type { EpubContentEntry, EpubContentReader, EpubInspectOutput, ZipEntry } from '~/types'
+import type { EpubContentEntry, EpubContentReader, EpubInspectEngine, EpubInspectOutput, ZipEntry } from '~/types'
 
 const EOCD_SIG = 0x06054b50
 const CD_SIG = 0x02014b50
@@ -84,7 +84,13 @@ const createZipReader = async (filePath: string): Promise<EpubContentReader> => 
   }
 }
 
-export const runEpubBunInspect = async (filePath: string): Promise<EpubInspectOutput> => {
+export const runEpubZipInspect = async (
+  filePath: string,
+  engine: EpubInspectEngine
+): Promise<EpubInspectOutput> => {
   const reader = await createZipReader(filePath)
-  return await inspectEpubWithReader(reader, 'bun')
+  return await inspectEpubWithReader(reader, engine)
 }
+
+export const runEpubBunInspect = async (filePath: string): Promise<EpubInspectOutput> =>
+  await runEpubZipInspect(filePath, 'bun')
