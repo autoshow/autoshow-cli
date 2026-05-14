@@ -11,12 +11,15 @@ export type DownloadProfile = {
 }
 
 export type DownloadFlowId =
-  | 'uv-installer'
+  | 'uv-release'
   | 'yt-dlp-binary'
   | 'whisper-model'
   | 'llama-tarball'
+  | 'whisper-source'
+  | 'reverb-source'
+  | 'reverb-model'
 
-export type DownloadMode = 'file' | 'pipe-to-tar' | 'script-installer'
+export type DownloadMode = 'file' | 'tar-gz'
 
 export type DownloadRequest = {
   url: string
@@ -25,8 +28,7 @@ export type DownloadRequest = {
   expectedMinBytes?: number
   flowId?: DownloadFlowId
   mode?: DownloadMode
-  pipeArgs?: string[]
-  pipeCwd?: string
+  stripComponents?: number
 }
 
 export type DownloadResult = {

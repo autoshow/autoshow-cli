@@ -4,9 +4,12 @@ import { loadEnvFile } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
+import { readDefuddleCliReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/defuddle-cli'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
 import type { CheckResult } from '~/types'
+import { resolveYtDlpBinaryInfo } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
+import { resolveUvCommand } from './setup-download/managed-uv'
 
 const checkCommand = (label: string, command: string): CheckResult => {
   const found = commandExists(command)
@@ -27,15 +30,35 @@ const checkEnvVar = (label: string, envVar: string): CheckResult => {
   }
 }
 
+const checkYtDlp = (): CheckResult => {
+  const resolved = resolveYtDlpBinaryInfo()
+  return {
+    label: 'yt-dlp',
+    ok: resolved !== undefined,
+    detail: resolved ? `${resolved.path} (${resolved.source})` : 'not found'
+  }
+}
+
+const checkUv = async (): Promise<CheckResult> => {
+  const resolved = await resolveUvCommand()
+  return {
+    label: 'uv',
+    ok: resolved !== undefined,
+    detail: resolved ?? 'not found'
+  }
+}
+
 export const runDoctor = async (): Promise<void> => {
   await loadEnvFile()
 
   const checks: CheckResult[] = []
 
-  checks.push(checkCommand('yt-dlp', 'yt-dlp'))
+  checks.push(checkYtDlp())
+  checks.push(await checkUv())
   checks.push(checkCommand('ffmpeg', 'ffmpeg'))
   checks.push(checkCommand('ffprobe', 'ffprobe'))
   checks.push(checkCommand('tesseract', 'tesseract'))
+  checks.push(await readDefuddleCliReadiness())
 
   checks.push(checkEnvVar('OPENAI_API_KEY', 'OPENAI_API_KEY'))
   checks.push(checkEnvVar('XAI_API_KEY (Grok STT/TTS/image/video)', 'XAI_API_KEY'))

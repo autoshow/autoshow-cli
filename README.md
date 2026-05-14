@@ -109,6 +109,9 @@ bun as links --kimi
 
 # Fetch STT docs across providers into project/links/all-stt-links.md
 bun as links stt
+
+# Fetch docs listed in a local URL file into project/links/urls-links.md
+bun as links urls.md
 ```
 
 ## Command Map

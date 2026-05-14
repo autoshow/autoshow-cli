@@ -1,147 +1,67 @@
-import { mkdir, rm } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { commandExists, pathExists, runCapture, runInherit, detectPlatform, reverbConfigPath, reverbDiarizationDir, reverbModelDir, reverbModelPath, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { mkdir, readdir, rm } from 'node:fs/promises'
+import { join } from 'node:path'
+import { pathExists, reverbConfigPath, reverbDiarizationDir, reverbModelDir, reverbModelPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { downloadHuggingFaceSnapshot } from '~/cli/commands/setup-and-utilities/setup/setup-download/huggingface'
 import * as l from '~/utils/logger'
 import { withRetry } from '~/utils/retries'
-import {
-  checkHuggingFaceCliInstalled,
-  getHuggingFaceCliPath,
-  getHuggingFaceToken,
-  installHuggingFaceCli
-} from './reverb-huggingface'
+import { getHuggingFaceToken } from './reverb-huggingface'
 
-const reverbScriptsDir = join(dirname(fileURLToPath(import.meta.url)), 'scripts')
+const REVERB_ASR_REPO = 'Revai/reverb-asr'
+const REVERB_ASR_REVISION = 'main'
+const REVERB_ASR_REQUIRED_FILES = ['reverb_asr_v1.pt', 'config.yaml'] as const
+const REVERB_DIARIZATION_REPO = 'Revai/reverb-diarization-v2'
+const REVERB_DIARIZATION_REVISION = 'main'
+
+const directoryHasFiles = async (root: string): Promise<boolean> => {
+  try {
+    const entries = await readdir(root, { withFileTypes: true })
+    for (const entry of entries) {
+      const path = join(root, entry.name)
+      if (entry.isFile()) return true
+      if (entry.isDirectory() && await directoryHasFiles(path)) return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
 
 export const checkReverbModelExists = async (): Promise<boolean> => {
   return await pathExists(reverbModelPath) && await pathExists(reverbConfigPath)
 }
 
 export const checkDiarizationModelCached = async (): Promise<boolean> => {
-  return await pathExists(reverbDiarizationDir)
-}
-
-const checkGitLfsInstalled = (): boolean => {
-  return commandExists('git-lfs')
-}
-
-const installGitLfs = async (): Promise<void> => {
-  l.write('info', 'Installing git-lfs')
-  const platform = detectPlatform()
-
-  if (platform === 'darwin') {
-    if (!commandExists('brew')) {
-      l.error('Homebrew not found. Please install git-lfs manually')
-      throw new Error('Homebrew not found for git-lfs installation')
-    }
-
-    await runInherit('brew', ['install', 'git-lfs'])
-    await Bun.sleep(2000)
-
-    const brewPrefixResult = await runCapture('brew', ['--prefix'], { allowFailure: true })
-    const brewPrefix = brewPrefixResult.exitCode === 0 ? brewPrefixResult.stdout.trim() : '/usr/local'
-    const gitLfsPath = `${brewPrefix}/bin/git-lfs`
-
-    if (await pathExists(gitLfsPath)) {
-      await runInherit(gitLfsPath, ['install'])
-    } else {
-      await runInherit('git', ['lfs', 'install'])
-    }
-
-    l.write('success', 'git-lfs installed')
-    return
-  }
-
-  if (platform === 'linux') {
-    await runInherit('sudo', ['apt-get', 'update'])
-    await runInherit('sudo', ['apt-get', 'install', '-y', 'git-lfs'])
-    await runInherit('git', ['lfs', 'install'])
-    l.write('success', 'git-lfs installed')
-    return
-  }
-
-  l.error('Unsupported platform for automatic git-lfs installation')
-  throw new Error('Unsupported platform for git-lfs setup')
+  return await directoryHasFiles(reverbDiarizationDir)
 }
 
 export const downloadReverbModel = async (): Promise<void> => {
-  l.write('info', 'Downloading Reverb ASR model from HuggingFace')
+  l.write('info', 'Downloading Reverb ASR model from Hugging Face')
 
   if (await checkReverbModelExists()) {
     return
   }
 
-  await mkdir(reverbModelDir, { recursive: true })
-
   const hfToken = getHuggingFaceToken()
   if (!hfToken) {
-    l.error('HuggingFace token is required to download Reverb model')
-    l.write('info', 'Please set the HUGGINGFACE_TOKEN environment variable')
-    throw new Error('Missing HuggingFace token')
+    l.error('HUGGINGFACE_TOKEN is required to download Reverb model assets')
+    throw new Error('Missing HUGGINGFACE_TOKEN')
   }
-
-  if (!checkGitLfsInstalled()) {
-    await installGitLfs()
-    await Bun.sleep(2000)
-  }
-
-  if (!checkHuggingFaceCliInstalled()) {
-    await installHuggingFaceCli().catch(() => undefined)
-  }
-
-  const hfCliPath = getHuggingFaceCliPath()
 
   await withRetry(
     { retryClass: 'setup_download', operationName: 'reverb-model' },
     async () => {
       await rm(reverbModelDir, { recursive: true, force: true })
-
-      const env = {
-        HF_HUB_DISABLE_PROGRESS_BARS: '1',
-        HF_HUB_VERBOSITY: 'error'
-      }
-
-      let usedCli = false
-
-      if (hfCliPath) {
-        const cliResult = await runInherit(
-          hfCliPath,
-          ['download', 'Revai/reverb-asr', '--token', hfToken, '--local-dir', reverbModelDir, '--local-dir-use-symlinks', 'False'],
-          { env, allowFailure: true }
-        )
-        usedCli = cliResult === 0
-      }
-
-      if (!usedCli) {
-        const HOME = Bun.env['HOME'] || process.env['HOME'] || ''
-        await runInherit('git', ['config', '--global', 'credential.helper', 'store'])
-        await Bun.write(`${HOME}/.git-credentials`, `https://oauth2:${hfToken}@huggingface.co\n`)
-
-        const mergedEnv: Record<string, string | undefined> = {
-          ...env,
-          GIT_TERMINAL_PROMPT: '0'
-        }
-
-        if (detectPlatform() === 'darwin') {
-          const brewPrefixResult = await runCapture('brew', ['--prefix'], { allowFailure: true })
-          const brewPrefix = brewPrefixResult.exitCode === 0 ? brewPrefixResult.stdout.trim() : '/usr/local'
-          mergedEnv['PATH'] = `${brewPrefix}/bin:${process.env['PATH'] || ''}`
-        }
-
-        const cloneCode = await runInherit(
-          'git',
-          ['clone', `https://oauth2:${hfToken}@huggingface.co/Revai/reverb-asr`, reverbModelDir],
-          { env: mergedEnv, allowFailure: true }
-        )
-
-        if (cloneCode !== 0) {
-          l.error('Git clone also failed')
-          throw new Error('Failed to download Reverb model')
-        }
-      }
+      await mkdir(reverbModelDir, { recursive: true })
+      await downloadHuggingFaceSnapshot({
+        repoId: REVERB_ASR_REPO,
+        revision: REVERB_ASR_REVISION,
+        token: hfToken,
+        destination: reverbModelDir,
+        allowPatterns: [...REVERB_ASR_REQUIRED_FILES],
+        requiredFiles: [...REVERB_ASR_REQUIRED_FILES]
+      })
 
       if (!await checkReverbModelExists()) {
-        l.error('Model files not found after download')
         throw new Error('Reverb model files missing after download')
       }
     }
@@ -161,27 +81,24 @@ export const downloadDiarizationModel = async (): Promise<boolean> => {
     return false
   }
 
-  await mkdir(reverbDiarizationDir, { recursive: true })
-
-  const scriptPath = join(reverbScriptsDir, 'download-reverb-diarization.py')
-  const result = await runCapture(
-    'uv',
-    ['run', '-p', `${reverbUvEnvDir}/bin/python`, scriptPath, 'Revai/reverb-diarization-v2', hfToken],
-    {
-      allowFailure: true,
-      env: {
-        HF_HOME: reverbDiarizationDir,
-        TRANSFORMERS_CACHE: reverbDiarizationDir
+  try {
+    await withRetry(
+      { retryClass: 'setup_download', operationName: 'reverb-diarization-model' },
+      async () => {
+        await rm(reverbDiarizationDir, { recursive: true, force: true })
+        await mkdir(reverbDiarizationDir, { recursive: true })
+        await downloadHuggingFaceSnapshot({
+          repoId: REVERB_DIARIZATION_REPO,
+          revision: REVERB_DIARIZATION_REVISION,
+          token: hfToken,
+          destination: reverbDiarizationDir
+        })
       }
-    }
-  )
-
-  if (result.exitCode !== 0) {
+    )
+  } catch (error) {
     l.error('Failed to download diarization model v2')
-    const details = result.stderr.trim()
-    if (details) {
-      l.error(`Error details: ${details}`)
-    }
+    const details = error instanceof Error ? error.message : String(error)
+    if (details) l.error(`Error details: ${details}`)
     return false
   }
 

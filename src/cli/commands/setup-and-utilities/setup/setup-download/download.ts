@@ -1,6 +1,4 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { stat } from 'node:fs/promises'
 import type {
   DownloadFlowId,
   DownloadProfile,
@@ -8,6 +6,7 @@ import type {
   DownloadRequest,
   DownloadResult
 } from '~/types'
+import { extractTarGzBuffer } from './tar-gz'
 
 const BUN_FETCH_TIMEOUT_MS = 60_000
 
@@ -20,10 +19,13 @@ const BUN_FETCH_PROFILES: Record<DownloadProfileId, DownloadProfile> = {
 }
 
 const FLOW_DEFAULTS: Record<DownloadFlowId, DownloadProfileId> = {
-  'uv-installer': 'bun-fetch-default',
+  'uv-release': 'bun-fetch-default',
   'yt-dlp-binary': 'bun-fetch-default',
   'whisper-model': 'bun-fetch-default',
-  'llama-tarball': 'bun-fetch-default'
+  'llama-tarball': 'bun-fetch-default',
+  'whisper-source': 'bun-fetch-default',
+  'reverb-source': 'bun-fetch-default',
+  'reverb-model': 'bun-fetch-default'
 }
 
 const resolveProfile = (req: DownloadRequest): DownloadProfile => {
@@ -51,10 +53,11 @@ const buildFetchHeaders = (req: DownloadRequest): Record<string, string> | undef
 }
 
 const fetchWithDefaults = async (req: DownloadRequest): Promise<Response> => {
+  const headers = buildFetchHeaders(req)
   const response = await fetch(req.url, {
-    headers: buildFetchHeaders(req),
     signal: AbortSignal.timeout(BUN_FETCH_TIMEOUT_MS),
-    redirect: 'follow'
+    redirect: 'follow',
+    ...(headers ? { headers } : {})
   })
   if (!response.ok) {
     throw new Error(`bun-fetch download failed: HTTP ${response.status} ${response.statusText}`)
@@ -68,80 +71,24 @@ const runBunFetchFile = async (req: DownloadRequest): Promise<void> => {
   await Bun.write(req.destination, buffer)
 }
 
-const buildTarArgsFromFile = (req: DownloadRequest, archivePath: string): string[] => {
-  if (!req.pipeArgs) {
-    return ['-xzf', archivePath, '--strip-components=1', '-C', req.destination]
-  }
-
-  return req.pipeArgs.map(arg => arg === '-' ? archivePath : arg)
-}
-
-const runBunFetchPipeToTar = async (req: DownloadRequest): Promise<{ exitCode: number }> => {
-  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-pipe-to-tar-'))
-  const tempArchivePath = join(tempRoot, 'archive.tar.gz')
-
-  try {
-    const response = await fetchWithDefaults(req)
-    const buffer = await response.arrayBuffer()
-    await Bun.write(tempArchivePath, buffer)
-
-    const tarArgs = buildTarArgsFromFile(req, tempArchivePath)
-    const tarProc = Bun.spawn(
-      ['tar', ...tarArgs],
-      { stdout: 'inherit', stderr: 'inherit', ...(req.pipeCwd ? { cwd: req.pipeCwd } : {}) }
-    )
-
-    const tarCode = await tarProc.exited
-    return { exitCode: tarCode }
-  } finally {
-    await rm(tempRoot, { recursive: true, force: true }).catch(() => undefined)
-  }
-}
-
-const runBunFetchScriptInstaller = async (req: DownloadRequest): Promise<{ exitCode: number }> => {
-  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-script-installer-'))
-  const tempFile = join(tempRoot, 'installer.sh')
-
-  try {
-    const response = await fetchWithDefaults(req)
-    const buffer = await response.arrayBuffer()
-    await Bun.write(tempFile, buffer)
-
-    const shProc = Bun.spawn(['sh', tempFile], { stdout: 'inherit', stderr: 'inherit' })
-    const shCode = await shProc.exited
-    return { exitCode: shCode }
-  } finally {
-    await rm(tempRoot, { recursive: true, force: true }).catch(() => undefined)
-  }
-}
-
-
 export const downloadFile = async (req: DownloadRequest): Promise<DownloadResult> => {
   const profile = resolveProfile(req)
   const startedAt = Date.now()
 
-  if (req.mode === 'pipe-to-tar') {
-    const result = await runBunFetchPipeToTar(req)
-    if (result.exitCode !== 0) {
-      throw new Error(`Download + extract failed (exit code ${result.exitCode})`)
+  if (req.mode === 'tar-gz') {
+    const response = await fetchWithDefaults(req)
+    const buffer = await response.arrayBuffer()
+    const bytes = buffer.byteLength
+    if (req.expectedMinBytes !== undefined && bytes < req.expectedMinBytes) {
+      throw new Error(`Downloaded archive too small: ${bytes} bytes (expected >= ${req.expectedMinBytes})`)
     }
+    await extractTarGzBuffer(buffer, {
+      destination: req.destination,
+      ...(req.stripComponents !== undefined ? { stripComponents: req.stripComponents } : {})
+    })
     return {
       success: true,
-      bytes: 0,
-      engine: profile.engine,
-      profileId: profile.profileId,
-      durationMs: Date.now() - startedAt
-    }
-  }
-
-  if (req.mode === 'script-installer') {
-    const result = await runBunFetchScriptInstaller(req)
-    if (result.exitCode !== 0) {
-      throw new Error(`Script installer download failed (exit code ${result.exitCode})`)
-    }
-    return {
-      success: true,
-      bytes: 0,
+      bytes,
       engine: profile.engine,
       profileId: profile.profileId,
       durationMs: Date.now() - startedAt

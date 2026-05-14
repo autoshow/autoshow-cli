@@ -6,6 +6,8 @@ import { exec } from '~/utils/cli-utils'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import { buildYtDlpDownloadArgs, buildYtDlpFailureMessage } from './yt-dlp-options'
 import { logAudioDownload } from './audio-logging'
+import { walkPaths } from '~/utils/filesystem'
+import { getYtDlpBinary } from './yt-dlp-binary'
 
 const DOWNLOADED_MEDIA_EXTENSIONS: ReadonlySet<string> = new Set(MEDIA_EXTENSIONS)
 
@@ -62,8 +64,7 @@ const findDownloadedAudio = async (
   outputDir: string,
   options: { strictSingleOutput?: boolean } = {}
 ): Promise<string> => {
-  const files = await Bun.$`find ${outputDir} -type f`.text()
-  const list = getMediaFilePaths(files)
+  const list = getMediaFilePaths((await walkPaths(outputDir, { kind: 'file' })).join('\n'))
   const first = assertSingleDownloadedMedia(list, 'output directory scan', options.strictSingleOutput === true)
   if (!first) {
     if (options.strictSingleOutput === true) {
@@ -92,7 +93,7 @@ export const downloadVideo = async (
       status: 'started',
       target: outputDir
     })
-    const result = await exec('yt-dlp', args)
+    const result = await exec(getYtDlpBinary(), args)
 
     if (result.exitCode !== 0) {
       const details = result.stderr || result.stdout || 'unknown yt-dlp error'

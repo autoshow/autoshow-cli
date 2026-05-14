@@ -4,12 +4,13 @@ import { exec } from '~/utils/cli-utils'
 import { YtDlpVideoInfoSchema, VideoMetadataSchema, type Step1SourceRef, type VideoMetadata, type YtDlpVideoInfo } from '~/types'
 import { MEDIA_EXTENSIONS } from '~/cli/commands/process-steps/step-1-download/media-extensions'
 import { buildYtDlpFailureMessage, buildYtDlpMetadataArgs } from './yt-dlp-options'
+import { getYtDlpBinary } from './yt-dlp-binary'
 
 export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> => {
   try {
     const args = await buildYtDlpMetadataArgs(url)
 
-    const result = await exec('yt-dlp', args)
+    const result = await exec(getYtDlpBinary(), args)
 
     if (result.exitCode !== 0) {
       l.warn(buildYtDlpFailureMessage('metadata', result.stderr || result.stdout || 'unknown yt-dlp error'))

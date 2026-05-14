@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/run-defuddle-url'
@@ -30,7 +30,11 @@ const envKeys = [
   'SPIDER_API_URL',
   'SPIDER_API_KEY',
   'ZYTE_API_URL',
-  'ZYTE_API_KEY'
+  'ZYTE_API_KEY',
+  'AUTOSHOW_DEFUDDLE_BIN',
+  'AUTOSHOW_DEFUDDLE_ARGS_LOG',
+  'AUTOSHOW_FAKE_DEFUDDLE_MODE',
+  'AUTOSHOW_FAKE_DEFUDDLE_STDERR'
 ] as const
 const originalEnv = new Map<string, string | undefined>(
   envKeys.map(key => [key, process.env[key]])
@@ -38,6 +42,7 @@ const originalEnv = new Map<string, string | undefined>(
 const originalAdapterRuns = new Map<HtmlArticleBackend, UrlArticleProviderAdapter['run']>(
   URL_ARTICLE_BACKENDS.map((backend) => [backend, URL_ARTICLE_PROVIDER_ADAPTERS[backend].run])
 )
+const tempDirs: string[] = []
 
 const longMarkdown = 'This article contains enough meaningful markdown content for the URL backend extraction contract to pass without reaching any hosted provider.'
 const htmlDocument = `<!doctype html>
@@ -54,7 +59,7 @@ const htmlDocument = `<!doctype html>
   </body>
 </html>`
 
-afterEach(() => {
+afterEach(async () => {
   globalThis.fetch = originalFetch
   for (const backend of URL_ARTICLE_BACKENDS) {
     const originalRun = originalAdapterRuns.get(backend)
@@ -70,6 +75,7 @@ afterEach(() => {
       process.env[key] = originalValue
     }
   }
+  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
 
 const buildMockArticle = (
@@ -91,7 +97,38 @@ const buildMockArticle = (
   }
 }
 
+const writeFakeDefuddleBin = async (): Promise<{ bin: string, argsLog: string }> => {
+  const dir = await mkdtemp(join(tmpdir(), 'autoshow-fake-defuddle-'))
+  tempDirs.push(dir)
+  const bin = join(dir, 'defuddle')
+  const argsLog = join(dir, 'args.log')
+
+  await writeFile(bin, [
+    '#!/usr/bin/env bun',
+    "import { appendFileSync, readFileSync } from 'node:fs'",
+    'const args = process.argv.slice(2)',
+    "if (args[0] === '--version') { console.log('0.17.0'); process.exit(0) }",
+    "const logPath = process.env.AUTOSHOW_DEFUDDLE_ARGS_LOG",
+    "if (logPath) appendFileSync(logPath, JSON.stringify(args) + '\\n')",
+    "if (process.env.AUTOSHOW_FAKE_DEFUDDLE_STDERR) console.error(process.env.AUTOSHOW_FAKE_DEFUDDLE_STDERR)",
+    "if (process.env.AUTOSHOW_FAKE_DEFUDDLE_MODE === 'nonzero') { console.log('partial stdout before failure'); console.error('fake defuddle failed'); process.exit(7) }",
+    "if (process.env.AUTOSHOW_FAKE_DEFUDDLE_MODE === 'invalid-json') { console.log('{not valid json'); process.exit(0) }",
+    "const sourcePath = args[1] ?? ''",
+    "const html = sourcePath ? readFileSync(sourcePath, 'utf8') : ''",
+    "const markdown = '# CLI Defuddle Article\\n\\nThis fake defuddle output includes enough meaningful markdown content from the CLI fixture. ' + (html.includes('Moved Backend Article') ? 'Moved Backend Article.' : 'Generic Article.')",
+    "console.log(JSON.stringify({ contentMarkdown: markdown, content: 'SHOULD_NOT_USE_CONTENT', title: 'CLI Title', author: 'CLI Author', site: 'CLI Site', published: '2026-05-01T00:00:00Z', language: 'en', description: 'CLI description', wordCount: 88 }))"
+  ].join('\n'))
+  await chmod(bin, 0o755)
+
+  process.env['AUTOSHOW_DEFUDDLE_BIN'] = bin
+  process.env['AUTOSHOW_DEFUDDLE_ARGS_LOG'] = argsLog
+
+  return { bin, argsLog }
+}
+
 test('defuddle URL backend extracts markdown from supplied HTML', async () => {
+  const { argsLog } = await writeFakeDefuddleBin()
+
   const result = await extractHtmlToMarkdown({
     html: htmlDocument,
     documentUrl: 'https://example.test/final',
@@ -100,11 +137,71 @@ test('defuddle URL backend extracts markdown from supplied HTML', async () => {
   })
 
   expect(result.markdown).toContain('meaningful markdown content')
+  expect(result.markdown).toContain('Moved Backend Article')
+  expect(result.markdown).not.toContain('SHOULD_NOT_USE_CONTENT')
+  expect(result.title).toBe('CLI Title')
+  expect(result.author).toBe('CLI Author')
   expect(result.web).toMatchObject({
     sourceUrl: 'https://example.test/source',
-    finalUrl: 'https://example.test/final'
+    finalUrl: 'https://example.test/final',
+    title: 'CLI Title',
+    author: 'CLI Author',
+    site: 'CLI Site',
+    published: '2026-05-01T00:00:00Z',
+    language: 'en',
+    description: 'CLI description',
+    wordCount: 88
   })
-  expect(result.web.wordCount).toBeGreaterThan(5)
+
+  const [parseArgs] = (await Bun.file(argsLog).text()).trim().split('\n').map((line) => JSON.parse(line) as string[])
+  expect(parseArgs?.[0]).toBe('parse')
+  expect(parseArgs?.[1]?.endsWith('article.html')).toBe(true)
+  expect(parseArgs?.slice(2)).toEqual(['--markdown', '--json'])
+  expect(await Bun.file(parseArgs![1]!).exists()).toBe(false)
+})
+
+test('defuddle URL backend includes captured output for nonzero CLI failures', async () => {
+  await writeFakeDefuddleBin()
+  process.env['AUTOSHOW_FAKE_DEFUDDLE_MODE'] = 'nonzero'
+
+  let error: unknown
+  try {
+    await extractHtmlToMarkdown({
+      html: htmlDocument,
+      documentUrl: 'https://example.test/final'
+    })
+  } catch (caught) {
+    error = caught
+  }
+
+  expect(error).toBeInstanceOf(Error)
+  const message = (error as Error).message
+  expect(message).toContain('Defuddle CLI failed')
+  expect(message).toContain('exit code 7')
+  expect(message).toContain('partial stdout before failure')
+  expect(message).toContain('fake defuddle failed')
+})
+
+test('defuddle URL backend includes captured output for invalid JSON', async () => {
+  await writeFakeDefuddleBin()
+  process.env['AUTOSHOW_FAKE_DEFUDDLE_MODE'] = 'invalid-json'
+  process.env['AUTOSHOW_FAKE_DEFUDDLE_STDERR'] = 'fake diagnostic stderr'
+
+  let error: unknown
+  try {
+    await extractHtmlToMarkdown({
+      html: htmlDocument,
+      documentUrl: 'https://example.test/final'
+    })
+  } catch (caught) {
+    error = caught
+  }
+
+  expect(error).toBeInstanceOf(Error)
+  const message = (error as Error).message
+  expect(message).toContain('Defuddle CLI returned invalid JSON')
+  expect(message).toContain('{not valid json')
+  expect(message).toContain('fake diagnostic stderr')
 })
 
 test('prepared article markdown carries backend duration into extraction metadata', async () => {

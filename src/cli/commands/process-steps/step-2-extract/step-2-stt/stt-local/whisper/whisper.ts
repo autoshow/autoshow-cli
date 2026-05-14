@@ -1,15 +1,16 @@
 import { copyFile, mkdir, readdir, rename, rm } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { pathExists, runCapture, runInherit, detectPlatform, supportsCoreML, setupUv, whisperBinaryPath, whisperBuildDir, whisperCoremlEnvDir, whisperLibDir, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { pathExists, runCapture, runInherit, runUvCapture, runUvInherit, detectPlatform, supportsCoreML, setupUv, whisperBinaryPath, whisperBuildDir, whisperCoremlEnvDir, whisperLibDir, whisperModelsDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
+import { findDirectoriesBySuffix, makeExecutable } from '~/utils/filesystem'
+import { downloadGithubArchive } from '~/cli/commands/setup-and-utilities/setup/setup-download/github-archives'
+import { readDependencyTag } from '~/cli/commands/setup-and-utilities/setup/dependency-metadata'
 
 const whisperBaseUrl = 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main'
 const whisperScriptsDir = join(dirname(fileURLToPath(import.meta.url)), 'scripts')
-
-const depsJsonPath = resolve(import.meta.dir, '../../../../config/deps.json')
 
 const coremlPackages = [
   'numpy<2',
@@ -33,16 +34,18 @@ const isExecutable = async (path: string): Promise<boolean> => {
 }
 
 const installCoremlPackages = async (pythonPath: string): Promise<void> => {
-  await runInherit('uv', ['pip', 'install', '-p', pythonPath, ...coremlPackages])
+  await setupUv()
+  await runUvInherit(['pip', 'install', '-p', pythonPath, ...coremlPackages])
 }
 
 const ensureCoremlEnvironment = async (): Promise<void> => {
   const uvPython = `${whisperCoremlEnvDir}/bin/python`
 
   if (!await isExecutable(uvPython)) {
-    await runCapture('uv', ['python', 'install', '3.11'], { allowFailure: true })
+    await setupUv()
+    await runUvCapture(['python', 'install', '3.11'], { allowFailure: true })
     await rm(whisperCoremlEnvDir, { recursive: true, force: true })
-    await runInherit('uv', ['venv', '--python', '3.11', whisperCoremlEnvDir])
+    await runUvInherit(['venv', '--python', '3.11', whisperCoremlEnvDir])
     await installCoremlPackages(uvPython)
     l.write('success', 'CoreML environment created')
     return
@@ -106,13 +109,7 @@ const verifyWhisperBinary = async (): Promise<void> => {
 }
 
 const readWhisperTag = async (): Promise<string> => {
-  try {
-    const raw = await Bun.file(depsJsonPath).text()
-    const deps = JSON.parse(raw)
-    return (deps['whisper.cpp']?.tag as string) || 'v1.7.4'
-  } catch {
-    return 'v1.7.4'
-  }
+  return await readDependencyTag('whisper.cpp') ?? 'v1.7.4'
 }
 
 export const detectCoremlSupport = async (): Promise<boolean> => {
@@ -143,7 +140,19 @@ export const setupWhisper = async (): Promise<void> => {
   await mkdir(repoDir, { recursive: true })
   await cleanupPath(repoDir)
 
-  await runInherit('git', ['clone', '--branch', tag, '--depth', '1', 'https://github.com/ggerganov/whisper.cpp.git', repoDir])
+  await withRetry(
+    { retryClass: 'setup_download', operationName: 'whisper-source' },
+    async () => {
+      await downloadGithubArchive({
+        owner: 'ggerganov',
+        repo: 'whisper.cpp',
+        ref: tag,
+        destination: repoDir,
+        stripComponents: 1,
+        flowId: 'whisper-source'
+      })
+    }
+  )
 
   const platform = detectPlatform()
   if (platform === 'darwin') {
@@ -162,7 +171,7 @@ export const setupWhisper = async (): Promise<void> => {
   const sourceBinary = await fileExists(binCandidateA) ? binCandidateA : binCandidateB
 
   await copyFile(sourceBinary, whisperBinaryPath)
-  await runInherit('chmod', ['+x', whisperBinaryPath])
+  await makeExecutable(whisperBinaryPath)
 
   if (platform === 'darwin') {
     await maybeCopyWhisperDylibs(`${repoDir}/build/src`)
@@ -187,11 +196,7 @@ const compileCoremlPackage = async (modelName: string): Promise<void> => {
   const compiled = compileA.exitCode === 0 || (await runCapture('xcrun', ['coremlcompiler', 'compile', mlpackagePath, outTmp], { allowFailure: true })).exitCode === 0
 
   if (compiled) {
-    const findResult = await runCapture('find', [outTmp, '-type', 'd', '-name', '*.mlmodelc', '-maxdepth', '2'], { allowFailure: true })
-    const compiledDir = findResult.stdout
-      .split('\n')
-      .map(line => line.trim())
-      .find(Boolean)
+    const compiledDir = (await findDirectoriesBySuffix(outTmp, '.mlmodelc', 2))[0]
 
     if (compiledDir) {
       const finalPath = `${whisperModelsDir}/ggml-${modelName}-encoder.mlmodelc`

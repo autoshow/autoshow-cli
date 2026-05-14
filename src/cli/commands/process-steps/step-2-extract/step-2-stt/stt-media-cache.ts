@@ -33,6 +33,8 @@ import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/se
 import { commandExists, ensureDirectory } from '~/utils/cli-utils'
 import { getAudioDuration } from './stt-utils/audio-splitter'
 import { logSttCacheEvent } from './stt-logging'
+import { hasYtDlpBinary } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
+import { listImmediateDirectories } from '~/utils/filesystem'
 
 const METADATA_SCHEMA_VERSION = 1
 const SOURCE_MEDIA_ARTIFACT_VERSION = 7
@@ -329,7 +331,7 @@ const updateLastAccessed = async (cacheKey: string, entry: MediaCacheEntry): Pro
 }
 
 const ensureMediaTooling = async (needsYtDlp: boolean): Promise<void> => {
-  if (!commandExists('ffmpeg') || !commandExists('ffprobe') || (needsYtDlp && !commandExists('yt-dlp'))) {
+  if (!commandExists('ffmpeg') || !commandExists('ffprobe') || (needsYtDlp && !hasYtDlpBinary())) {
     await setupYtDependencies()
   }
 }
@@ -605,10 +607,9 @@ export const pruneMediaCache = async (): Promise<void> => {
   const maxAgeMs = getMaxCacheAgeMs()
 
   try {
-    const entries = await Bun.file(rootDir).exists()
-      ? await Bun.$`find ${rootDir} -mindepth 1 -maxdepth 1 -type d`.text()
-      : ''
-    const directories = entries.trim().split('\n').filter((value) => value.length > 0)
+    const directories = await Bun.file(rootDir).exists()
+      ? await listImmediateDirectories(rootDir)
+      : []
 
     const inspected = await Promise.all(directories.map(async (directoryPath) => {
       const entryJsonPath = join(directoryPath, 'entry.json')

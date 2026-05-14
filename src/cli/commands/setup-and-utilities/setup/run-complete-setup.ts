@@ -1,18 +1,16 @@
 import { stat, mkdir, rm } from 'node:fs/promises'
-import { resolve, join } from 'node:path'
-import * as v from 'valibot'
+import { join } from 'node:path'
 import type { RunResult, RunOptions, SetupPlatform } from '~/types'
 import type { SetupStepId } from '~/types'
-import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import * as l from '~/utils/logger'
 import { createHumanTable, logKeyValueTable, logSingleRowTable } from '~/utils/logger/human-table'
 import { SUPPORTED_LLAMA_MODELS, SUPPORTED_KITTEN_TTS_MODELS } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry } from '~/utils/retries'
-import { validateJson } from '~/utils/validate/validation'
 import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio'
 import { setupWhisper, downloadWhisperModel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/whisper'
 import { checkLlamaInstalled, runLlamaSetup } from '~/cli/commands/process-steps/step-3-write/write-local/llama/llama'
 import { setupReverb } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb'
+import { defuddleRuntimeDir, setupDefuddleCli } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/defuddle-cli'
 import { setupElevenLabsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/elevenlabs/elevenlabs'
 import { setupDeepgramStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deepgram/deepgram'
 import { setupSonioxStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/soniox/soniox'
@@ -64,9 +62,11 @@ import { setupGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/m
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { logProviderReadiness, logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import { RUNTIME_BIN_DIR, RUNTIME_DIR, ytDlpManagedBinaryPath } from '~/utils/runtime-paths'
+import { installManagedUv, managedUvxPath, resolveUvCommand } from './setup-download/managed-uv'
+import { readDependencyMetadata } from './dependency-metadata'
 
-const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
-const RUNTIME = join(PROJECT_ROOT, 'runtime')
+const RUNTIME = RUNTIME_DIR
 
 export const whisperBinaryPath = join(RUNTIME, 'bin/whisper-cli')
 export const llamaBinaryPath = join(RUNTIME, 'bin/llama-server')
@@ -121,6 +121,22 @@ export const runInherit = async (command: string, args: string[] = [], options: 
   return exitCode
 }
 
+export const requireUvCommand = async (): Promise<string> => {
+  const command = await resolveUvCommand()
+  if (command) return command
+  throw new Error('uv is not available. Run `bun as setup --step uv` to install AutoShow managed uv.')
+}
+
+export const runUvCapture = async (args: string[] = [], options: RunOptions = {}): Promise<RunResult> => {
+  const command = await requireUvCommand()
+  return await runCapture(command, args, options)
+}
+
+export const runUvInherit = async (args: string[] = [], options: RunOptions = {}): Promise<number> => {
+  const command = await requireUvCommand()
+  return await runInherit(command, args, options)
+}
+
 export const commandExists = (command: string): boolean => {
   const resolved = Bun.which(command)
   return typeof resolved === 'string' && resolved.length > 0
@@ -149,34 +165,26 @@ export const supportsCoreML = async (): Promise<boolean> => {
 }
 
 export const setupUv = async (): Promise<void> => {
-  if (commandExists('uv')) {
+  const pathUv = Bun.which('uv')
+  if (pathUv) {
+    return
+  }
+  const managedUv = await resolveUvCommand()
+  if (managedUv && await pathExists(managedUvxPath)) {
     return
   }
   logSetupToolStatus(l, { tool: 'uv', status: 'installing' })
-  if (detectPlatform() === 'darwin' && commandExists('brew')) {
-    await runInherit('brew', ['install', 'uv'])
-  } else {
-    await withRetry(
-      { retryClass: 'setup_download', operationName: 'uv-installer' },
-      async () => {
-        await downloadFile({
-          url: 'https://astral.sh/uv/install.sh',
-          destination: '/tmp/uv-install.sh',
-          mode: 'script-installer',
-          flowId: 'uv-installer'
-        })
-      }
-    )
-  }
+  await withRetry(
+    { retryClass: 'setup_download', operationName: 'uv-release' },
+    async () => {
+      await installManagedUv()
+    }
+  )
   logSetupToolStatus(l, { tool: 'uv', status: 'installed' })
 }
 
 export const defaultWhisperModel = 'tiny'
 export const defaultLlamaModel = 'ggml-org/gemma-3-270m-it-GGUF'
-
-const DepsEntrySchema = v.object({ tag: v.optional(v.string(), undefined) })
-const DepsJsonSchema = v.record(v.string(), DepsEntrySchema)
-const depsJsonPath = resolve(import.meta.dir, '../../../../../config/deps.json')
 
 const withCompactSetup = async (fn: () => Promise<void>): Promise<void> => {
   const previous = process.env['AUTOSHOW_COMPACT_SETUP']
@@ -189,7 +197,7 @@ const withCompactSetup = async (fn: () => Promise<void>): Promise<void> => {
 
 const ensureRuntimeDirs = async (): Promise<void> => {
   await Promise.all([
-    mkdir(whisperBinaryPath.replace(/\/whisper-cli$/, ''), { recursive: true }),
+    mkdir(RUNTIME_BIN_DIR, { recursive: true }),
     mkdir(whisperBuildDir, { recursive: true }),
     mkdir(whisperModelsDir, { recursive: true }),
     mkdir(llamaModelsDir, { recursive: true }),
@@ -201,11 +209,12 @@ const ensureRuntimeDirs = async (): Promise<void> => {
 
 const logPinnedVersions = async (): Promise<void> => {
   try {
-    const raw = await Bun.file(depsJsonPath).text()
-    const deps = validateJson(DepsJsonSchema, raw, 'config/deps.json')
+    const deps = await readDependencyMetadata()
     logKeyValueTable(l, 'Pinned Versions', [
       ['whisper.cpp', deps['whisper.cpp']?.tag ?? 'unknown'],
-      ['llama.cpp', deps['llama.cpp']?.tag ?? 'unknown']
+      ['llama.cpp', deps['llama.cpp']?.tag ?? 'unknown'],
+      ['uv', deps['uv']?.version ?? 'unknown'],
+      ['reverb', deps['reverb']?.ref ?? 'unknown']
     ], { category: 'command', keyLabel: 'dependency', valueLabel: 'version' })
   } catch { l.warn('Could not read config/deps.json') }
 }
@@ -266,6 +275,8 @@ const runFullSetup = async (): Promise<void> => {
   const awsDefaults = await readAwsSttConfigDefaults()
 
   await withCompactSetup(setupYtDependencies)
+
+  await withCompactSetup(setupDefuddleCli)
 
   await withCompactSetup(setupWhisper)
 
@@ -532,9 +543,11 @@ const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
     case 'whisper-model': return [whisperModelPath]
     case 'llama-binary': return [llamaBinaryPath]
     case 'reverb': return [reverbModelDir, reverbDiarizationDir]
+    case 'defuddle': return [defuddleRuntimeDir]
     case 'music': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
     case 'all': return [whisperModelPath, llamaBinaryPath]
-    case 'uv': case 'yt-dlp': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'video': case 'sample': return []
+    case 'yt-dlp': return [ytDlpManagedBinaryPath]
+    case 'uv': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'video': case 'sample': return []
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
   }
 }
@@ -559,6 +572,7 @@ const executeStepOnce = async (step: SetupStepId): Promise<void> => {
     case 'whisper-model': await downloadWhisperModel(defaultWhisperModel); return
     case 'llama-binary': await runLlamaSetup(); return
     case 'reverb': await setupReverb(); return
+    case 'defuddle': await setupDefuddleCli(); return
     case 'calibre': await setupCalibreDocumentTools(); return
     case 'transcription': await runSetupTranscription(); return
     case 'write': await runSetupWrite(); return

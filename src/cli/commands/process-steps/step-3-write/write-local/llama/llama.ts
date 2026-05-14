@@ -1,9 +1,10 @@
 import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { pathExists, runInherit, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { pathExists, detectArchitecture, detectPlatform, llamaBinaryPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
+import { makeExecutable } from '~/utils/filesystem'
 
 const depsJsonPath = resolve(import.meta.dir, '../../../config/deps.json')
 
@@ -67,13 +68,14 @@ export const installLlama = async (): Promise<void> => {
       await downloadFile({
         url: tarballUrl,
         destination: binDir,
-        mode: 'pipe-to-tar',
+        mode: 'tar-gz',
+        stripComponents: 1,
         flowId: 'llama-tarball'
       })
     }
   )
 
-  await runInherit('chmod', ['+x', llamaBinaryPath])
+  await makeExecutable(llamaBinaryPath)
   l.write('success', 'llama.cpp installed')
 }
 

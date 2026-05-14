@@ -1,5 +1,6 @@
-import { parseHTML } from 'linkedom'
-import { Defuddle } from 'defuddle/node'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type {
   ExtractHtmlToMarkdownInput,
   ExtractHtmlToMarkdownResult,
@@ -11,6 +12,7 @@ import {
   ensureMeaningfulMarkdown,
   fallbackTitleFromSource,
   fetchRemoteHtml,
+  isRecord,
   isRemoteSource,
   normalizeMarkdown,
   readLocalHtml,
@@ -21,6 +23,11 @@ import {
   type UrlArticleProviderAdapter,
   type UrlArticleRunOptions
 } from '../../url-provider-adapter'
+import {
+  ensureDefuddleCliSetup,
+  formatDefuddleCliOutput,
+  runDefuddleCliCapture
+} from './defuddle-cli'
 
 const DEFUDDLE_CAPABILITIES = [
   'local-html',
@@ -31,21 +38,50 @@ const DEFUDDLE_CAPABILITIES = [
 export const extractHtmlToMarkdown = async (
   input: ExtractHtmlToMarkdownInput
 ): Promise<ExtractHtmlToMarkdownResult> => {
-  const { document } = parseHTML(input.html)
-  const parsed = await Defuddle(document, input.documentUrl, {
-    markdown: true,
-    useAsync: false
-  }) as unknown as Record<string, unknown>
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-defuddle-'))
+  const tempHtmlPath = join(tempRoot, 'article.html')
 
-  const markdown = ensureMeaningfulMarkdown(normalizeMarkdown(parsed['content']), 'defuddle')
-  const title = cleanString(parsed['title'])
-  const author = cleanString(parsed['author'])
+  try {
+    await Bun.write(tempHtmlPath, input.html)
 
-  return {
-    markdown,
-    web: buildDefuddleWebMetadata(input.sourceUrl, input.finalUrl, parsed, markdown),
-    ...(title ? { title } : {}),
-    ...(author ? { author } : {})
+    const defuddleBin = await ensureDefuddleCliSetup()
+    const result = await runDefuddleCliCapture(
+      defuddleBin,
+      ['parse', tempHtmlPath, '--markdown', '--json'],
+      { allowFailure: true }
+    )
+
+    if (result.exitCode !== 0) {
+      throw new Error(`Defuddle CLI failed: ${formatDefuddleCliOutput(result)}`)
+    }
+
+    let parsedValue: unknown
+    try {
+      parsedValue = JSON.parse(result.stdout)
+    } catch {
+      throw new Error(`Defuddle CLI returned invalid JSON: ${formatDefuddleCliOutput(result)}`)
+    }
+
+    if (!isRecord(parsedValue)) {
+      throw new Error(`Defuddle CLI returned non-object JSON: ${formatDefuddleCliOutput(result)}`)
+    }
+
+    const parsed = parsedValue
+    const markdown = ensureMeaningfulMarkdown(
+      normalizeMarkdown(parsed['contentMarkdown'] ?? parsed['content']),
+      'defuddle'
+    )
+    const title = cleanString(parsed['title'])
+    const author = cleanString(parsed['author'])
+
+    return {
+      markdown,
+      web: buildDefuddleWebMetadata(input.sourceUrl, input.finalUrl, parsed, markdown),
+      ...(title ? { title } : {}),
+      ...(author ? { author } : {})
+    }
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true }).catch(() => undefined)
   }
 }
 

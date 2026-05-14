@@ -1,7 +1,12 @@
 import { expect, test } from 'bun:test'
+import { chmod, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
   collectLinks,
+  getDefaultLinksInputOutputFileName,
   parseLinksArgv,
+  readLinksInputFile,
   runLinksWithArgv
 } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import { runCommand } from '../../test-utils/test-helpers'
@@ -335,6 +340,25 @@ const SPEECHIFY_TTS_LINKS = [
 const LINKS_RETRY_TEST_URL = 'https://elevenlabs.io/docs/overview/models.md'
 const linksTestOutputPath = (name: string): string =>
   `/tmp/autoshow-links-${name}-${Date.now()}-${Math.random().toString(16).slice(2)}.md`
+const linksTestInputPath = (name: string, extension = 'md'): string =>
+  `/tmp/autoshow-links-input-${name}-${Date.now()}-${Math.random().toString(16).slice(2)}.${extension}`
+
+const writeLinksFakeDefuddleBin = async (): Promise<{ dir: string, bin: string }> => {
+  const dir = await mkdtemp(join(tmpdir(), 'autoshow-links-fake-defuddle-'))
+  const bin = join(dir, 'defuddle')
+  await writeFile(bin, [
+    '#!/usr/bin/env bun',
+    "import { readFileSync } from 'node:fs'",
+    'const args = process.argv.slice(2)',
+    "if (args[0] === '--version') { console.log('0.17.0'); process.exit(0) }",
+    "if (process.env.AUTOSHOW_FAKE_DEFUDDLE_STDERR) console.error(process.env.AUTOSHOW_FAKE_DEFUDDLE_STDERR)",
+    "const html = readFileSync(args[1], 'utf8')",
+    "const text = html.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim()",
+    "console.log(JSON.stringify({ contentMarkdown: text, title: 'Links Defuddle Fixture', wordCount: text.split(/\\s+/).filter(Boolean).length }))"
+  ].join('\n'))
+  await chmod(bin, 0o755)
+  return { dir, bin }
+}
 
 test('metadata --markdown prints stable frontmatter instead of JSON', async () => {
   const result = await runCommand([
@@ -353,6 +377,135 @@ channel: 'Unknown'
 url: 'https://example.com/audio.mp3'
 ---`)
   expect(result.stdout).not.toContain('{\n  "title"')
+})
+
+test('links parses a local markdown input file as standalone file mode', () => {
+  const selection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'urls.md'
+  ])
+
+  expect(selection.inputFilePath).toBe('urls.md')
+  expect(selection.serviceSelections.size).toBe(0)
+  expect(selection.globalSections).toEqual([])
+  expect(getDefaultLinksInputOutputFileName('urls.md')).toBe('urls-links.md')
+  expect(getDefaultLinksInputOutputFileName('/tmp/my docs!.txt')).toBe('my-docs-links.md')
+})
+
+test('links reads remote URLs from input files and dedupes in first-seen order', async () => {
+  const inputPath = linksTestInputPath('extract')
+  await Bun.write(inputPath, [
+    '# Documentation links',
+    '<!-- https://ignored.example.com/comment -->',
+    '',
+    '- https://example.com/docs',
+    '- [API docs](https://example.com/api)',
+    '- [duplicate docs](https://example.com/docs)',
+    '- blob:https://docs.scrapecreators.com/de495975-7e82-4fd9-953a-2fe2c257845e',
+    'plain prose without a URL',
+    '// https://ignored.example.com/line-comment'
+  ].join('\n'))
+
+  await expect(readLinksInputFile(inputPath)).resolves.toEqual([
+    'https://example.com/docs',
+    'https://example.com/api',
+    'blob:https://docs.scrapecreators.com/de495975-7e82-4fd9-953a-2fe2c257845e'
+  ])
+})
+
+test('links fetches URL input files through the existing combined markdown writer', async () => {
+  const inputPath = linksTestInputPath('run')
+  const outputPath = linksTestOutputPath('input-file-run')
+  const fetchedUrls: string[] = []
+
+  await Bun.write(inputPath, [
+    'https://example.com/a.md',
+    '[Page](https://example.com/page)',
+    'https://example.com/a.md'
+  ].join('\n'))
+
+  const result = await runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    inputPath
+  ], {
+    outputPath,
+    fetchImpl: async (input: string | URL | Request): Promise<Response> => {
+      const url = String(input)
+      fetchedUrls.push(url)
+
+      return new Response(`# docs for ${url}\n`, {
+        headers: { 'content-type': 'text/markdown' }
+      })
+    }
+  })
+
+  const output = await Bun.file(outputPath).text()
+  expect(result.urlCount).toBe(2)
+  expect(fetchedUrls).toEqual([
+    'https://example.com/a.md',
+    'https://example.com/page'
+  ])
+  expect(output).toContain('<!-- Source: https://example.com/a.md -->')
+  expect(output).toContain('<!-- Source: https://example.com/page -->')
+  expect(output).toContain('# docs for https://example.com/a.md')
+})
+
+test('links input file mode reports missing empty and no-url files as usage errors', async () => {
+  const missingPath = linksTestInputPath('missing')
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    missingPath
+  ])).rejects.toThrow('Links input file not found')
+
+  const emptyPath = linksTestInputPath('empty')
+  await Bun.write(emptyPath, ' \n\t\n')
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    emptyPath
+  ])).rejects.toThrow('Links input file is empty')
+
+  const noUrlPath = linksTestInputPath('no-url')
+  await Bun.write(noUrlPath, '# Heading\n- local-file.md\nplain prose\n')
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    noUrlPath
+  ])).rejects.toThrow('No valid remote URLs found in links input file')
+})
+
+test('links input file mode cannot be combined with provider or section selectors', () => {
+  expect(() => parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'urls.md',
+    'stt'
+  ])).toThrow('links input file mode cannot be combined with provider or section selectors')
+
+  expect(() => parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'urls.md',
+    '--openai'
+  ])).toThrow('links input file mode cannot be combined with provider or section selectors')
+
+  expect(() => parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--openai',
+    'urls.md'
+  ])).toThrow('links input file mode cannot be combined with provider or section selectors')
 })
 
 test('links retries transient network failures before writing output', async () => {
@@ -479,15 +632,20 @@ test('links strips blob prefix when fetching scrapecreators documentation', asyn
   expect(output).not.toContain(`<!-- Source: ${SCRAPECREATORS_FETCH_STT_LINK} -->`)
 })
 
-test('links suppresses recoverable defuddle diagnostics for scrapecreators html', async () => {
+test('links captures defuddle CLI diagnostics for scrapecreators html', async () => {
   const outputPath = linksTestOutputPath('scrapecreators-defuddle-diagnostic')
   const words = Array.from({ length: 40 }, (_, index) => `word${index}`).join(' ')
   const html = `<!doctype html><html><body><div class="hidden bad[">${words}</div></body></html>`
   const consoleErrors: string[] = []
   const originalConsoleError = console.error
+  const previousDefuddleBin = process.env['AUTOSHOW_DEFUDDLE_BIN']
+  const previousDefuddleStderr = process.env['AUTOSHOW_FAKE_DEFUDDLE_STDERR']
+  const fakeDefuddle = await writeLinksFakeDefuddleBin()
   console.error = (...args: Parameters<typeof console.error>): void => {
     consoleErrors.push(args.map(String).join(' '))
   }
+  process.env['AUTOSHOW_DEFUDDLE_BIN'] = fakeDefuddle.bin
+  process.env['AUTOSHOW_FAKE_DEFUDDLE_STDERR'] = 'Defuddle Error processing document: captured by wrapper'
 
   try {
     await runLinksWithArgv([
@@ -504,6 +662,17 @@ test('links suppresses recoverable defuddle diagnostics for scrapecreators html'
     })
   } finally {
     console.error = originalConsoleError
+    if (previousDefuddleBin === undefined) {
+      delete process.env['AUTOSHOW_DEFUDDLE_BIN']
+    } else {
+      process.env['AUTOSHOW_DEFUDDLE_BIN'] = previousDefuddleBin
+    }
+    if (previousDefuddleStderr === undefined) {
+      delete process.env['AUTOSHOW_FAKE_DEFUDDLE_STDERR']
+    } else {
+      process.env['AUTOSHOW_FAKE_DEFUDDLE_STDERR'] = previousDefuddleStderr
+    }
+    await rm(fakeDefuddle.dir, { recursive: true, force: true })
   }
 
   const output = await Bun.file(outputPath).text()

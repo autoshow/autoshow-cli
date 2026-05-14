@@ -6,6 +6,7 @@ import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download
 import { selectBatchItems } from '~/cli/commands/process-steps/step-1-download/targets/batch/batch-select'
 import { resolveProcessTargetDoubleDash } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { buildDownloadMediaOptions } from '~/cli/commands/process-steps/step-1-download/targets/single/media-runner'
+import { resolveYtDlpBinaryInfo } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
 import { STABLE_LOCAL_AUDIO_PATH, runCommand } from '../../test-utils/test-helpers'
 
 const EMPTY_CONFIG_PATH = 'test/test-utils/fixtures/empty-autoshow-config.json'
@@ -79,6 +80,41 @@ const readLoggedArgs = async (path: string): Promise<string[]> =>
 
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+})
+
+describe('yt-dlp binary resolution', () => {
+  test('prefers AUTOSHOW_YTDLP_BIN before managed and PATH binaries', () => {
+    const resolved = resolveYtDlpBinaryInfo({
+      env: { AUTOSHOW_YTDLP_BIN: '/override/yt-dlp' },
+      managedPath: '/managed/yt-dlp',
+      exists: () => true,
+      which: () => '/path/yt-dlp'
+    })
+
+    expect(resolved).toEqual({ path: '/override/yt-dlp', source: 'env' })
+  })
+
+  test('prefers managed binary before PATH', () => {
+    const resolved = resolveYtDlpBinaryInfo({
+      env: {},
+      managedPath: '/managed/yt-dlp',
+      exists: (path) => path === '/managed/yt-dlp',
+      which: () => '/path/yt-dlp'
+    })
+
+    expect(resolved).toEqual({ path: '/managed/yt-dlp', source: 'managed' })
+  })
+
+  test('falls back to PATH when no override or managed binary exists', () => {
+    const resolved = resolveYtDlpBinaryInfo({
+      env: {},
+      managedPath: '/managed/yt-dlp',
+      exists: () => false,
+      which: () => '/path/yt-dlp'
+    })
+
+    expect(resolved).toEqual({ path: '/path/yt-dlp', source: 'path' })
+  })
 })
 
 describe('yt-dlp passthrough mode resolution', () => {

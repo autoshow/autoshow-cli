@@ -112,12 +112,15 @@ Rules:
 |--------|-------|
 | Selector | default, or `--url-backend defuddle` |
 | Inputs | Remote article URLs and local `.html` / `.htm` files |
-| Runtime | Local HTML/article extraction |
+| Runtime | Local HTML/article extraction through the Defuddle CLI |
 
 ```bash
+bun as setup --step defuddle
 bun as extract https://ajcwebdev.com
 bun as extract input/article.html --out json
 ```
+
+Set `AUTOSHOW_DEFUDDLE_BIN` to use a specific `defuddle` executable. Otherwise AutoShow tries the managed runtime install, then a `defuddle` binary on `PATH`.
 
 Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend is requested.
 

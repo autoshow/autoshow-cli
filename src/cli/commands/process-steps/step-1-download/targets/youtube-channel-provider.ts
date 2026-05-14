@@ -3,6 +3,7 @@ import { exec } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
 import type { YtDlpFlatEntry, YtDlpListOptions } from '~/types'
 import { buildYtDlpFailureMessage, buildYtDlpListArgs } from '../audio/yt-dlp-options'
+import { getYtDlpBinary } from '../audio/yt-dlp-binary'
 
 const YOUTUBE_CHANNEL_PATH_PATTERNS = [
   /^\/@[^/]+\/?$/,
@@ -86,7 +87,7 @@ export const tryEnumerateYoutubeChannel = async (
   l.write('info', `Enumerating YouTube channel/playlist: ${url}`)
 
   const args = await buildYoutubeChannelListArgs(url, batchOpts)
-  const res = await exec('yt-dlp', args)
+  const res = await exec(getYtDlpBinary(), args)
 
   if (res.exitCode !== 0) {
     l.warn(buildYtDlpFailureMessage('list', res.stderr || res.stdout || `failed to enumerate ${url}`))

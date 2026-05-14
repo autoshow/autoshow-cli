@@ -1,5 +1,5 @@
-import { readdir } from 'node:fs/promises'
-import { basename, extname, join } from 'node:path'
+import { mkdir } from 'node:fs/promises'
+import { basename, dirname, extname, join } from 'node:path'
 import type { ExtractionOptions, LocalExtractOcrEngine, PageResult } from '~/types'
 import { exec, commandExists } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
@@ -7,10 +7,19 @@ import { assertNever } from '~/utils/validate/assert-never'
 import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { ensureTesseractSetup, ocrImage } from './ocr-utils/tesseract-utils'
+import { openZip, readZipEntryData } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
 
 export const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 
 const IMAGE_ARCHIVE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tif', '.tiff'])
+
+const sanitizeZipEntryPath = (entryName: string): string | null => {
+  const parts = entryName
+    .replace(/\\/g, '/')
+    .split('/')
+    .filter((part) => part.length > 0 && part !== '.' && part !== '..')
+  return parts.length > 0 ? parts.join('/') : null
+}
 
 const naturalCompare = (a: string, b: string): number => {
   const re = /(\d+)|(\D+)/g
@@ -36,28 +45,22 @@ export const extractCbzImages = async (
   filePath: string,
   tempDir: string
 ): Promise<string[]> => {
-  const result = await exec('unzip', ['-o', filePath, '-d', tempDir])
-  if (result.exitCode !== 0) {
-    throw new Error(
-      `Failed to extract CBZ archive ${filePath}: ${result.stderr || result.stdout}`
-    )
+  const zip = await openZip(filePath)
+  const imageEntries = [...zip.entries.values()]
+    .filter((entry) => IMAGE_ARCHIVE_EXTENSIONS.has(extname(entry.name).toLowerCase()))
+    .sort((a, b) => naturalCompare(a.name, b.name))
+  const images: string[] = []
+
+  for (const entry of imageEntries) {
+    const safePath = sanitizeZipEntryPath(entry.name)
+    if (!safePath) continue
+
+    const imagePath = join(tempDir, safePath)
+    await mkdir(dirname(imagePath), { recursive: true })
+    await Bun.write(imagePath, readZipEntryData(zip.buf, entry))
+    images.push(imagePath)
   }
 
-  const collectImages = async (dir: string): Promise<string[]> => {
-    const images: string[] = []
-    const entries = await readdir(dir, { withFileTypes: true })
-    for (const entry of entries) {
-      const fullPath = join(dir, entry.name)
-      if (entry.isDirectory()) {
-        images.push(...await collectImages(fullPath))
-      } else if (IMAGE_ARCHIVE_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
-        images.push(fullPath)
-      }
-    }
-    return images
-  }
-
-  const images = await collectImages(tempDir)
   images.sort((a, b) => naturalCompare(a, b))
   return images
 }

@@ -4,7 +4,7 @@ import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { requireUvCommand, reverbDiarizationDir, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 
 const REVERB_SCRIPTS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -16,22 +16,64 @@ export const getHuggingFaceToken = (): string | null => {
   if (token && token.trim().length > 0) {
     return token.trim()
   }
-  l.warn(`No HuggingFace token found. Set the HUGGINGFACE_TOKEN environment variable.`)
   return null
 }
 
-export const runDiarization = async (audioPath: string, hfToken: string, outputDir: string): Promise<string | null> => {
-  const modelName = 'Revai/reverb-diarization-v2'
+const directoryHasFiles = async (root: string): Promise<boolean> => {
+  try {
+    const entries = await readdir(root, { withFileTypes: true })
+    for (const entry of entries) {
+      const path = `${root}/${entry.name}`
+      if (entry.isFile()) return true
+      if (entry.isDirectory() && await directoryHasFiles(path)) return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
+export type ReverbDiarizationModel = {
+  modelName: string
+  hfToken: string | null
+}
+
+export const resolveDiarizationModel = async (): Promise<ReverbDiarizationModel | null> => {
+  if (await directoryHasFiles(reverbDiarizationDir)) {
+    return {
+      modelName: reverbDiarizationDir,
+      hfToken: null
+    }
+  }
+
+  const hfToken = getHuggingFaceToken()
+  if (!hfToken) {
+    l.warn('Reverb diarization snapshot is missing. Set HUGGINGFACE_TOKEN and run `bun as setup --step reverb` to download it.')
+    return null
+  }
+
+  return {
+    modelName: 'Revai/reverb-diarization-v2',
+    hfToken
+  }
+}
+
+export const runDiarization = async (
+  audioPath: string,
+  diarizationModel: ReverbDiarizationModel,
+  outputDir: string
+): Promise<string | null> => {
   const uvEnvDir = reverbUvEnvDir
   const scriptPath = join(REVERB_SCRIPTS_DIR, 'reverb-diarization.py')
   const rttmPath = `${outputDir}/diarization.rttm`
   try {
-    const result = await exec('uv', [
+    const uvCommand = await requireUvCommand()
+    const result = await exec(uvCommand, [
       'run', '-p', `${uvEnvDir}/bin/python`,
       scriptPath,
       audioPath,
-      hfToken,
-      modelName
+      diarizationModel.hfToken ?? '',
+      diarizationModel.modelName
     ])
     if (result.stderr && result.exitCode !== 0) {
       const stderrLines = result.stderr.split('\n').filter((line: string) => line.trim())
@@ -61,7 +103,8 @@ export const mergeASRWithDiarization = async (ctmPath: string, rttmPath: string,
   const uvEnvDir = reverbUvEnvDir
   const scriptPath = join(REVERB_SCRIPTS_DIR, 'assign-words-to-speakers.py')
   try {
-    const result = await exec('uv', [
+    const uvCommand = await requireUvCommand()
+    const result = await exec(uvCommand, [
       'run', '-p', `${uvEnvDir}/bin/python`,
       scriptPath,
       rttmPath,

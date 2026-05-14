@@ -5,6 +5,7 @@ import type { ProcessCommand } from '~/types'
 import { isLikelyUrl } from './target-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { buildYtDlpListArgs, buildYtDlpFailureMessage } from '../audio/yt-dlp-options'
+import { getYtDlpBinary } from '../audio/yt-dlp-binary'
 
 const YtDlpPlaylistItemSchema = v.object({
   webpage_url: v.optional(v.string(), undefined),
@@ -33,7 +34,7 @@ export const buildYoutubeCollectionListArgs = async (url: string): Promise<strin
 const getYoutubeCollectionItems = async (url: string): Promise<string[]> => {
   try {
     const args = await buildYoutubeCollectionListArgs(url)
-    const res = await exec('yt-dlp', args)
+    const res = await exec(getYtDlpBinary(), args)
     if (res.exitCode !== 0) {
       l.warn(buildYtDlpFailureMessage('list', res.stderr || res.stdout || 'unknown yt-dlp error'))
       return []

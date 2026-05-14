@@ -77,7 +77,7 @@ const splitTocHref = (hrefRaw: string): { href: string, fragment?: string } => {
   }
 }
 
-const cleanEpubHtmlFragmentToText = (html: string): string =>
+const cleanEpubHtmlFragmentToText = (html: string): Promise<string> =>
   cleanEpubHtmlToText(`<html><body>${html}</body></html>`)
 
 const readTagTexts = (xml: string, tagName: string): string[] =>
@@ -180,7 +180,7 @@ const parseNcx = (ncxXml: string, packagePath: string): EpubTocItem[] => {
   return scanTagBlocks(navMapInner, 'navPoint').map(block => parseNcxNavPoint(block, packagePath))
 }
 
-const parseNavHtml = (navXml: string, packagePath: string): EpubTocItem[] => {
+const parseNavHtml = async (navXml: string, packagePath: string): Promise<EpubTocItem[]> => {
   const xml = stripNsPrefixes(navXml)
   const navBlocks = scanTagBlocks(xml, 'nav')
   if (navBlocks.length === 0) return []
@@ -198,7 +198,7 @@ const parseNavHtml = (navXml: string, packagePath: string): EpubTocItem[] => {
     const hrefRaw = (match[1] || match[2] || '').trim()
     const hrefParts = splitTocHref(hrefRaw)
     const href = hrefParts.href
-    const title = collapseWhitespace(cleanEpubHtmlFragmentToText(match[3] || ''))
+    const title = collapseWhitespace(await cleanEpubHtmlFragmentToText(match[3] || ''))
     if (!href || !title) continue
     items.push({
       title,
@@ -308,7 +308,7 @@ const isLikelyHeadingLine = (text: string, title: string, tagName: string): bool
     || /^(?:introduction|prologue|epilogue|table of contents|contents)$/.test(key)
 }
 
-const findNearbyHeadingStart = (html: string, anchorOffset: number, tocTitle: string): number | undefined => {
+const findNearbyHeadingStart = async (html: string, anchorOffset: number, tocTitle: string): Promise<number | undefined> => {
   const minOffset = Math.max(0, anchorOffset - HEADING_ADJUST_BEFORE_CHARS)
   const maxOffset = Math.min(html.length, anchorOffset + HEADING_ADJUST_AFTER_CHARS)
   const headingRegex = /<(h[1-6]|p)\b[\s\S]*?<\/\1>/gi
@@ -321,7 +321,7 @@ const findNearbyHeadingStart = (html: string, anchorOffset: number, tocTitle: st
     if (end < minOffset) continue
     if (start > maxOffset) break
 
-    const text = cleanEpubHtmlFragmentToText(match[0])
+    const text = await cleanEpubHtmlFragmentToText(match[0])
     if (!isLikelyHeadingLine(text, tocTitle, match[1] ?? '')) continue
     candidates.push({ start, end, text })
   }
@@ -378,12 +378,12 @@ const findFragmentAnchorOffset = (html: string, fragment: string): number | unde
   return undefined
 }
 
-const resolveTocBoundaryOffset = (
+const resolveTocBoundaryOffset = async (
   html: string,
   tocItem: EpubTocItem,
   spinePath: string,
   warnings: string[]
-): number | undefined => {
+): Promise<number | undefined> => {
   const fragment = tocItem.fragment
   if (!fragment) {
     return 0
@@ -395,22 +395,25 @@ const resolveTocBoundaryOffset = (
     return undefined
   }
 
-  return findNearbyHeadingStart(html, anchorOffset, tocItem.title) ?? anchorOffset
+  return await findNearbyHeadingStart(html, anchorOffset, tocItem.title) ?? anchorOffset
 }
 
-const buildTocBoundaries = (
+const buildTocBoundaries = async (
   html: string,
   spinePath: string,
   tocItems: EpubTocItem[],
   warnings: string[]
-): TocBoundary[] =>
-  tocItems
-    .map((tocItem, tocOrder): TocBoundary | null => {
-      const startOffset = resolveTocBoundaryOffset(html, tocItem, spinePath, warnings)
-      return startOffset === undefined ? null : { tocItem, startOffset, tocOrder }
-    })
-    .filter((boundary): boundary is TocBoundary => boundary !== null)
-    .sort((a, b) => a.startOffset - b.startOffset || a.tocOrder - b.tocOrder)
+): Promise<TocBoundary[]> => {
+  const boundaries: TocBoundary[] = []
+  for (const [tocOrder, tocItem] of tocItems.entries()) {
+    const startOffset = await resolveTocBoundaryOffset(html, tocItem, spinePath, warnings)
+    if (startOffset !== undefined) {
+      boundaries.push({ tocItem, startOffset, tocOrder })
+    }
+  }
+
+  return boundaries.sort((a, b) => a.startOffset - b.startOffset || a.tocOrder - b.tocOrder)
+}
 
 const appendChapter = (
   chapters: EpubChapter[],
@@ -437,17 +440,17 @@ const appendChapter = (
   })
 }
 
-const buildChapterFromFullSpineItem = (
+const buildChapterFromFullSpineItem = async (
   chapters: EpubChapter[],
   spineItem: EpubInspectionPayload['spine'][number],
   spinePath: string,
   html: string,
   tocItem?: EpubTocItem
-): void => {
+): Promise<void> => {
   const title = tocItem?.title
     ?? firstTagText(html, 'h1')
     ?? firstTagText(html, 'title')
-  const text = cleanEpubHtmlToText(html)
+  const text = await cleanEpubHtmlToText(html)
   appendChapter(chapters, spineItem, text, {
     path: spinePath,
     ...(title ? { title } : {}),
@@ -455,26 +458,26 @@ const buildChapterFromFullSpineItem = (
   })
 }
 
-const buildChaptersFromTocBoundaries = (
+const buildChaptersFromTocBoundaries = async (
   chapters: EpubChapter[],
   spineItem: EpubInspectionPayload['spine'][number],
   spinePath: string,
   html: string,
   tocItems: EpubTocItem[],
   warnings: string[]
-): boolean => {
+): Promise<boolean> => {
   if (tocItems.length === 0) {
     return false
   }
 
-  const boundaries = buildTocBoundaries(html, spinePath, tocItems, warnings)
+  const boundaries = await buildTocBoundaries(html, spinePath, tocItems, warnings)
   if (boundaries.length === 0) {
     return false
   }
 
   const firstBoundary = boundaries[0] as TocBoundary
   if (firstBoundary.startOffset > 0) {
-    const preludeText = cleanEpubHtmlFragmentToText(html.slice(0, firstBoundary.startOffset))
+    const preludeText = await cleanEpubHtmlFragmentToText(html.slice(0, firstBoundary.startOffset))
     if (preludeText.length > 0) {
       const title = firstTagText(html, 'title')
       appendChapter(chapters, spineItem, preludeText, {
@@ -488,7 +491,7 @@ const buildChaptersFromTocBoundaries = (
     const boundary = boundaries[index] as TocBoundary
     const nextBoundary = boundaries[index + 1]
     const endOffset = nextBoundary ? nextBoundary.startOffset : html.length
-    const text = cleanEpubHtmlFragmentToText(html.slice(boundary.startOffset, endOffset))
+    const text = await cleanEpubHtmlFragmentToText(html.slice(boundary.startOffset, endOffset))
     appendChapter(chapters, spineItem, text, {
       path: spinePath,
       title: boundary.tocItem.title,
@@ -518,11 +521,11 @@ const buildChapters = async (
     const xhtml = await reader.readText(spineItem.path)
     const stripped = stripNsPrefixes(xhtml)
     const tocForPath = tocByPath.get(spineItem.path) ?? []
-    if (buildChaptersFromTocBoundaries(chapters, spineItem, spineItem.path, stripped, tocForPath, warnings)) {
+    if (await buildChaptersFromTocBoundaries(chapters, spineItem, spineItem.path, stripped, tocForPath, warnings)) {
       continue
     }
 
-    buildChapterFromFullSpineItem(chapters, spineItem, spineItem.path, stripped, tocForPath[0])
+    await buildChapterFromFullSpineItem(chapters, spineItem, spineItem.path, stripped, tocForPath[0])
   }
 
   return chapters
@@ -623,7 +626,7 @@ export const inspectEpubWithReader = async (
     tocItems = parseNcx(await reader.readText(ncxItem.path), resolvedPackagePath)
     tocSource = 'ncx'
   } else if (navItem?.path && reader.hasEntry(navItem.path)) {
-    tocItems = parseNavHtml(await reader.readText(navItem.path), resolvedPackagePath)
+    tocItems = await parseNavHtml(await reader.readText(navItem.path), resolvedPackagePath)
     tocSource = 'nav'
   } else {
     warnings.push('No TOC source found (neither NCX nor EPUB3 nav)')

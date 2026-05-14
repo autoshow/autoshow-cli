@@ -1,4 +1,5 @@
 import { defineCliCommand } from '~/cli/native'
+import { basename, extname } from 'node:path'
 import modelLinks from './model-links'
 import * as l from '~/utils/logger'
 import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/run-defuddle-url'
@@ -28,6 +29,9 @@ const looksLikeHtmlDocument = (content: string): boolean =>
   /^(?:<!doctype html\b|<html\b|<head\b|<body\b)/i.test(content.trimStart())
 const formatErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
+const isRemoteUrlToken = (arg: string): boolean => /^(?:blob:)?https?:\/\//i.test(arg)
+const isLinksInputFileArg = (arg: string): boolean =>
+  !isRemoteUrlToken(arg) && /\.(?:md|txt)$/i.test(arg)
 const getFetchableDocumentationUrl = (url: string): string => {
   const match = /^blob:(https?:\/\/.+)$/i.exec(url)
   return match?.[1] ?? url
@@ -37,31 +41,6 @@ const createHttpFetchError = (response: Response): Error & { status: number, hea
   error.status = response.status
   error.headers = response.headers
   return error
-}
-let defuddleConsoleErrorQueue: Promise<void> = Promise.resolve()
-const isDefuddleConsoleError = (args: Parameters<typeof console.error>): boolean =>
-  typeof args[0] === 'string' && args[0].startsWith('Defuddle')
-const withSuppressedDefuddleConsoleErrors = async <T>(operation: () => Promise<T>): Promise<T> => {
-  const previousExtraction = defuddleConsoleErrorQueue
-  let releaseExtraction: () => void = () => {}
-  defuddleConsoleErrorQueue = new Promise<void>((resolve) => {
-    releaseExtraction = resolve
-  })
-
-  await previousExtraction
-
-  const originalConsoleError = console.error
-  console.error = (...args: Parameters<typeof console.error>): void => {
-    if (isDefuddleConsoleError(args)) return
-    originalConsoleError(...args)
-  }
-
-  try {
-    return await operation()
-  } finally {
-    console.error = originalConsoleError
-    releaseExtraction()
-  }
 }
 
 export const getDefaultLinksOutputFileName = (
@@ -91,6 +70,23 @@ const getDefaultOutputPath = (
   globalSections: string[]
 ): URL => new URL(getDefaultLinksOutputFileName(serviceSelections, globalSections), LINKS_OUTPUT_DIR)
 
+const sanitizeInputFileStem = (inputFilePath: string): string => {
+  const extension = extname(inputFilePath)
+  const rawStem = basename(inputFilePath, extension)
+  const sanitized = rawStem
+    .replace(/[^a-zA-Z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+
+  return sanitized.length > 0 ? sanitized : 'urls'
+}
+
+export const getDefaultLinksInputOutputFileName = (inputFilePath: string): string =>
+  `${sanitizeInputFileStem(inputFilePath)}-links.md`
+
+const getDefaultInputFileOutputPath = (inputFilePath: string): URL =>
+  new URL(getDefaultLinksInputOutputFileName(inputFilePath), LINKS_OUTPUT_DIR)
+
 const serviceEntries = Object.entries(data)
 const serviceKeySet = new Set(serviceEntries.map(([serviceName]) => serviceName.toLowerCase()))
 const serviceSectionKeyMap = new Map(
@@ -112,6 +108,7 @@ export const parseLinksArgv = (argv: string[]): LinksSelection => {
   const serviceSelections = new Map<string, string[]>()
   const globalSections: string[] = []
   let currentService: string | null = null
+  let inputFilePath: string | undefined
 
   for (const arg of args) {
     if (arg === '--help' || arg === '-h' || arg === '--version' || arg === '-v') continue
@@ -125,6 +122,11 @@ export const parseLinksArgv = (argv: string[]): LinksSelection => {
       } else {
         throw CLIUsageError(`Unknown links selector "--${flag}". Known providers: ${knownProviders.join(', ')}. Known sections: ${knownSections.join(', ')}.`)
       }
+    } else if (isLinksInputFileArg(arg)) {
+      if (inputFilePath) {
+        throw CLIUsageError('links accepts only one input file')
+      }
+      inputFilePath = arg
     } else if (currentService) {
       serviceSelections.get(currentService)!.push(arg.toLowerCase())
     } else {
@@ -132,7 +134,15 @@ export const parseLinksArgv = (argv: string[]): LinksSelection => {
     }
   }
 
-  return { serviceSelections, globalSections }
+  if (inputFilePath && (serviceSelections.size > 0 || globalSections.length > 0)) {
+    throw CLIUsageError('links input file mode cannot be combined with provider or section selectors')
+  }
+
+  return {
+    serviceSelections,
+    globalSections,
+    ...(inputFilePath ? { inputFilePath } : {})
+  }
 }
 
 const assertKnownSections = (
@@ -194,6 +204,67 @@ export const collectLinks = (
   return [...new Set(links)]
 }
 
+const stripLinksInputComments = (content: string): string =>
+  content
+    .replace(/<!--[\s\S]*?-->/g, '\n')
+    .split(/\r?\n/)
+    .filter((line) => {
+      const trimmed = line.trim()
+      return trimmed.length > 0 && !trimmed.startsWith('#') && !trimmed.startsWith('//')
+    })
+    .join('\n')
+
+const normalizeExtractedUrl = (url: string): string =>
+  url
+    .trim()
+    .replace(/^<|>$/g, '')
+    .replace(/[)\],.;!?]+$/g, '')
+
+export const extractLinksInputUrls = (content: string): string[] => {
+  const searchableContent = stripLinksInputComments(content)
+  const urls: string[] = []
+  const seen = new Set<string>()
+  const addUrl = (rawUrl: string): void => {
+    const url = normalizeExtractedUrl(rawUrl)
+    if (!/^(?:blob:)?https?:\/\/\S+$/i.test(url)) return
+    if (seen.has(url)) return
+    seen.add(url)
+    urls.push(url)
+  }
+
+  for (const match of searchableContent.matchAll(/(?:blob:)?https?:\/\/[^\s<>"'`]+/gi)) {
+    addUrl(match[0])
+  }
+
+  return urls
+}
+
+export const readLinksInputFile = async (inputFilePath: string): Promise<string[]> => {
+  const inputFile = Bun.file(inputFilePath)
+  const exists = await inputFile.exists()
+  if (!exists) {
+    throw CLIUsageError(`Links input file not found: ${inputFilePath}`)
+  }
+
+  let content: string
+  try {
+    content = await inputFile.text()
+  } catch (error) {
+    throw CLIUsageError(`Failed to read links input file ${inputFilePath}: ${formatErrorMessage(error)}`)
+  }
+
+  if (content.trim().length === 0) {
+    throw CLIUsageError(`Links input file is empty: ${inputFilePath}`)
+  }
+
+  const urls = extractLinksInputUrls(content)
+  if (urls.length === 0) {
+    throw CLIUsageError(`No valid remote URLs found in links input file: ${inputFilePath}`)
+  }
+
+  return urls
+}
+
 const downloadUrl = async (
   url: string,
   fetchImpl: FetchFn
@@ -234,14 +305,12 @@ const fetchUrl = async (url: string, fetchImpl: FetchFn): Promise<FetchUrlResult
     let content: string
     if (isHtmlContentType(contentType) || looksLikeHtmlDocument(fetchedText)) {
       try {
-        content = (await withSuppressedDefuddleConsoleErrors(async () =>
-          await extractHtmlToMarkdown({
-            html: fetchedText,
-            documentUrl: finalUrl,
-            sourceUrl: url,
-            finalUrl
-          })
-        )).markdown
+        content = (await extractHtmlToMarkdown({
+          html: fetchedText,
+          documentUrl: finalUrl,
+          sourceUrl: url,
+          finalUrl
+        })).markdown
       } catch (defuddleError) {
         l.warn(`Defuddle failed for ${url}; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
         try {
@@ -271,15 +340,21 @@ export const runLinksWithArgv = async (
   argv: string[],
   options: RunLinksOptions = {}
 ): Promise<{ outputPath: string, urlCount: number, lineCount: number }> => {
-  const { serviceSelections, globalSections } = parseLinksArgv(argv)
+  const { serviceSelections, globalSections, inputFilePath } = parseLinksArgv(argv)
   assertKnownSections(serviceSelections, globalSections)
-  const links = collectLinks(serviceSelections, globalSections)
+  const links = inputFilePath
+    ? await readLinksInputFile(inputFilePath)
+    : collectLinks(serviceSelections, globalSections)
 
   if (links.length === 0) {
     throw CLIUsageError('No documentation links matched the provided selections')
   }
 
-  const outputPath = options.outputPath ?? getDefaultOutputPath(serviceSelections, globalSections)
+  const outputPath = options.outputPath ?? (
+    inputFilePath
+      ? getDefaultInputFileOutputPath(inputFilePath)
+      : getDefaultOutputPath(serviceSelections, globalSections)
+  )
   const fetchImpl = options.fetchImpl ?? fetch
 
   l.write('info', `Fetching ${links.length} documentation URLs`)
@@ -325,7 +400,8 @@ export const linksCommand = defineCliCommand({
   help: {
     examples: [
       ['bun as links', 'Fetch all provider documentation'],
-      ['bun as links stt', 'Fetch STT documentation across every provider']
+      ['bun as links stt', 'Fetch STT documentation across every provider'],
+      ['bun as links urls.md', 'Fetch documentation URLs listed in a local file']
     ]
   }
 }, runLinks)

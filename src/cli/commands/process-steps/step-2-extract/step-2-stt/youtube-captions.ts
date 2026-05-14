@@ -13,6 +13,7 @@ import type {
 import { exec } from '~/utils/cli-utils'
 import { getVideoInfo } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { buildYtDlpFailureMessage, buildYtDlpSubtitleDownloadArgs } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-options'
+import { getYtDlpBinary } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
 import { readExistingSttRun } from './stt-batch/stt-run-state'
 import { countTokens, formatTranscriptText, toTimestamp } from './stt-utils/stt-utils'
 import { writeSttResultArtifact } from './stt-utils/stt-result-artifacts'
@@ -492,7 +493,7 @@ export const tryResolveYoutubeCaptionTranscription = async (
 
   try {
     const args = await buildYtDlpSubtitleDownloadArgs(watchUrl, tempDir, selection.kind)
-    const result = await exec('yt-dlp', args)
+    const result = await exec(getYtDlpBinary(), args)
     if (result.exitCode !== 0) {
       l.warn(buildYtDlpFailureMessage('subtitles', result.stderr || result.stdout || 'unknown yt-dlp error'))
       return null

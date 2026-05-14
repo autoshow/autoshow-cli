@@ -1,7 +1,12 @@
+import { mkdir } from 'node:fs/promises'
+import { dirname } from 'node:path'
 import { commandExists, runInherit, detectPlatform } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import { withRetry } from '~/utils/retries'
+import { makeExecutable } from '~/utils/filesystem'
+import { ytDlpManagedBinaryPath } from '~/utils/runtime-paths'
+import { hasYtDlpBinary } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
 
 const shouldPrintCompletion = (): boolean => {
   return (process.env['AUTOSHOW_COMPACT_SETUP'] || '0') !== '1'
@@ -37,7 +42,7 @@ const installFfmpeg = async (): Promise<void> => {
 }
 
 const installYtDlp = async (): Promise<void> => {
-  if (commandExists('yt-dlp')) {
+  if (hasYtDlpBinary()) {
     return
   }
 
@@ -56,19 +61,18 @@ const installYtDlp = async (): Promise<void> => {
       throw new Error('yt-dlp unavailable in Docker container')
     }
 
-    const tempPath = `/tmp/yt-dlp-${Date.now()}`
+    await mkdir(dirname(ytDlpManagedBinaryPath), { recursive: true })
     await withRetry(
       { retryClass: 'setup_download', operationName: 'yt-dlp-binary' },
       async () => {
         await downloadFile({
           url: 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp',
-          destination: tempPath,
+          destination: ytDlpManagedBinaryPath,
           flowId: 'yt-dlp-binary'
         })
       }
     )
-    await runInherit('sudo', ['mv', tempPath, '/usr/local/bin/yt-dlp'])
-    await runInherit('sudo', ['chmod', 'a+rx', '/usr/local/bin/yt-dlp'])
+    await makeExecutable(ytDlpManagedBinaryPath)
     l.write('success', 'yt-dlp installed')
     return
   }

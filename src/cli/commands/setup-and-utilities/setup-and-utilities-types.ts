@@ -143,6 +143,7 @@ export type ModelLinksData = Record<string, Record<string, string[]>>
 export type LinksSelection = {
   serviceSelections: Map<string, string[]>
   globalSections: string[]
+  inputFilePath?: string
 }
 
 export type FetchFn = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
@@ -310,6 +311,6 @@ export type SetupToolStatus = {
 }
 
 export type SetupStepId =
-  | 'uv' | 'yt-dlp' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
+  | 'uv' | 'yt-dlp' | 'defuddle' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
   | 'reverb' | 'calibre' | 'all'
   | 'transcription' | 'write' | 'tts' | 'image' | 'video' | 'music' | 'sample'

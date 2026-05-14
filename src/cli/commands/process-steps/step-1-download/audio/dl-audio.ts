@@ -13,6 +13,7 @@ import type { DownloadAudioOptions } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { materializeNormalizedAudioArtifact, planNormalizedAudioArtifact } from './audio-normalize'
 import { logAudioDownload, logAudioNormalize, logAudioOutput } from './audio-logging'
+import { getYtDlpBinary, hasYtDlpBinary } from './yt-dlp-binary'
 
 
 let ytDlpVersionVerified = false
@@ -151,7 +152,7 @@ const verifyYtDlpVersion = async (): Promise<void> => {
   }
 
   try {
-    const result = await exec('yt-dlp', ['--version'])
+    const result = await exec(getYtDlpBinary(), ['--version'])
     
     if (result.exitCode !== 0) {
       throw new Error('yt-dlp is not working properly')
@@ -255,7 +256,7 @@ export const downloadAudio = async (options: DownloadAudioOptions, videoMetadata
       ? await finalizeDownloadedMedia(mediaPath, options.outputDir, videoMetadata)
       : await normalizeDownloadedAudio(mediaPath, options.outputDir, videoMetadata, { removeOriginal: true })
   } else {
-    if (!commandExists('yt-dlp')) {
+    if (!hasYtDlpBinary()) {
       await setupYtDependencies()
     }
     await verifyYtDlpVersion()

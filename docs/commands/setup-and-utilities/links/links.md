@@ -7,6 +7,7 @@ Fetch curated provider documentation pages and write one combined markdown file 
 - [Usage](#usage)
 - [Overview](#overview)
 - [Selection syntax](#selection-syntax)
+- [Input file mode](#input-file-mode)
 - [Supported providers](#supported-providers)
 - [Global sections](#global-sections)
 - [Examples](#examples)
@@ -18,6 +19,7 @@ Fetch curated provider documentation pages and write one combined markdown file 
 
 ```bash
 bun as links
+bun as links urls.md
 bun as links <global-section>...
 bun as links --<provider> [section...]
 bun as links <global-section>... --<provider> [section...] [--<provider> [section...]]
@@ -25,13 +27,15 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 
 ## Overview
 
-`links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links/`, fetches every matched page, and concatenates the results into a single local file.
+`links` reads the curated URL registry from `src/cli/commands/setup-and-utilities/links/model-links/`, fetches every matched page, and concatenates the results into a single local file. It can also read a standalone local `.md` or `.txt` file containing remote documentation URLs.
 
 - Output path: `project/links/<normalized-selection>-links.md`
 - Examples: `project/links/all-all-links.md`, `project/links/all-stt-links.md`, `project/links/gemini-all-links.md`, `project/links/gemini-general-tts-links.md`, `project/links/spider-all-links.md`, `project/links/spider-url-links.md`
 - Existing output is overwritten on each run
 - Duplicate URLs are removed before fetching, so overlapping selections only fetch once
 - Raw markdown/text docs are appended as-is; HTML docs pages are converted to markdown locally before they are appended
+
+Input file mode uses `project/links/<input-basename>-links.md`; for example, `bun as links urls.md` writes `project/links/urls-links.md`.
 
 ## Selection syntax
 
@@ -42,6 +46,18 @@ bun as links <global-section>... --<provider> [section...] [--<provider> [sectio
 - Provider selectors and section names are case-insensitive.
 - Unknown providers or unknown sections exit with a usage error.
 - If a valid selection resolves to no URLs, the command exits with `No documentation links matched the provided selections`.
+
+## Input file mode
+
+Pass one local `.md` or `.txt` file to fetch URLs from that file instead of the curated registry:
+
+```bash
+bun as links urls.md
+```
+
+The file may contain bare `http://` or `https://` URLs, markdown links like `[docs](https://example.com/docs)`, and `blob:http://` or `blob:https://` documentation URLs. Headings, comments, blank lines, bullets, and non-URL prose are ignored. Duplicate URLs are fetched once in first-seen order.
+
+Input file mode is standalone. Do not combine it with provider selectors or section selectors.
 
 ## Supported providers
 
@@ -108,6 +124,9 @@ bun as links
 # Fetch all TTS docs across every provider
 bun as links tts
 
+# Fetch remote docs listed in urls.md
+bun as links urls.md
+
 # Fetch every curated OpenAI doc
 bun as links --openai
 
@@ -163,6 +182,7 @@ Global flags like `--config-path` and `--allow-over-budget` may still appear in 
 - Provider and section coverage comes entirely from `src/cli/commands/setup-and-utilities/links/model-links/`.
 - The generated file is always a single combined markdown file. There is no CLI flag to choose a different output path.
 - Curated `.md` / `.txt` endpoints and normal HTML docs pages can be mixed in the same provider/section selection. HTML pages are converted locally first; if that extraction fails, the command falls back to Firecrawl article extraction before marking the URL failed.
+- Input file entries must be remote documentation/page URLs; local file entries inside the input file are ignored.
 - Documentation links with a `blob:https://` or `blob:http://` wrapper are fetched through the underlying HTTP URL while preserving the original source marker in the output.
 - The filename is derived from the normalized provider and section selections, lowercased, deduped, and sorted into a stable order.
 - Provider selectors are parsed manually from argv, so they are documented here even though they do not appear in the standard help flag list.

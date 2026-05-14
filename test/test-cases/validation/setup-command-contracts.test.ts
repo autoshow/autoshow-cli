@@ -88,7 +88,26 @@ describe('setup command contracts', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('--gcloud')
     expect(result.stdout).toContain('--aws')
+    expect(result.stdout).toContain('defuddle')
     expect(result.stdout).not.toContain('--cloudflare')
     expect(result.stdout).not.toContain('Cloudflare')
+  })
+
+  test('setup usage contracts include the defuddle step', async () => {
+    const result = await runCommand(['src/cli/create-cli.ts', 'setup', '--step', 'not-real'], {
+      env: { NO_COLOR: '1' }
+    })
+
+    expect(result.exitCode).toBe(2)
+    expect(`${result.stdout}\n${result.stderr}`).toContain('defuddle')
+  })
+
+  test('Linux yt-dlp setup writes the managed runtime binary without sudo chmod or mv', async () => {
+    const source = await Bun.file('src/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio.ts').text()
+
+    expect(source).toContain('ytDlpManagedBinaryPath')
+    expect(source).toContain('makeExecutable(ytDlpManagedBinaryPath)')
+    expect(source).not.toContain("runInherit('sudo', ['mv'")
+    expect(source).not.toContain("runInherit('sudo', ['chmod'")
   })
 })

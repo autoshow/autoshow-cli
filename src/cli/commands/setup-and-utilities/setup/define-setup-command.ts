@@ -11,7 +11,7 @@ import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 import type { SetupStepId } from '~/types'
 
-const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'video', 'music', 'sample']
+const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'defuddle', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'video', 'music', 'sample']
 const SAMPLE_ONLY_FLAGS = ['--out', '--refresh', '--verify-only', '--valid-only'] as const
 const FOCUSED_SETUP_CONFLICT_FLAGS = [
   '--sample',
@@ -65,6 +65,7 @@ export const setupCommand = defineCliCommand({
       ['bun as setup --sample --verify-only', 'Validate deterministic sample fixtures without regenerating'],
       ['bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF', 'Download Whisper and llama.cpp models without running inference'],
       ['bun as setup --doctor', 'Check prerequisites without installing'],
+      ['bun as setup --step defuddle', 'Install the managed Defuddle CLI'],
       ['bun as setup --step whisper-binary --force-redownload', 'Reinstall whisper binary']
     ]
   }

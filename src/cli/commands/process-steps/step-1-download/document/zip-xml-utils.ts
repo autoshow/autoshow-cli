@@ -17,7 +17,7 @@ const findEocd = (buf: Buffer): number => {
   throw new Error('Not a valid ZIP file: End of Central Directory not found')
 }
 
-const readCentralDirectory = (buf: Buffer): ZipEntry[] => {
+export const readZipCentralDirectory = (buf: Buffer): ZipEntry[] => {
   const eocd = findEocd(buf)
   const cdCount  = buf.readUInt16LE(eocd + 10)
   const cdOffset = buf.readUInt32LE(eocd + 16)
@@ -44,7 +44,7 @@ const readCentralDirectory = (buf: Buffer): ZipEntry[] => {
   return entries
 }
 
-const readEntry = (buf: Buffer, entry: ZipEntry): Buffer => {
+export const readZipEntryData = (buf: Buffer, entry: ZipEntry): Buffer => {
   const lpos = entry.localOffset
   if (buf.readUInt32LE(lpos) !== LFH_SIG) {
     throw new Error(`Local file header missing for entry: ${entry.name}`)
@@ -61,11 +61,11 @@ const readEntry = (buf: Buffer, entry: ZipEntry): Buffer => {
 }
 
 const readEntryText = (buf: Buffer, entry: ZipEntry): string =>
-  readEntry(buf, entry).toString('utf8')
+  readZipEntryData(buf, entry).toString('utf8')
 
-const openZip = async (filePath: string): Promise<{ buf: Buffer, entries: Map<string, ZipEntry> }> => {
+export const openZip = async (filePath: string): Promise<{ buf: Buffer, entries: Map<string, ZipEntry> }> => {
   const buf = Buffer.from(await Bun.file(filePath).arrayBuffer())
-  const list = readCentralDirectory(buf)
+  const list = readZipCentralDirectory(buf)
   const entries = new Map(list.map(e => [e.name, e]))
   return { buf, entries }
 }

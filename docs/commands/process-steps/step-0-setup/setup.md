@@ -91,7 +91,7 @@ The same precedence rules apply everywhere in the CLI:
 The `setup` command currently supports:
 
 ```text
-uv | yt-dlp | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | video | music | sample
+uv | yt-dlp | defuddle | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | video | music | sample
 ```
 
 Isolated steps assume their prerequisites are already present. On a clean machine, prefer `bun as setup`.
@@ -99,6 +99,9 @@ Isolated steps assume their prerequisites are already present. On a clean machin
 ```bash
 # Document foundations: mutool + Calibre CLI tools
 bun as setup --step calibre
+
+# Local URL article extraction
+bun as setup --step defuddle
 
 # Focus only on Google Cloud STT + Document AI OCR + TTS readiness
 bun as setup --gcloud

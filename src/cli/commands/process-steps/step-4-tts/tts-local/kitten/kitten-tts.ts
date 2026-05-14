@@ -1,5 +1,5 @@
 import { rm } from 'node:fs/promises'
-import { commandExists, pathExists, runCapture, runInherit, kittenTtsUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { pathExists, runCapture, runUvCapture, runUvInherit, kittenTtsUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
 
@@ -36,15 +36,13 @@ const envExistsAndValid = async (): Promise<boolean> => {
 export const setupKittenTtsEnvironment = async (): Promise<void> => {
   l.write('info', 'Setting up Kitten TTS environment')
 
-  if (!commandExists('uv')) {
-    await setupUv()
-  }
+  await setupUv()
 
-  await runCapture('uv', ['python', 'install', PYTHON_VERSION], { allowFailure: true })
+  await runUvCapture(['python', 'install', PYTHON_VERSION], { allowFailure: true })
 
   await rm(kittenTtsUvEnvDir, { recursive: true, force: true })
 
-  const venv = await runInherit('uv', ['venv', '--python', PYTHON_VERSION, kittenTtsUvEnvDir], { allowFailure: true })
+  const venv = await runUvInherit(['venv', '--python', PYTHON_VERSION, kittenTtsUvEnvDir], { allowFailure: true })
   if (venv !== 0) {
     l.error('Failed to create Kitten TTS virtual environment')
     throw new Error('Failed to create Kitten TTS virtual environment')
@@ -58,8 +56,7 @@ export const setupKittenTtsEnvironment = async (): Promise<void> => {
     'numpy'
   ]
 
-  const installCode = await runInherit(
-    'uv',
+  const installCode = await runUvInherit(
     ['pip', 'install', '-p', `${kittenTtsUvEnvDir}/bin/python`, ...deps],
     { allowFailure: true, env: { UV_SKIP_WHEEL_FILENAME_CHECK: '1' } }
   )

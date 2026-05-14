@@ -11,8 +11,8 @@ import {
 import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
-import { getHuggingFaceToken, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'
-import { reverbUvEnvDir, reverbModelDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { resolveDiarizationModel, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'
+import { requireUvCommand, reverbUvEnvDir, reverbModelDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import { pollUntil } from '~/utils/retries'
 import { prepareLocalSttInput } from '../local-audio-normalize'
 import { REVERB_ASR_MODEL_ID } from '../../stt-model-labels'
@@ -194,8 +194,9 @@ export const runReverbTranscribe = async (
       '--verbatimicity', verbatimicity.toString(),
       '--gpu', device
     ]
-    const hfToken = getHuggingFaceToken()
-    const result = await exec('uv', args)
+    const diarizationModel = await resolveDiarizationModel()
+    const uvCommand = await requireUvCommand()
+    const result = await exec(uvCommand, args)
     if (result.stderr) {
       const stderrLines = result.stderr.split('\n').filter((line: string) => line.trim())
       let hasError = false
@@ -228,10 +229,10 @@ export const runReverbTranscribe = async (
     let transcription: TranscriptionResult
     let evidence: TranscriptionResult['evidence'] | undefined
     let ctmPath: string | null = null
-    if (hfToken) {
+    if (diarizationModel) {
       ctmPath = await findCTMFile(resultDir)
       if (ctmPath) {
-        const rttmPath = await runDiarization(preparedInput.audioPath, hfToken, resultDir)
+        const rttmPath = await runDiarization(preparedInput.audioPath, diarizationModel, resultDir)
         if (rttmPath) {
           const jsonOutputPath = `${outputDir}/transcription${segmentSuffix}.json`
           const diarizedData = await mergeASRWithDiarization(ctmPath, rttmPath, jsonOutputPath)

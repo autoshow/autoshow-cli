@@ -6,7 +6,6 @@ import { buildOptsFromFlags, isHtmlArticleTarget, resolveInputRoutingForCommand 
 import { handleSingleTarget } from './single-target'
 import { buildAggregatedPriceEstimate } from '~/utils/pricing/aggregate-pricing'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { commandExists } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { extractExplicitFlags, mergeConfigIntoRawFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
 import { setupYtDependencies } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-audio/audio'
@@ -17,6 +16,7 @@ import { buildBatchExpectedFilesList, buildExpectedFilesList } from './expected-
 import { planProcessTargetBatchExecution, resolveProcessTargetPlan } from './process-target-plan'
 import { formatCents, reportSuitePriceEstimate, shouldRunCommandPreflight } from './process-target-preflight'
 import { buildUnsupportedExtractInputMessage, validateWriteStep2ProviderSelection } from './process-target-validation'
+import { getYtDlpBinary, hasYtDlpBinary } from '../audio/yt-dlp-binary'
 
 export { buildExpectedFilesList } from './expected-output'
 export { shouldRunCommandPreflight } from './process-target-preflight'
@@ -66,11 +66,11 @@ export const resolveProcessTargetDoubleDash = (
 }
 
 export const runRawYtDlp = async (args: string[]): Promise<void> => {
-  if (!commandExists('yt-dlp')) {
+  if (!hasYtDlpBinary()) {
     await setupYtDependencies()
   }
 
-  const proc = Bun.spawn(['yt-dlp', ...args], {
+  const proc = Bun.spawn([getYtDlpBinary(), ...args], {
     stdin: 'inherit',
     stdout: 'inherit',
     stderr: 'inherit'

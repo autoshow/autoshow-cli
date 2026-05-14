@@ -199,24 +199,6 @@ export type InternalPage = {
   needsOcr: boolean
 }
 
-export type DomNode = {
-  nodeType: number
-  textContent?: string | null
-  childNodes?: Iterable<DomNode>
-}
-
-export type DomElement = DomNode & {
-  localName: string
-  getAttribute: (name: string) => string | null
-  remove: () => void
-}
-
-export type DomDocument = DomNode & {
-  body?: DomElement | null
-  documentElement?: DomElement | null
-  querySelectorAll: (selector: string) => Iterable<DomElement>
-}
-
 export type TextArtifactFile = {
   relativePath: string
   text: string

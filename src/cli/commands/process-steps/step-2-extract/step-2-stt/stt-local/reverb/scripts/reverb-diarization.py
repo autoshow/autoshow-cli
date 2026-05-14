@@ -10,7 +10,8 @@ def run_diarization(audio_path, hf_token, model_name="Revai/reverb-diarization-v
     try:
         print(f"[DIARIZATION] Loading diarization model: {model_name}", file=sys.stderr)
 
-        pipeline = Pipeline.from_pretrained(model_name, token=hf_token)
+        pipeline_kwargs = {"token": hf_token} if hf_token else {}
+        pipeline = Pipeline.from_pretrained(model_name, **pipeline_kwargs)
 
         if pipeline is None:
             print(
@@ -198,7 +199,7 @@ def run_diarization(audio_path, hf_token, model_name="Revai/reverb-diarization-v
                 file=sys.stderr,
             )
             try:
-                pipeline = Pipeline.from_pretrained(model_name, token=hf_token)
+                pipeline = Pipeline.from_pretrained(model_name, **pipeline_kwargs)
                 device = torch.device("cpu")
 
                 if hasattr(pipeline, "to"):
