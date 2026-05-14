@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
@@ -57,7 +57,7 @@ export const musicGenFlags = {
     negatable: false
   },
   ...priceFlag
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const musicLyricVideoFlags = {
   batch: {
@@ -90,9 +90,9 @@ const musicLyricVideoFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const musicCommandFlags = {
   ...musicGenFlags,
   ...musicLyricVideoFlags
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

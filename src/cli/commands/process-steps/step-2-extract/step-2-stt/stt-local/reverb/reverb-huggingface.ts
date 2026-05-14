@@ -27,12 +27,11 @@ export const installHuggingFaceCli = async (): Promise<void> => {
   if (platform === 'darwin') {
     if (commandExists('brew')) {
       await runInherit('brew', ['install', 'huggingface-cli'])
-    } else {
-      await runInherit('pip3', ['install', '--user', 'huggingface-hub[cli]'])
+      return
     }
-  } else {
-    await runInherit('pip3', ['install', '--user', 'huggingface-hub[cli]'])
   }
+
+  throw new Error('Hugging Face CLI is unavailable. Run `bun as setup --step reverb` to create the managed Reverb environment, or install `huggingface-cli` manually.')
 }
 
 export const getHuggingFaceCliPath = (): string | undefined => {

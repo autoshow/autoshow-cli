@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai'
 import { mkdir } from 'node:fs/promises'
 import { basename } from 'node:path'
 import * as l from '~/utils/logger'
@@ -6,6 +5,7 @@ import type { GeminiImageModel, Step5Metadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { isNativeGeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
+import { geminiGenerateContent, geminiGenerateImages } from '~/utils/gemini/gemini-rest'
 
 export const runGeminiImageGen = async (
   prompt: string,
@@ -22,7 +22,6 @@ export const runGeminiImageGen = async (
     throw new Error('GEMINI_API_KEY environment variable is required')
   }
 
-  const ai = new GoogleGenAI({ apiKey })
   const startTime = Date.now()
   const imagePaths: string[] = []
 
@@ -37,10 +36,10 @@ export const runGeminiImageGen = async (
       detail: 'native image'
     })
 
-    const response = await ai.models.generateContent({
+    const response = await geminiGenerateContent(apiKey, {
       model: options.model,
       contents: prompt,
-      config: {
+      generationConfig: {
         responseModalities: ['TEXT', 'IMAGE'],
         ...(options.aspectRatio || options.imageSize ? {
           imageConfig: {
@@ -79,14 +78,12 @@ export const runGeminiImageGen = async (
     })
     const numberOfImages = options.imagenCount ?? 1
 
-    const response = await ai.models.generateImages({
+    const response = await geminiGenerateImages(apiKey, {
       model: options.model,
       prompt,
-      config: {
-        numberOfImages,
-        ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-        ...(options.imageSize ? { imageSize: options.imageSize } : {})
-      }
+      numberOfImages,
+      ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+      ...(options.imageSize ? { imageSize: options.imageSize } : {})
     })
 
     const generatedImages = response.generatedImages ?? []
@@ -97,7 +94,7 @@ export const runGeminiImageGen = async (
       const outputPath = i === 0
         ? `${outputDir}/generated-image.png`
         : `${outputDir}/generated-image-${i + 1}.png`
-      await Bun.write(outputPath, Buffer.from(imageBytes as string, 'base64'))
+      await Bun.write(outputPath, Buffer.from(imageBytes, 'base64'))
       imagePaths.push(outputPath)
     }
   }

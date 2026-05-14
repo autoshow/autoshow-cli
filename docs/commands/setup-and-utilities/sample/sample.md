@@ -89,7 +89,7 @@ bun as setup --sample --valid-only
 | `1-document.azw3`| azw3   | planned       | calibre        |
 | `1-document.fb2` | fb2    | planned       | calibre        |
 | `1-document.lit` | lit    | planned       | calibre        |
-| `1-document.cbz` | cbz    | planned       | imagemagick    |
+| `1-document.cbz` | cbz    | planned       | —              |
 | `1-document.rtf` | rtf    | planned       | —              |
 | `1-document.csv` | csv    | planned       | —              |
 | `1-image.webp`   | webp   | planned       | imagemagick    |
@@ -115,7 +115,7 @@ Not all tools are required. The command adapts based on available tools:
 |-----------------------------|------------------------------------|-----------------------------------------------------|
 | ffmpeg / ffprobe            | Media fixtures                     | **Required** — preflight fails if missing           |
 | calibre (`ebook-convert`)   | MOBI/AZW3/FB2/LIT fixtures         | **Optional** — skipped with warning if missing      |
-| imagemagick (`convert`)     | WebP/BMP/GIF/CBZ fixtures          | **Optional** — skipped with warning if missing      |
+| imagemagick (`convert`)     | WebP/BMP/GIF fixtures              | **Optional** — skipped with warning if missing      |
 
 Skipped fixtures are recorded in `manifest.json` under `skipped[]`.
 

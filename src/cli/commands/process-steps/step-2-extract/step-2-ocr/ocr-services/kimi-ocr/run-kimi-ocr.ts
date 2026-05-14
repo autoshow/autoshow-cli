@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -14,6 +13,11 @@ import {
   ensureKimiApiKey,
   resolveKimiBaseUrl
 } from './kimi'
+import {
+  createOpenAIChatCompletion,
+  extractOpenAIChatCompletionText,
+  type OpenAIRestConfig
+} from '~/utils/openai/client'
 
 const KIMI_OCR_MAX_COMPLETION_TOKENS = 8192
 
@@ -109,7 +113,7 @@ const readImageDataUrl = async (
 }
 
 const runKimiOcrImage = async (
-  client: OpenAI,
+  config: OpenAIRestConfig,
   imagePath: string,
   format: DocumentMetadata['format'],
   model: string,
@@ -123,7 +127,7 @@ const runKimiOcrImage = async (
   for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
     const response = await withOcrCreateRetry(
       'kimi-ocr',
-      async (signal) => await client.chat.completions.create({
+      async (signal) => await createOpenAIChatCompletion(config, {
         model,
         stream: false,
         max_completion_tokens: KIMI_OCR_MAX_COMPLETION_TOKENS,
@@ -136,9 +140,9 @@ const runKimiOcrImage = async (
             { type: 'image_url', image_url: { url: imageUrl } }
           ]
         }]
-      } as any, { signal })
+      }, { signal, errorMessagePrefix: 'Kimi OCR request failed' })
     )
-    const rawText = response.choices[0]?.message?.content ?? ''
+    const rawText = extractOpenAIChatCompletionText(response) ?? ''
 
     try {
       if (!rawText.trim()) {
@@ -175,7 +179,7 @@ export const runKimiOcr = async (
   completionTokens?: number
 }> => {
   const apiKey = ensureKimiApiKey('Kimi OCR')
-  const client = new OpenAI({ apiKey, baseURL: resolveKimiBaseUrl(), maxRetries: 0 })
+  const config = { apiKey, baseURL: resolveKimiBaseUrl() }
   let promptTokens = 0
   let completionTokens = 0
   let hasPromptTokens = false
@@ -194,7 +198,7 @@ export const runKimiOcr = async (
   }
 
   if (step1Metadata.format !== 'pdf') {
-    const result = await runKimiOcrImage(client, filePath, step1Metadata.format, model, 1, 'input image')
+    const result = await runKimiOcrImage(config, filePath, step1Metadata.format, model, 1, 'input image')
     addUsage(result)
     return {
       pages: [result.page],
@@ -251,7 +255,7 @@ export const runKimiOcr = async (
           throw new Error(renderResult.stderr || `Failed rendering page ${page} for Kimi OCR`)
         }
       }
-      const result = await runKimiOcrImage(client, renderedImagePath, 'png', model, page, `page ${page}`)
+      const result = await runKimiOcrImage(config, renderedImagePath, 'png', model, page, `page ${page}`)
       addUsage(result)
       pages.push(result.page)
       if (removeRenderedImage) {

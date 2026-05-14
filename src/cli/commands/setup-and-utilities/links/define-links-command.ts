@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import modelLinks from './model-links'
 import * as l from '~/utils/logger'
 import { extractHtmlToMarkdown } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/run-defuddle-url'
@@ -317,9 +317,11 @@ const runLinks = async (): Promise<void> => {
   await runLinksWithArgv(process.argv)
 }
 
-export const linksCommand = defineCommand({
+export const linksCommand = defineCliCommand({
   name: 'links',
   description: 'Fetch provider documentation markdown and write a combined file',
+  allowUnknownFlags: true,
+  allowExcessParameters: true,
   help: {
     examples: [
       ['bun as links', 'Fetch all provider documentation'],

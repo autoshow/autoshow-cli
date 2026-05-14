@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai'
 import { mkdir } from 'node:fs/promises'
 import type { GeminiVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
@@ -8,6 +7,7 @@ import * as l from '~/utils/logger'
 import { normalizeGeminiDuration, normalizeGeminiResolution } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
+import { geminiDownloadFile, geminiGetOperation, geminiPredictLongRunning } from '~/utils/gemini/gemini-rest'
 
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
@@ -36,21 +36,18 @@ export const runGeminiVideoGen = async (
   })
   logVideoEstimate(estimate)
 
-  const ai = new GoogleGenAI({ apiKey })
   await mkdir(outputDir, { recursive: true })
   const normalizedResolution = normalizeGeminiResolution(options.resolution)
   const normalizedDuration = normalizeGeminiDuration(options.durationSeconds, normalizedResolution)
 
   const startTime = Date.now()
-  let operation = await ai.models.generateVideos({
+  let operation = await geminiPredictLongRunning(apiKey, {
     model: options.model,
     prompt,
-    config: {
-      ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-      resolution: normalizedResolution,
-      durationSeconds: normalizedDuration,
-      numberOfVideos: 1
-    }
+    ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+    resolution: normalizedResolution,
+    durationSeconds: normalizedDuration,
+    numberOfVideos: 1
   })
 
   const completedOp = await pollUntil({
@@ -64,7 +61,11 @@ export const runGeminiVideoGen = async (
         model: options.model,
         status: 'in_progress'
       })
-      operation = await ai.operations.getVideosOperation({ operation })
+      const operationName = operation.name
+      if (!operationName) {
+        throw new Error('Gemini video generation did not return an operation name')
+      }
+      operation = await geminiGetOperation(apiKey, operationName)
       return operation
     },
     isDone: (op) => op.done === true,
@@ -83,7 +84,7 @@ export const runGeminiVideoGen = async (
   }
 
   const outputPath = `${outputDir}/generated-video.mp4`
-  await ai.files.download({ file: video, downloadPath: outputPath })
+  await geminiDownloadFile(apiKey, video, outputPath)
 
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)

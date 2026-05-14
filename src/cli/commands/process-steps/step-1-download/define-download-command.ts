@@ -1,10 +1,10 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { downloadFlags } from '~/cli/flags'
 import { handleProcessTarget } from './targets/handle-process-target'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const
 
-export const downloadCommand = defineCommand({
+export const downloadCommand = defineCliCommand({
   name: 'download',
   description: 'Download media or document and collect metadata only',
   parameters: inputParameter,

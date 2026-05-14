@@ -224,10 +224,7 @@ const buildOverlaySegments = (cues: CaptionCue[]): OverlaySegment[] => {
   return segments.filter((segment) => segment.end > segment.start + 0.01)
 }
 
-const resolveMagickCommand = (): string | undefined => {
-  if (commandExists('magick')) {
-    return 'magick'
-  }
+const resolveConvertCommand = (): string | undefined => {
   if (commandExists('convert')) {
     return 'convert'
   }
@@ -292,9 +289,9 @@ const renderOverlayCard = async (options: {
   currentText?: string | undefined
   nextText?: string | undefined
 }): Promise<void> => {
-  const magick = resolveMagickCommand()
-  if (!magick) {
-    throw new Error('Lyrics rendering requires either ffmpeg with the ass filter or ImageMagick (magick/convert) for fallback text overlays')
+  const convert = resolveConvertCommand()
+  if (!convert) {
+    throw new Error('Lyrics rendering requires either ffmpeg with the ass filter or ImageMagick convert for fallback text overlays')
   }
 
   const layerPaths = [
@@ -356,7 +353,7 @@ const renderOverlayCard = async (options: {
   }
   args.push(`png32:${options.outputPath}`)
 
-  const result = await exec(magick, args)
+  const result = await exec(convert, args)
   if (result.exitCode !== 0) {
     throw new Error(`ImageMagick failed while rendering lyric overlay: ${result.stderr.trim() || result.stdout.trim()}`)
   }

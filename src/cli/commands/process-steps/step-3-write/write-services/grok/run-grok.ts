@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
@@ -21,13 +20,12 @@ export const runGrokModel = async (
   structuredOpts?: StructuredRequestOptions
 ): Promise<{ result: string, metadata: Step3Metadata }> => {
   const config = getGrokClientConfig()
-  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, maxRetries: 0 })
 
   return await runOpenAICompatibleChatModel({
     prompt,
     model,
     structuredOpts,
-    client,
+    config,
     service: 'grok',
     providerLabel: 'Grok',
     operationName: 'grok-llm'

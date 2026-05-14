@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_DEAPI_IMAGE_MODELS,
@@ -86,4 +86,4 @@ export const imageGenFlags = {
     type: String
   },
   ...priceFlag
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

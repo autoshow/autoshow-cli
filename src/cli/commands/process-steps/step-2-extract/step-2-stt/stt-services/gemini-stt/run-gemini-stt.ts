@@ -1,10 +1,19 @@
-import { GoogleGenAI, createPartFromUri, createUserContent } from '@google/genai'
 import { basename, extname } from 'node:path'
 import * as l from '~/utils/logger'
 import type { Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import { withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
+import {
+  geminiDeleteFile,
+  geminiFileDataPart,
+  geminiGenerateContent,
+  geminiGetFile,
+  geminiUploadFile,
+  geminiUserContent,
+  getGeminiFileState,
+  type GeminiContent
+} from '~/utils/gemini/gemini-rest'
 import {
   buildTranscriptionOutputBase,
   countTokens,
@@ -82,9 +91,9 @@ const buildInlineContents = async (
   filePath: string,
   mimeType: string,
   prompt: string
-): Promise<ReturnType<typeof createUserContent>> => {
+): Promise<GeminiContent> => {
   const bytes = await Bun.file(filePath).arrayBuffer()
-  return createUserContent([
+  return geminiUserContent([
     { text: prompt },
     {
       inlineData: {
@@ -92,32 +101,17 @@ const buildInlineContents = async (
         data: Buffer.from(bytes).toString('base64')
       }
     }
-  ] as any)
-}
-
-const getFileState = (file: unknown): string | undefined => {
-  if (typeof file !== 'object' || file === null) {
-    return undefined
-  }
-  const state = (file as { state?: unknown }).state
-  if (typeof state === 'string') {
-    return state.toUpperCase()
-  }
-  if (typeof state === 'object' && state !== null && 'name' in state) {
-    const name = (state as { name?: unknown }).name
-    return typeof name === 'string' ? name.toUpperCase() : undefined
-  }
-  return undefined
+  ])
 }
 
 const waitForGeminiFile = async (
-  ai: GoogleGenAI,
+  apiKey: string,
   fileName: string
 ): Promise<void> => {
   const deadline = Date.now() + 120_000
   while (Date.now() < deadline) {
-    const file = await ai.files.get({ name: fileName } as any)
-    const state = getFileState(file)
+    const file = await geminiGetFile(apiKey, fileName)
+    const state = getGeminiFileState(file)
     if (state === undefined || state === 'ACTIVE') {
       return
     }
@@ -212,12 +206,6 @@ export const runGeminiStt = async (
     throw new Error(`Gemini STT input exceeds the 2 GB file upload limit for ${basename(audioPath)}.`)
   }
 
-  const baseUrl = readEnv('GEMINI_BASE_URL')
-  const ai = new GoogleGenAI({
-    apiKey,
-    ...(baseUrl ? { httpOptions: { baseUrl } } : {})
-  })
-
   const response = await withRetry(
     {
       retryClass: 'runtime_http_create_conservative',
@@ -229,32 +217,29 @@ export const runGeminiStt = async (
       try {
         const contents = fileSizeBytes > GEMINI_INLINE_AUDIO_BYTES
           ? await (async () => {
-              const uploadedFile = await ai.files.upload({
-                file: audioPath,
-                config: {
-                  mimeType,
-                  displayName: basename(audioPath)
-                }
+              const uploadedFile = await geminiUploadFile(apiKey, audioPath, {
+                mimeType,
+                displayName: basename(audioPath)
               })
               uploadedFileName = uploadedFile.name ?? undefined
               if (uploadedFileName) {
-                await waitForGeminiFile(ai, uploadedFileName)
+                await waitForGeminiFile(apiKey, uploadedFileName)
               }
               const fileMimeType = uploadedFile.mimeType ?? mimeType
               if (typeof uploadedFile.uri !== 'string' || uploadedFile.uri.length === 0) {
                 throw new Error('Gemini Files API upload did not return a file URI.')
               }
-              return createUserContent([
+              return geminiUserContent([
                 { text: prompt },
-                createPartFromUri(uploadedFile.uri, fileMimeType)
-              ] as any)
+                geminiFileDataPart(uploadedFile.uri, fileMimeType)
+              ])
             })()
           : await buildInlineContents(audioPath, mimeType, prompt)
 
-        return await ai.models.generateContent({
+        return await geminiGenerateContent(apiKey, {
           model,
           contents,
-          config: {
+          generationConfig: {
             responseMimeType: 'application/json',
             responseJsonSchema: GEMINI_STT_JSON_SCHEMA
           }
@@ -262,7 +247,7 @@ export const runGeminiStt = async (
       } finally {
         if (uploadedFileName) {
           try {
-            await ai.files.delete({ name: uploadedFileName })
+            await geminiDeleteFile(apiKey, uploadedFileName)
           } catch (error) {
             l.warn(`Failed to delete Gemini STT upload ${uploadedFileName}: ${error instanceof Error ? error.message : String(error)}`)
           }

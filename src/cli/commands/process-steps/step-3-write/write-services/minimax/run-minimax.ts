@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk'
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
@@ -17,17 +16,16 @@ export const runMinimaxModel = async (
     throw new Error('MINIMAX_API_KEY environment variable is required')
   }
 
-  const client = new Anthropic({
+  const config = {
     apiKey,
-    baseURL: MINIMAX_ANTHROPIC_BASE_URL,
-    maxRetries: 0
-  })
+    baseURL: MINIMAX_ANTHROPIC_BASE_URL
+  }
 
   return await runAnthropicCompatibleModel({
     prompt,
     model,
     structuredOpts,
-    client,
+    config,
     service: 'minimax',
     providerLabel: 'MiniMax',
     operationName: 'minimax-llm'

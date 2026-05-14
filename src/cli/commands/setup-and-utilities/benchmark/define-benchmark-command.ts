@@ -1,8 +1,8 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { runBenchmark } from './run-benchmark'
 import type { BenchmarkFlags } from './benchmark-types'
 
-export const benchmarkCommand = defineCommand({
+export const benchmarkCommand = defineCliCommand({
   name: 'benchmark',
   description: 'Benchmark STT transcription quality across compression levels and playback speeds',
   parameters: [{ key: '[input]', description: 'Audio file path to benchmark' }],

@@ -1,11 +1,11 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { writeFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { validateEpubInspectCommandFlags } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/command-validation'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const
 
-export const writeCommand = defineCommand({
+export const writeCommand = defineCliCommand({
   name: 'write',
   description: 'Run the write pipeline for media, documents, or raw text inputs',
   parameters: inputParameter,

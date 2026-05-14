@@ -65,7 +65,7 @@ The music setup step checks hosted music API readiness and local lyric-video pre
 
 - `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `MINIMAX_API_KEY`, and `DEAPI_API_KEY` status
 - `ffmpeg` and `ffprobe`
-- ffmpeg `ass` subtitle filter, or `pango-view` plus ImageMagick (`magick` or `convert`) for fallback overlays
+- ffmpeg `ass` subtitle filter, or `pango-view` plus ImageMagick `convert` for fallback overlays
 - `whisper-cli`
 - the local Whisper `large-v3-turbo` model
 

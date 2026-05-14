@@ -1,11 +1,11 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { configCommandFlags } from '~/cli/flags'
 import { resolveConfigPath, loadConfig } from './config-loader'
 import { extractExplicitFlags, buildConfigPatchFromFlags, deepMergeConfig } from './config-merge'
 import { writeConfig } from './config-writer'
 import * as l from '~/utils/logger'
 
-export const configCommand = defineCommand({
+export const configCommand = defineCliCommand({
   name: 'config',
   description: 'View or set default CLI options saved to config/autoshow.json',
   flags: configCommandFlags,

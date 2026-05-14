@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { setupFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { runCompleteSetup, runSetupStep } from './run-complete-setup'
@@ -49,7 +49,7 @@ const normalizeStringArrayFlag = (value: unknown): string[] => {
   return []
 }
 
-export const setupCommand = defineCommand({
+export const setupCommand = defineCliCommand({
   name: 'setup',
   description: 'Install local dependencies and required tools',
   flags: setupFlags,

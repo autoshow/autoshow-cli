@@ -1,11 +1,11 @@
-import type Anthropic from '@anthropic-ai/sdk'
-import type OpenAI from 'openai'
 import type * as v from 'valibot'
 import type {
   RateEstimateBase,
   ProcessingOptions,
   Step3Metadata
 } from '~/types'
+import type { AnthropicRestConfig } from '~/utils/anthropic/client'
+import type { OpenAIRestConfig } from '~/utils/openai/client'
 
 export type LLMOptions = Pick<ProcessingOptions,
   | 'outputDir'
@@ -176,13 +176,27 @@ export type CompatibleModelRunOptionsBase<TClient, TService> = {
   operationName: string
 }
 
-export type RunAnthropicCompatibleModelOptions = CompatibleModelRunOptionsBase<Anthropic, AnthropicCompatibleService> & {
+export type RunAnthropicCompatibleModelOptions = {
+  prompt: string
+  model: string
+  structuredOpts?: StructuredRequestOptions | undefined
+  config: AnthropicRestConfig
+  service: AnthropicCompatibleService
+  providerLabel: string
+  operationName: string
   supportsStructuredOutput?: boolean
 }
 
 export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok' | 'glm' | 'kimi'>
 
-export type RunOpenAICompatibleChatModelOptions = CompatibleModelRunOptionsBase<OpenAI, OpenAICompatibleChatService> & {
+export type RunOpenAICompatibleChatModelOptions = {
+  prompt: string
+  model: string
+  structuredOpts?: StructuredRequestOptions | undefined
+  config: OpenAIRestConfig
+  service: OpenAICompatibleChatService
+  providerLabel: string
+  operationName: string
   customizeRequestBody?: ((requestBody: Record<string, unknown>, model: string) => void) | undefined
   buildStructuredResponseFormat?: ((structuredOpts: StructuredRequestOptions) => Record<string, unknown>) | undefined
 }

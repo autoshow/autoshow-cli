@@ -1,9 +1,9 @@
-import { GoogleGenAI } from '@google/genai'
 import type { GeminiMusicModel, Step7MusicMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { readEnv } from '~/utils/validate/env-utils'
 import * as l from '~/utils/logger'
+import { geminiGenerateContent } from '~/utils/gemini/gemini-rest'
 
 const GEMINI_CLIP_DURATION_SECONDS = 30
 const GEMINI_PRO_DEFAULT_DURATION_SECONDS = 120
@@ -174,7 +174,6 @@ export const runGeminiMusicGen = async (
   }
 
   const { prompt: geminiPrompt, lyricsSource, intendedDurationSeconds } = await buildGeminiMusicPrompt(prompt, options)
-  const ai = new GoogleGenAI({ apiKey })
   const musicPath = `${outputDir}/generated-music.mp3`
 
   logMediaGenerationStatus(l, {
@@ -185,7 +184,7 @@ export const runGeminiMusicGen = async (
   })
 
   const startTime = Date.now()
-  const response = await ai.models.generateContent({
+  const response = await geminiGenerateContent(apiKey, {
     model: options.model,
     contents: geminiPrompt
   })

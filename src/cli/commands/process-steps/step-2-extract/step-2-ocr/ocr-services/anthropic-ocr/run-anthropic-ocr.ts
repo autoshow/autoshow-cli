@@ -7,18 +7,21 @@ import { exec } from '~/utils/cli-utils'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { ensureMutoolSetup } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
+import { getAnthropicClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import {
+  createAnthropicMessage,
+  deleteAnthropicFile,
+  uploadAnthropicFile
+} from '~/utils/anthropic/client'
 import {
   ANTHROPIC_OCR_FILES_BETA,
   ANTHROPIC_OCR_FILES_UPLOAD_BYTES,
   ANTHROPIC_OCR_IMAGE_BYTES,
   ANTHROPIC_OCR_MAX_TOKENS
 } from './anthropic-ocr'
-
-const ANTHROPIC_OCR_TIMEOUT_MS = OCR_REQUEST_TIMEOUT_MS
 
 const AnthropicOcrEnvelopeSchema = v.object({
   pages: v.array(v.object({
@@ -78,7 +81,7 @@ const buildOcrPrompt = (expectedPageCount: number): string => [
   `Use this exact JSON schema: ${JSON.stringify(ANTHROPIC_OCR_JSON_SCHEMA)}`
 ].join(' ')
 
-const extractAnthropicText = (content: Array<{ type: string, text?: string }>): string =>
+const extractAnthropicText = (content: Array<{ type: string, text?: string | undefined }>): string =>
   content
     .filter((block) => block.type === 'text')
     .map((block) => block.text ?? '')
@@ -137,13 +140,15 @@ const parseOcrResponse = (
 
 const callAnthropicMessage = async (
   requestBody: Record<string, unknown>,
-  operationName: string
+  operationName: string,
+  beta?: string | string[] | undefined
 ) => {
-  const client = createAnthropicClient({ timeout: ANTHROPIC_OCR_TIMEOUT_MS })
+  const config = getAnthropicClientConfig()
   return await withOcrCreateRetry(
     operationName,
-    async (signal) => await client.beta.messages.create(requestBody as any, {
-      signal
+    async (signal) => await createAnthropicMessage(config, requestBody, {
+      signal,
+      beta
     })
   )
 }
@@ -152,13 +157,14 @@ const runMessageWithSchemaRetry = async (
   requestBody: Record<string, unknown>,
   expectedPageCount: number,
   pageLabel: string,
-  operationName: string
+  operationName: string,
+  beta?: string | string[] | undefined
 ): Promise<{ pages: PageResult[], promptTokens?: number, completionTokens?: number }> => {
   let lastError: Error | undefined
 
   for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
-    const message = await callAnthropicMessage(requestBody, operationName)
-    const rawText = extractAnthropicText(message.content as Array<{ type: string, text?: string }>)
+    const message = await callAnthropicMessage(requestBody, operationName, beta)
+    const rawText = extractAnthropicText(message.content ?? [])
 
     try {
       if (!rawText.trim()) {
@@ -238,7 +244,7 @@ const runPdfChunk = async (
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-anthropic-ocr-'))
   const pageLabel = `pages ${startPage}-${endPage}`
   const chunkPath = join(tempDir, `chunk-${startPage}-${endPage}.pdf`)
-  const client = createAnthropicClient({ timeout: ANTHROPIC_OCR_TIMEOUT_MS })
+  const config = getAnthropicClientConfig()
   let uploadedFileId: string | undefined
 
   try {
@@ -253,11 +259,9 @@ const runPdfChunk = async (
 
     const uploaded = await withOcrCreateRetry(
       'anthropic-ocr-file-upload',
-      async (signal) => await client.beta.files.upload({
-        file: uploadFile,
-        betas: [ANTHROPIC_OCR_FILES_BETA]
-      }, {
-        signal
+      async (signal) => await uploadAnthropicFile(config, uploadFile, {
+        signal,
+        beta: ANTHROPIC_OCR_FILES_BETA
       })
     )
 
@@ -266,7 +270,6 @@ const runPdfChunk = async (
     const requestBody = {
       model,
       max_tokens: ANTHROPIC_OCR_MAX_TOKENS,
-      betas: [ANTHROPIC_OCR_FILES_BETA],
       messages: [{
         role: 'user',
         content: [
@@ -290,7 +293,8 @@ const runPdfChunk = async (
       requestBody,
       expectedPageCount,
       pageLabel,
-      'anthropic-ocr'
+      'anthropic-ocr',
+      ANTHROPIC_OCR_FILES_BETA
     )
 
     return {
@@ -304,8 +308,9 @@ const runPdfChunk = async (
   } finally {
     if (uploadedFileId) {
       try {
-        await client.beta.files.delete(uploadedFileId, {
-          betas: [ANTHROPIC_OCR_FILES_BETA]
+        await deleteAnthropicFile(config, uploadedFileId, {
+          signal: AbortSignal.timeout(OCR_REQUEST_TIMEOUT_MS),
+          beta: ANTHROPIC_OCR_FILES_BETA
         })
       } catch (error) {
         l.warn(`Failed to delete Anthropic OCR upload ${uploadedFileId}: ${error instanceof Error ? error.message : String(error)}`)

@@ -1,9 +1,9 @@
-import OpenAI from 'openai'
 import { mkdir } from 'node:fs/promises'
 import * as l from '~/utils/logger'
 import type { OpenAIImageModel, Step5Metadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
+import { createOpenAIImage } from '~/utils/openai/client'
 
 export const runOpenAIImageGen = async (
   prompt: string,
@@ -24,7 +24,6 @@ export const runOpenAIImageGen = async (
   })
 
   const config = getOpenAIClientConfig()
-  const client = new OpenAI({ apiKey: config.apiKey, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
   const startTime = Date.now()
 
@@ -33,20 +32,16 @@ export const runOpenAIImageGen = async (
   const ext = options.outputFormat === 'jpeg' ? 'jpg' : (options.outputFormat ?? 'png')
   const outputPath = `${outputDir}/generated-image.${ext}`
 
-  const result = await client.images.generate({
+  const result = await createOpenAIImage(config, {
     model: options.model,
     prompt,
-    size: (options.size as OpenAI.ImageGenerateParams['size']) ?? 'auto',
-    quality: (options.quality as OpenAI.ImageGenerateParams['quality']) ?? 'auto',
-    output_format: (options.outputFormat as OpenAI.ImageGenerateParams['output_format']) ?? 'png',
-    background: (options.background as OpenAI.ImageGenerateParams['background']) ?? 'auto',
-  } as OpenAI.ImageGenerateParams)
+    size: options.size ?? 'auto',
+    quality: options.quality ?? 'auto',
+    output_format: options.outputFormat ?? 'png',
+    background: options.background ?? 'auto',
+  })
 
-  if (!('data' in result)) {
-    throw new Error('Unexpected streaming response from OpenAI image generation')
-  }
-
-  const imageBase64 = result.data[0]?.b64_json
+  const imageBase64 = result.data?.[0]?.b64_json
   if (!imageBase64) {
     throw new Error('No image data in OpenAI response')
   }

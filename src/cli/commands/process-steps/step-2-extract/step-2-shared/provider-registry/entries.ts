@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import type {
   Step2Command,
   Step2ModelProviderRegistryEntry,
@@ -31,7 +31,7 @@ export const getStep2ProviderEntry = (
 
 export const getStep2ProviderFlags = (
   step: Step2Command
-): ClercFlagsDefinition =>
+): CliFlagsDefinition =>
   Object.fromEntries(
     getStep2ProviderEntries(step).map((entry) => [entry.flagName, entry.flag])
   )

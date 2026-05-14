@@ -1,9 +1,8 @@
 export type BunFetchProfileId = 'bun-fetch-default'
-export type Wget2ProfileId = 'wget2-default'
 
-export type DownloadProfileId = BunFetchProfileId | Wget2ProfileId
+export type DownloadProfileId = BunFetchProfileId
 
-export type ResolvedEngine = 'bun-fetch' | 'wget2'
+export type ResolvedEngine = 'bun-fetch'
 
 export type DownloadProfile = {
   engine: ResolvedEngine

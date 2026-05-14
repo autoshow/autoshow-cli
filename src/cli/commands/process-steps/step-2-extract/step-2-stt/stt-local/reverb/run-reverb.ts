@@ -18,40 +18,6 @@ import { prepareLocalSttInput } from '../local-audio-normalize'
 import { REVERB_ASR_MODEL_ID } from '../../stt-model-labels'
 import { createKeyValueTable } from '~/utils/logger/human-table'
 
-let detectedGpuSupportPromise: Promise<boolean> | null = null
-
-const detectGpuSupport = async (): Promise<boolean> => {
-  if (detectedGpuSupportPromise) {
-    return await detectedGpuSupportPromise
-  }
-
-  detectedGpuSupportPromise = (async () => {
-    try {
-      const proc = Bun.spawn(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'], {
-        stdout: 'pipe',
-        stderr: 'pipe'
-      })
-      const stdout = await new Response(proc.stdout).text()
-      const exitCode = await proc.exited
-      const hasGpu = exitCode === 0
-      if (hasGpu) {
-        l.write('info', 'Reverb Device', {
-          category: 'pipeline',
-          humanTable: createKeyValueTable([
-            ['gpu', stdout.trim()]
-          ]),
-          metadata: { gpu: stdout.trim() }
-        })
-      }
-      return hasGpu
-    } catch {
-      return false
-    }
-  })()
-
-  return await detectedGpuSupportPromise
-}
-
 const listFilesRecursive = async (rootDir: string): Promise<string[]> => {
   const discovered: string[] = []
 
@@ -194,8 +160,7 @@ export const runReverbTranscribe = async (
   try {
     const startTime = Date.now()
     const verbatimicity = options.reverbVerbatimicity ?? 0.5
-    const hasGpu = await detectGpuSupport()
-    const device = hasGpu ? '0' : '-1'
+    const device = '-1'
     l.write('info', 'Reverb Config', {
       category: 'pipeline',
       humanTable: createKeyValueTable([
@@ -203,14 +168,14 @@ export const runReverbTranscribe = async (
         ['model', REVERB_ASR_MODEL_ID],
         ['diarizationModel', version],
         ['verbatimicity', verbatimicity],
-        ['device', hasGpu ? 'GPU' : 'CPU']
+        ['device', 'CPU']
       ]),
       metadata: {
         provider: 'reverb',
         model: REVERB_ASR_MODEL_ID,
         diarizationModel: version,
         verbatimicity,
-        device: hasGpu ? 'GPU' : 'CPU'
+        device: 'CPU'
       }
     })
     const uvEnvDir = reverbUvEnvDir

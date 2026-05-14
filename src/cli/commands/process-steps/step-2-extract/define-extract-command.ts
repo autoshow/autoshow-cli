@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { ocrCommandFlags, sttFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { validateEpubInspectCommandFlags } from './step-2-ocr/command-validation'
@@ -10,7 +10,7 @@ const extractFlags = {
   ...ocrCommandFlags
 } as const
 
-export const extractCommand = defineCommand({
+export const extractCommand = defineCliCommand({
   name: 'extract',
   description: 'Route media to STT and documents/articles/images to text extraction',
   parameters: inputParameter,

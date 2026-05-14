@@ -1,11 +1,11 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import * as l from '~/utils/logger'
 import { clearMediaCache, pruneMediaCache } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/media'
 import { CLIUsageError } from '~/utils/error-handler'
 
 const actionParameter = [{ key: '<action>', description: 'Cache action: prune or clear' }] as const
 
-export const cacheCommand = defineCommand({
+export const cacheCommand = defineCliCommand({
   name: 'cache',
   description: 'Manage the persistent STT media cache',
   parameters: actionParameter,

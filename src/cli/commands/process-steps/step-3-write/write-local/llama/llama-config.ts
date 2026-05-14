@@ -15,12 +15,7 @@ export const resolveLlamaServerBinary = (): string => {
     return llamaBinaryPath
   }
 
-  const systemPath = Bun.which('llama-server')
-  if (systemPath) {
-    return systemPath
-  }
-
-  throw new Error('llama-server is not installed. Run `bun as setup` first.')
+  throw new Error(`Managed llama-server is missing at ${llamaBinaryPath}. Run \`bun as setup --step llama-binary\` or \`bun as setup\`.`)
 }
 
 export const normalizeModelPath = (modelPath: string): string => resolvePath(modelPath.trim())

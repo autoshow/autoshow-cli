@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 
 export const sampleFlags = {
   out: {
@@ -24,4 +24,4 @@ export const sampleFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

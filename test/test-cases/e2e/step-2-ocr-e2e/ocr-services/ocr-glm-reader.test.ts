@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test'
 import { rm } from 'node:fs/promises'
 import { runCommand, fileExists } from '../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
-import { shouldSkipMissingEnv } from '../../../../test-utils/service-test-kit'
+import { classifySkippableLiveProviderFailure, shouldSkipMissingEnv } from '../../../../test-utils/service-test-kit'
 
 type ExtractMetadata = {
   step1?: { format?: string }
@@ -23,6 +23,13 @@ test('bun as extract https://ajcwebdev.com --url-backend glm-reader', async () =
       ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'glm-reader'],
       { testName: 'bun as extract https://ajcwebdev.com --url-backend glm-reader' }
     )
+    if (result.exitCode !== 0) {
+      const skipReason = classifySkippableLiveProviderFailure(`${result.stdout}\n${result.stderr}`)
+      if (skipReason) {
+        console.log(`Skipping: ${skipReason}`)
+        return
+      }
+    }
     expect(result.exitCode).toBe(0)
 
     outputDir = result.outputDir

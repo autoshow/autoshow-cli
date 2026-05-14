@@ -1,22 +1,17 @@
-import type { ClercFlagDefinitionValue, ClercFlagsDefinition } from 'clerc'
+import type { CliFlagDefinition, CliFlagsDefinition } from '~/cli/native'
 
-export const withHelpGroup = (flags: ClercFlagsDefinition, group: string): ClercFlagsDefinition => {
-  const grouped: ClercFlagsDefinition = {}
+export const withHelpGroup = (flags: CliFlagsDefinition, group: string): CliFlagsDefinition => {
+  const grouped: CliFlagsDefinition = {}
   for (const [name, definition] of Object.entries(flags)) {
-    const flagDefinition = definition as ClercFlagDefinitionValue
-    if (typeof flagDefinition === 'function' || Array.isArray(flagDefinition)) {
-      grouped[name] = flagDefinition
-      continue
-    }
-
-    const existingHelp = (flagDefinition as { help?: Record<string, unknown> }).help
+    const flagDefinition = definition as CliFlagDefinition
+    const existingHelp = flagDefinition.help
     grouped[name] = {
-      ...(flagDefinition as object),
+      ...flagDefinition,
       help: {
         ...(typeof existingHelp === 'object' && existingHelp !== null ? existingHelp : {}),
         group
       }
-    } as ClercFlagDefinitionValue
+    }
   }
   return grouped
 }

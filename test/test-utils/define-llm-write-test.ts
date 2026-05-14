@@ -8,7 +8,7 @@ import {
 } from "./test-helpers"
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import { readRunMetadata } from './manifest-helpers'
-import { shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
+import { classifySkippableLiveProviderFailure, shouldSkipMissingEnv, withOutputLifecycle } from './service-test-kit'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
@@ -92,6 +92,14 @@ export const defineLLMWriteTest = ({
               return
             }
           }
+        }
+      }
+
+      if (result.exitCode !== 0) {
+        const skipReason = classifySkippableLiveProviderFailure(`${result.stdout}\n${result.stderr}`)
+        if (skipReason) {
+          console.log(`Skipping: ${skipReason}`)
+          return
         }
       }
 

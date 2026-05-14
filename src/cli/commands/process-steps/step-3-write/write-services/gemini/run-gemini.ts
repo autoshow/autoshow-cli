@@ -1,10 +1,10 @@
-import { GoogleGenAI } from '@google/genai'
 import * as l from '~/utils/logger'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { readEnv } from '~/utils/validate/env-utils'
 import { withRetry } from '~/utils/retries'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
+import { geminiGenerateContent } from '~/utils/gemini/gemini-rest'
 
 export const runGeminiModel = async (
   prompt: string,
@@ -18,8 +18,6 @@ export const runGeminiModel = async (
       throw new Error('GEMINI_API_KEY environment variable is required')
     }
 
-    const ai = new GoogleGenAI({ apiKey })
-
     const apiCall = (): Promise<string> => withRetry(
       {
         retryClass: 'runtime_http_create_conservative',
@@ -27,19 +25,18 @@ export const runGeminiModel = async (
         policy: { maxAttempts: 3 }
       },
       async () => {
-        const requestBody: Record<string, unknown> = {
+        const generationConfig: Record<string, unknown> | undefined = structuredOpts
+          ? {
+              responseMimeType: 'application/json',
+              responseJsonSchema: structuredOpts.schema
+            }
+          : undefined
+
+        const response = await geminiGenerateContent(apiKey, {
           model,
           contents: prompt,
-        }
-
-        if (structuredOpts) {
-          requestBody['config'] = {
-            responseMimeType: 'application/json',
-            responseJsonSchema: structuredOpts.schema
-          }
-        }
-
-        const response = await ai.models.generateContent(requestBody as any)
+          ...(generationConfig ? { generationConfig } : {})
+        })
 
         const text = response.text ?? ''
         if (!text) {

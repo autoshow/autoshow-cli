@@ -1,10 +1,10 @@
-import OpenAI from 'openai'
 import * as l from '~/utils/logger'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import { createOpenAIResponse, extractOpenAIResponseText } from '~/utils/openai/client'
 
 export const runOpenAIModel = async (
   prompt: string,
@@ -13,7 +13,6 @@ export const runOpenAIModel = async (
 ): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
     const config = getOpenAIClientConfig()
-    const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
     const apiCall = (): Promise<string> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName: 'openai-llm' },
@@ -38,11 +37,11 @@ export const runOpenAIModel = async (
           }
         }
 
-        const response = await client.responses.create(requestBody as any, {
+        const response = await createOpenAIResponse(config, requestBody, {
           signal: combined
         })
 
-        const text = response.output_text || ''
+        const text = extractOpenAIResponseText(response) ?? ''
         if (!text) {
           throw new Error('No response text from model')
         }

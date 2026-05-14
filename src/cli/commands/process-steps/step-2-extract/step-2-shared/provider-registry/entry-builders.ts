@@ -1,4 +1,4 @@
-import type { ClercFlagDefinitionValue } from 'clerc'
+import type { CliFlagDefinition } from '~/cli/native'
 import type {
   RuntimeOptions,
   Step2BooleanProviderRegistryEntry,
@@ -11,7 +11,7 @@ import type {
 
 const createBooleanFlag = (
   description: string
-): ClercFlagDefinitionValue => ({
+): CliFlagDefinition => ({
   description,
   type: Boolean,
   default: false,
@@ -21,11 +21,11 @@ const createBooleanFlag = (
 const createRepeatableModelFlag = (
   description: string,
   defaultValue?: string[]
-): ClercFlagDefinitionValue => ({
+): CliFlagDefinition => ({
   description,
   type: [String] as [StringConstructor],
   ...(defaultValue ? { default: defaultValue } : {})
-} as ClercFlagDefinitionValue)
+} as CliFlagDefinition)
 
 const step2ConfigPath = (
   step: Step2Command,

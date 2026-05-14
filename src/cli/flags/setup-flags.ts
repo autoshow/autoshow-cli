@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import { transcriptionFlags } from './shared-flags'
 import { sampleFlags } from './sample-flags'
 
@@ -19,7 +19,7 @@ const setupSampleFlags = {
     ...sampleFlags['valid-only'],
     description: 'With --sample, skip invalid fixture generation'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const setupFlags = {
   gcloud: {
@@ -95,4 +95,4 @@ export const setupFlags = {
     type: String,
     default: '1'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

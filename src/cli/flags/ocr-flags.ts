@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import { allArticleFlags, batchFlags, ocrInputFlags, ocrTuningFlags, priceFlag } from './shared-flags'
 
 export const epubInspectFlags = {
@@ -14,7 +14,7 @@ export const epubInspectFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const ocrCommandFlags = {
   'all-ocr': {
@@ -33,4 +33,4 @@ export const ocrCommandFlags = {
   ...batchFlags,
   ...epubInspectFlags,
   ...priceFlag
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

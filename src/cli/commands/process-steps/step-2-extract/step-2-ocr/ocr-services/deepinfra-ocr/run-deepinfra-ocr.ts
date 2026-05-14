@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
@@ -13,6 +12,11 @@ import {
   DEEPINFRA_OCR_IMAGE_BYTES,
   getDeepinfraOcrClientConfig
 } from './deepinfra-ocr'
+import {
+  createOpenAIChatCompletion,
+  extractOpenAIChatCompletionText,
+  type OpenAIRestConfig
+} from '~/utils/openai/client'
 
 const DEEPINFRA_OCR_MAX_TOKENS = 4092
 
@@ -130,7 +134,7 @@ const readImageDataUrl = async (
 }
 
 const runDeepinfraOcrImage = async (
-  client: OpenAI,
+  config: OpenAIRestConfig,
   imagePath: string,
   format: DocumentMetadata['format'],
   model: string,
@@ -144,7 +148,7 @@ const runDeepinfraOcrImage = async (
   for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
     const response = await withOcrCreateRetry(
       'deepinfra-ocr',
-      async (signal) => await client.chat.completions.create({
+      async (signal) => await createOpenAIChatCompletion(config, {
         model,
         max_tokens: DEEPINFRA_OCR_MAX_TOKENS,
         response_format: {
@@ -162,9 +166,9 @@ const runDeepinfraOcrImage = async (
             { type: 'image_url', image_url: { url: imageUrl } }
           ]
         }]
-      }, { signal })
+      }, { signal, errorMessagePrefix: 'DeepInfra OCR request failed' })
     )
-    const rawText = response.choices[0]?.message?.content ?? ''
+    const rawText = extractOpenAIChatCompletionText(response) ?? ''
 
     try {
       if (!rawText.trim()) {
@@ -201,7 +205,6 @@ export const runDeepinfraOcr = async (
   completionTokens?: number
 }> => {
   const config = getDeepinfraOcrClientConfig()
-  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL, maxRetries: 0 })
   let promptTokens = 0
   let completionTokens = 0
   let hasPromptTokens = false
@@ -220,7 +223,7 @@ export const runDeepinfraOcr = async (
   }
 
   if (step1Metadata.format !== 'pdf') {
-    const result = await runDeepinfraOcrImage(client, filePath, step1Metadata.format, model, 1, 'input image')
+    const result = await runDeepinfraOcrImage(config, filePath, step1Metadata.format, model, 1, 'input image')
     addUsage(result)
     return {
       pages: [result.page],
@@ -277,7 +280,7 @@ export const runDeepinfraOcr = async (
           throw new Error(renderResult.stderr || `Failed rendering page ${page} for DeepInfra OCR`)
         }
       }
-      const result = await runDeepinfraOcrImage(client, renderedImagePath, 'png', model, page, `page ${page}`)
+      const result = await runDeepinfraOcrImage(config, renderedImagePath, 'png', model, page, `page ${page}`)
       addUsage(result)
       pages.push(result.page)
       if (removeRenderedImage) {

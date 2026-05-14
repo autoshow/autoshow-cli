@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { musicCommandFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
@@ -136,7 +136,7 @@ const runHostedMusicGeneration = async (
   )
 }
 
-export const musicCommand = defineCommand({
+export const musicCommand = defineCliCommand({
   name: 'music',
   description: 'Generate hosted music or render lyric videos from local audio',
   parameters: [{ key: '[input]', description: 'Hosted music prompt or path to a local .md/.txt file' }],

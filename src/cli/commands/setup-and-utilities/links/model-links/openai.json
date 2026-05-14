@@ -2,7 +2,6 @@
   "OpenAI": {
     "General": [
       "https://developers.openai.com/api/docs/pricing.md",
-      "https://raw.githubusercontent.com/openai/openai-node/refs/heads/master/README.md",
       "https://developers.openai.com/api/docs/guides/latest-model.md",
       "https://developers.openai.com/api/reference/resources/models/methods/retrieve/index.md",
       "https://developers.openai.com/api/reference/resources/models/methods/list/index.md"
@@ -11,19 +10,22 @@
       "https://developers.openai.com/api/docs/guides/text.md",
       "https://developers.openai.com/api/docs/guides/structured-outputs.md",
       "https://developers.openai.com/api/docs/guides/migrate-to-responses.md",
-      "https://developers.openai.com/api/reference/resources/responses/methods/create/index.md"
+      "https://developers.openai.com/api/reference/resources/responses/methods/create/index.md",
+      "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create/index.md"
     ],
     "OCR": [
       "https://developers.openai.com/api/docs/guides/images-vision.md"
     ],
     "STT": [
       "https://developers.openai.com/api/docs/guides/audio.md",
-      "https://developers.openai.com/api/docs/guides/speech-to-text.md"
+      "https://developers.openai.com/api/docs/guides/speech-to-text.md",
+      "https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create/index.md"
     ],
     "TTS": [
       "https://developers.openai.com/api/docs/guides/audio.md",
       "https://developers.openai.com/api/docs/guides/text-to-speech.md",
       "https://developers.openai.com/api/reference/resources/audio/subresources/speech/methods/create/index.md",
+      "https://developers.openai.com/api/reference/resources/audio/subresources/voice_consents/methods/create/index.md",
       "https://developers.openai.com/api/reference/resources/audio/subresources/voices/methods/create/index.md"
     ],
     "Image": [

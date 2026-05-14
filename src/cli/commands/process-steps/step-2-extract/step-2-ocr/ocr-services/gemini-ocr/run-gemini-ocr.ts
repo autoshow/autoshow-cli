@@ -1,4 +1,3 @@
-import { GoogleGenAI, createPartFromUri, createUserContent } from '@google/genai'
 import { basename } from 'node:path'
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
@@ -10,6 +9,16 @@ import { classifyOcrCreateRetry, OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry }
 import { getCachedCloudStagingObject } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import type { RetryDecision } from '~/types'
+import {
+  geminiDeleteFile,
+  geminiFileDataPart,
+  geminiGenerateContent,
+  geminiGetFile,
+  geminiUploadFile,
+  geminiUserContent,
+  getGeminiFileState,
+  type GeminiContent
+} from '~/utils/gemini/gemini-rest'
 import {
   GEMINI_FILE_UPLOAD_BYTES,
   GEMINI_INLINE_NON_PDF_BYTES,
@@ -132,10 +141,10 @@ const buildInlineContents = async (
   filePath: string,
   mimeType: string,
   prompt: string
-): Promise<ReturnType<typeof createUserContent>> => {
+): Promise<GeminiContent> => {
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
-  return createUserContent([
+  return geminiUserContent([
     { text: prompt },
     {
       inlineData: {
@@ -143,7 +152,7 @@ const buildInlineContents = async (
         data: base64
       }
     }
-  ] as any)
+  ])
 }
 
 const shouldUploadFile = (fileSizeBytes: number, format: DocumentMetadata['format']): boolean => {
@@ -159,6 +168,25 @@ const classifyGeminiOcrRetry = (error: unknown): RetryDecision => {
     return ocrDecision
   }
   return classifyGeminiRetry(error)
+}
+
+const waitForGeminiFile = async (
+  apiKey: string,
+  fileName: string
+): Promise<void> => {
+  const deadline = Date.now() + 120_000
+  while (Date.now() < deadline) {
+    const file = await geminiGetFile(apiKey, fileName)
+    const state = getGeminiFileState(file)
+    if (state === undefined || state === 'ACTIVE') {
+      return
+    }
+    if (state === 'FAILED') {
+      throw new Error(`Gemini Files API upload failed for ${fileName}`)
+    }
+    await Bun.sleep(1000)
+  }
+  throw new Error(`Gemini Files API upload did not become active for ${fileName}`)
 }
 
 export const runGeminiOcr = async (
@@ -186,12 +214,6 @@ export const runGeminiOcr = async (
     throw new Error(`Gemini OCR input exceeds the 2 GB file upload limit for ${basename(filePath)}.`)
   }
 
-  const baseUrl = readEnv('GEMINI_BASE_URL')
-  const ai = new GoogleGenAI({
-    apiKey,
-    ...(baseUrl ? { httpOptions: { baseUrl } } : {})
-  })
-
   let lastSchemaError: Error | undefined
 
   for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
@@ -211,15 +233,15 @@ export const runGeminiOcr = async (
                     displayName: basename(filePath)
                   },
                   async () => {
-                    const uploadedFile = await ai.files.upload({
-                      file: filePath,
-                      config: {
-                        mimeType,
-                        displayName: basename(filePath),
-                        ...(signal ? { abortSignal: signal } : {})
-                      }
+                    const uploadedFile = await geminiUploadFile(apiKey, filePath, {
+                      mimeType,
+                      displayName: basename(filePath),
+                      ...(signal ? { abortSignal: signal } : {})
                     })
                     const name = uploadedFile.name ?? undefined
+                    if (name) {
+                      await waitForGeminiFile(apiKey, name)
+                    }
                     const fileMimeType = uploadedFile.mimeType ?? mimeType
                     if (typeof uploadedFile.uri !== 'string' || uploadedFile.uri.length === 0) {
                       throw new Error('Gemini Files API upload did not return a file URI.')
@@ -230,33 +252,33 @@ export const runGeminiOcr = async (
                       name,
                       cleanup: async () => {
                         if (name) {
-                          await ai.files.delete({ name })
+                          await geminiDeleteFile(apiKey, name)
                         }
                       }
                     }
                   }
                 )
                 uploadedFileName = opts.ocrPreparationCache ? undefined : staged.name
-                return createUserContent([
+                return geminiUserContent([
                   { text: prompt },
-                  createPartFromUri(staged.uri, staged.mimeType)
-                ] as any)
+                  geminiFileDataPart(staged.uri, staged.mimeType)
+                ])
               })()
             : await buildInlineContents(filePath, mimeType, prompt)
 
-          return await ai.models.generateContent({
+          return await geminiGenerateContent(apiKey, {
             model,
             contents,
-            config: {
+            generationConfig: {
               responseMimeType: 'application/json',
-              responseJsonSchema: GEMINI_OCR_JSON_SCHEMA,
-              ...(signal ? { abortSignal: signal } : {})
-            }
+              responseJsonSchema: GEMINI_OCR_JSON_SCHEMA
+            },
+            ...(signal ? { abortSignal: signal } : {})
           })
         } finally {
           if (uploadedFileName) {
             try {
-              await ai.files.delete({ name: uploadedFileName })
+              await geminiDeleteFile(apiKey, uploadedFileName)
             } catch (error) {
               l.warn(`Failed to delete Gemini OCR upload ${uploadedFileName}: ${error instanceof Error ? error.message : String(error)}`)
             }

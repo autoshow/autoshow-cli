@@ -1,10 +1,4 @@
-import {
-  InvalidParametersError,
-  InvalidSchemaError,
-  MissingRequiredFlagError,
-  NoCommandSpecifiedError,
-  NoSuchCommandError
-} from 'clerc'
+import { isNativeUsageError, nativeUsageMessage } from '~/cli/native/errors'
 
 export const CLIUsageError = (message: string): Error => {
   const error = new Error(message)
@@ -18,11 +12,7 @@ const isCLIUsageError = (error: unknown): boolean =>
 export const isUsageError = (error: unknown): boolean => {
   return (
     isCLIUsageError(error) ||
-    error instanceof NoSuchCommandError ||
-    error instanceof NoCommandSpecifiedError ||
-    error instanceof InvalidParametersError ||
-    error instanceof MissingRequiredFlagError ||
-    error instanceof InvalidSchemaError
+    isNativeUsageError(error)
   )
 }
 
@@ -40,14 +30,7 @@ export const usageMessage = (error: unknown): string => {
   if (isCLIUsageError(error)) {
     return (error as Error).message
   }
-  if (error instanceof NoSuchCommandError) {
-    return `Unknown command "${error.commandName}". Run: bun as help`
-  }
-  if (error instanceof NoCommandSpecifiedError) {
-    return 'No command or input provided. Run: bun as --help'
-  }
-  if (error instanceof InvalidParametersError || error instanceof MissingRequiredFlagError || error instanceof InvalidSchemaError) {
-    return `${error.message}. Run: bun as help <command>`
-  }
+  const nativeMessage = nativeUsageMessage(error)
+  if (nativeMessage !== undefined) return nativeMessage
   return 'Invalid command usage. Run: bun as --help'
 }

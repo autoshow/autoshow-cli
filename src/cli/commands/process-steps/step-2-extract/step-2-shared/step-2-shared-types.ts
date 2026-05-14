@@ -1,4 +1,4 @@
-import type { ClercFlagDefinitionValue } from 'clerc'
+import type { CliFlagDefinition } from '~/cli/native'
 import type { RuntimeOptions, Step2Modality, Step2ProviderSelectionOrigin } from '~/types'
 
 export type OcrSelectionState = {
@@ -70,7 +70,7 @@ export type Step2BooleanProviderRegistryEntry = Step2ProviderRegistryEntryBase &
     runtimeKey: Step2BooleanSelectionKey
     model: string
   }
-  flag: ClercFlagDefinitionValue
+  flag: CliFlagDefinition
 }
 
 export type Step2ModelProviderRegistryEntry = Step2ProviderRegistryEntryBase & {
@@ -81,7 +81,7 @@ export type Step2ModelProviderRegistryEntry = Step2ProviderRegistryEntryBase & {
     supportedModels: readonly string[]
     validateModel: (value: string) => string
   }
-  flag: ClercFlagDefinitionValue
+  flag: CliFlagDefinition
 }
 
 export type Step2ProviderRegistryEntry =

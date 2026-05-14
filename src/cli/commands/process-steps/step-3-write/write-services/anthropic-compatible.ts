@@ -6,13 +6,14 @@ import type {
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import { createAnthropicMessage } from '~/utils/anthropic/client'
 
 const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
   const timeoutSignal = AbortSignal.timeout(LLM_REQUEST_TIMEOUT_MS)
   return AbortSignal.any([...(signal ? [signal] : []), timeoutSignal])
 }
 
-const extractAnthropicText = (content: Array<{ type: string, text?: string }>): string =>
+const extractAnthropicText = (content: Array<{ type: string, text?: string | undefined }>): string =>
   content
     .filter((block) => block.type === 'text')
     .map((block) => block.text ?? '')
@@ -22,7 +23,7 @@ export const runAnthropicCompatibleModel = async ({
   prompt,
   model,
   structuredOpts,
-  client,
+  config,
   service,
   providerLabel,
   operationName,
@@ -47,11 +48,11 @@ export const runAnthropicCompatibleModel = async ({
           }
         }
 
-        const message = await client.messages.create(requestBody as any, {
+        const message = await createAnthropicMessage(config, requestBody, {
           signal: createCombinedSignal(signal)
         })
 
-        const text = extractAnthropicText(message.content as Array<{ type: string, text?: string }>)
+        const text = extractAnthropicText(message.content ?? [])
         if (!text) {
           throw new Error('No response text from model')
         }

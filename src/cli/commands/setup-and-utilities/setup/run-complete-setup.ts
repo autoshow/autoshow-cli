@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path'
 import * as v from 'valibot'
 import type { RunResult, RunOptions, SetupPlatform } from '~/types'
 import type { SetupStepId } from '~/types'
-import { downloadFile, consumeDownloadFallbackEvents } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
+import { downloadFile } from '~/cli/commands/setup-and-utilities/setup/setup-download/download'
 import * as l from '~/utils/logger'
 import { createHumanTable, logKeyValueTable, logSingleRowTable } from '~/utils/logger/human-table'
 import { SUPPORTED_LLAMA_MODELS, SUPPORTED_KITTEN_TTS_MODELS } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -459,7 +459,7 @@ const runSetupMusic = async (): Promise<void> => {
   const ffmpegFilters = await runCapture('ffmpeg', ['-hide_banner', '-filters'], { allowFailure: true })
   const hasAssFilter = ffmpegFilters.exitCode === 0
     && ffmpegFilters.stdout.split('\n').some((line) => line.trim().split(/\s+/).includes('ass'))
-  const hasFallbackRenderer = commandExists('pango-view') && (commandExists('magick') || commandExists('convert'))
+  const hasFallbackRenderer = commandExists('pango-view') && commandExists('convert')
   if (!hasAssFilter && !hasFallbackRenderer) {
     throw new Error(
       'Music lyric-video setup: ffmpeg does not expose the ass filter, and the fallback renderer is unavailable. Install pango-view plus ImageMagick, or use an ffmpeg build with ass support.'
@@ -503,9 +503,7 @@ const computeP90 = (values: number[]): number => {
   return sorted[Math.max(0, Math.min(sorted.length - 1, Math.ceil(0.9 * sorted.length) - 1))]!
 }
 
-const logBenchmarkResults = (
-  stepLabel: string, runs: number, results: Map<string, number[]>, fallbackRuns: Map<string, number>
-): void => {
+const logBenchmarkResults = (stepLabel: string, runs: number, results: Map<string, number[]>): void => {
   const rows = [...results.entries()].map(([engine, durations]) => {
     const median = computeMedian(durations)
     const p90 = computeP90(durations)
@@ -515,14 +513,13 @@ const logBenchmarkResults = (
       p90Ms: p90,
       minMs: Math.min(...durations),
       maxMs: Math.max(...durations),
-      outliers: durations.filter(v => v > p90).length,
-      fallbackRuns: fallbackRuns.get(engine) ?? 0
+      outliers: durations.filter(v => v > p90).length
     }
   })
 
   l.write('info', `Setup Benchmark (${stepLabel}, ${runs} run${runs > 1 ? 's' : ''})`, {
     category: 'command',
-    humanTable: createHumanTable(rows, ['engine', 'medianMs', 'p90Ms', 'minMs', 'maxMs', 'outliers', 'fallbackRuns']),
+    humanTable: createHumanTable(rows, ['engine', 'medianMs', 'p90Ms', 'minMs', 'maxMs', 'outliers']),
     metadata: { step: stepLabel, runs, results: rows }
   })
 }
@@ -586,19 +583,14 @@ export const runSetupStep = async (step: SetupStepId, options?: { forceRedownloa
 
   const label = 'auto'
   const timings = new Map<string, number[]>([[label, []]])
-  const fallbackRuns = new Map<string, number>([[label, 0]])
   for (let i = 0; i < repeat; i++) {
     await applyRunOptions(step, options)
-    consumeDownloadFallbackEvents()
     const start = Date.now()
     await executeStepOnce(step)
     const duration = Date.now() - start
-    const fallbackEvents = consumeDownloadFallbackEvents()
-    if (fallbackEvents.length > 0) fallbackRuns.set(label, (fallbackRuns.get(label) ?? 0) + 1)
     timings.get(label)!.push(duration)
-    const fallbackSuffix = fallbackEvents.length > 0 ? ` | fallback events: ${fallbackEvents.length}` : ''
-    l.write('info', `Run ${i + 1}/${repeat} (${label}): ${duration}ms${fallbackSuffix}`)
+    l.write('info', `Run ${i + 1}/${repeat} (${label}): ${duration}ms`)
   }
 
-  logBenchmarkResults(step, repeat, timings, fallbackRuns)
+  logBenchmarkResults(step, repeat, timings)
 }

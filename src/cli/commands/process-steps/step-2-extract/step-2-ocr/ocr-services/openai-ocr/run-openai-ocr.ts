@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import * as v from 'valibot'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
@@ -6,6 +5,7 @@ import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import type { OpenAIOcrInputContent } from '~/types'
+import { createOpenAIResponse, extractOpenAIResponseText } from '~/utils/openai/client'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
   'gpt-5.4',
@@ -210,7 +210,6 @@ export const runOpenAIOcr = async (
 }> => {
   const expectedPageCount = Math.max(1, step1Metadata.pageCount)
   const config = getOpenAIClientConfig()
-  const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
 
   let lastError: Error | undefined
 
@@ -218,11 +217,11 @@ export const runOpenAIOcr = async (
     const requestBody = await createRequestBody(filePath, step1Metadata, model, expectedPageCount)
     const response = await withOcrCreateRetry(
       'openai-ocr',
-      async (signal) => await client.responses.create(requestBody as OpenAI.Responses.ResponseCreateParamsNonStreaming, {
+      async (signal) => await createOpenAIResponse(config, requestBody, {
         signal
       })
     )
-    const rawText = response.output_text || ''
+    const rawText = extractOpenAIResponseText(response) ?? ''
 
     try {
       if (!rawText.trim()) {

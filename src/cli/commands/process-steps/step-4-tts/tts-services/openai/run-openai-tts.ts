@@ -1,4 +1,3 @@
-import OpenAI from 'openai'
 import type { OpenAITtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
@@ -12,6 +11,7 @@ import {
   toOpenAISpeechVoice,
   type OpenAITtsCustomVoiceOptions
 } from './openai-custom-voices'
+import { createOpenAISpeech } from '~/utils/openai/client'
 
 const MAX_CHARS_PER_CHUNK = 4000
 
@@ -27,7 +27,6 @@ export const runOpenAITts = async (
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const config = getOpenAIClientConfig()
-  const client = new OpenAI({ apiKey: config.apiKey, maxRetries: 0, ...(config.baseURL ? { baseURL: config.baseURL } : {}) })
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
 
   if (chunks.length === 0) {
@@ -63,8 +62,7 @@ export const runOpenAITts = async (
       ...(options.instructions ? { instructions: options.instructions } : {}),
       ...(typeof options.speed === 'number' ? { speed: options.speed } : {})
     }
-    const response = await client.audio.speech.create(requestBody)
-    const bytes = new Uint8Array(await response.arrayBuffer())
+    const bytes = await createOpenAISpeech(config, requestBody)
     if (bytes.byteLength === 0) {
       throw new Error('OpenAI TTS returned empty audio')
     }

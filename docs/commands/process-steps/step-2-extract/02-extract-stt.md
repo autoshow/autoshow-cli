@@ -98,7 +98,7 @@ bun as setup --step reverb
 | Speechmatics | `SPEECHMATICS_API_KEY` | `SPEECHMATICS_BASE_URL` |
 | Rev | `REVAI_ACCESS_TOKEN` | `REVAI_BASE_URL` |
 | OpenAI STT | `OPENAI_API_KEY` | `OPENAI_BASE_URL` |
-| Gemini STT | `GEMINI_API_KEY` | `GEMINI_BASE_URL` |
+| Gemini STT | `GEMINI_API_KEY` | - |
 | GLM STT | `GLM_API_KEY` | `GLM_BASE_URL` |
 | Google Cloud STT + Document AI OCR + TTS | gcloud CLI auth (`gcloud auth login`) plus active project with linked billing | STT project is read from `gcloud config`, STT location is fixed to `us`, and requests go to `us-speech.googleapis.com`; `bun as setup --gcloud --gcloud-project ...` provisions/verifies Google resources, including `texttospeech.googleapis.com`, and prints runtime values without saving AutoShow defaults; env vars such as `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, and `AUTOSHOW_GCLOUD_BUCKET` override saved config |
 | AWS Transcribe | AWS CLI auth (`aws configure` or `AWS_PROFILE`) | `AWS_REGION` / `AWS_DEFAULT_REGION`; save `--aws-region` and `--aws-bucket` with `bun as config`, pass them per run, or run `bun as setup --aws --aws-create-bucket` to provision a staging bucket shared with AWS Textract |

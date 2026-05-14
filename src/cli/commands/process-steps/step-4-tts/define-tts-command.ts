@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { ttsFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
@@ -41,7 +41,7 @@ const clearElevenLabsPvcSetupOptions = <T extends TtsOptions>(
   elevenlabsTtsPvcWait: false
 } as T)
 
-export const ttsCommand = defineCommand({
+export const ttsCommand = defineCliCommand({
   name: 'tts',
   description: 'Generate speech audio from a text file (.md or .txt)',
   parameters: [{ key: '<input>', description: 'Path to .md or .txt file' }],

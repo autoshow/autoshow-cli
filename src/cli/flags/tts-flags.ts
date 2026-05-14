@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
@@ -448,4 +448,4 @@ export const ttsFlags = {
     negatable: false
   },
   ...priceFlag
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

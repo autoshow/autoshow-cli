@@ -1,10 +1,10 @@
 #!/bin/zsh
 
 INCLUDE_PATHS=(
-  # "**/*"
+  "**/*"
   # "*"
   # "test"
-  "src"
+  # "src"
   # "docs"
   # "config"
 )

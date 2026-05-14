@@ -1,10 +1,10 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { metadataFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, or URL list (.md/.txt)' }] as const
 
-export const metadataCommand = defineCommand({
+export const metadataCommand = defineCliCommand({
   name: 'metadata',
   description: 'Collect and display metadata for media or document without downloading',
   parameters: inputParameter,

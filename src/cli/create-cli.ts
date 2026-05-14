@@ -1,4 +1,3 @@
-import { Clerc, defaultFormatters, helpPlugin, versionPlugin } from 'clerc'
 import { configCommand } from './commands/setup-and-utilities/config/define-config-command'
 import { cacheCommand } from './commands/setup-and-utilities/cache/define-cache-command'
 import { metadataCommand } from '~/cli/commands/process-steps/step-0-metadata/define-metadata-command'
@@ -13,23 +12,19 @@ import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-m
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
-import { CLIUsageError, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
+import { isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import { benchmarkCommand } from '~/cli/commands/setup-and-utilities/benchmark/define-benchmark-command'
 import * as l from '~/utils/logger'
-import { runWithLogContext, reconfigureLogger } from '~/utils/logger'
 import type { HelpCommandGroupKey } from '~/types'
 import {
-  colorText,
   colorizeHelpDescription,
-  colorizeHelpFlagGroups,
   colorizeFlagDescriptions,
-  withPatchedHelpConsole,
-  shouldPatchHelpConsole,
-  helpColorsEnabled,
-  HELP_TYPE_COLOR,
-  HELP_DEFAULT_VALUE_COLOR_NAME
+  colorizeHelpFlagGroups,
+  helpColorsEnabled
 } from '~/cli/help-colors'
+import { dispatchNativeCli } from '~/cli/native'
+import type { CliFlagsDefinition, CliRootDefinition } from '~/cli/native'
 
 const cliErrorHandler = (error: unknown): void => {
   if (isUsageError(error)) {
@@ -127,6 +122,62 @@ const COMMAND_DEFINITIONS = [
   benchmarkCommand
 ] as const
 
+const GLOBAL_FLAG_DEFINITIONS = {
+  help: {
+    description: colorizeHelpDescription('Show help'),
+    short: 'h',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  version: {
+    description: colorizeHelpDescription('Print current version'),
+    short: 'v',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'config-path': {
+    description: colorizeHelpDescription('Path to config file (default: config/autoshow.json in project root)'),
+    type: String
+  },
+  'allow-over-budget': {
+    description: colorizeHelpDescription('Continue even if cost estimate exceeds the configured budget limit'),
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  verbose: {
+    description: colorizeHelpDescription('Enable debug-level logging (overrides AUTOSHOW_LOG_LEVEL)'),
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  quiet: {
+    description: colorizeHelpDescription('Suppress all output except errors (overrides AUTOSHOW_LOG_LEVEL)'),
+    short: 'q',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  json: {
+    description: colorizeHelpDescription('Output logs as JSON (overrides AUTOSHOW_LOG_FORMAT)'),
+    type: Boolean,
+    default: false,
+    negatable: false
+  }
+} as const satisfies CliFlagsDefinition
+
+const createNativeRootDefinition = (): CliRootDefinition => ({
+  name: 'AutoShow CLI',
+  scriptName: 'bun as',
+  description: 'Process audio/video and documents with transcription, extraction, and write workflows',
+  version: CLI_VERSION,
+  globalFlags: GLOBAL_FLAG_DEFINITIONS,
+  commandGroups: HELP_COMMAND_GROUP_DEFINITIONS,
+  flagGroups: colorizeHelpFlagGroups(CONFIG_COMMAND_HELP_FLAG_GROUPS)
+})
+
 const setCommandHelpGroup = (command: unknown, group: HelpCommandGroupKey): void => {
   if (typeof command !== 'object' || command === null) {
     return
@@ -164,159 +215,10 @@ const applyUniversalHelpDescriptionColors = (): void => {
   helpDescriptionColorsApplied = true
 }
 
-const createCli = () => {
-  applyUniversalHelpDescriptionColors()
-
-  const cli = Clerc.create({
-    name: 'AutoShow CLI',
-    scriptName: 'bun as',
-    description: 'Process audio/video and documents with transcription, extraction, and write workflows',
-    version: CLI_VERSION
-  })
-    .use(versionPlugin())
-    .use(helpPlugin({
-      groups: {
-        commands: HELP_COMMAND_GROUP_DEFINITIONS,
-        flags: colorizeHelpFlagGroups(CONFIG_COMMAND_HELP_FLAG_GROUPS)
-      },
-      formatters: {
-        formatTypeValue: (type): string => {
-          const formattedType = defaultFormatters.formatTypeValue(type)
-          return colorText(formattedType, HELP_TYPE_COLOR)
-        },
-        formatFlagDefault: <T>(value: T): string => {
-          const formattedValue = defaultFormatters.formatFlagDefault(value)
-          return colorText(formattedValue, HELP_DEFAULT_VALUE_COLOR_NAME)
-        }
-      }
-    }))
-
-  for (const commandName of ['version', 'help'] as const) {
-    const registeredCommand = cli._commands.get(commandName)
-    const group = HELP_COMMAND_GROUP_BY_NAME[commandName]
-    if (registeredCommand && group !== undefined) {
-      setCommandHelpGroup(registeredCommand, group)
-    }
-  }
-
-  return cli
-    .interceptor({ enforce: 'pre', handler: async (ctx, next) => {
-      const unknownFlags = Object.keys(
-        ((ctx.rawParsed as { unknown?: Record<string, unknown> } | undefined)?.unknown) ?? {}
-      )
-
-      if (ctx.command?.name !== 'links' && unknownFlags.length > 0) {
-        throw CLIUsageError(
-          unknownFlags.length === 1
-            ? `Unexpected flag: ${unknownFlags[0]}`
-            : `Unexpected flags: ${unknownFlags.join(', ')}`
-        )
-      }
-
-      await next()
-    }})
-    .globalFlag('help', colorizeHelpDescription('Show help'), {
-      short: 'h',
-      type: Boolean,
-      default: false,
-      negatable: false
-    })
-    .globalFlag('version', colorizeHelpDescription('Print current version'), {
-      short: 'v',
-      type: Boolean,
-      default: false,
-      negatable: false
-    })
-    .globalFlag('config-path', colorizeHelpDescription('Path to config file (default: config/autoshow.json in project root)'), {
-      type: String
-    })
-    .globalFlag('allow-over-budget', colorizeHelpDescription('Continue even if cost estimate exceeds the configured budget limit'), {
-      type: Boolean,
-      default: false,
-      negatable: false
-    })
-    .globalFlag('verbose', colorizeHelpDescription('Enable debug-level logging (overrides AUTOSHOW_LOG_LEVEL)'), {
-      type: Boolean,
-      default: false,
-      negatable: false
-    })
-    .globalFlag('quiet', colorizeHelpDescription('Suppress all output except errors (overrides AUTOSHOW_LOG_LEVEL)'), {
-      short: 'q',
-      type: Boolean,
-      default: false,
-      negatable: false
-    })
-    .globalFlag('json', colorizeHelpDescription('Output logs as JSON (overrides AUTOSHOW_LOG_FORMAT)'), {
-      type: Boolean,
-      default: false,
-      negatable: false
-    })
-    .command(COMMAND_DEFINITIONS)
-    .interceptor({ enforce: 'pre', handler: async (ctx, next) => {
-      const flags = ctx.flags as Record<string, unknown>
-      reconfigureLogger({
-        verbose: flags['verbose'] === true,
-        quiet: flags['quiet'] === true,
-        json: flags['json'] === true
-      })
-      const store = ctx.store as { startedAtMs?: number }
-      store.startedAtMs = Date.now()
-      const command = ctx.calledAs || ctx.command?.name || '(root)'
-      await runWithLogContext({ command }, async () => {
-        await next()
-      })
-    }})
-    .interceptor({ enforce: 'post', handler: async (ctx, next) => {
-      await next()
-
-      const store = ctx.store as { startedAtMs?: number }
-      const startedAtMs = store.startedAtMs
-      if (typeof startedAtMs !== 'number' || !ctx.command) {
-        return
-      }
-
-      if (ctx.command.name === 'help' || ctx.command.name === 'version') {
-        return
-      }
-
-      const elapsedMs = Date.now() - startedAtMs
-      const commandName = ctx.calledAs || ctx.command.name || '(root)'
-      l.debug(`Command "${commandName}" completed in ${elapsedMs}ms`)
-    }})
-    .errorHandler(cliErrorHandler)
-}
-
 const main = async (): Promise<void> => {
+  applyUniversalHelpDescriptionColors()
   const argv = Bun.argv.slice(2)
-  const parseCli = async (parseArgv: string[]): Promise<void> => {
-    if (shouldPatchHelpConsole(parseArgv)) {
-      await withPatchedHelpConsole(async () => {
-        await createCli().parse({ argv: parseArgv })
-      })
-      return
-    }
-    await createCli().parse({ argv: parseArgv })
-  }
-
-  if (argv.length > 0) {
-    const [first, ...rest] = argv
-
-    if (first === '--help' || first === '-h') {
-      if (rest.length === 0) {
-        await parseCli(['help'])
-        return
-      }
-    }
-
-    if (first === '--version' || first === '-v' || first === '-V') {
-      if (rest.length === 0) {
-        await parseCli(['--version'])
-        return
-      }
-    }
-  }
-
-  await parseCli(argv)
+  await dispatchNativeCli(argv, createNativeRootDefinition(), COMMAND_DEFINITIONS)
 }
 
 installProcessFailureHandlers()

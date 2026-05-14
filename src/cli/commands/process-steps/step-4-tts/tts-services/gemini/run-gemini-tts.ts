@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai'
 import type { GeminiInlineAudioInfo, GeminiMultiSpeakerConfig, GeminiTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
@@ -8,6 +7,7 @@ import { withRetry } from '~/utils/retries'
 import { GEMINI_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
+import { geminiGenerateContent } from '~/utils/gemini/gemini-rest'
 import {
   formatGeminiSpeakerSummary,
   validateGeminiMultiSpeakerTranscript
@@ -76,7 +76,6 @@ export const runGeminiTts = async (
         { label: 'chunk count', value: chunks.length }
       ])
 
-  const ai = new GoogleGenAI({ apiKey })
   const startTime = Date.now()
   const chunkPaths: string[] = []
   let chunkFileIndex = 0
@@ -90,10 +89,10 @@ export const runGeminiTts = async (
         policy: { maxAttempts: 3 }
       },
       async () => {
-        return await ai.models.generateContent({
+        return await geminiGenerateContent(apiKey, {
           model: options.model,
           contents: chunk,
-          config: {
+          generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
               ...(options.multiSpeakerConfig

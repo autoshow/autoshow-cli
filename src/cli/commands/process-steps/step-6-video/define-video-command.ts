@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { videoGenFlags } from '~/cli/flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
@@ -13,7 +13,7 @@ import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsF
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 
-export const videoCommand = defineCommand({
+export const videoCommand = defineCliCommand({
   name: 'video',
   description: 'Generate a video from a text prompt',
   parameters: [{ key: '<prompt>', description: 'Text prompt for video generation' }],

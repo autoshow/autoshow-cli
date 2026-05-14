@@ -2,7 +2,7 @@ import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runAnthropicCompatibleModel } from '../anthropic-compatible'
-import { createAnthropicClient } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
+import { getAnthropicClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 
 export const runAnthropicModel = async (
   prompt: string,
@@ -15,13 +15,13 @@ export const runAnthropicModel = async (
     throw new Error('ANTHROPIC_API_KEY environment variable is required')
   }
 
-  const client = createAnthropicClient()
+  const config = getAnthropicClientConfig()
 
   return await runAnthropicCompatibleModel({
     prompt,
     model,
     structuredOpts,
-    client,
+    config,
     service: 'anthropic',
     providerLabel: 'Anthropic',
     operationName: 'anthropic-llm',

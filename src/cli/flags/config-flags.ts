@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import { withHelpGroup } from './flag-utils'
 import {
   transcriptionFlags,
@@ -41,19 +41,19 @@ const configFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const pricingFlags = {
   'max-cents': {
     description: 'Budget limit in cents — commands exceeding this fail unless --allow-over-budget is set',
     type: String
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const omitFlags = (
-  flags: ClercFlagsDefinition,
+  flags: CliFlagsDefinition,
   omittedKeys: string[]
-): ClercFlagsDefinition => Object.fromEntries(
+): CliFlagsDefinition => Object.fromEntries(
   Object.entries(flags).filter(([name]) => !omittedKeys.includes(name))
 )
 
@@ -77,4 +77,4 @@ export const configCommandFlags = {
   ...withHelpGroup(configVideoFlags, 'step-6-video'),
   ...withHelpGroup(configMusicFlags, 'step-7-music'),
   ...withHelpGroup(priceFlag, 'pricing')
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

@@ -1,4 +1,4 @@
-import type { ClercFlagDefinitionValue, ClercFlagsDefinition } from 'clerc'
+import type { CliFlagDefinition, CliFlagsDefinition } from '~/cli/native'
 import {
   ocrTuningFlags,
   batchFlags,
@@ -14,14 +14,14 @@ import { musicGenFlags } from './music-flags'
 import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 const pickFlags = (
-  flags: ClercFlagsDefinition,
+  flags: CliFlagsDefinition,
   keys: readonly string[]
-): ClercFlagsDefinition => {
-  const picked: ClercFlagsDefinition = {}
+): CliFlagsDefinition => {
+  const picked: CliFlagsDefinition = {}
   for (const key of keys) {
     const definition = flags[key]
     if (definition !== undefined) {
-      picked[key] = definition as ClercFlagDefinitionValue
+      picked[key] = definition as CliFlagDefinition
     }
   }
   return picked
@@ -63,7 +63,7 @@ const resumeOcrFlags = {
     'rotate'
   ]),
   ...epubInspectFlags
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const resumeTtsFlags = pickFlags(ttsFlags, [
   'kitten-tts',
@@ -158,4 +158,4 @@ export const resumeFlags = {
   ...resumeImageFlags,
   ...resumeVideoFlags,
   ...resumeMusicFlags
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

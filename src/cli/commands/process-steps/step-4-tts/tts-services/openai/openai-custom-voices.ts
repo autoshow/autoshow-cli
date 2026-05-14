@@ -2,6 +2,7 @@ import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
+import { createOpenAIVoice, createOpenAIVoiceConsent } from '~/utils/openai/client'
 
 const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 const OPENAI_DEFAULT_CONSENT_LANGUAGE = 'en-US'
@@ -84,23 +85,6 @@ export const defaultOpenAITtsConsentName = (audioPath: string): string => {
 
 export const defaultOpenAITtsVoiceName = (): string => `AutoShow_${Date.now()}`
 
-const readOpenAIJsonResponse = async (response: Response, operationName: string): Promise<unknown> => {
-  try {
-    return await response.json()
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new Error(`${operationName} returned invalid JSON: ${message}`)
-  }
-}
-
-const readOpenAIErrorBody = async (response: Response): Promise<string> => {
-  try {
-    return await response.text()
-  } catch {
-    return ''
-  }
-}
-
 export const validateOpenAITtsCustomVoiceAudio = async (
   audioPath: string,
   label = 'audio'
@@ -160,22 +144,11 @@ const uploadOpenAITtsVoiceConsent = async (
   form.append('language', options.consentLanguage?.trim() || OPENAI_DEFAULT_CONSENT_LANGUAGE)
   appendAudioFile(form, 'recording', consentAudio)
 
-  const response = await fetch(`${baseURL}/audio/voice_consents`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: form
-  })
-
-  if (!response.ok) {
-    const body = await readOpenAIErrorBody(response)
-    throw new Error(`OpenAI TTS voice consent upload failed (${response.status}): ${body || 'No response body'}`)
-  }
-
   const data = validateData(
     OpenAIVoiceConsentResponseSchema,
-    await readOpenAIJsonResponse(response, 'OpenAI TTS voice consent upload response'),
+    await createOpenAIVoiceConsent({ apiKey, baseURL }, form, {
+      errorMessagePrefix: 'OpenAI TTS voice consent upload failed'
+    }),
     'OpenAI TTS voice consent upload response'
   )
   return data.id
@@ -207,22 +180,11 @@ const createOpenAITtsCustomVoice = async (
   form.append('consent', consentId)
   appendAudioFile(form, 'audio_sample', sampleAudio)
 
-  const response = await fetch(`${baseURL}/audio/voices`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: form
-  })
-
-  if (!response.ok) {
-    const body = await readOpenAIErrorBody(response)
-    throw new Error(`OpenAI TTS voice creation failed (${response.status}): ${body || 'No response body'}`)
-  }
-
   const data = validateData(
     OpenAIVoiceResponseSchema,
-    await readOpenAIJsonResponse(response, 'OpenAI TTS voice creation response'),
+    await createOpenAIVoice({ apiKey, baseURL }, form, {
+      errorMessagePrefix: 'OpenAI TTS voice creation failed'
+    }),
     'OpenAI TTS voice creation response'
   )
 

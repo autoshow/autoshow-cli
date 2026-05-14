@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import { withHelpGroup } from './flag-utils'
 import {
   SUPPORTED_KITTEN_TTS_MODELS,
@@ -201,7 +201,7 @@ const writeTtsFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const writeVideoModelFlags = {
   'gemini-video': {
@@ -224,7 +224,7 @@ const writeVideoModelFlags = {
     description: `Enable video generation on LLM output. ${buildModelDescription('Runway video model', SUPPORTED_RUNWAY_VIDEO_MODELS)}`,
     type: [String] as [StringConstructor]
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const writeMusicModelFlags = {
   'elevenlabs-music': {
@@ -253,7 +253,7 @@ const writeMusicModelFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const writeTextInputFlags = {
   'text-input': {
@@ -280,7 +280,7 @@ const writeTextInputFlags = {
     description: 'Optional tracks.md file used to prepend track-number headers on saved rendered text',
     type: String
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 const writeLlmShortcutFlags = {
   'all-llm': {
@@ -289,7 +289,7 @@ const writeLlmShortcutFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const writeFlags = {
   ...withHelpGroup(batchFlags, 'step-1-download'),
@@ -309,4 +309,4 @@ export const writeFlags = {
   ...withHelpGroup(musicGenFlags, 'step-7-music'),
   ...withHelpGroup(writeMusicModelFlags, 'step-7-music'),
   ...withHelpGroup(priceFlag, 'pricing')
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

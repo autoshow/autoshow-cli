@@ -1,4 +1,4 @@
-import { defineCommand } from 'clerc'
+import { defineCliCommand } from '~/cli/native'
 import { resumeFlags } from '~/cli/flags'
 import { dispatchResume } from './resume-dispatch'
 
@@ -7,7 +7,7 @@ const outputDirParameter = [{
   description: 'Existing run or batch output directory (contains run.json or batch.json)'
 }] as const
 
-export const resumeCommand = defineCommand({
+export const resumeCommand = defineCliCommand({
   name: 'resume',
   description: 'Resume missing provider outputs in an existing run or batch directory',
   parameters: outputDirParameter,

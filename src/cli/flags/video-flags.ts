@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_DEAPI_VIDEO_MODELS,
@@ -68,4 +68,4 @@ export const videoGenFlags = {
     type: String
   },
   ...priceFlag
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

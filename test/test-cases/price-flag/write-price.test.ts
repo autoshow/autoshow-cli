@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test'
 import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, isAbsolute, join, relative, resolve } from 'node:path'
+import { stripAnsi } from '~/utils/terminal-colors'
 import {
   cleanupTestOutput,
   fileExists,
@@ -20,6 +21,15 @@ type WriteLyricsProjectFixture = {
 }
 
 const createdProjects: string[] = []
+
+const toCliDisplayPath = (path: string): string => {
+  const absolutePath = isAbsolute(path) ? path : resolve(process.cwd(), path)
+  const relativePath = relative(process.cwd(), absolutePath)
+  if (relativePath.length === 0 || relativePath.startsWith('..') || isAbsolute(relativePath)) {
+    return absolutePath.replace(/\\/g, '/')
+  }
+  return `./${relativePath.replace(/\\/g, '/')}`
+}
 
 const createWriteLyricsProject = async (): Promise<WriteLyricsProjectFixture> => {
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -95,9 +105,9 @@ test('write project directory --price reports rendered lyric outputs without cre
   expect(result.exitCode).toBe(0)
   expect(result.outputDir).toBeNull()
 
-  const output = `${result.stdout}\n${result.stderr}`
+  const output = stripAnsi(`${result.stdout}\n${result.stderr}`)
   expect(output).toContain('Expected files')
-  expect(output).toContain(`${project.lyricsDir}/*.md`)
+  expect(output).toContain(`${toCliDisplayPath(project.lyricsDir)}/*.md`)
   expect(await fileExists(project.lyricsDir)).toBe(false)
 
   const dirsAfter = await listOutputDirs()

@@ -7,6 +7,7 @@ import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { isStructuredFallbackError } from '~/cli/commands/process-steps/step-3-write/write-utils/structured-error-utils'
 import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import { createOpenAIChatCompletion, extractOpenAIChatCompletionText } from '~/utils/openai/client'
 
 const createCombinedSignal = (signal?: AbortSignal): AbortSignal => {
   const timeoutSignal = AbortSignal.timeout(LLM_REQUEST_TIMEOUT_MS)
@@ -17,7 +18,7 @@ export const runOpenAICompatibleChatModel = async ({
   prompt,
   model,
   structuredOpts,
-  client,
+  config,
   service,
   providerLabel,
   operationName,
@@ -35,11 +36,11 @@ export const runOpenAICompatibleChatModel = async ({
         customizeRequestBody?.(requestBody, model)
 
         const executeRequest = async (body: Record<string, unknown>): Promise<string> => {
-          const response = await client.chat.completions.create(body as any, {
+          const response = await createOpenAIChatCompletion(config, body, {
             signal: createCombinedSignal(signal)
           })
 
-          const text = response.choices[0]?.message?.content ?? ''
+          const text = extractOpenAIChatCompletionText(response) ?? ''
           if (!text) {
             throw new Error('No response text from model')
           }

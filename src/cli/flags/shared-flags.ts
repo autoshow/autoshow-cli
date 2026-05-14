@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_LLAMA_MODELS,
   SUPPORTED_ANTHROPIC_MODELS,
@@ -19,7 +19,7 @@ export const priceFlag = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const batchFlags = {
   'batch-limit': {
@@ -43,7 +43,7 @@ export const batchFlags = {
     type: String,
     default: '1'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const transcriptionFlags = {
   ...getStep2ProviderFlags('stt'),
@@ -121,7 +121,7 @@ export const transcriptionFlags = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const llmProviderFlags = {
   llama: {
@@ -170,12 +170,12 @@ export const llmProviderFlags = {
     type: String,
     default: '1'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const mediaFlags = {
   ...transcriptionFlags,
   ...llmProviderFlags
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const promptFlag = {
   prompt: {
@@ -189,7 +189,7 @@ export const promptFlag = {
     default: false,
     negatable: false
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const ocrInputFlags = {
   ...getStep2ProviderFlags('ocr'),
@@ -231,14 +231,14 @@ export const ocrInputFlags = {
     type: String,
     default: '1'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const articleFlags = {
   'url-backend': {
     description: 'Article/HTML extraction backend: defuddle|firecrawl|glm-reader|spider|zyte (default: defuddle; local .html/.htm always use defuddle)',
     type: String
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const allArticleFlags = {
   ...articleFlags,
@@ -253,7 +253,7 @@ export const allArticleFlags = {
     type: String,
     default: '2'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition
 
 export const ocrTuningFlags = {
   dpi: {
@@ -286,4 +286,4 @@ export const ocrTuningFlags = {
     type: String,
     default: '0'
   }
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

@@ -468,14 +468,11 @@ export const generateFixture = async (
         await generateImageWithMagick(filePath, format)
         break
       case 'cbz': {
-        // Create a ZIP with a minimal PNG image
         const tmpPng = filePath + '.tmp.png'
         await generateMinimalPng(tmpPng)
-        const zipResult = await exec('zip', ['-j', filePath, tmpPng])
+        const pngBytes = new Uint8Array(await Bun.file(tmpPng).arrayBuffer())
         await rm(tmpPng, { force: true }).catch(() => {})
-        if (zipResult.exitCode !== 0) {
-          throw new Error(`zip failed for CBZ ${filePath}: ${zipResult.stderr}`)
-        }
+        await writeZipFixture(filePath, [{ path: 'page.png', content: pngBytes }])
         break
       }
       case 'mobi':

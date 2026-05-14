@@ -1,4 +1,4 @@
-import type { ClercFlagsDefinition } from 'clerc'
+import type { CliFlagsDefinition } from '~/cli/native'
 import { articleFlags, batchFlags } from './shared-flags'
 
 export const downloadFlags = {
@@ -23,4 +23,4 @@ export const downloadFlags = {
   },
   ...articleFlags,
   ...batchFlags,
-} as const satisfies ClercFlagsDefinition
+} as const satisfies CliFlagsDefinition

@@ -109,7 +109,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │                                                                              │
 │  Common Provider Base URL Overrides                                          │
 │  ├── OPENAI_BASE_URL, GROQ_BASE_URL, MISTRAL_BASE_URL                        │
-│  ├── XAI_BASE_URL, GEMINI_BASE_URL, DEAPI_BASE_URL                           │
+│  ├── XAI_BASE_URL, DEAPI_BASE_URL                                            │
 │  ├── ELEVENLABS_BASE_URL, MINIMAX_BASE_URL, DEEPGRAM_BASE_URL                │
 │  ├── SPEECHIFY_BASE_URL, RUNWAY_BASE_URL, BFL_BASE_URL                       │
 │  └── TOGETHER_BASE_URL, DEEPINFRA_BASE_URL, SONIOX_BASE_URL,                 │
