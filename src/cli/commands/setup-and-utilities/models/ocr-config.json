@@ -57,7 +57,7 @@
           "notes": "project/links/kimi-general-ocr-text-links.md documents Kimi image support for PNG/JPEG/WebP/GIF, a 100 MB request-body/file limit, and recommended image resolution no higher than 4K. AutoShow renders PDFs to page images before calling Kimi OCR."
         },
         "estimation": {
-          "costMultiplier": 1,
+          "costMultiplier": 0.8886,
           "msPerPage": 14300,
           "promptTokensPerPage": 4262,
           "completionTokensPerPage": 471
@@ -95,7 +95,7 @@
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         },
         "estimation": {
-          "costMultiplier": 1,
+          "costMultiplier": 0.8885,
           "msPerPage": 5793,
           "promptTokensPerPage": 3076,
           "completionTokensPerPage": 289.5
@@ -200,7 +200,7 @@
           "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
         },
         "estimation": {
-          "costMultiplier": 1,
+          "costMultiplier": 0.867,
           "msPerPage": 14428,
           "promptTokensPerPage": 7981,
           "completionTokensPerPage": 471.5
@@ -239,7 +239,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2
+          "msPerPage": 3
         }
       }
     }

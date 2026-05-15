@@ -97,7 +97,7 @@
         "blockCost720pCents": 19,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 35000
+          "msPerSecond": 31209
         }
       }
     }

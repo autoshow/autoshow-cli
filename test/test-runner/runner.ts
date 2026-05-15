@@ -8,6 +8,7 @@ import {
   cleanupTestOutputRoot,
   createRunArtifacts,
   writeJsonFile,
+  writeDashboardReportFiles,
   writeLatestRunLog,
   writeReportJson
 } from './artifacts'
@@ -20,7 +21,7 @@ import {
   type PriceCommandObservation,
 } from './price-evaluation'
 import { resolvePriceSelection } from './price-commands'
-import { buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
+import { buildDashboardReportData, buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
 import { applyModelConfigCalibrations } from './model-calibration'
 import { resolveSelectedFiles } from './path-selection'
@@ -546,6 +547,9 @@ const runStandardTestMode = async (
   if (typeof reportData['e2e'] === 'object' && reportData['e2e'] !== null) {
     await writeJsonFile(artifacts.e2eReportJsonPath, reportData['e2e'] as Record<string, unknown>)
   }
+  const dashboardReport = await buildDashboardReportData(junitCases, metrics, artifacts, endedAtIso, endedAtMs, argv.slice(2))
+  const dashboardPaths = await writeDashboardReportFiles(artifacts, dashboardReport)
+  console.log(`Dashboard report JSON: ${normalizeRepoPath(dashboardPaths.resultsReportPath)}`)
   const calibrationReport = await applyModelConfigCalibrations(artifacts.rootDir)
   await writeJsonFile(artifacts.calibrationReportJsonPath, calibrationReport as unknown as Record<string, unknown>)
   console.log(`Model calibration report: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
@@ -718,6 +722,7 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
     console.log(`Report JSON: ${normalizeRepoPath(artifacts.reportJsonPath)}`)
     if (!args.priceMode) {
       console.log(`E2E Report JSON: ${normalizeRepoPath(artifacts.e2eReportJsonPath)}`)
+      console.log(`Dashboard Report JSON: ${normalizeRepoPath(artifacts.dashboardReportJsonPath)}`)
       console.log(`Model Calibration JSON: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
     }
     console.log(`Latest log: ${normalizeRepoPath(latestLogPath)}`)

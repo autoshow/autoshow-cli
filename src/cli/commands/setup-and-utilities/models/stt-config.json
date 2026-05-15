@@ -11,7 +11,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 32
+          "msPerSecond": 24
         }
       },
       "base": {
@@ -22,7 +22,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 39
+          "msPerSecond": 34
         }
       },
       "small": {
@@ -49,7 +49,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 131
+          "msPerSecond": 114
         }
       }
     }
@@ -70,7 +70,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 162
+          "msPerSecond": 95
         }
       }
     }
@@ -94,7 +94,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 260
+          "msPerSecond": 379
         }
       }
     }
@@ -115,7 +115,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 140
+          "msPerSecond": 51
         }
       }
     }
@@ -145,7 +145,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 69
+          "msPerSecond": 62
         }
       }
     }
@@ -180,8 +180,8 @@
           "notes": "deAPI publishes conflicting current upload limits for audio transcription: the audiofile2txt endpoint doc lists 10 MB, while the global Limits & Quotas page lists 80 MB for audio uploads. AutoShow keeps deAPI v1 split policy note-only and relies on exact provider pricing plus retry-with-split when the upload path is rejected as too large. Supported passthrough URLs are documented for YouTube, X/Twitter, Twitch, Kick, TikTok, and X Spaces."
         },
         "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 82
+          "costMultiplier": 0.8499,
+          "msPerSecond": 202
         }
       }
     }
@@ -278,7 +278,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 469
+          "msPerSecond": 192
         }
       },
       "enhanced": {
@@ -292,7 +292,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 637
+          "msPerSecond": 291
         }
       }
     }
@@ -338,7 +338,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 441
+          "msPerSecond": 496
         }
       }
     }
@@ -425,7 +425,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 173
+          "msPerSecond": 257
         }
       }
     }

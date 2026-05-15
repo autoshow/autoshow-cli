@@ -21,7 +21,7 @@
         "outputCostPer1MUSD": 180,
         "outputCostPer1MCents": 18000,
         "estimation": {
-          "costMultiplier": 0.6983,
+          "costMultiplier": 0.8039,
           "msPer1KTokens": 127141
         }
       },
@@ -32,7 +32,7 @@
         "outputCostPer1MUSD": 4.5,
         "outputCostPer1MCents": 450,
         "estimation": {
-          "costMultiplier": 0.6811,
+          "costMultiplier": 0.7927,
           "msPer1KTokens": 3831
         }
       },
@@ -44,7 +44,7 @@
         "outputCostPer1MCents": 125,
         "estimation": {
           "costMultiplier": 0.7927,
-          "msPer1KTokens": 3482
+          "msPer1KTokens": 4743
         }
       }
     }
@@ -72,7 +72,7 @@
         "outputCostPer1MCents": 60,
         "estimation": {
           "costMultiplier": 0.848,
-          "msPer1KTokens": 1806
+          "msPer1KTokens": 1014
         }
       }
     }
@@ -88,7 +88,7 @@
         "outputCostPer1MUSD": 12,
         "outputCostPer1MCents": 1200,
         "estimation": {
-          "costMultiplier": 0.759,
+          "costMultiplier": 0.8434,
           "msPer1KTokens": 32312
         }
       },
@@ -100,7 +100,7 @@
         "outputCostPer1MCents": 150,
         "estimation": {
           "costMultiplier": 0.8395,
-          "msPer1KTokens": 5120
+          "msPer1KTokens": 2982
         }
       }
     }
@@ -117,7 +117,7 @@
         "outputCostPer1MCents": 2500,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 14456
+          "msPer1KTokens": 8899
         }
       },
       "claude-opus-4-6": {
@@ -127,8 +127,8 @@
         "outputCostPer1MUSD": 25,
         "outputCostPer1MCents": 2500,
         "estimation": {
-          "costMultiplier": 0.6857,
-          "msPer1KTokens": 14920
+          "costMultiplier": 0.7957,
+          "msPer1KTokens": 10927
         }
       },
       "claude-sonnet-4-6": {
@@ -138,8 +138,8 @@
         "outputCostPer1MUSD": 15,
         "outputCostPer1MCents": 1500,
         "estimation": {
-          "costMultiplier": 0.7672,
-          "msPer1KTokens": 13968
+          "costMultiplier": 0.8487,
+          "msPer1KTokens": 10305
         }
       },
       "claude-haiku-4-5": {
@@ -149,7 +149,7 @@
         "outputCostPer1MUSD": 5,
         "outputCostPer1MCents": 500,
         "estimation": {
-          "costMultiplier": 0.6419,
+          "costMultiplier": 0.8487,
           "msPer1KTokens": 5000
         }
       }
@@ -205,7 +205,7 @@
         "outputCostPer1MUSD": 6,
         "outputCostPer1MCents": 600,
         "estimation": {
-          "msPer1KTokens": 7829,
+          "msPer1KTokens": 11318,
           "costMultiplier": 1
         }
       }
@@ -267,7 +267,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 2285
+          "msPer1KTokens": 1717
         }
       }
     }

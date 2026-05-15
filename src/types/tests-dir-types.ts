@@ -39,6 +39,7 @@ export type TestRunArtifacts = {
   junitPath: string
   reportJsonPath: string
   e2eReportJsonPath: string
+  dashboardReportJsonPath: string
   calibrationReportJsonPath: string
   metadataDirPath: string
   startedAtMs: number

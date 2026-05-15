@@ -3,16 +3,18 @@ import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseRunnerArgs } from '../../test-runner/args'
-import { cleanupTestOutputRoot, createRunArtifacts, writeLatestRunLog } from '../../test-runner/artifacts'
+import { cleanupTestOutputRoot, createRunArtifacts, writeDashboardReportFiles, writeLatestRunLog } from '../../test-runner/artifacts'
 import { applyModelConfigCalibrations } from '../../test-runner/model-calibration'
 import { parseJunit } from '../../test-runner/parsers'
 import { EMPTY_PRICE_CONFIG_PATH, withEmptyPriceConfig } from '../../test-runner/price-command-config'
 import { resolvePriceSelection } from '../../test-runner/price-commands'
 import { BUDGET_PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
 import { evaluatePriceObservations } from '../../test-runner/price-evaluation'
+import { buildDashboardReportData } from '../../test-runner/reports'
 import { formatSelectedPathsLabel, formatSelectedPriceSuitesLabel } from '../../test-runner/path-selection'
 import { parseCommandEstimatedTotal } from '../../test-runner/utils'
 import { shouldSkipBudgetKeys } from '../../test-utils/budget'
+import type { ParsedCommandMetric, ParsedJunitCase } from '~/types'
 
 const tempDirs: string[] = []
 
@@ -511,6 +513,312 @@ describe('test-runner contracts', () => {
     expect(report.metadataFilesScanned).toBe(1)
     expect(report.updatedModels).toBe(1)
     expect(updatedConfig.openai.models['gpt-image-1-mini'].estimation.msPerImage).toBe(1500)
+  })
+
+  test('dashboard report builder expands manifest rows and converts cents to USD', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-dashboard-report-'))
+    tempDirs.push(dir)
+
+    const artifacts = await createRunArtifacts(dir)
+    const runManifestDir = join(artifacts.runDir, 'run')
+    await mkdir(runManifestDir, { recursive: true })
+
+    const urlFile = 'test/test-cases/e2e/step-2-ocr-e2e/url-backends.test.ts'
+    const urlName = 'extract url with all backends'
+    const docFile = 'test/test-cases/e2e/step-2-ocr-e2e/document.test.ts'
+    const docName = 'extract pdf with tesseract'
+    const writeFilePath = 'test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts'
+    const writeName = 'gpt-5.4-mini model generates summary'
+    const downloadFile = 'test/test-cases/e2e/download.test.ts'
+    const downloadName = 'download local document input'
+    const urlOutputDir = join(artifacts.runDir, 'outputs', 'all-url-run')
+    const docOutputDir = join(artifacts.runDir, 'outputs', 'document-run')
+    const writeOutputDir = join(artifacts.runDir, 'outputs', 'write-run')
+
+    await writeFile(join(runManifestDir, 'all-url-run.json'), `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'extract',
+      metadata: {
+        resolvedStep2: {
+          route: 'article',
+          sourceKind: 'article',
+          backend: 'defuddle',
+          backends: ['defuddle', 'firecrawl', 'glm-reader', 'spider', 'zyte'],
+        },
+        requestedProviders: [
+          { service: 'defuddle', model: 'defuddle' },
+          { service: 'firecrawl', model: 'firecrawl' },
+          { service: 'glm-reader', model: 'glm-reader' },
+          { service: 'spider', model: 'spider' },
+          { service: 'zyte', model: 'zyte' },
+        ],
+        step2: [
+          { extractionMethod: 'html+defuddle', processingTime: 100 },
+          { extractionMethod: 'html+firecrawl', processingTime: 200 },
+        ],
+        cost: {
+          estimated: {
+            steps: [
+              { step: 'extract', provider: 'defuddle', model: 'defuddle', cost: 0 },
+              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: 0.083 },
+            ],
+          },
+          actual: {
+            steps: [
+              { step: 'extract', provider: 'defuddle', model: 'defuddle', cost: 0 },
+              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: 0.085 },
+            ],
+          },
+        },
+        timing: {
+          estimated: {
+            steps: [
+              { step: 'extract', provider: 'defuddle', model: 'defuddle', processingTimeMs: 90 },
+              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', processingTimeMs: 180 },
+            ],
+          },
+          actual: {
+            steps: [
+              { step: 'extract', provider: 'defuddle', model: 'defuddle', processingTimeMs: 100 },
+              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', processingTimeMs: 200 },
+            ],
+          },
+        },
+      },
+    }, null, 2)}\n`)
+    await writeFile(join(runManifestDir, 'document-run.json'), `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'extract',
+      metadata: {
+        resolvedStep2: {
+          route: 'ocr',
+          sourceKind: 'document',
+          providers: [{ service: 'tesseract', model: 'tesseract' }],
+        },
+        cost: {
+          estimated: {
+            steps: [
+              { step: 'extract', provider: 'tesseract', model: 'tesseract', cost: 2 },
+            ],
+          },
+          actual: {
+            steps: [
+              { step: 'extract', provider: 'tesseract', model: 'tesseract', cost: 3 },
+            ],
+          },
+        },
+        timing: {
+          actual: {
+            steps: [
+              { step: 'extract', provider: 'tesseract', model: 'tesseract', processingTimeMs: 120 },
+            ],
+          },
+        },
+      },
+    }, null, 2)}\n`)
+    await writeFile(join(runManifestDir, 'write-run.json'), `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'write',
+      metadata: {
+        step2: {
+          transcriptionService: 'whisper',
+          transcriptionModel: '/Users/example/runtime/models/whisper/ggml-tiny.bin | coreml:/Users/example/runtime/models/whisper/ggml-tiny-encoder.mlmodelc',
+          processingTime: 50,
+        },
+        step3: {
+          llmService: 'openai',
+          llmModel: 'gpt-5.4-mini',
+          processingTime: 400,
+        },
+        cost: {
+          estimated: {
+            steps: [
+              { step: 'stt', provider: 'whisper', model: 'ggml-tiny.bin', cost: 0 },
+              { step: 'llm', provider: 'openai', model: 'gpt-5.4-mini', cost: 0.031 },
+            ],
+          },
+          actual: {
+            steps: [
+              { step: 'stt', provider: 'whisper', model: 'ggml-tiny.bin', cost: 0 },
+              { step: 'llm', provider: 'openai', model: 'gpt-5.4-mini', cost: 0.033 },
+            ],
+          },
+        },
+        timing: {
+          actual: {
+            steps: [
+              { step: 'stt', provider: 'whisper', model: 'ggml-tiny.bin', processingTimeMs: 50 },
+              { step: 'llm', provider: 'openai', model: 'gpt-5.4-mini', processingTimeMs: 400 },
+            ],
+          },
+        },
+      },
+    }, null, 2)}\n`)
+
+    const junitCases: ParsedJunitCase[] = [
+      {
+        id: `${urlFile}::${urlName}`,
+        file: urlFile,
+        name: urlName,
+        line: 10,
+        durationMs: 5000,
+        status: 'passed',
+        failureMessage: null,
+      },
+      {
+        id: `${docFile}::${docName}`,
+        file: docFile,
+        name: docName,
+        line: 20,
+        durationMs: 3000,
+        status: 'passed',
+        failureMessage: null,
+      },
+      {
+        id: `${writeFilePath}::${writeName}`,
+        file: writeFilePath,
+        name: writeName,
+        line: 30,
+        durationMs: 2000,
+        status: 'passed',
+        failureMessage: null,
+      },
+      {
+        id: `${downloadFile}::${downloadName}`,
+        file: downloadFile,
+        name: downloadName,
+        line: 40,
+        durationMs: 1000,
+        status: 'passed',
+        failureMessage: null,
+      },
+    ]
+    const metrics: ParsedCommandMetric[] = [
+      {
+        source: 'runCommand',
+        command: 'bun src/cli/create-cli.ts extract https://example.com --all-url',
+        args: ['src/cli/create-cli.ts', 'extract', 'https://example.com', '--all-url'],
+        exitCode: 0,
+        durationMs: 5000,
+        outputDir: urlOutputDir,
+        callerFile: urlFile,
+        callerLine: 10,
+        callerColumn: 1,
+        at: '2026-05-14T12:00:05.000Z',
+        testName: urlName,
+        estimatedCostCents: 0.083,
+        actualCostCents: 0.085,
+        estimatedProcessingTimeMs: 270,
+        actualProcessingTimeMs: 300,
+      },
+      {
+        source: 'runCommand',
+        command: 'bun src/cli/create-cli.ts extract input/examples/document/1-document.pdf --tesseract-ocr',
+        args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--tesseract-ocr'],
+        exitCode: 0,
+        durationMs: 3000,
+        outputDir: docOutputDir,
+        callerFile: docFile,
+        callerLine: 20,
+        callerColumn: 1,
+        at: '2026-05-14T12:00:09.000Z',
+        testName: docName,
+        estimatedCostCents: 2,
+        actualCostCents: 3,
+        estimatedProcessingTimeMs: null,
+        actualProcessingTimeMs: 120,
+      },
+      {
+        source: 'runCommand',
+        command: 'bun src/cli/create-cli.ts write input/examples/audio/1-audio.mp3 --openai gpt-5.4-mini',
+        args: ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4-mini'],
+        exitCode: 0,
+        durationMs: 2000,
+        outputDir: writeOutputDir,
+        callerFile: writeFilePath,
+        callerLine: 30,
+        callerColumn: 1,
+        at: '2026-05-14T12:00:11.000Z',
+        testName: writeName,
+        estimatedCostCents: 0.031,
+        actualCostCents: 0.033,
+        estimatedProcessingTimeMs: null,
+        actualProcessingTimeMs: 450,
+      },
+      {
+        source: 'runCommand',
+        command: 'bun src/cli/create-cli.ts download input/examples/document/1-document.pdf',
+        args: ['src/cli/create-cli.ts', 'download', 'input/examples/document/1-document.pdf'],
+        exitCode: 0,
+        durationMs: 1000,
+        outputDir: null,
+        callerFile: downloadFile,
+        callerLine: 40,
+        callerColumn: 1,
+        at: '2026-05-14T12:00:12.000Z',
+        testName: downloadName,
+        estimatedCostCents: 0,
+        actualCostCents: 0,
+        estimatedProcessingTimeMs: null,
+        actualProcessingTimeMs: null,
+      },
+    ]
+
+    const report = await buildDashboardReportData(
+      junitCases,
+      metrics,
+      artifacts,
+      '2026-05-14T12:00:10.000Z',
+      artifacts.startedAtMs + 10_000,
+      ['test/test-cases/e2e/step-2-ocr-e2e']
+    )
+    const rows = report['tests'] as Array<Record<string, unknown>>
+    const urlRows = rows.filter(row => row['category'] === 'url')
+    const documentRows = rows.filter(row => row['category'] === 'document')
+    const llmRows = rows.filter(row => row['category'] === 'llm')
+    const firecrawl = urlRows.find(row => row['serviceName'] === 'firecrawl') as Record<string, unknown>
+    const firecrawlCost = firecrawl['cost'] as Record<string, unknown>
+    const firecrawlDurations = firecrawl['durations'] as Record<string, Record<string, unknown>>
+
+    expect(report['schemaVersion']).toBe(2)
+    expect(urlRows.map(row => row['serviceName']).sort()).toEqual([
+      'defuddle',
+      'firecrawl',
+      'glm-reader',
+      'spider',
+      'zyte',
+    ])
+    expect(documentRows.map(row => row['serviceName'])).toEqual(['tesseract'])
+    expect(llmRows.map(row => row['serviceName'])).toEqual(['openai'])
+    expect(rows.some(row => row['serviceName'] === 'whisper')).toBe(false)
+    expect(rows.some(row => row['testName'] === downloadName)).toBe(false)
+    expect(firecrawlCost['estimatedUsd']).toBeCloseTo(0.00083)
+    expect(firecrawlCost['runtimeEstimatedUsd']).toBeCloseTo(0.00085)
+    expect(firecrawlDurations['primaryStep']?.['actualMs']).toBe(200)
+  })
+
+  test('dashboard report writer copies results and maintains an index', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-dashboard-write-'))
+    tempDirs.push(dir)
+
+    const artifacts = await createRunArtifacts(dir)
+    const resultsRoot = join(dir, 'reports', 'results')
+    const report = {
+      schemaVersion: 2,
+      generatedAt: '2026-05-14T12:00:00.000Z',
+      run: { id: artifacts.runId },
+      summary: { total: 0, passed: 0, failed: 0, skipped: 0 },
+      tests: [],
+    }
+
+    const paths = await writeDashboardReportFiles(artifacts, report, { resultsRoot })
+    const copiedReport = JSON.parse(await readFile(paths.resultsReportPath, 'utf8')) as Record<string, unknown>
+    const runReport = JSON.parse(await readFile(paths.runReportPath, 'utf8')) as Record<string, unknown>
+    const index = JSON.parse(await readFile(paths.indexPath, 'utf8')) as Record<string, unknown>
+
+    expect(copiedReport['schemaVersion']).toBe(2)
+    expect(runReport['schemaVersion']).toBe(2)
+    expect(index['files']).toEqual([`${artifacts.runId}-dashboard-report.json`])
   })
 
   test('validation paths stay mappedless in price selection', () => {

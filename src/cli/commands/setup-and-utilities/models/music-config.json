@@ -9,7 +9,7 @@
         "costPerMinuteCents": 28,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 487
+          "msPerSecond": 1097
         }
       }
     }
@@ -26,7 +26,7 @@
         "lyricsCostPerTrackCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 2015
+          "msPerSecond": 3023
         }
       },
       "music-2.6": {
@@ -93,7 +93,7 @@
         "costPerTrackCents": 4,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 774
+          "msPerSecond": 606
         }
       },
       "lyria-3-pro-preview": {
@@ -102,7 +102,7 @@
         "costPerTrackCents": 8,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 1073
+          "msPerSecond": 770
         }
       }
     }

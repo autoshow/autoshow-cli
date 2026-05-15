@@ -40,7 +40,7 @@
         "nativeGeminiImage": false,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 3315
+          "msPerImage": 3698
         }
       }
     }
@@ -64,7 +64,7 @@
         "costPerImageCents": 4,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 40590
+          "msPerImage": 48932
         }
       },
       "gpt-image-1-mini": {
@@ -73,7 +73,7 @@
         "costPerImageCents": 2,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10640
+          "msPerImage": 14491
         }
       },
       "gpt-image-2": {
@@ -82,7 +82,7 @@
         "costPerImageCents": 5.3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 23669
+          "msPerImage": 27584
         }
       }
     }
@@ -97,7 +97,7 @@
         "costPerImageCents": 0.35,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 21984
+          "msPerImage": 19482
         }
       }
     }
@@ -136,7 +136,7 @@
         "costPerImageCents": 7,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10549
+          "msPerImage": 7896
         }
       }
     }
@@ -195,7 +195,7 @@
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 23767
+          "msPerImage": 19548
         }
       },
       "flux-2-pro": {
@@ -237,7 +237,7 @@
         "costPerImageCents": 0.136,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 17519
+          "msPerImage": 14154
         }
       },
       "ZImageTurbo_INT8": {

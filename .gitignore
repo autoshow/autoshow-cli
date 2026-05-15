@@ -40,7 +40,11 @@ TODO.md
 project/benchmark
 project/links
 project/plans
-project/reports
+project/reports/*
+!project/reports/.gitkeep
+!project/reports/dashboard/
+!project/reports/dashboard/**
+project/reports/results/
 config
 **/*.wav
 

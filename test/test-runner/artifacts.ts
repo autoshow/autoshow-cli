@@ -8,6 +8,7 @@ const ACTIVE_RUN_FILE = '.active-run.json'
 
 export const TEST_OUTPUT_ROOT = resolve(process.cwd(), 'project/test-output')
 export const LATEST_TEST_LOG_PATH = resolve(TEST_OUTPUT_ROOT, LATEST_LOG_FILE)
+export const DASHBOARD_RESULTS_ROOT = resolve(process.cwd(), 'project/reports/results')
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
@@ -213,6 +214,7 @@ export const createRunArtifacts = async (rootDir = TEST_OUTPUT_ROOT): Promise<Te
     junitPath: resolve(runDir, 'junit.xml'),
     reportJsonPath: resolve(runDir, 'report.json'),
     e2eReportJsonPath: resolve(runDir, 'e2e-report.json'),
+    dashboardReportJsonPath: resolve(runDir, 'dashboard-report.json'),
     calibrationReportJsonPath: resolve(runDir, 'model-calibration.json'),
     metadataDirPath,
     startedAtMs,
@@ -242,7 +244,50 @@ export const writeJsonFile = async (
   path: string,
   json: Record<string, unknown>
 ): Promise<void> => {
+  await ensureParentDirectory(path)
   await Bun.write(path, JSON.stringify(json, null, 2))
+}
+
+export const writeDashboardReportFiles = async (
+  artifacts: TestRunArtifacts,
+  json: Record<string, unknown>,
+  options: { resultsRoot?: string } = {}
+): Promise<{ runReportPath: string; resultsReportPath: string; indexPath: string }> => {
+  const resultsRoot = options.resultsRoot ?? DASHBOARD_RESULTS_ROOT
+  const resultFileName = `${artifacts.runId}-dashboard-report.json`
+  const resultsReportPath = resolve(resultsRoot, resultFileName)
+  const indexPath = resolve(resultsRoot, 'index.json')
+
+  await writeJsonFile(artifacts.dashboardReportJsonPath, json)
+  await writeJsonFile(resultsReportPath, json)
+
+  let resultFiles: string[] = []
+  try {
+    const entries = await readdir(resultsRoot, { withFileTypes: true })
+    resultFiles = entries
+      .filter(entry => entry.isFile() && entry.name.endsWith('.json') && entry.name !== 'index.json')
+      .map(entry => entry.name)
+      .sort((left, right) => left.localeCompare(right))
+  } catch {
+    resultFiles = [resultFileName]
+  }
+
+  if (!resultFiles.includes(resultFileName)) {
+    resultFiles.push(resultFileName)
+    resultFiles.sort((left, right) => left.localeCompare(right))
+  }
+
+  await writeJsonFile(indexPath, {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    files: resultFiles,
+  })
+
+  return {
+    runReportPath: artifacts.dashboardReportJsonPath,
+    resultsReportPath,
+    indexPath,
+  }
 }
 
 export const writeLatestRunLog = async (
