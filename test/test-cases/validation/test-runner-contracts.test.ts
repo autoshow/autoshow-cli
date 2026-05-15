@@ -515,6 +515,86 @@ describe('test-runner contracts', () => {
     expect(updatedConfig.openai.models['gpt-image-1-mini'].estimation.msPerImage).toBe(1500)
   })
 
+  test('model calibration writes split STT provider fragments', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-calibration-stt-fragment-'))
+    tempDirs.push(dir)
+
+    const runsRoot = join(dir, 'runs')
+    const configDir = join(dir, 'config', 'stt-config')
+    await mkdir(configDir, { recursive: true })
+    const deepgramConfigPath = join(configDir, 'stt-deepgram.json')
+    const openaiConfigPath = join(configDir, 'stt-openai-stt.json')
+
+    await writeFile(deepgramConfigPath, `${JSON.stringify({
+      deepgram: {
+        description: 'Deepgram transcription',
+        type: 'api',
+        models: {
+          'nova-3': {
+            description: 'Nova 3',
+            costPerHourCents: 27,
+            estimation: {
+              costMultiplier: 1,
+              msPerSecond: 1000
+            }
+          }
+        }
+      }
+    }, null, 2)}\n`)
+    await writeFile(openaiConfigPath, `${JSON.stringify({
+      'openai-stt': {
+        description: 'OpenAI transcription',
+        type: 'api',
+        models: {
+          'gpt-4o-mini-transcribe': {
+            description: 'GPT-4o mini transcribe',
+            costPerHourCents: 36,
+            estimation: {
+              costMultiplier: 1,
+              msPerSecond: 2000
+            }
+          }
+        }
+      }
+    }, null, 2)}\n`)
+
+    const runDir = join(runsRoot, '2026-05-01_00-00-00_test-run')
+    const copiedRunDir = join(runDir, 'run')
+    await mkdir(copiedRunDir, { recursive: true })
+    await writeFile(join(copiedRunDir, '2026-05-01_00-00-01_stt.json'), `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'stt',
+      metadata: {
+        timing: {
+          actual: {
+            steps: [{
+              step: 'stt',
+              provider: 'deepgram',
+              model: 'nova-3',
+              processingTimeMs: 3000,
+              inputMetric: 'durationSeconds',
+              inputValue: 1
+            }]
+          }
+        }
+      }
+    }, null, 2)}\n`)
+
+    const report = await applyModelConfigCalibrations(runsRoot, { stt: configDir })
+    const updatedDeepgramConfig = await Bun.file(deepgramConfigPath).json() as {
+      deepgram: { models: { 'nova-3': { estimation: { msPerSecond: number } } } }
+    }
+    const untouchedOpenaiConfig = await Bun.file(openaiConfigPath).json() as {
+      'openai-stt': { models: { 'gpt-4o-mini-transcribe': { estimation: { msPerSecond: number } } } }
+    }
+
+    expect(report.runsScanned).toBe(1)
+    expect(report.metadataFilesScanned).toBe(1)
+    expect(report.updatedModels).toBe(1)
+    expect(updatedDeepgramConfig.deepgram.models['nova-3'].estimation.msPerSecond).toBe(1500)
+    expect(untouchedOpenaiConfig['openai-stt'].models['gpt-4o-mini-transcribe'].estimation.msPerSecond).toBe(2000)
+  })
+
   test('dashboard report builder expands manifest rows and converts cents to USD', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-dashboard-report-'))
     tempDirs.push(dir)

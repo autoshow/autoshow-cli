@@ -1,0 +1,38 @@
+{
+  "groq": {
+    "description": "Groq cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "whisper-large-v3": {
+        "description": "Groq-hosted Whisper large v3",
+        "costPerHourUSD": 0.111,
+        "costPerHourCents": 11.1,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "remoteUrlBytes": 104857600,
+          "notes": "Groq documents a 25 MB free-tier file cap and a 100 MB dev-tier file cap. Direct multipart attachments remain capped at 25 MB, so the current CLI keeps effectiveBytes at 25 MB. No maximum audio duration is currently documented."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 25
+        }
+      },
+      "whisper-large-v3-turbo": {
+        "description": "Groq-hosted Whisper large v3 turbo",
+        "costPerHourUSD": 0.04,
+        "costPerHourCents": 4,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "remoteUrlBytes": 104857600,
+          "notes": "Groq documents a 25 MB free-tier file cap and a 100 MB dev-tier file cap. Direct multipart attachments remain capped at 25 MB, so the current CLI keeps effectiveBytes at 25 MB. No maximum audio duration is currently documented."
+        },
+        "estimation": {
+          "costMultiplier": 0.9951,
+          "msPerSecond": 23
+        }
+      }
+    }
+  }
+}

@@ -1,521 +1,42 @@
-import { basename } from 'node:path'
 import type {
   AsyncSttLifecycleHooks,
   DiarizationOptions,
-  RetryClass,
-  SonioxHttpError,
-  SonioxTranscriptResponse,
-  SonioxTranscriptionStatus,
   Step2Metadata,
   Step2RuntimeMetadata,
-  TranscriptionResult,
-  TranscriptionSegment
-} from '~/types'
-import {
-  SonioxFileResponseSchema,
-  SonioxTranscriptResponseSchema,
-  SonioxTranscriptionStatusSchema
+  TranscriptionResult
 } from '~/types'
 import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
-  logSttCleanupFailure,
   logSttSegmentLifecycle
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
   countTokens,
-  formatSpeakerLabel,
-  formatTranscriptText,
-  toTimestamp
+  formatTranscriptText
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import {
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
   writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
-import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
-import { validateData } from '~/utils/validate/validation'
+import {
+  createTranscription,
+  deleteFile,
+  deleteTranscription,
+  getTranscriptionTranscript,
+  pollTranscription,
+  uploadAudio
+} from './soniox-api'
+import {
+  buildSonioxPollingDeadlineError,
+  buildSonioxResumeProbeError
+} from './soniox-utils'
+import { normalizeSonioxTranscript } from './parse-soniox-transcript'
 
-const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
-const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
 const INITIAL_POLL_INTERVAL_MS = 1000
 const MAX_POLL_INTERVAL_MS = 10000
-const SILENCE_BREAK_MS = 1500
-const MIN_SENTENCE_SEGMENT_CHARS = 80
-const MAX_SEGMENT_CHARS = 220
-
-const buildSonioxUrl = (baseURL: string, path: string): string => new URL(path, baseURL).toString()
-
-const getErrorStatus = (error: unknown): number | undefined =>
-  error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
-    ? (error as { status: number }).status
-    : undefined
-
-const toSonioxHttpError = (
-  stage: 'upload' | 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass,
-  response: Response,
-  errText: string
-): SonioxHttpError => Object.assign(
-  new Error(`Soniox ${stage} failed (${response.status}): ${errText}`),
-  {
-    status: response.status,
-    headers: response.headers,
-    stage,
-    retryClass
-  }
-)
-
-const attachSonioxErrorContext = (
-  error: unknown,
-  stage: 'upload' | 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass
-): never => {
-  if (error instanceof Error && error.cause instanceof Error) {
-    ;(error.cause as SonioxHttpError).stage = stage
-    ;(error.cause as SonioxHttpError).retryClass = retryClass
-    throw error.cause
-  }
-
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as SonioxHttpError).stage = stage
-  ;(source as SonioxHttpError).retryClass = retryClass
-  throw source
-}
-
-const attachSonioxValidationContext = (
-  error: unknown,
-  stage: 'upload' | 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass,
-  rawResponse: unknown
-): never => {
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as SonioxHttpError).stage = stage
-  ;(source as SonioxHttpError).retryClass = retryClass
-  ;(source as SonioxHttpError).rawResponse = rawResponse
-  throw source
-}
-
-const buildUploadForm = (
-  audioPath: string
-): FormData => {
-  const form = new FormData()
-  form.append('file', Bun.file(audioPath), basename(audioPath))
-  return form
-}
-
-const uploadAudio = async (
-  baseURL: string,
-  apiKey: string,
-  audioPath: string,
-  metrics?: {
-    onRequest?: (() => void) | undefined
-    onRetry?: ((status: number | undefined) => void) | undefined
-  } | undefined
-): Promise<string> => {
-  let rawPayload: unknown
-  try {
-    rawPayload = await withRetry(
-      {
-        retryClass: 'runtime_http_create_conservative',
-        operationName: 'soniox-upload',
-        policy: { maxAttempts: 4 },
-        timeoutMs: REQUEST_TIMEOUT_MS
-      },
-      async (signal) => {
-        metrics?.onRequest?.()
-        const response = await fetch(buildSonioxUrl(baseURL, '/v1/files'), {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: buildUploadForm(audioPath),
-          signal: signal ?? null
-        })
-
-        if (!response.ok) {
-          throw toSonioxHttpError('upload', 'runtime_http_create_conservative', response, await response.text())
-        }
-
-        return await response.json()
-      },
-      (error) => {
-        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
-        if (decision.shouldRetry) {
-          metrics?.onRetry?.(getErrorStatus(error))
-        }
-        return decision
-      }
-    )
-  } catch (error) {
-    attachSonioxErrorContext(error, 'upload', 'runtime_http_create_conservative')
-  }
-
-  let payload!: { id: string }
-  try {
-    payload = validateData(SonioxFileResponseSchema, rawPayload, 'Soniox upload response')
-  } catch (error) {
-    attachSonioxValidationContext(error, 'upload', 'runtime_http_create_conservative', rawPayload)
-  }
-
-  return payload.id
-}
-
-const createTranscription = async (
-  baseURL: string,
-  apiKey: string,
-  modelName: string,
-  fileId: string,
-  diarizationOptions: DiarizationOptions | undefined,
-  metrics?: {
-    onRequest?: (() => void) | undefined
-    onRetry?: ((status: number | undefined) => void) | undefined
-  } | undefined
-): Promise<string> => {
-  const body = {
-    model: modelName,
-    file_id: fileId,
-    enable_speaker_diarization: diarizationOptions?.enabled !== false
-  }
-
-  let rawPayload: unknown
-  try {
-    rawPayload = await withRetry(
-      {
-        retryClass: 'runtime_http_create_conservative',
-        operationName: 'soniox-create-transcription',
-        policy: { maxAttempts: 4 },
-        timeoutMs: REQUEST_TIMEOUT_MS
-      },
-      async (signal) => {
-        metrics?.onRequest?.()
-        const response = await fetch(buildSonioxUrl(baseURL, '/v1/transcriptions'), {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body),
-          signal: signal ?? null
-        })
-
-        if (!response.ok) {
-          throw toSonioxHttpError('create', 'runtime_http_create_conservative', response, await response.text())
-        }
-
-        return await response.json()
-      },
-      (error) => {
-        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
-        if (decision.shouldRetry) {
-          metrics?.onRetry?.(getErrorStatus(error))
-        }
-        return decision
-      }
-    )
-  } catch (error) {
-    attachSonioxErrorContext(error, 'create', 'runtime_http_create_conservative')
-  }
-
-  let payload!: SonioxTranscriptionStatus
-  try {
-    payload = validateData(SonioxTranscriptionStatusSchema, rawPayload, 'Soniox transcription create response')
-  } catch (error) {
-    attachSonioxValidationContext(error, 'create', 'runtime_http_create_conservative', rawPayload)
-  }
-
-  return payload.id
-}
-
-const pollTranscription = async (
-  baseURL: string,
-  apiKey: string,
-  transcriptionId: string,
-  metrics?: {
-    onRequest?: (() => void) | undefined
-    onRetry?: ((status: number | undefined) => void) | undefined
-  } | undefined
-): Promise<{ retryAfterMs: number | null, status: SonioxTranscriptionStatus }> => {
-  let pollResult!: { payload: unknown, retryAfterMs: number | null }
-  try {
-    pollResult = await withRetry(
-      {
-        retryClass: 'runtime_http_read',
-        operationName: 'soniox-poll-transcription',
-        policy: { maxAttempts: 6 },
-        timeoutMs: POLL_REQUEST_TIMEOUT_MS
-      },
-      async (signal) => {
-        metrics?.onRequest?.()
-        const response = await fetch(buildSonioxUrl(baseURL, `/v1/transcriptions/${transcriptionId}`), {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`
-          },
-          signal: signal ?? null
-        })
-
-        if (!response.ok) {
-          throw toSonioxHttpError('poll', 'runtime_http_read', response, await response.text())
-        }
-
-        return {
-          payload: await response.json(),
-          retryAfterMs: parseRetryAfterMs(response.headers) ?? null
-        }
-      },
-      (error) => {
-        const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
-        if (decision.shouldRetry) {
-          metrics?.onRetry?.(getErrorStatus(error))
-        }
-        return decision
-      }
-    )
-  } catch (error) {
-    attachSonioxErrorContext(error, 'poll', 'runtime_http_read')
-  }
-
-  let status!: SonioxTranscriptionStatus
-  try {
-    status = validateData(SonioxTranscriptionStatusSchema, pollResult.payload, 'Soniox transcription status')
-  } catch (error) {
-    attachSonioxValidationContext(error, 'poll', 'runtime_http_read', pollResult.payload)
-  }
-
-  return {
-    retryAfterMs: pollResult.retryAfterMs,
-    status
-  }
-}
-
-const getTranscriptionTranscript = async (
-  baseURL: string,
-  apiKey: string,
-  transcriptionId: string,
-  metrics?: {
-    onRequest?: (() => void) | undefined
-    onRetry?: ((status: number | undefined) => void) | undefined
-  } | undefined
-): Promise<SonioxTranscriptResponse> => {
-  let rawPayload: unknown
-  try {
-    rawPayload = await withRetry(
-      {
-        retryClass: 'runtime_http_read',
-        operationName: 'soniox-get-transcript',
-        policy: { maxAttempts: 6 },
-        timeoutMs: POLL_REQUEST_TIMEOUT_MS
-      },
-      async (signal) => {
-        metrics?.onRequest?.()
-        const response = await fetch(buildSonioxUrl(baseURL, `/v1/transcriptions/${transcriptionId}/transcript`), {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`
-          },
-          signal: signal ?? null
-        })
-
-        if (!response.ok) {
-          throw toSonioxHttpError('transcript', 'runtime_http_read', response, await response.text())
-        }
-
-        return await response.json()
-      },
-      (error) => {
-        const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
-        if (decision.shouldRetry) {
-          metrics?.onRetry?.(getErrorStatus(error))
-        }
-        return decision
-      }
-    )
-  } catch (error) {
-    attachSonioxErrorContext(error, 'transcript', 'runtime_http_read')
-  }
-
-  try {
-    return validateData(SonioxTranscriptResponseSchema, rawPayload, 'Soniox transcript response')
-  } catch (error) {
-    return attachSonioxValidationContext(error, 'transcript', 'runtime_http_read', rawPayload)
-  }
-}
-
-const deleteTranscription = async (
-  baseURL: string,
-  apiKey: string,
-  transcriptionId: string
-): Promise<boolean> => {
-  try {
-    const response = await fetch(buildSonioxUrl(baseURL, `/v1/transcriptions/${transcriptionId}`), {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    })
-
-    if (!response.ok && response.status !== 404) {
-      logSttCleanupFailure(l, {
-        provider: 'soniox',
-        artifact: 'transcription',
-        id: transcriptionId,
-        detail: String(response.status)
-      })
-      return false
-    }
-    return true
-  } catch (error) {
-    logSttCleanupFailure(l, {
-      provider: 'soniox',
-      artifact: 'transcription',
-      id: transcriptionId,
-      detail: error instanceof Error ? error.message : String(error)
-    })
-    return false
-  }
-}
-
-const deleteFile = async (
-  baseURL: string,
-  apiKey: string,
-  fileId: string
-): Promise<boolean> => {
-  try {
-    const response = await fetch(buildSonioxUrl(baseURL, `/v1/files/${fileId}`), {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    })
-
-    if (!response.ok && response.status !== 404) {
-      logSttCleanupFailure(l, {
-        provider: 'soniox',
-        artifact: 'file',
-        id: fileId,
-        detail: String(response.status)
-      })
-      return false
-    }
-    return true
-  } catch (error) {
-    logSttCleanupFailure(l, {
-      provider: 'soniox',
-      artifact: 'file',
-      id: fileId,
-      detail: error instanceof Error ? error.message : String(error)
-    })
-    return false
-  }
-}
-
-const toSegments = (
-  tokens: SonioxTranscriptResponse['tokens'],
-  offsetSeconds: number
-): TranscriptionSegment[] => {
-  const segments: TranscriptionSegment[] = []
-
-  let currentText = ''
-  let currentSpeaker: string | undefined
-  let segmentStartMs: number | null = null
-  let segmentEndMs: number | null = null
-  let lastEndMs: number | undefined
-
-  const flush = (): void => {
-    const text = currentText.trim()
-    if (text.length === 0) {
-      currentText = ''
-      currentSpeaker = undefined
-      segmentStartMs = null
-      segmentEndMs = null
-      return
-    }
-
-    const startSeconds = ((segmentStartMs ?? 0) / 1000) + offsetSeconds
-    const endSeconds = ((segmentEndMs ?? segmentStartMs ?? 0) / 1000) + offsetSeconds
-    segments.push({
-      start: toTimestamp(startSeconds),
-      end: toTimestamp(endSeconds),
-      text,
-      ...(currentSpeaker ? { speaker: currentSpeaker } : {})
-    })
-
-    currentText = ''
-    currentSpeaker = undefined
-    segmentStartMs = null
-    segmentEndMs = null
-  }
-
-  for (const token of tokens) {
-    if (token.text.length === 0) {
-      continue
-    }
-
-    const startMs: number = token.start_ms ?? segmentEndMs ?? 0
-    const endMs: number = token.end_ms ?? startMs
-    const speaker = formatSpeakerLabel(token.speaker)
-    const speakerChanged = currentText.trim().length > 0 && speaker !== currentSpeaker
-    const gapBreak = currentText.trim().length > 0 && lastEndMs !== undefined && startMs - lastEndMs > SILENCE_BREAK_MS
-
-    if (speakerChanged || gapBreak) {
-      flush()
-    }
-
-    if (segmentStartMs === null) {
-      segmentStartMs = startMs
-    }
-
-    if (currentSpeaker === undefined && speaker !== undefined) {
-      currentSpeaker = speaker
-    }
-
-    currentText += token.text
-    segmentEndMs = endMs
-    lastEndMs = endMs
-
-    const trimmed = currentText.trimEnd()
-    if ((trimmed.length >= MIN_SENTENCE_SEGMENT_CHARS && /[.!?]["')\]]?$/.test(trimmed)) || trimmed.length >= MAX_SEGMENT_CHARS) {
-      flush()
-    }
-  }
-
-  flush()
-  return segments
-}
-
-const buildPollingDeadlineError = (
-  transcriptionId: string,
-  pollDeadlineMs: number
-): never => {
-  const error = Object.assign(
-    new Error(`Soniox timed out waiting for transcription completion for ${transcriptionId} (deadline exceeded after ${pollDeadlineMs}ms)`),
-    {
-      stage: 'poll',
-      retryClass: 'runtime_http_read' as RetryClass,
-      retryable: true
-    }
-  )
-  throw error
-}
-
-const buildResumeProbeError = (
-  transcriptionId: string,
-  probeCount: number,
-  totalWaitMs: number
-): never => {
-  const error = Object.assign(
-    new Error(`Soniox transcription ${transcriptionId} is still pending after ${probeCount} resume status checks (${totalWaitMs}ms total backoff). Retry the command later.`),
-    {
-      stage: 'poll',
-      retryClass: 'runtime_http_read' as RetryClass,
-      retryable: true
-    }
-  )
-  throw error
-}
 
 export const runSonioxStt = async (
   audioPath: string,
@@ -671,8 +192,8 @@ export const runSonioxStt = async (
       audioDurationSeconds,
       envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_SONIOX',
       pollMode: resumedExistingTranscription ? 'resume-probe' : 'fresh',
-      buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
-      buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
+      buildDeadlineError: (jobId, pollDeadlineMs) => buildSonioxPollingDeadlineError(jobId, pollDeadlineMs),
+      buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildSonioxResumeProbeError(jobId, probeCount, totalWaitMs),
       poll: async () => {
         const pollStartedAt = Date.now()
         const result = await pollTranscription(baseURL, apiKey, activeTranscriptionId, requestMetrics)
@@ -711,37 +232,9 @@ export const runSonioxStt = async (
     const transcriptStartedAt = Date.now()
     const transcript = await getTranscriptionTranscript(baseURL, apiKey, transcriptionId, requestMetrics)
     transcriptMs += Date.now() - transcriptStartedAt
-    const text = transcript.text.trim().length > 0
-      ? transcript.text.trim()
-      : transcript.tokens.map((token) => token.text).join('').trim()
-    const segments = toSegments(transcript.tokens, offsetSeconds)
-    const finalSegments = segments.length > 0
-      ? segments
-      : [{
-          start: toTimestamp(offsetSeconds),
-          end: toTimestamp(offsetSeconds),
-          text
-        }]
-    const evidenceWords = transcript.tokens
-      .map((token) => {
-        const textValue = token.text.trim()
-        if (textValue.length === 0 || typeof token.start_ms !== 'number' || typeof token.end_ms !== 'number') {
-          return null
-        }
+    const result = normalizeSonioxTranscript(transcript, offsetSeconds)
 
-        return {
-          startSeconds: (token.start_ms / 1000) + offsetSeconds,
-          endSeconds: (token.end_ms / 1000) + offsetSeconds,
-          text: textValue,
-          normalized: textValue.toLowerCase(),
-          ...(formatSpeakerLabel(token.speaker) ? { speaker: formatSpeakerLabel(token.speaker) } : {}),
-          ...(typeof token.confidence === 'number' ? { confidence: token.confidence } : {}),
-          timingSource: 'native' as const
-        }
-      })
-      .filter((word): word is NonNullable<typeof word> => word !== null)
-
-    await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
+    await Bun.write(`${outputBase}.txt`, formatTranscriptText(result.segments))
 
     const processingTime = Date.now() - startTime
     const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs - transcriptMs)
@@ -763,7 +256,7 @@ export const runSonioxStt = async (
       transcriptionService: 'soniox',
       transcriptionModel: modelName,
       processingTime,
-      tokenCount: countTokens(text),
+      tokenCount: countTokens(result.text),
       runtime: completedRuntime,
       ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || pollSleepMs > 0 || transcriptMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
         ? {
@@ -787,23 +280,6 @@ export const runSonioxStt = async (
 
     if (segmentNumber && totalSegments) {
       logSttSegmentLifecycle(l, { provider: 'soniox', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
-    }
-
-    const result: TranscriptionResult = {
-      text,
-      segments: finalSegments,
-      evidence: {
-        ...(evidenceWords.length > 0 ? {
-          words: evidenceWords
-        } : {}),
-        capabilities: {
-          hasNativeWordTiming: evidenceWords.length > 0,
-          hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
-          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-        },
-        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-        rawResponse: transcript
-      }
     }
 
     return { result, metadata }

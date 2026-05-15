@@ -1,0 +1,49 @@
+{
+  "deapi": {
+    "description": "deAPI text-to-speech",
+    "type": "api",
+    "models": {
+      "Kokoro": {
+        "description": "Kokoro TTS — multi-voice, multi-language, speed 0.5-2.0",
+        "costPer1kCharsUSD": 0.00077,
+        "costPer1kCharsCents": 0.077,
+        "estimation": {
+          "msPer1KChars": 5000
+        }
+      },
+      "Chatterbox": {
+        "description": "Chatterbox TTS — 22 languages, max 2000 chars",
+        "costPer1kCharsUSD": 0.00077,
+        "costPer1kCharsCents": 0.077,
+        "estimation": {
+          "msPer1KChars": 5000
+        }
+      },
+      "Qwen3_TTS_12Hz_1_7B_CustomVoice": {
+        "description": "Qwen3 TTS CustomVoice — preset speakers, 10 languages",
+        "costPer1kCharsUSD": 0.00077,
+        "costPer1kCharsCents": 0.077,
+        "estimation": {
+          "msPer1KChars": 8000
+        }
+      },
+      "Qwen3_TTS_12Hz_1_7B_Base": {
+        "description": "Qwen3 TTS VoiceClone — clone from 3-10 second reference audio",
+        "costPer1kCharsUSD": 0.00077,
+        "costPer1kCharsCents": 0.077,
+        "estimation": {
+          "msPer1KChars": 50625,
+          "costMultiplier": 1
+        }
+      },
+      "Qwen3_TTS_12Hz_1_7B_VoiceDesign": {
+        "description": "Qwen3 TTS VoiceDesign — create voice from text description (CLI input not yet supported)",
+        "costPer1kCharsUSD": 0.00077,
+        "costPer1kCharsCents": 0.077,
+        "estimation": {
+          "msPer1KChars": 10000
+        }
+      }
+    }
+  }
+}

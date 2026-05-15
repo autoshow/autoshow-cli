@@ -1,0 +1,23 @@
+{
+  "glm-stt": {
+    "description": "GLM/Z.AI cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "glm-asr-2512": {
+        "description": "GLM ASR 2512 speech-to-text",
+        "costPerHourUSD": 0.144,
+        "costPerHourCents": 14.4,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "durationSeconds": 30,
+          "notes": "GLM ASR supports wav and mp3 uploads, with a 25 MB file cap and 30-second audio-duration cap. AutoShow pre-splits longer audio and retries with split transcription if the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 200
+        }
+      }
+    }
+  }
+}

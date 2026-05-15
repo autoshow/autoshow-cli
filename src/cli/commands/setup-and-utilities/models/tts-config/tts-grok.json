@@ -1,0 +1,24 @@
+{
+  "grok": {
+    "description": "xAI Grok cloud text-to-speech",
+    "type": "api",
+    "voices": [
+      "eve",
+      "ara",
+      "rex",
+      "sal",
+      "leo"
+    ],
+    "models": {
+      "grok-tts": {
+        "description": "xAI Grok TTS REST synthesis with five expressive voices",
+        "costPer1kCharsUSD": 0.0042,
+        "costPer1kCharsCents": 0.42,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 22183
+        }
+      }
+    }
+  }
+}

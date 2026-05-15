@@ -1,0 +1,19 @@
+{
+  "youtube-captions": {
+    "description": "YouTube English subtitle track reuse",
+    "type": "api",
+    "models": {
+      "subtitle-track": {
+        "description": "Manual or auto-generated English subtitle track via yt-dlp",
+        "costPerHourUSD": 0,
+        "costPerHourCents": 0,
+        "limits": {
+          "notes": "This adapter reuses subtitle tracks fetched by yt-dlp instead of uploading audio to a hosted STT API, so provider-side file-size and duration request caps do not apply."
+        },
+        "estimation": {
+          "msPerSecond": 0
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "rev": {
+    "description": "Rev AI async cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "machine": {
+        "description": "Reverb Transcription via Rev async REST API with diarization enabled by default",
+        "costPerHourUSD": 0.2,
+        "costPerHourCents": 20,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "directUploadBytes": 2147483648,
+          "remoteUrlBytes": 5497558138880,
+          "durationSeconds": 61200,
+          "notes": "The 5 TB limit applies to dashboard or source_config submissions; current CLI uploads multipart media files directly."
+        },
+        "billing": {
+          "roundingIncrementSeconds": 1,
+          "minimumSeconds": 15
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 431
+        }
+      },
+      "low_cost": {
+        "description": "Reverb Turbo transcription via Rev async REST API with diarization enabled by default",
+        "costPerHourUSD": 0.1,
+        "costPerHourCents": 10,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "directUploadBytes": 2147483648,
+          "remoteUrlBytes": 5497558138880,
+          "durationSeconds": 61200,
+          "notes": "The 5 TB limit applies to dashboard or source_config submissions; current CLI uploads multipart media files directly."
+        },
+        "billing": {
+          "roundingIncrementSeconds": 1,
+          "minimumSeconds": 15
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 496
+        }
+      }
+    }
+  }
+}

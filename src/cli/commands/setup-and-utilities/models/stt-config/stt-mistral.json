@@ -1,0 +1,23 @@
+{
+  "mistral": {
+    "description": "Mistral cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "voxtral-mini-2602": {
+        "description": "Voxtral Mini Transcribe 2",
+        "costPerHourUSD": 0.18,
+        "costPerHourCents": 18,
+        "limits": {
+          "effectiveBytes": 524288000,
+          "directUploadBytes": 524288000,
+          "durationSeconds": 10800,
+          "notes": "Mistral's /v1/audio/transcriptions endpoint supports file, file_id, and file_url inputs. Current docs publish an approximately 3-hour audio-length cap for Voxtral Mini Transcribe 2, and the Known limitations page lists a 500 MB maximum file size for audio transcription. AutoShow uses those documented limits directly."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 101
+        }
+      }
+    }
+  }
+}

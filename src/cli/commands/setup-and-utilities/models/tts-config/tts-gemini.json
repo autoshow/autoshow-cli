@@ -1,0 +1,37 @@
+{
+  "gemini": {
+    "description": "Google Gemini cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "gemini-3.1-flash-tts-preview": {
+        "description": "Gemini 3.1 Flash TTS Preview — expressive low-latency speech synthesis",
+        "inputCostPer1MCharsUSD": 1,
+        "inputCostPer1MCharsCents": 100,
+        "outputCostPer1MCharsUSD": 20,
+        "outputCostPer1MCharsCents": 2000,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 49703
+        }
+      },
+      "gemini-2.5-flash-preview-tts": {
+        "description": "Gemini 2.5 Flash Preview TTS — fast speech synthesis",
+        "costPer1kCharsUSD": 0.0005,
+        "costPer1kCharsCents": 0.05,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 42500
+        }
+      },
+      "gemini-2.5-pro-preview-tts": {
+        "description": "Gemini 2.5 Pro Preview TTS — higher quality speech synthesis",
+        "costPer1kCharsUSD": 0.001,
+        "costPer1kCharsCents": 0.1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 76080
+        }
+      }
+    }
+  }
+}

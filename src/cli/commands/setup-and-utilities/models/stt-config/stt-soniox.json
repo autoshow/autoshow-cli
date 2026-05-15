@@ -1,0 +1,23 @@
+{
+  "soniox": {
+    "description": "Soniox cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "stt-async-v4": {
+        "description": "Async v4 — diarized asynchronous transcription with token timestamps",
+        "costPerHourUSD": 0.1,
+        "costPerHourCents": 10,
+        "limits": {
+          "effectiveBytes": 524288000,
+          "directUploadBytes": 524288000,
+          "durationSeconds": 18000,
+          "notes": "Soniox's Files API documents a maximum uploaded file size of 524288000 bytes. Async docs separately cap file duration at 300 minutes. The transcription API also accepts audio_url, but no explicit remote URL size cap is currently published."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 139
+        }
+      }
+    }
+  }
+}

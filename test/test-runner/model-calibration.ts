@@ -1,6 +1,6 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { MODEL_CONFIG_PATHS } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { MODEL_CONFIG_FRAGMENT_PREFIXES, MODEL_CONFIG_PATHS } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { getFiniteNumber } from './utils'
 
 type CalibrationKind = 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
@@ -318,6 +318,52 @@ const setEstimationValue = (modelEntry: MutableJson, fieldName: string, value: n
   modelEntry['estimation'] = estimation
 }
 
+const getConfigFragmentFilenamePrefix = (kind: CalibrationKind): string | null => {
+  switch (kind) {
+    case 'stt':
+      return MODEL_CONFIG_FRAGMENT_PREFIXES.stt
+    case 'tts':
+      return MODEL_CONFIG_FRAGMENT_PREFIXES.tts
+    case 'extract':
+    case 'llm':
+    case 'image':
+    case 'video':
+    case 'music':
+      return null
+  }
+}
+
+const resolveCalibrationConfigFilePath = async (
+  kind: CalibrationKind,
+  configPath: string,
+  service: string
+): Promise<string | null> => {
+  let isFile = false
+  let isDirectory = false
+  try {
+    const pathStat = await stat(configPath)
+    isFile = pathStat.isFile()
+    isDirectory = pathStat.isDirectory()
+  } catch {
+    return null
+  }
+
+  if (isFile) {
+    return configPath
+  }
+
+  if (!isDirectory) {
+    return null
+  }
+
+  const fragmentFilenamePrefix = getConfigFragmentFilenamePrefix(kind)
+  if (fragmentFilenamePrefix === null) {
+    return null
+  }
+
+  return resolve(configPath, `${fragmentFilenamePrefix}-${service}.json`)
+}
+
 const unwrapCalibrationMetadata = (parsed: Record<string, unknown>): Record<string, unknown> => {
   const metadata = parsed['metadata']
   return isRecord(metadata) ? metadata : parsed
@@ -394,23 +440,26 @@ export const applyModelConfigCalibrations = async (
     grouped.set(key, list)
   }
 
-  const parsedConfigCache = new Map<CalibrationKind, MutableJson>()
-  const changedKinds = new Set<CalibrationKind>()
+  const parsedConfigCache = new Map<string, MutableJson>()
+  const changedConfigPaths = new Set<string>()
   const updates: CalibrationUpdate[] = []
 
   for (const [key, group] of grouped) {
     const [kind, service, model] = key.split('::')
     if (!kind || !service || !model) continue
-    const configPath = configPaths[kind as CalibrationKind]
+    const calibrationKind = kind as CalibrationKind
+    const configPath = configPaths[calibrationKind]
     if (!configPath) continue
+    const configFilePath = await resolveCalibrationConfigFilePath(calibrationKind, configPath, service)
+    if (!configFilePath) continue
 
-    let parsedConfig = parsedConfigCache.get(kind as CalibrationKind)
+    let parsedConfig = parsedConfigCache.get(configFilePath)
     if (!parsedConfig) {
       try {
-        const raw = JSON.parse(await readFile(configPath, 'utf8')) as unknown
+        const raw = JSON.parse(await readFile(configFilePath, 'utf8')) as unknown
         if (!isRecord(raw)) continue
         parsedConfig = raw
-        parsedConfigCache.set(kind as CalibrationKind, parsedConfig)
+        parsedConfigCache.set(configFilePath, parsedConfig)
       } catch {
         continue
       }
@@ -434,7 +483,7 @@ export const applyModelConfigCalibrations = async (
     const medianCost = median(costRatios)
     const medianTime = median(timeRates)
     const oldCost = readCurrentCostMultiplier(modelEntry)
-    const timeField = getTimeFieldName(kind as CalibrationKind)
+    const timeField = getTimeFieldName(calibrationKind)
     const oldTime = readCurrentTimeValue(modelEntry, timeField)
 
     let newCost: number | null = null
@@ -461,9 +510,9 @@ export const applyModelConfigCalibrations = async (
     }
 
     if (newCost !== null || newTime !== null) {
-      changedKinds.add(kind as CalibrationKind)
+      changedConfigPaths.add(configFilePath)
       updates.push({
-        kind: kind as CalibrationKind,
+        kind: calibrationKind,
         service,
         model,
         costSamples: costRatios.length,
@@ -479,11 +528,10 @@ export const applyModelConfigCalibrations = async (
     }
   }
 
-  for (const kind of changedKinds) {
-    const parsedConfig = parsedConfigCache.get(kind)
-    const configPath = configPaths[kind]
-    if (!parsedConfig || !configPath) continue
-    await writeFile(configPath, `${JSON.stringify(parsedConfig, null, 2)}\n`)
+  for (const configFilePath of changedConfigPaths) {
+    const parsedConfig = parsedConfigCache.get(configFilePath)
+    if (!parsedConfig) continue
+    await writeFile(configFilePath, `${JSON.stringify(parsedConfig, null, 2)}\n`)
   }
 
   return {

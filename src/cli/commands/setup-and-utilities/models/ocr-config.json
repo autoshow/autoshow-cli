@@ -200,7 +200,7 @@
           "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
         },
         "estimation": {
-          "costMultiplier": 0.867,
+          "costMultiplier": 0.7802,
           "msPerPage": 14428,
           "promptTokensPerPage": 7981,
           "completionTokensPerPage": 471.5
@@ -221,7 +221,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 500
+          "msPerPage": 703
         }
       }
     }
@@ -239,7 +239,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3
+          "msPerPage": 8
         }
       }
     }

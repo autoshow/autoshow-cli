@@ -1,0 +1,19 @@
+{
+  "mistral": {
+    "description": "Mistral Voxtral cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "voxtral-mini-tts-2603": {
+        "description": "Voxtral Mini TTS 2603 — low-latency speech synthesis with saved voices or reference audio",
+        "inputCostPer1MCharsUSD": 0,
+        "inputCostPer1MCharsCents": 0,
+        "outputCostPer1MCharsUSD": 16,
+        "outputCostPer1MCharsCents": 1600,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 29850
+        }
+      }
+    }
+  }
+}

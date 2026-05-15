@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
@@ -220,11 +220,80 @@ export const ModelRegistrySchema = v.object({
   video: VideoRegistrySchema
 })
 
+type ModelConfigLoadOptions = {
+  fragmentFilenamePrefix?: string
+}
 
-const STT_PATH = resolve(import.meta.dir, 'stt-config.json')
+const isJsonRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+const readModelConfigFile = (configPath: string): Record<string, unknown> => {
+  const parsed = JSON.parse(readFileSync(configPath, 'utf-8')) as unknown
+  if (!isJsonRecord(parsed)) {
+    throw new Error(`Model config at ${configPath} must contain a JSON object`)
+  }
+  return parsed
+}
+
+const loadModelConfigJson = (
+  configPath: string,
+  options: ModelConfigLoadOptions = {}
+): Record<string, unknown> => {
+  const stats = statSync(configPath)
+
+  if (stats.isFile()) {
+    return readModelConfigFile(configPath)
+  }
+
+  if (!stats.isDirectory()) {
+    throw new Error(`Model config path ${configPath} must be a JSON file or a directory`)
+  }
+
+  const fragments = readdirSync(configPath, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+    .sort((left, right) => left.name.localeCompare(right.name))
+
+  if (fragments.length === 0) {
+    throw new Error(`Model config directory ${configPath} must contain JSON fragments`)
+  }
+
+  const registry: Record<string, unknown> = {}
+
+  for (const entry of fragments) {
+    const fragmentPath = resolve(configPath, entry.name)
+    const fragment = readModelConfigFile(fragmentPath)
+    const providerKeys = Object.keys(fragment)
+    if (providerKeys.length !== 1) {
+      throw new Error(`Model config fragment ${fragmentPath} must contain exactly one provider key`)
+    }
+
+    const providerKey = providerKeys[0]
+    if (!providerKey) {
+      throw new Error(`Model config fragment ${fragmentPath} must contain a provider key`)
+    }
+
+    const expectedFilename = options.fragmentFilenamePrefix === undefined
+      ? undefined
+      : `${options.fragmentFilenamePrefix}-${providerKey}.json`
+    if (expectedFilename !== undefined && entry.name !== expectedFilename) {
+      throw new Error(`Model config fragment ${fragmentPath} must be named ${expectedFilename}`)
+    }
+
+    if (Object.prototype.hasOwnProperty.call(registry, providerKey)) {
+      throw new Error(`Duplicate provider key ${providerKey} in model config directory ${configPath}`)
+    }
+
+    registry[providerKey] = fragment[providerKey]
+  }
+
+  return registry
+}
+
+const STT_PATH = resolve(import.meta.dir, 'stt-config')
 const OCR_PATH = resolve(import.meta.dir, 'ocr-config.json')
 const LLM_PATH = resolve(import.meta.dir, 'llm-config.json')
-const TTS_PATH = resolve(import.meta.dir, 'tts-config.json')
+const TTS_PATH = resolve(import.meta.dir, 'tts-config')
 const IMAGE_PATH = resolve(import.meta.dir, 'image-config.json')
 const MUSIC_PATH = resolve(import.meta.dir, 'music-config.json')
 const VIDEO_PATH = resolve(import.meta.dir, 'video-config.json')
@@ -249,6 +318,11 @@ const DEFAULT_IMAGE_MS_PER_IMAGE = 12_000
 const DEFAULT_VIDEO_MS_PER_SECOND = 12_000
 const DEFAULT_MUSIC_MS_PER_SECOND = 4_000
 
+export const MODEL_CONFIG_FRAGMENT_PREFIXES = {
+  stt: 'stt',
+  tts: 'tts',
+} as const
+
 export const MODEL_CONFIG_PATHS = {
   stt: STT_PATH,
   extract: OCR_PATH,
@@ -262,13 +336,13 @@ export const MODEL_CONFIG_PATHS = {
 export const getModelRegistry = (): ModelRegistry => {
   if (cached) return cached
 
-  const stt = validateData(SttRegistrySchema, JSON.parse(readFileSync(STT_PATH, 'utf-8')), `STT models at ${STT_PATH}`)
-  const extract = validateData(ExtractRegistrySchema, JSON.parse(readFileSync(OCR_PATH, 'utf-8')), `extract models at ${OCR_PATH}`)
-  const llm = validateData(LlmRegistrySchema, JSON.parse(readFileSync(LLM_PATH, 'utf-8')), `LLM models at ${LLM_PATH}`)
-  const tts = validateData(TtsRegistrySchema, JSON.parse(readFileSync(TTS_PATH, 'utf-8')), `TTS models at ${TTS_PATH}`)
-  const image = validateData(ImageRegistrySchema, JSON.parse(readFileSync(IMAGE_PATH, 'utf-8')), `image models at ${IMAGE_PATH}`)
-  const music = validateData(MusicRegistrySchema, JSON.parse(readFileSync(MUSIC_PATH, 'utf-8')), `music models at ${MUSIC_PATH}`)
-  const video = validateData(VideoRegistrySchema, JSON.parse(readFileSync(VIDEO_PATH, 'utf-8')), `video models at ${VIDEO_PATH}`)
+  const stt = validateData(SttRegistrySchema, loadModelConfigJson(STT_PATH, { fragmentFilenamePrefix: MODEL_CONFIG_FRAGMENT_PREFIXES.stt }), `STT models at ${STT_PATH}`)
+  const extract = validateData(ExtractRegistrySchema, loadModelConfigJson(OCR_PATH), `extract models at ${OCR_PATH}`)
+  const llm = validateData(LlmRegistrySchema, loadModelConfigJson(LLM_PATH), `LLM models at ${LLM_PATH}`)
+  const tts = validateData(TtsRegistrySchema, loadModelConfigJson(TTS_PATH, { fragmentFilenamePrefix: MODEL_CONFIG_FRAGMENT_PREFIXES.tts }), `TTS models at ${TTS_PATH}`)
+  const image = validateData(ImageRegistrySchema, loadModelConfigJson(IMAGE_PATH), `image models at ${IMAGE_PATH}`)
+  const music = validateData(MusicRegistrySchema, loadModelConfigJson(MUSIC_PATH), `music models at ${MUSIC_PATH}`)
+  const video = validateData(VideoRegistrySchema, loadModelConfigJson(VIDEO_PATH), `video models at ${VIDEO_PATH}`)
 
   cached = { stt, extract, llm, tts, image, music, video }
   return cached

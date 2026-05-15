@@ -1,0 +1,38 @@
+{
+  "openai-stt": {
+    "description": "OpenAI cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "gpt-4o-mini-transcribe": {
+        "description": "OpenAI GPT-4o mini transcribe",
+        "costPerHourUSD": 0.18,
+        "costPerHourCents": 18,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "requestBudgetSeconds": 600,
+          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model, so AutoShow uses a conservative per-request audio budget to stay under model input limits."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 150
+        }
+      },
+      "gpt-4o-transcribe": {
+        "description": "OpenAI GPT-4o transcribe",
+        "costPerHourUSD": 0.36,
+        "costPerHourCents": 36,
+        "limits": {
+          "effectiveBytes": 26214400,
+          "directUploadBytes": 26214400,
+          "requestBudgetSeconds": 600,
+          "notes": "OpenAI Audio API uploads are capped at 25 MB. Current public docs do not publish a fixed duration cap for this model, so AutoShow uses a conservative per-request audio budget to stay under model input limits."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 200
+        }
+      }
+    }
+  }
+}

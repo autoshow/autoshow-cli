@@ -1,0 +1,32 @@
+{
+  "deepinfra": {
+    "description": "DeepInfra OpenAI-compatible Whisper speech-to-text",
+    "type": "api",
+    "models": {
+      "openai/whisper-large-v3-turbo": {
+        "description": "OpenAI Whisper large v3 turbo via DeepInfra's OpenAI-compatible transcription API",
+        "costPerHourUSD": 0.012,
+        "costPerHourCents": 1.2,
+        "limits": {
+          "notes": "DeepInfra publishes OpenAI-compatible speech-to-text routes and model pages for whisper-large-v3 and whisper-large-v3-turbo, but current public docs do not publish fixed multipart upload or duration caps for the OpenAI-compatible transcription endpoint. AutoShow therefore keeps v1 split policy metadata notes-only and relies on retry-with-split when the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 0.9951,
+          "msPerSecond": 44
+        }
+      },
+      "openai/whisper-large-v3": {
+        "description": "OpenAI Whisper large v3 via DeepInfra's OpenAI-compatible transcription API",
+        "costPerHourUSD": 0.027,
+        "costPerHourCents": 2.7,
+        "limits": {
+          "notes": "DeepInfra publishes OpenAI-compatible speech-to-text routes and model pages for whisper-large-v3 and whisper-large-v3-turbo, but current public docs do not publish fixed multipart upload or duration caps for the OpenAI-compatible transcription endpoint. AutoShow therefore keeps v1 split policy metadata notes-only and relies on retry-with-split when the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 93
+        }
+      }
+    }
+  }
+}

@@ -243,7 +243,7 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
   const childArgs = withEmptyTestConfig(args)
   const cmdStr = `bun ${childArgs.join(' ')}`
   const startTime = Date.now()
-  const commandLogPath = process.env['AUTOSHOW_TEST_COMMAND_LOG'] || 'test_debug.log'
+  const commandLogPath = process.env['AUTOSHOW_TEST_COMMAND_LOG']
   const metricsLogPath = process.env['AUTOSHOW_TEST_METRICS_LOG']
 
   const env = {
@@ -314,10 +314,12 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
     }
   }
 
-  await appendFile(
-    commandLogPath,
-    `\n=== START cmd: ${cmdStr} ===\nstdout:\n${stdout}\nstderr:\n${stderr}\n=== END cmd: ${cmdStr} (exit=${exitCode}, ${duration}ms) ===\n`
-  )
+  if (commandLogPath) {
+    await appendFile(
+      commandLogPath,
+      `\n=== START cmd: ${cmdStr} ===\nstdout:\n${stdout}\nstderr:\n${stderr}\n=== END cmd: ${cmdStr} (exit=${exitCode}, ${duration}ms) ===\n`
+    )
+  }
   return { exitCode, stdout, stderr, outputDir }
 }
 

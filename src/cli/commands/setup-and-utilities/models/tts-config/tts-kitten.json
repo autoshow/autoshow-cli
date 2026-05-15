@@ -1,0 +1,54 @@
+{
+  "kitten": {
+    "description": "KittenML local text-to-speech",
+    "type": "local",
+    "voices": [
+      "Bella",
+      "Jasper",
+      "Luna",
+      "Bruno",
+      "Rosie",
+      "Hugo",
+      "Kiki",
+      "Leo"
+    ],
+    "models": {
+      "kitten-tts-mini": {
+        "description": "Kitten TTS Mini — balanced quality and speed",
+        "hfRepo": "KittenML/kitten-tts-mini-0.8",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 43343
+        }
+      },
+      "kitten-tts-micro": {
+        "description": "Kitten TTS Micro — lightweight",
+        "hfRepo": "KittenML/kitten-tts-micro-0.8",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 58050
+        }
+      },
+      "kitten-tts-nano": {
+        "description": "Kitten TTS Nano — ultra-lightweight fp32",
+        "hfRepo": "KittenML/kitten-tts-nano-0.8-fp32",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 30917
+        }
+      },
+      "kitten-tts-nano-0.8-int8": {
+        "description": "Kitten TTS Nano — ultra-lightweight int8 quantized",
+        "hfRepo": "KittenML/kitten-tts-nano-0.8-int8",
+        "costPer1kCharsUSD": 0,
+        "costPer1kCharsCents": 0,
+        "estimation": {
+          "msPer1KChars": 30729
+        }
+      }
+    }
+  }
+}

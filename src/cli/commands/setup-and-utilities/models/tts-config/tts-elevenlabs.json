@@ -1,0 +1,35 @@
+{
+  "elevenlabs": {
+    "description": "ElevenLabs cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "eleven_v3": {
+        "description": "ElevenLabs v3 — latest generation",
+        "costPer1kCharsUSD": 0.1,
+        "costPer1kCharsCents": 10,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 35885
+        }
+      },
+      "eleven_flash_v2_5": {
+        "description": "ElevenLabs Flash v2.5 — low latency",
+        "costPer1kCharsUSD": 0.05,
+        "costPer1kCharsCents": 5,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 5876
+        }
+      },
+      "eleven_turbo_v2_5": {
+        "description": "ElevenLabs Turbo v2.5 — low latency",
+        "costPer1kCharsUSD": 0.05,
+        "costPer1kCharsCents": 5,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3700
+        }
+      }
+    }
+  }
+}

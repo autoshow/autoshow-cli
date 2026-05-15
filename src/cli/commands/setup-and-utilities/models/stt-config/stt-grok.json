@@ -1,0 +1,22 @@
+{
+  "grok": {
+    "description": "xAI Grok REST speech-to-text",
+    "type": "api",
+    "models": {
+      "speech-to-text": {
+        "description": "xAI REST STT with word timestamps, formatting, and diarization",
+        "costPerHourUSD": 0.1,
+        "costPerHourCents": 10,
+        "limits": {
+          "effectiveBytes": 524288000,
+          "directUploadBytes": 524288000,
+          "notes": "xAI REST STT accepts multipart audio uploads up to 500 MB. AutoShow sends format=true, language=en, and diarize=true, with file last. Streaming STT is separately priced and not used by extract."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 33
+        }
+      }
+    }
+  }
+}

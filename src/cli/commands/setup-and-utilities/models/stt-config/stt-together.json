@@ -1,0 +1,20 @@
+{
+  "together": {
+    "description": "Together AI OpenAI-compatible Whisper speech-to-text",
+    "type": "api",
+    "models": {
+      "openai/whisper-large-v3": {
+        "description": "OpenAI Whisper large v3 via Together's OpenAI-compatible transcription API",
+        "costPerHourUSD": 0.09,
+        "costPerHourCents": 9,
+        "limits": {
+          "notes": "Together documents local file uploads and public URLs for wav, mp3, m4a, webm, and flac. Public docs do not publish a precise hard upload cap in the transcription API reference, so AutoShow keeps split policy notes-only and relies on retry-with-split when the provider rejects an oversized payload."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 33
+        }
+      }
+    }
+  }
+}

@@ -369,7 +369,7 @@ describe('price mode contracts', () => {
       ttsTargets: [{ service: 'mistral', model: 'voxtral-mini-tts-2603' }],
       ttsCharacterCount: 1000
     })
-    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(9000)
+    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(13_500)
   })
 
   test('Speechify and Google Cloud TTS estimates use registry pricing and timing defaults', () => {
@@ -477,8 +477,8 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { provider: 'elevenlabs', model: 'eleven_flash_v2_5', processingTimeMs: 20_240 },
-      { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 31_952 }
+      { provider: 'elevenlabs', model: 'eleven_flash_v2_5', processingTimeMs: 16_627 },
+      { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 35_885 }
     ])
 
     const pvcReadyCosts = estimateTtsCosts({
@@ -542,7 +542,7 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { provider: 'openai', model: 'gpt-4o-mini-tts', processingTimeMs: 34_655 }
+      { provider: 'openai', model: 'gpt-4o-mini-tts', processingTimeMs: 37_576 }
     ])
   })
 
@@ -846,8 +846,8 @@ describe('price mode contracts', () => {
       processingTimeMs: step.processingTimeMs,
       inputValue: step.inputValue
     }))).toEqual([
-      { model: 'lyria-3-clip-preview', processingTimeMs: 23_220, inputValue: 30 },
-      { model: 'lyria-3-pro-preview', processingTimeMs: 128_760, inputValue: 120 }
+      { model: 'lyria-3-clip-preview', processingTimeMs: 18_180, inputValue: 30 },
+      { model: 'lyria-3-pro-preview', processingTimeMs: 92_400, inputValue: 120 }
     ])
   })
 
@@ -865,8 +865,8 @@ describe('price mode contracts', () => {
       processingTimeMs: step.processingTimeMs,
       inputValue: step.inputValue
     }))).toEqual([
-      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 241_800, inputValue: 120 },
-      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 241_800, inputValue: 120 }
+      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 362_760, inputValue: 120 },
+      { provider: 'minimax', model: 'music-2.5', processingTimeMs: 362_760, inputValue: 120 }
     ])
   })
 

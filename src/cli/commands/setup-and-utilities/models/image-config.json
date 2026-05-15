@@ -82,7 +82,7 @@
         "costPerImageCents": 5.3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 27584
+          "msPerImage": 30848
         }
       }
     }
@@ -237,7 +237,7 @@
         "costPerImageCents": 0.136,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 14154
+          "msPerImage": 11969
         }
       },
       "ZImageTurbo_INT8": {
@@ -246,7 +246,7 @@
         "costPerImageCents": 0.405,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10000
+          "msPerImage": 17621
         }
       },
       "Flux_2_Klein_4B_BF16": {
@@ -255,7 +255,7 @@
         "costPerImageCents": 0.186,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 8824
+          "msPerImage": 12482
         }
       }
     }

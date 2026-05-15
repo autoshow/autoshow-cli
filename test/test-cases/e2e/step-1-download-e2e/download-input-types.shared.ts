@@ -24,16 +24,18 @@ export type Metadata = {
   step3?: unknown
 }
 
+type CaseInput = string | (() => string | Promise<string>)
+
 export type SingleCase = {
   name: string
-  input: string
+  input: CaseInput
   suffix?: string
   checks: (metadata: Metadata, outputDir: string) => Promise<void>
 }
 
 export type BatchCase = {
   name: string
-  input: string
+  input: CaseInput
   extraArgs: string[]
   expectedSourceKind: string
   expectedSelectedCount?: number
@@ -60,6 +62,9 @@ const withDefined = <T extends object, K extends keyof T>(target: T, key: K, val
     target[key] = value
   }
 }
+
+const resolveCaseInput = async (input: CaseInput): Promise<string> =>
+  typeof input === 'function' ? await input() : input
 
 const parseMetadata = (value: unknown): Metadata => {
   const root = asRecord(value)
@@ -173,9 +178,10 @@ export const defineSingleCaseTest = (tc: SingleCase): void => {
       await cleanupTestOutput(tc.suffix)
     }
 
+    const input = await resolveCaseInput(tc.input)
     const dirsBefore = tc.suffix ? null : new Set(await getOutputDirs())
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'download', tc.input],
+      ['src/cli/create-cli.ts', 'download', input],
       { testName: tc.name }
     )
     expect(result.exitCode).toBe(0)
@@ -202,11 +208,12 @@ export const defineSingleCaseTest = (tc: SingleCase): void => {
 export const defineBatchCaseTest = (tc: BatchCase): void => {
   test(tc.name, async () => {
     const dirsBefore = new Set(await getOutputDirs())
+    const input = await resolveCaseInput(tc.input)
 
     const result = await runCommand([
       'src/cli/create-cli.ts',
       'download',
-      tc.input,
+      input,
       ...tc.extraArgs,
     ], {
       testName: tc.name
