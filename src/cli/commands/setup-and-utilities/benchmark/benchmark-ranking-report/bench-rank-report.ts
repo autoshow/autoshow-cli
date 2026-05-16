@@ -2,7 +2,8 @@ import {
   EXCLUDED_SERVICES,
   OUTPUT_PATH,
   STEP_DEFINITIONS,
-  TOP_PICK_BUCKET_DISPLAY_ORDER
+  TOP_PICK_BUCKET_DISPLAY_ORDER,
+  TOP_PICK_TARGET_COUNT
 } from './bench-rank-config'
 import { relativeToProject } from './bench-rank-io'
 import {
@@ -57,6 +58,8 @@ const formatTopPickMetric = (pick: TopBenchmarkPick): string => {
   }
   return `${formatQuality(pick.metricValue)} ${pick.metricName}`
 }
+
+const topPickLabel = (): string => `Top ${TOP_PICK_TARGET_COUNT}`
 
 const markdownList = (paths: readonly string[]): string => {
   if (paths.length === 0) {
@@ -118,7 +121,7 @@ const metricTable = (rows: readonly RankingRow[], metric: 'price' | 'speed' | 'q
 
 const topPicksTable = (selection: TopBenchmarkPickSelection): string => {
   if (selection.rows.length === 0) {
-    return 'No Top 9 picks are available because this step has no measurable third-party rankings.'
+    return `No ${topPickLabel()} picks are available because this step has no measurable third-party rankings.`
   }
 
   const lines = [
@@ -189,7 +192,7 @@ const buildReport = (
       continue
     }
 
-    lines.push('### Top 9 Picks')
+    lines.push(`### ${topPickLabel()} Picks`)
     lines.push('')
     lines.push(topPicksTable(selectTopBenchmarkPicks({ priceRows, speedRows, qualityRows })))
     lines.push('')

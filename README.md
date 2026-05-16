@@ -45,6 +45,12 @@ bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 # Hosted Grok speech-to-text
 bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
 
+# Render a synced speaker transcript video from a previous media extract run
+bun as extract output/<extract-run-dir> --transcript-video
+
+# Render a transcript video from explicit local artifacts
+bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
+
 # Compare every URL article backend for one remote article
 bun as extract https://example.com/article --all-url
 
@@ -100,6 +106,7 @@ bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-li
 bun as music "an ambient piano instrumental" --minimax-music music-2.5
 bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
+bun as extract output/<extract-run-dir> --transcript-video
 
 # Fetch curated OpenAI docs into project/links/openai-all-links.md
 bun as links --openai

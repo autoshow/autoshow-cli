@@ -33,6 +33,7 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
   - [Google Cloud STT](#google-cloud-stt)
   - [AWS Transcribe](#aws-transcribe)
   - [AssemblyAI](#assemblyai)
+- [Transcript Videos](#transcript-videos)
 - [STT Pricing And Manifests](#stt-pricing-and-manifests)
 - [STT Notes](#stt-notes)
 
@@ -140,6 +141,26 @@ bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-a
 ```
 
 `--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Supadata, ScrapeCreators, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
+
+## Transcript Videos
+
+`extract --transcript-video` renders a local MP4 from existing STT artifacts. It does not call an STT provider. The normal path is a media extract output directory; AutoShow reads its `run.json`, infers the saved audio file, and renders the root `result.json` or the single completed provider result. Multi-provider runs with more than one result require `--transcript-result`.
+
+```bash
+# render from a completed media extract directory
+bun as extract output/<extract-run-dir> --transcript-video
+
+# choose one provider result from a multi-provider extract run
+bun as extract output/<extract-run-dir> --transcript-video --transcript-result output/<extract-run-dir>/providers/deepgram-nova-3/result.json
+
+# render from explicit files without an extract run directory
+bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
+
+# render from the timestamped text transcript format
+bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-text output/<extract-run-dir>/transcription.txt
+```
+
+The output directory contains `<label>.mp4`, `<label>.vtt`, `<label>.srt`, and `run.json`. Speaker labels from `result.json` or `[HH:MM:SS] [speaker] text` transcript lines are preserved in the rendered video and caption files. The renderer uses the same fixed 1920x1080 local ffmpeg pipeline as lyric videos, with `--font` and `--keep-tmp` available for transcript-video rendering.
 
 ## URL/streaming/source-URL STT
 

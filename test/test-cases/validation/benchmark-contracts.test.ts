@@ -125,7 +125,7 @@ describe('benchmark contracts', () => {
     })
   })
 
-  test('benchmark Top 9 assigns an overlapping model to Best first', () => {
+  test('benchmark Top 6 assigns an overlapping model to Best first', () => {
     const selection = selectTopBenchmarkPicks({
       qualityRows: [
         rankingRow(1, 'shared/model', 99, 3, 'quality score'),
@@ -145,7 +145,7 @@ describe('benchmark contracts', () => {
     expect(selection.rows.find((row) => row.key === 'shared/model')?.bucket).toBe('Best')
   })
 
-  test('benchmark Top 9 cheapest and fastest buckets skip already-selected models', () => {
+  test('benchmark Top 6 cheapest and fastest buckets skip already-selected models', () => {
     const selection = selectTopBenchmarkPicks({
       qualityRows: [
         rankingRow(1, 'claimed/best', 100, 2, 'quality score'),
@@ -168,12 +168,13 @@ describe('benchmark contracts', () => {
       ]
     })
 
-    expect(pickKeys(selection, 'Cheapest')).toEqual(['cheap/one', 'cheap/two', 'cheap/three'])
-    expect(pickKeys(selection, 'Fastest')).toEqual(['fast/one', 'fast/two', 'fast/three'])
-    expect(selection.rows).toHaveLength(9)
+    expect(pickKeys(selection, 'Cheapest')).toEqual(['cheap/one', 'cheap/two'])
+    expect(pickKeys(selection, 'Fastest')).toEqual(['fast/one', 'fast/two'])
+    expect(selection.rows).toHaveLength(6)
+    expect(new Set(selection.rows.map((row) => row.key)).size).toBe(6)
   })
 
-  test('benchmark Top 9 uses highest price as the Best proxy when quality is missing', () => {
+  test('benchmark Top 6 uses highest price as the Best proxy when quality is missing', () => {
     const selection = selectTopBenchmarkPicks({
       qualityRows: [],
       priceRows: [
@@ -186,12 +187,12 @@ describe('benchmark contracts', () => {
     })
 
     const bestRows = selection.rows.filter((row) => row.bucket === 'Best')
-    expect(bestRows.map((row) => row.key)).toEqual(['most-expensive/model', 'expensive/model', 'mid/model'])
-    expect(bestRows.map((row) => row.originalRank)).toEqual([4, 3, 2])
+    expect(bestRows.map((row) => row.key)).toEqual(['most-expensive/model', 'expensive/model'])
+    expect(bestRows.map((row) => row.originalRank)).toEqual([4, 3])
     expect(bestRows.every((row) => row.selectionNote === 'Best proxy: highest cost')).toBe(true)
   })
 
-  test('benchmark Top 9 returns fewer unique picks when fewer unique candidates exist', () => {
+  test('benchmark Top 6 returns fewer unique picks when fewer unique candidates exist', () => {
     const selection = selectTopBenchmarkPicks({
       qualityRows: [rankingRow(1, 'only/shared', 90, 1, 'quality score')],
       priceRows: [rankingRow(1, 'only/shared', 0.01)],

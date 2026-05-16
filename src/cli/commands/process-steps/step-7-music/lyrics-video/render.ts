@@ -105,6 +105,63 @@ export const buildAss = (
   return `${header}\n${events.join('\n')}\n`
 }
 
+export const buildTranscriptAss = (
+  options: { width: number, height: number, font: string, title: string },
+  cues: Array<CaptionCue & { speaker?: string | undefined }>
+): string => {
+  const { width, height, font, title } = options
+  const horizontalMargin = Math.round(width * 0.085)
+  const verticalMargin = Math.round(height * 0.09)
+  const bodyFontSize = Math.round(height * 0.05)
+  const speakerFontSize = Math.round(bodyFontSize * 0.66)
+  const titleFontSize = Math.round(bodyFontSize * 0.72)
+  const activeOutline = Math.max(3, Math.round(bodyFontSize * 0.08))
+  const labelOutline = Math.max(2, Math.round(speakerFontSize * 0.08))
+
+  const header = [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${width}`,
+    `PlayResY: ${height}`,
+    'WrapStyle: 2',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: TranscriptActive,${font},${bodyFontSize},&H00FFFFFF,&H00FFFFFF,&H00000000,&HA0000000,1,0,0,0,100,100,0,0,1,${activeOutline},2,5,${horizontalMargin},${horizontalMargin},${verticalMargin},1`,
+    `Style: TranscriptSpeaker,${font},${speakerFontSize},&H004FE7FF,&H004FE7FF,&H00000000,&HA0000000,1,0,0,0,100,100,0,0,1,${labelOutline},1,5,${horizontalMargin},${horizontalMargin},${verticalMargin},1`,
+    `Style: TranscriptTitle,${font},${titleFontSize},&H00FFFFFF,&H00FFFFFF,&H00000000,&HA0000000,1,0,0,0,100,100,0,0,1,${labelOutline},1,8,${horizontalMargin},${horizontalMargin},${verticalMargin},1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text'
+  ].join('\n')
+
+  const events: string[] = []
+  if (cues.length > 0) {
+    const videoEnd = cues[cues.length - 1]!.end + 2
+    const titleY = Math.round(height * 0.07)
+    events.push(`Dialogue: 4,${assTime(0)},${assTime(videoEnd)},TranscriptTitle,,0,0,0,,{\\pos(${width / 2},${titleY})\\an5\\blur0.6\\q2}${escapeAssText(title)}`)
+  }
+
+  const centerY = Math.round(height * 0.52)
+  const speakerY = Math.round(height * 0.36)
+
+  for (let index = 0; index < cues.length; index += 1) {
+    const cue = cues[index]!
+    if (cue.end <= cue.start) {
+      continue
+    }
+
+    if (cue.speaker) {
+      events.push(`Dialogue: 3,${assTime(cue.start)},${assTime(cue.end)},TranscriptSpeaker,,0,0,0,,{\\pos(${width / 2},${speakerY})\\an5\\blur0.6\\q2}${escapeAssText(cue.speaker)}`)
+    }
+
+    events.push(`Dialogue: 2,${assTime(cue.start)},${assTime(cue.end)},TranscriptActive,,0,0,0,,{\\pos(${width / 2},${centerY})\\an5\\blur0.6\\q2}${escapeAssText(cue.text)}`)
+  }
+
+  return `${header}\n${events.join('\n')}\n`
+}
+
 const checkFfmpegEncoder = async (encoder: string): Promise<boolean> => {
   const result = await exec('ffmpeg', ['-hide_banner', '-encoders'])
   return result.exitCode === 0 && result.stdout.includes(encoder)
@@ -189,10 +246,11 @@ export const findMatchingImage = async (audioPath: string, directory: string): P
   return undefined
 }
 
-const buildOverlaySegments = (cues: CaptionCue[]): OverlaySegment[] => {
+const buildOverlaySegments = (cues: CaptionCue[], options?: { includeContext?: boolean | undefined }): OverlaySegment[] => {
   if (cues.length === 0) {
     return []
   }
+  const includeContext = options?.includeContext !== false
 
   const segments: OverlaySegment[] = []
   const firstCue = cues[0]!
@@ -208,9 +266,9 @@ const buildOverlaySegments = (cues: CaptionCue[]): OverlaySegment[] => {
     segments.push({
       start: cue.start,
       end: cue.end,
-      ...(index > 0 ? { previousText: cues[index - 1]!.text } : {}),
+      ...(includeContext && index > 0 ? { previousText: cues[index - 1]!.text } : {}),
       currentText: cue.text,
-      ...(index + 1 < cues.length ? { nextText: cues[index + 1]!.text } : {})
+      ...(includeContext && index + 1 < cues.length ? { nextText: cues[index + 1]!.text } : {})
     })
   }
 
@@ -218,7 +276,7 @@ const buildOverlaySegments = (cues: CaptionCue[]): OverlaySegment[] => {
   segments.push({
     start: lastCue.end,
     end: lastCue.end + 2,
-    previousText: lastCue.text
+    ...(includeContext ? { previousText: lastCue.text } : {})
   })
 
   return segments.filter((segment) => segment.end > segment.start + 0.01)
@@ -366,8 +424,9 @@ const buildOverlaySequence = async (options: {
   font: string
   title: string
   cues: CaptionCue[]
+  includeContext?: boolean | undefined
 }): Promise<string> => {
-  const segments = buildOverlaySegments(options.cues)
+  const segments = buildOverlaySegments(options.cues, { includeContext: options.includeContext })
   const listLines: string[] = []
   let lastFramePath = ''
 
@@ -409,6 +468,7 @@ export const renderLyricsVideo = async (options: {
   cues: CaptionCue[]
   title: string
   font: string
+  includeContext?: boolean | undefined
   imageRelativePath?: string | undefined
 }): Promise<LyricsRenderSummary> => {
   const encoder = await detectLyricsEncoder()
@@ -424,6 +484,7 @@ export const renderLyricsVideo = async (options: {
     cues,
     title,
     font,
+    includeContext,
     imageRelativePath
   } = options
 
@@ -504,7 +565,8 @@ export const renderLyricsVideo = async (options: {
           height,
           font,
           title,
-          cues
+          cues,
+          includeContext
         })
 
         const filter = imageRelativePath

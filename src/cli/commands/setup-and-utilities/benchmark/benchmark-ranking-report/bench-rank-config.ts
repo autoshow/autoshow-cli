@@ -94,6 +94,6 @@ export const EXCLUDED_SERVICES = new Set([
 
 export const QUALITY_STEPS = new Set<StepKey>(['documentOcr', 'urlExtraction', 'transcription'])
 
-export const TOP_PICK_LIMIT_PER_BUCKET = 3
-export const TOP_PICK_TARGET_COUNT = 9
+export const TOP_PICK_LIMIT_PER_BUCKET = 2
+export const TOP_PICK_TARGET_COUNT = 6
 export const TOP_PICK_BUCKET_DISPLAY_ORDER: readonly TopPickBucket[] = ['Fastest', 'Cheapest', 'Best']

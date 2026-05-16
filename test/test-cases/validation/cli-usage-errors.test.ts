@@ -116,6 +116,24 @@ test('extract rejects unsupported ScrapeCreators STT modes', async () => {
   )
 })
 
+test('extract transcript-video flags require transcript-video mode', async () => {
+  await expectUsageExit(
+    ['extract', STABLE_LOCAL_AUDIO_PATH, '--transcript-result', 'output/run/result.json'],
+    '--transcript-result require --transcript-video'
+  )
+})
+
+test('extract transcript-video manual mode requires audio and one transcript source', async () => {
+  await expectUsageExit(
+    ['extract', '--transcript-video', '--transcript-result', 'output/run/result.json'],
+    'Manual transcript-video mode requires --audio'
+  )
+  await expectUsageExit(
+    ['extract', '--transcript-video', '--audio', STABLE_LOCAL_AUDIO_PATH],
+    'Manual transcript-video mode requires exactly one of --transcript-result or --transcript-text'
+  )
+})
+
 test('music lyric-video mode rejects missing audio or batch', async () => {
   await expectUsageExit(['music', '--model', 'tiny'], 'Missing --audio (or use --batch)')
 })

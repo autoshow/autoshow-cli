@@ -4,12 +4,12 @@ This report averages available benchmark rows into per-step third-party provider
 
 ## Source Summary
 
-- Reconciled `project/reports/results/index.json` with 17 listed dashboard report files.
-- Used 9 raw comparison reports and 8 test-run dashboard reports.
+- Reconciled `project/reports/results/index.json` with 20 listed dashboard report files.
+- Used 9 raw comparison reports and 11 test-run dashboard reports.
 - Skipped 9 benchmark dashboard reports because matching raw comparison reports are canonical for those runs.
-- Saw 353 provider/test rows: included 228, excluded 124 local or non-third-party rows, omitted 1 failed row, skipped 0 unsupported-category rows, and skipped 0 rows with no measurable metrics.
+- Saw 677 provider/test rows: included 415, excluded 261 local or non-third-party rows, omitted 1 failed row, skipped 0 unsupported-category rows, and skipped 0 rows with no measurable metrics.
 - Filled 26 raw price rows from sibling run estimates where raw comparison costs were zero or missing.
-- Missing metrics among otherwise included rows: price 2, speed 0, quality 34 in quality-ranked steps.
+- Missing metrics among otherwise included rows: price 5, speed 0, quality 124 in quality-ranked steps.
 - 54 provider/model rankings include raw comparison data; 80 include test-run dashboard data.
 
 Contributed raw comparison reports:
@@ -33,6 +33,9 @@ Contributed test-run dashboard reports:
 - `project/reports/results/2026-05-14_21-58-41_test-run-dashboard-report.json`
 - `project/reports/results/2026-05-14_21-58-42_test-run-dashboard-report.json`
 - `project/reports/results/2026-05-14_21-58-44_test-run-dashboard-report.json`
+- `project/reports/results/2026-05-15_03-34-24_test-run-dashboard-report.json`
+- `project/reports/results/2026-05-15_03-35-28_test-run-dashboard-report.json`
+- `project/reports/results/2026-05-15_23-51-07_test-run-dashboard-report.json`
 
 ## Step 1 Download
 
@@ -40,34 +43,31 @@ No measurable third-party download rows were present in the reconciled benchmark
 
 ## Step 2 Document OCR
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
-| Fastest | mistral/mistral-ocr-2512 | 5.405 average seconds | 1 | 5 | Fastest: lowest processing time |
-| Fastest | aws-textract/detect-text | 14.279 average seconds | 4 | 3 | Fastest: lowest processing time |
-| Fastest | anthropic/claude-haiku-4-5 | 27.097 average seconds | 6 | 5 | Fastest: lowest processing time |
-| Cheapest | gemini/gemini-3.1-flash-lite-preview | $0.001974 average cost | 2 | 5 | Cheapest: lowest cost |
-| Cheapest | openai/gpt-5.4-nano | $0.002013 average cost | 3 | 5 | Cheapest: lowest cost |
-| Cheapest | deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct | $0.003284 average cost | 4 | 5 | Cheapest: lowest cost |
+| Fastest | mistral/mistral-ocr-2512 | 3.643 average seconds | 1 | 11 | Fastest: lowest processing time |
+| Fastest | gemini/gemini-3.1-flash-lite-preview | 4.273 average seconds | 2 | 11 | Fastest: lowest processing time |
+| Cheapest | glm/glm-ocr | $0.000345 average cost | 1 | 3 | Cheapest: lowest cost |
+| Cheapest | openai/gpt-5.4-nano | $0.001279 average cost | 2 | 11 | Cheapest: lowest cost |
 | Best | gemini/gemini-3.1-pro-preview | 95.78 WER accuracy score | 1 | 3 | Best: highest quality score |
 | Best | kimi/kimi-k2.6 | 94.97 WER accuracy score | 2 | 3 | Best: highest quality score |
-| Best | glm/glm-ocr | 87.34 WER accuracy score | 3 | 3 | Best: highest quality score |
 
 ### Price
 
 | Rank | Provider/model | Average cost (USD) | Samples |
 | ---: | --- | ---: | ---: |
 | 1 | glm/glm-ocr | 0.000345 | 3 |
-| 2 | gemini/gemini-3.1-flash-lite-preview | 0.001974 | 5 |
-| 3 | openai/gpt-5.4-nano | 0.002013 | 5 |
-| 4 | deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct | 0.003284 | 5 |
-| 5 | mistral/mistral-ocr-2512 | 0.004800 | 5 |
+| 2 | openai/gpt-5.4-nano | 0.001279 | 11 |
+| 3 | gemini/gemini-3.1-flash-lite-preview | 0.001389 | 11 |
+| 4 | deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct | 0.001994 | 11 |
+| 5 | mistral/mistral-ocr-2512 | 0.003273 | 11 |
 | 6 | aws-textract/detect-text | 0.005000 | 3 |
 | 7 | gcloud-docai/ocr | 0.005000 | 3 |
 | 8 | deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct | 0.006721 | 3 |
-| 9 | anthropic/claude-haiku-4-5 | 0.012703 | 5 |
-| 10 | kimi/kimi-k2.6 | 0.015190 | 5 |
+| 9 | anthropic/claude-haiku-4-5 | 0.008099 | 11 |
+| 10 | kimi/kimi-k2.6 | 0.009108 | 11 |
 | 11 | gemini/gemini-3.1-pro-preview | 0.031751 | 3 |
 | 12 | openai/gpt-5.4 | 0.052451 | 3 |
 
@@ -75,16 +75,16 @@ No measurable third-party download rows were present in the reconciled benchmark
 
 | Rank | Provider/model | Average seconds | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | mistral/mistral-ocr-2512 | 5.405 | 5 |
-| 2 | gemini/gemini-3.1-flash-lite-preview | 6.346 | 5 |
-| 3 | openai/gpt-5.4-nano | 11.675 | 5 |
+| 1 | mistral/mistral-ocr-2512 | 3.643 | 11 |
+| 2 | gemini/gemini-3.1-flash-lite-preview | 4.273 | 11 |
+| 3 | openai/gpt-5.4-nano | 8.217 | 11 |
 | 4 | aws-textract/detect-text | 14.279 | 3 |
 | 5 | glm/glm-ocr | 15.383 | 3 |
-| 6 | anthropic/claude-haiku-4-5 | 27.097 | 5 |
-| 7 | deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct | 33.982 | 5 |
-| 8 | gcloud-docai/ocr | 36.590 | 3 |
-| 9 | openai/gpt-5.4 | 37.233 | 3 |
-| 10 | kimi/kimi-k2.6 | 42.938 | 5 |
+| 6 | anthropic/claude-haiku-4-5 | 16.362 | 11 |
+| 7 | deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct | 22.579 | 11 |
+| 8 | kimi/kimi-k2.6 | 25.732 | 11 |
+| 9 | gcloud-docai/ocr | 36.590 | 3 |
+| 10 | openai/gpt-5.4 | 37.233 | 3 |
 | 11 | deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct | 80.348 | 3 |
 | 12 | gemini/gemini-3.1-pro-preview | 88.389 | 3 |
 
@@ -107,14 +107,14 @@ No measurable third-party download rows were present in the reconciled benchmark
 
 ## Step 2 URL Extraction
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
 | Cheapest | zyte/zyte | $0.001600 average cost | 3 | 2 | Cheapest: lowest cost |
+| Cheapest | glm-reader/glm-reader | $0.010000 average cost | 4 | 2 | Cheapest: lowest cost |
 | Best | firecrawl/firecrawl | 98.06 URL extraction accuracy score | 1 | 2 | Best: highest quality score |
 | Best | spider/spider | 96.86 URL extraction accuracy score | 2 | 2 | Best: highest quality score |
-| Best | glm-reader/glm-reader | 65.70 URL extraction accuracy score | 3 | 2 | Best: highest quality score |
 
 Only 4 picks are shown because only 4 unique provider/models had eligible ranking rows for this step.
 
@@ -122,7 +122,7 @@ Only 4 picks are shown because only 4 unique provider/models had eligible rankin
 
 | Rank | Provider/model | Average cost (USD) | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | firecrawl/firecrawl | 0.000830 | 3 |
+| 1 | firecrawl/firecrawl | 0.000830 | 6 |
 | 2 | spider/spider | 0.001200 | 2 |
 | 3 | zyte/zyte | 0.001600 | 2 |
 | 4 | glm-reader/glm-reader | 0.010000 | 2 |
@@ -131,9 +131,9 @@ Only 4 picks are shown because only 4 unique provider/models had eligible rankin
 
 | Rank | Provider/model | Average seconds | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | firecrawl/firecrawl | 1.453 | 3 |
+| 1 | firecrawl/firecrawl | 1.264 | 6 |
 | 2 | spider/spider | 1.810 | 2 |
-| 3 | glm-reader/glm-reader | 2.748 | 3 |
+| 3 | glm-reader/glm-reader | 2.279 | 6 |
 | 4 | zyte/zyte | 12.229 | 2 |
 
 ### Quality
@@ -147,45 +147,42 @@ Only 4 picks are shown because only 4 unique provider/models had eligible rankin
 
 ## Step 2 Transcription/STT
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
 | Fastest | supadata/generate | 1.772 average seconds | 1 | 1 | Fastest: lowest processing time |
-| Fastest | deepgram/nova-3 | 3.513 average seconds | 2 | 4 | Fastest: lowest processing time |
-| Fastest | together/openai/whisper-large-v3 | 5.025 average seconds | 3 | 3 | Fastest: lowest processing time |
-| Cheapest | deepinfra/openai/whisper-large-v3-turbo | $0.002618 average cost | 1 | 4 | Cheapest: lowest cost |
-| Cheapest | deepinfra/openai/whisper-large-v3 | $0.005891 average cost | 2 | 4 | Cheapest: lowest cost |
-| Cheapest | grok/speech-to-text | $0.006654 average cost | 3 | 3 | Cheapest: lowest cost |
+| Fastest | deepgram/nova-3 | 2.618 average seconds | 2 | 7 | Fastest: lowest processing time |
+| Cheapest | deepinfra/openai/whisper-large-v3-turbo | $0.001580 average cost | 1 | 7 | Cheapest: lowest cost |
+| Cheapest | deepinfra/openai/whisper-large-v3 | $0.003556 average cost | 2 | 7 | Cheapest: lowest cost |
 | Best | assemblyai/universal-3-pro | 96.72 speaker-aware WER score | 1 | 3 | Best: highest quality score |
 | Best | mistral/voxtral-mini-2602 | 95.85 speaker-aware WER score | 2 | 3 | Best: highest quality score |
-| Best | speechmatics/enhanced | 95.40 speaker-aware WER score | 3 | 3 | Best: highest quality score |
 
 ### Price
 
 | Rank | Provider/model | Average cost (USD) | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | deepinfra/openai/whisper-large-v3-turbo | 0.002618 | 4 |
-| 2 | deepinfra/openai/whisper-large-v3 | 0.005891 | 4 |
-| 3 | grok/speech-to-text | 0.006654 | 3 |
-| 4 | deapi/WhisperLargeV3 | 0.008441 | 5 |
-| 5 | groq/whisper-large-v3-turbo | 0.008727 | 4 |
-| 6 | supadata/generate | 0.020000 | 1 |
-| 7 | supadata/native | 0.020000 | 1 |
-| 8 | soniox/stt-async-v4 | 0.021817 | 4 |
-| 9 | rev/low_cost | 0.021826 | 4 |
-| 10 | groq/whisper-large-v3 | 0.024217 | 4 |
-| 11 | together/openai/whisper-large-v3 | 0.025689 | 3 |
-| 12 | gemini-stt/gemini-3-flash-preview | 0.032881 | 3 |
-| 13 | elevenlabs/scribe_v2 | 0.039119 | 5 |
-| 14 | mistral/voxtral-mini-2602 | 0.039270 | 4 |
-| 15 | glm-stt/glm-asr-2512 | 0.041102 | 3 |
-| 16 | rev/machine | 0.043653 | 4 |
-| 17 | assemblyai/universal-3-pro | 0.045815 | 4 |
+| 1 | deepinfra/openai/whisper-large-v3-turbo | 0.001580 | 7 |
+| 2 | deepinfra/openai/whisper-large-v3 | 0.003556 | 7 |
+| 3 | grok/speech-to-text | 0.004146 | 6 |
+| 4 | groq/whisper-large-v3-turbo | 0.005268 | 7 |
+| 5 | deapi/WhisperLargeV3 | 0.009248 | 11 |
+| 6 | soniox/stt-async-v4 | 0.013169 | 7 |
+| 7 | rev/low_cost | 0.013175 | 7 |
+| 8 | groq/whisper-large-v3 | 0.014618 | 7 |
+| 9 | elevenlabs/scribe_v2 | 0.019748 | 11 |
+| 10 | supadata/generate | 0.020000 | 1 |
+| 11 | supadata/native | 0.020000 | 1 |
+| 12 | mistral/voxtral-mini-2602 | 0.023704 | 7 |
+| 13 | together/openai/whisper-large-v3 | 0.025689 | 3 |
+| 14 | rev/machine | 0.026349 | 7 |
+| 15 | assemblyai/universal-3-pro | 0.027655 | 7 |
+| 16 | gemini-stt/gemini-3-flash-preview | 0.032881 | 3 |
+| 17 | glm-stt/glm-asr-2512 | 0.041102 | 3 |
 | 18 | openai-stt/gpt-4o-mini-transcribe | 0.051377 | 3 |
-| 19 | speechmatics/standard | 0.098176 | 4 |
-| 20 | openai-stt/gpt-4o-transcribe | 0.102754 | 3 |
-| 21 | deepgram/nova-3 | 0.126974 | 4 |
+| 19 | speechmatics/standard | 0.059261 | 7 |
+| 20 | deepgram/nova-3 | 0.076644 | 7 |
+| 21 | openai-stt/gpt-4o-transcribe | 0.102754 | 3 |
 | 22 | gladia/default | 0.133083 | 4 |
 | 23 | speechmatics/enhanced | 0.163626 | 4 |
 | 24 | gcloud/chirp_3 | 0.209442 | 4 |
@@ -198,30 +195,30 @@ Only 4 picks are shown because only 4 unique provider/models had eligible rankin
 | Rank | Provider/model | Average seconds | Samples |
 | ---: | --- | ---: | ---: |
 | 1 | supadata/generate | 1.772 | 1 |
-| 2 | deepgram/nova-3 | 3.513 | 4 |
+| 2 | deepgram/nova-3 | 2.618 | 7 |
 | 3 | together/openai/whisper-large-v3 | 5.025 | 3 |
 | 4 | supadata/native | 5.118 | 1 |
-| 5 | supadata/auto | 6.174 | 3 |
-| 6 | grok/speech-to-text | 8.094 | 4 |
-| 7 | groq/whisper-large-v3 | 9.401 | 4 |
-| 8 | deepinfra/openai/whisper-large-v3-turbo | 10.319 | 4 |
-| 9 | groq/whisper-large-v3-turbo | 11.305 | 4 |
-| 10 | mistral/voxtral-mini-2602 | 14.221 | 4 |
-| 11 | assemblyai/universal-3-pro | 18.319 | 4 |
-| 12 | deepinfra/openai/whisper-large-v3 | 20.875 | 4 |
-| 13 | openai-stt/gpt-4o-mini-transcribe | 26.599 | 3 |
-| 14 | gladia/default | 29.137 | 4 |
-| 15 | speechmatics/standard | 30.448 | 4 |
-| 16 | soniox/stt-async-v4 | 37.672 | 4 |
-| 17 | deapi/WhisperLargeV3 | 43.091 | 5 |
-| 18 | elevenlabs/scribe_v2 | 43.460 | 5 |
-| 19 | openai-stt/gpt-4o-transcribe | 45.093 | 3 |
-| 20 | speechmatics/enhanced | 46.734 | 4 |
-| 21 | rev/machine | 47.839 | 4 |
-| 22 | aws/standard | 73.734 | 4 |
-| 23 | glm-stt/glm-asr-2512 | 75.337 | 3 |
-| 24 | happyscribe/auto | 78.429 | 3 |
-| 25 | rev/low_cost | 88.662 | 4 |
+| 5 | grok/speech-to-text | 5.332 | 7 |
+| 6 | groq/whisper-large-v3 | 6.041 | 7 |
+| 7 | supadata/auto | 6.174 | 3 |
+| 8 | deepinfra/openai/whisper-large-v3-turbo | 6.947 | 7 |
+| 9 | groq/whisper-large-v3-turbo | 7.035 | 7 |
+| 10 | mistral/voxtral-mini-2602 | 10.747 | 7 |
+| 11 | assemblyai/universal-3-pro | 14.015 | 7 |
+| 12 | deepinfra/openai/whisper-large-v3 | 14.022 | 7 |
+| 13 | speechmatics/standard | 19.623 | 7 |
+| 14 | elevenlabs/scribe_v2 | 23.525 | 11 |
+| 15 | soniox/stt-async-v4 | 24.875 | 7 |
+| 16 | deapi/WhisperLargeV3 | 24.956 | 11 |
+| 17 | openai-stt/gpt-4o-mini-transcribe | 26.599 | 3 |
+| 18 | gladia/default | 29.137 | 4 |
+| 19 | rev/machine | 38.179 | 7 |
+| 20 | openai-stt/gpt-4o-transcribe | 45.093 | 3 |
+| 21 | speechmatics/enhanced | 46.734 | 4 |
+| 22 | rev/low_cost | 62.903 | 7 |
+| 23 | aws/standard | 73.734 | 4 |
+| 24 | glm-stt/glm-asr-2512 | 75.337 | 3 |
+| 25 | happyscribe/auto | 78.429 | 3 |
 | 26 | gemini-stt/gemini-3-flash-preview | 120.498 | 3 |
 | 27 | gcloud/chirp_3 | 219.864 | 4 |
 
@@ -259,35 +256,32 @@ Only 4 picks are shown because only 4 unique provider/models had eligible rankin
 
 ## Step 3 Write/LLM
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
-| Fastest | openai/gpt-5.4 | 1.970 average seconds | 3 | 2 | Fastest: lowest processing time |
-| Fastest | anthropic/claude-opus-4-7 | 2.290 average seconds | 4 | 1 | Fastest: lowest processing time |
-| Fastest | gemini/gemini-3.1-flash-lite-preview | 2.305 average seconds | 5 | 1 | Fastest: lowest processing time |
-| Cheapest | groq/openai/gpt-oss-20b | $0.000030 average cost | 1 | 1 | Cheapest: lowest cost |
-| Cheapest | minimax/MiniMax-M2.5-highspeed | $0.000274 average cost | 2 | 1 | Cheapest: lowest cost |
-| Cheapest | openai/gpt-5.4-mini | $0.000331 average cost | 3 | 1 | Cheapest: lowest cost |
+| Fastest | openai/gpt-5.4-mini | 1.143 average seconds | 2 | 4 | Fastest: lowest processing time |
+| Fastest | openai/gpt-5.4 | 1.876 average seconds | 3 | 5 | Fastest: lowest processing time |
+| Cheapest | groq/openai/gpt-oss-20b | $0.000113 average cost | 1 | 5 | Cheapest: lowest cost |
+| Cheapest | minimax/MiniMax-M2.5-highspeed | $0.000275 average cost | 2 | 4 | Cheapest: lowest cost |
 | Best | openai/gpt-5.4-pro | $0.013080 average cost | 14 | 1 | Best proxy: highest cost |
 | Best | kimi/kimi-k2.6 | $0.002891 average cost | 13 | 1 | Best proxy: highest cost |
-| Best | anthropic/claude-haiku-4-5 | $0.002460 average cost | 12 | 1 | Best proxy: highest cost |
 
 ### Price
 
 | Rank | Provider/model | Average cost (USD) | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | groq/openai/gpt-oss-20b | 0.000030 | 1 |
-| 2 | minimax/MiniMax-M2.5-highspeed | 0.000274 | 1 |
-| 3 | openai/gpt-5.4-mini | 0.000331 | 1 |
-| 4 | minimax/MiniMax-M2.5 | 0.000604 | 1 |
-| 5 | gemini/gemini-3.1-flash-lite-preview | 0.000666 | 1 |
-| 6 | openai/gpt-5.4-nano | 0.000708 | 1 |
-| 7 | gemini/gemini-3.1-pro-preview | 0.000944 | 1 |
-| 8 | openai/gpt-5.4 | 0.001097 | 2 |
-| 9 | anthropic/claude-sonnet-4-6 | 0.001335 | 1 |
-| 10 | anthropic/claude-opus-4-6 | 0.002175 | 1 |
-| 11 | anthropic/claude-opus-4-7 | 0.002225 | 1 |
+| 1 | groq/openai/gpt-oss-20b | 0.000113 | 5 |
+| 2 | minimax/MiniMax-M2.5-highspeed | 0.000275 | 4 |
+| 3 | openai/gpt-5.4-mini | 0.000328 | 4 |
+| 4 | minimax/MiniMax-M2.5 | 0.000592 | 4 |
+| 5 | gemini/gemini-3.1-flash-lite-preview | 0.000679 | 4 |
+| 6 | openai/gpt-5.4-nano | 0.000690 | 4 |
+| 7 | gemini/gemini-3.1-pro-preview | 0.000956 | 4 |
+| 8 | openai/gpt-5.4 | 0.001108 | 5 |
+| 9 | anthropic/claude-sonnet-4-6 | 0.001320 | 4 |
+| 10 | anthropic/claude-opus-4-6 | 0.002156 | 4 |
+| 11 | anthropic/claude-opus-4-7 | 0.002213 | 4 |
 | 12 | anthropic/claude-haiku-4-5 | 0.002460 | 1 |
 | 13 | kimi/kimi-k2.6 | 0.002891 | 1 |
 | 14 | openai/gpt-5.4-pro | 0.013080 | 1 |
@@ -296,18 +290,18 @@ Only 4 picks are shown because only 4 unique provider/models had eligible rankin
 
 | Rank | Provider/model | Average seconds | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | groq/openai/gpt-oss-20b | 0.236 | 1 |
-| 2 | openai/gpt-5.4-mini | 1.199 | 1 |
-| 3 | openai/gpt-5.4 | 1.970 | 2 |
-| 4 | anthropic/claude-opus-4-7 | 2.290 | 1 |
-| 5 | gemini/gemini-3.1-flash-lite-preview | 2.305 | 1 |
-| 6 | anthropic/claude-sonnet-4-6 | 2.570 | 1 |
-| 7 | anthropic/claude-opus-4-6 | 2.682 | 1 |
-| 8 | openai/gpt-5.4-nano | 6.730 | 1 |
-| 9 | anthropic/claude-haiku-4-5 | 6.801 | 1 |
-| 10 | minimax/MiniMax-M2.5 | 7.500 | 1 |
-| 11 | gemini/gemini-3.1-pro-preview | 7.834 | 1 |
-| 12 | minimax/MiniMax-M2.5-highspeed | 13.775 | 1 |
+| 1 | groq/openai/gpt-oss-20b | 0.861 | 5 |
+| 2 | openai/gpt-5.4-mini | 1.143 | 4 |
+| 3 | openai/gpt-5.4 | 1.876 | 5 |
+| 4 | anthropic/claude-opus-4-6 | 2.382 | 4 |
+| 5 | gemini/gemini-3.1-flash-lite-preview | 2.467 | 4 |
+| 6 | anthropic/claude-sonnet-4-6 | 2.554 | 4 |
+| 7 | anthropic/claude-opus-4-7 | 2.917 | 4 |
+| 8 | minimax/MiniMax-M2.5 | 5.527 | 4 |
+| 9 | openai/gpt-5.4-nano | 5.843 | 4 |
+| 10 | anthropic/claude-haiku-4-5 | 6.801 | 1 |
+| 11 | gemini/gemini-3.1-pro-preview | 9.335 | 4 |
+| 12 | minimax/MiniMax-M2.5-highspeed | 15.735 | 4 |
 | 13 | kimi/kimi-k2.6 | 16.736 | 1 |
 | 14 | openai/gpt-5.4-pro | 51.259 | 1 |
 
@@ -315,34 +309,31 @@ Quality: No pure LLM quality metric is present in these benchmark files.
 
 ## Step 4 TTS
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
-| Fastest | elevenlabs/eleven_turbo_v2_5 | 1.058 average seconds | 1 | 2 | Fastest: lowest processing time |
-| Fastest | elevenlabs/eleven_flash_v2_5 | 1.286 average seconds | 2 | 2 | Fastest: lowest processing time |
-| Fastest | mistral/voxtral-mini-tts-2603 | 3.797 average seconds | 4 | 2 | Fastest: lowest processing time |
-| Cheapest | gemini/gemini-2.5-flash-preview-tts | $0.000197 average cost | 1 | 2 | Cheapest: lowest cost |
-| Cheapest | gemini/gemini-2.5-pro-preview-tts | $0.000393 average cost | 2 | 2 | Cheapest: lowest cost |
-| Cheapest | grok/grok-tts | $0.000735 average cost | 3 | 1 | Cheapest: lowest cost |
+| Fastest | elevenlabs/eleven_turbo_v2_5 | 0.808 average seconds | 1 | 5 | Fastest: lowest processing time |
+| Fastest | elevenlabs/eleven_flash_v2_5 | 0.999 average seconds | 2 | 5 | Fastest: lowest processing time |
+| Cheapest | gemini/gemini-2.5-flash-preview-tts | $0.000131 average cost | 1 | 5 | Cheapest: lowest cost |
+| Cheapest | gemini/gemini-2.5-pro-preview-tts | $0.000262 average cost | 2 | 5 | Cheapest: lowest cost |
 | Best | elevenlabs/eleven_v3 | $0.045470 average cost | 14 | 2 | Best proxy: highest cost |
 | Best | runway/eleven_multilingual_v2 | $0.040000 average cost | 13 | 1 | Best proxy: highest cost |
-| Best | minimax/speech-2.8-hd | $0.039350 average cost | 12 | 2 | Best proxy: highest cost |
 
 ### Price
 
 | Rank | Provider/model | Average cost (USD) | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | gemini/gemini-2.5-flash-preview-tts | 0.000197 | 2 |
-| 2 | gemini/gemini-2.5-pro-preview-tts | 0.000393 | 2 |
-| 3 | grok/grok-tts | 0.000735 | 1 |
-| 4 | mistral/voxtral-mini-tts-2603 | 0.001912 | 2 |
-| 5 | openai/gpt-4o-mini-tts | 0.003258 | 5 |
-| 6 | gemini/gemini-3.1-flash-tts-preview | 0.006601 | 3 |
-| 7 | deepgram/aura-2-thalia-en | 0.011805 | 2 |
-| 8 | groq/canopylabs/orpheus-v1-english | 0.012592 | 2 |
-| 9 | elevenlabs/eleven_flash_v2_5 | 0.022735 | 2 |
-| 10 | elevenlabs/eleven_turbo_v2_5 | 0.022735 | 2 |
+| 1 | gemini/gemini-2.5-flash-preview-tts | 0.000131 | 5 |
+| 2 | gemini/gemini-2.5-pro-preview-tts | 0.000262 | 5 |
+| 3 | grok/grok-tts | 0.000735 | 4 |
+| 4 | mistral/voxtral-mini-tts-2603 | 0.001912 | 8 |
+| 5 | openai/gpt-4o-mini-tts | 0.002481 | 17 |
+| 6 | gemini/gemini-3.1-flash-tts-preview | 0.004517 | 9 |
+| 7 | deepgram/aura-2-thalia-en | 0.007872 | 5 |
+| 8 | groq/canopylabs/orpheus-v1-english | 0.008397 | 5 |
+| 9 | elevenlabs/eleven_flash_v2_5 | 0.014344 | 5 |
+| 10 | elevenlabs/eleven_turbo_v2_5 | 0.014344 | 5 |
 | 11 | minimax/speech-2.8-turbo | 0.023610 | 2 |
 | 12 | minimax/speech-2.8-hd | 0.039350 | 2 |
 | 13 | runway/eleven_multilingual_v2 | 0.040000 | 1 |
@@ -352,55 +343,55 @@ Quality: No pure LLM quality metric is present in these benchmark files.
 
 | Rank | Provider/model | Average seconds | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | elevenlabs/eleven_turbo_v2_5 | 1.058 | 2 |
-| 2 | elevenlabs/eleven_flash_v2_5 | 1.286 | 2 |
-| 3 | grok/grok-tts | 3.330 | 1 |
-| 4 | mistral/voxtral-mini-tts-2603 | 3.797 | 2 |
-| 5 | openai/gpt-4o-mini-tts | 5.051 | 5 |
-| 6 | groq/canopylabs/orpheus-v1-english | 5.332 | 2 |
-| 7 | gemini/gemini-2.5-flash-preview-tts | 10.342 | 2 |
-| 8 | gemini/gemini-3.1-flash-tts-preview | 10.932 | 3 |
+| 1 | elevenlabs/eleven_turbo_v2_5 | 0.808 | 5 |
+| 2 | elevenlabs/eleven_flash_v2_5 | 0.999 | 5 |
+| 3 | grok/grok-tts | 3.268 | 4 |
+| 4 | groq/canopylabs/orpheus-v1-english | 3.547 | 5 |
+| 5 | mistral/voxtral-mini-tts-2603 | 4.119 | 8 |
+| 6 | gemini/gemini-3.1-flash-tts-preview | 7.730 | 9 |
+| 7 | gemini/gemini-2.5-flash-preview-tts | 7.876 | 5 |
+| 8 | deepgram/aura-2-thalia-en | 8.157 | 5 |
 | 9 | runway/eleven_multilingual_v2 | 10.972 | 1 |
 | 10 | elevenlabs/eleven_v3 | 11.776 | 2 |
-| 11 | deepgram/aura-2-thalia-en | 11.935 | 2 |
-| 12 | minimax/speech-2.8-turbo | 15.357 | 2 |
+| 11 | minimax/speech-2.8-turbo | 15.357 | 2 |
+| 12 | gemini/gemini-2.5-pro-preview-tts | 15.857 | 5 |
 | 13 | minimax/speech-2.8-hd | 17.654 | 2 |
-| 14 | gemini/gemini-2.5-pro-preview-tts | 22.476 | 2 |
+| 14 | openai/gpt-4o-mini-tts | 55.300 | 17 |
 
 Quality: No TTS quality ranking is shown because roundtrip WER is null in the current raw TTS comparison and dashboard rows do not contain a pure TTS quality metric.
 
 ## Step 5 Image
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
 | Fastest | gemini/imagen-4.0-fast-generate-001 | 4.408 average seconds | 2 | 1 | Fastest: lowest processing time |
 | Fastest | gemini/imagen-4.0-generate-001 | 4.745 average seconds | 3 | 1 | Fastest: lowest processing time |
-| Fastest | deapi/ZImageTurbo_INT8 | 7.512 average seconds | 5 | 1 | Fastest: lowest processing time |
-| Cheapest | deapi/Flux1schnell | $0.001360 average cost | 1 | 1 | Cheapest: lowest cost |
-| Cheapest | deapi/Flux_2_Klein_4B_BF16 | $0.001860 average cost | 2 | 1 | Cheapest: lowest cost |
-| Cheapest | minimax/image-01 | $0.003500 average cost | 3 | 1 | Cheapest: lowest cost |
+| Cheapest | deapi/Flux1schnell | $0.001360 average cost | 1 | 4 | Cheapest: lowest cost |
+| Cheapest | deapi/Flux_2_Klein_4B_BF16 | $0.001860 average cost | 2 | 4 | Cheapest: lowest cost |
 | Best | openai/gpt-image-1.5 | $0.080000 average cost | 15 | 1 | Best proxy: highest cost |
 | Best | grok/grok-imagine-image | $0.070000 average cost | 14 | 1 | Best proxy: highest cost |
-| Best | gemini/imagen-4.0-ultra-generate-001 | $0.060000 average cost | 13 | 1 | Best proxy: highest cost |
 
 ### Price
 
 | Rank | Provider/model | Average cost (USD) | Samples |
 | ---: | --- | ---: | ---: |
-| 1 | deapi/Flux1schnell | 0.001360 | 1 |
-| 2 | deapi/Flux_2_Klein_4B_BF16 | 0.001860 | 1 |
-| 3 | minimax/image-01 | 0.003500 | 1 |
-| 4 | deapi/ZImageTurbo_INT8 | 0.004050 | 1 |
-| 5 | openai/gpt-image-2 | 0.005000 | 2 |
+| 1 | deapi/Flux1schnell | 0.001360 | 4 |
+| 2 | deapi/Flux_2_Klein_4B_BF16 | 0.001860 | 4 |
+| 3 | minimax/image-01 | 0.003500 | 4 |
+| 4 | deapi/ZImageTurbo_INT8 | 0.004050 | 4 |
+| 5 | openai/gpt-image-2 | 0.005000 | 8 |
 | 6 | gemini/imagen-4.0-fast-generate-001 | 0.020000 | 1 |
-| 7 | bfl/flux-2-pro-preview | 0.030000 | 1 |
-| 8 | gemini/imagen-4.0-generate-001 | 0.040000 | 1 |
-| 9 | runway/gen4_image | 0.050000 | 1 |
-| 10 | gemini/imagen-4.0-ultra-generate-001 | 0.060000 | 1 |
-| 11 | grok/grok-imagine-image | 0.070000 | 1 |
-| 12 | openai/gpt-image-1.5 | 0.080000 | 1 |
+| 7 | openai/gpt-image-1-mini | 0.020000 | 1 |
+| 8 | bfl/flux-2-pro-preview | 0.030000 | 1 |
+| 9 | gemini/gemini-3-pro-image-preview | 0.030000 | 1 |
+| 10 | gemini/imagen-4.0-generate-001 | 0.040000 | 1 |
+| 11 | openai/gpt-image-1 | 0.040000 | 1 |
+| 12 | runway/gen4_image | 0.050000 | 1 |
+| 13 | gemini/imagen-4.0-ultra-generate-001 | 0.060000 | 1 |
+| 14 | grok/grok-imagine-image | 0.070000 | 1 |
+| 15 | openai/gpt-image-1.5 | 0.080000 | 1 |
 
 ### Speed
 
@@ -409,34 +400,33 @@ Quality: No TTS quality ranking is shown because roundtrip WER is null in the cu
 | 1 | grok/grok-imagine-image | 2.970 | 1 |
 | 2 | gemini/imagen-4.0-fast-generate-001 | 4.408 | 1 |
 | 3 | gemini/imagen-4.0-generate-001 | 4.745 | 1 |
-| 4 | deapi/Flux_2_Klein_4B_BF16 | 6.602 | 1 |
-| 5 | deapi/ZImageTurbo_INT8 | 7.512 | 1 |
-| 6 | deapi/Flux1schnell | 7.904 | 1 |
-| 7 | gemini/imagen-4.0-ultra-generate-001 | 10.611 | 1 |
-| 8 | bfl/flux-2-pro-preview | 11.713 | 1 |
-| 9 | minimax/image-01 | 14.835 | 1 |
-| 10 | runway/gen4_image | 30.984 | 1 |
-| 11 | openai/gpt-image-2 | 34.853 | 2 |
-| 12 | openai/gpt-image-1.5 | 48.361 | 1 |
+| 4 | deapi/Flux1schnell | 9.043 | 4 |
+| 5 | gemini/imagen-4.0-ultra-generate-001 | 10.611 | 1 |
+| 6 | deapi/Flux_2_Klein_4B_BF16 | 10.648 | 4 |
+| 7 | bfl/flux-2-pro-preview | 11.713 | 1 |
+| 8 | gemini/gemini-3-pro-image-preview | 14.210 | 1 |
+| 9 | minimax/image-01 | 14.578 | 4 |
+| 10 | openai/gpt-image-1-mini | 21.644 | 1 |
+| 11 | openai/gpt-image-2 | 29.127 | 8 |
+| 12 | deapi/ZImageTurbo_INT8 | 29.433 | 4 |
+| 13 | runway/gen4_image | 30.984 | 1 |
+| 14 | openai/gpt-image-1.5 | 48.361 | 1 |
+| 15 | openai/gpt-image-1 | 64.423 | 1 |
 
 Quality: No pure image quality metric is present in these benchmark files.
 
 ## Step 6 Video
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
 | Fastest | gemini/veo-3.1-lite-generate-preview | 31.424 average seconds | 2 | 1 | Fastest: lowest processing time |
-| Fastest | minimax/MiniMax-Hailuo-2.3 | 104.601 average seconds | 6 | 1 | Fastest: lowest processing time |
+| Fastest | minimax/MiniMax-Hailuo-02 | 74.589 average seconds | 5 | 1 | Fastest: lowest processing time |
 | Cheapest | deapi/Ltxv_13B_0_9_8_Distilled_FP8 | $0.000868 average cost | 1 | 1 | Cheapest: lowest cost |
 | Cheapest | minimax/T2V-01 | $0.190000 average cost | 2 | 1 | Cheapest: lowest cost |
-| Cheapest | minimax/T2V-01-Director | $0.190000 average cost | 3 | 1 | Cheapest: lowest cost |
 | Best | gemini/veo-3.1-generate-preview | $1.600000 average cost | 8 | 1 | Best proxy: highest cost |
 | Best | gemini/veo-3.1-fast-generate-preview | $0.400000 average cost | 7 | 1 | Best proxy: highest cost |
-| Best | minimax/MiniMax-Hailuo-02 | $0.280000 average cost | 5 | 1 | Best proxy: highest cost |
-
-Only 8 picks are shown because only 8 unique provider/models had eligible ranking rows for this step.
 
 ### Price
 
@@ -468,13 +458,13 @@ Quality: No pure video quality metric is present in these benchmark files.
 
 ## Step 7 Music
 
-### Top 9 Picks
+### Top 6 Picks
 
 | Bucket | Provider/model | Metric | Original rank | Samples | Selection note |
 | --- | --- | --- | ---: | ---: | --- |
+| Cheapest | elevenlabs/music_v1 | $0.014000 average cost | 1 | 2 | Cheapest: lowest cost |
 | Best | minimax/music-2.5 | $0.150000 average cost | 3 | 1 | Best proxy: highest cost |
 | Best | gemini/lyria-3-clip-preview | $0.040000 average cost | 2 | 1 | Best proxy: highest cost |
-| Best | elevenlabs/music_v1 | $0.014000 average cost | 1 | 2 | Best proxy: highest cost |
 
 Only 3 picks are shown because only 3 unique provider/models had eligible ranking rows for this step.
 

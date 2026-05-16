@@ -51,6 +51,9 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--ocr-provider-concurrency')
   expect(result.stdout).toContain('--ocr-local-concurrency')
   expect(result.stdout).toContain('--url-provider-concurrency')
+  expect(result.stdout).toContain('--transcript-video')
+  expect(result.stdout).toContain('--transcript-result')
+  expect(result.stdout).toContain('--transcript-text')
   expect(result.stdout).not.toContain('--deapi-ocr')
 })
 
