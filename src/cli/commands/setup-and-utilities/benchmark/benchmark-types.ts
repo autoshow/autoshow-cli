@@ -114,6 +114,7 @@ export type BenchmarkReport = {
 }
 
 export type BenchmarkFlags = {
+  tts?: boolean | undefined
   bitrates: string
   speeds: string
   'stt-services'?: string | undefined
@@ -121,4 +122,10 @@ export type BenchmarkFlags = {
   'skip-compression': boolean
   'skip-speed': boolean
   'output-dir'?: string | undefined
+  'tts-input-text'?: string | undefined
+  'tts-mode'?: string | undefined
+  'tts-roundtrip-dir'?: string | undefined
+  'tts-metric-fixtures'?: string | undefined
+  'tts-audio-judge-model'?: string | undefined
+  'tts-keep-temp'?: boolean | undefined
 }

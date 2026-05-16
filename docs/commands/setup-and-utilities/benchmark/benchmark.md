@@ -1,13 +1,14 @@
 # benchmark
 
-Benchmark STT transcription quality across audio compression levels and playback speeds.
+Benchmark STT transcription quality across audio compression levels and playback speeds, or score voice quality for an existing TTS run.
 
 ## Outline
 
 - [Usage](#usage)
-- [Overview](#overview)
+- [Modes](#modes)
 - [Flags](#flags)
 - [Examples](#examples)
+- [TTS voice-quality mode](#tts-voice-quality-mode)
 - [How it works](#how-it-works)
   - [Phase 1: Prepare source audio](#phase-1-prepare-source-audio)
   - [Phase 2: Generate audio variants](#phase-2-generate-audio-variants)
@@ -27,23 +28,40 @@ Benchmark STT transcription quality across audio compression levels and playback
 
 ```bash
 bun as benchmark <audio-file> [flags]
+bun as benchmark <tts-run-dir> --tts [flags]
 ```
 
-## Overview
+## Modes
 
-The benchmark command takes an audio file, generates a spectrum of degraded versions (lower bitrates and faster playback speeds), transcribes each version through all available STT services, and produces a JSON report comparing transcription quality via Word Error Rate (WER). This identifies at what point compression or speed-up causes transcription quality to degrade for each service.
+Default STT mode takes an audio file, generates a spectrum of degraded versions (lower bitrates and faster playback speeds), transcribes each version through all available STT services, and produces a JSON report comparing transcription quality via Word Error Rate (WER). This identifies at what point compression or speed-up causes transcription quality to degrade for each service.
+
+TTS mode is selected with `--tts`. It takes an existing AutoShow TTS run directory, reads `run.json`, derives the source text from `metadata.input`, scores all `metadata.tts[]` audio files, and writes voice quality reports beside the run.
 
 ## Flags
 
-| Flag                | Default                      | Description                                                  |
-|---------------------|------------------------------|--------------------------------------------------------------|
-| `--bitrates`        | `128,96,64,48,32,24,16,8`   | Comma-separated bitrate list in kbps                         |
-| `--speeds`          | `1.25,1.5,2.0,2.5,3.0`      | Comma-separated speed multipliers                            |
-| `--stt-services`    | all available                | Comma-separated STT services to test                         |
-| `--reference-stt`   | `deepgram:nova-3`            | Service:model pair for reference transcription               |
-| `--skip-compression`| `false`                      | Skip compression spectrum tests                              |
-| `--skip-speed`      | `false`                      | Skip speed spectrum tests                                    |
-| `--output-dir`      | `output/benchmark/<timestamp>` | Custom output directory for benchmark results              |
+### STT flags
+
+| Flag                 | Default                        | Description                                     |
+|----------------------|--------------------------------|-------------------------------------------------|
+| `--bitrates`         | `128,96,64,48,32,24,16,8`     | Comma-separated bitrate list in kbps            |
+| `--speeds`           | `1.25,1.5,2.0,2.5,3.0`        | Comma-separated speed multipliers               |
+| `--stt-services`     | all available                  | Comma-separated STT services to test            |
+| `--reference-stt`    | `deepgram:nova-3`              | Service:model pair for reference transcription  |
+| `--skip-compression` | `false`                        | Skip compression spectrum tests                 |
+| `--skip-speed`       | `false`                        | Skip speed spectrum tests                       |
+| `--output-dir`       | `output/benchmark/<timestamp>` | Custom output directory for STT benchmark files |
+
+### TTS flags
+
+| Flag                        | Default                  | Description                                                                    |
+|-----------------------------|--------------------------|--------------------------------------------------------------------------------|
+| `--tts`                     | `false`                  | Score an existing TTS run instead of running the STT compression/speed benchmark |
+| `--tts-input-text`          | `metadata.input`         | Original source text, or a text file path, for older runs without `metadata.input` |
+| `--tts-mode`                | `full`                   | `full` may call paid STT/audio judge APIs when credentials exist; `local` never does |
+| `--tts-roundtrip-dir`       | none                     | Directory of existing roundtrip transcripts                                    |
+| `--tts-metric-fixtures`     | none                     | JSON fixtures with precomputed model metrics and transcripts                    |
+| `--tts-audio-judge-model`   | `gpt-audio`              | OpenAI audio-capable chat model for paid rubric judging                         |
+| `--tts-keep-temp`           | `false`                  | Keep temporary normalized audio files                                           |
 
 ## Examples
 
@@ -68,7 +86,33 @@ bun as benchmark audio.mp3 --reference-stt openai-stt:gpt-4o-transcribe
 
 # Custom output location
 bun as benchmark audio.mp3 --output-dir output/my-benchmark
+
+# Score an existing TTS run with full scoring
+bun as benchmark docs/benchmarks/tts/<run> --tts
+
+# Score an existing TTS run without paid calls
+bun as benchmark docs/benchmarks/tts/<run> --tts --tts-mode local
+
+# Score a TTS run with existing roundtrip transcripts
+bun as benchmark docs/benchmarks/tts/<run> --tts --tts-roundtrip-dir <dir>
 ```
+
+## TTS voice-quality mode
+
+`bun as benchmark <tts-run-dir> --tts` is analysis-only. It does not generate new TTS samples. The run directory must contain a TTS `run.json` with `metadata.tts[]`; each entry's `audioFileName` is resolved relative to the run directory.
+
+By default, `--tts` uses `--tts-mode full`. Full mode computes local signal/prosody heuristics, uses any supplied fixtures or roundtrip transcripts, and may call OpenAI audio judging plus AssemblyAI/OpenAI roundtrip STT when the corresponding API keys are configured. Configured paid scoring calls are strict in full mode: if OpenAI judging or paid roundtrip STT is attempted and fails, the benchmark exits non-zero instead of recording a warning. Missing paid credentials still skip those metrics. Use `--tts-mode local` for a no-paid, warning-tolerant pass.
+
+Outputs are written beside the run:
+
+```
+<tts-run-dir>/
+  voice-quality-report.json
+  voice-quality-report.md
+  voice-quality-roundtrip/        # created only when full mode runs paid STT
+```
+
+The voice-quality score excludes cost, provider processing speed, and provider latency. It combines naturalness signals with speech-quality/intelligibility signals and records missing metrics per provider.
 
 ## How it works
 

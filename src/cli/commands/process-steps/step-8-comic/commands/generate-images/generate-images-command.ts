@@ -3,11 +3,13 @@ import { mkdir, readdir } from 'node:fs/promises'
 import { l, err, bold, cyan, green, red } from '../../utils/logger'
 import { generatePanelImages } from './generate-panel-images'
 import { generateComicPages } from './generate-comic-pages'
+import { panelSelectionToSketchRange } from './comic-page-utils'
 import { draftScenesCommand } from '../draft-scenes/draft-scenes-command'
 import { panelPromptsCommand } from '../panel-prompts/panel-prompts-command'
 import { generateSketchesCommand } from '../generate-sketches/generate-sketches-command'
 import { DEFAULT_IMAGE_MODEL, isGeminiImageModel } from '../../models/model-registry'
 import { validateImageSizeForModels } from '../../utils/image-size'
+import { getImagePromptVariationLabel } from './prompt-variations'
 import {
   COMIC_OUTPUT_ROOT,
   getPanelPromptsDirectory,
@@ -85,19 +87,16 @@ export const runFinalPanelImageStage = async (options: GenerateImagesCommandOpti
     if (models.some(isGeminiImageModel)) {
       l.dim('Gemini image models map CLI sizes to aspect ratio + 1K and ignore --quality')
     }
+    if (options.variations !== undefined) {
+      l.dim(`Variations: ${options.variations.map(getImagePromptVariationLabel).join(', ')}`)
+    }
     if (usePageMode) {
       const panelSelection = options.panels ?? 'all'
       l.dim(`Panels: ${panelSelection === 'all' ? 'all' : panelSelection.join(', ')}`)
-      if (options.panelLimit !== undefined) {
-        l.dim(`Panel limit: ${options.panelLimit}`)
-      }
       l.dim(`Panels per image: ${panelsPerImage}`)
     } else {
       if (options.panels) {
         l.dim(`Panels: ${options.panels === 'all' ? 'all' : options.panels.join(', ')}`)
-      }
-      if (options.panelLimit !== undefined) {
-        l.dim(`Panel limit: ${options.panelLimit}`)
       }
     }
     if (force) {
@@ -125,7 +124,7 @@ export const runFinalPanelImageStage = async (options: GenerateImagesCommandOpti
         force,
         panels: options.panels ?? 'all',
         panelsPerImage,
-        ...(options.panelLimit !== undefined ? { panelLimit: options.panelLimit } : {}),
+        ...(options.variations !== undefined ? { variations: options.variations } : {}),
       }
       await generateComicPages(sceneSlug, pageOptions)
     } else {
@@ -135,7 +134,7 @@ export const runFinalPanelImageStage = async (options: GenerateImagesCommandOpti
         quality,
         force,
         ...(options.panels !== undefined ? { panels: options.panels } : {}),
-        ...(options.panelLimit !== undefined ? { panelLimit: options.panelLimit } : {}),
+        ...(options.variations !== undefined ? { variations: options.variations } : {}),
       }
       await generatePanelImages(sceneSlug, generationOptions)
     }
@@ -217,15 +216,14 @@ export const generateImagesCommand = async (
   )
 
   if (target === 'sketches' || target === 'both') {
+    const sketchPanels = panelSelectionToSketchRange(options.panels)
     await runSketches({
       sceneSlug,
       ...(options.imageModels ? { imageModels: options.imageModels } : {}),
       ...(options.size ? { size: options.size } : {}),
       ...(options.quality ? { quality: options.quality } : {}),
       ...(options.force !== undefined ? { force: options.force } : {}),
-      ...(options.chunk !== undefined ? { chunk: options.chunk } : {}),
-      ...(options.sketchGroupSize !== undefined ? { sketchGroupSize: options.sketchGroupSize } : {}),
-      ...(options.sketchPanels !== undefined ? { sketchPanels: options.sketchPanels } : {}),
+      ...(sketchPanels !== undefined ? { sketchPanels } : {}),
     })
   }
 

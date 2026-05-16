@@ -16,12 +16,22 @@ import {
   buildComicPagePrompt,
   buildComicPagePromptData,
   chunkComicPagePanels,
+  panelSelectionToSketchRange,
   parsePanelSelector,
   selectComicPanels
 } from '~/cli/commands/process-steps/step-8-comic/commands/generate-images/comic-page-utils'
+import { applyImagePromptVariation } from '~/cli/commands/process-steps/step-8-comic/commands/generate-images/prompt-variations'
+import {
+  buildSketchPrompt,
+  selectSketchPanelRange
+} from '~/cli/commands/process-steps/step-8-comic/commands/generate-sketches/generate-scene-sketches'
 import { parseDraftScenesArgs, parseGenerateImagesArgs } from '~/cli/commands/process-steps/step-8-comic/utils/cli-args'
 import { LLM_MODELS } from '~/cli/commands/process-steps/step-8-comic/models/model-registry'
-import { getPageComicImageFilename } from '~/cli/commands/process-steps/step-8-comic/utils/scene-utils'
+import {
+  getPageComicImageFilename,
+  getPageComicImagePath,
+  getPanelComicImagePath
+} from '~/cli/commands/process-steps/step-8-comic/utils/scene-utils'
 import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
 import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
@@ -58,6 +68,7 @@ import {
   SUPPORTED_SPEECHIFY_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
+import type { ExpandedScenePromptData, PromptsConfig } from '~/cli/commands/process-steps/step-8-comic/types'
 
 describe('option resolution contracts', () => {
   test('comic generate-images args parse page image options', () => {
@@ -65,8 +76,8 @@ describe('option resolution contracts', () => {
       'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
       '--image-model', 'gpt-image-2,gemini-3.1-flash-image-preview',
       '--panels', '1-4,9',
-      '--panel-limit', '3',
       '--panels-per-image', '4',
+      '--variation', 'animation-polish,cinematic-depth',
       '--size', '1536x1024',
       '--quality', 'high',
       '--force'
@@ -75,11 +86,24 @@ describe('option resolution contracts', () => {
     expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
     expect(opts.imageModels).toEqual(['gpt-image-2', 'gemini-3.1-flash-image-preview'])
     expect(opts.panels).toEqual([1, 2, 3, 4, 9])
-    expect(opts.panelLimit).toBe(3)
     expect(opts.panelsPerImage).toBe(4)
+    expect(opts.variations).toEqual(['animation-polish', 'cinematic-depth'])
     expect(opts.size).toBe('1536x1024')
     expect(opts.quality).toBe('high')
     expect(opts.force).toBe(true)
+  })
+
+  test('comic generate-images removed options throw deprecation errors', () => {
+    expect(() => parseGenerateImagesArgs(['script.md', '--panel-limit', '3'])).toThrow('--panel-limit was removed')
+    expect(() => parseGenerateImagesArgs(['script.md', '--panel', '2'])).toThrow('--panel was removed')
+    expect(() => parseGenerateImagesArgs(['script.md', '--chunk', '2'])).toThrow('--chunk was removed')
+    expect(() => parseGenerateImagesArgs(['script.md', '--sketch-group-size', '8'])).toThrow('--sketch-group-size was removed')
+    expect(() => parseGenerateImagesArgs(['script.md', '--sketch-panels', '1-4'])).toThrow('--sketch-panels was removed')
+  })
+
+  test('comic generate-images variation args reject duplicates and unknown values', () => {
+    expect(() => parseGenerateImagesArgs(['script.md', '--variation', 'animation-polish,animation-polish'])).toThrow('Duplicate variation "animation-polish" is not allowed')
+    expect(() => parseGenerateImagesArgs(['script.md', '--variation', 'unknown'])).toThrow('Invalid variation "unknown"')
   })
 
   test('comic draft-scenes args parse llm model', () => {
@@ -102,12 +126,11 @@ describe('option resolution contracts', () => {
     expect(opts.target).toBe('prompts')
   })
 
-  test('comic generate-images args parse page image options', () => {
+  test('comic generate-images args parse page image options with target', () => {
     const opts = parseGenerateImagesArgs([
       'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
       '--target', 'images',
-      '--panels', '1-8',
-      '--panel-limit', '6',
+      '--panels', '1-6',
       '--panels-per-image', '4',
       '--image-model', 'gpt-image-2',
       '--size', '1536x1024',
@@ -117,8 +140,7 @@ describe('option resolution contracts', () => {
 
     expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
     expect(opts.target).toBe('images')
-    expect(opts.panels).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
-    expect(opts.panelLimit).toBe(6)
+    expect(opts.panels).toEqual([1, 2, 3, 4, 5, 6])
     expect(opts.panelsPerImage).toBe(4)
     expect(opts.imageModels).toEqual(['gpt-image-2'])
     expect(opts.size).toBe('1536x1024')
@@ -126,32 +148,118 @@ describe('option resolution contracts', () => {
     expect(opts.force).toBe(true)
   })
 
-  test('comic panel selectors dedupe, sort, limit, and chunk page groups', () => {
+  test('comic panel selectors dedupe, sort, and chunk page groups', () => {
     expect(parsePanelSelector('all')).toBe('all')
     expect(parsePanelSelector('3,1,3,2-4')).toEqual([1, 2, 3, 4])
 
     const selected = selectComicPanels(
       [1, 2, 3, 4, 5].map(panelNumber => ({ panelNumber })),
       parsePanelSelector('1-4'),
-      3,
+      undefined,
       'ep02/scene'
     )
     const chunks = chunkComicPagePanels(selected, 2)
 
-    expect(selected.map(panel => panel.panelNumber)).toEqual([1, 2, 3])
+    expect(selected.map(panel => panel.panelNumber)).toEqual([1, 2, 3, 4])
     expect(chunks.map(chunk => ({
       pageNumber: chunk.pageNumber,
       panelNumbers: chunk.panelNumbers
     }))).toEqual([
       { pageNumber: 1, panelNumbers: [1, 2] },
-      { pageNumber: 2, panelNumbers: [3] }
+      { pageNumber: 2, panelNumbers: [3, 4] }
     ])
+  })
+
+  test('comic panel selectors clamp overlong contiguous ranges to available overlap', () => {
+    const panels = Array.from({ length: 11 }, (_, index) => ({ panelNumber: index + 1 }))
+
+    const selected = selectComicPanels(
+      panels,
+      parsePanelSelector('9-16'),
+      undefined,
+      'ep02/scene'
+    )
+    const sketchChunk = selectSketchPanelRange(
+      panels,
+      { startPanelNumber: 9, endPanelNumber: 16 },
+      'ep02/scene'
+    )
+
+    expect(selected.map(panel => panel.panelNumber)).toEqual([9, 10, 11])
+    expect(sketchChunk.startPanelNumber).toBe(9)
+    expect(sketchChunk.endPanelNumber).toBe(11)
+    expect(sketchChunk.panels.map(panel => panel.panelNumber)).toEqual([9, 10, 11])
+  })
+
+  test('comic panel selectors reject no-overlap and non-contiguous missing selections', () => {
+    const panels = Array.from({ length: 11 }, (_, index) => ({ panelNumber: index + 1 }))
+    const gappedPanels = [1, 2, 4, 5].map(panelNumber => ({ panelNumber }))
+
+    expect(() => selectComicPanels(
+      panels,
+      parsePanelSelector('12-16'),
+      undefined,
+      'ep02/scene'
+    )).toThrow('Selected panels 12, 13, 14, 15, 16 were not found')
+    expect(() => selectComicPanels(
+      gappedPanels,
+      parsePanelSelector('1-5'),
+      undefined,
+      'ep02/scene'
+    )).toThrow('Selected panel 3 was not found')
+    expect(() => selectComicPanels(
+      panels,
+      parsePanelSelector('1,99'),
+      undefined,
+      'ep02/scene'
+    )).toThrow('Selected panel 99 was not found')
+    expect(() => selectSketchPanelRange(
+      gappedPanels,
+      { startPanelNumber: 1, endPanelNumber: 5 },
+      'ep02/scene'
+    )).toThrow('Sketch panel range "1-5" was not found')
+    expect(() => selectSketchPanelRange(
+      panels,
+      { startPanelNumber: 12, endPanelNumber: 16 },
+      'ep02/scene'
+    )).toThrow('Sketch panel range "12-16" was not found')
+    expect(() => panelSelectionToSketchRange(parsePanelSelector('1,99'))).toThrow(
+      'Sketch panel selection must be contiguous'
+    )
   })
 
   test('comic page image filenames preserve contiguous and non-contiguous panel labels', () => {
     expect(getPageComicImageFilename(1, [1, 2, 3, 4])).toBe('page-01-panels-01-04.png')
     expect(getPageComicImageFilename(2, [5, 6, 7, 8])).toBe('page-02-panels-05-08.png')
     expect(getPageComicImageFilename(1, [1, 3, 7])).toBe('page-01-panels-01_03_07.png')
+  })
+
+  test('comic final image paths preserve legacy paths unless variations are explicit', () => {
+    expect(getPanelComicImagePath('scene-one', 1)).toBe(join('output', 'comic', 'scene-one', 'panels', 'panel-01.png'))
+    expect(getPanelComicImagePath('scene-one', 1, 'gpt-image-2')).toBe(join('output', 'comic', 'scene-one', 'panels', 'gpt-image-2', 'panel-01.png'))
+    expect(getPanelComicImagePath('scene-one', 1, 'gpt-image-2', 'animation-polish')).toBe(join('output', 'comic', 'scene-one', 'panels', 'animation-polish', 'gpt-image-2', 'panel-01.png'))
+    expect(getPageComicImagePath('scene-one', 1, [1, 2], 'gpt-image-2', 'cinematic-depth')).toBe(join('output', 'comic', 'scene-one', 'pages', 'cinematic-depth', 'gpt-image-2', 'page-01-panels-01-02.png'))
+  })
+
+  test('comic final image prompt variations apply only non-canonical prompt prefixes', () => {
+    const prompts = {
+      'Image Prompt Variations': {
+        'animation-polish': 'Production animation instruction.',
+        'cinematic-depth': 'Cinematic depth instruction.',
+      },
+    } as unknown as PromptsConfig
+    const basePrompt = 'Base final prompt.'
+
+    expect(applyImagePromptVariation(basePrompt, 'canonical', prompts)).toBe(basePrompt)
+
+    const animationPrompt = applyImagePromptVariation(basePrompt, 'animation-polish', prompts)
+    const cinematicPrompt = applyImagePromptVariation(basePrompt, 'cinematic-depth', prompts)
+
+    expect(animationPrompt.startsWith('Production animation instruction.')).toBe(true)
+    expect(cinematicPrompt.startsWith('Cinematic depth instruction.')).toBe(true)
+    expect(animationPrompt).toContain(`\n\n${basePrompt}`)
+    expect(cinematicPrompt).toContain(`\n\n${basePrompt}`)
+    expect(animationPrompt).not.toBe(cinematicPrompt)
   })
 
   test('comic final page prompt preserves panel order and speech text', () => {
@@ -202,6 +310,41 @@ describe('option resolution contracts', () => {
     expect(prompt).toContain('We need the exact text.')
     expect(prompt).toContain('Then do not rewrite it.')
     expect(prompt.indexOf('"number": 1')).toBeLessThan(prompt.indexOf('"number": 3'))
+  })
+
+  test('comic sketch prompt asks for numeric panel labels only', () => {
+    const promptData: ExpandedScenePromptData = {
+      title: 'Paddy Repairs Everything',
+      location: 'Engineering Bay',
+      panels: [{
+        number: 4,
+        description: 'Paddy kicks the laser cutter panel as steam escapes.',
+        characters: [],
+        speech: [{ character: 'Paddy', line: 'I need the exact text.', tone: 'muttering' }],
+        sourceSegmentIds: ['beat-0004'],
+        sourceSegments: [{
+          id: 'beat-0004',
+          type: 'dialogue',
+          text: 'I need the exact text.',
+          beatIndex: 4,
+          speaker: 'Paddy',
+          speakerLabel: 'PADDY',
+        }]
+      }]
+    }
+    const sketchPrompts: PromptsConfig['Sketch Prompts'] = {
+      Prefix: 'Generate a black-and-white rough sketch review image for comic layout approval.',
+      Chunk: 'Use the ordered panel data below to produce one review sketch image with one sub-panel per source panel.',
+    }
+
+    const prompt = buildSketchPrompt(promptData, sketchPrompts)
+
+    expect(prompt).toContain('Label each sub-panel only with its source panel number')
+    expect(prompt).toContain('small boxed numeral in the upper-left corner')
+    expect(prompt).toContain('caption banners such as "Wide opening shot..." or "Action panel..."')
+    expect(prompt).toContain('Keep visible text limited to story content explicitly present in the panel data')
+    expect(prompt).toContain('Include the exact speech bubble text')
+    expect(prompt).toContain('I need the exact text.')
   })
 
   test('buildOptsFromFlags maps representative CLI flags to runtime options', () => {

@@ -1,0 +1,50 @@
+Input summary
+Source path: /Users/ajc/c/as/autoshow-cli/docs/benchmarks/tts/2026-05-16_03-19-23-659_tts-long/input.txt
+Character count: 286
+Word count: 60
+Provider count: 29 total, with 4 local models and 25 cloud services.
+Scoring method: composite scoring only. Roundtrip STT WER was not run, so the evaluation uses measured duration, speaking rate, file size, processing time, and recorded cost.
+
+Local models analysis
+kitten/kitten-tts-nano: composite score 37.61/100, duration 18.67s, speaking rate 15.32 c/s, file size 875.0 KB, processing time 7.18s, cost 0.0000 cents, roundtrip WER unavailable.
+kitten/kitten-tts-micro: composite score 37.13/100, duration 17.94s, speaking rate 15.94 c/s, file size 841.1 KB, processing time 8.62s, cost 0.0000 cents, roundtrip WER unavailable.
+kitten/kitten-tts-nano-0.8-int8: composite score 37.12/100, duration 18.79s, speaking rate 15.22 c/s, file size 880.9 KB, processing time 8.65s, cost 0.0000 cents, roundtrip WER unavailable.
+kitten/kitten-tts-mini: composite score 36.69/100, duration 15.39s, speaking rate 18.58 c/s, file size 721.5 KB, processing time 9.94s, cost 0.0000 cents, roundtrip WER unavailable.
+
+Cloud services analysis
+gcloud/standard: composite score 39.66/100, duration 15.68s, speaking rate 18.23 c/s, file size 490.2 KB, processing time 0.67s, cost 0.1144 cents, roundtrip WER unavailable.
+gcloud/wavenet: composite score 39.64/100, duration 16.47s, speaking rate 17.36 c/s, file size 514.9 KB, processing time 0.73s, cost 0.1144 cents, roundtrip WER unavailable.
+gcloud/neural2: composite score 39.37/100, duration 15.68s, speaking rate 18.23 c/s, file size 490.2 KB, processing time 0.51s, cost 0.4576 cents, roundtrip WER unavailable.
+grok/grok-tts: composite score 38.31/100, duration 18.05s, speaking rate 15.84 c/s, file size 564.1 KB, processing time 4.71s, cost 0.1201 cents, roundtrip WER unavailable.
+gcloud/chirp3-hd: composite score 38.27/100, duration 17.68s, speaking rate 16.18 c/s, file size 552.6 KB, processing time 2.61s, cost 0.8580 cents, roundtrip WER unavailable.
+elevenlabs/eleven_turbo_v2_5: composite score 38.25/100, duration 17.28s, speaking rate 16.56 c/s, file size 539.9 KB, processing time 0.94s, cost 1.4300 cents, roundtrip WER unavailable.
+elevenlabs/eleven_flash_v2_5: composite score 38.25/100, duration 17.65s, speaking rate 16.21 c/s, file size 551.6 KB, processing time 0.95s, cost 1.4300 cents, roundtrip WER unavailable.
+openai/gpt-4o-mini-tts: composite score 38.11/100, duration 19.65s, speaking rate 14.55 c/s, file size 614.1 KB, processing time 4.59s, cost 0.3604 cents, roundtrip WER unavailable.
+groq/canopylabs/orpheus-v1-english: composite score 37.72/100, duration 25.36s, speaking rate 11.28 c/s, file size 792.6 KB, processing time 4.11s, cost 0.9152 cents, roundtrip WER unavailable.
+deapi/Kokoro: composite score 37.24/100, duration 17.02s, speaking rate 16.80 c/s, file size 532.1 KB, processing time 8.23s, cost 0.0220 cents, roundtrip WER unavailable.
+deepgram/aura-2-thalia-en: composite score 36.31/100, duration 18.22s, speaking rate 15.70 c/s, file size 569.3 KB, processing time 8.48s, cost 0.8580 cents, roundtrip WER unavailable.
+gemini/gemini-2.5-flash-preview-tts: composite score 36.00/100, duration 20.25s, speaking rate 14.12 c/s, file size 632.9 KB, processing time 11.95s, cost 0.0143 cents, roundtrip WER unavailable.
+minimax/speech-02-turbo: composite score 35.74/100, duration 17.60s, speaking rate 16.25 c/s, file size 550.2 KB, processing time 7.62s, cost 1.7160 cents, roundtrip WER unavailable.
+gemini/gemini-3.1-flash-tts-preview: composite score 35.18/100, duration 22.92s, speaking rate 12.48 c/s, file size 716.3 KB, processing time 12.67s, cost 0.6006 cents, roundtrip WER unavailable.
+gcloud/studio: composite score 34.86/100, duration 16.02s, speaking rate 17.85 c/s, file size 500.9 KB, processing time 1.69s, cost 4.5760 cents, roundtrip WER unavailable.
+minimax/speech-02-hd: composite score 34.46/100, duration 20.66s, speaking rate 13.84 c/s, file size 645.8 KB, processing time 8.03s, cost 2.8600 cents, roundtrip WER unavailable.
+minimax/speech-2.6-turbo: composite score 34.44/100, duration 17.93s, speaking rate 15.95 c/s, file size 560.3 KB, processing time 11.54s, cost 1.7160 cents, roundtrip WER unavailable.
+gemini/gemini-2.5-pro-preview-tts: composite score 34.04/100, duration 25.33s, speaking rate 11.29 c/s, file size 791.7 KB, processing time 17.80s, cost 0.0286 cents, roundtrip WER unavailable.
+minimax/speech-2.6-hd: composite score 33.45/100, duration 17.93s, speaking rate 15.95 c/s, file size 560.3 KB, processing time 11.06s, cost 2.8600 cents, roundtrip WER unavailable.
+elevenlabs/eleven_v3: composite score 33.27/100, duration 18.88s, speaking rate 15.15 c/s, file size 590.1 KB, processing time 11.62s, cost 2.8600 cents, roundtrip WER unavailable.
+runway/eleven_multilingual_v2: composite score 30.34/100, duration 19.43s, speaking rate 14.72 c/s, file size 607.1 KB, processing time 10.98s, cost 6.0000 cents, roundtrip WER unavailable.
+minimax/speech-2.8-hd: composite score 29.07/100, duration 18.32s, speaking rate 15.61 c/s, file size 572.7 KB, processing time 24.20s, cost 2.8600 cents, roundtrip WER unavailable.
+deapi/Chatterbox: composite score 25.36/100, duration 11.96s, speaking rate 23.91 c/s, file size 373.8 KB, processing time 43.87s, cost 0.0220 cents, roundtrip WER unavailable.
+deapi/Qwen3_TTS_12Hz_1_7B_CustomVoice: composite score 21.91/100, duration 28.48s, speaking rate 10.04 c/s, file size 890.1 KB, processing time 54.20s, cost 0.0220 cents, roundtrip WER unavailable.
+minimax/speech-2.8-turbo: composite score 18.28/100, duration 17.24s, speaking rate 16.59 c/s, file size 539.0 KB, processing time 82.31s, cost 1.7160 cents, roundtrip WER unavailable.
+
+Recommendation
+Best local model: kitten/kitten-tts-nano, with the highest local composite score at 37.61/100. It had the fastest local processing time at 7.18s and zero recorded cost.
+Best cloud service: gcloud/standard, with the highest cloud composite score at 39.66/100. It combined low recorded cost, fast processing time, and measured duration/speaking-rate metrics that ranked highest under the composite formula.
+
+Caveats
+Roundtrip STT WER was not available because AssemblyAI transcription was not run for this pass.
+Direct audio quality, voice naturalness, pronunciation quality, and artifacts were not subjectively assessed.
+The composite score is based only on measurable metadata: ffprobe duration, calculated speaking rate, recorded processing time, recorded cost, and file size.
+Cost data came from run.json actual cost metadata where available.
+All audio files referenced by metadata.tts were present and ffprobe produced duration measurements without warnings.

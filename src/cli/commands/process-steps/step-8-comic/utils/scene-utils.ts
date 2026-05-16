@@ -5,6 +5,7 @@ import { PromptsConfigSchema } from '../schemas/schemas'
 import { parseJsonFile } from './json-prompt-utils'
 import { getPanelsDirectory, getSketchesDirectory, getPagesDirectory } from './project-paths'
 import type {
+  ImagePromptVariation,
   ImageGenerationModel,
   PromptsConfig,
   ScenePrompts,
@@ -112,14 +113,31 @@ export const getPageComicImageFilename = (
   return `${pageFilename}.png`
 }
 
+const getFinalImageOutputDirectory = (
+  rootDirectory: string,
+  model?: ImageGenerationModel,
+  variation?: ImagePromptVariation
+): string => {
+  if (!variation) {
+    return model ? join(rootDirectory, model) : rootDirectory
+  }
+
+  if (!model) {
+    throw new Error(`Model is required for variation output path "${variation}"`)
+  }
+
+  return join(rootDirectory, variation, model)
+}
+
 export const getPanelComicImagePath = (
   sceneSlug: string,
   panelNumber: number,
-  model?: ImageGenerationModel
+  model?: ImageGenerationModel,
+  variation?: ImagePromptVariation
 ): string => {
   const dir = getPanelsDirectory(sceneSlug)
   const filename = getPanelComicImageFilename(panelNumber)
-  return model ? join(dir, model, filename) : join(dir, filename)
+  return join(getFinalImageOutputDirectory(dir, model, variation), filename)
 }
 
 export const getSketchComicImagePath = (
@@ -137,11 +155,12 @@ export const getPageComicImagePath = (
   sceneSlug: string,
   pageNumber: number,
   panelNumbers: number[],
-  model?: ImageGenerationModel
+  model?: ImageGenerationModel,
+  variation?: ImagePromptVariation
 ): string => {
   const dir = getPagesDirectory(sceneSlug)
   const filename = getPageComicImageFilename(pageNumber, panelNumbers)
-  return model ? join(dir, model, filename) : join(dir, filename)
+  return join(getFinalImageOutputDirectory(dir, model, variation), filename)
 }
 
 export const findExistingPanelImages = async (

@@ -1,6 +1,6 @@
 import type { Dirent } from 'node:fs'
 import { mkdir, readdir } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { l, err, cyan, bold } from '../../utils/logger'
 import {
   createImage,
@@ -19,18 +19,23 @@ import {
   resolveScenePanelDirectories,
 } from '../../utils/panel-prompt-utils'
 import { getPanelPromptsDirectory, getPagesDirectory } from '../../utils/project-paths'
-import { getPageComicImagePath } from '../../utils/scene-utils'
+import { getPageComicImagePath, loadPromptsConfig } from '../../utils/scene-utils'
 import {
   buildComicPagePrompt,
   buildComicPagePromptData,
   chunkComicPagePanels,
   selectComicPanels,
 } from './comic-page-utils'
+import {
+  applyImagePromptVariation,
+  getImagePromptVariationLabel,
+} from './prompt-variations'
 import type {
   ComicPagePanelSource,
   GenerateComicPagesDependencies,
   GenerateComicPagesOptions,
   ImageGenerationModel,
+  ImagePromptVariation,
   ResolvedReferenceImages,
 } from '../../types'
 
@@ -122,8 +127,11 @@ export const generateComicPages = async (
   let errorCount = 0
   let estimatedCostRequests = 0
   const useModelSpecificFilenames = options.models.length > 1
+  const variations: ImagePromptVariation[] = options.variations ?? ['canonical']
+  const useVariationOutputPaths = options.variations !== undefined
 
   try {
+    const prompts = useVariationOutputPaths ? await loadPromptsConfig() : undefined
     const sceneDirectory = getPanelPromptsDirectory(sceneSlug)
     const sceneLabel = sceneSlug
     l.dim(`Scene: ${sceneSlug}`)
@@ -137,12 +145,12 @@ export const generateComicPages = async (
       const selectedPanels = selectComicPanels(
         panelSources,
         options.panels,
-        options.panelLimit,
+        undefined,
         sceneLabel,
       )
       const pageChunks = chunkComicPagePanels(selectedPanels, options.panelsPerImage)
       const pagesDirectory = getPagesDirectory(sceneSlug)
-      const previousPageByModel = new Map<ImageGenerationModel, string>()
+      const previousPageByModel = new Map<string, string>()
 
       await mkdir(pagesDirectory, { recursive: true })
       l.dim(`  Selected panels: ${selectedPanels.map(panel => panel.panelNumber).join(', ')}`)
@@ -152,92 +160,107 @@ export const generateComicPages = async (
         const pagePromptData = buildComicPagePromptData(pageChunk.panels.map(panel => panel.bundleData))
         const normalizedPrompt = buildComicPagePrompt(pagePromptData)
 
-        for (const model of options.models) {
-          const outputPath = getPageComicImagePath(
-            sceneSlug,
-            pageChunk.pageNumber,
-            pageChunk.panelNumbers,
-            useModelSpecificFilenames ? model : undefined
-          )
+        for (const variation of variations) {
+          const promptForVariation = prompts
+            ? applyImagePromptVariation(normalizedPrompt, variation, prompts)
+            : normalizedPrompt
 
-          if (!options.force && await Bun.file(outputPath).exists()) {
-            stats.imagesSkipped++
-            previousPageByModel.set(model, outputPath)
-            l.dim(`  Skipping existing output: ${outputPath}`)
-            continue
-          }
-
-          try {
-            const resolvedReferences = await resolvePageReferences(
-              pageChunk.panels,
-              model,
-              previousPageByModel.get(model)
+          for (const model of options.models) {
+            const previousPageKey = `${variation}/${model}`
+            const outputPath = getPageComicImagePath(
+              sceneSlug,
+              pageChunk.pageNumber,
+              pageChunk.panelNumbers,
+              useVariationOutputPaths ? model : useModelSpecificFilenames ? model : undefined,
+              useVariationOutputPaths ? variation : undefined
             )
-            const referenceImages = resolvedReferences.all
-            const requestStart = Date.now()
-            const imageResponse = await requestImage({
-              normalizedPrompt,
-              referenceImages,
-              model,
-              size: options.size,
-              quality: options.quality,
-            })
-            const requestDurationMs = Date.now() - requestStart
-            stats.totalDurationMs += requestDurationMs
 
-            await writeImage(
-              outputPath,
-              imageResponse.result.imageBase64,
-              imageResponse.result.mimeType,
-            )
-            previousPageByModel.set(model, outputPath)
-
-            l.dim(`  Page:             ${String(pageChunk.pageNumber).padStart(2, '0')}`)
-            l.dim(`  Source panels:    ${pageChunk.panelNumbers.join(', ')}`)
-            l.dim(`  Model:            ${model}`)
-            l.dim(`  Mode:             ${imageResponse.mode}`)
-            if (imageResponse.inputFidelity) {
-              l.dim(`  Input fidelity:   ${imageResponse.inputFidelity}`)
-            }
-            l.dim(`  References:       ${referenceImages.length}`)
-            if (resolvedReferences.primaryCharacterRefs.length > 0) {
-              l.dim(`  Character refs:   ${resolvedReferences.primaryCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.priorPanelRefs.length > 0) {
-              l.dim(`  Continuity refs:  ${resolvedReferences.priorPanelRefs.map(path => basename(path)).join(', ')}`)
-            }
-            l.dim(`  Size:             ${imageResponse.result.providerSizeLabel ?? options.size}`)
-            l.dim(`  Quality:          ${imageResponse.result.providerQualityLabel ?? options.quality}`)
-            if (imageResponse.result.mimeType && imageResponse.result.mimeType !== 'image/png') {
-              l.dim(`  Source MIME:      ${imageResponse.result.mimeType} (normalized to PNG)`)
-            }
-
-            const usageCost = logUsageAndUpdateStats(model, imageResponse.result.usage, stats)
-            if (usageCost === null) {
-              const estimatedCost = estimateImageOutputCost(model, options.quality, options.size)
-              const costUnavailableReason = imageResponse.result.usage
-                ? 'no usable modality breakdown was returned'
-                : 'no usage data returned'
-
-              if (estimatedCost !== null) {
-                stats.totalCost += estimatedCost
-                estimatedCostRequests++
-                l.dim(`  Cost:             ${formatCost(estimatedCost)} (estimated output only; ${costUnavailableReason})`)
-              } else {
-                l.dim(`  Cost:             unavailable (${costUnavailableReason})`)
+            if (!options.force && await Bun.file(outputPath).exists()) {
+              stats.imagesSkipped++
+              previousPageByModel.set(previousPageKey, outputPath)
+              if (useVariationOutputPaths) {
+                l.dim(`  Variation:        ${getImagePromptVariationLabel(variation)}`)
               }
+              l.dim(`  Skipping existing output: ${outputPath}`)
+              continue
             }
 
-            l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
-            l.dim(`  Wrote:            ${outputPath}`)
+            try {
+              const resolvedReferences = await resolvePageReferences(
+                pageChunk.panels,
+                model,
+                previousPageByModel.get(previousPageKey)
+              )
+              const referenceImages = resolvedReferences.all
+              const requestStart = Date.now()
+              const imageResponse = await requestImage({
+                normalizedPrompt: promptForVariation,
+                referenceImages,
+                model,
+                size: options.size,
+                quality: options.quality,
+              })
+              const requestDurationMs = Date.now() - requestStart
+              stats.totalDurationMs += requestDurationMs
 
-            stats.imagesGenerated++
-          } catch (error) {
-            errorCount++
-            err(
-              `Failed to generate ${sceneLabel}/page-${String(pageChunk.pageNumber).padStart(2, '0')}:`,
-              error instanceof Error ? error.message : String(error)
-            )
+              await mkdir(dirname(outputPath), { recursive: true })
+              await writeImage(
+                outputPath,
+                imageResponse.result.imageBase64,
+                imageResponse.result.mimeType,
+              )
+              previousPageByModel.set(previousPageKey, outputPath)
+
+              l.dim(`  Page:             ${String(pageChunk.pageNumber).padStart(2, '0')}`)
+              l.dim(`  Source panels:    ${pageChunk.panelNumbers.join(', ')}`)
+              if (useVariationOutputPaths) {
+                l.dim(`  Variation:        ${getImagePromptVariationLabel(variation)}`)
+              }
+              l.dim(`  Model:            ${model}`)
+              l.dim(`  Mode:             ${imageResponse.mode}`)
+              if (imageResponse.inputFidelity) {
+                l.dim(`  Input fidelity:   ${imageResponse.inputFidelity}`)
+              }
+              l.dim(`  References:       ${referenceImages.length}`)
+              if (resolvedReferences.primaryCharacterRefs.length > 0) {
+                l.dim(`  Character refs:   ${resolvedReferences.primaryCharacterRefs.map(path => basename(path)).join(', ')}`)
+              }
+              if (resolvedReferences.priorPanelRefs.length > 0) {
+                l.dim(`  Continuity refs:  ${resolvedReferences.priorPanelRefs.map(path => basename(path)).join(', ')}`)
+              }
+              l.dim(`  Size:             ${imageResponse.result.providerSizeLabel ?? options.size}`)
+              l.dim(`  Quality:          ${imageResponse.result.providerQualityLabel ?? options.quality}`)
+              if (imageResponse.result.mimeType && imageResponse.result.mimeType !== 'image/png') {
+                l.dim(`  Source MIME:      ${imageResponse.result.mimeType} (normalized to PNG)`)
+              }
+
+              const usageCost = logUsageAndUpdateStats(model, imageResponse.result.usage, stats)
+              if (usageCost === null) {
+                const estimatedCost = estimateImageOutputCost(model, options.quality, options.size)
+                const costUnavailableReason = imageResponse.result.usage
+                  ? 'no usable modality breakdown was returned'
+                  : 'no usage data returned'
+
+                if (estimatedCost !== null) {
+                  stats.totalCost += estimatedCost
+                  estimatedCostRequests++
+                  l.dim(`  Cost:             ${formatCost(estimatedCost)} (estimated output only; ${costUnavailableReason})`)
+                } else {
+                  l.dim(`  Cost:             unavailable (${costUnavailableReason})`)
+                }
+              }
+
+              l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
+              l.dim(`  Wrote:            ${outputPath}`)
+
+              stats.imagesGenerated++
+            } catch (error) {
+              errorCount++
+              err(
+                `Failed to generate ${sceneLabel}/page-${String(pageChunk.pageNumber).padStart(2, '0')}:`,
+                error instanceof Error ? error.message : String(error)
+              )
+            }
           }
         }
       }

@@ -13,6 +13,7 @@ Draft comic scene JSON, build panel prompt bundles, generate review sketches and
 - [generate-images](#generate-images)
 - [character-sketch](#character-sketch)
 - [Output](#output)
+- [Supported Models](#supported-models)
 - [Notes](#notes)
 
 ## Overview
@@ -59,9 +60,9 @@ Canonical project-root paths:
 ## Usage
 
 ```bash
-bun as comic draft-scenes [--episode ep01] [--script <script-slug>] [--only structure|prompt|scene] [--llm-model <model>] [--concurrency <n>] [--price]
-bun as comic generate-images [--episode ep01] [--scene <scene-slug>] [--target prompts|images|sketches|both] [--llm-model <model>] [--concurrency <n>] [--panel <number>] [--panels <all|list>] [--panel-limit <n>] [--panels-per-image <n>] [--chunk <number>] [--sketch-group-size <number|all>] [--sketch-panels <start-end|all>] [--image-model <model[,model...]>] [--size <size>] [--quality <quality>] [--force] [--price]
-bun as comic character-sketch --image <source-image|sketch-dir> [--image-model <model[,model...]>] [--size <size>] [--quality <quality>] [--force] [--revise --notes <text>] [--price]
+bun as comic draft-scenes <script-path> [--only structure|prompt|scene] [--price]
+bun as comic generate-images <script-path> [--target prompts|images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
+bun as comic character-sketch --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 ```
 
 ## Walkthrough: 01-co-work-smarter
@@ -72,12 +73,10 @@ This walkthrough starts from:
 input/episode-scripts/ep02-scripts/01-co-work-smarter.md
 ```
 
-The CLI selects that file with `--episode ep02 --script 01-co-work-smarter`. Downstream image steps use the matching scene slug, `--scene 01-co-work-smarter`.
-
 To run the complete script-to-page pipeline:
 
 ```bash
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --panels 1-16
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1-16
 ```
 
 This writes grouped final page images under `output/episode-comics/episode-02-comic-images/01-co-work-smarter/pages/`.
@@ -85,19 +84,19 @@ This writes grouped final page images under `output/episode-comics/episode-02-co
 ### 1. Create structured script JSON
 
 ```bash
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only structure
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only structure
 ```
 
 ### 2. Build the scene-drafting prompt
 
 ```bash
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only prompt
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only prompt
 ```
 
 ### 3. Draft scene JSON
 
 ```bash
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only scene
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only scene
 ```
 
 This stage calls the selected text model. Use `--price` first when you want a side-effect-free cost estimate.
@@ -119,7 +118,7 @@ bun as comic character-sketch --image output/characters/sketches/03-duco
 ### 5. Build stable panel prompt bundles
 
 ```bash
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target prompts
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target prompts
 ```
 
 Review these prompt bundles before spending image-generation cost.
@@ -127,7 +126,7 @@ Review these prompt bundles before spending image-generation cost.
 ### 6. Generate review sketches
 
 ```bash
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target sketches
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches
 ```
 
 Panel prompt bundles from the previous step are detected automatically and reused. Use `--force` to rebuild them.
@@ -135,13 +134,13 @@ Panel prompt bundles from the previous step are detected automatically and reuse
 ### 7. Generate final panel images
 
 ```bash
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images
 ```
 
 To generate review sketches and final panel images in one run after scene JSON exists, use:
 
 ```bash
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target both
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target both
 ```
 
 ## draft-scenes
@@ -152,21 +151,22 @@ bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target 
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-e, --episode <episode>` | Run one episode key such as `ep02` | none (runs all episodes) |
-| `--script <script>` | Run one script slug in the selected episode | none (runs all scripts) |
 | `--only <stage>` | Run only `structure`, `prompt`, or `scene` | none (runs all stages) |
-| `--llm-model <model>` | Use a supported OpenAI or Gemini text model | `gpt-5.4-nano` |
-| `--concurrency <n>` | Process up to n scripts in parallel | `3` |
 | `--price` | Estimate API-backed stages without making API calls | `false` |
+
+### Advanced Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--llm-model <model>` | Use a supported OpenAI or Gemini text model | `gpt-5.4` |
 
 ### Examples
 
 ```bash
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter
-bun as comic draft-scenes --episode ep02 --script 02-unaccounted-for
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only structure
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only prompt
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only scene
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only structure
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only prompt
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only scene
 ```
 
 ### Behavior
@@ -185,50 +185,49 @@ bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --only scen
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `-e, --episode <episode>` | Run one episode key such as `ep02` | none (runs all episodes) |
-| `-s, --scene <scene>` | Run one scene slug in the selected episode | none (runs all scenes) |
 | `--target <target>` | `prompts`, `images`, `sketches`, or `both` | `images` |
-| `--llm-model <model>` | Use a supported OpenAI or Gemini text model for scene drafting (used when scene drafts are auto-generated) | `gpt-5.4-nano` |
-| `--concurrency <n>` | Process up to n scripts in parallel during scene drafting | `3` |
-| `--panel <number>` | Generate one 1-based final panel image | none |
-| `--panels <all\|list>` | Panel selection: `all`, a range like `1-8`, a list like `1,3,7`, or mixed like `1-4,9`; mutually exclusive with `--panel` | `all` |
-| `--panel-limit <n>` | Cap selected panels after `--panels` resolution | none |
-| `--panels-per-image <n>` | Number of ordered panels per page image; values greater than 1 trigger page generation mode | `4` |
-| `--chunk <number>` | Generate one 1-based review-sketch chunk | none |
-| `--sketch-group-size <number\|all>` | Group review sketches by panel count, or all panels | none |
-| `--sketch-panels <range>` | Generate one explicit range such as `1-4` or `all` | none |
-| `--image-model <model[,model...]>` | Use one or more supported OpenAI or Gemini image models | `gpt-image-1.5` |
-| `--size <size>` | Image size such as `1536x1024`, `1024x1024`, `1024x1536`, or `auto` | `1536x1024` |
-| `--quality <quality>` | `low`, `medium`, `high`, or `auto`; Gemini ignores this compatibility flag | `high` |
+| `--panels <all\|range\|list>` | Panels to process: `all`, a range like `1-8`, a list like `1,3,7`, or mixed like `1-4,9`; overlong contiguous ranges clamp to available panels | `all` |
 | `-f, --force` | Rebuild panel prompts and overwrite existing generated PNGs | `false` |
 | `--price` | Estimate image-generation costs without making API calls | `false` |
+
+### Advanced Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--llm-model <model>` | Use a supported text model (see [Supported Models](#supported-models)) | `gpt-5.4` |
+| `--image-model <model[,model...]>` | Use one or more supported image models (see [Supported Models](#supported-models)) | `gpt-image-1.5` |
+| `--variation <name[,name...]>` | Generate final images with one or more prompt variations: `canonical`, `animation-polish`, `cinematic-depth` | none |
+| `--size <size>` | Image size such as `1536x1024`, `1024x1024`, `1024x1536`, or `auto` | `1536x1024` |
+| `--quality <quality>` | `low`, `medium`, `high`, or `auto`; Gemini ignores this compatibility flag | `high` |
+| `--panels-per-image <n>` | Number of ordered panels per page image; values greater than 1 trigger page generation mode | `4` |
 
 ### Examples
 
 ```bash
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target prompts
-bun as comic generate-images --episode ep02 --scene 02-unaccounted-for --target prompts
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target sketches
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target both
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --panels 1-16 --panels-per-image 4
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --panels 1,3,7
-bun as comic generate-images --episode ep05 --draft-scenes --target prompts
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target prompts
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target both
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1-16
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1,3,7
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches --panels 5-8
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --image-model gpt-image-2
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --image-model gpt-image-2,gemini-3.1-flash-image-preview
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --variation animation-polish,cinematic-depth
 ```
 
 ### Behavior
 
-- `--draft-scenes` runs the full draft-scenes pipeline (structure, prompt, scene JSON) before building panel prompts, combining both steps into one command.
-- `--llm-model` selects the text model for scene drafting and requires `--draft-scenes`.
 - Panel prompt bundles are auto-detected: if they already exist for the target scope, the rebuild is skipped. Use `--force` to rebuild existing prompts, or `--target prompts` to explicitly rebuild.
 - `--target prompts` always rebuilds stable panel prompt bundles.
 - `--target sketches` builds panel prompt bundles if missing, then generates review sketches.
 - `--target images` builds panel prompt bundles if missing, then generates final panel images.
 - `--target both` builds panel prompt bundles if missing, generates sketches, then generates final images.
+- `--panels` selects which panels to process for any target (images, sketches, or both). A contiguous range that extends past the last available panel is clamped to the overlap, so `--panels 9-16` on an 11-panel scene processes panels 9-11.
+- Review sketch selections must be contiguous because each sketch output is one panel range; use `--target images` for non-contiguous final panel lists like `1,3,7`.
+- Non-overlapping panel selections, non-contiguous missing panels, and likely typos such as `--panels 1,99` still fail.
 - When `--panels-per-image` is greater than 1, the images target produces grouped page images instead of individual panel images.
-- `--panels` and `--panel-limit` filter which panels are processed in both individual panel and page generation modes.
-- `--panel` and `--panels` are mutually exclusive.
-- `--panels`, `--panel-limit`, and `--panels-per-image` only apply when `--target` is `images` or `both`.
+- `--variation` only applies to final images (`--target images` or `--target both`). When omitted, legacy final image paths are preserved. When provided, outputs are grouped under `pages/<variation>/<model>/` or `panels/<variation>/<model>/`.
 - Review sketches and final images use the defaults shown above (`gpt-image-1.5`, `1536x1024`, `high`).
 - Multi-model runs write model-specific filenames.
 
@@ -241,13 +240,18 @@ bun as comic generate-images --episode ep05 --draft-scenes --target prompts
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--image <path>` | Source image under `input/characters/`, or a sketch directory under `output/characters/sketches/` | required |
-| `--image-model <model[,model...]>` | Use one or more supported OpenAI or Gemini image models | `gpt-image-1.5` |
-| `--size <size>` | Image size such as `1024x1536`, `1024x1024`, `1536x1024`, or `auto` | `1024x1536` |
-| `--quality <quality>` | `low`, `medium`, `high`, or `auto`; Gemini ignores this compatibility flag | `medium` |
 | `-f, --force` | Overwrite existing generated sketch PNGs | `false` |
 | `-r, --revise` | Revise existing sketches using the source image and existing sketch refs | `false` |
 | `--notes <text>` | Revision instructions; required with `--revise` | none |
 | `--price` | Estimate image-generation costs without making API calls | `false` |
+
+### Advanced Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--image-model <model[,model...]>` | Use one or more supported OpenAI or Gemini image models | `gpt-image-1.5` |
+| `--size <size>` | Image size such as `1024x1536`, `1024x1024`, `1536x1024`, or `auto` | `1024x1536` |
+| `--quality <quality>` | `low`, `medium`, `high`, or `auto`; Gemini ignores this compatibility flag | `medium` |
 
 ### Examples
 
@@ -279,8 +283,51 @@ output/episode-comics/episode-02-comic-images/01-co-work-smarter/sketches/
 output/characters/sketches/
 ```
 
+## Supported Models
+
+### Image Models
+
+| Model | Provider | Notes |
+|-------|----------|-------|
+| `gpt-image-1.5` | OpenAI | Default. Good balance of quality and cost. |
+| `gpt-image-2` | OpenAI | Higher quality, higher cost. |
+| `gemini-3.1-flash-image-preview` | Google | Gemini native image generation. |
+
+Pass multiple models with `--image-model` to generate each panel with every model for comparison:
+
+```bash
+--image-model gpt-image-2,gemini-3.1-flash-image-preview
+```
+
+### Text Models (LLM)
+
+| Model | Provider | Notes |
+|-------|----------|-------|
+| `gpt-5.4` | OpenAI | Default. Used for scene drafting and panel prompts. |
+| `gpt-5.4-pro` | OpenAI | Highest quality, slowest and most expensive. |
+| `gpt-5.4-mini` | OpenAI | Faster and cheaper, slightly lower quality. |
+| `gpt-5.4-nano` | OpenAI | Fastest and cheapest. |
+| `gemini-3.1-pro-preview` | Google | Gemini pro-tier text model. |
+| `gemini-3.1-flash-lite-preview` | Google | Gemini lightweight text model. |
+
 ## Notes
 
 - Real `draft-scenes`, `generate-images`, and source-image `character-sketch` runs can call OpenAI or Gemini APIs.
 - Use `--price` to estimate hosted cost before running generation.
 - `generate-images --target prompts` and `draft-scenes --only prompt` are prompt-building stages and do not generate images.
+
+## Deprecated Options
+
+The following options were removed. Using them will produce an informative error with migration instructions:
+
+| Removed Flag | Replacement |
+|---|---|
+| `--episode`, `--scene` | Pass a script file path directly |
+| `--concurrency` | Commands now process a single script |
+| `--panel <n>` | Use `--panels <n>` |
+| `--panel-limit <n>` | Use `--panels <range>` directly (e.g. `--panels 1-4`) |
+| `--chunk <number>` | Use `--panels <range>` with `--target sketches` |
+| `--sketch-group-size <n\|all>` | Sketches auto-group in chunks of 4; use `--panels <range>` for explicit selection |
+| `--sketch-panels <range>` | Use `--panels <range>` |
+| `--draft-scenes` | Scene drafts are auto-detected |
+| `--skip-panel-prompts` | Panel prompts are auto-detected |

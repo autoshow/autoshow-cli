@@ -1,5 +1,5 @@
 import { mkdir, readdir } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { l, err, cyan, bold } from '../../utils/logger'
 import { getPanelPromptsDirectory, getPanelsDirectory } from '../../utils/project-paths'
 import {
@@ -12,7 +12,6 @@ import {
 } from '../../image-services'
 import {
   extractExpandedScenePromptData,
-  formatPanelDirectoryName,
   getPanelNumberFromName,
   getPromptBundleFilename,
   normalizePromptBundle,
@@ -21,8 +20,12 @@ import {
   resolveScenePanelDirectories,
 } from '../../utils/panel-prompt-utils'
 import { selectComicPanels } from './comic-page-utils'
-import { getPanelComicImagePath } from '../../utils/scene-utils'
-import type { GeneratePanelImagesOptions } from '../../types'
+import { getPanelComicImagePath, loadPromptsConfig } from '../../utils/scene-utils'
+import {
+  applyImagePromptVariation,
+  getImagePromptVariationLabel,
+} from './prompt-variations'
+import type { GeneratePanelImagesOptions, ImagePromptVariation } from '../../types'
 
 
 
@@ -36,24 +39,27 @@ export const generatePanelImages = async (
   let errorCount = 0
   let estimatedCostRequests = 0
   const useModelSpecificFilenames = options.models.length > 1
+  const variations: ImagePromptVariation[] = options.variations ?? ['canonical']
+  const useVariationOutputPaths = options.variations !== undefined
 
   try {
+    const prompts = useVariationOutputPaths ? await loadPromptsConfig() : undefined
     const sceneDirectory = getPanelPromptsDirectory(sceneSlug)
-    l.dim(`Scene: ${sceneSlug}${options.panel ? ` (${formatPanelDirectoryName(options.panel)})` : ''}`)
+    l.dim(`Scene: ${sceneSlug}`)
 
     try {
       const sceneEntries = await readdir(sceneDirectory, { withFileTypes: true })
-      let panelDirectories = resolveScenePanelDirectories(sceneEntries, sceneDirectory, options.panel)
+      let panelDirectories = resolveScenePanelDirectories(sceneEntries, sceneDirectory, undefined)
 
-      if (options.panels !== undefined || options.panelLimit !== undefined) {
+      if (options.panels !== undefined) {
         const panelSources = panelDirectories.map(entry => ({
           panelNumber: getPanelNumberFromName(entry.name)!,
           entry,
         }))
         const selected = selectComicPanels(
           panelSources,
-          options.panels ?? 'all',
-          options.panelLimit,
+          options.panels,
+          undefined,
           sceneSlug,
         )
         panelDirectories = selected.map(s => s.entry)
@@ -98,85 +104,99 @@ export const generatePanelImages = async (
 
           await mkdir(getPanelsDirectory(sceneSlug), { recursive: true })
 
-          for (const model of options.models) {
-            const outputPath = getPanelComicImagePath(
-              sceneSlug,
-              panelNumber,
-              useModelSpecificFilenames ? model : undefined
-            )
-            const resolvedReferences = resolveReferenceImages(panelDirectory, panelEntries, bundleData, model)
-            const referenceImages = resolvedReferences.all
+          for (const variation of variations) {
+            const promptForVariation = prompts
+              ? applyImagePromptVariation(normalizedPrompt, variation, prompts)
+              : normalizedPrompt
 
-            if (!options.force && await Bun.file(outputPath).exists()) {
-              stats.imagesSkipped++
-              l.dim(`  Skipping existing output: ${outputPath}`)
-              continue
-            }
+            for (const model of options.models) {
+              const outputPath = getPanelComicImagePath(
+                sceneSlug,
+                panelNumber,
+                useVariationOutputPaths ? model : useModelSpecificFilenames ? model : undefined,
+                useVariationOutputPaths ? variation : undefined
+              )
+              const resolvedReferences = resolveReferenceImages(panelDirectory, panelEntries, bundleData, model)
+              const referenceImages = resolvedReferences.all
 
-            const requestStart = Date.now()
-            const imageResponse = await createImage(
-              normalizedPrompt,
-              referenceImages,
-              model,
-              options.size,
-              options.quality,
-            )
-            const requestDurationMs = Date.now() - requestStart
-            stats.totalDurationMs += requestDurationMs
-
-            await writeGeneratedImage(
-              outputPath,
-              imageResponse.result.imageBase64,
-              imageResponse.result.mimeType,
-            )
-
-            l.dim(`  Model:            ${model}`)
-            l.dim(`  Mode:             ${imageResponse.mode}`)
-            if (imageResponse.inputFidelity) {
-              l.dim(`  Input fidelity:   ${imageResponse.inputFidelity}`)
-            }
-            l.dim(`  References:       ${referenceImages.length}`)
-            if (resolvedReferences.primaryCharacterRefs.length > 0) {
-              l.dim(`  Character refs:   ${resolvedReferences.primaryCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.sketchCharacterRefs.length > 0) {
-              l.dim(`  Sketch refs:      ${resolvedReferences.sketchCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.canonicalCharacterRefs.length > 0) {
-              l.dim(`  Canonical refs:   ${resolvedReferences.canonicalCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.priorPanelRefs.length > 0) {
-              l.dim(`  Prior panel refs: ${resolvedReferences.priorPanelRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.secondaryRefs.length > 0) {
-              l.dim(`  Other refs:       ${resolvedReferences.secondaryRefs.map(path => basename(path)).join(', ')}`)
-            }
-            l.dim(`  Size:             ${imageResponse.result.providerSizeLabel ?? options.size}`)
-            l.dim(`  Quality:          ${imageResponse.result.providerQualityLabel ?? options.quality}`)
-            if (imageResponse.result.mimeType && imageResponse.result.mimeType !== 'image/png') {
-              l.dim(`  Source MIME:      ${imageResponse.result.mimeType} (normalized to PNG)`)
-            }
-
-            const usageCost = logUsageAndUpdateStats(model, imageResponse.result.usage, stats)
-            if (usageCost === null) {
-              const estimatedCost = estimateImageOutputCost(model, options.quality, options.size)
-              const costUnavailableReason = imageResponse.result.usage
-                ? 'no usable modality breakdown was returned'
-                : 'no usage data returned'
-
-              if (estimatedCost !== null) {
-                stats.totalCost += estimatedCost
-                estimatedCostRequests++
-                l.dim(`  Cost:             ${formatCost(estimatedCost)} (estimated output only; ${costUnavailableReason})`)
-              } else {
-                l.dim(`  Cost:             unavailable (${costUnavailableReason})`)
+              if (!options.force && await Bun.file(outputPath).exists()) {
+                stats.imagesSkipped++
+                if (useVariationOutputPaths) {
+                  l.dim(`  Variation:        ${getImagePromptVariationLabel(variation)}`)
+                }
+                l.dim(`  Skipping existing output: ${outputPath}`)
+                continue
               }
+
+              const requestStart = Date.now()
+              const imageResponse = await createImage(
+                promptForVariation,
+                referenceImages,
+                model,
+                options.size,
+                options.quality,
+              )
+              const requestDurationMs = Date.now() - requestStart
+              stats.totalDurationMs += requestDurationMs
+
+              await mkdir(dirname(outputPath), { recursive: true })
+              await writeGeneratedImage(
+                outputPath,
+                imageResponse.result.imageBase64,
+                imageResponse.result.mimeType,
+              )
+
+              if (useVariationOutputPaths) {
+                l.dim(`  Variation:        ${getImagePromptVariationLabel(variation)}`)
+              }
+              l.dim(`  Model:            ${model}`)
+              l.dim(`  Mode:             ${imageResponse.mode}`)
+              if (imageResponse.inputFidelity) {
+                l.dim(`  Input fidelity:   ${imageResponse.inputFidelity}`)
+              }
+              l.dim(`  References:       ${referenceImages.length}`)
+              if (resolvedReferences.primaryCharacterRefs.length > 0) {
+                l.dim(`  Character refs:   ${resolvedReferences.primaryCharacterRefs.map(path => basename(path)).join(', ')}`)
+              }
+              if (resolvedReferences.sketchCharacterRefs.length > 0) {
+                l.dim(`  Sketch refs:      ${resolvedReferences.sketchCharacterRefs.map(path => basename(path)).join(', ')}`)
+              }
+              if (resolvedReferences.canonicalCharacterRefs.length > 0) {
+                l.dim(`  Canonical refs:   ${resolvedReferences.canonicalCharacterRefs.map(path => basename(path)).join(', ')}`)
+              }
+              if (resolvedReferences.priorPanelRefs.length > 0) {
+                l.dim(`  Prior panel refs: ${resolvedReferences.priorPanelRefs.map(path => basename(path)).join(', ')}`)
+              }
+              if (resolvedReferences.secondaryRefs.length > 0) {
+                l.dim(`  Other refs:       ${resolvedReferences.secondaryRefs.map(path => basename(path)).join(', ')}`)
+              }
+              l.dim(`  Size:             ${imageResponse.result.providerSizeLabel ?? options.size}`)
+              l.dim(`  Quality:          ${imageResponse.result.providerQualityLabel ?? options.quality}`)
+              if (imageResponse.result.mimeType && imageResponse.result.mimeType !== 'image/png') {
+                l.dim(`  Source MIME:      ${imageResponse.result.mimeType} (normalized to PNG)`)
+              }
+
+              const usageCost = logUsageAndUpdateStats(model, imageResponse.result.usage, stats)
+              if (usageCost === null) {
+                const estimatedCost = estimateImageOutputCost(model, options.quality, options.size)
+                const costUnavailableReason = imageResponse.result.usage
+                  ? 'no usable modality breakdown was returned'
+                  : 'no usage data returned'
+
+                if (estimatedCost !== null) {
+                  stats.totalCost += estimatedCost
+                  estimatedCostRequests++
+                  l.dim(`  Cost:             ${formatCost(estimatedCost)} (estimated output only; ${costUnavailableReason})`)
+                } else {
+                  l.dim(`  Cost:             unavailable (${costUnavailableReason})`)
+                }
+              }
+
+              l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
+              l.dim(`  Wrote:            ${outputPath}`)
+
+              stats.imagesGenerated++
             }
-
-            l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
-            l.dim(`  Wrote:            ${outputPath}`)
-
-            stats.imagesGenerated++
           }
         } catch (error) {
           errorCount++

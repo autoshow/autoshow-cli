@@ -14,7 +14,7 @@ export const LLM_MODELS = [...OPENAI_LLM_MODELS, ...GEMINI_LLM_MODELS] as const
 export const IMAGE_MODELS = [...OPENAI_IMAGE_MODELS, ...GEMINI_IMAGE_MODELS] as const
 
 
-export const DEFAULT_LLM_MODEL: LlmModel = 'gpt-5.4-nano'
+export const DEFAULT_LLM_MODEL: LlmModel = 'gpt-5.4'
 export const DEFAULT_IMAGE_MODEL: ImageGenerationModel = 'gpt-image-1.5'
 
 const OPENAI_LLM_MODEL_OPTIONS = new Set<string>(OPENAI_LLM_MODELS)

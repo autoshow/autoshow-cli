@@ -75,6 +75,20 @@ test('setup help exposes focused cloud setup flags', async () => {
   expect(result.stdout).not.toContain('--cloudflare')
 })
 
+test('benchmark help exposes TTS voice-quality scoring flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'benchmark', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--tts')
+  expect(result.stdout).toContain('--tts-input-text')
+  expect(result.stdout).toContain('--tts-mode')
+  expect(result.stdout).toContain('--tts-roundtrip-dir')
+  expect(result.stdout).toContain('--tts-metric-fixtures')
+  expect(result.stdout).toContain('--tts-audio-judge-model')
+  expect(result.stdout).toContain('gpt-audio')
+  expect(result.stdout).toContain('--tts-keep-temp')
+})
+
 test('tts help exposes hosted TTS provider flags', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', 'tts', '--help'], { env: helpEnv })
 
@@ -217,7 +231,7 @@ test('comic help exposes the generate-images command and page flags', async () =
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('bun as comic generate-images')
   expect(result.stdout).toContain('generate-images   Run scene JSON to panel prompt bundles')
-  expect(result.stdout).toContain('--panels <all|list>')
-  expect(result.stdout).toContain('--panel-limit <n>')
+  expect(result.stdout).toContain('--panels <all|range|list>')
+  expect(result.stdout).toContain('--variation <name[,name...]>')
   expect(result.stdout).toContain('--panels-per-image <n>')
 })

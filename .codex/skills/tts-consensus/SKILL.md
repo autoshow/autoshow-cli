@@ -164,6 +164,33 @@ The report script:
 7. Adds a combined overall leaderboard using `overallScore = 50% accuracy + 25% processing speed + 25% cost efficiency`, with neutral 50/100 accuracy for providers missing roundtrip data, and reports the best and worst overall providers.
 8. Adds grouped tiering for local and third-party providers using balanced overall group rank.
 
+## Voice Quality Report
+
+To add human-speech naturalness and perceived-quality scoring that excludes cost,
+speed, and provider latency, run:
+
+```bash
+cd "$SKILL_DIR"
+bun scripts/build_voice_quality_report.ts "$RUN_DIR" --input-text "$INPUT_TEXT" --mode local
+```
+
+This writes:
+
+1. `voice-quality-report.md`
+2. `voice-quality-report.json`
+
+`--mode local` never starts paid API calls. It uses local audio normalization and
+signal/prosody heuristics, and it includes any supplied metric fixtures or
+existing roundtrip transcripts. Full paid scoring requires an explicit paid
+opt-in:
+
+```bash
+bun scripts/build_voice_quality_report.ts "$RUN_DIR" --input-text "$INPUT_TEXT" --mode full --allow-paid
+```
+
+Full mode may call paid STT and audio-judge APIs when required credentials are
+configured. Do not run full mode unless the user explicitly approves paid calls.
+
 ## Validation Checklist
 
 1. Confirm `consensus-evaluation.txt` exists and does not contain markdown formatting or claims of having listened to audio.

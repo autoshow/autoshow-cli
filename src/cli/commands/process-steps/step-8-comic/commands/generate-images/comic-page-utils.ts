@@ -4,6 +4,7 @@ import type {
   ComicPageChunk,
   ComicPanelSelection,
   ExpandedScenePromptData,
+  SketchPanelRange,
 } from '../../types'
 
 const PANEL_SELECTOR_PART_PATTERN = /^(\d+)(?:-(\d+))?$/
@@ -46,6 +47,46 @@ export const parsePanelSelector = (value: string): ComicPanelSelection => {
   return Array.from(selectedPanels).sort((left, right) => left - right)
 }
 
+export const isContiguousPanelSelection = (panelNumbers: number[]): boolean => {
+  return panelNumbers.every((panelNumber, index) => {
+    return index === 0 || panelNumber === panelNumbers[index - 1]! + 1
+  })
+}
+
+export const hasOnlyTrailingPanelSelectionMisses = (
+  requestedPanelNumbers: number[],
+  selectedPanelNumbers: number[],
+  missingPanelNumbers: number[]
+): boolean => {
+  const requestedStartPanel = requestedPanelNumbers[0]
+  const firstSelectedPanel = selectedPanelNumbers[0]
+  const lastSelectedPanel = selectedPanelNumbers.at(-1)
+
+  return isContiguousPanelSelection(requestedPanelNumbers)
+    && requestedStartPanel !== undefined
+    && firstSelectedPanel === requestedStartPanel
+    && lastSelectedPanel !== undefined
+    && missingPanelNumbers.every(panelNumber => panelNumber > lastSelectedPanel)
+}
+
+export const panelSelectionToSketchRange = (
+  panels: ComicPanelSelection | undefined
+): SketchPanelRange | undefined => {
+  if (panels === undefined || panels === 'all') {
+    return undefined
+  }
+
+  const sorted = Array.from(new Set(panels)).sort((a, b) => a - b)
+  if (!isContiguousPanelSelection(sorted)) {
+    throw new Error(
+      'Sketch panel selection must be contiguous when generating sketches. ' +
+      'Use a range like 1-4 or pass --target images for non-contiguous final panel selections.'
+    )
+  }
+
+  return { startPanelNumber: sorted[0]!, endPanelNumber: sorted.at(-1)! }
+}
+
 export const applyPanelLimit = <T>(
   panels: T[],
   panelLimit: number | undefined
@@ -65,17 +106,29 @@ export const selectComicPanels = <T extends { panelNumber: number }>(
   sceneLabel: string
 ): T[] => {
   const sortedPanels = [...panels].sort((left, right) => left.panelNumber - right.panelNumber)
+  const requestedPanelNumbers = selection === 'all'
+    ? undefined
+    : Array.from(new Set(selection)).sort((left, right) => left - right)
+  const requestedPanelNumberSet = requestedPanelNumbers
+    ? new Set(requestedPanelNumbers)
+    : undefined
   const selectedPanels = selection === 'all'
     ? sortedPanels
-    : sortedPanels.filter(panel => selection.includes(panel.panelNumber))
+    : sortedPanels.filter(panel => requestedPanelNumberSet?.has(panel.panelNumber))
 
-  if (selection !== 'all') {
+  if (requestedPanelNumbers) {
     const availablePanels = new Set(sortedPanels.map(panel => panel.panelNumber))
-    const missingPanels = selection.filter(panelNumber => !availablePanels.has(panelNumber))
-    if (missingPanels.length > 0) {
+    const missingPanels = requestedPanelNumbers.filter(panelNumber => !availablePanels.has(panelNumber))
+    const selectedPanelNumbers = selectedPanels.map(panel => panel.panelNumber)
+    if (missingPanels.length > 0 && !hasOnlyTrailingPanelSelectionMisses(
+      requestedPanelNumbers,
+      selectedPanelNumbers,
+      missingPanels
+    )) {
+      const missingPanelLabel = `Selected panel${missingPanels.length === 1 ? '' : 's'} ${missingPanels.join(', ')}`
+      const missingPanelVerb = missingPanels.length === 1 ? 'was' : 'were'
       throw new Error(
-        `Selected panel${missingPanels.length === 1 ? '' : 's'} ${missingPanels.join(', ')} ` +
-        `were not found in ${sceneLabel}.`
+        `${missingPanelLabel} ${missingPanelVerb} not found in ${sceneLabel}.`
       )
     }
   }

@@ -4,7 +4,6 @@ import { basename, join } from 'node:path'
 import * as v from 'valibot'
 import { l, err, cyan, bold } from '../../utils/logger'
 import { ExpandedScenePromptDataSchema } from '../../schemas/schemas'
-import { formatSketchChunkTarget } from '../../utils/draft-scene-utils'
 import {
   createImage,
   createImageRunStats,
@@ -27,6 +26,7 @@ import {
   loadPromptsConfig,
   PANEL_FILENAME_PADDING,
 } from '../../utils/scene-utils'
+import { hasOnlyTrailingPanelSelectionMisses } from '../generate-images/comic-page-utils'
 import { getPanelPromptsDirectory, getSketchesDirectory } from '../../utils/project-paths'
 import type {
   ExpandedScenePromptData,
@@ -46,43 +46,8 @@ export const SKETCH_CHUNK_SIZE = 4
 
 
 
-const getSketchGroupSize = (
-  panelCount: number,
-  groupSize: GenerateSceneSketchesOptions['sketchGroupSize']
-): number => {
-  if (groupSize === 'all') {
-    return Math.max(panelCount, 1)
-  }
-
-  return groupSize ?? SKETCH_CHUNK_SIZE
-}
-
 const formatSketchChunkLabel = (startPanelNumber: number, endPanelNumber: number): string => {
   return `panels-${String(startPanelNumber).padStart(PANEL_FILENAME_PADDING, '0')}-${String(endPanelNumber).padStart(PANEL_FILENAME_PADDING, '0')}`
-}
-
-export const selectSketchChunks = <T>(
-  sketchChunks: Array<SketchPanelChunk<T>>,
-  chunk: number | undefined,
-  sceneLabel: string
-): Array<SketchPanelChunk<T>> => {
-  if (chunk === undefined) {
-    return sketchChunks
-  }
-
-  if (sketchChunks.length === 0) {
-    throw new Error(`No sketch chunks were found in ${sceneLabel}.`)
-  }
-
-  const selectedChunk = sketchChunks[chunk - 1]
-  if (!selectedChunk) {
-    throw new Error(
-      `Sketch chunk "${formatSketchChunkTarget(chunk)}" was not found in ${sceneLabel}. ` +
-      `Expected a value from 1-${sketchChunks.length}.`
-    )
-  }
-
-  return [selectedChunk]
 }
 
 export const chunkSketchPanels = <T extends { panelNumber: number }>(
@@ -122,9 +87,10 @@ export const selectSketchPanelRange = <T extends { panelNumber: number }>(
     throw new Error(`No sketch panels were found in ${sceneLabel}.`)
   }
 
+  const sortedPanels = [...panels].sort((left, right) => left.panelNumber - right.panelNumber)
   const selectedPanels = sketchPanels === 'all'
-    ? panels
-    : panels.filter(panel => {
+    ? sortedPanels
+    : sortedPanels.filter(panel => {
       return panel.panelNumber >= sketchPanels.startPanelNumber
         && panel.panelNumber <= sketchPanels.endPanelNumber
     })
@@ -139,9 +105,23 @@ export const selectSketchPanelRange = <T extends { panelNumber: number }>(
   }
 
   if (sketchPanels !== 'all') {
-    const hasStartPanel = selectedPanels.some(panel => panel.panelNumber === sketchPanels.startPanelNumber)
-    const hasEndPanel = selectedPanels.some(panel => panel.panelNumber === sketchPanels.endPanelNumber)
-    if (!hasStartPanel || !hasEndPanel) {
+    const availablePanels = new Set(sortedPanels.map(panel => panel.panelNumber))
+    const requestedPanels: number[] = []
+    for (
+      let panelNumber = sketchPanels.startPanelNumber;
+      panelNumber <= sketchPanels.endPanelNumber;
+      panelNumber++
+    ) {
+      requestedPanels.push(panelNumber)
+    }
+
+    const missingPanels = requestedPanels.filter(panelNumber => !availablePanels.has(panelNumber))
+    const selectedPanelNumbers = selectedPanels.map(panel => panel.panelNumber)
+    if (missingPanels.length > 0 && !hasOnlyTrailingPanelSelectionMisses(
+      requestedPanels,
+      selectedPanelNumbers,
+      missingPanels
+    )) {
       throw new Error(
         `Sketch panel range "${sketchPanels.startPanelNumber}-${sketchPanels.endPanelNumber}" ` +
         `was not found in ${sceneLabel}.`
@@ -158,7 +138,7 @@ export const selectSketchPanelRange = <T extends { panelNumber: number }>(
 
 export const resolveSketchChunks = <T extends { panelNumber: number }>(
   panels: T[],
-  options: Pick<GenerateSceneSketchesOptions, 'chunk' | 'sketchGroupSize' | 'sketchPanels'>,
+  options: Pick<GenerateSceneSketchesOptions, 'sketchPanels'>,
   sceneLabel: string
 ): {
   allChunks: Array<SketchPanelChunk<T>>
@@ -172,14 +152,11 @@ export const resolveSketchChunks = <T extends { panelNumber: number }>(
     }
   }
 
-  const sketchChunks = chunkSketchPanels(
-    panels,
-    getSketchGroupSize(panels.length, options.sketchGroupSize)
-  )
+  const sketchChunks = chunkSketchPanels(panels, SKETCH_CHUNK_SIZE)
 
   return {
     allChunks: sketchChunks,
-    selectedChunks: selectSketchChunks(sketchChunks, options.chunk, sceneLabel),
+    selectedChunks: sketchChunks,
   }
 }
 
@@ -262,6 +239,9 @@ export const buildSketchPrompt = (
       'Requirements:',
       '- Produce black-and-white rough sketch output only.',
       '- Use one sub-panel per source panel, in order.',
+      '- Label each sub-panel only with its source panel number, as a small boxed numeral in the upper-left corner.',
+      '- Do not add panel title cards, shot labels, descriptive headings, or caption banners such as "Wide opening shot..." or "Action panel...".',
+      '- Keep visible text limited to story content explicitly present in the panel data, such as speech bubbles, signs, screens, and prop labels.',
       '- Preserve scenery and character staging for each panel.',
       '- Include the exact speech bubble text from each panel\'s speech entries.',
       '- Keep the result at review quality, not polished final art.',
@@ -375,11 +355,6 @@ export const generateSceneSketches = async (
           (selectedChunk
             ? `(${formatSketchChunkLabel(selectedChunk.startPanelNumber, selectedChunk.endPanelNumber)})`
             : '(no selected sketch panels)')
-        )
-      } else if (options.chunk !== undefined) {
-        l.dim(
-          `Scene: ${sceneSlug} ` +
-          `(${formatSketchChunkTarget(options.chunk)} of ${sketchChunks.length})`
         )
       } else {
         l.dim(

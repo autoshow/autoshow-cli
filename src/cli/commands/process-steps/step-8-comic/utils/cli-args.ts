@@ -11,6 +11,10 @@ import {
   IMAGE_SIZE_HELP,
   validateImageSizeForModels,
 } from './image-size'
+import {
+  IMAGE_PROMPT_VARIATIONS,
+  parseImagePromptVariations,
+} from '../commands/generate-images/prompt-variations'
 import type {
   ParsedCharacterSketchArgs,
   ParsedDraftCommandArgs,
@@ -40,9 +44,9 @@ const GENERATE_IMAGES_TARGET_OPTIONS = new Set<string>(GENERATE_IMAGES_TARGET_VA
 export const HELP_TEXT = `USS Acampo
 
 Usage:
-  bun as comic ${DRAFT_SCENES_COMMAND} <script-path> [--only structure|prompt|scene] [--llm-model <model>] [--price]
-  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target prompts|images|sketches|both] [--llm-model <model>] [--panels <all|list>] [--panel-limit <n>] [--panels-per-image <n>] [--chunk <number>] [--sketch-group-size <number|all>] [--sketch-panels <range>] [--image-model <model[,model...]>] [--size <size>] [--quality <quality>] [--force] [--price]
-  bun as comic ${CHARACTER_SKETCH_COMMAND} --image <source-image|sketch-dir> [--image-model <model[,model...]>] [--size <size>] [--quality <quality>] [--force] [--revise --notes <text>] [--price]
+  bun as comic ${DRAFT_SCENES_COMMAND} <script-path> [--only structure|prompt|scene] [--price]
+  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target prompts|images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
+  bun as comic ${CHARACTER_SKETCH_COMMAND} --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 
 Commands:
   ${DRAFT_SCENES_COMMAND.padEnd(18, ' ')}Run script markdown to structured script JSON to draft prompt bundles to scene JSON
@@ -53,24 +57,23 @@ Arguments:
   <script-path>              Path to a script markdown file (e.g. input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md)
 
 Options:
-  --only <stage>             (${DRAFT_SCENES_COMMAND} command) Run one stage: structure, prompt, or scene
-  --llm-model <model>        (${DRAFT_SCENES_COMMAND}/${GENERATE_IMAGES_COMMAND} commands) One of ${LLM_MODELS.join(', ')}${DEFAULT_LLM_MODEL ? ` (default for scene drafting: ${DEFAULT_LLM_MODEL})` : ''}
-  --target <target>          (${GENERATE_IMAGES_COMMAND} command) prompts, images, sketches, or both (default: images)
-  --panels <all|list>        (${GENERATE_IMAGES_COMMAND} command) Page panels to generate: all, 1-8, 1,3,7, or 1-4,9 (default: all)
-  --panel-limit <n>          (${GENERATE_IMAGES_COMMAND} command) Cap selected panels after --panels resolution
-  --panels-per-image <n>     (${GENERATE_IMAGES_COMMAND} command) Render this many ordered panels per final page image (default: 4)
-  --chunk <number>           (${GENERATE_IMAGES_COMMAND} command) Run only one 1-based sketch chunk within a scene
-  --sketch-group-size <n|all> (${GENERATE_IMAGES_COMMAND} command) Group sketches by this many panels, or all panels in each scene
-  --sketch-panels <range>    (${GENERATE_IMAGES_COMMAND} command) Generate one explicit scene sketch range such as 1-4 or all
-  --image <path>             (${CHARACTER_SKETCH_COMMAND} command) Character source image path, or sketch directory such as output/characters/sketches/03-duco
-  --image-model <model[,model...]> (${CHARACTER_SKETCH_COMMAND}/${GENERATE_IMAGES_COMMAND} commands) One or more comma-separated values from ${IMAGE_MODELS.join(', ')} (default: ${DEFAULT_IMAGE_MODEL})
-  --size <size>              (${CHARACTER_SKETCH_COMMAND}/${GENERATE_IMAGES_COMMAND} commands) One of ${IMAGE_SIZE_HELP}
-  --quality <quality>        (${CHARACTER_SKETCH_COMMAND}/${GENERATE_IMAGES_COMMAND} commands) One of ${IMAGE_GENERATION_QUALITIES.join(', ')}. Gemini image models accept this flag for CLI compatibility but ignore it
-  -f, --force                (${CHARACTER_SKETCH_COMMAND}/${GENERATE_IMAGES_COMMAND} commands) Rebuild panel prompts and overwrite existing generated PNGs
-  -r, --revise               (${CHARACTER_SKETCH_COMMAND} command) Revision mode: pass existing sketches as additional references alongside the source image
-  --notes <text>             (${CHARACTER_SKETCH_COMMAND} command, requires --revise) Revision instructions describing what to change
+  --only <stage>             (${DRAFT_SCENES_COMMAND}) Run one stage: structure, prompt, or scene
+  --target <target>          (${GENERATE_IMAGES_COMMAND}) prompts, images, sketches, or both (default: images)
+  --panels <all|range|list>  (${GENERATE_IMAGES_COMMAND}) Panels to process: all, 1-8, 1,3,7, or 1-4,9; overlong ranges clamp (default: all)
+  --image <path>             (${CHARACTER_SKETCH_COMMAND}) Character source image or sketch directory
+  -f, --force                Rebuild and overwrite existing outputs
+  -r, --revise               (${CHARACTER_SKETCH_COMMAND}) Revision mode with --notes
+  --notes <text>             (${CHARACTER_SKETCH_COMMAND}, requires --revise) Revision instructions
   --price                    Dry run: estimate API cost without making any calls
   -h, --help                 Show this help text
+
+Advanced:
+  --llm-model <model>        Text model for scene drafting (default: ${DEFAULT_LLM_MODEL})
+  --image-model <model[,model...]> Image model (default: ${DEFAULT_IMAGE_MODEL})
+  --variation <name[,name...]> (${GENERATE_IMAGES_COMMAND}) Final-image prompt variations: ${IMAGE_PROMPT_VARIATIONS.join(', ')}
+  --size <size>              Image size: ${IMAGE_SIZE_HELP}
+  --quality <quality>        Image quality: ${IMAGE_GENERATION_QUALITIES.join(', ')}
+  --panels-per-image <n>     (${GENERATE_IMAGES_COMMAND}) Panels per page image (default: 4)
 `
 
 const readFlagValue = (args: string[], index: number, flag: string): string => {
@@ -349,20 +352,8 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
         throw new Error('--scene was removed. Pass a script file path directly: bun as comic generate-images path/to/script.md')
       case '--concurrency':
         throw new Error('--concurrency was removed. Commands now process a single script.')
-      case '--panel': {
-        if (parsed.panel !== undefined) {
-          throw new Error('Panel can only be specified once')
-        }
-
-        const panel = readFlagValue(args, index, argument)
-        if (!isPositiveInteger(panel)) {
-          throw new Error(`Invalid panel "${panel}". Expected a positive integer like 1 or 2`)
-        }
-
-        parsed.panel = Number(panel)
-        index++
-        break
-      }
+      case '--panel':
+        throw new Error('--panel was removed. Use --panels <n> to select a single panel.')
       case '--panels': {
         if (parsed.panels !== undefined) {
           throw new Error('Panels can only be specified once')
@@ -372,20 +363,8 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
         index++
         break
       }
-      case '--panel-limit': {
-        if (parsed.panelLimit !== undefined) {
-          throw new Error('Panel limit can only be specified once')
-        }
-
-        const panelLimit = readFlagValue(args, index, argument)
-        if (!isPositiveInteger(panelLimit)) {
-          throw new Error(`Invalid panel limit "${panelLimit}". Expected a positive integer like 4 or 16`)
-        }
-
-        parsed.panelLimit = Number(panelLimit)
-        index++
-        break
-      }
+      case '--panel-limit':
+        throw new Error('--panel-limit was removed. Use --panels <range> to select an explicit range (e.g. --panels 1-4).')
       case '--panels-per-image': {
         if (parsed.panelsPerImage !== undefined) {
           throw new Error('Panels per image can only be specified once')
@@ -400,70 +379,27 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
         index++
         break
       }
-      case '--chunk': {
-        if (parsed.chunk !== undefined) {
-          throw new Error('Chunk can only be specified once')
-        }
-
-        const chunk = readFlagValue(args, index, argument)
-        if (!isPositiveInteger(chunk)) {
-          throw new Error(`Invalid chunk "${chunk}". Expected a positive integer like 1 or 2`)
-        }
-
-        parsed.chunk = Number(chunk)
-        index++
-        break
-      }
-      case '--sketch-group-size': {
-        if (parsed.sketchGroupSize !== undefined) {
-          throw new Error('Sketch group size can only be specified once')
-        }
-
-        const sketchGroupSize = readFlagValue(args, index, argument)
-        if (sketchGroupSize === 'all') {
-          parsed.sketchGroupSize = 'all'
-        } else if (isPositiveInteger(sketchGroupSize)) {
-          parsed.sketchGroupSize = Number(sketchGroupSize)
-        } else {
-          throw new Error(
-            `Invalid sketch group size "${sketchGroupSize}". Expected a positive integer or all`
-          )
-        }
-
-        index++
-        break
-      }
-      case '--sketch-panels': {
-        if (parsed.sketchPanels !== undefined) {
-          throw new Error('Sketch panels can only be specified once')
-        }
-
-        const sketchPanels = readFlagValue(args, index, argument)
-        if (sketchPanels === 'all') {
-          parsed.sketchPanels = 'all'
-        } else {
-          const match = sketchPanels.match(/^(\d+)-(\d+)$/)
-          const startPanelNumber = match?.[1] ? Number(match[1]) : 0
-          const endPanelNumber = match?.[2] ? Number(match[2]) : 0
-
-          if (!match || startPanelNumber < 1 || endPanelNumber < 1 || startPanelNumber > endPanelNumber) {
-            throw new Error(
-              `Invalid sketch panels "${sketchPanels}". Expected a range like 1-4 or all`
-            )
-          }
-
-          parsed.sketchPanels = { startPanelNumber, endPanelNumber }
-        }
-
-        index++
-        break
-      }
+      case '--chunk':
+        throw new Error('--chunk was removed. Use --panels <range> with --target sketches instead (e.g. --panels 5-8).')
+      case '--sketch-group-size':
+        throw new Error('--sketch-group-size was removed. Sketches are grouped in chunks of 4 automatically. Use --panels <range> to select specific panels.')
+      case '--sketch-panels':
+        throw new Error('--sketch-panels was removed. Use --panels <range> instead (e.g. --panels 1-4).')
       case '--image-model': {
         if (parsed.imageModels) {
           throw new Error('Image model can only be specified once')
         }
 
         parsed.imageModels = parseImageModels(readFlagValue(args, index, argument))
+        index++
+        break
+      }
+      case '--variation': {
+        if (parsed.variations) {
+          throw new Error('Variation can only be specified once')
+        }
+
+        parsed.variations = parseImagePromptVariations(readFlagValue(args, index, argument))
         index++
         break
       }
@@ -515,38 +451,15 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
     }
   }
 
-  if (parsed.chunk !== undefined && parsed.sketchPanels !== undefined) {
-    throw new Error('--chunk cannot be combined with --sketch-panels')
-  }
-
-  if (parsed.sketchGroupSize !== undefined && parsed.sketchPanels !== undefined) {
-    throw new Error('--sketch-group-size cannot be combined with --sketch-panels')
-  }
-
-  if (parsed.panels !== undefined && parsed.panel !== undefined) {
-    throw new Error('--panels cannot be combined with --panel')
-  }
-
   const target = parsed.target ?? 'images'
   const targetRunsFinalImages = target === 'images' || target === 'both'
-  const targetRunsSketches = target === 'sketches' || target === 'both'
-  const hasSketchOptions = parsed.chunk !== undefined
-    || parsed.sketchGroupSize !== undefined
-    || parsed.sketchPanels !== undefined
-  const hasPageOptions = parsed.panels !== undefined
-    || parsed.panelLimit !== undefined
-    || parsed.panelsPerImage !== undefined
 
-  if (parsed.panel !== undefined && !targetRunsFinalImages) {
-    throw new Error('--panel only applies when --target is images or both')
+  if (parsed.panelsPerImage !== undefined && !targetRunsFinalImages) {
+    throw new Error('--panels-per-image only applies when --target is images or both')
   }
 
-  if (hasPageOptions && !targetRunsFinalImages) {
-    throw new Error('--panels, --panel-limit, and --panels-per-image only apply when --target is images or both')
-  }
-
-  if (hasSketchOptions && !targetRunsSketches) {
-    throw new Error('Sketch options require --target sketches or --target both')
+  if (parsed.variations !== undefined && !targetRunsFinalImages) {
+    throw new Error('--variation only applies when --target is images or both')
   }
 
   validateImageSizeForModels(parsed.size, parsed.imageModels)

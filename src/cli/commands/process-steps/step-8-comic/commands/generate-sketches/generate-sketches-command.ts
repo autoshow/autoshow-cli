@@ -1,8 +1,5 @@
 import { mkdir } from 'node:fs/promises'
 import { l, err, bold, cyan, green, red } from '../../utils/logger'
-import {
-  formatSketchChunkTarget,
-} from '../../utils/draft-scene-utils'
 import { generateSceneSketches } from './generate-scene-sketches'
 import { DEFAULT_IMAGE_MODEL, isGeminiImageModel } from '../../models/model-registry'
 import { validateImageSizeForModels } from '../../utils/image-size'
@@ -26,8 +23,6 @@ export const generateSketchesCommand = async (
     size: options.size ?? DEFAULT_IMAGE_SIZE,
     quality: options.quality ?? DEFAULT_SKETCH_QUALITY,
     force: options.force ?? false,
-    ...(options.chunk !== undefined ? { chunk: options.chunk } : {}),
-    ...(options.sketchGroupSize !== undefined ? { sketchGroupSize: options.sketchGroupSize } : {}),
     ...(options.sketchPanels !== undefined ? { sketchPanels: options.sketchPanels } : {}),
   }
   validateImageSizeForModels(generationOptions.size, generationOptions.models)
@@ -51,12 +46,6 @@ export const generateSketchesCommand = async (
     l.dim(`Image models: ${generationOptions.models.join(', ')}`)
     l.dim(`Image size: ${generationOptions.size}`)
     l.dim(`Image quality: ${generationOptions.quality}`)
-    if (generationOptions.chunk) {
-      l.dim(`Sketch chunk target: ${formatSketchChunkTarget(generationOptions.chunk)}`)
-    }
-    if (generationOptions.sketchGroupSize) {
-      l.dim(`Sketch group size: ${generationOptions.sketchGroupSize}`)
-    }
     if (generationOptions.sketchPanels) {
       const sketchPanels = generationOptions.sketchPanels === 'all'
         ? 'all'

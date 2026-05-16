@@ -80,6 +80,11 @@ const CharacterSketchPromptsSchema = v.object({
   Profile: v.string(),
 })
 
+const ImagePromptVariationsSchema = v.object({
+  'animation-polish': v.string(),
+  'cinematic-depth': v.string(),
+})
+
 const EpisodeEntrySchema = v.object({
   scenes: v.array(v.string()),
   scripts: v.array(v.string())
@@ -146,6 +151,7 @@ export const PromptsConfigSchema = v.object({
   'Scene Prompts': ScenePromptsSchema,
   'Sketch Prompts': SketchPromptsSchema,
   'Character Sketch Prompts': CharacterSketchPromptsSchema,
+  'Image Prompt Variations': ImagePromptVariationsSchema,
 })
 
 

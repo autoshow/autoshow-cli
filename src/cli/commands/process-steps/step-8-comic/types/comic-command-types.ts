@@ -91,7 +91,7 @@ export type DefineGenerateImagesCommandDeps = {
 
 export type GenerateImagesTarget = 'prompts' | 'images' | 'sketches' | 'both'
 
-export type SketchGroupSize = number | 'all'
+export type ImagePromptVariation = 'canonical' | 'animation-polish' | 'cinematic-depth'
 
 export type SketchPanelRange =
   | 'all'
@@ -110,11 +110,8 @@ export type GenerateImagesCommandOptions = {
   target?: GenerateImagesTarget
   llmModel?: LlmModel
   panels?: ComicPanelSelection
-  panelLimit?: number
   panelsPerImage?: number
-  chunk?: number
-  sketchGroupSize?: SketchGroupSize
-  sketchPanels?: SketchPanelRange
+  variations?: ImagePromptVariation[]
 }
 
 export type GeneratePanelImagesOptions = {
@@ -122,9 +119,8 @@ export type GeneratePanelImagesOptions = {
   size: ImageGenerationSize
   quality: ImageGenerationQuality
   force: boolean
-  panel?: number
   panels?: ComicPanelSelection
-  panelLimit?: number
+  variations?: ImagePromptVariation[]
 }
 
 export type ParsedGenerateImagesArgs = GenerateImagesCommandOptions & { showHelp: boolean; price?: boolean }
@@ -137,8 +133,8 @@ export type GenerateComicPagesOptions = {
   quality: ImageGenerationQuality
   force: boolean
   panels: ComicPanelSelection
-  panelLimit?: number
   panelsPerImage: number
+  variations?: ImagePromptVariation[]
 }
 
 export type ComicPagePanelSource = {
@@ -185,8 +181,6 @@ export type GenerateSceneSketchesOptions = {
   size: ImageGenerationSize
   quality: ImageGenerationQuality
   force: boolean
-  chunk?: number
-  sketchGroupSize?: SketchGroupSize
   sketchPanels?: SketchPanelRange
 }
 
@@ -207,8 +201,6 @@ export type GenerateSketchesCommandOptions = {
   size?: GenerateSceneSketchesOptions['size']
   quality?: GenerateSceneSketchesOptions['quality']
   force?: boolean
-  chunk?: GenerateSceneSketchesOptions['chunk']
-  sketchGroupSize?: GenerateSceneSketchesOptions['sketchGroupSize']
   sketchPanels?: GenerateSceneSketchesOptions['sketchPanels']
 }
 

@@ -8,6 +8,7 @@ import { sanitizeLogText } from '~/utils/logger/redaction'
 import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { generateCompressionVariant, generateSpeedVariant } from './audio-variants'
 import { resolveAvailableServices, parseReferenceStt } from './benchmark-services'
+import { runTtsBenchmark } from './run-tts-benchmark'
 import { computeWER } from './wer'
 import type {
   AudioVariant,
@@ -264,6 +265,11 @@ export const runBenchmark = async (
   input: string | undefined,
   flags: BenchmarkFlags
 ): Promise<void> => {
+  if (flags.tts === true) {
+    await runTtsBenchmark(input, flags)
+    return
+  }
+
   if (!input) {
     throw new Error('Input audio file path is required. Usage: bun as benchmark <audio-file>')
   }
