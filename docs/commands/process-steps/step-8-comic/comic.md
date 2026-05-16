@@ -60,8 +60,8 @@ Canonical project-root paths:
 ## Usage
 
 ```bash
-bun as comic draft-scenes <script-path> [--only structure|prompt|scene] [--price]
-bun as comic generate-images <script-path> [--target prompts|images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
+bun as comic draft-scenes <script-path> [--only structure|prompt|scene|panel-prompts] [--price]
+bun as comic generate-images <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
 bun as comic character-sketch --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 ```
 
@@ -118,7 +118,7 @@ bun as comic character-sketch --image output/characters/sketches/03-duco
 ### 5. Build stable panel prompt bundles
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target prompts
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only panel-prompts
 ```
 
 Review these prompt bundles before spending image-generation cost.
@@ -145,13 +145,13 @@ bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smart
 
 ## draft-scenes
 
-`draft-scenes` runs script markdown through structured script JSON, draft prompt bundles, and scene JSON panel objects.
+`draft-scenes` runs script markdown through structured script JSON, draft prompt bundles, scene JSON panel objects, and stable panel prompt bundles.
 
 ### Options
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--only <stage>` | Run only `structure`, `prompt`, or `scene` | none (runs all stages) |
+| `--only <stage>` | Run only `structure`, `prompt`, `scene`, or `panel-prompts` | none (runs all stages) |
 | `--price` | Estimate API-backed stages without making API calls | `false` |
 
 ### Advanced Options
@@ -167,14 +167,16 @@ bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.
 bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only structure
 bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only prompt
 bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only scene
+bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only panel-prompts
 ```
 
 ### Behavior
 
-- The full run executes `structure`, `prompt`, and `scene` in order.
+- The full run executes `structure`, `prompt`, `scene`, and `panel-prompts` in order.
 - `--only structure` creates or reviews structured script JSON.
 - `--only prompt` builds the scene-drafting prompt bundle and does not call an API.
 - `--only scene` drafts scene JSON from an existing prompt bundle.
+- `--only panel-prompts` builds stable panel prompt bundles from existing scene JSON and does not call an API.
 - Scene drafting validates generated JSON before writing it.
 
 ## generate-images
@@ -185,7 +187,7 @@ bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--target <target>` | `prompts`, `images`, `sketches`, or `both` | `images` |
+| `--target <target>` | `images`, `sketches`, or `both` | `images` |
 | `--panels <all\|range\|list>` | Panels to process: `all`, a range like `1-8`, a list like `1,3,7`, or mixed like `1-4,9`; overlong contiguous ranges clamp to available panels | `all` |
 | `-f, --force` | Rebuild panel prompts and overwrite existing generated PNGs | `false` |
 | `--price` | Estimate image-generation costs without making API calls | `false` |
@@ -204,7 +206,6 @@ bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.
 ### Examples
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target prompts
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target both
@@ -218,8 +219,7 @@ bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smart
 
 ### Behavior
 
-- Panel prompt bundles are auto-detected: if they already exist for the target scope, the rebuild is skipped. Use `--force` to rebuild existing prompts, or `--target prompts` to explicitly rebuild.
-- `--target prompts` always rebuilds stable panel prompt bundles.
+- Panel prompt bundles are auto-detected: if they already exist for the target scope, the rebuild is skipped. Use `--force` during image generation or `draft-scenes --only panel-prompts` to rebuild stable bundles explicitly.
 - `--target sketches` builds panel prompt bundles if missing, then generates review sketches.
 - `--target images` builds panel prompt bundles if missing, then generates final panel images.
 - `--target both` builds panel prompt bundles if missing, generates sketches, then generates final images.
@@ -266,7 +266,7 @@ bun as comic character-sketch --image output/characters/sketches/03-duco
 - Source-image mode writes front, three-quarter, and profile outline references under `output/characters/sketches/<character-stem>/`.
 - Sketch-directory mode combines a complete three-view sketch set into one horizontal sheet and does not call an image API.
 - Uses the defaults shown above (`gpt-image-1.5`, `1024x1536`, `medium`).
-- After generating or updating character sketch refs, rerun `generate-images --target prompts` for affected scenes so stable panel bundles stage the new refs.
+- After generating or updating character sketch refs, rerun `draft-scenes --only panel-prompts` for affected scenes so stable panel bundles stage the new refs.
 
 ## Output
 
@@ -314,7 +314,7 @@ Pass multiple models with `--image-model` to generate each panel with every mode
 
 - Real `draft-scenes`, `generate-images`, and source-image `character-sketch` runs can call OpenAI or Gemini APIs.
 - Use `--price` to estimate hosted cost before running generation.
-- `generate-images --target prompts` and `draft-scenes --only prompt` are prompt-building stages and do not generate images.
+- `draft-scenes --only prompt` and `draft-scenes --only panel-prompts` are prompt-building stages and do not generate images.
 
 ## Deprecated Options
 
@@ -331,3 +331,4 @@ The following options were removed. Using them will produce an informative error
 | `--sketch-panels <range>` | Use `--panels <range>` |
 | `--draft-scenes` | Scene drafts are auto-detected |
 | `--skip-panel-prompts` | Panel prompts are auto-detected |
+| `generate-images --target prompts` | Use `draft-scenes <script-path> --only panel-prompts` |

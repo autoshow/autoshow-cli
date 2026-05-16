@@ -192,21 +192,21 @@ export const generateImagesCommand = async (
     l.dim('Scene drafts already exist, skipping draft-scenes (use --force to rebuild)')
   }
 
-  const shouldBuildPrompts = target === 'prompts'
-    || options.force === true
-    || !(await checkPromptsExist(sceneSlug))
+  const shouldBuildPrompts = !shouldRunDraftScenes
+    && (
+      options.force === true
+      || !(await checkPromptsExist(sceneSlug))
+    )
 
-  if (shouldBuildPrompts) {
+  if (shouldRunDraftScenes) {
+    l.dim('Panel prompt bundles prepared by draft-scenes')
+  } else if (shouldBuildPrompts) {
     await runPanelPrompts({
       sceneSlug,
       ...(options.force !== undefined ? { force: options.force } : {}),
     })
   } else {
     l.dim('Panel prompt bundles already exist, skipping rebuild (use --force to rebuild)')
-  }
-
-  if (target === 'prompts') {
-    return
   }
 
   const coverageReport = await assertPanelPromptSourceCoverage(sceneSlug)

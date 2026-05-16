@@ -12,6 +12,7 @@ import * as v from 'valibot'
 import { l, err, cyan, bold } from './logger'
 import {
   CHARACTER_NAMES,
+  CHARACTER_REFERENCE_ALIASES,
   STRUCTURED_SCRIPT_JSON_SCHEMA,
   StructuredScriptDataSchema,
 } from '../schemas/schemas'
@@ -84,6 +85,7 @@ const CHARACTER_ALIAS_PATTERNS: CharacterAliasPattern[] = [
   { pattern: String.raw`\bIRONHANDS?\s*#\s*3\b`, characters: ['Ironhand #3'] },
   { pattern: String.raw`\bIRONHANDS?\b`, characters: ['Ironhand #1', 'Ironhand #2', 'Ironhand #3'] },
   { pattern: String.raw`\bHR\s+HOLOGRAM\b`, characters: ['HR Hologram'] },
+  { pattern: String.raw`\bCHAT\b`, characters: ['HR Hologram'] },
   { pattern: String.raw`\bPODCAST\s+HOST\b`, characters: ['Podcast Host'] },
   { pattern: String.raw`\bBUOY\s*4\s*(?:&|AND)\s*BUOY\s*6\b`, characters: ['Buoy 4 & Buoy 6'] },
   { pattern: String.raw`\bWILHELM\s+SPEAKING\s+VILLAGERS?\b`, characters: ['Wilhelm Speaking Villagers'] },
@@ -92,6 +94,9 @@ const CHARACTER_ALIAS_PATTERNS: CharacterAliasPattern[] = [
 ]
 
 const CHARACTER_NAME_SET = new Set<string>(CHARACTER_NAMES)
+const CHARACTER_ALIAS_GUIDANCE = Object.entries(CHARACTER_REFERENCE_ALIASES)
+  .map(([alias, character]) => `${alias} -> ${character}`)
+  .join(', ')
 
 const formatCost = (dollars: number): string => {
   return dollars < 0.01
@@ -655,6 +660,7 @@ const formatStructuredScriptReviewPrompt = (
     '- Keep `sourceSegments` as deterministic source coverage records; do not paraphrase or omit source segment text.',
     '- Keep beat indexes sequential starting at 1.',
     '- Keep `scriptSlug` and `sourceFile` aligned to the source file shown below.',
+    `- Resolve character aliases to canonical names: ${CHARACTER_ALIAS_GUIDANCE}.`,
     '',
     `Allowed canonical character names: ${CHARACTER_NAMES.join(', ')}`,
     '',

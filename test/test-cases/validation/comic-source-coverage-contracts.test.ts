@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -186,6 +187,37 @@ describe('comic source coverage contracts', () => {
     expect(sourceText).toContain('C’mon man, wake up')
   })
 
+  test('structured parser maps CHAT script labels and mentions to the HR Hologram reference', () => {
+    const structured = parseScriptMarkdownToStructuredData([
+      '# Episode Test',
+      '',
+      '**USS ACAMPO**',
+      '',
+      '---',
+      '',
+      '## Hologram Check',
+      '',
+      '**INT. USS ACAMPO – FABRICATION BAY**',
+      '',
+      'CHAT’s interface flickers rapidly on the wall panel.',
+      '',
+      '**CHAT (V.O.)**',
+      'I am only mostly broken.',
+    ].join('\n'), 'input/test-chat-alias.md')
+
+    const narrationBeat = structured.beats.find(beat => beat.text.includes('interface flickers'))
+    const dialogueBeat = structured.beats.find(beat => beat.text === 'I am only mostly broken.')
+
+    expect(structured.characters).toContain('HR Hologram')
+    expect(narrationBeat?.characters).toEqual(['HR Hologram'])
+    expect(narrationBeat?.rawMentions).toEqual([{
+      raw: 'CHAT',
+      characters: ['HR Hologram'],
+    }])
+    expect(dialogueBeat?.speaker).toBe('HR Hologram')
+    expect(dialogueBeat?.speakerLabel).toBe('CHAT (V.O.)')
+  })
+
   test('scene source segment coverage validation rejects missing and unknown IDs', () => {
     expect(() => validateSceneSourceSegmentCoverage(
       buildSceneData(['beat-0001', 'beat-0002']),
@@ -288,6 +320,66 @@ describe('comic source coverage contracts', () => {
       expect(report.complete).toBe(true)
       expect(report.coveredSegments).toBe(2)
       expect(report.totalSegments).toBe(2)
+    } finally {
+      await rm(sceneOutputDirectory, { recursive: true, force: true })
+    }
+  })
+
+  test('panel prompt packaging resolves legacy CHAT panel text to the HR Hologram image reference', async () => {
+    const sceneSlug = `comic-chat-reference-${Date.now()}`
+    const sceneOutputDirectory = getSceneOutputDirectory(sceneSlug)
+    const sourceSegments: StructuredScriptSourceSegment[] = [{
+      id: 'beat-0001',
+      type: 'narration',
+      text: 'A tired CHAT hologram appears beside GeeBee.',
+      beatIndex: 1,
+    }]
+    const structuredScript: StructuredScriptData = {
+      scriptSlug: sceneSlug,
+      sourceFile: 'input/test.md',
+      document: {
+        heading: 'Episode Test',
+        title: 'Episode Test',
+        metadata: [{ label: 'USS ACAMPO', raw: 'USS ACAMPO' }],
+      },
+      scene: {
+        heading: 'Hologram Check',
+        title: 'Hologram Check',
+        location: { raw: 'USS ACAMPO' },
+      },
+      characters: ['HR Hologram', 'GeeBee'],
+      beats: [],
+      sourceSegments,
+    }
+    const sceneData: ScenePromptData = {
+      title: 'Hologram Check',
+      location: 'USS ACAMPO',
+      panels: [{
+        number: 1,
+        description: 'A tired CHAT hologram appears beside GeeBee.',
+        characters: [],
+        speech: [],
+        sourceSegmentIds: ['beat-0001'],
+      }],
+    }
+
+    try {
+      await mkdir(sceneOutputDirectory, { recursive: true })
+      await writeFile(getStructuredScriptPath(sceneSlug), JSON.stringify(structuredScript, null, 2))
+      await writeFile(getSceneJsonPath(sceneSlug), JSON.stringify(sceneData, null, 2))
+
+      await processScene({
+        sceneSlug,
+        sceneJsonPath: getSceneJsonPath(sceneSlug),
+        outputDir: getPanelPromptsDirectory(sceneSlug),
+      })
+
+      const panelDir = `${getPanelPromptsDirectory(sceneSlug)}/panel-01`
+      const prompt = await Bun.file(`${panelDir}/${sceneSlug}-panel-1.md`).text()
+
+      expect(existsSync(`${panelDir}/12-chat.webp`)).toBe(true)
+      expect(prompt).toContain('"name": "HR Hologram"')
+      expect(prompt).toContain('"image": "input/characters/12-chat.webp"')
     } finally {
       await rm(sceneOutputDirectory, { recursive: true, force: true })
     }

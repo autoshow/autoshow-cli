@@ -2,7 +2,7 @@ import { existsSync, statSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { l } from '../../utils/logger'
-import { CharacterReferenceSchema } from '../../schemas/schemas'
+import { CHARACTER_NAMES, CHARACTER_REFERENCE_ALIASES, CharacterReferenceSchema } from '../../schemas/schemas'
 import { parseJsonFile } from '../../utils/json-prompt-utils'
 import {
   CHARACTER_SKETCHES_ROOT,
@@ -12,12 +12,14 @@ import {
 } from '../../utils/project-paths'
 import type {
   CharacterDetails,
+  CharacterName,
   CharacterSketchView,
   ImageGenerationModel,
 } from '../../types'
 
 
-const NON_CHARACTER_ENTRIES = ['SFX', 'SOUND', 'MUSIC', 'NARRATOR', 'TITLE', 'CAPTION', 'CHAT']
+const NON_CHARACTER_ENTRIES = ['SFX', 'SOUND', 'MUSIC', 'NARRATOR', 'TITLE', 'CAPTION']
+const NON_CHARACTER_ENTRY_SET = new Set(NON_CHARACTER_ENTRIES)
 const CHARACTER_SOURCE_IMAGE_EXTENSIONS = ['.webp', '.png', '.jpg', '.jpeg'] as const
 export const CHARACTER_SKETCH_VIEWS = ['front', 'three-quarter', 'profile'] as const
 export type CharacterSketchVariant = 'canonical' | 'revised'
@@ -33,7 +35,55 @@ type CharacterSketchDirectoryOptionInput = {
 
 export const stripVoiceOverSuffix = (name: string): string => name.replace(/\s*\(V\.O\.\)\s*$/, '')
 
-export const isCharacterEntry = (name: string): boolean => !NON_CHARACTER_ENTRIES.includes(stripVoiceOverSuffix(name))
+const normalizeCharacterAliasKey = (name: string): string => {
+  return stripVoiceOverSuffix(name)
+    .trim()
+    .replace(/[’']S$/i, '')
+    .toUpperCase()
+}
+
+export const resolveCharacterReferenceName = (name: string): string => {
+  const strippedName = stripVoiceOverSuffix(name).trim()
+  const aliasKey = normalizeCharacterAliasKey(strippedName)
+
+  return CHARACTER_REFERENCE_ALIASES[aliasKey as keyof typeof CHARACTER_REFERENCE_ALIASES] ?? strippedName
+}
+
+export const isCharacterEntry = (name: string): boolean => {
+  const characterName = resolveCharacterReferenceName(name)
+  return !NON_CHARACTER_ENTRY_SET.has(characterName.toUpperCase())
+}
+
+const escapeRegExp = (value: string): string => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export const findCharacterReferenceNamesInText = (text: string): CharacterName[] => {
+  const seen = new Set<CharacterName>()
+  const characterNames: CharacterName[] = []
+  const matchers = [
+    ...Object.entries(CHARACTER_REFERENCE_ALIASES).map(([alias, character]) => ({
+      pattern: alias,
+      character,
+    })),
+    ...CHARACTER_NAMES.map(character => ({
+      pattern: character,
+      character,
+    })),
+  ].sort((left, right) => right.pattern.length - left.pattern.length)
+
+  matchers.forEach(({ pattern, character }) => {
+    const regex = new RegExp(`\\b${escapeRegExp(pattern)}\\b`, 'i')
+    if (!regex.test(text) || seen.has(character)) {
+      return
+    }
+
+    seen.add(character)
+    characterNames.push(character)
+  })
+
+  return characterNames
+}
 
 const normalizeCharacterImagePath = (imagePath: string): string => {
   return normalizeProjectPath(imagePath)
@@ -298,7 +348,8 @@ export const getCharacters = async (
   const reference = await getCharacterReferenceConfig()
 
   const results = await Promise.all(characters.map(async char => {
-    const fullCharacter = reference.charactersReference[char as keyof typeof reference.charactersReference]
+    const characterName = resolveCharacterReferenceName(char)
+    const fullCharacter = reference.charactersReference[characterName as keyof typeof reference.charactersReference]
     if (!fullCharacter) {
       l.dim(`Character "${char}" not found in reference — skipping visual reference`)
       return null

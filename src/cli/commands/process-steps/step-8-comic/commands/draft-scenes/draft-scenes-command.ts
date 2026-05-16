@@ -3,20 +3,23 @@ import { generateSceneJson } from './generate-scene-json'
 import { DEFAULT_LLM_MODEL } from '../../models/model-registry'
 import { structureScriptsCommand } from '../structure-scripts/structure-scripts-command'
 import { draftPromptsCommand } from '../draft-prompts/draft-prompts-command'
+import { panelPromptsCommand } from '../panel-prompts/panel-prompts-command'
 import { COMIC_OUTPUT_ROOT } from '../../utils/project-paths'
 import type {
   DraftScenesCommandOptions,
   DraftScenesStage,
+  PanelPromptsCommandOptions,
 } from '../../types'
 
 
 
-const DRAFT_SCENE_STAGE_ORDER: DraftScenesStage[] = ['structure', 'prompt', 'scene']
+const DRAFT_SCENE_STAGE_ORDER: DraftScenesStage[] = ['structure', 'prompt', 'scene', 'panel-prompts']
 
 export type DraftScenesWorkflowDependencies = {
   runStructureScripts?: (options: DraftScenesCommandOptions) => Promise<void>
   runDraftPrompts?: (options: DraftScenesCommandOptions) => Promise<void>
   runSceneDraft?: (options: DraftScenesCommandOptions) => Promise<void>
+  runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<void>
 }
 
 const getDraftSceneStages = (only: DraftScenesCommandOptions['only']): DraftScenesStage[] => {
@@ -69,6 +72,7 @@ export const draftScenesCommand = async (
   const runStructureScripts = dependencies.runStructureScripts ?? structureScriptsCommand
   const runDraftPrompts = dependencies.runDraftPrompts ?? ((opts: DraftScenesCommandOptions) => draftPromptsCommand({ sceneSlug: opts.sceneSlug }))
   const runSceneDraft = dependencies.runSceneDraft ?? runSceneDraftStage
+  const runPanelPrompts = dependencies.runPanelPrompts ?? panelPromptsCommand
 
   for (const stage of getDraftSceneStages(options.only)) {
     if (stage === 'structure') {
@@ -81,6 +85,11 @@ export const draftScenesCommand = async (
       continue
     }
 
-    await runSceneDraft(options)
+    if (stage === 'scene') {
+      await runSceneDraft(options)
+      continue
+    }
+
+    await runPanelPrompts({ sceneSlug: options.sceneSlug })
   }
 }

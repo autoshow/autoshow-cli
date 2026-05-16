@@ -140,8 +140,15 @@ export const estimateSceneDraftPrice = async (options: DraftScenesCommandOptions
   l.dim('  Estimates: tokens ~ chars / 4, no cache discount, output ~800 tokens/call')
 }
 
+const estimatePanelPromptsPrice = (): void => {
+  l(`${bold('USS Acampo')} - Price Estimate: draft-scenes --only panel-prompts`)
+  l(`${cyan('='.repeat(50))}\n`)
+  l('  The panel-prompt stage makes no LLM or image generation API calls.')
+  l('')
+}
+
 export const estimateDraftScenesPrice = async (options: DraftScenesCommandOptions): Promise<void> => {
-  const stages = options.only ? [options.only] : ['structure', 'prompt', 'scene'] as const
+  const stages = options.only ? [options.only] : ['structure', 'prompt', 'scene', 'panel-prompts'] as const
 
   if (stages.includes('structure')) {
     await estimateStructureScriptsPrice({
@@ -160,6 +167,10 @@ export const estimateDraftScenesPrice = async (options: DraftScenesCommandOption
 
   if (stages.includes('scene')) {
     await estimateSceneDraftPrice(options)
+  }
+
+  if (stages.includes('panel-prompts')) {
+    estimatePanelPromptsPrice()
   }
 }
 
@@ -390,7 +401,7 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
   const panelPromptsDir = getPanelPromptsDirectory(sceneSlug)
 
   if (!existsSync(panelPromptsDir)) {
-    l('  No stable panel prompt bundles found. Run "bun as comic generate-images --target prompts" first.')
+    l('  No stable panel prompt bundles found. Run "bun as comic draft-scenes <script-path> --only panel-prompts" first.')
     return
   }
 
@@ -528,7 +539,7 @@ export const estimateGenerateSketchesPrice = async (
   const panelPromptsDir = getPanelPromptsDirectory(sceneSlug)
 
   if (!existsSync(panelPromptsDir)) {
-    l('  No stable panel prompt bundles found. Run "bun as comic generate-images --target prompts" first.')
+    l('  No stable panel prompt bundles found. Run "bun as comic draft-scenes <script-path> --only panel-prompts" first.')
     return
   }
 
@@ -626,13 +637,6 @@ export const estimateGenerateImagesPrice = async (
   }
 
   const target = options.target ?? 'images'
-
-  if (target === 'prompts') {
-    l(`${bold('USS Acampo')} - Price Estimate: generate-images --target prompts`)
-    l(`${cyan('='.repeat(50))}\n`)
-    l('  The panel-prompt stage makes no LLM or image generation API calls.')
-    return
-  }
 
   if (target === 'sketches' || target === 'both') {
     const sketchPanels = panelSelectionToSketchRange(options.panels)

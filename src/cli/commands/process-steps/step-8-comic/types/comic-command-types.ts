@@ -40,7 +40,7 @@ export type DefineDraftScenesCommandDeps = {
   printHelp?: (text: string) => void
 }
 
-export type DraftScenesStage = 'structure' | 'prompt' | 'scene'
+export type DraftScenesStage = 'structure' | 'prompt' | 'scene' | 'panel-prompts'
 
 export type DraftScenesCommandOptions = {
   scriptPath: string
@@ -89,7 +89,7 @@ export type DefineGenerateImagesCommandDeps = {
   printHelp?: (text: string) => void
 }
 
-export type GenerateImagesTarget = 'prompts' | 'images' | 'sketches' | 'both'
+export type GenerateImagesTarget = 'images' | 'sketches' | 'both'
 
 export type ImagePromptVariation = 'canonical' | 'animation-polish' | 'cinematic-depth'
 

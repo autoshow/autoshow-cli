@@ -35,6 +35,10 @@ export const CHARACTER_NAMES = [
   'Buoy 4 & Buoy 6', 'Wilhelm Speaking Villagers', 'Guards'
 ] as const
 
+export const CHARACTER_REFERENCE_ALIASES = {
+  CHAT: 'HR Hologram',
+} as const
+
 export const STRUCTURED_SCRIPT_BEAT_TYPES = ['narration', 'dialogue', 'direction', 'transition', 'panel-note'] as const
 
 export const CharacterReferenceImagePathSchema = v.pipe(

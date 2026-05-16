@@ -32,8 +32,10 @@ import { parsePanelSelector } from '../commands/generate-images/comic-page-utils
 export const CHARACTER_SKETCH_COMMAND = 'character-sketch'
 export const DRAFT_SCENES_COMMAND = 'draft-scenes'
 export const GENERATE_IMAGES_COMMAND = 'generate-images'
-export const DRAFT_SCENES_ONLY_VALUES = ['structure', 'prompt', 'scene'] as const
-export const GENERATE_IMAGES_TARGET_VALUES = ['prompts', 'images', 'sketches', 'both'] as const
+export const DRAFT_SCENES_ONLY_VALUES = ['structure', 'prompt', 'scene', 'panel-prompts'] as const
+export const GENERATE_IMAGES_TARGET_VALUES = ['images', 'sketches', 'both'] as const
+export const PANEL_PROMPTS_TARGET_MIGRATION =
+  'The generate-images "prompts" target was removed. Use: bun as comic draft-scenes <script-path> --only panel-prompts'
 
 const IMAGE_QUALITY_OPTIONS = new Set<string>(IMAGE_GENERATION_QUALITIES)
 const IMAGE_MODEL_OPTIONS = new Set<string>(IMAGE_MODELS)
@@ -44,21 +46,21 @@ const GENERATE_IMAGES_TARGET_OPTIONS = new Set<string>(GENERATE_IMAGES_TARGET_VA
 export const HELP_TEXT = `USS Acampo
 
 Usage:
-  bun as comic ${DRAFT_SCENES_COMMAND} <script-path> [--only structure|prompt|scene] [--price]
-  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target prompts|images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
+  bun as comic ${DRAFT_SCENES_COMMAND} <script-path> [--only structure|prompt|scene|panel-prompts] [--price]
+  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
   bun as comic ${CHARACTER_SKETCH_COMMAND} --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 
 Commands:
-  ${DRAFT_SCENES_COMMAND.padEnd(18, ' ')}Run script markdown to structured script JSON to draft prompt bundles to scene JSON
-  ${GENERATE_IMAGES_COMMAND.padEnd(18, ' ')}Run scene JSON to panel prompt bundles to review sketches and/or final panel images
+  ${DRAFT_SCENES_COMMAND.padEnd(18, ' ')}Run script markdown to structured script JSON to draft prompt bundles to scene JSON to panel prompt bundles
+  ${GENERATE_IMAGES_COMMAND.padEnd(18, ' ')}Run panel prompt bundles to review sketches and/or final panel images
   ${CHARACTER_SKETCH_COMMAND.padEnd(18, ' ')}Generate 3 outline-only character sketch refs, or combine a sketch directory into one sheet
 
 Arguments:
   <script-path>              Path to a script markdown file (e.g. input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md)
 
 Options:
-  --only <stage>             (${DRAFT_SCENES_COMMAND}) Run one stage: structure, prompt, or scene
-  --target <target>          (${GENERATE_IMAGES_COMMAND}) prompts, images, sketches, or both (default: images)
+  --only <stage>             (${DRAFT_SCENES_COMMAND}) Run one stage: structure, prompt, scene, or panel-prompts
+  --target <target>          (${GENERATE_IMAGES_COMMAND}) images, sketches, or both (default: images)
   --panels <all|range|list>  (${GENERATE_IMAGES_COMMAND}) Panels to process: all, 1-8, 1,3,7, or 1-4,9; overlong ranges clamp (default: all)
   --image <path>             (${CHARACTER_SKETCH_COMMAND}) Character source image or sketch directory
   -f, --force                Rebuild and overwrite existing outputs
@@ -314,6 +316,10 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
         }
 
         const target = readFlagValue(args, index, argument)
+        if (target === 'prompts') {
+          throw new Error(PANEL_PROMPTS_TARGET_MIGRATION)
+        }
+
         if (!GENERATE_IMAGES_TARGET_OPTIONS.has(target)) {
           throw new Error(
             `Invalid target "${target}". Expected one of: ${GENERATE_IMAGES_TARGET_VALUES.join(', ')}`
@@ -325,7 +331,7 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
         break
       }
       case '--skip-panel-prompts':
-        throw new Error('--skip-panel-prompts was removed. Panel prompts are now auto-detected and only rebuilt when missing. Use --force to rebuild existing prompts, or --target prompts to explicitly rebuild.')
+        throw new Error('--skip-panel-prompts was removed. Panel prompts are now auto-detected and only rebuilt when missing. Use --force to rebuild during image generation, or run "bun as comic draft-scenes <script-path> --only panel-prompts" explicitly.')
       case '--draft-scenes':
         throw new Error('--draft-scenes was removed. Scene drafts are now auto-detected and only rebuilt when missing. Use --force to rebuild existing scene drafts.')
       case '--llm-model': {

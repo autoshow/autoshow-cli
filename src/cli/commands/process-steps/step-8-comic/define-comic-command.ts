@@ -76,7 +76,7 @@ const stripNativeGlobalFlags = (rawArgs: string[]): string[] => {
 const comicSubcommands = [
   {
     name: DRAFT_SCENES_COMMAND,
-    description: 'Run script markdown to structured script JSON to draft prompt bundles to scene JSON',
+    description: 'Run script markdown to structured script JSON to draft prompt bundles to scene JSON to panel prompt bundles',
     run: async (rawArgs) => {
       const parsed = parseArgsOrUsage(() => parseDraftScenesArgs(rawArgs))
       if (parsed.showHelp) {
@@ -97,7 +97,7 @@ const comicSubcommands = [
   },
   {
     name: GENERATE_IMAGES_COMMAND,
-    description: 'Run scene JSON to panel prompt bundles to review sketches and/or final panel images',
+    description: 'Run panel prompt bundles to review sketches and/or final panel images',
     run: async (rawArgs) => {
       const parsed = parseArgsOrUsage(() => parseGenerateImagesArgs(rawArgs))
       if (parsed.showHelp) {
@@ -176,7 +176,7 @@ export const comicCommand = defineCliCommand({
   help: {
     examples: [
       ['bun as comic draft-scenes input/episode-scripts/ep01-scripts/01-co-work-smarter.md', 'Draft structured scene JSON'],
-      ['bun as comic generate-images input/episode-scripts/ep01-scripts/01-co-work-smarter.md --target prompts', 'Build panel prompt bundles'],
+      ['bun as comic draft-scenes input/episode-scripts/ep01-scripts/01-co-work-smarter.md --only panel-prompts', 'Build panel prompt bundles'],
       ['bun as comic generate-images input/episode-scripts/ep01-scripts/01-co-work-smarter.md --panels-per-image 4', 'Generate page images'],
       ['bun as comic character-sketch --image input/characters/03-duco.webp', 'Generate character sketch references'],
       ['bun as comic draft-scenes --help', 'Show comic subcommand help']

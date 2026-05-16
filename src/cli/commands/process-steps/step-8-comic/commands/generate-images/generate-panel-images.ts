@@ -97,7 +97,7 @@ export const generatePanelImages = async (
             throw new Error(
               `Missing character reference images in ${panelEntry.name}: ` +
               `${primaryCharacterReferenceState.missingPrimaryCharacterRefs.join(', ')}. ` +
-              `Re-run "bun as comic generate-images --target prompts --scene ${sceneSlug}" ` +
+              `Re-run "bun as comic draft-scenes <script-path> --only panel-prompts" ` +
               `after generating any missing character sketches.`
             )
           }

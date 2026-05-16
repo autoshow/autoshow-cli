@@ -106,24 +106,29 @@ describe('option resolution contracts', () => {
     expect(() => parseGenerateImagesArgs(['script.md', '--variation', 'unknown'])).toThrow('Invalid variation "unknown"')
   })
 
-  test('comic draft-scenes args parse llm model', () => {
+  test('comic draft-scenes args parse llm model and panel prompt stage', () => {
     const opts = parseDraftScenesArgs([
       'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
       '--llm-model', LLM_MODELS[0],
+      '--only', 'panel-prompts',
     ])
 
     expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
     expect(opts.llmModel).toBe(LLM_MODELS[0])
+    expect(opts.only).toBe('panel-prompts')
   })
 
   test('comic generate-images args parse target', () => {
     const opts = parseGenerateImagesArgs([
       'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
-      '--target', 'prompts',
+      '--target', 'sketches',
     ])
 
     expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
-    expect(opts.target).toBe('prompts')
+    expect(opts.target).toBe('sketches')
+    expect(() => parseGenerateImagesArgs(['script.md', '--target', 'prompts'])).toThrow(
+      'bun as comic draft-scenes <script-path> --only panel-prompts'
+    )
   })
 
   test('comic generate-images args parse page image options with target', () => {

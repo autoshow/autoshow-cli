@@ -2,7 +2,14 @@ import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import * as v from 'valibot'
 import { l, err } from '../../utils/logger'
-import { getCharacterImageFilename, getCharacters, isCharacterEntry, stripVoiceOverSuffix } from './character-utils'
+import {
+  findCharacterReferenceNamesInText,
+  getCharacterImageFilename,
+  getCharacters,
+  isCharacterEntry,
+  resolveCharacterReferenceName,
+  stripVoiceOverSuffix,
+} from './character-utils'
 import {
   findExistingPanelImages,
   getPanelPromptTemplate,
@@ -84,28 +91,44 @@ export const processScene = async ({
 
       const panelCharacterNames = new Set<string>()
       const referenceCharacterNames = new Set<string>()
+      const sourceSegments = resolvePanelSourceSegments(
+        currentPanel.sourceSegmentIds,
+        structuredScript.sourceSegments,
+      )
 
       currentPanel.characters.forEach(name => {
         if (typeof name === 'string' && isCharacterEntry(name)) {
-          panelCharacterNames.add(name)
-          referenceCharacterNames.add(name)
+          const resolvedName = resolveCharacterReferenceName(name)
+          panelCharacterNames.add(resolvedName)
+          referenceCharacterNames.add(resolvedName)
         }
+      })
+
+      findCharacterReferenceNamesInText(currentPanel.description).forEach(name => {
+        panelCharacterNames.add(name)
+        referenceCharacterNames.add(name)
       })
 
       if (currentPanel.speech && Array.isArray(currentPanel.speech)) {
         currentPanel.speech.forEach(speech => {
           if (speech.character && isCharacterEntry(speech.character)) {
-            referenceCharacterNames.add(stripVoiceOverSuffix(speech.character))
+            referenceCharacterNames.add(resolveCharacterReferenceName(stripVoiceOverSuffix(speech.character)))
           }
         })
       }
 
+      sourceSegments.forEach(segment => {
+        findCharacterReferenceNamesInText([
+          segment.speaker,
+          segment.speakerLabel,
+          segment.text,
+        ].filter(Boolean).join('\n')).forEach(name => {
+          referenceCharacterNames.add(name)
+        })
+      })
+
       const relevantCharacters = await getCharacters(Array.from(panelCharacterNames))
       const referenceCharacters = await getCharacters(Array.from(referenceCharacterNames))
-      const sourceSegments = resolvePanelSourceSegments(
-        currentPanel.sourceSegmentIds,
-        structuredScript.sourceSegments,
-      )
 
       const expandedPanel = {
         ...currentPanel,

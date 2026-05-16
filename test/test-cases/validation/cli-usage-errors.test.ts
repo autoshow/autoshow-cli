@@ -262,11 +262,14 @@ test('comic generate-images rejects --panels-per-image with sketch target', asyn
   )
 })
 
-test('comic generate-images rejects variations with non-final targets', async () => {
+test('comic generate-images rejects removed prompts target with migration', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'prompts', '--variation', 'animation-polish', '--price'],
-    '--variation only applies when --target is images or both'
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'prompts', '--price'],
+    'bun as comic draft-scenes <script-path> --only panel-prompts'
   )
+})
+
+test('comic generate-images rejects variations with non-final targets', async () => {
   await expectUsageExit(
     ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'sketches', '--variation', 'cinematic-depth', '--price'],
     '--variation only applies when --target is images or both'

@@ -2,7 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import * as v from 'valibot'
 import { l, err } from './logger'
-import { CHARACTER_NAMES, StructuredScriptDataSchema } from '../schemas/schemas'
+import { CHARACTER_NAMES, CHARACTER_REFERENCE_ALIASES, StructuredScriptDataSchema } from '../schemas/schemas'
 import { getStructuredScriptPath, getDraftPromptPath } from './project-paths'
 import type {
   StructuredScriptData,
@@ -28,6 +28,9 @@ export const parseJsonFile = async <T>(
 }
 
 const VALID_CHARACTER_NAMES = CHARACTER_NAMES.map(name => `- ${name}`).join('\n')
+const CHARACTER_ALIAS_GUIDANCE = Object.entries(CHARACTER_REFERENCE_ALIASES)
+  .map(([alias, character]) => `- ${alias} -> ${character}`)
+  .join('\n')
 
 const JSON_PROMPT_TEMPLATE = `# Convert Structured Script to Comic Panel JSON
 
@@ -61,6 +64,10 @@ The character references in "speech" and panel "characters" arrays must use thes
 ${VALID_CHARACTER_NAMES}
 
 **Note:** Do not use variations like "Captain Peaches", "DUCO", "Gulp Shiddo", "Lieutenant GeeBee", "Ensign Seamus", etc. Use only the exact names from the list above.
+
+## Character Aliases:
+When source text uses these aliases, use the canonical character name in "speech" and panel "characters" arrays:
+${CHARACTER_ALIAS_GUIDANCE}
 
 ## JSON Schema Example:
 
