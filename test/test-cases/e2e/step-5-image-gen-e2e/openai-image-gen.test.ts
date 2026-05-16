@@ -14,8 +14,6 @@ import { readRunMetadata } from '../../../test-utils/manifest-helpers'
 
 defineImageServiceTest({
   models: [
-    { model: 'gpt-image-1', prompt: 'an oil painting of a lighthouse', extraArgs: ['--image-quality', 'high', '--image-size', '1536x1024'] },
-    { model: 'gpt-image-1-mini', prompt: 'a simple blue square on white background', extraArgs: ['--image-format', 'jpeg', '--image-size', '1024x1024', '--image-quality', 'low'], expectedExtension: 'jpg' },
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
     { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1536', '--image-quality', 'low'] },
   ],

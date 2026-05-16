@@ -32,7 +32,7 @@
         "costPer1kCharsUSD": 0.00077,
         "costPer1kCharsCents": 0.077,
         "estimation": {
-          "msPer1KChars": 50625,
+          "msPer1KChars": 75938,
           "costMultiplier": 1
         }
       },

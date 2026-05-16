@@ -4,7 +4,6 @@ import type { BflImageModel, DeapiImageModel, GeminiImageModel, GlmImageModel, G
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
   'imagen-4.0-fast-generate-001',
-  'gemini-3-pro-image-preview',
   'imagen-4.0-generate-001',
   'imagen-4.0-ultra-generate-001'
 ] as const satisfies readonly string[]
@@ -23,8 +22,6 @@ export const supportsGeminiImageSize = (model: GeminiImageModel): boolean =>
   isNativeGeminiImageModel(model) || GEMINI_IMAGE_SIZE_IMAGEN_MODELS.includes(model)
 
 export const SUPPORTED_OPENAI_IMAGE_MODELS = [
-  'gpt-image-1-mini',
-  'gpt-image-1',
   'gpt-image-1.5',
   'gpt-image-2',
 ] as const satisfies readonly string[]

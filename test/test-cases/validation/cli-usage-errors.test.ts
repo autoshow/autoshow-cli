@@ -137,3 +137,69 @@ test('music lyric-video mode rejects price mode', async () => {
     'Do not combine hosted music flags'
   )
 })
+
+test('comic generate-images rejects invalid page selection flags', async () => {
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels', '4-2', '--price'],
+    'Invalid panels "4-2"'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels-per-image', '0', '--price'],
+    'Invalid panels per image "0"'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panel-limit', 'nope', '--price'],
+    'Invalid panel limit "nope"'
+  )
+})
+
+test('comic generate-images rejects invalid and duplicate image models', async () => {
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--image-model', 'not-a-model', '--price'],
+    'Invalid image model "not-a-model"'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--image-model', 'gpt-image-2,gpt-image-2', '--price'],
+    'Duplicate image model "gpt-image-2" is not allowed'
+  )
+})
+
+test('comic generate-images rejects --panels combined with --panel', async () => {
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panel', '1', '--panels', '1-4', '--price'],
+    '--panels cannot be combined with --panel'
+  )
+})
+
+test('comic generate-images rejects page options with sketch target', async () => {
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'sketches', '--panels-per-image', '4', '--price'],
+    '--panels, --panel-limit, and --panels-per-image only apply when --target is images or both'
+  )
+})
+
+test('comic generate-images rejects invalid page selection flags', async () => {
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels-per-image', '0', '--price'],
+    'Invalid panels per image "0"'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panel-limit', 'nope', '--price'],
+    'Invalid panel limit "nope"'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels', '4-2', '--price'],
+    'Invalid panels "4-2"'
+  )
+})
+
+test('comic draft-scenes rejects removed flags', async () => {
+  await expectUsageExit(
+    ['comic', 'draft-scenes', '--episode', 'ep02', '--price'],
+    '--episode was removed'
+  )
+  await expectUsageExit(
+    ['comic', 'draft-scenes', '--concurrency', '3', '--price'],
+    '--concurrency was removed'
+  )
+})

@@ -448,10 +448,10 @@ describe('test-runner contracts', () => {
         description: 'OpenAI image generation',
         type: 'api',
         models: {
-          'gpt-image-1-mini': {
-            description: 'GPT Image 1 Mini',
-            costPerImageUSD: 0.02,
-            costPerImageCents: 2,
+          'gpt-image-1.5': {
+            description: 'GPT Image 1.5',
+            costPerImageUSD: 0.08,
+            costPerImageCents: 8,
             estimation: {
               costMultiplier: 1,
               msPerImage: 1000
@@ -473,7 +473,7 @@ describe('test-runner contracts', () => {
             steps: [{
               step: 'image',
               provider: 'openai',
-              model: 'gpt-image-1-mini',
+              model: 'gpt-image-1.5',
               cost: 2,
               costMultiplier: 1
             }]
@@ -482,7 +482,7 @@ describe('test-runner contracts', () => {
             steps: [{
               step: 'image',
               provider: 'openai',
-              model: 'gpt-image-1-mini',
+              model: 'gpt-image-1.5',
               cost: 2,
               inputMetric: 'images',
               inputValue: 1
@@ -494,7 +494,7 @@ describe('test-runner contracts', () => {
             steps: [{
               step: 'image',
               provider: 'openai',
-              model: 'gpt-image-1-mini',
+              model: 'gpt-image-1.5',
               processingTimeMs: 3000,
               inputMetric: 'images',
               inputValue: 1
@@ -506,13 +506,13 @@ describe('test-runner contracts', () => {
 
     const report = await applyModelConfigCalibrations(dir, { image: configPath })
     const updatedConfig = await Bun.file(configPath).json() as {
-      openai: { models: { 'gpt-image-1-mini': { estimation: { msPerImage: number } } } }
+      openai: { models: { 'gpt-image-1.5': { estimation: { msPerImage: number } } } }
     }
 
     expect(report.runsScanned).toBe(1)
     expect(report.metadataFilesScanned).toBe(1)
     expect(report.updatedModels).toBe(1)
-    expect(updatedConfig.openai.models['gpt-image-1-mini'].estimation.msPerImage).toBe(1500)
+    expect(updatedConfig.openai.models['gpt-image-1.5'].estimation.msPerImage).toBe(1500)
   })
 
   test('model calibration writes split STT provider fragments', async () => {

@@ -137,8 +137,6 @@ describe('provider selection contracts', () => {
       'veo-3.1-lite-generate-preview'
     ])
     expect(allOpts.openaiImageModels).toEqual([
-      'gpt-image-1-mini',
-      'gpt-image-1',
       'gpt-image-1.5',
       'gpt-image-2'
     ])
@@ -219,7 +217,7 @@ describe('provider selection contracts', () => {
     }
 
     const fixedSizeOpts = buildOptsFromFlags(false, {
-      'openai-image': ['gpt-image-1'],
+      'openai-image': ['gpt-image-1.5'],
       'image-size': '2048x1152'
     })
     expect(() => collectImageTargets(fixedSizeOpts)).toThrow('Expected auto, 1024x1024, 1536x1024, or 1024x1536')

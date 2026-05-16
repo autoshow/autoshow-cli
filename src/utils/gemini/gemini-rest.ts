@@ -23,6 +23,26 @@ export type GeminiContent = {
   parts: GeminiPart[]
 }
 
+export type GeminiGenerateContentUsageMetadata = {
+  promptTokenCount?: number | undefined
+  candidatesTokenCount?: number | undefined
+  totalTokenCount?: number | undefined
+  cachedContentTokenCount?: number | undefined
+  thoughtsTokenCount?: number | undefined
+  toolUsePromptTokenCount?: number | undefined
+  promptTokensDetails?: Array<{
+    modality?: string | undefined
+    tokenCount?: number | undefined
+    [key: string]: unknown
+  }> | undefined
+  candidatesTokensDetails?: Array<{
+    modality?: string | undefined
+    tokenCount?: number | undefined
+    [key: string]: unknown
+  }> | undefined
+  [key: string]: unknown
+}
+
 export type GeminiGenerateContentResponse = {
   candidates?: Array<{
     content?: {
@@ -31,11 +51,13 @@ export type GeminiGenerateContentResponse = {
     } | undefined
     [key: string]: unknown
   }> | undefined
-  usageMetadata?: {
-    promptTokenCount?: number | undefined
-    candidatesTokenCount?: number | undefined
+  usageMetadata?: GeminiGenerateContentUsageMetadata | undefined
+  promptFeedback?: {
+    blockReason?: string | undefined
     [key: string]: unknown
   } | undefined
+  modelVersion?: string | undefined
+  responseId?: string | undefined
   text?: string | undefined
   sdkHttpResponse?: {
     headers: Headers
@@ -266,6 +288,7 @@ export const geminiGenerateContent = async (
     model: string
     contents: string | GeminiPart | GeminiContent | Array<string | GeminiPart | GeminiContent>
     generationConfig?: Record<string, unknown> | undefined
+    systemInstruction?: string | GeminiContent | undefined
     abortSignal?: AbortSignal | undefined
   }
 ): Promise<GeminiGenerateContentResponse> => {
@@ -274,6 +297,11 @@ export const geminiGenerateContent = async (
   }
   if (params.generationConfig) {
     body['generationConfig'] = params.generationConfig
+  }
+  if (params.systemInstruction) {
+    body['systemInstruction'] = typeof params.systemInstruction === 'string'
+      ? { parts: [{ text: params.systemInstruction }] }
+      : params.systemInstruction
   }
   const modelPath = normalizeGeminiModelPath(params.model)
   const { json, headers, status } = await geminiJsonRequest(apiKey, `${encodePath(modelPath)}:generateContent`, {

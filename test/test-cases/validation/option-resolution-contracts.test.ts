@@ -12,6 +12,16 @@ import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-t
 import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
 import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
 import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
+import {
+  buildComicPagePrompt,
+  buildComicPagePromptData,
+  chunkComicPagePanels,
+  parsePanelSelector,
+  selectComicPanels
+} from '~/cli/commands/process-steps/step-8-comic/commands/generate-images/comic-page-utils'
+import { parseDraftScenesArgs, parseGenerateImagesArgs } from '~/cli/commands/process-steps/step-8-comic/utils/cli-args'
+import { LLM_MODELS } from '~/cli/commands/process-steps/step-8-comic/models/model-registry'
+import { getPageComicImageFilename } from '~/cli/commands/process-steps/step-8-comic/utils/scene-utils'
 import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
 import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
@@ -50,6 +60,150 @@ import {
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
 
 describe('option resolution contracts', () => {
+  test('comic generate-images args parse page image options', () => {
+    const opts = parseGenerateImagesArgs([
+      'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
+      '--image-model', 'gpt-image-2,gemini-3.1-flash-image-preview',
+      '--panels', '1-4,9',
+      '--panel-limit', '3',
+      '--panels-per-image', '4',
+      '--size', '1536x1024',
+      '--quality', 'high',
+      '--force'
+    ])
+
+    expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
+    expect(opts.imageModels).toEqual(['gpt-image-2', 'gemini-3.1-flash-image-preview'])
+    expect(opts.panels).toEqual([1, 2, 3, 4, 9])
+    expect(opts.panelLimit).toBe(3)
+    expect(opts.panelsPerImage).toBe(4)
+    expect(opts.size).toBe('1536x1024')
+    expect(opts.quality).toBe('high')
+    expect(opts.force).toBe(true)
+  })
+
+  test('comic draft-scenes args parse llm model', () => {
+    const opts = parseDraftScenesArgs([
+      'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
+      '--llm-model', LLM_MODELS[0],
+    ])
+
+    expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
+    expect(opts.llmModel).toBe(LLM_MODELS[0])
+  })
+
+  test('comic generate-images args parse target', () => {
+    const opts = parseGenerateImagesArgs([
+      'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
+      '--target', 'prompts',
+    ])
+
+    expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
+    expect(opts.target).toBe('prompts')
+  })
+
+  test('comic generate-images args parse page image options', () => {
+    const opts = parseGenerateImagesArgs([
+      'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
+      '--target', 'images',
+      '--panels', '1-8',
+      '--panel-limit', '6',
+      '--panels-per-image', '4',
+      '--image-model', 'gpt-image-2',
+      '--size', '1536x1024',
+      '--quality', 'high',
+      '--force'
+    ])
+
+    expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
+    expect(opts.target).toBe('images')
+    expect(opts.panels).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+    expect(opts.panelLimit).toBe(6)
+    expect(opts.panelsPerImage).toBe(4)
+    expect(opts.imageModels).toEqual(['gpt-image-2'])
+    expect(opts.size).toBe('1536x1024')
+    expect(opts.quality).toBe('high')
+    expect(opts.force).toBe(true)
+  })
+
+  test('comic panel selectors dedupe, sort, limit, and chunk page groups', () => {
+    expect(parsePanelSelector('all')).toBe('all')
+    expect(parsePanelSelector('3,1,3,2-4')).toEqual([1, 2, 3, 4])
+
+    const selected = selectComicPanels(
+      [1, 2, 3, 4, 5].map(panelNumber => ({ panelNumber })),
+      parsePanelSelector('1-4'),
+      3,
+      'ep02/scene'
+    )
+    const chunks = chunkComicPagePanels(selected, 2)
+
+    expect(selected.map(panel => panel.panelNumber)).toEqual([1, 2, 3])
+    expect(chunks.map(chunk => ({
+      pageNumber: chunk.pageNumber,
+      panelNumbers: chunk.panelNumbers
+    }))).toEqual([
+      { pageNumber: 1, panelNumbers: [1, 2] },
+      { pageNumber: 2, panelNumbers: [3] }
+    ])
+  })
+
+  test('comic page image filenames preserve contiguous and non-contiguous panel labels', () => {
+    expect(getPageComicImageFilename(1, [1, 2, 3, 4])).toBe('page-01-panels-01-04.png')
+    expect(getPageComicImageFilename(2, [5, 6, 7, 8])).toBe('page-02-panels-05-08.png')
+    expect(getPageComicImageFilename(1, [1, 3, 7])).toBe('page-01-panels-01_03_07.png')
+  })
+
+  test('comic final page prompt preserves panel order and speech text', () => {
+    const promptData = buildComicPagePromptData([
+      {
+        title: 'Co-Work Smarter',
+        location: 'Engineering Bay',
+        panels: [{
+          number: 1,
+          description: 'Peaches points at the dashboard.',
+          characters: [],
+          speech: [{ character: 'Peaches', line: 'We need the exact text.', tone: 'firm' }],
+          sourceSegmentIds: ['beat-0001'],
+          sourceSegments: [{
+            id: 'beat-0001',
+            type: 'dialogue',
+            text: 'We need the exact text.',
+            beatIndex: 1,
+            speaker: 'Peaches',
+            speakerLabel: 'PEACHES',
+          }]
+        }]
+      },
+      {
+        title: 'Co-Work Smarter',
+        location: 'Engineering Bay',
+        panels: [{
+          number: 3,
+          description: 'Duco nods.',
+          characters: [],
+          speech: [{ character: 'Duco', line: 'Then do not rewrite it.', tone: 'dry' }],
+          sourceSegmentIds: ['beat-0002'],
+          sourceSegments: [{
+            id: 'beat-0002',
+            type: 'dialogue',
+            text: 'Then do not rewrite it.',
+            beatIndex: 2,
+            speaker: 'Duco',
+            speakerLabel: 'DUCO',
+          }]
+        }]
+      }
+    ])
+    const prompt = buildComicPagePrompt(promptData)
+
+    expect(promptData.panels.map(panel => panel.number)).toEqual([1, 3])
+    expect(prompt).toContain('Render exactly 2 sub-panels')
+    expect(prompt).toContain('We need the exact text.')
+    expect(prompt).toContain('Then do not rewrite it.')
+    expect(prompt.indexOf('"number": 1')).toBeLessThan(prompt.indexOf('"number": 3'))
+  })
+
   test('buildOptsFromFlags maps representative CLI flags to runtime options', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',

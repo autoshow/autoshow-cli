@@ -207,3 +207,14 @@ test('image and video help expose BFL/deAPI provider flags', async () => {
   expect(videoResult.stdout).toContain('--video-local-concurrency')
   expect(videoResult.stdout).toContain('--deapi-video')
 })
+
+test('comic help exposes the generate-images command and page flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'comic', 'generate-images', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('bun as comic generate-images')
+  expect(result.stdout).toContain('generate-images   Run scene JSON to panel prompt bundles')
+  expect(result.stdout).toContain('--panels <all|list>')
+  expect(result.stdout).toContain('--panel-limit <n>')
+  expect(result.stdout).toContain('--panels-per-image <n>')
+})

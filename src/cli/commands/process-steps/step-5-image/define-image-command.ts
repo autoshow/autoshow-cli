@@ -21,7 +21,7 @@ export const imageCommand = defineCliCommand({
   help: {
     examples: [
       ['bun as image "a dramatic fox portrait in snow" --gemini-image imagen-4.0-fast-generate-001', 'Generate with Gemini'],
-      ['bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --image-size 1024x1024', 'Generate with OpenAI'],
+      ['bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1.5 --image-size 1024x1024', 'Generate with OpenAI'],
       ['bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low', 'Generate low-cost OpenAI drafts'],
       ['bun as image "a clean product photo of a red enamel camping mug" --glm-image glm-image', 'Generate with Z.AI GLM'],
       ['bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-image --image-size 1K', 'Generate with Grok'],

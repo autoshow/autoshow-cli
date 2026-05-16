@@ -54,6 +54,7 @@ export type CliFlagValues = Record<string, unknown> & {
 }
 
 export type CliCommandContext = {
+  argv: string[]
   calledAs?: string
   command?: CliCommandDefinition
   flags: CliFlagValues
@@ -72,6 +73,7 @@ export type CliCommandDefinition = {
   help?: CliHelpDefinition
   allowUnknownFlags?: boolean
   allowExcessParameters?: boolean
+  passThroughHelpAfterFirstPositional?: boolean
   handler: CliCommandHandler
 }
 

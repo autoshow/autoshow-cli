@@ -9,6 +9,7 @@ import { ttsCommand } from '~/cli/commands/process-steps/step-4-tts/define-tts-c
 import { imageCommand } from '~/cli/commands/process-steps/step-5-image/define-image-command'
 import { videoCommand } from '~/cli/commands/process-steps/step-6-video/define-video-command'
 import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
+import { comicCommand } from '~/cli/commands/process-steps/step-8-comic/define-comic-command'
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
@@ -102,6 +103,7 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   image: 'processing',
   video: 'processing',
   music: 'processing',
+  comic: 'processing',
   benchmark: 'setup'
 }
 
@@ -119,6 +121,7 @@ const COMMAND_DEFINITIONS = [
   imageCommand,
   videoCommand,
   musicCommand,
+  comicCommand,
   benchmarkCommand
 ] as const
 

@@ -6,6 +6,7 @@ import type { DocumentMetadata, StructuredRequestOptions } from '~/types'
 import { runOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/run-openai-ocr'
 import { runOpenAICompatibleChatModel } from '~/cli/commands/process-steps/step-3-write/write-services/openai-compatible-chat'
 import { runOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/run-openai-image-gen'
+import { createImageOpenAi } from '~/cli/commands/process-steps/step-8-comic/image-services/openai/openai-image-service'
 import {
   OpenAIRestError,
   createOpenAIResponse,
@@ -291,6 +292,57 @@ describe('OpenAI REST contracts', () => {
       output_format: 'webp',
       background: 'opaque'
     })
+  })
+
+  test('OpenAI comic image edits use multipart REST with repeated image files', async () => {
+    process.env['OPENAI_API_KEY'] = 'openai-key'
+    process.env['OPENAI_BASE_URL'] = 'https://mock.openai.local/v1'
+    const imageBytes = new Uint8Array([3, 4, 5])
+    const calls = installFetch(() => jsonResponse({
+      data: [{ b64_json: Buffer.from(imageBytes).toString('base64') }],
+      usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 },
+      size: '1024x1024',
+      quality: 'high'
+    }))
+
+    await withTempDir(async (dir) => {
+      const firstRef = join(dir, 'front.png')
+      const secondRef = join(dir, 'profile.png')
+      await writeFile(firstRef, new Uint8Array([1, 2, 3]))
+      await writeFile(secondRef, new Uint8Array([4, 5, 6]))
+
+      const result = await createImageOpenAi(
+        'Keep character design consistent.',
+        [firstRef, secondRef],
+        'gpt-image-1.5',
+        '1024x1024',
+        'high'
+      )
+
+      expect(result.mode).toBe('edit')
+      expect(result.inputFidelity).toBe('high')
+      expect(result.result.imageBase64).toBe(Buffer.from(imageBytes).toString('base64'))
+      expect(result.result.providerSizeLabel).toBe('1024x1024')
+      expect(result.result.providerQualityLabel).toBe('high')
+    })
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]).toMatchObject({
+      url: 'https://mock.openai.local/v1/images/edits',
+      method: 'POST'
+    })
+    expect(calls[0]?.headers.get('authorization')).toBe('Bearer openai-key')
+    expect(calls[0]?.headers.get('content-type')).toBeNull()
+    expect(calls[0]?.form?.get('model')).toBe('gpt-image-1.5')
+    expect(calls[0]?.form?.get('prompt')).toBe('Keep character design consistent.')
+    expect(calls[0]?.form?.get('n')).toBe('1')
+    expect(calls[0]?.form?.get('size')).toBe('1024x1024')
+    expect(calls[0]?.form?.get('quality')).toBe('high')
+    expect(calls[0]?.form?.get('output_format')).toBe('png')
+    expect(calls[0]?.form?.get('input_fidelity')).toBe('high')
+    const images = calls[0]?.form?.getAll('image[]') ?? []
+    expect(images).toHaveLength(2)
+    expect(images.every((image) => image instanceof File)).toBe(true)
   })
 
   test('OpenAI OCR sends data URLs and returns response usage token metadata', async () => {

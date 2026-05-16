@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-AutoShow currently exposes 14 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 15 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
@@ -150,6 +150,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
 - `video`: [video](./commands/process-steps/step-6-video/text-to-video-services.md)
 - `music`: [music](./commands/process-steps/step-7-music/text-to-music-services.md)
+- `comic`: [comic](./commands/process-steps/step-8-comic/comic.md)
 - `config`: [config](./commands/setup-and-utilities/config/config.md)
 - `links`: [links](./commands/setup-and-utilities/links/links.md)
 - `benchmark`: [benchmark](./commands/setup-and-utilities/benchmark/benchmark.md)
@@ -163,6 +164,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - Use `write` for full summary pipeline with optional TTS/image/video generation, and for lyric draft generation from `./output/<name>/text`.
 - Use `music --audio` or `music --batch` for lyric-video rendering from repo audio under `input/`.
 - Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
+- Use `comic` for staged or complete episode-script to comic workflows: scene drafting, character sketch references, panel prompt bundles, review sketches, final panel images, and grouped page images.
 
 ## Pricing Preflight
 
@@ -209,6 +211,10 @@ bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
 bun as video "a sunset timelapse" --runway-video gen4.5 --video-duration 5 --price
 bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
 bun as video "a sunset timelapse" --all-video --price
+bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --panels 1-16 --price
+bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --price
+bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --price
+bun as comic character-sketch --image input/characters/01-peaches.webp --price
 ```
 
 For token-priced hosted OCR providers, price preflight uses registry token rates with model-specific input/output token heuristics from recent OCR benchmark usage and adds page processing-time estimates. URL article estimates include the selected `--url-backend`, or every URL backend when `--all-url` is set. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0059/page`. For `extract --deapi-stt`, `tts --deapi-tts`, and `music --deapi-music`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. MiniMax music estimates use current model rates, including the `music-2.6-free` zero-cost track estimate and any generated-lyrics add-on. For `extract --happyscribe-stt`, price preflight is side-effect free and uses the published `$0.01/min` AI rate; exact billing is captured only during real runs with a resolvable USD organization. Supadata STT estimates use the Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, with plan-pricing variance possible.

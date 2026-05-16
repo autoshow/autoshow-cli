@@ -89,7 +89,7 @@
         "outputCostPer1MCents": 1200,
         "estimation": {
           "costMultiplier": 0.8434,
-          "msPer1KTokens": 33459
+          "msPer1KTokens": 29842
         }
       },
       "gemini-3.1-flash-lite-preview": {
@@ -139,7 +139,7 @@
         "outputCostPer1MCents": 1500,
         "estimation": {
           "costMultiplier": 0.8487,
-          "msPer1KTokens": 10305
+          "msPer1KTokens": 9005
         }
       },
       "claude-haiku-4-5": {
@@ -257,7 +257,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 2210
+          "msPer1KTokens": 1900
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {

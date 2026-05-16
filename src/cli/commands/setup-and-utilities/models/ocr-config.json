@@ -58,7 +58,7 @@
         },
         "estimation": {
           "costMultiplier": 0.8886,
-          "msPerPage": 14300,
+          "msPerPage": 11510,
           "promptTokensPerPage": 4262,
           "completionTokensPerPage": 471
         }
@@ -201,7 +201,7 @@
         },
         "estimation": {
           "costMultiplier": 0.7802,
-          "msPerPage": 14428,
+          "msPerPage": 12920,
           "promptTokensPerPage": 7981,
           "completionTokensPerPage": 471.5
         }
@@ -239,7 +239,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 8
+          "msPerPage": 12
         }
       }
     }

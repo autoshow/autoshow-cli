@@ -4,8 +4,6 @@ import { runCommand } from '../../test-utils/test-helpers'
 
 defineImageServicePriceTests({
   models: [
-    { model: 'gpt-image-1', prompt: 'a simple red circle on white background' },
-    { model: 'gpt-image-1-mini', prompt: 'a simple blue square on white background' },
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
     { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1024', '--image-quality', 'low'] },
   ],
@@ -15,7 +13,6 @@ defineImageServicePriceTests({
 
 defineImageServicePriceTests({
   models: [
-    { model: 'gemini-3-pro-image-preview', prompt: 'a simple red circle on white background' },
     { model: 'imagen-4.0-ultra-generate-001', prompt: 'a simple green square on white background' },
     { model: 'imagen-4.0-fast-generate-001', prompt: 'a simple yellow star on white background' },
     { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--imagen-count', '1', '--image-aspect-ratio', '1:1'] },
@@ -109,20 +106,20 @@ defineImageServicePriceTests({
 
 test('--price allows multiple image providers and reports each image step', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1-mini', '--minimax-image', 'image-01', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1.5', '--minimax-image', 'image-01', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
   expect(output).toContain('Cost Estimate')
   expect(output).toContain('openai')
   expect(output).toContain('minimax')
-  expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
+  expect(output).toContain('generated-image-openai-gpt-image-1.5.png')
   expect(output).toContain('generated-image-minimax-image-01.jpeg')
 })
 
 test('--price allows Gemini with another image provider', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1-mini', '--imagen-count', '2', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1.5', '--imagen-count', '2', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
@@ -131,5 +128,5 @@ test('--price allows Gemini with another image provider', async () => {
   expect(output).toContain('openai')
   expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
   expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
-  expect(output).toContain('generated-image-openai-gpt-image-1-mini.png')
+  expect(output).toContain('generated-image-openai-gpt-image-1.5.png')
 })

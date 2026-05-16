@@ -54,6 +54,7 @@ export const dispatchNativeCli = async (
 
   const store: Record<string, unknown> = { startedAtMs: Date.now() }
   const ctx: CliCommandContext = {
+    argv: parsed.argv,
     ...(parsed.calledAs ? { calledAs: parsed.calledAs } : {}),
     command,
     flags: parsed.flags,

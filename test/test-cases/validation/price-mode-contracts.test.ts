@@ -107,7 +107,7 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   },
   {
     label: 'image',
-    args: ['image', 'a sunset over a lake', '--openai-image', 'gpt-image-1-mini', '--price'],
+    args: ['image', 'a sunset over a lake', '--openai-image', 'gpt-image-1.5', '--price'],
     expected: 'generated-image'
   },
   {
@@ -313,7 +313,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
     expect(resolveCheapestModelForFlag('glm')).toBe('glm-5.1')
     expect(resolveCheapestModelForFlag('kimi')).toBe('kimi-k2.6')
-    expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1-mini')
+    expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-2')
     expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-klein-4b')
     expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
     expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')

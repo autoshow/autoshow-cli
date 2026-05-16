@@ -3,16 +3,6 @@
     "description": "Google Gemini image generation",
     "type": "api",
     "models": {
-      "gemini-3-pro-image-preview": {
-        "description": "Gemini 3 Pro native image generation",
-        "costPerImageUSD": 0.03,
-        "costPerImageCents": 3,
-        "nativeGeminiImage": true,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 16471
-        }
-      },
       "imagen-4.0-generate-001": {
         "description": "Imagen 4.0 — dedicated image generation",
         "costPerImageUSD": 0.04,
@@ -58,31 +48,13 @@
           "msPerImage": 40283
         }
       },
-      "gpt-image-1": {
-        "description": "GPT Image 1 — standard quality",
-        "costPerImageUSD": 0.04,
-        "costPerImageCents": 4,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 48932
-        }
-      },
-      "gpt-image-1-mini": {
-        "description": "GPT Image 1 Mini — budget option",
-        "costPerImageUSD": 0.02,
-        "costPerImageCents": 2,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 14491
-        }
-      },
       "gpt-image-2": {
         "description": "GPT Image 2 — state-of-the-art image generation",
         "costPerImageUSD": 0.053,
         "costPerImageCents": 5.3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30848
+          "msPerImage": 26517
         }
       }
     }
@@ -237,7 +209,7 @@
         "costPerImageCents": 0.136,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 11969
+          "msPerImage": 10443
         }
       },
       "ZImageTurbo_INT8": {
@@ -246,7 +218,7 @@
         "costPerImageCents": 0.405,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 17621
+          "msPerImage": 19717
         }
       },
       "Flux_2_Klein_4B_BF16": {

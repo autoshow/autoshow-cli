@@ -75,7 +75,16 @@ const linksCommand = defineCliCommand({
   allowExcessParameters: true
 }, () => {})
 
-const commands = [runCommand, linksCommand] as const satisfies readonly CliCommandDefinition[]
+const subcommandsCommand = defineCliCommand({
+  name: 'subcommands',
+  description: 'Subcommand parser fixture',
+  parameters: [{ key: '[args...]', description: 'Subcommand args' }],
+  allowUnknownFlags: true,
+  allowExcessParameters: true,
+  passThroughHelpAfterFirstPositional: true
+}, () => {})
+
+const commands = [runCommand, linksCommand, subcommandsCommand] as const satisfies readonly CliCommandDefinition[]
 
 const root: CliRootDefinition = {
   name: 'Test CLI',
@@ -162,6 +171,30 @@ describe('native CLI parser contracts', () => {
     const commandVersion = parseNativeCli(['run', '--version'], commands, globalFlags)
     expect(commandVersion.mode).toBe('version')
     expect(commandVersion.command?.name).toBe('run')
+  })
+
+  test('passes help through only after the first positional when enabled', () => {
+    const parentHelp = parseNativeCli(['subcommands', '--help'], commands, globalFlags)
+    expect(parentHelp.mode).toBe('help')
+    expect(parentHelp.command?.name).toBe('subcommands')
+
+    const parentShortHelp = parseNativeCli(['subcommands', '-h'], commands, globalFlags)
+    expect(parentShortHelp.mode).toBe('help')
+    expect(parentShortHelp.command?.name).toBe('subcommands')
+
+    const childHelp = parseNativeCli(['subcommands', 'child', '--help'], commands, globalFlags)
+    expect(childHelp.mode).toBe('command')
+    expect(childHelp.command?.name).toBe('subcommands')
+    expect(childHelp.flags['help']).toBe(true)
+
+    const childShortHelp = parseNativeCli(['subcommands', 'child', '-h'], commands, globalFlags)
+    expect(childShortHelp.mode).toBe('command')
+    expect(childShortHelp.command?.name).toBe('subcommands')
+    expect(childShortHelp.flags['help']).toBe(true)
+
+    const unchangedCommandHelp = parseNativeCli(['run', 'input.txt', '--help'], commands, globalFlags)
+    expect(unchangedCommandHelp.mode).toBe('help')
+    expect(unchangedCommandHelp.command?.name).toBe('run')
   })
 
   test('native dispatcher rejects unknown flags except for links selectors', async () => {

@@ -395,15 +395,12 @@ Quality: No TTS quality ranking is shown because roundtrip WER is null in the cu
 | 4 | deapi/ZImageTurbo_INT8 | 0.004050 | 1 |
 | 5 | openai/gpt-image-2 | 0.005000 | 2 |
 | 6 | gemini/imagen-4.0-fast-generate-001 | 0.020000 | 1 |
-| 7 | openai/gpt-image-1-mini | 0.020000 | 1 |
-| 8 | bfl/flux-2-pro-preview | 0.030000 | 1 |
-| 9 | gemini/gemini-3-pro-image-preview | 0.030000 | 1 |
-| 10 | gemini/imagen-4.0-generate-001 | 0.040000 | 1 |
-| 11 | openai/gpt-image-1 | 0.040000 | 1 |
-| 12 | runway/gen4_image | 0.050000 | 1 |
-| 13 | gemini/imagen-4.0-ultra-generate-001 | 0.060000 | 1 |
-| 14 | grok/grok-imagine-image | 0.070000 | 1 |
-| 15 | openai/gpt-image-1.5 | 0.080000 | 1 |
+| 7 | bfl/flux-2-pro-preview | 0.030000 | 1 |
+| 8 | gemini/imagen-4.0-generate-001 | 0.040000 | 1 |
+| 9 | runway/gen4_image | 0.050000 | 1 |
+| 10 | gemini/imagen-4.0-ultra-generate-001 | 0.060000 | 1 |
+| 11 | grok/grok-imagine-image | 0.070000 | 1 |
+| 12 | openai/gpt-image-1.5 | 0.080000 | 1 |
 
 ### Speed
 
@@ -417,13 +414,10 @@ Quality: No TTS quality ranking is shown because roundtrip WER is null in the cu
 | 6 | deapi/Flux1schnell | 7.904 | 1 |
 | 7 | gemini/imagen-4.0-ultra-generate-001 | 10.611 | 1 |
 | 8 | bfl/flux-2-pro-preview | 11.713 | 1 |
-| 9 | gemini/gemini-3-pro-image-preview | 14.210 | 1 |
-| 10 | minimax/image-01 | 14.835 | 1 |
-| 11 | openai/gpt-image-1-mini | 21.644 | 1 |
-| 12 | runway/gen4_image | 30.984 | 1 |
-| 13 | openai/gpt-image-2 | 34.853 | 2 |
-| 14 | openai/gpt-image-1.5 | 48.361 | 1 |
-| 15 | openai/gpt-image-1 | 64.423 | 1 |
+| 9 | minimax/image-01 | 14.835 | 1 |
+| 10 | runway/gen4_image | 30.984 | 1 |
+| 11 | openai/gpt-image-2 | 34.853 | 2 |
+| 12 | openai/gpt-image-1.5 | 48.361 | 1 |
 
 Quality: No pure image quality metric is present in these benchmark files.
 

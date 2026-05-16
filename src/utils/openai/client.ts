@@ -11,6 +11,11 @@ export type OpenAIRequestOptions = {
 }
 
 export type OpenAIResponsesResponse = {
+  id?: string | undefined
+  model?: string | undefined
+  status?: string | undefined
+  error?: unknown
+  incomplete_details?: unknown
   output_text?: string | undefined
   output?: unknown[] | undefined
   usage?: {
@@ -45,6 +50,8 @@ export type OpenAIImageResponse = {
     [key: string]: unknown
   }> | undefined
   usage?: Record<string, unknown> | undefined
+  size?: string | undefined
+  quality?: string | undefined
   [key: string]: unknown
 }
 
@@ -338,6 +345,16 @@ export const createOpenAIImage = async (
   await openAIJsonRequest<OpenAIImageResponse>(config, '/images/generations', body, {
     ...options,
     errorMessagePrefix: options.errorMessagePrefix ?? 'OpenAI image generation failed'
+  })
+
+export const createOpenAIImageEdit = async (
+  config: OpenAIRestConfig,
+  form: FormData,
+  options: OpenAIRequestOptions = {}
+): Promise<OpenAIImageResponse> =>
+  await openAIMultipartRequest<OpenAIImageResponse>(config, '/images/edits', form, {
+    ...options,
+    errorMessagePrefix: options.errorMessagePrefix ?? 'OpenAI image edit failed'
   })
 
 export const createOpenAIVoiceConsent = async <T = Record<string, unknown>>(

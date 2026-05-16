@@ -70,8 +70,8 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | `--price` | Show the aggregated estimate and exit |
 
 ```bash
-bun as image "a sunset over the lake" --gemini-image imagen-4.0-generate-001 --openai-image gpt-image-1-mini --imagen-count 2
-bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-image gpt-image-1
+bun as image "a sunset over the lake" --gemini-image imagen-4.0-generate-001 --openai-image gpt-image-1.5 --imagen-count 2
+bun as image "a sunset over the lake" --openai-image gpt-image-1.5 --openai-image gpt-image-2
 ```
 
 ## Image Services
@@ -81,13 +81,12 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1-mini --openai-i
 | Option | Value |
 |--------|-------|
 | Selector | `--gemini-image <model>` |
-| Models | `gemini-3-pro-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001`, `imagen-4.0-fast-generate-001` |
-| Size | `--image-size 1K\|2K\|4K`; rejected for `imagen-4.0-fast-generate-001` |
+| Models | `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001`, `imagen-4.0-fast-generate-001` |
+| Size | `--image-size 1K\|2K\|4K` (Imagen models); rejected for `imagen-4.0-fast-generate-001` |
 | Aspect ratio | `--image-aspect-ratio <ratio>` |
 | Count | `--imagen-count <n>` for Imagen 4 models |
 
 ```bash
-bun as image "a serene mountain lake at dawn" --gemini-image gemini-3-pro-image-preview
 bun as image "a serene mountain lake at dawn" --gemini-image imagen-4.0-generate-001 --imagen-count 4 --image-aspect-ratio 16:9
 ```
 
@@ -96,13 +95,13 @@ bun as image "a serene mountain lake at dawn" --gemini-image imagen-4.0-generate
 | Option | Value |
 |--------|-------|
 | Selector | `--openai-image <model>` |
-| Models | `gpt-image-1.5`, `gpt-image-1`, `gpt-image-1-mini`, `gpt-image-2` |
+| Models | `gpt-image-1.5`, `gpt-image-2` |
 | Size | `auto`, `1024x1024`, `1536x1024`, `1024x1536`; `gpt-image-2` also accepts constrained `WIDTHxHEIGHT` values |
 | Quality | `--image-quality low\|medium\|high\|auto` |
 | Format/background | `--image-format png\|jpeg\|webp`, `--image-background transparent\|opaque\|auto` |
 
 ```bash
-bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1 --image-quality high --image-size 1536x1024
+bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1.5 --image-quality high --image-size 1536x1024
 bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low
 ```
 
@@ -202,7 +201,7 @@ deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--im
 - Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.
 - BFL writes `generated-image.jpg`, `generated-image.png`, or `generated-image.webp`.
 - deAPI writes `generated-image.png`.
-- Multi-provider runs rename outputs to include the provider and model, such as `generated-image-openai-gpt-image-1-mini.png`.
+- Multi-provider runs rename outputs to include the provider and model, such as `generated-image-openai-gpt-image-1.5.png`.
 - `run.json` includes `image`, `cost`, and `timing` sections. The `image` field is always an array, and each entry includes `imageFileNames`.
 
 ## Notes

@@ -330,7 +330,10 @@ export const parseNativeCli = (
       doubleDash = argv.slice(index + 1)
       break
     }
-    if (arg === '--help' || arg === '-h') {
+    if (
+      (arg === '--help' || arg === '-h') &&
+      !(command.passThroughHelpAfterFirstPositional === true && positional.length > 0)
+    ) {
       explicitFlags.add('help')
       flags['help'] = true
       return {

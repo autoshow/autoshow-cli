@@ -19,7 +19,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 43343
+          "msPer1KChars": 38205
         }
       },
       "kitten-tts-micro": {
@@ -28,7 +28,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 58050
+          "msPer1KChars": 49449
         }
       },
       "kitten-tts-nano": {
@@ -37,7 +37,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 30917
+          "msPer1KChars": 26016
         }
       },
       "kitten-tts-nano-0.8-int8": {
@@ -46,7 +46,7 @@
         "costPer1kCharsUSD": 0,
         "costPer1kCharsCents": 0,
         "estimation": {
-          "msPer1KChars": 30729
+          "msPer1KChars": 27296
         }
       }
     }

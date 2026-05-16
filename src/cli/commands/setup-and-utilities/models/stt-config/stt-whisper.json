@@ -11,7 +11,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 28
+          "msPerSecond": 25
         }
       },
       "base": {
@@ -22,7 +22,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 42
+          "msPerSecond": 36
         }
       },
       "small": {
@@ -49,7 +49,7 @@
           "notes": "Local whisper.cpp transcription runs on the local machine rather than a hosted API, so provider-side upload and duration caps do not apply."
         },
         "estimation": {
-          "msPerSecond": 127
+          "msPerSecond": 111
         }
       }
     }

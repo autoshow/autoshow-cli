@@ -10,6 +10,7 @@ import { runGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-servic
 import { runGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/run-gemini-image-gen'
 import { runGeminiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/gemini/run-gemini-video-gen'
 import { runGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/run-gemini-music-gen'
+import { createImageGemini } from '~/cli/commands/process-steps/step-8-comic/image-services/gemini/gemini-image-service'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import { geminiGenerateContent, GeminiRestError } from '~/utils/gemini/gemini-rest'
 
@@ -138,7 +139,8 @@ describe('Gemini REST contracts', () => {
         generationConfig: {
           responseMimeType: 'application/json',
           responseJsonSchema: { type: 'object' }
-        }
+        },
+        systemInstruction: { parts: [{ text: 'Return only JSON.' }] }
       })
       return jsonResponse({
         candidates: [{
@@ -159,7 +161,8 @@ describe('Gemini REST contracts', () => {
       generationConfig: {
         responseMimeType: 'application/json',
         responseJsonSchema: { type: 'object' }
-      }
+      },
+      systemInstruction: 'Return only JSON.'
     })
 
     expect(calls).toHaveLength(1)
@@ -442,14 +445,9 @@ describe('Gemini REST contracts', () => {
     })
   }, 20_000)
 
-  test('Gemini image generation supports native generateContent and Imagen predict bodies', async () => {
+  test('Gemini image generation supports Imagen predict bodies', async () => {
     process.env['GEMINI_API_KEY'] = 'gemini-key'
     const calls = installFetch((call) => {
-      if (call.url.endsWith('/models/gemini-3-pro-image-preview:generateContent')) {
-        return jsonResponse({
-          candidates: [{ content: { parts: [{ text: 'caption' }, { inlineData: { mimeType: 'image/png', data: imageBase64 } }] } }]
-        })
-      }
       if (call.url.endsWith('/models/imagen-4.0-generate-001:predict')) {
         return jsonResponse({
           predictions: [{ bytesBase64Encoded: imageBase64, mimeType: 'image/png' }]
@@ -458,14 +456,6 @@ describe('Gemini REST contracts', () => {
       throw new Error(`Unexpected Gemini image fetch: ${call.method} ${call.url}`)
     })
 
-    await withTempDir(async (dir) => {
-      const result = await runGeminiImageGen('a red kite', dir, {
-        model: 'gemini-3-pro-image-preview',
-        aspectRatio: '16:9',
-        imageSize: '1K'
-      })
-      expect(new Uint8Array(await Bun.file(result.imagePaths[0] as string).arrayBuffer())).toEqual(new Uint8Array([9, 8, 7]))
-    })
     await withTempDir(async (dir) => {
       const result = await runGeminiImageGen('a blue kite', dir, {
         model: 'imagen-4.0-generate-001',
@@ -476,19 +466,79 @@ describe('Gemini REST contracts', () => {
       expect(await Bun.file(result.imagePaths[0] as string).exists()).toBe(true)
     })
 
-    expect(calls[0]?.bodyJson?.['generationConfig']).toMatchObject({
-      responseModalities: ['TEXT', 'IMAGE'],
-      imageConfig: {
-        aspectRatio: '16:9',
-        imageSize: '1K'
-      }
-    })
-    expect(calls[1]?.bodyJson).toEqual({
+    expect(calls[0]?.bodyJson).toEqual({
       instances: [{ prompt: 'a blue kite' }],
       parameters: {
         sampleCount: 2,
         aspectRatio: '1:1',
         sampleImageSize: '2K'
+      }
+    })
+  })
+
+  test('Gemini comic image generation sends inline references and image modalities', async () => {
+    process.env['GEMINI_API_KEY'] = 'gemini-key'
+    const calls = installFetch(() => jsonResponse({
+      candidates: [{
+        content: {
+          parts: [{ inlineData: { mimeType: 'image/webp', data: imageBase64 } }]
+        }
+      }],
+      usageMetadata: {
+        promptTokenCount: 12,
+        promptTokensDetails: [
+          { modality: 'TEXT', tokenCount: 4 },
+          { modality: 'IMAGE', tokenCount: 8 }
+        ],
+        candidatesTokenCount: 30,
+        candidatesTokensDetails: [
+          { modality: 'TEXT', tokenCount: 2 },
+          { modality: 'IMAGE', tokenCount: 28 }
+        ],
+        totalTokenCount: 42
+      },
+      modelVersion: 'gemini-3.1-flash-image-preview'
+    }))
+
+    await withTempDir(async (dir) => {
+      const referencePath = join(dir, 'reference.png')
+      await writeFile(referencePath, new Uint8Array([8, 7, 6]))
+
+      const result = await createImageGemini(
+        'Draw a panel.',
+        [referencePath],
+        'gemini-3.1-flash-image-preview',
+        '1024x1024'
+      )
+
+      expect(result.mode).toBe('generate')
+      expect(result.result.imageBase64).toBe(imageBase64)
+      expect(result.result.mimeType).toBe('image/webp')
+      expect(result.result.usage).toMatchObject({
+        input_tokens: 12,
+        input_tokens_details: { text_tokens: 4, image_tokens: 8 },
+        output_tokens: 30,
+        output_tokens_details: { text_tokens: 2, image_tokens: 28 },
+        total_tokens: 42
+      })
+      expect(result.result.providerSizeLabel).toBe('1:1 @ 1K (mapped from 1024x1024)')
+    })
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent')
+    const parts = (((calls[0]?.bodyJson?.['contents'] as unknown[])[0] as Record<string, unknown>)['parts'] as Array<Record<string, unknown>>)
+    expect(parts[0]).toEqual({ text: 'Draw a panel.' })
+    expect(parts[1]).toEqual({
+      inlineData: {
+        mimeType: 'image/png',
+        data: Buffer.from(new Uint8Array([8, 7, 6])).toString('base64')
+      }
+    })
+    expect(calls[0]?.bodyJson?.['generationConfig']).toEqual({
+      responseModalities: ['IMAGE'],
+      imageConfig: {
+        aspectRatio: '1:1',
+        imageSize: '1K'
       }
     })
   })
