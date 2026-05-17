@@ -181,7 +181,9 @@ describe('STT normalization contracts', () => {
 
     const proc = Bun.spawn([
       process.execPath,
-      '.codex/skills/stt-consensus/scripts/build_reference_report.ts',
+      '.codex/skills/consensus/scripts/run.ts',
+      'stt',
+      'build-report',
       runDir
     ], {
       stdout: 'pipe',
@@ -192,9 +194,12 @@ describe('STT normalization contracts', () => {
       readStreamText(proc.stderr),
       proc.exited
     ])
-    expect({ stdout, stderr, exitCode }).toEqual({ stdout: '', stderr: '', exitCode: 0 })
+    expect(stdout).toContain('Rewrote')
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
 
     const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
+      rankingSurfaces: Record<'local' | 'service', Record<'fastest' | 'cheapest' | 'highestQuality', unknown[]>>
       duplicateGroups: Array<{ providers: string[] }>
       tiering: {
         metric: string
@@ -206,23 +211,36 @@ describe('STT normalization contracts', () => {
           thirdPartyNonDiarization: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
         }
       }
-      providers: Array<{
-        provider: string
-        supportsDiarization: boolean
-        diarizationSupport: string
-        tierGroup: string
-        groupOverallRank: number
-        groupTier: number
-        qualityWarnings: string[]
-        segmentStats: { segmentCount: number }
-        duplicateGroupId?: string
-      }>
+      providerGroups: {
+        local: { count: number, providers: Array<unknown> }
+        service: {
+          count: number
+          providers: Array<{
+            provider: string
+            supportsDiarization: boolean
+            diarizationSupport: string
+            tierGroup: string
+            groupOverallRank: number
+            groupTier: number
+            qualityWarnings: string[]
+            segmentStats: { segmentCount: number }
+            duplicateGroupId?: string
+          }>
+        }
+      }
+      overall?: unknown
+      providers?: unknown
     }
+    const serviceProviders = report.providerGroups.service.providers
     expect(report.duplicateGroups).toHaveLength(1)
-    expect(report.providers.find((provider) => provider.provider === 'deapi-WhisperLargeV3')?.qualityWarnings.join(' ')).toContain('deAPI raw response')
-    expect(report.providers.find((provider) => provider.provider === 'openai-stt-gpt-4o-transcribe')?.qualityWarnings.join(' ')).toContain('coarse')
-    expect(report.providers.find((provider) => provider.provider === 'supadata-auto')?.duplicateGroupId).toBeDefined()
-    expect(report.providers[0]?.segmentStats.segmentCount).toBeGreaterThan(0)
+    expect(report.overall).toBeUndefined()
+    expect(report.providers).toBeUndefined()
+    expect(Array.isArray(report.rankingSurfaces.local.fastest)).toBe(true)
+    expect(Array.isArray(report.rankingSurfaces.service.highestQuality)).toBe(true)
+    expect(serviceProviders.find((provider) => provider.provider === 'deapi-WhisperLargeV3')?.qualityWarnings.join(' ')).toContain('deAPI raw response')
+    expect(serviceProviders.find((provider) => provider.provider === 'openai-stt-gpt-4o-transcribe')?.qualityWarnings.join(' ')).toContain('coarse')
+    expect(serviceProviders.find((provider) => provider.provider === 'supadata-auto')?.duplicateGroupId).toBeDefined()
+    expect(serviceProviders[0]?.segmentStats.segmentCount).toBeGreaterThan(0)
     expect(deprecatedTierSplitKey in report).toBe(false)
     expect('tiers' in report).toBe(false)
     expect(report.tiering.metric).toBe('balanced-overall')
@@ -232,15 +250,15 @@ describe('STT normalization contracts', () => {
     expect(report.tiering.groups.thirdPartyDiarization.tiers.map((tier) => tier.count)).toEqual([0, 0, 0])
     expect(report.tiering.groups.thirdPartyNonDiarization.tiers.map((tier) => tier.count)).toEqual([1, 1, 2])
     expect(report.tiering.groups.thirdPartyNonDiarization.tiers.flatMap((tier) => tier.providers).map((provider) => provider.groupTier)).toEqual([1, 2, 3, 3])
-    expect(report.providers.every((provider) => provider.tierGroup === 'thirdPartyNonDiarization')).toBe(true)
-    expect(report.providers.every((provider) => provider.supportsDiarization === false && provider.diarizationSupport === 'not-supported')).toBe(true)
-    expect(report.providers.every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
-    expect(report.providers.every((provider) => !(deprecatedOverallTierKey in provider))).toBe(true)
+    expect(serviceProviders.every((provider) => provider.tierGroup === 'thirdPartyNonDiarization')).toBe(true)
+    expect(serviceProviders.every((provider) => provider.supportsDiarization === false && provider.diarizationSupport === 'not-supported')).toBe(true)
+    expect(serviceProviders.every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
+    expect(serviceProviders.every((provider) => !(deprecatedOverallTierKey in provider))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
-    expect(markdown).toContain('## Tier Breakdown')
-    expect(markdown).toContain('### Third-Party Diarization Group')
-    expect(markdown).toContain('### Third-Party Non-Diarization Group')
-    expect(markdown).toContain('## Quality Flags')
+    expect(markdown).toContain('## Local Providers')
+    expect(markdown).toContain('## Service Providers')
+    expect(markdown).toContain('### Top 3 Highest Quality')
+    expect(markdown).not.toContain('## Overall Ranking')
   })
 })

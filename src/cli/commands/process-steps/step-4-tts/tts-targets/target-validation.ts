@@ -1,5 +1,9 @@
 import type { TtsOptions } from '~/types'
 import {
+  getGroqTtsVoicesForModel,
+  validateGroqTtsVoice
+} from '~/cli/commands/setup-and-utilities/models/model-options'
+import {
   parseSpeakerRefAudioMappings,
   resolveDialogueFormat
 } from '../dialogue-normalizer'
@@ -29,7 +33,6 @@ export const validateTtsTargetSelection = (
       selection.openaiModels,
       selection.geminiModels,
       selection.deepgramModels,
-      selection.runwayModels,
       selection.speechifyModels,
       selection.gcloudModels,
       selection.deapiModels
@@ -76,6 +79,18 @@ export const validateTtsTargetSelection = (
 
   if ((selection.grokLanguage || selection.grokTextNormalization) && selection.grokModels.length === 0) {
     throw new Error('Grok TTS request control flags require --grok-tts <model> or --all-tts.')
+  }
+
+  if (selection.groqVoiceId && selection.groqModels.length > 1) {
+    const voice = validateGroqTtsVoice(selection.groqVoiceId)
+    const matchingModel = selection.groqModels.find((model) =>
+      getGroqTtsVoicesForModel(model as Parameters<typeof getGroqTtsVoicesForModel>[0]).includes(voice)
+    )
+    throw new Error(
+      matchingModel
+        ? `Groq TTS --groq-voice "${voice}" matches only ${matchingModel}; use explicit --groq-tts ${matchingModel}.`
+        : `Groq TTS --groq-voice "${voice}" requires an explicit --groq-tts <model>.`
+    )
   }
 
   const hasDeepgramRequestControlFlags = Boolean(
@@ -207,6 +222,9 @@ export const validateTtsTargetSelection = (
   }
   if (selection.deapiRefText && !selection.deapiRefAudioPath) {
     throw new Error('deAPI TTS --deapi-tts-ref-text requires --deapi-tts-ref-audio.')
+  }
+  if (selection.deapiRefAudioPath && !selection.deapiModels.includes(DEAPI_TTS_VOICE_CLONE_MODEL)) {
+    throw new Error(`deAPI TTS --deapi-tts-ref-audio requires --deapi-tts ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
   }
   if (selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL) && !selection.deapiInstruction) {
     throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_DESIGN_MODEL} requires --deapi-tts-instruction.`)

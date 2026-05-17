@@ -18,7 +18,6 @@ Generate speech audio from a local `.md` or `.txt` file with local or hosted TTS
   - [OpenAI](#openai)
   - [Gemini](#gemini)
   - [Deepgram](#deepgram)
-  - [Runway](#runway)
   - [Speechify](#speechify)
   - [Google Cloud](#google-cloud)
   - [deAPI](#deapi)
@@ -52,7 +51,6 @@ XAI_API_KEY=...
 ELEVENLABS_API_KEY=...
 MINIMAX_API_KEY=...
 DEEPGRAM_API_KEY=...
-RUNWAYML_API_SECRET=...
 MISTRAL_API_KEY=...
 SPEECHIFY_API_KEY=...
 DEAPI_API_KEY=...
@@ -64,8 +62,6 @@ MISTRAL_TTS_VOICE=...
 MISTRAL_TTS_REF_AUDIO=input/examples/audio/anthony-voice.mp3
 # optional for Speechify TTS
 SPEECHIFY_TTS_VOICE=george
-# optional for Runway TTS
-RUNWAY_TTS_VOICE=Leslie
 # optional for Grok TTS
 XAI_BASE_URL=https://api.x.ai/v1
 XAI_TTS_VOICE=eve
@@ -90,7 +86,7 @@ bun as tts <input> [flags]
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file. Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider.
 
-`--all-tts` expands to every supported TTS provider/model, including Grok, Mistral, Deepgram, Runway, Speechify, Google Cloud prebuilt models, and runnable deAPI models. It does not include Google Cloud `instant-custom-voice` or other clone-only modes unless their explicit clone flags are provided.
+`--all-tts` expands to every self-contained TTS provider/model, including Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Speechify, Google Cloud prebuilt models, and runnable deAPI models. It excludes special modes that require extra inputs, including Google Cloud `instant-custom-voice`, deAPI voice clone/design models, and dialogue-only flows.
 
 ```bash
 bun as tts input/examples/tts/1-tts.md \
@@ -98,7 +94,7 @@ bun as tts input/examples/tts/1-tts.md \
   --openai-tts gpt-4o-mini-tts \
   --openai-voice alloy
 
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts eleven_flash_v2_5
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3
 ```
 
 ## TTS Services
@@ -121,18 +117,18 @@ bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini --kitten-voi
 | Option | Value |
 |--------|-------|
 | Selector | `--elevenlabs-tts <model>` |
-| Models | `eleven_v3`, `eleven_flash_v2_5`, `eleven_turbo_v2_5` |
+| Models | `eleven_v3` |
 | Existing voice | `--elevenlabs-voice <id>`, default `hpp4J3VqNfWAUOO0d1Us` |
 | Instant Voice Cloning | `--elevenlabs-tts-ref-audio <path>`, `--elevenlabs-tts-voice-name <name>`, `--elevenlabs-tts-clone-remove-background-noise` |
 | Professional Voice Cloning | `--elevenlabs-tts-pvc-voice <id>`, `--elevenlabs-tts-pvc-sample <path>`, `--elevenlabs-tts-pvc-sample-dir <dir>`, `--elevenlabs-tts-pvc-language <code>`, `--elevenlabs-tts-pvc-description <text>`, `--elevenlabs-tts-pvc-captcha-out <path>`, `--elevenlabs-tts-pvc-verify-audio <path>`, `--elevenlabs-tts-pvc-wait` |
 
 ```bash
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-voice hpp4J3VqNfWAUOO0d1Us
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --elevenlabs-tts-voice-name AutoShowAnthony
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-sample-dir input/pvc-samples --elevenlabs-tts-voice-name AutoShowPVC --elevenlabs-tts-pvc-captcha-out output/pvc-captcha.png
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123 --elevenlabs-tts-pvc-verify-audio input/pvc-captcha-reading.mp3 --elevenlabs-tts-pvc-wait
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-voice hpp4J3VqNfWAUOO0d1Us
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --elevenlabs-tts-voice-name AutoShowAnthony
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-sample-dir input/pvc-samples --elevenlabs-tts-voice-name AutoShowPVC --elevenlabs-tts-pvc-captcha-out output/pvc-captcha.png
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123 --elevenlabs-tts-pvc-verify-audio input/pvc-captcha-reading.mp3 --elevenlabs-tts-pvc-wait
 ```
 
 ElevenLabs TTS uses existing voices by default. Add `--elevenlabs-tts-ref-audio` to create one persistent ElevenLabs Instant Voice Clone before synthesis and reuse the returned `voice_id` for every selected ElevenLabs model in that run. `--elevenlabs-tts-voice-name` labels the created voice and defaults to `AutoShow_<timestamp>`. Do not combine clone mode with `--elevenlabs-voice`; if ElevenLabs returns `requires_verification`, AutoShow stops with the created `voice_id` so you can verify it in ElevenLabs and rerun with `--elevenlabs-voice <id>`.
@@ -146,13 +142,13 @@ PVC samples must be local, non-empty audio files with supported extensions. Auto
 | Option | Value |
 |--------|-------|
 | Selector | `--minimax-tts <model>` |
-| Models | `speech-2.8-hd`, `speech-2.8-turbo`, `speech-2.6-hd`, `speech-2.6-turbo`, `speech-02-hd`, `speech-02-turbo` |
+| Models | `speech-2.8-hd`, `speech-2.8-turbo` |
 | Voice | `--minimax-tts-voice <id>`, default `English_expressive_narrator` |
 | Synthesis controls | `--minimax-tts-language-boost <language>`, `--minimax-tts-speed <0.5..2>`, `--minimax-tts-volume <greater-than-0..10>`, `--minimax-tts-pitch <-12..12>`, `--minimax-tts-emotion <emotion>`, `--minimax-tts-english-normalization`, repeatable `--minimax-tts-pronunciation <rule>` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.6-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15 --minimax-tts-emotion calm
+bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15 --minimax-tts-emotion calm
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator --price
 ```
 
@@ -236,7 +232,7 @@ OpenAI custom voices are available only to eligible OpenAI customers. To create 
 | Option | Value |
 |--------|-------|
 | Selector | `--gemini-tts <model>` |
-| Models | `gemini-3.1-flash-tts-preview`, `gemini-2.5-flash-preview-tts`, `gemini-2.5-pro-preview-tts` |
+| Models | `gemini-3.1-flash-tts-preview` |
 | Single voice | `--gemini-voice <name>`, default `Kore` |
 | Multispeaker | `--gemini-speaker-1-name`, `--gemini-speaker-1-voice`, `--gemini-speaker-2-name`, `--gemini-speaker-2-voice` |
 
@@ -263,18 +259,6 @@ Gemini multispeaker mode is enabled only when all four `--gemini-speaker-*` flag
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --deepgram-tts aura-2-thalia-en --deepgram-voice aura-2-andromeda-en
-```
-
-### Runway
-
-| Option | Value |
-|--------|-------|
-| Selector | `--runway-tts <model>` |
-| Models | `eleven_multilingual_v2` |
-| Voice | `--runway-tts-voice <preset>`, default `Leslie` |
-
-```bash
-bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 ```
 
 ### Speechify
@@ -306,18 +290,18 @@ The reference sample must be local, non-empty audio with a supported extension (
 | Option | Value |
 |--------|-------|
 | Selector | `--gcloud-tts <model>` |
-| Models | `standard`, `wavenet`, `neural2`, `studio`, `chirp3-hd`, `instant-custom-voice` |
+| Models | `chirp3-hd`, `studio`, `instant-custom-voice` |
 | Prebuilt voice | `--gcloud-tts-voice <name>` |
 | Language | `--gcloud-tts-language <tag>` |
 | Instant Custom Voice | `--gcloud-tts-ref-audio <path>`, `--gcloud-tts-consent-audio <path>`, `--gcloud-tts-consent-language <tag>`, `--gcloud-tts-voice-cloning-key <key>`, `--gcloud-tts-voice-cloning-key-out <path>` |
 
 ```bash
-bun as tts input/examples/tts/1-tts.md --gcloud-tts neural2 --gcloud-tts-voice en-US-Neural2-C
+bun as tts input/examples/tts/1-tts.md --gcloud-tts chirp3-hd --gcloud-tts-voice en-US-Chirp3-HD-Charon
 bun as tts input/examples/tts/1-tts.md --gcloud-tts instant-custom-voice --gcloud-tts-voice-cloning-key "$GCLOUD_TTS_VOICE_CLONING_KEY"
 bun as tts input/examples/tts/1-tts.md --gcloud-tts instant-custom-voice --gcloud-tts-ref-audio input/examples/audio/anthony-voice.mp3 --gcloud-tts-consent-audio input/examples/audio/0-audio-short.mp3 --gcloud-tts-voice-cloning-key-out output/gcloud-voice-key.txt
 ```
 
-Google Cloud prebuilt TTS uses `gcloud` CLI auth to call `v1/text:synthesize` with `LINEAR16` output. `--gcloud-tts-language` overrides language code; otherwise AutoShow infers it from the voice name and falls back to `en-US`. Default voices are `en-US-Standard-J`, `en-US-Wavenet-D`, `en-US-Neural2-J`, `en-US-Studio-O`, and `en-US-Chirp3-HD-Charon` for the matching model families.
+Google Cloud prebuilt TTS uses `gcloud` CLI auth to call `v1/text:synthesize` with `LINEAR16` output. `--gcloud-tts-language` overrides language code; otherwise AutoShow infers it from the voice name and falls back to `en-US`. Default voices are `en-US-Chirp3-HD-Charon` for `chirp3-hd` and `en-US-Studio-O` for `studio`.
 
 Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice cloning key. Provide an existing key with `--gcloud-tts-voice-cloning-key`, or generate one in the run with both `--gcloud-tts-ref-audio` and `--gcloud-tts-consent-audio`. Optional `--gcloud-tts-voice-cloning-key-out <path>` writes the generated key; AutoShow does not save raw cloning keys to config. Reference and consent audio must be local, non-empty `wav`, `mp3`, `m4a`, or `pcm`; when `ffprobe` can detect duration and channels, files must be at most 10 seconds and single-channel. `--gcloud-tts-consent-language` currently supports `en-US`.
 
@@ -337,18 +321,17 @@ bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --de
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --deapi-tts-ref-text "Reference transcript"
 ```
 
-deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts-voice`. deAPI voice cloning uses `Qwen3_TTS_12Hz_1_7B_Base` plus `--deapi-tts-ref-audio`; optional `--deapi-tts-ref-text` is sent as `ref_text`. Reference audio must be a local `mp3`, `wav`, `flac`, `ogg`, or `m4a` file, at most 10 MB, and 3-10 seconds long. `--deapi-tts-voice` and `--deapi-tts-ref-audio` are mutually exclusive. `Qwen3_TTS_12Hz_1_7B_VoiceDesign` remains listed but unsupported until an instruction flag is added. `--all-tts` selects only preset/runnable deAPI models and does not include clone mode.
+deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts-voice`. deAPI voice cloning uses `Qwen3_TTS_12Hz_1_7B_Base` plus `--deapi-tts-ref-audio`; optional `--deapi-tts-ref-text` is sent as `ref_text`. Reference audio must be a local `mp3`, `wav`, `flac`, `ogg`, or `m4a` file, at most 10 MB, and 3-10 seconds long. `--deapi-tts-voice` and `--deapi-tts-ref-audio` are mutually exclusive. `Qwen3_TTS_12Hz_1_7B_VoiceDesign` requires `--deapi-tts-instruction`. `--all-tts` selects only preset/runnable deAPI models and does not include clone or voice-design modes.
 
 ## Pricing Notes
 
-- Runway `eleven_multilingual_v2` is priced at 1 credit per 50 input characters. AutoShow treats 1 credit as 1 cent, so the equivalent rate is 20 cents per 1K characters. Estimates use exact block rounding: `ceil(characterCount / 50) * 1¢`.
-- ElevenLabs API pricing is 5 cents / 1K characters for `eleven_flash_v2_5` and `eleven_turbo_v2_5`, and 10 cents / 1K characters for `eleven_v3`. IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate. PVC setup adds a 0 cent setup estimate; training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used.
-- MiniMax synthesis estimates are 6 cents / 1K characters for `speech-2.8-turbo`, `speech-2.6-turbo`, and `speech-02-turbo`; HD variants are 10 cents / 1K characters.
+- ElevenLabs API pricing is 10 cents / 1K characters for `eleven_v3`. IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate. PVC setup adds a 0 cent setup estimate; training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used.
+- MiniMax synthesis estimates are 6 cents / 1K characters for `speech-2.8-turbo` and 10 cents / 1K characters for `speech-2.8-hd`.
 - Groq English Orpheus estimates use $10 / 1M input characters plus $22 / 1M output characters. Groq Arabic Saudi uses $0 input plus $40 / 1M output characters.
-- Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a 9000 ms / 1K characters timing heuristic.
+- Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a 36908 ms / 1K characters timing heuristic.
 - OpenAI `gpt-4o-mini-tts` estimates use 60 cents / 1M input characters plus 1200 cents / 1M output characters, equivalent to 1.26 cents per 1K characters in AutoShow's character estimator. OpenAI custom voice creation adds a one-time 0 cent setup estimate and a 15000 ms setup timing estimate.
 - Speechify Simba estimates use 1 cent / 1K characters for both `simba-english` and `simba-multilingual`, with a 3000 ms / 1K characters timing heuristic. Custom voice creation adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate.
-- Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Standard and WaveNet 0.4 cents / 1K characters, Neural2 1.6 cents / 1K, Chirp 3 HD 3 cents / 1K, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics range from 6000 ms / 1K characters for Standard to 12000 ms / 1K for Instant Custom Voice.
+- Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Chirp 3 HD 3 cents / 1K characters, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics are 9000 ms / 1K characters for Chirp 3 HD, 10000 ms / 1K for Studio, and 12000 ms / 1K for Instant Custom Voice.
 - deAPI TTS price preflight calls `/api/v2/audio/speech/price` when `DEAPI_API_KEY` is available. Voice clone quotes send `mode: "voice_clone"` with `count_text`, `model`, `lang`, `speed`, `format`, and `sample_rate`; `voice` is not sent. Without a key, AutoShow falls back to the local registry rate of `$0.00077 / 1K characters` (`0.077¢ / 1K`, `$0.77 / 1M`). `Qwen3_TTS_12Hz_1_7B_Base` uses a 10000 ms / 1K characters processing-time estimate.
 
 ## Output

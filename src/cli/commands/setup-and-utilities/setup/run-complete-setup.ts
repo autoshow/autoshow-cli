@@ -44,7 +44,6 @@ import { setupMistralTts } from '~/cli/commands/process-steps/step-4-tts/tts-ser
 import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
-import { setupRunwayTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/runway/runway-tts'
 import { setupSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-tts'
 import { setupGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/gcloud-tts'
 import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
@@ -352,8 +351,6 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupDeepgramTts)
 
-  await withCompactSetup(setupRunwayTts)
-
   await withCompactSetup(setupSpeechifyTts)
 
   await withCompactSetup(setupGcloudTts)
@@ -425,7 +422,6 @@ const runSetupTts = async (): Promise<void> => {
   await setupOpenAITts()
   await setupGeminiTts()
   await setupDeepgramTts()
-  await setupRunwayTts()
   await setupSpeechifyTts()
   await setupGcloudTts()
   await setupDeapiTts()

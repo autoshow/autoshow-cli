@@ -50,7 +50,6 @@ import {
   validateGeminiTtsModel,
   validateDeapiTtsModel,
   validateDeepgramTtsModel,
-  validateRunwayTtsModel,
   validateSpeechifyTtsModel,
   validateGcloudTtsModel,
   validateElevenlabsMusicModel,
@@ -200,7 +199,6 @@ export const readRuntimeModelOptions = (
   const openaiTtsModels = readValidatedMany('openai-tts', validateOpenAITtsModel)
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
-  const runwayTtsModels = readValidatedMany('runway-tts', validateRunwayTtsModel)
   const speechifyTtsModels = readValidatedMany('speechify-tts', validateSpeechifyTtsModel)
   const gcloudTtsModels = readValidatedMany('gcloud-tts', validateGcloudTtsModel)
   const deapiTtsModels = readValidatedMany('deapi-tts', validateDeapiTtsModel)
@@ -214,7 +212,6 @@ export const readRuntimeModelOptions = (
     openaiTtsModels,
     geminiTtsModels,
     deepgramTtsModels,
-    runwayTtsModels,
     speechifyTtsModels,
     gcloudTtsModels,
     deapiTtsModels
@@ -341,8 +338,6 @@ export const readRuntimeModelOptions = (
     geminiTtsModel: first(geminiTtsModels),
     deepgramTtsModels,
     deepgramTtsModel: first(deepgramTtsModels),
-    runwayTtsModels,
-    runwayTtsModel: first(runwayTtsModels),
     speechifyTtsModels,
     speechifyTtsModel: first(speechifyTtsModels),
     gcloudTtsModels,

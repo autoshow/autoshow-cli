@@ -53,7 +53,6 @@ import {
   SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
-  SUPPORTED_RUNWAY_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS,
   SUPPORTED_GCLOUD_TTS_MODELS
 } from './models/tts-models'
@@ -199,7 +198,6 @@ export type MistralTtsModel = typeof SUPPORTED_MISTRAL_TTS_MODELS[number]
 export type OpenAITtsModel = typeof SUPPORTED_OPENAI_TTS_MODELS[number]
 export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
 export type DeepgramTtsModel = typeof SUPPORTED_DEEPGRAM_TTS_MODELS[number]
-export type RunwayTtsModel = typeof SUPPORTED_RUNWAY_TTS_MODELS[number]
 export type SpeechifyTtsModel = typeof SUPPORTED_SPEECHIFY_TTS_MODELS[number]
 export type GcloudTtsModel = typeof SUPPORTED_GCLOUD_TTS_MODELS[number]
 export type ElevenlabsMusicModel = typeof SUPPORTED_ELEVENLABS_MUSIC_MODELS[number]

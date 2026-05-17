@@ -10,7 +10,6 @@ import { collectKittenTtsTargets } from './providers/kitten'
 import { collectMinimaxTtsTargets } from './providers/minimax'
 import { collectMistralTtsTargets } from './providers/mistral'
 import { collectOpenAITtsTargets } from './providers/openai'
-import { collectRunwayTtsTargets } from './providers/runway'
 import { collectSpeechifyTtsTargets } from './providers/speechify'
 import { createTtsTargetSelection } from './selection'
 import { validateTtsTargetSelection } from './target-validation'
@@ -29,7 +28,6 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     ...collectOpenAITtsTargets(selection),
     ...collectGeminiTtsTargets(selection),
     ...collectDeepgramTtsTargets(selection),
-    ...collectRunwayTtsTargets(selection),
     ...collectSpeechifyTtsTargets(selection),
     ...collectGcloudTtsTargets(selection),
     ...collectDeapiTtsTargets(selection)

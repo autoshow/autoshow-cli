@@ -79,10 +79,10 @@ bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
 # ElevenLabs Instant Voice Cloning
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # ElevenLabs Professional Voice Clone synthesis
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 
 # Hosted Grok text-to-speech
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
@@ -92,9 +92,6 @@ bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mis
 
 # MiniMax hosted text-to-speech
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
-
-# Runway-hosted text-to-speech
-bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 
 # deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
@@ -181,8 +178,8 @@ Persistent defaults live in `config/autoshow.json`. You can save provider choice
 ```bash
 bun as config --show
 bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
-bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
-bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 bun as config --reset

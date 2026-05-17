@@ -181,7 +181,7 @@ describe('kitten-tts', () => {
           '--openai-tts',
           'gpt-4o-mini-tts',
           '--gemini-tts',
-          'gemini-2.5-flash-preview-tts'
+          'gemini-3.1-flash-tts-preview'
         ],
         {
           env: {

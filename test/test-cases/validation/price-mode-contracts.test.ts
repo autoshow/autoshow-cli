@@ -52,8 +52,8 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
     expected: 'speech'
   },
   {
-    label: 'Runway TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--runway-tts', 'eleven_multilingual_v2', '--price'],
+    label: 'all TTS',
+    args: ['tts', STABLE_TTS_MD_PATH, '--all-tts', '--price'],
     expected: 'speech'
   },
   {
@@ -68,7 +68,7 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   },
   {
     label: 'Google Cloud TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--gcloud-tts', 'standard', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--gcloud-tts', 'chirp3-hd', '--price'],
     expected: 'speech'
   },
   {
@@ -89,13 +89,13 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   },
   {
     label: 'ElevenLabs IVC TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_flash_v2_5', '--elevenlabs-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_v3', '--elevenlabs-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
     expected: 'speech',
     env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
   {
     label: 'ElevenLabs PVC setup TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_flash_v2_5', '--elevenlabs-tts-pvc-sample', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_v3', '--elevenlabs-tts-pvc-sample', 'input/examples/audio/anthony-voice.mp3', '--price'],
     expected: 'elevenlabs-pvc-status.json',
     env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
@@ -322,9 +322,8 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('grok-stt')).toBe('speech-to-text')
     expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
     expect(resolveCheapestModelForFlag('mistral-tts')).toBe('voxtral-mini-tts-2603')
-    expect(resolveCheapestModelForFlag('runway-tts')).toBe('eleven_multilingual_v2')
     expect(resolveCheapestModelForFlag('speechify-tts')).toBe('simba-english')
-    expect(resolveCheapestModelForFlag('gcloud-tts')).toBe('standard')
+    expect(resolveCheapestModelForFlag('gcloud-tts')).toBe('chirp3-hd')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
@@ -343,17 +342,6 @@ describe('price mode contracts', () => {
     })
   })
 
-  test('Runway TTS estimates use 50-character block billing', () => {
-    const opts = {
-      runwayTtsModels: ['eleven_multilingual_v2'],
-      runwayTtsModel: 'eleven_multilingual_v2'
-    } as Parameters<typeof estimateTtsCosts>[0]
-
-    expect(estimateTtsCosts(opts, 1)[0]?.totalCost).toBe(1)
-    expect(estimateTtsCosts(opts, 50)[0]?.totalCost).toBe(1)
-    expect(estimateTtsCosts(opts, 51)[0]?.totalCost).toBe(2)
-  })
-
   test('Mistral TTS estimates use published output-character pricing and provisional speed', () => {
     const opts = {
       mistralTtsModels: ['voxtral-mini-tts-2603'],
@@ -369,14 +357,14 @@ describe('price mode contracts', () => {
       ttsTargets: [{ service: 'mistral', model: 'voxtral-mini-tts-2603' }],
       ttsCharacterCount: 1000
     })
-    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(13_500)
+    expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs).toBe(36_908)
   })
 
   test('Speechify and Google Cloud TTS estimates use registry pricing and timing defaults', () => {
     const costs = [
       ...estimateTtsCosts({
         speechifyTtsModels: ['simba-english'],
-        gcloudTtsModels: ['standard', 'chirp3-hd']
+        gcloudTtsModels: ['chirp3-hd', 'studio']
       } as Parameters<typeof estimateTtsCosts>[0], 1000),
       ...estimateTtsCosts({
         speechifyTtsModels: ['simba-multilingual'],
@@ -399,8 +387,8 @@ describe('price mode contracts', () => {
       totalCost: cost.totalCost
     }))).toEqual([
       { provider: 'speechify', model: 'simba-english', costPer1kCharactersCents: 1, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 1 },
-      { provider: 'gcloud', model: 'standard', costPer1kCharactersCents: 0.4, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 0.4 },
       { provider: 'gcloud', model: 'chirp3-hd', costPer1kCharactersCents: 3, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 3 },
+      { provider: 'gcloud', model: 'studio', costPer1kCharactersCents: 16, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 16 },
       { provider: 'speechify', model: 'simba-multilingual', costPer1kCharactersCents: 1, setupCostCents: 0, setupTimeMs: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS, totalCost: 1 },
       { provider: 'gcloud', model: 'instant-custom-voice', costPer1kCharactersCents: 6, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 6 }
     ])
@@ -408,7 +396,7 @@ describe('price mode contracts', () => {
     const timing = computeEstimatedProcessingTimes({
       ttsTargets: [
         { service: 'speechify', model: 'simba-english' },
-        { service: 'gcloud', model: 'standard' }
+        { service: 'gcloud', model: 'chirp3-hd' }
       ],
       ttsCharacterCount: 1000
     })
@@ -419,13 +407,13 @@ describe('price mode contracts', () => {
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
       { provider: 'speechify', model: 'simba-english', processingTimeMs: 3_000 },
-      { provider: 'gcloud', model: 'standard', processingTimeMs: 6_000 }
+      { provider: 'gcloud', model: 'chirp3-hd', processingTimeMs: 9_000 }
     ])
   })
 
   test('ElevenLabs TTS estimates use current API rates and IVC setup timing', () => {
     const baseCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_flash_v2_5', 'eleven_turbo_v2_5', 'eleven_v3']
+      elevenlabsTtsModels: ['eleven_v3']
     } as Parameters<typeof estimateTtsCosts>[0], 1000)
 
     expect(baseCosts.map((cost) => ({
@@ -433,13 +421,11 @@ describe('price mode contracts', () => {
       costPer1kCharactersCents: cost.costPer1kCharactersCents,
       totalCost: cost.totalCost
     }))).toEqual([
-      { model: 'eleven_flash_v2_5', costPer1kCharactersCents: 5, totalCost: 5 },
-      { model: 'eleven_turbo_v2_5', costPer1kCharactersCents: 5, totalCost: 5 },
       { model: 'eleven_v3', costPer1kCharactersCents: 10, totalCost: 10 }
     ])
 
     const cloneCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_flash_v2_5', 'eleven_v3'],
+      elevenlabsTtsModels: ['eleven_v3'],
       elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3'
     } as Parameters<typeof estimateTtsCosts>[0], 1000)
     expect(cloneCosts.map((cost) => ({
@@ -450,24 +436,17 @@ describe('price mode contracts', () => {
       totalCost: cost.totalCost
     }))).toEqual([
       {
-        model: 'eleven_flash_v2_5',
+        model: 'eleven_v3',
         setupCostCents: 0,
         setupTimeMs: 10_000,
         setupNote: 'ElevenLabs instant voice clone setup',
-        totalCost: 5
-      },
-      {
-        model: 'eleven_v3',
-        setupCostCents: undefined,
-        setupTimeMs: undefined,
-        setupNote: undefined,
         totalCost: 10
       }
     ])
 
     const timing = computeEstimatedProcessingTimes({
       ttsTargets: [
-        { service: 'elevenlabs', model: 'eleven_flash_v2_5', setupTimeMs: 10_000 },
+        { service: 'elevenlabs', model: 'eleven_v3', setupTimeMs: 10_000 },
         { service: 'elevenlabs', model: 'eleven_v3' }
       ],
       ttsCharacterCount: 1000
@@ -477,38 +456,38 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { provider: 'elevenlabs', model: 'eleven_flash_v2_5', processingTimeMs: 16_627 },
+      { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 45_885 },
       { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 35_885 }
     ])
 
     const pvcReadyCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_flash_v2_5'],
+      elevenlabsTtsModels: ['eleven_v3'],
       elevenlabsTtsPvcVoice: 'pvc_voice_123'
     } as Parameters<typeof estimateTtsCosts>[0], 1000)
     expect(pvcReadyCosts[0]).toMatchObject({
       provider: 'elevenlabs',
-      model: 'eleven_flash_v2_5',
-      totalCost: 5
+      model: 'eleven_v3',
+      totalCost: 10
     })
     expect(pvcReadyCosts[0]?.setupCostCents).toBeUndefined()
 
     const pvcEnglishSetupCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_flash_v2_5'],
+      elevenlabsTtsModels: ['eleven_v3'],
       elevenlabsTtsPvcSamples: ['input/examples/audio/anthony-voice.mp3'],
       elevenlabsTtsPvcLanguage: 'en',
       elevenlabsTtsPvcWait: true
     } as Parameters<typeof estimateTtsCosts>[0], 1000)
     expect(pvcEnglishSetupCosts[0]).toMatchObject({
       provider: 'elevenlabs',
-      model: 'eleven_flash_v2_5',
+      model: 'eleven_v3',
       setupCostCents: 0,
       setupTimeMs: ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
       setupNote: 'ElevenLabs professional voice clone training',
-      totalCost: 5
+      totalCost: 10
     })
 
     const pvcMultilingualSetupCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_flash_v2_5'],
+      elevenlabsTtsModels: ['eleven_v3'],
       elevenlabsTtsPvcSamples: ['input/examples/audio/anthony-voice.mp3'],
       elevenlabsTtsPvcLanguage: 'es',
       elevenlabsTtsPvcWait: true
@@ -542,7 +521,7 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { provider: 'openai', model: 'gpt-4o-mini-tts', processingTimeMs: 37_576 }
+      { provider: 'openai', model: 'gpt-4o-mini-tts', processingTimeMs: 52_781 }
     ])
   })
 
@@ -917,7 +896,7 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'deepinfra',
       model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
-      processingTimeMs: 28_856
+      processingTimeMs: 25_840
     })
 
     const actualMetadata: ExtractionMetadata = {
@@ -978,7 +957,7 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'kimi',
       model: 'kimi-k2.6',
-      processingTimeMs: 28_600
+      processingTimeMs: 23_020
     })
   })
 

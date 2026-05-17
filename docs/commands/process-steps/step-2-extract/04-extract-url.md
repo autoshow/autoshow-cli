@@ -221,12 +221,12 @@ Incomplete runs can still leave useful provider artifacts. For example, local `.
 
 ## URL Consensus
 
-After an `--all-url` run, use the local `url-consensus` skill to build a gold reference and comparison reports from `providers/*/result.json`:
+After an `--all-url` run, use the local `consensus` skill to build a gold reference and comparison reports from `providers/*/result.json`:
 
 ```text
-.codex/skills/url-consensus/
-  scripts/build_consensus_packet.ts
-  scripts/build_comparison_report.ts
+.codex/skills/consensus/
+  scripts/run.ts url build-packet <run_dir>
+  scripts/run.ts url build-report <run_dir>
 ```
 
 The expected consensus deliverables are `consensus-extraction.txt`, `provider-comparison-report.md`, and `provider-comparison-report.json` in the run directory.

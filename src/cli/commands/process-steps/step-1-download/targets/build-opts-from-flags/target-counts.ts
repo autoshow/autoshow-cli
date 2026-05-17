@@ -45,7 +45,6 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.openaiTtsModels, modelOptions.openaiTtsModel)
     + countSelectedTargets(modelOptions.geminiTtsModels, modelOptions.geminiTtsModel)
     + countSelectedTargets(modelOptions.deepgramTtsModels, modelOptions.deepgramTtsModel)
-    + countSelectedTargets(modelOptions.runwayTtsModels, modelOptions.runwayTtsModel)
     + countSelectedTargets(modelOptions.speechifyTtsModels, modelOptions.speechifyTtsModel)
     + countSelectedTargets(modelOptions.gcloudTtsModels, modelOptions.gcloudTtsModel)
     + countSelectedTargets(modelOptions.deapiTtsModels, modelOptions.deapiTtsModel)

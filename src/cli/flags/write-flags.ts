@@ -8,7 +8,6 @@ import {
   SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
-  SUPPORTED_RUNWAY_TTS_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
@@ -67,10 +66,6 @@ const writeTtsFlags = {
   },
   'gemini-tts': {
     description: `Enable Gemini TTS on LLM output. ${buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'runway-tts': {
-    description: `Enable Runway TTS on LLM output. ${buildModelDescription('Runway TTS model', SUPPORTED_RUNWAY_TTS_MODELS)}`,
     type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
@@ -145,10 +140,6 @@ const writeTtsFlags = {
   },
   'gemini-voice': {
     description: 'Gemini TTS voice name override (default: Kore)',
-    type: String
-  },
-  'runway-tts-voice': {
-    description: 'Runway TTS preset voice override (default: Leslie)',
     type: String
   },
   'gemini-speaker-1-name': {

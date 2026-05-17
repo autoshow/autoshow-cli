@@ -90,10 +90,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --ha
 
 # Resume missing ElevenLabs TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
-bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
-
-# Resume missing Runway TTS outputs
-bun as resume ./output/2026-04-22_12-00-00-000_run --runway-tts eleven_multilingual_v2
+bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 
 # Resume missing OpenAI custom voice TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
@@ -210,7 +207,6 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--openai-tts <model>` | Select one or more OpenAI TTS models |
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
-| `--runway-tts <model>` | Select one or more Runway TTS models |
 | `--tts-provider-concurrency <n>` | Max hosted TTS providers/models running in parallel for one item |
 | `--tts-local-concurrency <n>` | Max local TTS providers running in parallel for one item |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
@@ -229,7 +225,6 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--openai-tts-voice-name <name>` | Created OpenAI custom voice label |
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
-| `--runway-tts-voice <preset>` | Runway TTS preset voice override |
 | `--groq-voice <id>` | Groq TTS voice ID override |
 | `--mistral-tts-voice <id>` | Mistral saved/custom voice ID |
 | `--mistral-tts-ref-audio <path>` | Mistral one-off voice clone reference audio path |

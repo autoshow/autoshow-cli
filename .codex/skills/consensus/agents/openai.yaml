@@ -1,0 +1,3 @@
+display_name: "Consensus"
+short_description: "Compare AutoShow providers by category"
+default_prompt: "Use $consensus to build a consensus report for an AutoShow run directory."

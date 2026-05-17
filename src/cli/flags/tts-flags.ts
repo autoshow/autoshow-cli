@@ -9,7 +9,6 @@ import {
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
-  SUPPORTED_RUNWAY_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS,
   SUPPORTED_GCLOUD_TTS_MODELS,
   SUPPORTED_DEAPI_TTS_MODELS
@@ -73,10 +72,6 @@ export const ttsFlags = {
   },
   'deepgram-tts': {
     description: buildModelDescription('Deepgram TTS model', SUPPORTED_DEEPGRAM_TTS_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'runway-tts': {
-    description: buildModelDescription('Runway TTS model', SUPPORTED_RUNWAY_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'deapi-tts': {
@@ -283,10 +278,6 @@ export const ttsFlags = {
   },
   'gcloud-tts-voice-cloning-key-out': {
     description: 'Write a generated Google Cloud TTS instant custom voice cloning key to this path',
-    type: String
-  },
-  'runway-tts-voice': {
-    description: 'Runway TTS preset voice override (default: Leslie)',
     type: String
   },
   'gemini-speaker-1-name': {

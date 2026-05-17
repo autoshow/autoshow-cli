@@ -85,10 +85,10 @@ bun as tts input/examples/tts/1-tts.md --gemini-tts gemini-3.1-flash-tts-preview
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
 # text-to-speech with ElevenLabs Instant Voice Cloning
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # text-to-speech with a trained ElevenLabs Professional Voice Clone
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 
 # text-to-speech with xAI Grok
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
@@ -101,9 +101,6 @@ bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mis
 
 # text-to-speech with MiniMax hosted voices
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
-
-# text-to-speech with Runway-hosted Eleven multilingual v2
-bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --runway-tts-voice Leslie
 
 # text-to-speech with deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
@@ -191,8 +188,8 @@ bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
 bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6 --price
 bun as write ./output/demo/text --price
 bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --price
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-pvc-sample input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-sample input/examples/audio/anthony-voice.mp3 --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-v1-english --price
 bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-arabic-saudi --price
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
@@ -202,7 +199,6 @@ bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --de
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
-bun as tts input/examples/tts/1-tts.md --runway-tts eleven_multilingual_v2 --price
 bun as image "a sunset" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low --price
 bun as image "a sunset" --bfl-image flux-2-klein-4b --price
 bun as image "a sunset" --deapi-image Flux1schnell --price

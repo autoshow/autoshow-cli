@@ -237,9 +237,6 @@ export type RuntimeOptions = {
   deepgramTtsBitRate: number | undefined
   deepgramTtsSampleRate: number | undefined
   deepgramTtsSpeed: number | undefined
-  runwayTtsModels: string[] | undefined
-  runwayTtsModel: string | undefined
-  runwayTtsVoice: string | undefined
   speechifyTtsModels: string[] | undefined
   speechifyTtsModel: string | undefined
   speechifyVoice: string | undefined

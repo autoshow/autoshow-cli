@@ -13,7 +13,6 @@ export type TtsTargetSelection = {
   openaiModels: string[]
   geminiModels: string[]
   deepgramModels: string[]
-  runwayModels: string[]
   speechifyModels: string[]
   gcloudModels: string[]
   deapiModels: string[]
@@ -89,7 +88,6 @@ export type TtsTargetSelection = {
   mistralVoiceName: string | undefined
   geminiVoiceId: string | undefined
   deepgramVoiceId: string | undefined
-  runwayVoiceId: string | undefined
   deapiVoiceId: string | undefined
   deapiRefAudioPath: string | undefined
   deapiRefText: string | undefined
@@ -192,7 +190,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     openaiModels: selectModels(options.openaiTtsModels, options.openaiTtsModel),
     geminiModels: selectModels(options.geminiTtsModels, options.geminiTtsModel),
     deepgramModels: selectModels(options.deepgramTtsModels, options.deepgramTtsModel),
-    runwayModels: selectModels(options.runwayTtsModels, options.runwayTtsModel),
     speechifyModels: selectModels(options.speechifyTtsModels, options.speechifyTtsModel),
     gcloudModels: selectModels(options.gcloudTtsModels, options.gcloudTtsModel),
     deapiModels: selectModels(options.deapiTtsModels, options.deapiTtsModel),
@@ -268,7 +265,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     mistralVoiceName: trimmed(options.mistralTtsVoiceName),
     geminiVoiceId: trimmed(options.geminiVoiceId),
     deepgramVoiceId: trimmed(options.deepgramVoiceId),
-    runwayVoiceId: trimmed(options.runwayTtsVoice),
     deapiVoiceId: trimmed(options.deapiTtsVoice),
     deapiRefAudioPath: trimmed(options.deapiTtsRefAudio),
     deapiRefText: trimmed(options.deapiTtsRefText),

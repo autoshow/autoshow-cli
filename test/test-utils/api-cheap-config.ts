@@ -69,8 +69,7 @@ export const buildApiCheapSelections = () => {
     { service: 'grok', flag: '--grok-tts', envVar: 'XAI_API_KEY', model: selectCheapestTtsModel('grok') },
     { service: 'mistral', flag: '--mistral-tts', envVar: 'MISTRAL_API_KEY', model: selectCheapestTtsModel('mistral') },
     { service: 'openai', flag: '--openai-tts', envVar: 'OPENAI_API_KEY', model: selectCheapestTtsModel('openai') },
-    { service: 'gemini', flag: '--gemini-tts', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') },
-    { service: 'runway', flag: '--runway-tts', envVar: 'RUNWAYML_API_SECRET', model: selectCheapestTtsModel('runway') }
+    { service: 'gemini', flag: '--gemini-tts', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') }
   ]
 
   const imageSelections = [

@@ -196,30 +196,14 @@ describe('config contracts', () => {
     })
   })
 
-  test('buildConfigPatchFromFlags saves Runway TTS defaults', () => {
-    expect(buildConfigPatchFromFlags({
-      'runway-tts': ['eleven_multilingual_v2'],
-      'runway-tts-voice': 'Leslie'
-    }, new Set(['runway-tts', 'runway-tts-voice']))).toEqual({
-      defaults: {
-        post: {
-          tts: {
-            runwayTts: ['eleven_multilingual_v2'],
-            runwayTtsVoice: 'Leslie'
-          }
-        }
-      }
-    })
-  })
-
   test('buildConfigPatchFromFlags saves and merges Speechify and Google Cloud TTS defaults', () => {
     const patch = buildConfigPatchFromFlags({
       'speechify-tts': ['simba-english', 'simba-multilingual'],
       'speechify-voice': 'narrator_voice',
       'speechify-tts-audio-format': 'wav',
       'speechify-tts-language': 'en-US',
-      'gcloud-tts': ['neural2'],
-      'gcloud-tts-voice': 'en-US-Neural2-C',
+      'gcloud-tts': ['chirp3-hd'],
+      'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
       'gcloud-tts-language': 'en-US',
       'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
       'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
@@ -245,8 +229,8 @@ describe('config contracts', () => {
             speechifyVoice: 'narrator_voice',
             speechifyTtsAudioFormat: 'wav',
             speechifyTtsLanguage: 'en-US',
-            gcloudTts: ['neural2'],
-            gcloudTtsVoice: 'en-US-Neural2-C',
+            gcloudTts: ['chirp3-hd'],
+            gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
             gcloudTtsLanguage: 'en-US',
             gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
             gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
@@ -261,8 +245,8 @@ describe('config contracts', () => {
       'speechify-voice': 'narrator_voice',
       'speechify-tts-audio-format': 'wav',
       'speechify-tts-language': 'en-US',
-      'gcloud-tts': ['neural2'],
-      'gcloud-tts-voice': 'en-US-Neural2-C',
+      'gcloud-tts': ['chirp3-hd'],
+      'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
       'gcloud-tts-language': 'en-US',
       'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
       'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
@@ -523,7 +507,7 @@ describe('config contracts', () => {
 
   test('buildConfigPatchFromFlags saves and merges ElevenLabs TTS clone defaults', () => {
     const patch = buildConfigPatchFromFlags({
-      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts': ['eleven_v3'],
       'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
       'elevenlabs-tts-voice-name': 'AutoShow Anthony',
       'elevenlabs-tts-clone-remove-background-noise': true
@@ -538,7 +522,7 @@ describe('config contracts', () => {
       defaults: {
         post: {
           tts: {
-            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTts: ['eleven_v3'],
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTtsCloneRemoveBackgroundNoise: true
@@ -548,7 +532,7 @@ describe('config contracts', () => {
     })
 
     expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
-      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts': ['eleven_v3'],
       'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
       'elevenlabs-tts-voice-name': 'AutoShow Anthony',
       'elevenlabs-tts-clone-remove-background-noise': true
@@ -557,7 +541,7 @@ describe('config contracts', () => {
 
   test('buildConfigPatchFromFlags saves and merges ElevenLabs ready PVC voice defaults', () => {
     const patch = buildConfigPatchFromFlags({
-      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts': ['eleven_v3'],
       'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
     }, new Set([
       'elevenlabs-tts',
@@ -568,7 +552,7 @@ describe('config contracts', () => {
       defaults: {
         post: {
           tts: {
-            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTts: ['eleven_v3'],
             elevenlabsTtsPvcVoice: 'pvc_voice_123'
           }
         }
@@ -576,7 +560,7 @@ describe('config contracts', () => {
     })
 
     expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
-      'elevenlabs-tts': ['eleven_flash_v2_5'],
+      'elevenlabs-tts': ['eleven_v3'],
       'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
     })
   })
@@ -634,14 +618,12 @@ describe('config contracts', () => {
         },
         post: {
           tts: {
-            runwayTts: ['eleven_multilingual_v2'],
-            runwayTtsVoice: 'Leslie',
             speechifyTts: ['simba-english'],
             speechifyVoice: 'narrator_voice',
             speechifyTtsAudioFormat: 'wav',
             speechifyTtsLanguage: 'en-US',
-            gcloudTts: ['standard'],
-            gcloudTtsVoice: 'en-US-Standard-J',
+            gcloudTts: ['chirp3-hd'],
+            gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
             gcloudTtsLanguage: 'en-US',
             gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
             gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
@@ -663,7 +645,7 @@ describe('config contracts', () => {
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
-            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTts: ['eleven_v3'],
             elevenlabsTtsPvcVoice: 'pvc_voice_123',
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',
@@ -725,14 +707,12 @@ describe('config contracts', () => {
         },
         post: {
           tts: {
-            runwayTts: ['eleven_multilingual_v2'],
-            runwayTtsVoice: 'Leslie',
             speechifyTts: ['simba-english'],
             speechifyVoice: 'narrator_voice',
             speechifyTtsAudioFormat: 'wav',
             speechifyTtsLanguage: 'en-US',
-            gcloudTts: ['standard'],
-            gcloudTtsVoice: 'en-US-Standard-J',
+            gcloudTts: ['chirp3-hd'],
+            gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
             gcloudTtsLanguage: 'en-US',
             gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
             gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
@@ -754,7 +734,7 @@ describe('config contracts', () => {
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
-            elevenlabsTts: ['eleven_flash_v2_5'],
+            elevenlabsTts: ['eleven_v3'],
             elevenlabsTtsPvcVoice: 'pvc_voice_123',
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',

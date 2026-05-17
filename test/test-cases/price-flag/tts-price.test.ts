@@ -6,8 +6,7 @@ import {
   SUPPORTED_GROK_TTS_VOICES,
   SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES,
   SUPPORTED_GROQ_ENGLISH_TTS_VOICES,
-  SUPPORTED_KITTEN_TTS_VOICES,
-  SUPPORTED_RUNWAY_TTS_VOICES
+  SUPPORTED_KITTEN_TTS_VOICES
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { E2E_TEST_TIMEOUT_MS } from '../../test-utils/budget'
 import { runCommand, STABLE_LOCAL_AUDIO_PATH, STABLE_TTS_MD_PATH } from '../../test-utils/test-helpers'
@@ -44,8 +43,6 @@ const NO_PAID_TTS_ENV = {
   OPENAI_API_KEY: '',
   OPENAI_BASE_URL: '',
   OPENAI_TTS_VOICE: '',
-  RUNWAYML_API_SECRET: '',
-  RUNWAY_TTS_VOICE: '',
   SPEECHIFY_API_KEY: '',
   SPEECHIFY_TTS_VOICE: '',
   XAI_API_KEY: '',
@@ -136,19 +133,19 @@ defineTTSServicePriceTests({
 })
 
 defineTTSServicePriceTests({
-  models: ['gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
+  models: ['gemini-3.1-flash-tts-preview'],
   cliFlag: '--gemini-tts',
   ttsService: 'gemini',
 })
 
 defineTTSServicePriceTests({
-  models: ['speech-2.8-turbo', 'speech-2.8-hd', 'speech-2.6-turbo', 'speech-2.6-hd', 'speech-02-turbo', 'speech-02-hd'],
+  models: ['speech-2.8-turbo', 'speech-2.8-hd'],
   cliFlag: '--minimax-tts',
   ttsService: 'minimax',
 })
 
 defineTTSServicePriceTests({
-  models: ['eleven_v3', 'eleven_flash_v2_5', 'eleven_turbo_v2_5'],
+  models: ['eleven_v3'],
   cliFlag: '--elevenlabs-tts',
   ttsService: 'elevenlabs',
 })
@@ -172,19 +169,13 @@ defineTTSServicePriceTests({
 })
 
 defineTTSServicePriceTests({
-  models: ['eleven_multilingual_v2'],
-  cliFlag: '--runway-tts',
-  ttsService: 'runway',
-})
-
-defineTTSServicePriceTests({
   models: ['simba-english', 'simba-multilingual'],
   cliFlag: '--speechify-tts',
   ttsService: 'speechify',
 })
 
 defineTTSServicePriceTests({
-  models: ['standard', 'wavenet', 'neural2', 'studio', 'chirp3-hd'],
+  models: ['studio', 'chirp3-hd'],
   cliFlag: '--gcloud-tts',
   ttsService: 'gcloud',
 })
@@ -230,14 +221,6 @@ for (const model of SUPPORTED_DEEPGRAM_TTS_MODELS) {
     voices: [model],
   })
 }
-
-defineTTSVoicePriceTests({
-  provider: 'runway',
-  modelFlag: '--runway-tts',
-  model: 'eleven_multilingual_v2',
-  voiceFlag: '--runway-tts-voice',
-  voices: SUPPORTED_RUNWAY_TTS_VOICES,
-})
 
 for (const model of SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS) {
   defineTTSVoicePriceTests({
@@ -399,22 +382,6 @@ test('rejects invalid grok voice override before API request in price mode', asy
 
   expect(result.exitCode).not.toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --grok-tts-voice "invalid-voice"')
-})
-
-test('rejects invalid runway voice override before API request in price mode', async () => {
-  const result = await runTtsPriceCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--runway-tts',
-    'eleven_multilingual_v2',
-    '--runway-tts-voice',
-    'invalid-voice',
-    '--price'
-  ])
-
-  expect(result.exitCode).not.toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --runway-tts-voice "invalid-voice"')
 })
 
 test('multi-provider --price prints both TTS targets and renamed output files', async () => {

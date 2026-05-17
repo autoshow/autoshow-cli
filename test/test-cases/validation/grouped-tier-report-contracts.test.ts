@@ -35,6 +35,16 @@ const hasOwnKeyDeep = (value: unknown, key: string): boolean => {
   return false
 }
 
+const expectRankingSurfaces = (report: {
+  rankingSurfaces: Record<'local' | 'service', Record<'fastest' | 'cheapest' | 'highestQuality', unknown[]>>
+}): void => {
+  for (const group of ['local', 'service'] as const) {
+    for (const surface of ['fastest', 'cheapest', 'highestQuality'] as const) {
+      expect(Array.isArray(report.rankingSurfaces[group][surface])).toBe(true)
+    }
+  }
+}
+
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
@@ -97,7 +107,9 @@ describe('grouped tier report contracts', () => {
 
     const proc = Bun.spawn([
       process.execPath,
-      '.codex/skills/ocr-consensus/scripts/build_comparison_report.ts',
+      '.codex/skills/consensus/scripts/run.ts',
+      'ocr',
+      'build-report',
       runDir
     ], {
       stdout: 'pipe',
@@ -108,9 +120,16 @@ describe('grouped tier report contracts', () => {
       readStreamText(proc.stderr),
       proc.exited
     ])
-    expect({ stdout, stderr, exitCode }).toEqual({ stdout: '', stderr: '', exitCode: 0 })
+    expect(stdout).toContain('Rewrote')
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
 
     const report = await Bun.file(join(runDir, 'provider-comparison-report.json')).json() as {
+      rankingSurfaces: Record<'local' | 'service', Record<'fastest' | 'cheapest' | 'highestQuality', unknown[]>>
+      providerGroups: {
+        local: { count: number, providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
+        service: { count: number, providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
+      }
       tiering: {
         metric: string
         method: string
@@ -119,26 +138,30 @@ describe('grouped tier report contracts', () => {
           thirdParty: { count: number, tiers: Array<{ count: number }> }
         }
       }
-      local: { providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
-      cloud: { providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
+      overall?: unknown
+      providers?: unknown
     }
 
     expect(hasOwnKeyDeep(report, deprecatedTierSplitKey)).toBe(false)
     expect(hasOwnKeyDeep(report, deprecatedOverallTierKey)).toBe(false)
+    expect(report.overall).toBeUndefined()
+    expect(report.providers).toBeUndefined()
+    expectRankingSurfaces(report)
     expect(report.tiering.metric).toBe('balanced-overall')
     expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
     expect(report.tiering.groups.local.count).toBe(2)
     expect(report.tiering.groups.local.tiers.map((tier) => tier.count)).toEqual([1, 1, 0])
     expect(report.tiering.groups.thirdParty.count).toBe(2)
     expect(report.tiering.groups.thirdParty.tiers.map((tier) => tier.count)).toEqual([1, 1, 0])
-    expect(report.local.providers.every((provider) => provider.tierGroup === 'local')).toBe(true)
-    expect(report.cloud.providers.every((provider) => provider.tierGroup === 'thirdParty')).toBe(true)
-    expect([...report.local.providers, ...report.cloud.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
+    expect(report.providerGroups.local.providers.every((provider) => provider.tierGroup === 'local')).toBe(true)
+    expect(report.providerGroups.service.providers.every((provider) => provider.tierGroup === 'thirdParty')).toBe(true)
+    expect([...report.providerGroups.local.providers, ...report.providerGroups.service.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'provider-comparison-report.md')).text()
-    expect(markdown).toContain('## Tier Breakdown')
-    expect(markdown).toContain('### Local Group')
-    expect(markdown).toContain('### Third-Party Group')
+    expect(markdown).toContain('## Local Providers')
+    expect(markdown).toContain('## Service Providers')
+    expect(markdown).toContain('### Top 3 Highest Quality')
+    expect(markdown).not.toContain('## Overall Ranking')
   })
 
   test('STT comparison report splits service tiers by diarization support', async () => {
@@ -250,7 +273,9 @@ describe('grouped tier report contracts', () => {
 
     const proc = Bun.spawn([
       process.execPath,
-      '.codex/skills/stt-consensus/scripts/build_reference_report.ts',
+      '.codex/skills/consensus/scripts/run.ts',
+      'stt',
+      'build-report',
       runDir
     ], {
       stdout: 'pipe',
@@ -261,9 +286,16 @@ describe('grouped tier report contracts', () => {
       readStreamText(proc.stderr),
       proc.exited
     ])
-    expect({ stdout, stderr, exitCode }).toEqual({ stdout: '', stderr: '', exitCode: 0 })
+    expect(stdout).toContain('Rewrote')
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
 
     const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
+      rankingSurfaces: Record<'local' | 'service', Record<'fastest' | 'cheapest' | 'highestQuality', unknown[]>>
+      providerGroups: {
+        local: { count: number, providers: Array<{ supportsDiarization: boolean, tierGroup: string, groupOverallRank: number, groupTier: number }> }
+        service: { count: number, providers: Array<{ supportsDiarization: boolean, tierGroup: string, groupOverallRank: number, groupTier: number }> }
+      }
       tiering: {
         metric: string
         method: string
@@ -273,24 +305,29 @@ describe('grouped tier report contracts', () => {
           thirdPartyNonDiarization: { count: number, tiers: Array<{ count: number }> }
         }
       }
-      providers: Array<{ group: string, supportsDiarization: boolean, tierGroup: string, groupOverallRank: number, groupTier: number }>
+      overall?: unknown
+      providers?: unknown
     }
 
     expect(hasOwnKeyDeep(report, deprecatedTierSplitKey)).toBe(false)
     expect(hasOwnKeyDeep(report, deprecatedOverallTierKey)).toBe(false)
+    expect(report.overall).toBeUndefined()
+    expect(report.providers).toBeUndefined()
+    expectRankingSurfaces(report)
     expect(report.tiering.metric).toBe('balanced-overall')
     expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
     expect(report.tiering.groups.local.tiers.map((tier) => tier.count)).toEqual([1, 0, 0])
     expect(report.tiering.groups.thirdPartyDiarization.tiers.map((tier) => tier.count)).toEqual([1, 1, 0])
     expect(report.tiering.groups.thirdPartyNonDiarization.tiers.map((tier) => tier.count)).toEqual([1, 1, 0])
-    expect(report.providers.filter((provider) => provider.group === 'cloud' && provider.supportsDiarization).every((provider) => provider.tierGroup === 'thirdPartyDiarization')).toBe(true)
-    expect(report.providers.filter((provider) => provider.group === 'cloud' && !provider.supportsDiarization).every((provider) => provider.tierGroup === 'thirdPartyNonDiarization')).toBe(true)
-    expect(report.providers.every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
+    expect(report.providerGroups.service.providers.filter((provider) => provider.supportsDiarization).every((provider) => provider.tierGroup === 'thirdPartyDiarization')).toBe(true)
+    expect(report.providerGroups.service.providers.filter((provider) => !provider.supportsDiarization).every((provider) => provider.tierGroup === 'thirdPartyNonDiarization')).toBe(true)
+    expect([...report.providerGroups.local.providers, ...report.providerGroups.service.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
-    expect(markdown).toContain('## Tier Breakdown')
-    expect(markdown).toContain('### Third-Party Diarization Group')
-    expect(markdown).toContain('### Third-Party Non-Diarization Group')
+    expect(markdown).toContain('## Local Providers')
+    expect(markdown).toContain('## Service Providers')
+    expect(markdown).toContain('### Top 3 Highest Quality')
+    expect(markdown).not.toContain('## Overall Ranking')
   })
 
   test('TTS comparison report emits grouped tier JSON without provider APIs', async () => {
@@ -302,7 +339,7 @@ describe('grouped tier report contracts', () => {
       { ttsService: 'kitten', ttsModel: 'kitten-tts-nano', speaker: 'A', processingTime: 1000, audioFileName: 'missing-local-a.wav', audioFileSize: 100, chunkCount: 1 },
       { ttsService: 'kitten', ttsModel: 'kitten-tts-mini', speaker: 'B', processingTime: 2000, audioFileName: 'missing-local-b.wav', audioFileSize: 110, chunkCount: 1 },
       { ttsService: 'openai', ttsModel: 'gpt-4o-mini-tts', speaker: 'alloy', processingTime: 1500, audioFileName: 'missing-openai.wav', audioFileSize: 120, chunkCount: 1 },
-      { ttsService: 'elevenlabs', ttsModel: 'eleven_flash_v2_5', speaker: 'Rachel', processingTime: 3000, audioFileName: 'missing-elevenlabs.wav', audioFileSize: 130, chunkCount: 1 }
+      { ttsService: 'elevenlabs', ttsModel: 'eleven_v3', speaker: 'Rachel', processingTime: 3000, audioFileName: 'missing-elevenlabs.wav', audioFileSize: 130, chunkCount: 1 }
     ]
 
     await writeJson(join(runDir, 'run.json'), {
@@ -314,7 +351,7 @@ describe('grouped tier report contracts', () => {
           actual: {
             steps: [
               { provider: 'openai', model: 'gpt-4o-mini-tts', cost: 0.2 },
-              { provider: 'elevenlabs', model: 'eleven_flash_v2_5', cost: 0.4 }
+              { provider: 'elevenlabs', model: 'eleven_v3', cost: 0.4 }
             ]
           }
         },
@@ -332,7 +369,9 @@ describe('grouped tier report contracts', () => {
 
     const proc = Bun.spawn([
       process.execPath,
-      '.codex/skills/tts-consensus/scripts/build_comparison_report.ts',
+      '.codex/skills/consensus/scripts/run.ts',
+      'tts',
+      'build-report',
       runDir,
       '--input-text',
       inputTextPath
@@ -345,11 +384,16 @@ describe('grouped tier report contracts', () => {
       readStreamText(proc.stderr),
       proc.exited
     ])
-    expect(stdout).toBe('')
+    expect(stdout).toContain('Rewrote')
     expect(stderr).toContain('Missing audio files')
     expect(exitCode).toBe(0)
 
     const report = await Bun.file(join(runDir, 'provider-comparison-report.json')).json() as {
+      rankingSurfaces: Record<'local' | 'service', Record<'fastest' | 'cheapest' | 'highestQuality', unknown[]>>
+      providerGroups: {
+        local: { count: number, providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
+        service: { count: number, providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
+      }
       tiering: {
         metric: string
         method: string
@@ -358,23 +402,27 @@ describe('grouped tier report contracts', () => {
           thirdParty: { count: number, tiers: Array<{ count: number }> }
         }
       }
-      local: { providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
-      cloud: { providers: Array<{ tierGroup: string, groupOverallRank: number, groupTier: number }> }
+      overall?: unknown
+      providers?: unknown
     }
 
     expect(hasOwnKeyDeep(report, deprecatedTierSplitKey)).toBe(false)
     expect(hasOwnKeyDeep(report, deprecatedOverallTierKey)).toBe(false)
+    expect(report.overall).toBeUndefined()
+    expect(report.providers).toBeUndefined()
+    expectRankingSurfaces(report)
     expect(report.tiering.metric).toBe('balanced-overall')
     expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
     expect(report.tiering.groups.local.tiers.map((tier) => tier.count)).toEqual([1, 1, 0])
     expect(report.tiering.groups.thirdParty.tiers.map((tier) => tier.count)).toEqual([1, 1, 0])
-    expect(report.local.providers.every((provider) => provider.tierGroup === 'local')).toBe(true)
-    expect(report.cloud.providers.every((provider) => provider.tierGroup === 'thirdParty')).toBe(true)
-    expect([...report.local.providers, ...report.cloud.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
+    expect(report.providerGroups.local.providers.every((provider) => provider.tierGroup === 'local')).toBe(true)
+    expect(report.providerGroups.service.providers.every((provider) => provider.tierGroup === 'thirdParty')).toBe(true)
+    expect([...report.providerGroups.local.providers, ...report.providerGroups.service.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'provider-comparison-report.md')).text()
-    expect(markdown).toContain('## Tier Breakdown')
-    expect(markdown).toContain('### Local Group')
-    expect(markdown).toContain('### Third-Party Group')
+    expect(markdown).toContain('## Local Providers')
+    expect(markdown).toContain('## Service Providers')
+    expect(markdown).toContain('### Top 3 Highest Quality')
+    expect(markdown).not.toContain('## Overall Ranking')
   })
 })

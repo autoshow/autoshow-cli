@@ -1,0 +1,101 @@
+{
+  "skill_name": "consensus",
+  "evals": [
+    {
+      "id": "image-service-ranking-surfaces",
+      "category": "image",
+      "prompt": "Use the consensus skill to generate an image provider comparison report.",
+      "assertions": [
+        "JSON report contains rankingSurfaces.local and rankingSurfaces.service",
+        "service fastest and cheapest surfaces are populated when timing and cost exist",
+        "highest-quality surfaces are unavailable without explicit quality metrics",
+        "markdown has separate local and service sections"
+      ],
+      "files": []
+    },
+    {
+      "id": "music-service-ranking-surfaces",
+      "category": "music",
+      "prompt": "Use the consensus skill to generate a music provider comparison report.",
+      "assertions": [
+        "JSON report contains all six ranking surface arrays",
+        "highest-quality surfaces are unavailable without explicit quality metrics",
+        "markdown does not include a combined local-vs-service leaderboard"
+      ],
+      "files": []
+    },
+    {
+      "id": "ocr-local-service-separation",
+      "category": "ocr",
+      "prompt": "Use the consensus skill to generate OCR provider comparison reports from the fixture run.",
+      "assertions": [
+        "provider-comparison-report.md has separate Local Providers and Service Providers sections",
+        "provider-comparison-report.json contains all six ranking surface arrays",
+        "OCR highest-quality rankings use WER/CER evidence",
+        "local cheapest rankings use zero monetary cost",
+        "no combined local-vs-service ranked leaderboard remains"
+      ],
+      "files": [
+        "evals/files/ocr/run.json",
+        "evals/files/ocr/providers/tesseract-tesseract/result.json",
+        "evals/files/ocr/providers/mistral-mistral-ocr-2512/result.json",
+        "evals/files/ocr/providers/openai-gpt-5.4/result.json"
+      ]
+    },
+    {
+      "id": "stt-local-service-separation",
+      "category": "stt",
+      "prompt": "Use the consensus skill to generate STT provider comparison reports from the fixture run.",
+      "assertions": [
+        "reference-comparison-report.md has separate Local Providers and Service Providers sections",
+        "reference-comparison-report.json contains all six ranking surface arrays",
+        "STT highest-quality rankings use speaker-aware WER evidence",
+        "no combined local-vs-service ranked leaderboard remains"
+      ],
+      "files": [
+        "evals/files/stt/run.json",
+        "evals/files/stt/providers/deepgram/result.json",
+        "evals/files/stt/providers/assembly/result.json",
+        "evals/files/stt/providers/whisper/result.json"
+      ]
+    },
+    {
+      "id": "tts-roundtrip-quality-surface",
+      "category": "tts",
+      "prompt": "Use the consensus skill to generate TTS provider comparison reports with existing roundtrip transcripts.",
+      "assertions": [
+        "TTS highest-quality rankings use roundtrip WER when available",
+        "local and service cheapest rankings are separate",
+        "duration and file size are not used as quality proxies"
+      ],
+      "files": []
+    },
+    {
+      "id": "url-local-service-separation",
+      "category": "url",
+      "prompt": "Use the consensus skill to generate URL provider comparison reports from the fixture run.",
+      "assertions": [
+        "provider-comparison-report.md has separate Local Providers and Service Providers sections",
+        "provider-comparison-report.json contains all six ranking surface arrays",
+        "URL highest-quality rankings use WER/CER/coverage evidence",
+        "no combined local-vs-service ranked leaderboard remains"
+      ],
+      "files": [
+        "evals/files/url/run.json",
+        "evals/files/url/providers/defuddle/result.json",
+        "evals/files/url/providers/firecrawl/result.json"
+      ]
+    },
+    {
+      "id": "video-service-ranking-surfaces",
+      "category": "video",
+      "prompt": "Use the consensus skill to generate a video provider comparison report.",
+      "assertions": [
+        "JSON report contains all six ranking surface arrays",
+        "highest-quality surfaces are unavailable without explicit quality metrics",
+        "markdown does not include a combined local-vs-service leaderboard"
+      ],
+      "files": []
+    }
+  ]
+}

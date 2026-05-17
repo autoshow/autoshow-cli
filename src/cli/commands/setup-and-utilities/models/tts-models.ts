@@ -4,8 +4,7 @@ import {
   getKittenHfRepo,
   getKittenVoices,
   getGroqTtsVoices,
-  getGrokTtsVoices,
-  getRunwayTtsVoices
+  getGrokTtsVoices
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type {
   KittenTtsModel,
@@ -17,7 +16,6 @@ import type {
   OpenAITtsModel,
   GeminiTtsModel,
   DeepgramTtsModel,
-  RunwayTtsModel,
   SpeechifyTtsModel,
   GcloudTtsModel,
   DeapiTtsModel
@@ -50,8 +48,6 @@ export const resolveKittenTtsModelId = (model: KittenTtsModel): string => {
 }
 
 export const SUPPORTED_ELEVENLABS_TTS_MODELS = [
-  'eleven_flash_v2_5',
-  'eleven_turbo_v2_5',
   'eleven_v3'
 ] as const satisfies readonly string[]
 
@@ -75,12 +71,8 @@ export const validateElevenLabsTtsTextNormalization = (value: string): string =>
 }
 
 export const SUPPORTED_MINIMAX_TTS_MODELS = [
-  'speech-2.8-turbo',
   'speech-2.8-hd',
-  'speech-2.6-turbo',
-  'speech-2.6-hd',
-  'speech-02-turbo',
-  'speech-02-hd'
+  'speech-2.8-turbo'
 ] as const satisfies readonly string[]
 
 export const validateMinimaxTtsModel = createModelValidator<MinimaxTtsModel>(SUPPORTED_MINIMAX_TTS_MODELS, 'minimax-tts')
@@ -293,9 +285,7 @@ export const OPENAI_DEFAULT_TTS_VOICE = 'alloy'
 export const validateOpenAITtsModel = createModelValidator<OpenAITtsModel>(SUPPORTED_OPENAI_TTS_MODELS, 'openai-tts')
 
 export const SUPPORTED_GEMINI_TTS_MODELS = [
-  'gemini-3.1-flash-tts-preview',
-  'gemini-2.5-flash-preview-tts',
-  'gemini-2.5-pro-preview-tts'
+  'gemini-3.1-flash-tts-preview'
 ] as const satisfies readonly string[]
 
 export const GEMINI_DEFAULT_TTS_VOICE = 'Kore'
@@ -387,24 +377,6 @@ export const validateDeepgramTtsVoice = (voice: string): DeepgramTtsModel => {
   return voice as DeepgramTtsModel
 }
 
-export const SUPPORTED_RUNWAY_TTS_MODELS = [
-  'eleven_multilingual_v2'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_RUNWAY_TTS_VOICES = getRunwayTtsVoices()
-export const RUNWAY_DEFAULT_TTS_VOICE = 'Leslie'
-
-export const validateRunwayTtsModel = createModelValidator<RunwayTtsModel>(SUPPORTED_RUNWAY_TTS_MODELS, 'runway-tts')
-
-export const validateRunwayTtsVoice = (voice: string): string => {
-  if (!SUPPORTED_RUNWAY_TTS_VOICES.includes(voice)) {
-    throw CLIUsageError(
-      `Invalid --runway-tts-voice "${voice}". Allowed values: ${formatAllowedValues(SUPPORTED_RUNWAY_TTS_VOICES)}`
-    )
-  }
-  return voice
-}
-
 export const SUPPORTED_SPEECHIFY_TTS_MODELS = [
   'simba-english',
   'simba-multilingual'
@@ -440,28 +412,19 @@ export const validateSpeechifyTtsAudioFormat = (value: string): string => {
 }
 
 export const SUPPORTED_GCLOUD_TTS_MODELS = [
-  'standard',
-  'wavenet',
-  'neural2',
-  'studio',
   'chirp3-hd',
+  'studio',
   'instant-custom-voice'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS = [
-  'standard',
-  'wavenet',
-  'neural2',
+  'chirp3-hd',
   'studio',
-  'chirp3-hd'
 ] as const satisfies readonly string[]
 
 export const GCLOUD_DEFAULT_TTS_VOICES = {
-  standard: 'en-US-Standard-J',
-  wavenet: 'en-US-Wavenet-D',
-  neural2: 'en-US-Neural2-J',
+  'chirp3-hd': 'en-US-Chirp3-HD-Charon',
   studio: 'en-US-Studio-O',
-  'chirp3-hd': 'en-US-Chirp3-HD-Charon'
 } as const satisfies Record<typeof SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS[number], string>
 
 export const GCLOUD_DEFAULT_TTS_LANGUAGE = 'en-US'

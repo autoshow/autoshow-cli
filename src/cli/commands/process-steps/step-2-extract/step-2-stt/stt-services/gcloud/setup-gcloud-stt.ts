@@ -28,7 +28,7 @@ import {
 } from './gcloud-docai-setup'
 import { readGcloudSttReadiness } from './gcloud-readiness'
 
-const GCLOUD_TTS_DEFAULT_MODEL = 'standard'
+const GCLOUD_TTS_DEFAULT_MODEL = 'chirp3-hd'
 
 const buildSetupGcloudCommand = (
   options: {

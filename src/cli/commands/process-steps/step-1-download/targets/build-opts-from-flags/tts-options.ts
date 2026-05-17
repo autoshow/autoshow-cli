@@ -9,7 +9,6 @@ import {
   validateKittenTtsSpeaker,
   validateMinimaxTtsEmotion,
   validateMinimaxTtsLanguageBoost,
-  validateRunwayTtsVoice,
   validateSpeechifyTtsAudioFormat,
   validateSpeechifyTtsVoice
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -112,9 +111,6 @@ type TtsRuntimeOptionKey =
   | 'minimaxTtsEmotion'
   | 'minimaxTtsEnglishNormalization'
   | 'minimaxTtsPronunciations'
-  | 'runwayTtsModels'
-  | 'runwayTtsModel'
-  | 'runwayTtsVoice'
   | 'speechifyTtsModels'
   | 'speechifyTtsModel'
   | 'speechifyVoice'
@@ -172,8 +168,6 @@ export const buildTtsOptions = (
     geminiTtsModel,
     deepgramTtsModels,
     deepgramTtsModel,
-    runwayTtsModels,
-    runwayTtsModel,
     speechifyTtsModels,
     speechifyTtsModel,
     gcloudTtsModels,
@@ -220,14 +214,6 @@ export const buildTtsOptions = (
     geminiTtsModel,
     deepgramTtsModels,
     deepgramTtsModel,
-    runwayTtsModels,
-    runwayTtsModel,
-    runwayTtsVoice: (() => {
-      const value = readOptionalStringFlag(flags, 'runway-tts-voice')
-      if (value === undefined) return undefined
-      if (runwayTtsModels === undefined) return value
-      return validateCliValue(validateRunwayTtsVoice, value)
-    })(),
     speechifyTtsModels,
     speechifyTtsModel,
     speechifyVoice: (() => {

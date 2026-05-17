@@ -95,17 +95,17 @@ const makeSingleProviderTtsRun = async (): Promise<{
       tts: [
         {
           ttsService: 'gcloud',
-          ttsModel: 'neural2',
-          speaker: 'en-US-Neural2-F',
+          ttsModel: 'chirp3-hd',
+          speaker: 'en-US-Chirp3-HD-Charon',
           processingTime: 1000,
-          audioFileName: 'speech-gcloud-neural2.wav',
+          audioFileName: 'speech-gcloud-chirp3-hd.wav',
           audioFileSize: 100,
           chunkCount: 1
         }
       ]
     }
   })
-  await writeSyntheticWav(join(runDir, 'speech-gcloud-neural2.wav'), {
+  await writeSyntheticWav(join(runDir, 'speech-gcloud-chirp3-hd.wav'), {
     durationSeconds: 4.5,
     amplitude: 0.35,
     frequencyHz: 220
@@ -215,7 +215,7 @@ describe('voice quality scoring contracts', () => {
     const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
     await writeJson(fixturesPath, {
       providers: {
-        'gcloud/neural2': {
+        'gcloud/chirp3-hd': {
           stt: {
             'openai-stt/gpt-4o-transcribe': inputText
           }
@@ -282,7 +282,7 @@ describe('voice quality scoring contracts', () => {
     }))
 
     await expect(buildSingleProviderReport(runDir, inputText)).rejects.toThrow(
-      'gcloud/neural2: OpenAI audio judge failed: OpenAI audio judge returned text without a JSON object'
+      'gcloud/chirp3-hd: OpenAI audio judge failed: OpenAI audio judge returned text without a JSON object'
     )
   })
 
@@ -297,7 +297,7 @@ describe('voice quality scoring contracts', () => {
     })
 
     await expect(buildSingleProviderReport(runDir, inputText)).rejects.toThrow(
-      'gcloud/neural2: AssemblyAI roundtrip STT failed: AssemblyAI upload failed (503): upload unavailable'
+      'gcloud/chirp3-hd: AssemblyAI roundtrip STT failed: AssemblyAI upload failed (503): upload unavailable'
     )
   })
 
@@ -368,10 +368,10 @@ describe('voice quality scoring contracts', () => {
       },
       {
         ttsService: 'elevenlabs',
-        ttsModel: 'eleven_flash_v2_5',
+        ttsModel: 'eleven_v3',
         speaker: 'Rachel',
         processingTime: 800,
-        audioFileName: 'speech-elevenlabs-eleven_flash_v2_5.wav',
+        audioFileName: 'speech-elevenlabs-eleven_v3.wav',
         audioFileSize: 100,
         chunkCount: 1
       }
@@ -406,7 +406,7 @@ describe('voice quality scoring contracts', () => {
       amplitude: 0.32,
       frequencyHz: 260
     })
-    await writeSyntheticWav(join(runDir, 'speech-elevenlabs-eleven_flash_v2_5.wav'), {
+    await writeSyntheticWav(join(runDir, 'speech-elevenlabs-eleven_v3.wav'), {
       durationSeconds: 5.0,
       amplitude: 0.28,
       frequencyHz: 180
@@ -437,7 +437,7 @@ describe('voice quality scoring contracts', () => {
             'openai-stt/gpt-4o-transcribe': inputText
           }
         },
-        'elevenlabs/eleven_flash_v2_5': {
+        'elevenlabs/eleven_v3': {
           utmosv2Mos: 2.6,
           nisqaTtsNaturalnessMos: 2.5,
           nisqaQualityMos: 2.7,
@@ -503,7 +503,7 @@ describe('voice quality scoring contracts', () => {
     expect(report.providers[0]?.componentScores.naturalness.paidAudioJudgeRubric.score).toBe(93)
     expect(report.providers[0]?.componentScores.speechQuality.roundtripSttIntelligibility.score).toBe(100)
     expect(report.providers[0]?.missingMetrics).toEqual([])
-    expect(report.providers[2]?.providerKey).toBe('elevenlabs/eleven_flash_v2_5')
+    expect(report.providers[2]?.providerKey).toBe('elevenlabs/eleven_v3')
 
     const markdown = await Bun.file(join(runDir, 'voice-quality-report.md')).text()
     expect(markdown).toContain('# TTS Voice Quality Report')

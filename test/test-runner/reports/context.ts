@@ -53,7 +53,6 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--openai-tts': { service: 'openai', kind: 'tts' },
   '--gemini-tts': { service: 'gemini', kind: 'tts' },
   '--deepgram-tts': { service: 'deepgram', kind: 'tts' },
-  '--runway-tts': { service: 'runway', kind: 'tts' },
   '--kitten-tts': { service: 'kitten', kind: 'tts' },
   '--openai-image': { service: 'openai', kind: 'image' },
   '--gemini-image': { service: 'gemini', kind: 'image' },

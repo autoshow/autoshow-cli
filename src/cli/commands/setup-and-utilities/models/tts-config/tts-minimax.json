@@ -20,42 +20,6 @@
           "costMultiplier": 1,
           "msPer1KChars": 118008
         }
-      },
-      "speech-2.6-hd": {
-        "description": "speech-2.6-hd — high quality synthesis",
-        "costPer1kCharsUSD": 0.1,
-        "costPer1kCharsCents": 10,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 94592
-        }
-      },
-      "speech-2.6-turbo": {
-        "description": "speech-2.6-turbo — low latency synthesis",
-        "costPer1kCharsUSD": 0.06,
-        "costPer1kCharsCents": 6,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 118008
-        }
-      },
-      "speech-02-hd": {
-        "description": "speech-02-hd — high quality synthesis",
-        "costPer1kCharsUSD": 0.1,
-        "costPer1kCharsCents": 10,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 94592
-        }
-      },
-      "speech-02-turbo": {
-        "description": "speech-02-turbo — low latency synthesis",
-        "costPer1kCharsUSD": 0.06,
-        "costPer1kCharsCents": 6,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 118008
-        }
       }
     }
   }

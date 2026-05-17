@@ -100,8 +100,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  ├── XAI_API_KEY                     Required for --grok, --grok-stt,        │
 │  │                                   --grok-tts, --grok-image,               │
 │  │                                   --grok-video models                     │
-│  ├── RUNWAYML_API_SECRET             Required for --runway-tts,              │
-│  │                                   --runway-image, --runway-video models   │
+│  ├── RUNWAYML_API_SECRET             Required for --runway-image and         │
+│  │                                   --runway-video models                   │
 │  ├── SPEECHIFY_API_KEY               Required for --speechify-tts models     │
 │  ├── TOGETHER_API_KEY                Required for --together-stt models      │
 │  ├── BFL_API_KEY                     Required for --bfl-image models         │

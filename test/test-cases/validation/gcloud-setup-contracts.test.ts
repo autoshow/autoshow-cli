@@ -145,7 +145,7 @@ describe('gcloud setup contracts', () => {
         },
         post: {
           tts: {
-            gcloudTts: ['standard']
+            gcloudTts: ['chirp3-hd']
           }
         }
       }
@@ -219,7 +219,7 @@ describe('gcloud setup contracts', () => {
         },
         post: {
           tts: {
-            gcloudTts: ['standard']
+            gcloudTts: ['chirp3-hd']
           }
         }
       }

@@ -306,7 +306,7 @@ describe('TTS provider service contracts', () => {
     }) as typeof fetch
 
     const result = await runMinimaxTts('MiniMax control synthesis.', dir, {
-      model: 'speech-2.6-hd',
+      model: 'speech-2.8-hd',
       voiceId: 'English_expressive_narrator',
       languageBoost: 'English',
       speed: 1.2,
@@ -322,7 +322,7 @@ describe('TTS provider service contracts', () => {
       url: 'https://mock.minimax.local/v1/t2a_async_v2',
       method: 'POST',
       body: {
-        model: 'speech-2.6-hd',
+        model: 'speech-2.8-hd',
         text: 'MiniMax control synthesis.',
         voice_setting: {
           voice_id: 'English_expressive_narrator',
@@ -713,7 +713,7 @@ describe('TTS provider service contracts', () => {
     }) as typeof fetch
 
     const result = await runElevenLabsTts('ElevenLabs control synthesis.', dir, {
-      model: 'eleven_flash_v2_5',
+      model: 'eleven_v3',
       voiceId: 'voice_existing123',
       controls: {
         outputFormat: 'mp3_22050_32',
@@ -740,7 +740,7 @@ describe('TTS provider service contracts', () => {
       authorization: 'elevenlabs-key',
       body: {
         text: 'ElevenLabs control synthesis.',
-        model_id: 'eleven_flash_v2_5',
+        model_id: 'eleven_v3',
         language_code: 'en',
         voice_settings: {
           stability: 0.4,
@@ -907,16 +907,16 @@ describe('TTS provider service contracts', () => {
     }) as typeof fetch
 
     const result = await runGcloudTts('x'.repeat(4900), dir, {
-      model: 'neural2',
-      voice: 'en-US-Neural2-C',
+      model: 'chirp3-hd',
+      voice: 'en-US-Chirp3-HD-Charon',
       language: 'en-US'
     })
 
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(result.metadata).toMatchObject({
       ttsService: 'gcloud',
-      ttsModel: 'neural2',
-      speaker: 'en-US-Neural2-C',
+      ttsModel: 'chirp3-hd',
+      speaker: 'en-US-Chirp3-HD-Charon',
       chunkCount: 2
     })
     expect(calls).toHaveLength(2)
@@ -927,7 +927,7 @@ describe('TTS provider service contracts', () => {
     expect(calls[0]?.body).toMatchObject({
       voice: {
         languageCode: 'en-US',
-        name: 'en-US-Neural2-C'
+        name: 'en-US-Chirp3-HD-Charon'
       },
       audioConfig: {
         audioEncoding: 'LINEAR16',

@@ -1,4 +1,4 @@
-export const TTS_PROVIDERS = ['kitten', 'elevenlabs', 'minimax', 'groq', 'grok', 'mistral', 'openai', 'gemini', 'deepgram', 'runway', 'speechify', 'gcloud', 'deapi'] as const
+export const TTS_PROVIDERS = ['kitten', 'elevenlabs', 'minimax', 'groq', 'grok', 'mistral', 'openai', 'gemini', 'deepgram', 'speechify', 'gcloud', 'deapi'] as const
 export type TtsProvider = typeof TTS_PROVIDERS[number]
 
 export const IMAGE_PROVIDERS = ['gemini', 'openai', 'minimax', 'glm', 'grok', 'runway', 'bfl', 'deapi'] as const

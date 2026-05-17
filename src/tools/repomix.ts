@@ -5,8 +5,8 @@ import { PROJECT_ROOT } from '~/utils/runtime-paths'
 
 const INCLUDE_PATHS = [
   // '**/*'
-  // 'src'
-  'src'
+  'src/*'
+
 ]
 
 const IGNORE_PATHS = [

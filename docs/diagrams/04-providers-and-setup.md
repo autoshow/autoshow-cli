@@ -175,7 +175,6 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `tts --openai-tts` | `OPENAI_API_KEY`; custom voice creation also needs `--openai-tts-ref-audio` plus `--openai-tts-consent-id` or `--openai-tts-consent-audio` |
 | `tts --gemini-tts` | `GEMINI_API_KEY` |
 | `tts --deepgram-tts` | `DEEPGRAM_API_KEY` |
-| `tts --runway-tts` | `RUNWAYML_API_SECRET` |
 | `tts --speechify-tts` | `SPEECHIFY_API_KEY` |
 | `tts --gcloud-tts` | Google Cloud CLI auth or credentials plus Text-to-Speech API readiness |
 | `tts --deapi-tts` | `DEAPI_API_KEY` |

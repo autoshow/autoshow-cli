@@ -13,24 +13,6 @@
           "costMultiplier": 1,
           "msPer1KChars": 49703
         }
-      },
-      "gemini-2.5-flash-preview-tts": {
-        "description": "Gemini 2.5 Flash Preview TTS — fast speech synthesis",
-        "costPer1kCharsUSD": 0.0005,
-        "costPer1kCharsCents": 0.05,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 42500
-        }
-      },
-      "gemini-2.5-pro-preview-tts": {
-        "description": "Gemini 2.5 Pro Preview TTS — higher quality speech synthesis",
-        "costPer1kCharsUSD": 0.001,
-        "costPer1kCharsCents": 0.1,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 76080
-        }
       }
     }
   }

@@ -22,7 +22,6 @@ import {
   DEEPGRAM_DEFAULT_VOICE,
   GCLOUD_DEFAULT_TTS_VOICES,
   GROK_DEFAULT_TTS_VOICE,
-  RUNWAY_DEFAULT_TTS_VOICE,
   SPEECHIFY_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
@@ -99,7 +98,7 @@ budgetedTest('tts-openai-gpt-4o-mini-tts-clone', 'OpenAI custom voice clone gene
 }, E2E_TEST_TIMEOUT_MS)
 
 defineTTSServiceTest({
-  models: ['gemini-3.1-flash-tts-preview', 'gemini-2.5-flash-preview-tts', 'gemini-2.5-pro-preview-tts'],
+  models: ['gemini-3.1-flash-tts-preview'],
   cliFlag: '--gemini-tts',
   ttsService: 'gemini',
   envVarKey: 'GEMINI_API_KEY',
@@ -177,7 +176,7 @@ defineTTSServiceTest({
 })
 
 defineTTSServiceTest({
-  models: ['eleven_v3', 'eleven_flash_v2_5', 'eleven_turbo_v2_5'],
+  models: ['eleven_v3'],
   cliFlag: '--elevenlabs-tts',
   ttsService: 'elevenlabs',
   envVarKey: 'ELEVENLABS_API_KEY',
@@ -221,18 +220,6 @@ defineTTSServiceTest({
 })
 
 defineTTSServiceTest({
-  models: ['eleven_multilingual_v2'],
-  cliFlag: '--runway-tts',
-  ttsService: 'runway',
-  envVarKey: 'RUNWAYML_API_SECRET',
-  envVarDescription: 'Runway TTS',
-  resolveExpectedSpeaker: async () => {
-    const voice = await readConfiguredEnvVar('RUNWAY_TTS_VOICE')
-    return voice ?? RUNWAY_DEFAULT_TTS_VOICE
-  },
-})
-
-defineTTSServiceTest({
   models: ['simba-english', 'simba-multilingual'],
   cliFlag: '--speechify-tts',
   ttsService: 'speechify',
@@ -245,12 +232,12 @@ defineTTSServiceTest({
 })
 
 defineTTSServiceTest({
-  models: ['standard'],
+  models: ['chirp3-hd'],
   cliFlag: '--gcloud-tts',
   ttsService: 'gcloud',
   envVarKey: 'AUTOSHOW_GCLOUD_TTS_E2E',
   envVarDescription: 'Google Cloud TTS readiness with AUTOSHOW_GCLOUD_TTS_E2E=1',
-  resolveExpectedSpeaker: async () => GCLOUD_DEFAULT_TTS_VOICES.standard,
+  resolveExpectedSpeaker: async () => GCLOUD_DEFAULT_TTS_VOICES['chirp3-hd'],
 })
 
 test('rejects invalid mistral model', async () => {
