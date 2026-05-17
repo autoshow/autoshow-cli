@@ -34,6 +34,8 @@ export const validateTtsTargetSelection = (
       selection.geminiModels,
       selection.deepgramModels,
       selection.speechifyModels,
+      selection.humeModels,
+      selection.cartesiaModels,
       selection.gcloudModels,
       selection.deapiModels
     ].reduce((sum, models) => sum + (models?.length ?? 0), 0)
@@ -164,6 +166,14 @@ export const validateTtsTargetSelection = (
   }
   if (selection.speechifyCustomVoiceGender) {
     validateSpeechifyTtsCustomVoiceGender(selection.speechifyCustomVoiceGender)
+  }
+
+  if ((selection.humeVoice || selection.humeVoiceProvider) && selection.humeModels.length === 0) {
+    throw new Error('Hume TTS voice flags require --hume-tts <model> or --all-tts.')
+  }
+
+  if ((selection.cartesiaVoiceId || selection.cartesiaLanguage) && selection.cartesiaModels.length === 0) {
+    throw new Error('Cartesia TTS request control flags require --cartesia-tts <model> or --all-tts.')
   }
 
   if (selection.hasGcloudIcvFlags && selection.gcloudModels.length === 0) {

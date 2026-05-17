@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
   collectLinks,
+  getDefaultLinksOutputFileName,
   getDefaultLinksInputOutputFileName,
   parseLinksArgv,
   readLinksInputFile,
@@ -303,6 +304,44 @@ const BFL_IMAGE_LINKS = [
   'https://docs.bfl.ml/api-reference/models/generate-or-edit-an-image-with-flux2-[flex]-recommended-for-editing.md'
 ]
 
+const CARTESIA_GENERAL_LINKS = [
+  'https://docs.cartesia.ai/get-started/overview.md',
+  'https://docs.cartesia.ai/get-started/authenticate-your-client-applications.md',
+  'https://docs.cartesia.ai/tools/client-libraries.md',
+  'https://docs.cartesia.ai/use-the-api/api-conventions.md',
+  'https://docs.cartesia.ai/use-the-api/api-errors.md',
+  'https://docs.cartesia.ai/use-the-api/concurrency-limits-and-timeouts.md'
+]
+
+const CARTESIA_TTS_LINKS = [
+  'https://docs.cartesia.ai/get-started/realtime-text-to-speech-quickstart.md',
+  'https://docs.cartesia.ai/api-reference/tts/bytes.md',
+  'https://docs.cartesia.ai/api-reference/tts/sse.md',
+  'https://docs.cartesia.ai/api-reference/tts/websocket.md',
+  'https://docs.cartesia.ai/use-the-api/compare-tts-endpoints.md',
+  'https://docs.cartesia.ai/build-with-cartesia/tts-models/sonic-3-5.md',
+  'https://docs.cartesia.ai/build-with-cartesia/tts-models/voice-ids.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/choosing-a-voice.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/choosing-tts-parameters.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/clone-voices.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/clone-voices-pro/api.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/custom-pronunciations.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/localize-voices.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/prompting-tips.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/ssml-tags.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/stream-inputs-using-continuations.md',
+  'https://docs.cartesia.ai/build-with-cartesia/capability-guides/volume-speed-emotion.md',
+  'https://docs.cartesia.ai/use-the-api/tts-websocket/buffering.md',
+  'https://docs.cartesia.ai/use-the-api/tts-websocket/context-flushing-and-flush-i-ds.md',
+  'https://docs.cartesia.ai/use-the-api/tts-websocket/contexts.md',
+  'https://docs.cartesia.ai/api-reference/voices/list.md',
+  'https://docs.cartesia.ai/api-reference/voices/clone.md',
+  'https://docs.cartesia.ai/api-reference/voices/localize.md',
+  'https://docs.cartesia.ai/api-reference/voices/get.md',
+  'https://docs.cartesia.ai/api-reference/voices/update.md',
+  'https://docs.cartesia.ai/api-reference/voices/delete.md'
+]
+
 const DRIVE_GENERAL_LINKS = [
   'https://developers.google.com/workspace/drive/api/guides/about-sdk.md.txt',
   'https://developers.google.com/workspace/drive/api/guides/api-specific-auth.md.txt',
@@ -335,6 +374,43 @@ const SPEECHIFY_TTS_LINKS = [
   'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/create.md',
   'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/delete.md',
   'https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/download-sample.md'
+]
+
+const HUME_GENERAL_LINKS = [
+  'https://dev.hume.ai/intro.md',
+  'https://dev.hume.ai/docs/introduction/api-key.md',
+  'https://dev.hume.ai/docs/resources/use-case-guidelines.md',
+  'https://dev.hume.ai/docs/resources/billing.md',
+  'https://dev.hume.ai/docs/resources/errors.md',
+  'https://dev.hume.ai/docs/resources/privacy.md'
+]
+
+const HUME_TTS_LINKS = [
+  'https://dev.hume.ai/docs/text-to-speech-tts/overview.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/quickstart/typescript.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/quickstart/python.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/quickstart/dotnet.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/quickstart/cli.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/voice.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/acting-instructions.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/voice-conversion.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/continuation.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/timestamps.md',
+  'https://dev.hume.ai/docs/text-to-speech-tts/faq.md',
+  'https://dev.hume.ai/docs/voice/overview.md',
+  'https://dev.hume.ai/docs/voice/voice-design.md',
+  'https://dev.hume.ai/docs/voice/voice-cloning.md',
+  'https://dev.hume.ai/docs/voice/management.md',
+  'https://dev.hume.ai/reference/voices/create.md',
+  'https://dev.hume.ai/reference/voices/list.md',
+  'https://dev.hume.ai/reference/voices/delete.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/stream-input.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/synthesize-json-streaming.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/synthesize-file-streaming.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/synthesize-json.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/synthesize-file.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/convert-voice-file.md',
+  'https://dev.hume.ai/reference/text-to-speech-tts/convert-voice-json.md'
 ]
 
 const LINKS_RETRY_TEST_URL = 'https://elevenlabs.io/docs/overview/models.md'
@@ -791,6 +867,68 @@ test('links selector accepts bfl provider with image section', async () => {
   ])).rejects.toThrow('Unknown links section(s) for --bfl: general')
 })
 
+test('links selector accepts cartesia provider with general and tts sections', async () => {
+  const cartesiaSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--cartesia'
+  ])
+
+  expect(cartesiaSelection.serviceSelections.get('cartesia')).toEqual([])
+  expect(collectLinks(
+    cartesiaSelection.serviceSelections,
+    cartesiaSelection.globalSections
+  )).toEqual([...CARTESIA_GENERAL_LINKS, ...CARTESIA_TTS_LINKS])
+  expect(getDefaultLinksOutputFileName(
+    cartesiaSelection.serviceSelections,
+    cartesiaSelection.globalSections
+  )).toBe('cartesia-all-links.md')
+
+  const cartesiaTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--cartesia',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    cartesiaTtsSelection.serviceSelections,
+    cartesiaTtsSelection.globalSections
+  )).toEqual(CARTESIA_TTS_LINKS)
+  expect(getDefaultLinksOutputFileName(
+    cartesiaTtsSelection.serviceSelections,
+    cartesiaTtsSelection.globalSections
+  )).toBe('cartesia-tts-links.md')
+
+  const cartesiaGeneralTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--cartesia',
+    'general',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    cartesiaGeneralTtsSelection.serviceSelections,
+    cartesiaGeneralTtsSelection.globalSections
+  )).toEqual([...CARTESIA_GENERAL_LINKS, ...CARTESIA_TTS_LINKS])
+  expect(getDefaultLinksOutputFileName(
+    cartesiaGeneralTtsSelection.serviceSelections,
+    cartesiaGeneralTtsSelection.globalSections
+  )).toBe('cartesia-general-tts-links.md')
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--cartesia',
+    'stt'
+  ])).rejects.toThrow('Unknown links section(s) for --cartesia: stt')
+})
+
 test('links selector accepts drive provider with general section', () => {
   const driveSelection = parseLinksArgv([
     'bun',
@@ -853,6 +991,68 @@ test('links selector accepts speechify provider with only tts section', async ()
     '--speechify',
     'general'
   ])).rejects.toThrow('Unknown links section(s) for --speechify: general')
+})
+
+test('links selector accepts hume provider with general and tts sections', async () => {
+  const humeSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--hume'
+  ])
+
+  expect(humeSelection.serviceSelections.get('hume')).toEqual([])
+  expect(collectLinks(
+    humeSelection.serviceSelections,
+    humeSelection.globalSections
+  )).toEqual([...HUME_GENERAL_LINKS, ...HUME_TTS_LINKS])
+  expect(getDefaultLinksOutputFileName(
+    humeSelection.serviceSelections,
+    humeSelection.globalSections
+  )).toBe('hume-all-links.md')
+
+  const humeTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--hume',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    humeTtsSelection.serviceSelections,
+    humeTtsSelection.globalSections
+  )).toEqual(HUME_TTS_LINKS)
+  expect(getDefaultLinksOutputFileName(
+    humeTtsSelection.serviceSelections,
+    humeTtsSelection.globalSections
+  )).toBe('hume-tts-links.md')
+
+  const humeGeneralTtsSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--hume',
+    'general',
+    'tts'
+  ])
+
+  expect(collectLinks(
+    humeGeneralTtsSelection.serviceSelections,
+    humeGeneralTtsSelection.globalSections
+  )).toEqual([...HUME_GENERAL_LINKS, ...HUME_TTS_LINKS])
+  expect(getDefaultLinksOutputFileName(
+    humeGeneralTtsSelection.serviceSelections,
+    humeGeneralTtsSelection.globalSections
+  )).toBe('hume-general-tts-links.md')
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--hume',
+    'stt'
+  ])).rejects.toThrow('Unknown links section(s) for --hume: stt')
 })
 
 test('links selector accepts gcloud provider with stt and ocr sections', () => {

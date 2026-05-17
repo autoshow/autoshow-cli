@@ -6,8 +6,10 @@ import { runDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-service
 import { runDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/run-deepgram-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
 import { runGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/run-gcloud-tts'
+import { runCartesiaTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/run-cartesia-tts'
 import { runGrokTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/run-grok-tts'
 import { runGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/run-groq-tts'
+import { runHumeTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/run-hume-tts'
 import { runMinimaxTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/run-minimax-tts'
 import { runMistralTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/run-mistral-tts'
 import { runOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/run-openai-tts'
@@ -21,6 +23,14 @@ const envKeys = [
   'SPEECHIFY_API_KEY',
   'SPEECHIFY_BASE_URL',
   'SPEECHIFY_TTS_VOICE',
+  'HUME_API_KEY',
+  'HUME_BASE_URL',
+  'HUME_TTS_VOICE',
+  'HUME_TTS_VOICE_PROVIDER',
+  'CARTESIA_API_KEY',
+  'CARTESIA_BASE_URL',
+  'CARTESIA_VERSION',
+  'CARTESIA_TTS_VOICE',
   'MISTRAL_API_KEY',
   'MISTRAL_BASE_URL',
   'OPENAI_API_KEY',
@@ -382,6 +392,186 @@ describe('TTS provider service contracts', () => {
       body: { text: 'Deepgram control synthesis.' }
     }])
   }, 10_000)
+
+  test('Hume TTS posts Octave file requests with chunked utterances and default named voice', async () => {
+    const dir = await makeTempDir('autoshow-hume-tts-default-')
+    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const calls: Array<{
+      url: string
+      method: string
+      apiKey: string | null
+      accept: string | null
+      body: Record<string, unknown>
+    }> = []
+
+    process.env['HUME_API_KEY'] = 'hume-key'
+    process.env['HUME_BASE_URL'] = 'https://mock.hume.local/'
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      const headers = new Headers(init?.headers)
+      calls.push({
+        url: String(input),
+        method: init?.method ?? 'GET',
+        apiKey: headers.get('x-hume-api-key'),
+        accept: headers.get('accept'),
+        body: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      })
+      return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+    }) as typeof fetch
+
+    const result = await runHumeTts(`${'a'.repeat(5000)} ${'b'.repeat(100)}`, dir, {
+      model: 'octave-2'
+    })
+
+    expect(await Bun.file(result.audioPath).exists()).toBe(true)
+    expect(result.metadata).toMatchObject({
+      ttsService: 'hume',
+      ttsModel: 'octave-2',
+      speaker: 'Male English Actor',
+      chunkCount: 2
+    })
+    expect(calls).toHaveLength(2)
+    expect(calls.every((call) => call.url === 'https://mock.hume.local/v0/tts/file')).toBe(true)
+    expect(calls.every((call) => call.method === 'POST')).toBe(true)
+    expect(calls.every((call) => call.apiKey === 'hume-key')).toBe(true)
+    expect(calls.every((call) => call.accept === 'application/octet-stream')).toBe(true)
+    expect(calls.map((call) => ((call.body['utterances'] as Array<{ text: string }>)[0] as { text: string }).text.length)).toEqual([5000, 100])
+    expect(calls[0]?.body).toMatchObject({
+      version: '2',
+      format: { type: 'mp3' },
+      num_generations: 1,
+      utterances: [{
+        text: 'a'.repeat(5000),
+        voice: {
+          name: 'Male English Actor',
+          provider: 'HUME_AI'
+        }
+      }]
+    })
+  }, 10_000)
+
+  test('Hume TTS sends UUID voice IDs unless a provider is explicit', async () => {
+    const idDir = await makeTempDir('autoshow-hume-tts-id-')
+    const providerDir = await makeTempDir('autoshow-hume-tts-provider-')
+    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const bodies: Record<string, unknown>[] = []
+
+    process.env['HUME_API_KEY'] = 'hume-key'
+    process.env['HUME_BASE_URL'] = 'https://mock.hume.local'
+
+    globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      bodies.push(JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>)
+      return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+    }) as typeof fetch
+
+    await runHumeTts('Hume UUID voice synthesis.', idDir, {
+      model: 'octave-2',
+      voice: '123e4567-e89b-12d3-a456-426614174000'
+    })
+    await runHumeTts('Hume explicit provider synthesis.', providerDir, {
+      model: 'octave-2',
+      voice: 'Studio Voice',
+      voiceProvider: 'CUSTOM_VOICE'
+    })
+
+    expect(((bodies[0]?.['utterances'] as Array<{ voice: unknown }>)[0] as { voice: unknown }).voice).toEqual({
+      id: '123e4567-e89b-12d3-a456-426614174000'
+    })
+    expect(((bodies[1]?.['utterances'] as Array<{ voice: unknown }>)[0] as { voice: unknown }).voice).toEqual({
+      name: 'Studio Voice',
+      provider: 'CUSTOM_VOICE'
+    })
+  }, 10_000)
+
+  test('Hume TTS includes non-OK response text in errors', async () => {
+    const dir = await makeTempDir('autoshow-hume-tts-error-')
+    process.env['HUME_API_KEY'] = 'hume-key'
+
+    globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], _init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      return new Response('bad hume', { status: 400 })
+    }) as typeof fetch
+
+    await expect(runHumeTts('Hume error synthesis.', dir, {
+      model: 'octave-2'
+    })).rejects.toThrow('Hume TTS failed (400): bad hume')
+  })
+
+  test('Cartesia TTS posts byte synthesis requests with chunked WAV output', async () => {
+    const dir = await makeTempDir('autoshow-cartesia-tts-')
+    const audioBytes = Buffer.from(createMockWavBase64(), 'base64')
+    const calls: Array<{
+      url: string
+      method: string
+      authorization: string | null
+      version: string | null
+      accept: string | null
+      body: Record<string, unknown>
+    }> = []
+
+    process.env['CARTESIA_API_KEY'] = 'cartesia-key'
+    process.env['CARTESIA_BASE_URL'] = 'https://mock.cartesia.local/'
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      const headers = new Headers(init?.headers)
+      calls.push({
+        url: String(input),
+        method: init?.method ?? 'GET',
+        authorization: headers.get('authorization'),
+        version: headers.get('cartesia-version'),
+        accept: headers.get('accept'),
+        body: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      })
+      return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/wav' } })
+    }) as typeof fetch
+
+    const result = await runCartesiaTts(`${'a'.repeat(5000)} ${'b'.repeat(100)}`, dir, {
+      model: 'sonic-3.5',
+      voiceId: 'voice-id-123',
+      language: 'en'
+    })
+
+    expect(await Bun.file(result.audioPath).exists()).toBe(true)
+    expect(result.metadata).toMatchObject({
+      ttsService: 'cartesia',
+      ttsModel: 'sonic-3.5',
+      speaker: 'voice-id-123',
+      chunkCount: 2
+    })
+    expect(calls).toHaveLength(2)
+    expect(calls.every((call) => call.url === 'https://mock.cartesia.local/tts/bytes')).toBe(true)
+    expect(calls.every((call) => call.method === 'POST')).toBe(true)
+    expect(calls.every((call) => call.authorization === 'Bearer cartesia-key')).toBe(true)
+    expect(calls.every((call) => call.version === '2026-03-01')).toBe(true)
+    expect(calls.every((call) => call.accept === 'application/octet-stream')).toBe(true)
+    expect(calls.map((call) => String(call.body['transcript']).length)).toEqual([5000, 100])
+    expect(calls[0]?.body).toMatchObject({
+      model_id: 'sonic-3.5',
+      transcript: 'a'.repeat(5000),
+      voice: {
+        mode: 'id',
+        id: 'voice-id-123'
+      },
+      language: 'en',
+      output_format: {
+        container: 'wav',
+        encoding: 'pcm_s16le',
+        sample_rate: 24000
+      }
+    })
+  }, 10_000)
+
+  test('Cartesia TTS includes non-OK response text in errors', async () => {
+    const dir = await makeTempDir('autoshow-cartesia-tts-error-')
+    process.env['CARTESIA_API_KEY'] = 'cartesia-key'
+
+    globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], _init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      return new Response('bad cartesia', { status: 400 })
+    }) as typeof fetch
+
+    await expect(runCartesiaTts('Cartesia error synthesis.', dir, {
+      model: 'sonic-3'
+    })).rejects.toThrow('Cartesia TTS failed (400): bad cartesia')
+  })
 
   test('deAPI TTS sends language, speed, format controls and enables VoiceDesign with instruction', async () => {
     const firstDir = await makeTempDir('autoshow-deapi-tts-controls-')

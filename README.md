@@ -93,6 +93,12 @@ bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mis
 # MiniMax hosted text-to-speech
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 
+# Hume Octave 2 text-to-speech
+bun as tts input/examples/tts/1-tts.md --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+
+# Cartesia Sonic text-to-speech
+bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+
 # deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
@@ -181,6 +187,8 @@ bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
 bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 bun as config --reset
 ```

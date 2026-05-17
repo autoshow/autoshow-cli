@@ -45,6 +45,8 @@ import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-serv
 import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
 import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { setupSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-tts'
+import { setupHumeTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/hume-tts'
+import { setupCartesiaTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/cartesia-tts'
 import { setupGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/gcloud-tts'
 import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
@@ -353,6 +355,10 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupSpeechifyTts)
 
+  await withCompactSetup(setupHumeTts)
+
+  await withCompactSetup(setupCartesiaTts)
+
   await withCompactSetup(setupGcloudTts)
 
   await withCompactSetup(setupDeapiTts)
@@ -423,6 +429,8 @@ const runSetupTts = async (): Promise<void> => {
   await setupGeminiTts()
   await setupDeepgramTts()
   await setupSpeechifyTts()
+  await setupHumeTts()
+  await setupCartesiaTts()
   await setupGcloudTts()
   await setupDeapiTts()
   l.write('success', 'TTS setup complete')

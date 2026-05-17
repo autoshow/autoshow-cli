@@ -18,7 +18,9 @@ import type {
   DeepgramTtsModel,
   SpeechifyTtsModel,
   GcloudTtsModel,
-  DeapiTtsModel
+  DeapiTtsModel,
+  HumeTtsModel,
+  CartesiaTtsModel
 } from '~/types'
 
 export const SUPPORTED_KITTEN_TTS_MODELS = [
@@ -457,3 +459,50 @@ export const SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS = [
 export const DEAPI_DEFAULT_TTS_VOICE = 'af_heart'
 
 export const validateDeapiTtsModel = createModelValidator<DeapiTtsModel>(SUPPORTED_DEAPI_TTS_MODELS, 'deapi-tts')
+
+export const SUPPORTED_HUME_TTS_MODELS = [
+  'octave-2'
+] as const satisfies readonly string[]
+
+export const HUME_DEFAULT_TTS_VOICE = 'Male English Actor'
+export const SUPPORTED_HUME_TTS_VOICE_PROVIDERS = [
+  'HUME_AI',
+  'CUSTOM_VOICE'
+] as const satisfies readonly string[]
+
+export const validateHumeTtsModel = createModelValidator<HumeTtsModel>(SUPPORTED_HUME_TTS_MODELS, 'hume-tts')
+
+export const validateHumeTtsVoice = (voice: string): string => {
+  const normalized = voice.trim()
+  if (!normalized) {
+    throw CLIUsageError('Invalid --hume-tts-voice value. Expected a non-empty Hume voice name or ID.')
+  }
+  return normalized
+}
+
+export const validateHumeTtsVoiceProvider = (value: string): string => {
+  const normalized = normalizeListedValue(value, SUPPORTED_HUME_TTS_VOICE_PROVIDERS)
+  if (!normalized) {
+    throw CLIUsageError(
+      `Invalid --hume-tts-voice-provider "${value}". Allowed values: ${formatAllowedValues(SUPPORTED_HUME_TTS_VOICE_PROVIDERS)}`
+    )
+  }
+  return normalized
+}
+
+export const SUPPORTED_CARTESIA_TTS_MODELS = [
+  'sonic-3',
+  'sonic-3.5'
+] as const satisfies readonly string[]
+
+export const CARTESIA_DEFAULT_TTS_VOICE = 'f786b574-daa5-4673-aa0c-cbe3e8534c02'
+
+export const validateCartesiaTtsModel = createModelValidator<CartesiaTtsModel>(SUPPORTED_CARTESIA_TTS_MODELS, 'cartesia-tts')
+
+export const validateCartesiaTtsVoice = (voice: string): string => {
+  const normalized = voice.trim()
+  if (!normalized) {
+    throw CLIUsageError('Invalid --cartesia-tts-voice value. Expected a non-empty Cartesia voice ID.')
+  }
+  return normalized
+}

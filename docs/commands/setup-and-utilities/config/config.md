@@ -45,12 +45,14 @@ bun as config --whisper-stt large-v3-turbo
 bun as config --gcloud-stt chirp_3
 bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
 bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
-bun as config --elevenlabs-tts eleven_flash_v2_5 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
-bun as config --minimax-tts speech-2.6-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15
+bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --minimax-tts speech-2.8-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15
 bun as config --grok-tts grok-tts --grok-tts-language auto --grok-tts-text-normalization
 bun as config --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 bun as config --openai-tts gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1
 bun as config --speechify-tts simba-english --speechify-voice george
+bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 bun as config --gcloud-tts chirp3-hd --gcloud-tts-voice en-US-Chirp3-HD-Achernar
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 100
@@ -120,6 +122,12 @@ Representative JSON shape:
         "openaiTtsInstructions": "Warm documentary narration",
         "openaiTtsSpeed": 1.1,
         "speechifyTts": ["simba-english"],
+        "humeTts": ["octave-2"],
+        "humeTtsVoice": "Male English Actor",
+        "humeTtsVoiceProvider": "HUME_AI",
+        "cartesiaTts": ["sonic-3.5"],
+        "cartesiaTtsVoice": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+        "cartesiaTtsLanguage": "en",
         "gcloudTts": ["chirp3-hd"],
         "deapiTts": ["Qwen3_TTS_12Hz_1_7B_Base"],
         "providerConcurrency": 2,
@@ -213,7 +221,7 @@ Google Cloud Document AI runtime fields such as processor IDs, location, and buc
 
 | Field | Flag |
 |-------|------|
-| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `runwayTts`, `speechifyTts`, `gcloudTts`, `deapiTts` | matching TTS provider flags |
+| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `runwayTts`, `speechifyTts`, `humeTts`, `cartesiaTts`, `gcloudTts`, `deapiTts` | matching TTS provider flags |
 | `ttsSpeaker`, `groqVoice`, `grokTtsVoice`, `grokTtsLanguage`, `grokTtsTextNormalization`, `mistralTtsVoice`, `mistralTtsRefAudio` | matching voice/reference flags |
 | `ttsDialogueFormat`, `ttsSpeakerRefAudio` | dialogue TTS flags |
 | `openaiVoice`, `openaiTtsInstructions`, `openaiTtsSpeed`, `openaiTtsRefAudio`, `openaiTtsConsentId`, `openaiTtsConsentAudio`, `openaiTtsConsentLanguage`, `openaiTtsConsentName`, `openaiTtsVoiceName` | OpenAI voice and synthesis flags |
@@ -221,7 +229,7 @@ Google Cloud Document AI runtime fields such as processor IDs, location, and buc
 | `elevenlabsVoice`, `elevenlabsTtsPvcVoice`, `elevenlabsTtsRefAudio`, `elevenlabsTtsVoiceName`, `elevenlabsTtsCloneRemoveBackgroundNoise` | ElevenLabs reusable voice/clone flags |
 | `minimaxTtsVoice`, `minimaxTtsRefAudio`, `minimaxTtsPromptAudio`, `minimaxTtsPromptText`, `minimaxTtsCloneNoiseReduction`, `minimaxTtsCloneVolumeNormalization` | MiniMax voice/clone flags |
 | `minimaxTtsLanguageBoost`, `minimaxTtsSpeed`, `minimaxTtsVolume`, `minimaxTtsPitch`, `minimaxTtsEmotion`, `minimaxTtsEnglishNormalization`, `minimaxTtsPronunciations` | MiniMax synthesis control flags |
-| `deepgramVoice`, `runwayTtsVoice`, `speechifyVoice`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage`, `deapiTtsVoice`, `deapiTtsRefAudio`, `deapiTtsRefText` | provider voice/reference flags |
+| `deepgramVoice`, `runwayTtsVoice`, `speechifyVoice`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage`, `deapiTtsVoice`, `deapiTtsRefAudio`, `deapiTtsRefText` | provider voice/reference flags |
 | `providerConcurrency`, `localConcurrency` | `--tts-provider-concurrency`, `--tts-local-concurrency` |
 
 PVC training samples, CAPTCHA output, Speechify custom-voice consent fields, and Google Cloud voice-cloning key output flags are runtime-only and are not persisted.

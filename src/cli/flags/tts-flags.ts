@@ -11,7 +11,9 @@ import {
   SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS,
   SUPPORTED_GCLOUD_TTS_MODELS,
-  SUPPORTED_DEAPI_TTS_MODELS
+  SUPPORTED_DEAPI_TTS_MODELS,
+  SUPPORTED_HUME_TTS_MODELS,
+  SUPPORTED_CARTESIA_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
@@ -80,6 +82,14 @@ export const ttsFlags = {
   },
   'speechify-tts': {
     description: buildModelDescription('Speechify TTS model', SUPPORTED_SPEECHIFY_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'hume-tts': {
+    description: buildModelDescription('Hume TTS model', SUPPORTED_HUME_TTS_MODELS),
+    type: [String] as [StringConstructor]
+  },
+  'cartesia-tts': {
+    description: buildModelDescription('Cartesia TTS model', SUPPORTED_CARTESIA_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'gcloud-tts': {
@@ -250,6 +260,22 @@ export const ttsFlags = {
   },
   'speechify-tts-voice-gender': {
     description: 'Speechify custom voice gender: male|female|notSpecified (default: notSpecified)',
+    type: String
+  },
+  'hume-tts-voice': {
+    description: 'Hume TTS voice name or voice ID override (default: Male English Actor)',
+    type: String
+  },
+  'hume-tts-voice-provider': {
+    description: 'Hume named voice provider: HUME_AI|CUSTOM_VOICE (default: HUME_AI)',
+    type: String
+  },
+  'cartesia-tts-voice': {
+    description: 'Cartesia TTS voice ID override (default: f786b574-daa5-4673-aa0c-cbe3e8534c02)',
+    type: String
+  },
+  'cartesia-tts-language': {
+    description: 'Cartesia TTS language code override',
     type: String
   },
   'gcloud-tts-voice': {

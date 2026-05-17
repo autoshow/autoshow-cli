@@ -248,6 +248,14 @@ export type RuntimeOptions = {
   speechifyTtsConsentEmail: string | undefined
   speechifyTtsVoiceLocale: string | undefined
   speechifyTtsVoiceGender: string | undefined
+  humeTtsModels: string[] | undefined
+  humeTtsModel: string | undefined
+  humeTtsVoice: string | undefined
+  humeTtsVoiceProvider: string | undefined
+  cartesiaTtsModels: string[] | undefined
+  cartesiaTtsModel: string | undefined
+  cartesiaTtsVoice: string | undefined
+  cartesiaTtsLanguage: string | undefined
   gcloudTtsModels: string[] | undefined
   gcloudTtsModel: string | undefined
   gcloudTtsVoice: string | undefined

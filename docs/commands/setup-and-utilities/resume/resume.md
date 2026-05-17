@@ -95,6 +95,12 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3 --
 # Resume missing OpenAI custom voice TTS outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
+# Resume missing Hume TTS outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+
+# Resume missing Cartesia TTS outputs
+bun as resume ./output/2026-04-22_12-00-00-000_run --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+
 # Resume missing Gemini image outputs
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
 
@@ -195,7 +201,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 ### TTS
 
-The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, Groq, Mistral, OpenAI, Gemini, Runway, and Deepgram TTS. It does not expose newer standalone TTS-only flags for Grok, Speechify, Google Cloud, deAPI, MiniMax synthesis controls, OpenAI instructions/speed, or Grok language/normalization.
+The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, Groq, Mistral, OpenAI, Gemini, Deepgram, Hume, and Cartesia TTS. It does not expose newer standalone TTS-only flags for Grok, Speechify, Google Cloud, deAPI, MiniMax synthesis controls, OpenAI instructions/speed, or Grok language/normalization.
 
 | Flag | Description |
 |------|-------------|
@@ -207,6 +213,8 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--openai-tts <model>` | Select one or more OpenAI TTS models |
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
+| `--hume-tts <model>` | Select one or more Hume TTS models |
+| `--cartesia-tts <model>` | Select one or more Cartesia TTS models |
 | `--tts-provider-concurrency <n>` | Max hosted TTS providers/models running in parallel for one item |
 | `--tts-local-concurrency <n>` | Max local TTS providers running in parallel for one item |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
@@ -225,6 +233,10 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--openai-tts-voice-name <name>` | Created OpenAI custom voice label |
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
+| `--hume-tts-voice <name-or-id>` | Hume voice name or ID override |
+| `--hume-tts-voice-provider <provider>` | Hume named voice provider, `HUME_AI` or `CUSTOM_VOICE` |
+| `--cartesia-tts-voice <id>` | Cartesia voice ID override |
+| `--cartesia-tts-language <code>` | Cartesia language code override |
 | `--groq-voice <id>` | Groq TTS voice ID override |
 | `--mistral-tts-voice <id>` | Mistral saved/custom voice ID |
 | `--mistral-tts-ref-audio <path>` | Mistral one-off voice clone reference audio path |

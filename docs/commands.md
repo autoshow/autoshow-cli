@@ -102,6 +102,12 @@ bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mis
 # text-to-speech with MiniMax hosted voices
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 
+# text-to-speech with Hume Octave 2
+bun as tts input/examples/tts/1-tts.md --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+
+# text-to-speech with Cartesia Sonic
+bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+
 # text-to-speech with deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
@@ -195,6 +201,8 @@ bun as tts input/examples/tts/1-tts.md --groq-tts canopylabs/orpheus-arabic-saud
 bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --price
 bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --price
 bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --price
+bun as tts input/examples/tts/1-tts.md --hume-tts octave-2 --price
+bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3.5 --price
 bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --price
 bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price

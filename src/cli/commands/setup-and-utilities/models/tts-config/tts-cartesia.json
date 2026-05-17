@@ -1,0 +1,24 @@
+{
+  "cartesia": {
+    "description": "Cartesia Sonic cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "sonic-3": {
+        "description": "Cartesia Sonic 3 text-to-speech",
+        "costPer1kCharsCents": 3.7375,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      },
+      "sonic-3.5": {
+        "description": "Cartesia Sonic 3.5 text-to-speech",
+        "costPer1kCharsCents": 3.7375,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      }
+    }
+  }
+}

@@ -128,7 +128,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
   Hosted TTS readiness
     ElevenLabs, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway,
-    Speechify, Google Cloud, deAPI
+    Speechify, Hume, Cartesia, Google Cloud, deAPI
     MiniMax TTS uses MINIMAX_API_KEY but has no dedicated TTS setup hook
 
   Hosted image/video/music readiness
@@ -176,6 +176,8 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `tts --gemini-tts` | `GEMINI_API_KEY` |
 | `tts --deepgram-tts` | `DEEPGRAM_API_KEY` |
 | `tts --speechify-tts` | `SPEECHIFY_API_KEY` |
+| `tts --hume-tts` | `HUME_API_KEY` |
+| `tts --cartesia-tts` | `CARTESIA_API_KEY` |
 | `tts --gcloud-tts` | Google Cloud CLI auth or credentials plus Text-to-Speech API readiness |
 | `tts --deapi-tts` | `DEAPI_API_KEY` |
 | `image --gemini-image` | `GEMINI_API_KEY` |

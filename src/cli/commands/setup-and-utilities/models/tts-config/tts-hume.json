@@ -1,0 +1,17 @@
+{
+  "hume": {
+    "description": "Hume Octave cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "octave-2": {
+        "description": "Hume Octave 2 expressive text-to-speech",
+        "costPer1kCharsUSD": 0.15,
+        "costPer1kCharsCents": 15,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      }
+    }
+  }
+}

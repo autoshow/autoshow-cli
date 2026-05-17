@@ -51,6 +51,8 @@ import {
   validateDeapiTtsModel,
   validateDeepgramTtsModel,
   validateSpeechifyTtsModel,
+  validateHumeTtsModel,
+  validateCartesiaTtsModel,
   validateGcloudTtsModel,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
@@ -200,6 +202,8 @@ export const readRuntimeModelOptions = (
   const geminiTtsModels = readValidatedMany('gemini-tts', validateGeminiTtsModel)
   const deepgramTtsModels = readValidatedMany('deepgram-tts', validateDeepgramTtsModel)
   const speechifyTtsModels = readValidatedMany('speechify-tts', validateSpeechifyTtsModel)
+  const humeTtsModels = readValidatedMany('hume-tts', validateHumeTtsModel)
+  const cartesiaTtsModels = readValidatedMany('cartesia-tts', validateCartesiaTtsModel)
   const gcloudTtsModels = readValidatedMany('gcloud-tts', validateGcloudTtsModel)
   const deapiTtsModels = readValidatedMany('deapi-tts', validateDeapiTtsModel)
   const hasExplicitTtsEngine = [
@@ -213,6 +217,8 @@ export const readRuntimeModelOptions = (
     geminiTtsModels,
     deepgramTtsModels,
     speechifyTtsModels,
+    humeTtsModels,
+    cartesiaTtsModels,
     gcloudTtsModels,
     deapiTtsModels
   ].some((value) => value !== undefined && value.length > 0)
@@ -340,6 +346,10 @@ export const readRuntimeModelOptions = (
     deepgramTtsModel: first(deepgramTtsModels),
     speechifyTtsModels,
     speechifyTtsModel: first(speechifyTtsModels),
+    humeTtsModels,
+    humeTtsModel: first(humeTtsModels),
+    cartesiaTtsModels,
+    cartesiaTtsModel: first(cartesiaTtsModels),
     gcloudTtsModels,
     gcloudTtsModel: first(gcloudTtsModels),
     deapiTtsModels,

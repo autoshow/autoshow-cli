@@ -82,6 +82,7 @@ Accepted provider selectors are the lowercase names below.
 | `--assembly` | `stt` |
 | `--aws` | `stt`, `ocr` |
 | `--bfl` | `image` |
+| `--cartesia` | `general`, `tts` |
 | `--gcloud` | `stt`, `tts`, `ocr` |
 | `--deepgram` | `stt`, `tts` |
 | `--deepinfra` | `general`, `stt`, `ocr` |
@@ -92,6 +93,7 @@ Accepted provider selectors are the lowercase names below.
 | `--runway` | `general` |
 | `--resend` | `general` |
 | `--happyscribe` | `stt` |
+| `--hume` | `general`, `tts` |
 | `--deapi` | `general`, `image`, `ocr`, `video`, `tts`, `music`, `stt` |
 | `--supadata` | `stt` |
 | `--scrapecreators` | `general`, `stt`, `url` |
@@ -138,6 +140,9 @@ bun as links --kimi text ocr
 
 # Fetch Mistral STT, OCR, and TTS docs
 bun as links --mistral stt ocr tts
+
+# Fetch Hume and Cartesia TTS docs
+bun as links --hume tts --cartesia tts
 
 # Fetch only OpenAI general and text docs
 bun as links --openai general text

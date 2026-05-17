@@ -78,6 +78,8 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkEnvVar('GLADIA_API_KEY', 'GLADIA_API_KEY'))
   checks.push(checkEnvVar('DEEPGRAM_API_KEY', 'DEEPGRAM_API_KEY'))
   checks.push(checkEnvVar('SPEECHIFY_API_KEY', 'SPEECHIFY_API_KEY'))
+  checks.push(checkEnvVar('HUME_API_KEY', 'HUME_API_KEY'))
+  checks.push(checkEnvVar('CARTESIA_API_KEY', 'CARTESIA_API_KEY'))
   checks.push(checkEnvVar('SONIOX_API_KEY', 'SONIOX_API_KEY'))
   checks.push(checkEnvVar('SPEECHMATICS_API_KEY', 'SPEECHMATICS_API_KEY'))
   checks.push(checkEnvVar('REVAI_ACCESS_TOKEN', 'REVAI_ACCESS_TOKEN'))

@@ -69,18 +69,20 @@ import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/
 import {
   GCLOUD_DEFAULT_TTS_VOICES,
   getGroqDefaultTtsVoiceForModel,
+  DEEPGRAM_DEFAULT_VOICE,
   GROK_DEFAULT_TTS_VOICE,
   SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
-  SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GROK_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
+  SUPPORTED_HUME_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_MODELS,
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
+  SUPPORTED_CARTESIA_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
@@ -518,6 +520,12 @@ describe('option resolution contracts', () => {
       'speechify-voice': 'narrator_voice',
       'speechify-tts-audio-format': 'wav',
       'speechify-tts-language': 'en-US',
+      'hume-tts': 'octave-2',
+      'hume-tts-voice': 'Studio Voice',
+      'hume-tts-voice-provider': 'CUSTOM_VOICE',
+      'cartesia-tts': 'sonic-3.5',
+      'cartesia-tts-voice': 'cartesia-voice-id',
+      'cartesia-tts-language': 'en',
       'elevenlabs-tts': 'eleven_v3',
       'elevenlabs-tts-output-format': 'mp3_22050_32',
       'elevenlabs-tts-language-code': 'en',
@@ -585,6 +593,12 @@ describe('option resolution contracts', () => {
     expect(opts.speechifyVoice).toBe('narrator_voice')
     expect(opts.speechifyTtsAudioFormat).toBe('wav')
     expect(opts.speechifyTtsLanguage).toBe('en-US')
+    expect(opts.humeTtsModel).toBe('octave-2')
+    expect(opts.humeTtsVoice).toBe('Studio Voice')
+    expect(opts.humeTtsVoiceProvider).toBe('CUSTOM_VOICE')
+    expect(opts.cartesiaTtsModel).toBe('sonic-3.5')
+    expect(opts.cartesiaTtsVoice).toBe('cartesia-voice-id')
+    expect(opts.cartesiaTtsLanguage).toBe('en')
     expect(opts.elevenlabsTtsModel).toBe('eleven_v3')
     expect(opts.elevenlabsTtsOutputFormat).toBe('mp3_22050_32')
     expect(opts.elevenlabsTtsLanguageCode).toBe('en')
@@ -836,6 +850,9 @@ describe('option resolution contracts', () => {
     expect(() => buildOptsFromFlags(false, { 'minimax-tts-pitch': '1.5' })).toThrow('Invalid --minimax-tts-pitch value "1.5"')
     expect(() => buildOptsFromFlags(false, { 'minimax-tts-emotion': 'bored' })).toThrow('Invalid --minimax-tts-emotion "bored"')
     expect(() => buildOptsFromFlags(false, { 'speechify-tts-audio-format': 'flac' })).toThrow('Invalid --speechify-tts-audio-format "flac"')
+    expect(() => buildOptsFromFlags(false, { 'hume-tts': 'octave-1' })).toThrow('Invalid --hume-tts model "octave-1"')
+    expect(() => buildOptsFromFlags(false, { 'hume-tts-voice-provider': 'PRIVATE' })).toThrow('Invalid --hume-tts-voice-provider "PRIVATE"')
+    expect(() => buildOptsFromFlags(false, { 'cartesia-tts': 'sonic-2' })).toThrow('Invalid --cartesia-tts model "sonic-2"')
     expect(() => buildOptsFromFlags(false, { 'deepgram-tts-sample-rate': '1.5' })).toThrow('Invalid --deepgram-tts-sample-rate value "1.5"')
     expect(() => buildOptsFromFlags(false, { 'deapi-tts-speed': '0.4' })).toThrow('Invalid --deapi-tts-speed value "0.4"')
     expect(() => buildOptsFromFlags(false, { 'elevenlabs-tts-text-normalization': 'always' })).toThrow('Invalid --elevenlabs-tts-text-normalization "always"')
@@ -868,8 +885,44 @@ describe('option resolution contracts', () => {
     }))).toThrow('Speechify TTS request control flags require --speechify-tts <model> or --all-tts')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'hume-tts-voice': 'Studio Voice'
+    }))).toThrow('Hume TTS voice flags require --hume-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'cartesia-tts-language': 'en'
+    }))).toThrow('Cartesia TTS request control flags require --cartesia-tts <model> or --all-tts')
+
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'deapi-tts-language': 'English'
     }))).toThrow('deAPI TTS request control flags require --deapi-tts <model> or --all-tts')
+  })
+
+  test('Hume and Cartesia TTS target collection preserves model and voice controls', () => {
+    const targets = collectTtsTargets(buildOptsFromFlags(false, {
+      'hume-tts': 'octave-2',
+      'hume-tts-voice': 'Studio Voice',
+      'hume-tts-voice-provider': 'CUSTOM_VOICE',
+      'cartesia-tts': 'sonic-3.5',
+      'cartesia-tts-voice': 'cartesia-voice-id',
+      'cartesia-tts-language': 'en'
+    }))
+
+    expect(targets.map((target) => ({
+      service: target.service,
+      model: target.model,
+      voice: target.voice
+    }))).toEqual([
+      {
+        service: 'hume',
+        model: 'octave-2',
+        voice: 'Studio Voice'
+      },
+      {
+        service: 'cartesia',
+        model: 'sonic-3.5',
+        voice: 'cartesia-voice-id'
+      }
+    ])
   })
 
   test('LLM provider concurrency defaults, falls back, and clamps like STT/OCR concurrency flags', () => {
@@ -945,6 +998,8 @@ describe('option resolution contracts', () => {
     const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
     const kimiOcrDefault = resolveCheapestModelForFlag('kimi-ocr')
     const speechifyTtsDefault = resolveCheapestModelForFlag('speechify-tts')
+    const humeTtsDefault = resolveCheapestModelForFlag('hume-tts')
+    const cartesiaTtsDefault = resolveCheapestModelForFlag('cartesia-tts')
     const gcloudTtsDefault = resolveCheapestModelForFlag('gcloud-tts')
     const opts = buildOptsFromFlags(false, {
       openai: true,
@@ -955,6 +1010,8 @@ describe('option resolution contracts', () => {
       'deepinfra-ocr': true,
       'kimi-ocr': true,
       'speechify-tts': true,
+      'hume-tts': true,
+      'cartesia-tts': true,
       'gcloud-tts': true
     })
 
@@ -966,6 +1023,8 @@ describe('option resolution contracts', () => {
     expect(deepinfraOcrDefault).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
     expect(speechifyTtsDefault).toBe('simba-english')
+    expect(humeTtsDefault).toBe('octave-2')
+    expect(cartesiaTtsDefault).toBe('sonic-3')
     expect(gcloudTtsDefault).toBe('chirp3-hd')
     expect(opts.openaiModel).toBe(openaiDefault)
     expect(opts.glmModel).toBe(glmDefault)
@@ -975,6 +1034,8 @@ describe('option resolution contracts', () => {
     expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
     expect(opts.kimiOcrModel).toBe(kimiOcrDefault)
     expect(opts.speechifyTtsModel).toBe(speechifyTtsDefault)
+    expect(opts.humeTtsModel).toBe(humeTtsDefault)
+    expect(opts.cartesiaTtsModel).toBe(cartesiaTtsDefault)
     expect(opts.gcloudTtsModel).toBe(gcloudTtsDefault)
   })
 
@@ -1078,6 +1139,8 @@ describe('option resolution contracts', () => {
     const grokTargets = collectTtsTargets(opts).filter((target) => target.service === 'grok')
     const mistralTargets = collectTtsTargets(opts).filter((target) => target.service === 'mistral')
     const speechifyTargets = collectTtsTargets(opts).filter((target) => target.service === 'speechify')
+    const humeTargets = collectTtsTargets(opts).filter((target) => target.service === 'hume')
+    const cartesiaTargets = collectTtsTargets(opts).filter((target) => target.service === 'cartesia')
     const gcloudTargets = collectTtsTargets(opts).filter((target) => target.service === 'gcloud')
 
     expect(services).not.toContain('runway')
@@ -1099,10 +1162,14 @@ describe('option resolution contracts', () => {
     expect(targetModelsFor('openai')).toEqual([...SUPPORTED_OPENAI_TTS_MODELS])
     expect(opts.geminiTtsModels).toEqual([...SUPPORTED_GEMINI_TTS_MODELS])
     expect(targetModelsFor('gemini')).toEqual([...SUPPORTED_GEMINI_TTS_MODELS])
-    expect(opts.deepgramTtsModels).toEqual([...SUPPORTED_DEEPGRAM_TTS_MODELS])
-    expect(deepgramTargets.map((target) => target.model)).toEqual([...SUPPORTED_DEEPGRAM_TTS_MODELS])
+    expect(opts.deepgramTtsModels).toEqual([DEEPGRAM_DEFAULT_VOICE])
+    expect(deepgramTargets.map((target) => target.model)).toEqual([DEEPGRAM_DEFAULT_VOICE])
     expect(opts.speechifyTtsModels).toEqual([...SUPPORTED_SPEECHIFY_TTS_MODELS])
     expect(speechifyTargets.map((target) => target.model)).toEqual([...SUPPORTED_SPEECHIFY_TTS_MODELS])
+    expect(opts.humeTtsModels).toEqual([...SUPPORTED_HUME_TTS_MODELS])
+    expect(humeTargets.map((target) => target.model)).toEqual([...SUPPORTED_HUME_TTS_MODELS])
+    expect(opts.cartesiaTtsModels).toEqual([...SUPPORTED_CARTESIA_TTS_MODELS])
+    expect(cartesiaTargets.map((target) => target.model)).toEqual([...SUPPORTED_CARTESIA_TTS_MODELS])
     expect(opts.gcloudTtsModels).toEqual([...SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS])
     expect(gcloudTargets.map((target) => target.model)).toEqual([...SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS])
     expect(gcloudTargets.map((target) => target.voice)).toEqual(

@@ -8,6 +8,8 @@ import {
   SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
+  SUPPORTED_HUME_TTS_MODELS,
+  SUPPORTED_CARTESIA_TTS_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
@@ -66,6 +68,14 @@ const writeTtsFlags = {
   },
   'gemini-tts': {
     description: `Enable Gemini TTS on LLM output. ${buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
+  'hume-tts': {
+    description: `Enable Hume TTS on LLM output. ${buildModelDescription('Hume TTS model', SUPPORTED_HUME_TTS_MODELS)}`,
+    type: [String] as [StringConstructor]
+  },
+  'cartesia-tts': {
+    description: `Enable Cartesia TTS on LLM output. ${buildModelDescription('Cartesia TTS model', SUPPORTED_CARTESIA_TTS_MODELS)}`,
     type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
@@ -140,6 +150,22 @@ const writeTtsFlags = {
   },
   'gemini-voice': {
     description: 'Gemini TTS voice name override (default: Kore)',
+    type: String
+  },
+  'hume-tts-voice': {
+    description: 'Hume TTS voice name or voice ID override (default: Male English Actor)',
+    type: String
+  },
+  'hume-tts-voice-provider': {
+    description: 'Hume named voice provider: HUME_AI|CUSTOM_VOICE (default: HUME_AI)',
+    type: String
+  },
+  'cartesia-tts-voice': {
+    description: 'Cartesia TTS voice ID override (default: f786b574-daa5-4673-aa0c-cbe3e8534c02)',
+    type: String
+  },
+  'cartesia-tts-language': {
+    description: 'Cartesia TTS language code override',
     type: String
   },
   'gemini-speaker-1-name': {

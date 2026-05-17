@@ -114,6 +114,8 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --gemini-tts,              │
                                         │   --deepgram-tts,            │
                                         │   --speechify-tts,           │
+                                        │   --hume-tts,                │
+                                        │   --cartesia-tts,            │
                                         │   --gcloud-tts, --deapi-tts) │
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image,     │

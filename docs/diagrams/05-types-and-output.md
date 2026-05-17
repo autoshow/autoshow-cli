@@ -128,7 +128,7 @@ src/types/
 │                                                                              │
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|'grok'|             │
 │                  'mistral'|'openai'|'gemini'|'deepgram'|'runway'|           │
-│                  'speechify'|'gcloud'|'deapi'                               │
+│                  'speechify'|'hume'|'cartesia'|'gcloud'|'deapi'             │
 │  ImageProvider = 'gemini'|'openai'|'minimax'|'glm'|'grok'|'runway'|'bfl'     │
 │                  |'deapi'                                                    │
 │  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'|'deapi'            │

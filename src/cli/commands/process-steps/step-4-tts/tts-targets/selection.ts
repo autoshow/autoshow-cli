@@ -14,6 +14,8 @@ export type TtsTargetSelection = {
   geminiModels: string[]
   deepgramModels: string[]
   speechifyModels: string[]
+  humeModels: string[]
+  cartesiaModels: string[]
   gcloudModels: string[]
   deapiModels: string[]
   geminiMultiSpeakerConfig: GeminiMultiSpeakerConfig | undefined
@@ -72,6 +74,10 @@ export type TtsTargetSelection = {
   speechifyVoiceId: string | undefined
   speechifyAudioFormat: string | undefined
   speechifyLanguage: string | undefined
+  humeVoice: string | undefined
+  humeVoiceProvider: string | undefined
+  cartesiaVoiceId: string | undefined
+  cartesiaLanguage: string | undefined
   gcloudVoiceCloningKey: string | undefined
   gcloudRefAudioPath: string | undefined
   gcloudConsentAudioPath: string | undefined
@@ -191,6 +197,8 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     geminiModels: selectModels(options.geminiTtsModels, options.geminiTtsModel),
     deepgramModels: selectModels(options.deepgramTtsModels, options.deepgramTtsModel),
     speechifyModels: selectModels(options.speechifyTtsModels, options.speechifyTtsModel),
+    humeModels: selectModels(options.humeTtsModels, options.humeTtsModel),
+    cartesiaModels: selectModels(options.cartesiaTtsModels, options.cartesiaTtsModel),
     gcloudModels: selectModels(options.gcloudTtsModels, options.gcloudTtsModel),
     deapiModels: selectModels(options.deapiTtsModels, options.deapiTtsModel),
     geminiMultiSpeakerConfig: resolveGeminiMultiSpeakerConfig(options),
@@ -249,6 +257,10 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     speechifyVoiceId: trimmed(options.speechifyVoice),
     speechifyAudioFormat: trimmed(options.speechifyTtsAudioFormat),
     speechifyLanguage: trimmed(options.speechifyTtsLanguage),
+    humeVoice: trimmed(options.humeTtsVoice),
+    humeVoiceProvider: trimmed(options.humeTtsVoiceProvider),
+    cartesiaVoiceId: trimmed(options.cartesiaTtsVoice),
+    cartesiaLanguage: trimmed(options.cartesiaTtsLanguage),
     gcloudVoiceCloningKey,
     gcloudRefAudioPath,
     gcloudConsentAudioPath,

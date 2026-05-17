@@ -9,6 +9,9 @@ import {
   validateKittenTtsSpeaker,
   validateMinimaxTtsEmotion,
   validateMinimaxTtsLanguageBoost,
+  validateHumeTtsVoice,
+  validateHumeTtsVoiceProvider,
+  validateCartesiaTtsVoice,
   validateSpeechifyTtsAudioFormat,
   validateSpeechifyTtsVoice
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -122,6 +125,14 @@ type TtsRuntimeOptionKey =
   | 'speechifyTtsConsentEmail'
   | 'speechifyTtsVoiceLocale'
   | 'speechifyTtsVoiceGender'
+  | 'humeTtsModels'
+  | 'humeTtsModel'
+  | 'humeTtsVoice'
+  | 'humeTtsVoiceProvider'
+  | 'cartesiaTtsModels'
+  | 'cartesiaTtsModel'
+  | 'cartesiaTtsVoice'
+  | 'cartesiaTtsLanguage'
   | 'gcloudTtsModels'
   | 'gcloudTtsModel'
   | 'gcloudTtsVoice'
@@ -170,6 +181,10 @@ export const buildTtsOptions = (
     deepgramTtsModel,
     speechifyTtsModels,
     speechifyTtsModel,
+    humeTtsModels,
+    humeTtsModel,
+    cartesiaTtsModels,
+    cartesiaTtsModel,
     gcloudTtsModels,
     gcloudTtsModel,
     deapiTtsModels,
@@ -234,6 +249,28 @@ export const buildTtsOptions = (
     speechifyTtsConsentEmail: readOptionalStringFlag(flags, 'speechify-tts-consent-email'),
     speechifyTtsVoiceLocale: readOptionalStringFlag(flags, 'speechify-tts-voice-locale'),
     speechifyTtsVoiceGender: readOptionalStringFlag(flags, 'speechify-tts-voice-gender'),
+    humeTtsModels,
+    humeTtsModel,
+    humeTtsVoice: (() => {
+      const value = readOptionalRawStringFlag(rawFlagArgs, 'hume-tts-voice') ?? readOptionalStringFlag(flags, 'hume-tts-voice')
+      if (value === undefined) return undefined
+      if (humeTtsModels === undefined) return value
+      return validateCliValue(validateHumeTtsVoice, value)
+    })(),
+    humeTtsVoiceProvider: (() => {
+      const value = readOptionalStringFlag(flags, 'hume-tts-voice-provider')
+      if (value === undefined) return undefined
+      return validateCliValue(validateHumeTtsVoiceProvider, value)
+    })(),
+    cartesiaTtsModels,
+    cartesiaTtsModel,
+    cartesiaTtsVoice: (() => {
+      const value = readOptionalStringFlag(flags, 'cartesia-tts-voice')
+      if (value === undefined) return undefined
+      if (cartesiaTtsModels === undefined) return value
+      return validateCliValue(validateCartesiaTtsVoice, value)
+    })(),
+    cartesiaTtsLanguage: readOptionalStringFlag(flags, 'cartesia-tts-language'),
     gcloudTtsModels,
     gcloudTtsModel,
     gcloudTtsVoice: (() => {

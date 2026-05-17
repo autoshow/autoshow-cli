@@ -33,6 +33,8 @@ import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extrac
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/tesseract-utils'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
 import { ensureDeapiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
+import { ensureHumeTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/hume-tts'
+import { ensureCartesiaTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/cartesia-tts'
 import { ensureGrokTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
 import { ensureMistralTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/mistral-tts'
 import { ensureDeapiMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
@@ -165,6 +167,12 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'deepgram-tts': {
     ensure: async () => await ensureDeepgramTtsSetup()
+  },
+  'hume-tts': {
+    ensure: async () => await ensureHumeTtsSetup()
+  },
+  'cartesia-tts': {
+    ensure: async () => await ensureCartesiaTtsSetup()
   },
   'deapi-tts': {
     ensure: async () => await ensureDeapiTtsSetup()

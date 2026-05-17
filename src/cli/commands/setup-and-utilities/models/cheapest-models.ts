@@ -360,6 +360,10 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('deepgram')
     case 'speechify-tts':
       return selectCheapestTtsModel('speechify')
+    case 'hume-tts':
+      return selectCheapestTtsModel('hume')
+    case 'cartesia-tts':
+      return selectCheapestTtsModel('cartesia')
     case 'gcloud-tts':
       return selectCheapestTtsModel('gcloud')
     case 'deapi-tts':

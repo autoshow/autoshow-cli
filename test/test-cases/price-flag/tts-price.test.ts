@@ -6,6 +6,8 @@ import {
   SUPPORTED_GROK_TTS_VOICES,
   SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES,
   SUPPORTED_GROQ_ENGLISH_TTS_VOICES,
+  SUPPORTED_HUME_TTS_MODELS,
+  SUPPORTED_CARTESIA_TTS_MODELS,
   SUPPORTED_KITTEN_TTS_VOICES
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { E2E_TEST_TIMEOUT_MS } from '../../test-utils/budget'
@@ -34,6 +36,10 @@ const NO_PAID_TTS_ENV = {
   GOOGLE_APPLICATION_CREDENTIALS: '',
   GOOGLE_CLOUD_PROJECT: '',
   GROK_API_KEY: '',
+  HUME_API_KEY: '',
+  HUME_BASE_URL: '',
+  HUME_TTS_VOICE: '',
+  HUME_TTS_VOICE_PROVIDER: '',
   GROQ_API_KEY: '',
   GROQ_TTS_VOICE: '',
   MISTRAL_API_KEY: '',
@@ -43,6 +49,10 @@ const NO_PAID_TTS_ENV = {
   OPENAI_API_KEY: '',
   OPENAI_BASE_URL: '',
   OPENAI_TTS_VOICE: '',
+  CARTESIA_API_KEY: '',
+  CARTESIA_BASE_URL: '',
+  CARTESIA_VERSION: '',
+  CARTESIA_TTS_VOICE: '',
   SPEECHIFY_API_KEY: '',
   SPEECHIFY_TTS_VOICE: '',
   XAI_API_KEY: '',
@@ -172,6 +182,18 @@ defineTTSServicePriceTests({
   models: ['simba-english', 'simba-multilingual'],
   cliFlag: '--speechify-tts',
   ttsService: 'speechify',
+})
+
+defineTTSServicePriceTests({
+  models: SUPPORTED_HUME_TTS_MODELS,
+  cliFlag: '--hume-tts',
+  ttsService: 'hume',
+})
+
+defineTTSServicePriceTests({
+  models: SUPPORTED_CARTESIA_TTS_MODELS,
+  cliFlag: '--cartesia-tts',
+  ttsService: 'cartesia',
 })
 
 defineTTSServicePriceTests({

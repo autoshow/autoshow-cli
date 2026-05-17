@@ -1,6 +1,7 @@
 import assemblyLinks from './model-links/assembly.json'
 import awsLinks from './model-links/aws.json'
 import bflLinks from './model-links/bfl.json'
+import cartesiaLinks from './model-links/cartesia.json'
 import claudeLinks from './model-links/claude.json'
 import deapiLinks from './model-links/deapi.json'
 import deepgramLinks from './model-links/deepgram.json'
@@ -15,6 +16,7 @@ import glmLinks from './model-links/glm.json'
 import grokLinks from './model-links/grok.json'
 import groqLinks from './model-links/groq.json'
 import happyscribeLinks from './model-links/happyscribe.json'
+import humeLinks from './model-links/hume.json'
 import kimiLinks from './model-links/kimi.json'
 import minimaxLinks from './model-links/minimax.json'
 import mistralLinks from './model-links/mistral.json'
@@ -51,6 +53,7 @@ const providerLinks = [
   assemblyLinks,
   awsLinks,
   bflLinks,
+  cartesiaLinks,
   gcloudLinks,
   deepgramLinks,
   deepinfraLinks,
@@ -61,6 +64,7 @@ const providerLinks = [
   runwayLinks,
   resendLinks,
   happyscribeLinks,
+  humeLinks,
   deapiLinks,
   supadataLinks,
   scrapecreatorsLinks,

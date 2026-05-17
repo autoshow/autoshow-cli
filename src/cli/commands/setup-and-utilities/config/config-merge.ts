@@ -14,7 +14,7 @@ import {
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
-const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'gcloud-tts', 'deapi-tts'] as const
+const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'hume-tts', 'cartesia-tts', 'gcloud-tts', 'deapi-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'glm-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video', 'glm-video', 'grok-video', 'runway-video', 'deapi-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music', 'deapi-music', 'gemini-music'] as const
@@ -125,7 +125,9 @@ export const mergeConfigIntoRawFlags = (
       ['grok-tts', d.post.tts.grokTts], ['mistral-tts', d.post.tts.mistralTts],
       ['openai-tts', d.post.tts.openaiTts], ['gemini-tts', d.post.tts.geminiTts],
       ['deepgram-tts', d.post.tts.deepgramTts],
-      ['speechify-tts', d.post.tts.speechifyTts], ['gcloud-tts', d.post.tts.gcloudTts],
+      ['speechify-tts', d.post.tts.speechifyTts],
+      ['hume-tts', d.post.tts.humeTts], ['cartesia-tts', d.post.tts.cartesiaTts],
+      ['gcloud-tts', d.post.tts.gcloudTts],
       ['deapi-tts', d.post.tts.deapiTts],
     ])
     inject('kitten-voice', d.post.tts.ttsSpeaker)
@@ -186,6 +188,10 @@ export const mergeConfigIntoRawFlags = (
     inject('speechify-voice', d.post.tts.speechifyVoice)
     inject('speechify-tts-audio-format', d.post.tts.speechifyTtsAudioFormat)
     inject('speechify-tts-language', d.post.tts.speechifyTtsLanguage)
+    inject('hume-tts-voice', d.post.tts.humeTtsVoice)
+    inject('hume-tts-voice-provider', d.post.tts.humeTtsVoiceProvider)
+    inject('cartesia-tts-voice', d.post.tts.cartesiaTtsVoice)
+    inject('cartesia-tts-language', d.post.tts.cartesiaTtsLanguage)
     inject('gcloud-tts-voice', d.post.tts.gcloudTtsVoice)
     inject('gcloud-tts-language', d.post.tts.gcloudTtsLanguage)
     inject('gcloud-tts-ref-audio', d.post.tts.gcloudTtsRefAudio)
@@ -317,6 +323,8 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini-tts':        ['defaults', 'post', 'tts', 'geminiTts'],
   'deepgram-tts':      ['defaults', 'post', 'tts', 'deepgramTts'],
   'speechify-tts':     ['defaults', 'post', 'tts', 'speechifyTts'],
+  'hume-tts':          ['defaults', 'post', 'tts', 'humeTts'],
+  'cartesia-tts':      ['defaults', 'post', 'tts', 'cartesiaTts'],
   'gcloud-tts':        ['defaults', 'post', 'tts', 'gcloudTts'],
   'deapi-tts':         ['defaults', 'post', 'tts', 'deapiTts'],
   'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
@@ -382,6 +390,10 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'speechify-voice':   ['defaults', 'post', 'tts', 'speechifyVoice'],
   'speechify-tts-audio-format': ['defaults', 'post', 'tts', 'speechifyTtsAudioFormat'],
   'speechify-tts-language': ['defaults', 'post', 'tts', 'speechifyTtsLanguage'],
+  'hume-tts-voice':    ['defaults', 'post', 'tts', 'humeTtsVoice'],
+  'hume-tts-voice-provider': ['defaults', 'post', 'tts', 'humeTtsVoiceProvider'],
+  'cartesia-tts-voice': ['defaults', 'post', 'tts', 'cartesiaTtsVoice'],
+  'cartesia-tts-language': ['defaults', 'post', 'tts', 'cartesiaTtsLanguage'],
   'gcloud-tts-voice':  ['defaults', 'post', 'tts', 'gcloudTtsVoice'],
   'gcloud-tts-language': ['defaults', 'post', 'tts', 'gcloudTtsLanguage'],
   'gcloud-tts-ref-audio': ['defaults', 'post', 'tts', 'gcloudTtsRefAudio'],

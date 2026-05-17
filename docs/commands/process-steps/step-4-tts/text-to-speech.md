@@ -19,6 +19,8 @@ Generate speech audio from a local `.md` or `.txt` file with local or hosted TTS
   - [Gemini](#gemini)
   - [Deepgram](#deepgram)
   - [Speechify](#speechify)
+  - [Hume](#hume)
+  - [Cartesia](#cartesia)
   - [Google Cloud](#google-cloud)
   - [deAPI](#deapi)
 - [Pricing Notes](#pricing-notes)
@@ -30,7 +32,7 @@ Generate speech audio from a local `.md` or `.txt` file with local or hosted TTS
 # full setup
 bun as setup
 
-# install Kitten TTS and download all supported local TTS models
+# install Kitten TTS, download local models, and check hosted TTS readiness
 bun as setup --step tts
 ```
 
@@ -53,6 +55,8 @@ MINIMAX_API_KEY=...
 DEEPGRAM_API_KEY=...
 MISTRAL_API_KEY=...
 SPEECHIFY_API_KEY=...
+HUME_API_KEY=...
+CARTESIA_API_KEY=...
 DEAPI_API_KEY=...
 DEAPI_BASE_URL=https://api.deapi.ai
 # Google Cloud TTS uses gcloud CLI auth and an active billed project
@@ -62,6 +66,14 @@ MISTRAL_TTS_VOICE=...
 MISTRAL_TTS_REF_AUDIO=input/examples/audio/anthony-voice.mp3
 # optional for Speechify TTS
 SPEECHIFY_TTS_VOICE=george
+# optional for Hume TTS
+HUME_BASE_URL=https://api.hume.ai
+HUME_TTS_VOICE="Male English Actor"
+HUME_TTS_VOICE_PROVIDER=HUME_AI
+# optional for Cartesia TTS
+CARTESIA_BASE_URL=https://api.cartesia.ai
+CARTESIA_VERSION=2026-03-01
+CARTESIA_TTS_VOICE=f786b574-daa5-4673-aa0c-cbe3e8534c02
 # optional for Grok TTS
 XAI_BASE_URL=https://api.x.ai/v1
 XAI_TTS_VOICE=eve
@@ -79,14 +91,14 @@ bun as tts <input> [flags]
 
 | Flag | Description |
 |------|-------------|
-| `--all-tts` | Select every supported TTS provider/model |
+| `--all-tts` | Select the default all-provider TTS target set |
 | `--tts-provider-concurrency <n>` | Hosted TTS providers/models to run concurrently per item; default `2`, or up to `8` for `--all-tts` |
 | `--tts-local-concurrency <n>` | Local TTS providers to run concurrently per item; default `1` |
 | `--price` | Show the aggregated estimate and exit |
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file. Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider.
 
-`--all-tts` expands to every self-contained TTS provider/model, including Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Speechify, Google Cloud prebuilt models, and runnable deAPI models. It excludes special modes that require extra inputs, including Google Cloud `instant-custom-voice`, deAPI voice clone/design models, and dialogue-only flows.
+`--all-tts` expands to the self-contained TTS target set, including Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, the default Deepgram model, Speechify, Hume, Cartesia, Google Cloud prebuilt models, and runnable deAPI models. It excludes special modes that require extra inputs, including Google Cloud `instant-custom-voice`, deAPI voice clone/design models, and dialogue-only flows.
 
 ```bash
 bun as tts input/examples/tts/1-tts.md \
@@ -285,6 +297,44 @@ To create a Speechify custom voice as part of `tts`, add `--speechify-tts-ref-au
 
 The reference sample must be local, non-empty audio with a supported extension (`mp3`/`mpeg`, `wav`, `m4a`/`mp4`, `ogg`, `flac`, `aac`, or `webm`) and at most 5 MiB. When `ffprobe` can detect duration, AutoShow requires 10-30 seconds to match Speechify's cloning guidance. `--speechify-tts-voice-locale` defaults to `en-US`; `--speechify-tts-voice-gender` defaults to `notSpecified` and accepts `male`, `female`, or `notSpecified`.
 
+### Hume
+
+| Option | Value |
+|--------|-------|
+| Selector | `--hume-tts <model>` |
+| Models | `octave-2` |
+| Voice | `--hume-tts-voice <name-or-id>`, `HUME_TTS_VOICE`, default `Male English Actor` |
+| Voice provider | `--hume-tts-voice-provider HUME_AI|CUSTOM_VOICE`, `HUME_TTS_VOICE_PROVIDER`, default `HUME_AI` for named voices |
+| API settings | `HUME_API_KEY`, optional `HUME_BASE_URL` |
+
+```bash
+bun as tts input/examples/tts/1-tts.md --hume-tts octave-2
+bun as tts input/examples/tts/1-tts.md --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+bun as tts input/examples/tts/1-tts.md --hume-tts octave-2 --hume-tts-voice 00000000-0000-4000-8000-000000000000
+bun as config --hume-tts octave-2 --hume-tts-voice "Studio Voice" --hume-tts-voice-provider CUSTOM_VOICE
+```
+
+Hume TTS uses Octave 2 through `POST /v0/tts/file`, sends `version: "2"`, requests MP3 chunks, and converts the final output to `speech.wav`. Text is split into 5000-character chunks. UUID-like voice values are sent as voice IDs unless a provider is explicit; named voices are sent with the selected provider.
+
+### Cartesia
+
+| Option | Value |
+|--------|-------|
+| Selector | `--cartesia-tts <model>` |
+| Models | `sonic-3`, `sonic-3.5` |
+| Voice | `--cartesia-tts-voice <voice-id>`, `CARTESIA_TTS_VOICE`, default `f786b574-daa5-4673-aa0c-cbe3e8534c02` |
+| Language | `--cartesia-tts-language <code>` |
+| API settings | `CARTESIA_API_KEY`, optional `CARTESIA_BASE_URL`, `CARTESIA_VERSION` |
+
+```bash
+bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3
+bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3.5 --cartesia-tts-language en
+bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+```
+
+Cartesia TTS uses `POST /tts/bytes`, sends the `Cartesia-Version` header, requests 24000 Hz `pcm_s16le` WAV bytes, and converts the final output to `speech.wav`. Text is split into 5000-character chunks. Voice selection currently uses Cartesia voice IDs; cloning, localization, pronunciation dictionaries, speed, volume, and emotion controls are not exposed in this pass.
+
 ### Google Cloud
 
 | Option | Value |
@@ -331,6 +381,8 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a 36908 ms / 1K characters timing heuristic.
 - OpenAI `gpt-4o-mini-tts` estimates use 60 cents / 1M input characters plus 1200 cents / 1M output characters, equivalent to 1.26 cents per 1K characters in AutoShow's character estimator. OpenAI custom voice creation adds a one-time 0 cent setup estimate and a 15000 ms setup timing estimate.
 - Speechify Simba estimates use 1 cent / 1K characters for both `simba-english` and `simba-multilingual`, with a 3000 ms / 1K characters timing heuristic. Custom voice creation adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate.
+- Hume `octave-2` estimates use the conservative public overage rate of 15 cents / 1K characters.
+- Cartesia Sonic estimates use 3.7375 cents / 1K characters for `sonic-3` and `sonic-3.5`, with a 3000 ms / 1K characters timing heuristic.
 - Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Chirp 3 HD 3 cents / 1K characters, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics are 9000 ms / 1K characters for Chirp 3 HD, 10000 ms / 1K for Studio, and 12000 ms / 1K for Instant Custom Voice.
 - deAPI TTS price preflight calls `/api/v2/audio/speech/price` when `DEAPI_API_KEY` is available. Voice clone quotes send `mode: "voice_clone"` with `count_text`, `model`, `lang`, `speed`, `format`, and `sample_rate`; `voice` is not sent. Without a key, AutoShow falls back to the local registry rate of `$0.00077 / 1K characters` (`0.077¢ / 1K`, `$0.77 / 1M`). `Qwen3_TTS_12Hz_1_7B_Base` uses a 10000 ms / 1K characters processing-time estimate.
 
@@ -342,6 +394,8 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - ElevenLabs IVC runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
 - Ready ElevenLabs PVC synthesis records `speaker: "pvc:<voice_id>"` in Step 4 metadata. PVC setup-only runs write `elevenlabs-pvc-status.json`; when no wait is requested, no `speech.wav` is produced.
 - OpenAI custom voice creation runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
+- Hume runs record the selected voice name or ID as `speaker`.
+- Cartesia runs record the selected voice ID as `speaker`.
 - Google Cloud Instant Custom Voice runs record `speaker: "instant-custom-voice"` and do not store the raw voice cloning key in `run.json`.
 - `run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.
 - Reference-audio runs store only `speaker: "ref_audio:<basename>"`; the full path and reference transcript are not written to `run.json`.

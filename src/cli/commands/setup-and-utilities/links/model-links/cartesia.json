@@ -1,0 +1,40 @@
+{
+  "Cartesia": {
+    "General": [
+      "https://docs.cartesia.ai/get-started/overview.md",
+      "https://docs.cartesia.ai/get-started/authenticate-your-client-applications.md",
+      "https://docs.cartesia.ai/tools/client-libraries.md",
+      "https://docs.cartesia.ai/use-the-api/api-conventions.md",
+      "https://docs.cartesia.ai/use-the-api/api-errors.md",
+      "https://docs.cartesia.ai/use-the-api/concurrency-limits-and-timeouts.md"
+    ],
+    "TTS": [
+      "https://docs.cartesia.ai/get-started/realtime-text-to-speech-quickstart.md",
+      "https://docs.cartesia.ai/api-reference/tts/bytes.md",
+      "https://docs.cartesia.ai/api-reference/tts/sse.md",
+      "https://docs.cartesia.ai/api-reference/tts/websocket.md",
+      "https://docs.cartesia.ai/use-the-api/compare-tts-endpoints.md",
+      "https://docs.cartesia.ai/build-with-cartesia/tts-models/sonic-3-5.md",
+      "https://docs.cartesia.ai/build-with-cartesia/tts-models/voice-ids.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/choosing-a-voice.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/choosing-tts-parameters.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/clone-voices.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/clone-voices-pro/api.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/custom-pronunciations.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/localize-voices.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/prompting-tips.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/ssml-tags.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/stream-inputs-using-continuations.md",
+      "https://docs.cartesia.ai/build-with-cartesia/capability-guides/volume-speed-emotion.md",
+      "https://docs.cartesia.ai/use-the-api/tts-websocket/buffering.md",
+      "https://docs.cartesia.ai/use-the-api/tts-websocket/context-flushing-and-flush-i-ds.md",
+      "https://docs.cartesia.ai/use-the-api/tts-websocket/contexts.md",
+      "https://docs.cartesia.ai/api-reference/voices/list.md",
+      "https://docs.cartesia.ai/api-reference/voices/clone.md",
+      "https://docs.cartesia.ai/api-reference/voices/localize.md",
+      "https://docs.cartesia.ai/api-reference/voices/get.md",
+      "https://docs.cartesia.ai/api-reference/voices/update.md",
+      "https://docs.cartesia.ai/api-reference/voices/delete.md"
+    ]
+  }
+}
