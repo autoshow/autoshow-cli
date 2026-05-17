@@ -25,7 +25,10 @@ import type {
   ParsedImageSize,
   ParsedLlmModel,
 } from '../types'
-import { parsePanelSelector } from '../commands/generate-images/comic-page-utils'
+import {
+  DEFAULT_PANELS_PER_IMAGE,
+  parsePanelSelector,
+} from '../commands/generate-images/comic-page-utils'
 
 
 
@@ -47,7 +50,7 @@ export const HELP_TEXT = `USS Acampo
 
 Usage:
   bun as comic ${DRAFT_SCENES_COMMAND} <script-path> [--only structure|prompt|scene|panel-prompts] [--price]
-  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
+  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--panels-per-image <n>] [--variation <name[,name...]>] [--force] [--price]
   bun as comic ${CHARACTER_SKETCH_COMMAND} --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 
 Commands:
@@ -75,7 +78,7 @@ Advanced:
   --variation <name[,name...]> (${GENERATE_IMAGES_COMMAND}) Final-image prompt variations: ${IMAGE_PROMPT_VARIATIONS.join(', ')}
   --size <size>              Image size: ${IMAGE_SIZE_HELP}
   --quality <quality>        Image quality: ${IMAGE_GENERATION_QUALITIES.join(', ')}
-  --panels-per-image <n>     (${GENERATE_IMAGES_COMMAND}) Panels per page image (default: 4)
+  --panels-per-image <n>     (${GENERATE_IMAGES_COMMAND}) Panels per generated image (default: ${DEFAULT_PANELS_PER_IMAGE})
 `
 
 const readFlagValue = (args: string[], index: number, flag: string): string => {
@@ -378,7 +381,7 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
 
         const panelsPerImage = readFlagValue(args, index, argument)
         if (!isPositiveInteger(panelsPerImage)) {
-          throw new Error(`Invalid panels per image "${panelsPerImage}". Expected a positive integer like 1 or 4`)
+          throw new Error(`Invalid panels per image "${panelsPerImage}". Expected a positive integer like 1 or ${DEFAULT_PANELS_PER_IMAGE}`)
         }
 
         parsed.panelsPerImage = Number(panelsPerImage)
@@ -388,7 +391,7 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
       case '--chunk':
         throw new Error('--chunk was removed. Use --panels <range> with --target sketches instead (e.g. --panels 5-8).')
       case '--sketch-group-size':
-        throw new Error('--sketch-group-size was removed. Sketches are grouped in chunks of 4 automatically. Use --panels <range> to select specific panels.')
+        throw new Error(`--sketch-group-size was removed. Sketches are grouped in chunks of ${DEFAULT_PANELS_PER_IMAGE} by default. Use --panels-per-image <n> to change the chunk size or --panels <range> to select specific panels.`)
       case '--sketch-panels':
         throw new Error('--sketch-panels was removed. Use --panels <range> instead (e.g. --panels 1-4).')
       case '--image-model': {
@@ -459,10 +462,6 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
 
   const target = parsed.target ?? 'images'
   const targetRunsFinalImages = target === 'images' || target === 'both'
-
-  if (parsed.panelsPerImage !== undefined && !targetRunsFinalImages) {
-    throw new Error('--panels-per-image only applies when --target is images or both')
-  }
 
   if (parsed.variations !== undefined && !targetRunsFinalImages) {
     throw new Error('--variation only applies when --target is images or both')

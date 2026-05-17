@@ -239,5 +239,6 @@ test('comic help exposes the generate-images command and page flags', async () =
   expect(result.stdout).toContain('--panels <all|range|list>')
   expect(result.stdout).toContain('--variation <name[,name...]>')
   expect(result.stdout).toContain('--panels-per-image <n>')
+  expect(result.stdout).toContain('Panels per generated image (default: 6)')
   expect(result.stdout).not.toContain('[--target prompts|images|sketches|both]')
 })

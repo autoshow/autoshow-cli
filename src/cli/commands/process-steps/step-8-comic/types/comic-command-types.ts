@@ -182,6 +182,7 @@ export type GenerateSceneSketchesOptions = {
   quality: ImageGenerationQuality
   force: boolean
   sketchPanels?: SketchPanelRange
+  panelsPerImage?: number
 }
 
 export type GenerateSceneSketchesDependencies = {
@@ -202,6 +203,7 @@ export type GenerateSketchesCommandOptions = {
   quality?: GenerateSceneSketchesOptions['quality']
   force?: boolean
   sketchPanels?: GenerateSceneSketchesOptions['sketchPanels']
+  panelsPerImage?: GenerateSceneSketchesOptions['panelsPerImage']
 }
 
 export type SceneSketchCount = { label: string; sketches: number; skipped: number }

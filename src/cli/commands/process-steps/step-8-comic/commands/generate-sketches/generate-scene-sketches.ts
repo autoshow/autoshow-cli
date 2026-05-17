@@ -26,7 +26,10 @@ import {
   loadPromptsConfig,
   PANEL_FILENAME_PADDING,
 } from '../../utils/scene-utils'
-import { hasOnlyTrailingPanelSelectionMisses } from '../generate-images/comic-page-utils'
+import {
+  DEFAULT_PANELS_PER_IMAGE,
+  hasOnlyTrailingPanelSelectionMisses,
+} from '../generate-images/comic-page-utils'
 import { getPanelPromptsDirectory, getSketchesDirectory } from '../../utils/project-paths'
 import type {
   ExpandedScenePromptData,
@@ -40,7 +43,7 @@ import type {
 } from '../../types'
 
 
-export const SKETCH_CHUNK_SIZE = 4
+export const SKETCH_CHUNK_SIZE = DEFAULT_PANELS_PER_IMAGE
 
 
 
@@ -138,21 +141,24 @@ export const selectSketchPanelRange = <T extends { panelNumber: number }>(
 
 export const resolveSketchChunks = <T extends { panelNumber: number }>(
   panels: T[],
-  options: Pick<GenerateSceneSketchesOptions, 'sketchPanels'>,
+  options: Pick<GenerateSceneSketchesOptions, 'sketchPanels' | 'panelsPerImage'>,
   sceneLabel: string
 ): {
   allChunks: Array<SketchPanelChunk<T>>
   selectedChunks: Array<SketchPanelChunk<T>>
 } => {
+  const chunkSize = options.panelsPerImage ?? SKETCH_CHUNK_SIZE
+
   if (options.sketchPanels !== undefined) {
     const selectedChunk = selectSketchPanelRange(panels, options.sketchPanels, sceneLabel)
+    const selectedChunks = chunkSketchPanels(selectedChunk.panels, chunkSize)
     return {
-      allChunks: [selectedChunk],
-      selectedChunks: [selectedChunk],
+      allChunks: selectedChunks,
+      selectedChunks,
     }
   }
 
-  const sketchChunks = chunkSketchPanels(panels, SKETCH_CHUNK_SIZE)
+  const sketchChunks = chunkSketchPanels(panels, chunkSize)
 
   return {
     allChunks: sketchChunks,
@@ -349,11 +355,13 @@ export const generateSceneSketches = async (
       )
 
       if (options.sketchPanels !== undefined) {
-        const selectedChunk = selectedSketchChunks[0]
+        const firstSelectedChunk = selectedSketchChunks[0]
+        const lastSelectedChunk = selectedSketchChunks.at(-1)
         l.dim(
           `Scene: ${sceneSlug} ` +
-          (selectedChunk
-            ? `(${formatSketchChunkLabel(selectedChunk.startPanelNumber, selectedChunk.endPanelNumber)})`
+          (firstSelectedChunk && lastSelectedChunk
+            ? `(${selectedSketchChunks.length} selected sketch chunk${selectedSketchChunks.length !== 1 ? 's' : ''}, ` +
+              `${formatSketchChunkLabel(firstSelectedChunk.startPanelNumber, lastSelectedChunk.endPanelNumber)})`
             : '(no selected sketch panels)')
         )
       } else {

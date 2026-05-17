@@ -272,6 +272,11 @@ const normalizeBlockText = (block: string): string => {
     .trim()
 }
 
+type ExpandedScriptBlock = {
+  text: string
+  followsBoldLabelInSameBlock?: boolean
+}
+
 const splitIntoBlocks = (body: string): string[] => {
   return body
     .split(/\n\s*\n/g)
@@ -279,7 +284,7 @@ const splitIntoBlocks = (body: string): string[] => {
     .filter(block => block.length > 0 && block !== '---')
 }
 
-const expandScriptBlocks = (blocks: string[]): string[] => {
+const expandScriptBlocks = (blocks: string[]): ExpandedScriptBlock[] => {
   return blocks.flatMap(block => {
     const lines = block
       .split('\n')
@@ -287,20 +292,23 @@ const expandScriptBlocks = (blocks: string[]): string[] => {
       .filter(line => line.length > 0)
 
     if (lines.length <= 1 || !extractSingleBoldLine(lines[0] ?? '')) {
-      return [block]
+      return [{ text: block }]
     }
 
-    const expanded: string[] = [lines[0]!]
+    const expanded: ExpandedScriptBlock[] = [{ text: lines[0]! }]
     let buffer: string[] = []
 
     for (const line of lines.slice(1)) {
       if (extractSingleBoldLine(line) || isParentheticalBlock(line)) {
         if (buffer.length > 0) {
-          expanded.push(buffer.join('\n'))
+          expanded.push({
+            text: buffer.join('\n'),
+            followsBoldLabelInSameBlock: true,
+          })
           buffer = []
         }
 
-        expanded.push(line)
+        expanded.push({ text: line })
         continue
       }
 
@@ -308,11 +316,23 @@ const expandScriptBlocks = (blocks: string[]): string[] => {
     }
 
     if (buffer.length > 0) {
-      expanded.push(buffer.join('\n'))
+      expanded.push({
+        text: buffer.join('\n'),
+        followsBoldLabelInSameBlock: true,
+      })
     }
 
     return expanded
   })
+}
+
+const stripLeadingMarkdownMarkers = (text: string): string => {
+  return text.trim().replace(/^[*_`~\s]+/, '')
+}
+
+const looksLikeLabeledActionFragment = (text: string): boolean => {
+  const stripped = stripLeadingMarkdownMarkers(text)
+  return /^[a-z]/.test(stripped)
 }
 
 const extractSingleBoldLine = (block: string): string | null => {
@@ -479,15 +499,14 @@ const normalizeSpeakerLabelForMatching = (label: string): string => {
     .trim()
 }
 
-const detectSpeakerLabelCharacters = (label: string): CharacterName[] => {
-  const normalizedLabel = normalizeSpeakerLabelForMatching(label)
-  if (!normalizedLabel) {
+const detectSingleSpeakerLabelCharacters = (label: string): CharacterName[] => {
+  if (!label) {
     return []
   }
 
   for (const alias of CHARACTER_ALIAS_PATTERNS) {
     const regex = new RegExp(`^${alias.pattern}$`, 'i')
-    if (regex.test(normalizedLabel)) {
+    if (regex.test(label)) {
       return uniqueCharacters(alias.characters)
     }
   }
@@ -495,10 +514,55 @@ const detectSpeakerLabelCharacters = (label: string): CharacterName[] => {
   return []
 }
 
+const detectSpeakerLabelCharacters = (label: string): CharacterName[] => {
+  const normalizedLabel = normalizeSpeakerLabelForMatching(label)
+  if (!normalizedLabel) {
+    return []
+  }
+
+  const directCharacters = detectSingleSpeakerLabelCharacters(normalizedLabel)
+  if (directCharacters.length > 0) {
+    return directCharacters
+  }
+
+  const labelParts = normalizedLabel
+    .split(/\s*(?:,|&|\bAND\b)\s*/i)
+    .map(part => part.trim())
+    .filter(part => part.length > 0)
+
+  if (labelParts.length < 2) {
+    return []
+  }
+
+  const characters: CharacterName[] = []
+  for (const part of labelParts) {
+    const partCharacters = detectSingleSpeakerLabelCharacters(part)
+    if (partCharacters.length === 0) {
+      return []
+    }
+    characters.push(...partCharacters)
+  }
+
+  return uniqueCharacters(characters)
+}
+
+const isUncataloguedSpokenSpeakerLabel = (label: string): boolean => {
+  const normalizedLabel = label
+    .trim()
+    .replace(/\s*\((?:V\.?O\.?|O\.?S\.?)\)\s*$/i, '')
+    .trim()
+
+  return /^(?:RADIO|INTERCOM|COMPUTER|ANNOUNCER|NARRATOR|VOICE|P\.?A\.?)(?:\s+(?:V\.?O\.?|O\.?S\.?))?$/i.test(normalizedLabel)
+}
+
 const LOCATION_HINT_PATTERN = /\b(?:USS|INT|EXT|BRIDGE|BAY|DECK|CORRIDOR|HALL|OFFICE|QUARTERS|ROOM|LAB|ENGINE|FABRICATION|CARGO|AIRLOCK|HULL|SHUTTLE|SHIP|STATION|PLANET|SURFACE|COLONY|VILLAGE|SQUARE|CENTER|CENTRE|DOCK|PORT|WARD|MESS|GALLEY|TRANSPORT|ARRAY)\b/i
 
 const isSceneLocationLine = (raw: string): boolean => {
-  if (detectSpeakerLabelCharacters(raw).length > 0 || isTransitionText(raw)) {
+  if (
+    detectSpeakerLabelCharacters(raw).length > 0
+    || isUncataloguedSpokenSpeakerLabel(raw)
+    || isTransitionText(raw)
+  ) {
     return false
   }
 
@@ -970,7 +1034,8 @@ export const parseScriptMarkdownToStructuredData = (
     }
   }
 
-  for (const block of blocks) {
+  for (const blockInfo of blocks) {
+    const block = blockInfo.text
     const boldLine = extractSingleBoldLine(block)
     if (boldLine) {
       const mentions = detectCharacterMentions(boldLine)
@@ -992,6 +1057,15 @@ export const parseScriptMarkdownToStructuredData = (
       if (speakerCharacters.length > 0) {
         activeSpeakerLabel = boldLine
         activeSpeakerCharacters = speakerCharacters
+        pendingDelivery = null
+        hasDialogueInCurrentTurn = false
+        continueDialogueAfterDirection = false
+        continue
+      }
+
+      if (isUncataloguedSpokenSpeakerLabel(boldLine)) {
+        activeSpeakerLabel = boldLine
+        activeSpeakerCharacters = []
         pendingDelivery = null
         hasDialogueInCurrentTurn = false
         continueDialogueAfterDirection = false
@@ -1057,6 +1131,30 @@ export const parseScriptMarkdownToStructuredData = (
     }
 
     const text = normalizeBlockText(block)
+
+    if (
+      activeSpeakerLabel
+      && blockInfo.followsBoldLabelInSameBlock
+      && !hasDialogueInCurrentTurn
+      && !pendingDelivery
+      && looksLikeLabeledActionFragment(text)
+    ) {
+      const mentions = detectCharacterMentions(text)
+      const characters = uniqueCharacters([
+        ...activeSpeakerCharacters,
+        ...getCharactersFromMentions(mentions),
+      ])
+
+      beats.push(buildBeat(nextBeatIndex(), {
+        type: 'narration',
+        text,
+        characters,
+        rawMentions: mentions,
+      }))
+      registerCharacters(characters)
+      resetSpeakerTurn()
+      continue
+    }
 
     if (activeSpeakerLabel && (!hasDialogueInCurrentTurn || continueDialogueAfterDirection)) {
       const dialogue = extractLeadingDelivery(text)

@@ -61,7 +61,7 @@ Canonical project-root paths:
 
 ```bash
 bun as comic draft-scenes <script-path> [--only structure|prompt|scene|panel-prompts] [--price]
-bun as comic generate-images <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--variation <name[,name...]>] [--force] [--price]
+bun as comic generate-images <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--panels-per-image <n>] [--variation <name[,name...]>] [--force] [--price]
 bun as comic character-sketch --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 ```
 
@@ -201,7 +201,7 @@ bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.
 | `--variation <name[,name...]>` | Generate final images with one or more prompt variations: `canonical`, `animation-polish`, `cinematic-depth` | none |
 | `--size <size>` | Image size such as `1536x1024`, `1024x1024`, `1024x1536`, or `auto` | `1536x1024` |
 | `--quality <quality>` | `low`, `medium`, `high`, or `auto`; Gemini ignores this compatibility flag | `high` |
-| `--panels-per-image <n>` | Number of ordered panels per page image; values greater than 1 trigger page generation mode | `4` |
+| `--panels-per-image <n>` | Number of ordered panels per generated image: page images for final images, sketch chunks for review sketches; use `1` for individual final panels | `6` |
 
 ### Examples
 
@@ -212,6 +212,7 @@ bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smart
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1-16
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1,3,7
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches --panels 5-8
+bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches --panels-per-image 6 --quality high
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --image-model gpt-image-2
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --image-model gpt-image-2,gemini-3.1-flash-image-preview
 bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --variation animation-polish,cinematic-depth
@@ -226,7 +227,7 @@ bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smart
 - `--panels` selects which panels to process for any target (images, sketches, or both). A contiguous range that extends past the last available panel is clamped to the overlap, so `--panels 9-16` on an 11-panel scene processes panels 9-11.
 - Review sketch selections must be contiguous because each sketch output is one panel range; use `--target images` for non-contiguous final panel lists like `1,3,7`.
 - Non-overlapping panel selections, non-contiguous missing panels, and likely typos such as `--panels 1,99` still fail.
-- When `--panels-per-image` is greater than 1, the images target produces grouped page images instead of individual panel images.
+- `--panels-per-image` controls grouped final page images and review sketch chunks. The default is `6`; use `--panels-per-image 1` for individual final panel images.
 - `--variation` only applies to final images (`--target images` or `--target both`). When omitted, legacy final image paths are preserved. When provided, outputs are grouped under `pages/<variation>/<model>/` or `panels/<variation>/<model>/`.
 - Review sketches and final images use the defaults shown above (`gpt-image-1.5`, `1536x1024`, `high`).
 - Multi-model runs write model-specific filenames.
@@ -327,7 +328,7 @@ The following options were removed. Using them will produce an informative error
 | `--panel <n>` | Use `--panels <n>` |
 | `--panel-limit <n>` | Use `--panels <range>` directly (e.g. `--panels 1-4`) |
 | `--chunk <number>` | Use `--panels <range>` with `--target sketches` |
-| `--sketch-group-size <n\|all>` | Sketches auto-group in chunks of 4; use `--panels <range>` for explicit selection |
+| `--sketch-group-size <n\|all>` | Sketches auto-group in chunks of 6 by default; use `--panels-per-image <n>` to change chunk size or `--panels <range>` for explicit selection |
 | `--sketch-panels <range>` | Use `--panels <range>` |
 | `--draft-scenes` | Scene drafts are auto-detected |
 | `--skip-panel-prompts` | Panel prompts are auto-detected |

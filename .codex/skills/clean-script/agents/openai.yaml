@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clean Script"
+  short_description: "Normalize AutoShow episode scripts"
+  default_prompt: "Use $clean-script to clean and validate AutoShow episode script Markdown."

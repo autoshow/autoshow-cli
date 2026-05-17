@@ -45,6 +45,7 @@ import {
   getPanelNumberFromName,
 } from './panel-prompt-utils'
 import {
+  DEFAULT_PANELS_PER_IMAGE,
   chunkComicPagePanels,
   panelSelectionToSketchRange,
   selectComicPanels,
@@ -379,7 +380,7 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
   const size: ImageGenerationSize = options.size ?? '1536x1024'
   const quality: ImageGenerationQuality = options.quality ?? 'high'
   const force = options.force ?? false
-  const panelsPerImage = options.panelsPerImage ?? 4
+  const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
   const usePageMode = panelsPerImage > 1
   const useModelSpecificFilenames = models.length > 1
   const variations: ImagePromptVariation[] = options.variations ?? ['canonical']
@@ -525,8 +526,9 @@ export const estimateGenerateSketchesPrice = async (
   const { sceneSlug } = options
   const models = options.imageModels ?? [DEFAULT_IMAGE_MODEL]
   const size: ImageGenerationSize = options.size ?? '1536x1024'
-  const quality: ImageGenerationQuality = options.quality ?? 'low'
+  const quality: ImageGenerationQuality = options.quality ?? 'high'
   const force = options.force ?? false
+  const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
   const useModelSpecificFilenames = models.length > 1
   validateImageSizeForModels(size, models)
 
@@ -534,6 +536,7 @@ export const estimateGenerateSketchesPrice = async (
   l(`${cyan('='.repeat(50))}\n`)
   l(`  Models:  ${models.join(', ')}`)
   l(`  Size:    ${size}  Quality: ${quality}`)
+  l(`  Panels per sketch: ${panelsPerImage}`)
   l('')
 
   const panelPromptsDir = getPanelPromptsDirectory(sceneSlug)
@@ -559,6 +562,7 @@ export const estimateGenerateSketchesPrice = async (
     panelNumbers.map(panelNumber => ({ panelNumber })),
     {
       ...(options.sketchPanels !== undefined ? { sketchPanels: options.sketchPanels } : {}),
+      panelsPerImage,
     },
     sceneSlug,
   )
@@ -582,14 +586,19 @@ export const estimateGenerateSketchesPrice = async (
   }
 
   const totalSketches = selectedSketchChunks.length - skipped
-  const explicitSketchChunk = options.sketchPanels !== undefined && options.sketchPanels !== 'all'
-    ? selectedSketchChunks[0]
-    : undefined
-  const label = explicitSketchChunk
-    ? `${sceneSlug}/panels-${String(explicitSketchChunk.startPanelNumber).padStart(2, '0')}-${String(explicitSketchChunk.endPanelNumber).padStart(2, '0')}`
-    : options.sketchPanels === 'all'
-      ? `${sceneSlug}/all-panels`
-      : sceneSlug
+  const firstSelectedSketchChunk = selectedSketchChunks[0]
+  const lastSelectedSketchChunk = selectedSketchChunks.at(-1)
+  let label = sceneSlug
+  if (
+    options.sketchPanels !== undefined
+    && options.sketchPanels !== 'all'
+    && firstSelectedSketchChunk
+    && lastSelectedSketchChunk
+  ) {
+    label = `${sceneSlug}/panels-${String(firstSelectedSketchChunk.startPanelNumber).padStart(2, '0')}-${String(lastSelectedSketchChunk.endPanelNumber).padStart(2, '0')}`
+  } else if (options.sketchPanels === 'all') {
+    label = `${sceneSlug}/all-panels`
+  }
   const sceneSketchCount: SceneSketchCount = { label, sketches: totalSketches, skipped }
 
   l('  Sketch chunks:')
@@ -647,6 +656,7 @@ export const estimateGenerateImagesPrice = async (
       ...(options.quality ? { quality: options.quality } : {}),
       ...(options.force !== undefined ? { force: options.force } : {}),
       ...(sketchPanels !== undefined ? { sketchPanels } : {}),
+      ...(options.panelsPerImage !== undefined ? { panelsPerImage: options.panelsPerImage } : {}),
     })
   }
 

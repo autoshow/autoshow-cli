@@ -4,6 +4,7 @@ import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
+  getDraftPromptPath,
   getPanelPromptCoverageReportPath,
   getPanelPromptsDirectory,
   getSceneJsonPath,
@@ -12,6 +13,7 @@ import {
 } from '~/cli/commands/process-steps/step-8-comic/utils/project-paths'
 import { processScene } from '~/cli/commands/process-steps/step-8-comic/commands/process-scenes/process-scenes-command'
 import { parseScriptMarkdownToStructuredData } from '~/cli/commands/process-steps/step-8-comic/utils/structured-script-utils'
+import { generateJsonPrompt } from '~/cli/commands/process-steps/step-8-comic/utils/json-prompt-utils'
 import {
   assertSourceCoverageReportComplete,
   formatSourceSegmentsMarkdown,
@@ -218,6 +220,104 @@ describe('comic source coverage contracts', () => {
     expect(dialogueBeat?.speakerLabel).toBe('CHAT (V.O.)')
   })
 
+  test('structured parser treats lowercase action after a character label as narration', () => {
+    const structured = parseScriptMarkdownToStructuredData([
+      '# Episode Test',
+      '',
+      '**USS ACAMPO**',
+      '',
+      '---',
+      '',
+      '## Scene: "Action Label"',
+      '',
+      '**INT. STONE CELL - LATE NIGHT**',
+      '',
+      '**DUCO**',
+      'walks up to the inside of the cell door. There, embedded just beside it, is a small **metallic horn**.',
+      '',
+      '**DUCO**',
+      'Alright. Who here thinks they can scream like a prophet?',
+      '',
+      '**GULP**',
+      '(softly)',
+      'no it is not like that.',
+    ].join('\n'), 'input/test-action-label.md')
+
+    const actionBeat = structured.beats.find(beat => beat.text.includes('metallic horn'))
+    const dialogueBeat = structured.beats.find(beat => beat.text.startsWith('Alright.'))
+    const lowercaseDialogueBeat = structured.beats.find(beat => beat.text.startsWith('no it'))
+    const actionSegment = structured.sourceSegments.find(segment => segment.text.includes('metallic horn'))
+
+    expect(actionBeat?.type).toBe('narration')
+    expect(actionBeat?.characters).toContain('Duco')
+    expect(actionBeat?.speaker).toBeUndefined()
+    expect(actionBeat?.speakerLabel).toBeUndefined()
+    expect(actionSegment?.type).toBe('narration')
+    expect(actionSegment?.speakerLabel).toBeUndefined()
+    expect(dialogueBeat?.type).toBe('dialogue')
+    expect(dialogueBeat?.speaker).toBe('Duco')
+    expect(dialogueBeat?.speakerLabel).toBe('DUCO')
+    expect(lowercaseDialogueBeat?.type).toBe('dialogue')
+    expect(lowercaseDialogueBeat?.speaker).toBe('Gulp')
+    expect(lowercaseDialogueBeat?.delivery).toBe('softly')
+  })
+
+  test('structured parser keeps compound speaker labels as dialogue', () => {
+    const structured = parseScriptMarkdownToStructuredData([
+      '# Episode Test',
+      '',
+      '**USS ACAMPO**',
+      '',
+      '---',
+      '',
+      '## Scene: "Compound Speaker"',
+      '',
+      '**EXT. CLEARING - DAY**',
+      '',
+      '**GULP AND GEEBEE**',
+      '(in unison, not looking up)',
+      'Almost done!',
+    ].join('\n'), 'input/test-compound-speaker.md')
+
+    const beat = structured.beats.find(entry => entry.text === 'Almost done!')
+    const segment = structured.sourceSegments.find(entry => entry.text === 'Almost done!')
+
+    expect(beat?.type).toBe('dialogue')
+    expect(beat?.speaker).toBeUndefined()
+    expect(beat?.speakerLabel).toBe('GULP AND GEEBEE')
+    expect(beat?.characters).toEqual(['Gulp', 'GeeBee'])
+    expect(beat?.delivery).toBe('in unison, not looking up')
+    expect(segment?.type).toBe('dialogue')
+    expect(segment?.speakerLabel).toBe('GULP AND GEEBEE')
+  })
+
+  test('structured parser keeps uncatalogued spoken labels as dialogue without inventing characters', () => {
+    const structured = parseScriptMarkdownToStructuredData([
+      '# Episode Test',
+      '',
+      '**USS ACAMPO**',
+      '',
+      '---',
+      '',
+      '## Scene: "Radio Speaker"',
+      '',
+      '**INT. SHUTTLE BAY - IN FLIGHT**',
+      '',
+      '**RADIO V.O.**',
+      'And now those bozos in the URP lower parliament are asking for more funds for...',
+    ].join('\n'), 'input/test-radio-speaker.md')
+
+    const beat = structured.beats.find(entry => entry.text.startsWith('And now those bozos'))
+    const segment = structured.sourceSegments.find(entry => entry.text.startsWith('And now those bozos'))
+
+    expect(beat?.type).toBe('dialogue')
+    expect(beat?.speaker).toBeUndefined()
+    expect(beat?.speakerLabel).toBe('RADIO V.O.')
+    expect(beat?.characters).toEqual([])
+    expect(segment?.type).toBe('dialogue')
+    expect(segment?.speakerLabel).toBe('RADIO V.O.')
+  })
+
   test('scene source segment coverage validation rejects missing and unknown IDs', () => {
     expect(() => validateSceneSourceSegmentCoverage(
       buildSceneData(['beat-0001', 'beat-0002']),
@@ -233,6 +333,44 @@ describe('comic source coverage contracts', () => {
       buildSceneData(['beat-0001', 'beat-9999']),
       sampleSourceSegments,
     )).toThrow(/unknown source segment ID.*beat-9999/)
+  })
+
+  test('draft prompt includes an explicit source segment ID checklist', async () => {
+    const sceneSlug = `comic-source-checklist-${Date.now()}`
+    const sceneOutputDirectory = getSceneOutputDirectory(sceneSlug)
+    const structuredScript: StructuredScriptData = {
+      scriptSlug: sceneSlug,
+      sourceFile: 'input/test.md',
+      document: {
+        heading: 'Episode Test',
+        title: 'Episode Test',
+        metadata: [{ label: 'USS ACAMPO', raw: 'USS ACAMPO' }],
+      },
+      scene: {
+        heading: 'COLD OPEN: "Coverage Test"',
+        section: 'COLD OPEN',
+        title: 'Coverage Test',
+        location: { raw: 'USS ACAMPO' },
+      },
+      characters: [],
+      beats: [],
+      sourceSegments: sampleSourceSegments,
+    }
+
+    try {
+      await mkdir(sceneOutputDirectory, { recursive: true })
+      await writeFile(getStructuredScriptPath(sceneSlug), JSON.stringify(structuredScript, null, 2))
+
+      await generateJsonPrompt(sceneSlug)
+
+      const prompt = await Bun.file(getDraftPromptPath(sceneSlug)).text()
+      expect(prompt).toContain('## Required Source Segment ID Checklist')
+      expect(prompt).toContain('- beat-0001 (narration, beat 1): The screen is black. A machine wakes up.')
+      expect(prompt).toContain('- beat-0002 (dialogue, beat 2): C’mon man, wake up')
+      expect(prompt).toContain('verify that every exact ID below appears in at least one panel')
+    } finally {
+      await rm(sceneOutputDirectory, { recursive: true, force: true })
+    }
   })
 
   test('panel prompt packaging writes and verifies verbatim source segment coverage', async () => {

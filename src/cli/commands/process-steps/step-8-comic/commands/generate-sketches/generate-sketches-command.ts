@@ -5,6 +5,7 @@ import { DEFAULT_IMAGE_MODEL, isGeminiImageModel } from '../../models/model-regi
 import { validateImageSizeForModels } from '../../utils/image-size'
 import { COMIC_OUTPUT_ROOT, getSketchesDirectory } from '../../utils/project-paths'
 import { assertPanelPromptSourceCoverage } from '../../utils/source-coverage-utils'
+import { DEFAULT_PANELS_PER_IMAGE } from '../generate-images/comic-page-utils'
 import type {
   GenerateSceneSketchesOptions,
   GenerateSketchesCommandOptions,
@@ -23,6 +24,7 @@ export const generateSketchesCommand = async (
     size: options.size ?? DEFAULT_IMAGE_SIZE,
     quality: options.quality ?? DEFAULT_SKETCH_QUALITY,
     force: options.force ?? false,
+    panelsPerImage: options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE,
     ...(options.sketchPanels !== undefined ? { sketchPanels: options.sketchPanels } : {}),
   }
   validateImageSizeForModels(generationOptions.size, generationOptions.models)
@@ -46,6 +48,7 @@ export const generateSketchesCommand = async (
     l.dim(`Image models: ${generationOptions.models.join(', ')}`)
     l.dim(`Image size: ${generationOptions.size}`)
     l.dim(`Image quality: ${generationOptions.quality}`)
+    l.dim(`Panels per sketch: ${generationOptions.panelsPerImage}`)
     if (generationOptions.sketchPanels) {
       const sketchPanels = generationOptions.sketchPanels === 'all'
         ? 'all'

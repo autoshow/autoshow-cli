@@ -19,6 +19,9 @@ export const getDraftPromptPath = (sceneSlug: string): string =>
 export const getSceneJsonPath = (sceneSlug: string): string =>
   join(getSceneOutputDirectory(sceneSlug), 'scene.json')
 
+export const getInvalidSceneJsonPath = (sceneSlug: string): string =>
+  join(getSceneOutputDirectory(sceneSlug), 'scene.invalid.json')
+
 export const getPanelPromptsDirectory = (sceneSlug: string): string =>
   join(getSceneOutputDirectory(sceneSlug), 'panel-prompts')
 

@@ -149,6 +149,20 @@ ${CHARACTER_ALIAS_GUIDANCE}
 
 Convert the structured script JSON above into this scene JSON format, ensuring all dialogue is preserved exactly, all source segments are covered, all important scene beats are represented visually, and all character and panel limits are respected.`
 
+const formatPromptExcerpt = (text: string): string => {
+  const normalized = text.replace(/\s+/g, ' ').trim()
+  return normalized.length > 120 ? `${normalized.slice(0, 117)}...` : normalized
+}
+
+const formatSourceSegmentChecklist = (structuredScript: StructuredScriptData): string => {
+  return structuredScript.sourceSegments
+    .map(segment => {
+      const beat = segment.beatIndex ? `, beat ${segment.beatIndex}` : ''
+      return `- ${segment.id} (${segment.type}${beat}): ${formatPromptExcerpt(segment.text)}`
+    })
+    .join('\n')
+}
+
 const formatStructuredScriptPrompt = (structuredScript: StructuredScriptData): string => {
   return [
     '# Structured Script JSON',
@@ -160,6 +174,11 @@ const formatStructuredScriptPrompt = (structuredScript: StructuredScriptData): s
     '---',
     '',
     JSON_PROMPT_TEMPLATE,
+    '',
+    '## Required Source Segment ID Checklist',
+    'Before returning JSON, verify that every exact ID below appears in at least one panel `sourceSegmentIds` array.',
+    '',
+    formatSourceSegmentChecklist(structuredScript),
   ].join('\n')
 }
 

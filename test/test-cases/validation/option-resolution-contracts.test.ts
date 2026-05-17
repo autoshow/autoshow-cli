@@ -16,6 +16,7 @@ import {
   buildComicPagePrompt,
   buildComicPagePromptData,
   chunkComicPagePanels,
+  DEFAULT_PANELS_PER_IMAGE,
   panelSelectionToSketchRange,
   parsePanelSelector,
   selectComicPanels
@@ -23,6 +24,7 @@ import {
 import { applyImagePromptVariation } from '~/cli/commands/process-steps/step-8-comic/commands/generate-images/prompt-variations'
 import {
   buildSketchPrompt,
+  resolveSketchChunks,
   selectSketchPanelRange
 } from '~/cli/commands/process-steps/step-8-comic/commands/generate-sketches/generate-scene-sketches'
 import { parseDraftScenesArgs, parseGenerateImagesArgs } from '~/cli/commands/process-steps/step-8-comic/utils/cli-args'
@@ -76,7 +78,7 @@ describe('option resolution contracts', () => {
       'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
       '--image-model', 'gpt-image-2,gemini-3.1-flash-image-preview',
       '--panels', '1-4,9',
-      '--panels-per-image', '4',
+      '--panels-per-image', String(DEFAULT_PANELS_PER_IMAGE),
       '--variation', 'animation-polish,cinematic-depth',
       '--size', '1536x1024',
       '--quality', 'high',
@@ -86,7 +88,7 @@ describe('option resolution contracts', () => {
     expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
     expect(opts.imageModels).toEqual(['gpt-image-2', 'gemini-3.1-flash-image-preview'])
     expect(opts.panels).toEqual([1, 2, 3, 4, 9])
-    expect(opts.panelsPerImage).toBe(4)
+    expect(opts.panelsPerImage).toBe(DEFAULT_PANELS_PER_IMAGE)
     expect(opts.variations).toEqual(['animation-polish', 'cinematic-depth'])
     expect(opts.size).toBe('1536x1024')
     expect(opts.quality).toBe('high')
@@ -122,10 +124,14 @@ describe('option resolution contracts', () => {
     const opts = parseGenerateImagesArgs([
       'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
       '--target', 'sketches',
+      '--panels-per-image', String(DEFAULT_PANELS_PER_IMAGE),
+      '--quality', 'high',
     ])
 
     expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
     expect(opts.target).toBe('sketches')
+    expect(opts.panelsPerImage).toBe(DEFAULT_PANELS_PER_IMAGE)
+    expect(opts.quality).toBe('high')
     expect(() => parseGenerateImagesArgs(['script.md', '--target', 'prompts'])).toThrow(
       'bun as comic draft-scenes <script-path> --only panel-prompts'
     )
@@ -136,7 +142,7 @@ describe('option resolution contracts', () => {
       'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
       '--target', 'images',
       '--panels', '1-6',
-      '--panels-per-image', '4',
+      '--panels-per-image', String(DEFAULT_PANELS_PER_IMAGE),
       '--image-model', 'gpt-image-2',
       '--size', '1536x1024',
       '--quality', 'high',
@@ -146,7 +152,7 @@ describe('option resolution contracts', () => {
     expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
     expect(opts.target).toBe('images')
     expect(opts.panels).toEqual([1, 2, 3, 4, 5, 6])
-    expect(opts.panelsPerImage).toBe(4)
+    expect(opts.panelsPerImage).toBe(DEFAULT_PANELS_PER_IMAGE)
     expect(opts.imageModels).toEqual(['gpt-image-2'])
     expect(opts.size).toBe('1536x1024')
     expect(opts.quality).toBe('high')
@@ -172,6 +178,35 @@ describe('option resolution contracts', () => {
     }))).toEqual([
       { pageNumber: 1, panelNumbers: [1, 2] },
       { pageNumber: 2, panelNumbers: [3, 4] }
+    ])
+  })
+
+  test('comic sketch chunks default to six panels per image', () => {
+    const panels = Array.from({ length: 13 }, (_, index) => ({ panelNumber: index + 1 }))
+    const defaultChunks = resolveSketchChunks(panels, {}, 'ep02/scene')
+    const selectedChunks = resolveSketchChunks(
+      panels,
+      {
+        sketchPanels: { startPanelNumber: 1, endPanelNumber: 12 },
+        panelsPerImage: DEFAULT_PANELS_PER_IMAGE,
+      },
+      'ep02/scene'
+    )
+
+    expect(defaultChunks.selectedChunks.map(chunk => [
+      chunk.startPanelNumber,
+      chunk.endPanelNumber
+    ])).toEqual([
+      [1, 6],
+      [7, 12],
+      [13, 13],
+    ])
+    expect(selectedChunks.selectedChunks.map(chunk => [
+      chunk.startPanelNumber,
+      chunk.endPanelNumber
+    ])).toEqual([
+      [1, 6],
+      [7, 12],
     ])
   })
 

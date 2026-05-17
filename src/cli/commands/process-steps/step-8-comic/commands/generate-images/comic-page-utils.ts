@@ -9,6 +9,8 @@ import type {
 
 const PANEL_SELECTOR_PART_PATTERN = /^(\d+)(?:-(\d+))?$/
 
+export const DEFAULT_PANELS_PER_IMAGE = 6
+
 const assertPositiveInteger = (value: number, label: string): void => {
   if (!Number.isInteger(value) || value < 1) {
     throw new Error(`${label} must be a positive integer`)

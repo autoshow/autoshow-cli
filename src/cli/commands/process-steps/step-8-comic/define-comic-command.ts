@@ -177,7 +177,7 @@ export const comicCommand = defineCliCommand({
     examples: [
       ['bun as comic draft-scenes input/episode-scripts/ep01-scripts/01-co-work-smarter.md', 'Draft structured scene JSON'],
       ['bun as comic draft-scenes input/episode-scripts/ep01-scripts/01-co-work-smarter.md --only panel-prompts', 'Build panel prompt bundles'],
-      ['bun as comic generate-images input/episode-scripts/ep01-scripts/01-co-work-smarter.md --panels-per-image 4', 'Generate page images'],
+      ['bun as comic generate-images input/episode-scripts/ep01-scripts/01-co-work-smarter.md --panels-per-image 6', 'Generate page images'],
       ['bun as comic character-sketch --image input/characters/03-duco.webp', 'Generate character sketch references'],
       ['bun as comic draft-scenes --help', 'Show comic subcommand help']
     ],

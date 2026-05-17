@@ -11,7 +11,12 @@ import {
 import * as v from 'valibot'
 import { l, err } from '../../utils/logger'
 import { ScenePromptDataSchema, SCENE_JSON_SCHEMA, StructuredScriptDataSchema } from '../../schemas/schemas'
-import { getDraftPromptPath, getSceneJsonPath, getStructuredScriptPath } from '../../utils/project-paths'
+import {
+  getDraftPromptPath,
+  getInvalidSceneJsonPath,
+  getSceneJsonPath,
+  getStructuredScriptPath,
+} from '../../utils/project-paths'
 import { getGeminiApiKey } from '../../utils/gemini-client'
 import { calculateGeminiLlmCost } from '../../models/gemini-models'
 import { isGeminiLlmModel, isOpenAiLlmModel } from '../../models/model-registry'
@@ -327,7 +332,23 @@ export const generateSceneJson = async (
       getStructuredScriptPath(sceneSlug),
       StructuredScriptDataSchema,
     )
-    validateSceneSourceSegmentCoverage(validated, structuredScript.sourceSegments)
+    try {
+      validateSceneSourceSegmentCoverage(validated, structuredScript.sourceSegments)
+    } catch (coverageError) {
+      const invalidOutputPath = getInvalidSceneJsonPath(sceneSlug)
+      try {
+        await mkdir(dirname(invalidOutputPath), { recursive: true })
+        await Bun.write(invalidOutputPath, JSON.stringify(validated, null, 2))
+        l.dim(`Saved invalid scene draft candidate: ${invalidOutputPath}`)
+      } catch (writeError) {
+        l.dim(
+          `Could not save invalid scene draft candidate: ${
+            writeError instanceof Error ? writeError.message : String(writeError)
+          }`
+        )
+      }
+      throw coverageError
+    }
 
     const outputPath = getSceneJsonPath(sceneSlug)
     await mkdir(dirname(outputPath), { recursive: true })

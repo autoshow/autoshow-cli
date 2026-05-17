@@ -255,11 +255,26 @@ test('comic generate-images rejects removed --panel flag', async () => {
   )
 })
 
-test('comic generate-images rejects --panels-per-image with sketch target', async () => {
-  await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'sketches', '--panels-per-image', '4', '--price'],
-    '--panels-per-image only applies when --target is images or both'
-  )
+test('comic generate-images accepts --panels-per-image with sketch target', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'comic',
+    'generate-images',
+    'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
+    '--target',
+    'sketches',
+    '--panels-per-image',
+    '6',
+    '--quality',
+    'high',
+    '--price'
+  ], {
+    env: { NO_COLOR: '1' }
+  })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('Price Estimate: generate-images --target sketches')
+  expect(result.stdout).toContain('Panels per sketch: 6')
 })
 
 test('comic generate-images rejects removed prompts target with migration', async () => {

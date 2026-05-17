@@ -3,7 +3,10 @@ import { mkdir, readdir } from 'node:fs/promises'
 import { l, err, bold, cyan, green, red } from '../../utils/logger'
 import { generatePanelImages } from './generate-panel-images'
 import { generateComicPages } from './generate-comic-pages'
-import { panelSelectionToSketchRange } from './comic-page-utils'
+import {
+  DEFAULT_PANELS_PER_IMAGE,
+  panelSelectionToSketchRange,
+} from './comic-page-utils'
 import { draftScenesCommand } from '../draft-scenes/draft-scenes-command'
 import { panelPromptsCommand } from '../panel-prompts/panel-prompts-command'
 import { generateSketchesCommand } from '../generate-sketches/generate-sketches-command'
@@ -56,7 +59,7 @@ const panelPromptsExist = async (sceneSlug: string): Promise<boolean> => {
 
 export const runFinalPanelImageStage = async (options: GenerateImagesCommandOptions): Promise<void> => {
   const { sceneSlug } = options
-  const panelsPerImage = options.panelsPerImage ?? 4
+  const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
   const usePageMode = panelsPerImage > 1
 
   const models = options.imageModels ?? [DEFAULT_IMAGE_MODEL]
@@ -224,6 +227,7 @@ export const generateImagesCommand = async (
       ...(options.quality ? { quality: options.quality } : {}),
       ...(options.force !== undefined ? { force: options.force } : {}),
       ...(sketchPanels !== undefined ? { sketchPanels } : {}),
+      ...(options.panelsPerImage !== undefined ? { panelsPerImage: options.panelsPerImage } : {}),
     })
   }
 
