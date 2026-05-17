@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import * as v from 'valibot'
-import { l, err } from '../../utils/logger'
+import { err, comicLog } from '../../utils/logger'
 import {
   findCharacterReferenceNamesInText,
   getCharacterImageFilename,
@@ -17,8 +17,9 @@ import {
   validatePanelNumberSequence,
 } from '../../utils/scene-utils'
 import { ScenePromptDataSchema, ExpandedScenePromptDataSchema, StructuredScriptDataSchema } from '../../schemas/schemas'
-import { getPanelPromptCoverageReportPath, getStructuredScriptPath } from '../../utils/project-paths'
+import { getStructuredScriptPath } from '../../utils/project-paths'
 import { parseJsonFile } from '../../utils/json-prompt-utils'
+import { validateSceneRecapMontageExpansion } from '../../utils/recap-montage-utils'
 import {
   assertSourceCoverageReportComplete,
   formatSourceSegmentsMarkdown,
@@ -26,6 +27,7 @@ import {
   validateSceneSourceSegmentCoverage,
   verifySourceSegmentCoverageInPromptFiles,
   writePanelPromptCoverageReport,
+  type SourceCoverageReport,
 } from '../../utils/source-coverage-utils'
 
 
@@ -35,14 +37,21 @@ export type ProcessSceneOptions = {
   outputDir: string
 }
 
+export type ProcessSceneResult = {
+  success: number
+  errors: number
+  panels: number
+  coverageReport?: SourceCoverageReport
+}
+
 const getPanelDirectoryName = (panelNumber: number): string => `panel-${String(panelNumber).padStart(2, '0')}`
 
 export const processScene = async ({
   sceneSlug,
   sceneJsonPath,
   outputDir,
-}: ProcessSceneOptions): Promise<{ success: number; errors: number }> => {
-  const stats = { success: 0, errors: 0 }
+}: ProcessSceneOptions): Promise<ProcessSceneResult> => {
+  const stats: ProcessSceneResult = { success: 0, errors: 0, panels: 0 }
 
   try {
     const prompts = await loadPromptsConfig()
@@ -55,12 +64,14 @@ export const processScene = async ({
     }
 
     const sceneData = v.parse(ScenePromptDataSchema, JSON.parse(sceneContent))
+    stats.panels = sceneData.panels.length
     const structuredScript = await parseJsonFile(
       getStructuredScriptPath(sceneSlug),
       StructuredScriptDataSchema,
     )
     validatePanelNumberSequence(sceneData.title, sceneData.panels)
     validateSceneSourceSegmentCoverage(sceneData, structuredScript.sourceSegments)
+    await validateSceneRecapMontageExpansion(sceneData, structuredScript)
 
     await mkdir(outputDir, { recursive: true })
 
@@ -173,13 +184,13 @@ export const processScene = async ({
     )
     await writePanelPromptCoverageReport(sceneSlug, coverageReport)
     assertSourceCoverageReportComplete(coverageReport)
+    stats.coverageReport = coverageReport
 
     stats.success++
-    l.dim(`  Processed: ${sceneSlug}`)
-    l.dim(
-      `  Source coverage: ${coverageReport.coveredSegments}/${coverageReport.totalSegments} ` +
-      `segment(s), report: ${getPanelPromptCoverageReportPath(sceneSlug)}`
-    )
+    comicLog.line('panel-prompts generated', [
+      `panels=${sceneData.panels.length}`,
+      `coverage=${coverageReport.coveredSegments}/${coverageReport.totalSegments}`,
+    ])
 
   } catch (error) {
     stats.errors++

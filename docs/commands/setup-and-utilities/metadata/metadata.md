@@ -187,10 +187,13 @@ src/cli/commands/
     step-6-video/
     step-7-music/
   setup-and-utilities/
+    benchmark/
+    cache/
+    config/
+    links/
+    resume/
+    sample/
     setup/
     models/
-    links/
-    config/
-    cache/
-    sample/
+    sock/
 ```

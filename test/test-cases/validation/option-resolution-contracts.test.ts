@@ -15,8 +15,10 @@ import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/m
 import {
   buildComicPagePrompt,
   buildComicPagePromptData,
+  chunkComicGridPanels,
   chunkComicPagePanels,
   DEFAULT_PANELS_PER_IMAGE,
+  parseComicGridSpec,
   panelSelectionToSketchRange,
   parsePanelSelector,
   selectComicPanels
@@ -34,6 +36,9 @@ import {
   getPageComicImagePath,
   getPanelComicImagePath
 } from '~/cli/commands/process-steps/step-8-comic/utils/scene-utils'
+import {
+  resolveComicScriptReference
+} from '~/cli/commands/process-steps/step-8-comic/utils/project-paths'
 import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
 import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
@@ -75,7 +80,7 @@ import type { ExpandedScenePromptData, PromptsConfig } from '~/cli/commands/proc
 describe('option resolution contracts', () => {
   test('comic generate-images args parse page image options', () => {
     const opts = parseGenerateImagesArgs([
-      'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
+      'input/episode-scripts/02-script/01-co-work-smarter.md',
       '--image-model', 'gpt-image-2,gemini-3.1-flash-image-preview',
       '--panels', '1-4,9',
       '--panels-per-image', String(DEFAULT_PANELS_PER_IMAGE),
@@ -85,7 +90,7 @@ describe('option resolution contracts', () => {
       '--force'
     ])
 
-    expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
+    expect(opts.scriptPath).toBe('input/episode-scripts/02-script/01-co-work-smarter.md')
     expect(opts.imageModels).toEqual(['gpt-image-2', 'gemini-3.1-flash-image-preview'])
     expect(opts.panels).toEqual([1, 2, 3, 4, 9])
     expect(opts.panelsPerImage).toBe(DEFAULT_PANELS_PER_IMAGE)
@@ -93,6 +98,29 @@ describe('option resolution contracts', () => {
     expect(opts.size).toBe('1536x1024')
     expect(opts.quality).toBe('high')
     expect(opts.force).toBe(true)
+  })
+
+  test('comic generate-images args parse grid page composition options', () => {
+    const opts = parseGenerateImagesArgs([
+      'input/episode-scripts/02-script/01-co-work-smarter.md',
+      '--target', 'images',
+      '--panels', '1-6',
+      '--panels-per-image', '1',
+      '--grid', '2x3',
+      '--size', '1536x1024',
+    ])
+
+    expect(opts.grid).toEqual({ columns: 2, rows: 3 })
+    expect(opts.panelsPerImage).toBe(1)
+  })
+
+  test('comic generate-images grid args reject invalid values and combinations', () => {
+    expect(() => parseComicGridSpec('2x3')).not.toThrow()
+    expect(() => parseGenerateImagesArgs(['script.md', '--panels-per-image', '1', '--grid', '0x3'])).toThrow('Invalid grid "0x3"')
+    expect(() => parseGenerateImagesArgs(['script.md', '--panels-per-image', '1', '--grid', '2x3', '--grid', '3x2'])).toThrow('Grid can only be specified once')
+    expect(() => parseGenerateImagesArgs(['script.md', '--target', 'sketches', '--panels-per-image', '1', '--grid', '2x3'])).toThrow('--grid only applies when --target is images or both')
+    expect(() => parseGenerateImagesArgs(['script.md', '--grid', '2x3'])).toThrow('--grid requires --panels-per-image 1')
+    expect(() => parseGenerateImagesArgs(['script.md', '--panels-per-image', '1', '--grid', '2x3', '--size', '1024x1024'])).toThrow('--grid requires --size 1536x1024')
   })
 
   test('comic generate-images removed options throw deprecation errors', () => {
@@ -110,25 +138,25 @@ describe('option resolution contracts', () => {
 
   test('comic draft-scenes args parse llm model and panel prompt stage', () => {
     const opts = parseDraftScenesArgs([
-      'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
+      'input/episode-scripts/05-script/01-paddy-goes-on-vacation.md',
       '--llm-model', LLM_MODELS[0],
       '--only', 'panel-prompts',
     ])
 
-    expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
+    expect(opts.scriptPath).toBe('input/episode-scripts/05-script/01-paddy-goes-on-vacation.md')
     expect(opts.llmModel).toBe(LLM_MODELS[0])
     expect(opts.only).toBe('panel-prompts')
   })
 
   test('comic generate-images args parse target', () => {
     const opts = parseGenerateImagesArgs([
-      'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md',
+      'input/episode-scripts/05-script/01-paddy-goes-on-vacation.md',
       '--target', 'sketches',
       '--panels-per-image', String(DEFAULT_PANELS_PER_IMAGE),
       '--quality', 'high',
     ])
 
-    expect(opts.scriptPath).toBe('input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md')
+    expect(opts.scriptPath).toBe('input/episode-scripts/05-script/01-paddy-goes-on-vacation.md')
     expect(opts.target).toBe('sketches')
     expect(opts.panelsPerImage).toBe(DEFAULT_PANELS_PER_IMAGE)
     expect(opts.quality).toBe('high')
@@ -139,7 +167,7 @@ describe('option resolution contracts', () => {
 
   test('comic generate-images args parse page image options with target', () => {
     const opts = parseGenerateImagesArgs([
-      'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
+      'input/episode-scripts/02-script/01-co-work-smarter.md',
       '--target', 'images',
       '--panels', '1-6',
       '--panels-per-image', String(DEFAULT_PANELS_PER_IMAGE),
@@ -149,7 +177,7 @@ describe('option resolution contracts', () => {
       '--force'
     ])
 
-    expect(opts.scriptPath).toBe('input/episode-scripts/ep02-scripts/01-co-work-smarter.md')
+    expect(opts.scriptPath).toBe('input/episode-scripts/02-script/01-co-work-smarter.md')
     expect(opts.target).toBe('images')
     expect(opts.panels).toEqual([1, 2, 3, 4, 5, 6])
     expect(opts.panelsPerImage).toBe(DEFAULT_PANELS_PER_IMAGE)
@@ -157,6 +185,35 @@ describe('option resolution contracts', () => {
     expect(opts.size).toBe('1536x1024')
     expect(opts.quality).toBe('high')
     expect(opts.force).toBe(true)
+  })
+
+  test('comic script shorthand resolves only strict NN-SC references', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-comic-script-ref-'))
+    const episodeDir = join(tempDir, '02-script')
+    const fullPath = 'input/episode-scripts/02-script/01-co-work-smarter.md'
+
+    try {
+      await mkdir(episodeDir, { recursive: true })
+      await writeFile(join(episodeDir, '01-co-work-smarter.md'), '# Co-Work Smarter\n')
+
+      expect(parseDraftScenesArgs(['02-01']).scriptPath).toBe('02-01')
+      expect(parseGenerateImagesArgs(['02-01']).scriptPath).toBe('02-01')
+      await expect(resolveComicScriptReference('02-01', { episodeScriptsRoot: tempDir }))
+        .resolves.toBe(join(episodeDir, '01-co-work-smarter.md'))
+      await expect(resolveComicScriptReference(fullPath, { episodeScriptsRoot: tempDir }))
+        .resolves.toBe(fullPath)
+      await expect(resolveComicScriptReference('2-1', { episodeScriptsRoot: tempDir }))
+        .resolves.toBe('2-1')
+      await expect(resolveComicScriptReference('02-02', { episodeScriptsRoot: tempDir }))
+        .rejects.toThrow('Comic script shorthand "02-02" could not be resolved')
+
+      await writeFile(join(episodeDir, '01-alt.md'), '# Alternate Scene\n')
+
+      await expect(resolveComicScriptReference('02-01', { episodeScriptsRoot: tempDir }))
+        .rejects.toThrow('Expected exactly one Markdown file')
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
   test('comic panel selectors dedupe, sort, and chunk page groups', () => {
@@ -178,6 +235,37 @@ describe('option resolution contracts', () => {
     }))).toEqual([
       { pageNumber: 1, panelNumbers: [1, 2] },
       { pageNumber: 2, panelNumbers: [3, 4] }
+    ])
+  })
+
+  test('comic grid chunks preserve selected panel order and full grid capacity', () => {
+    const grid = { columns: 2, rows: 3 }
+    const exact = chunkComicGridPanels(
+      Array.from({ length: 6 }, (_, index) => ({ panelNumber: index + 1 })),
+      grid
+    )
+    const fewer = chunkComicGridPanels(
+      [1, 2, 3, 4].map(panelNumber => ({ panelNumber })),
+      grid
+    )
+    const more = chunkComicGridPanels(
+      Array.from({ length: 8 }, (_, index) => ({ panelNumber: index + 1 })),
+      grid
+    )
+    const nonContiguous = chunkComicGridPanels(
+      [1, 3, 7, 9, 11, 13, 15].map(panelNumber => ({ panelNumber })),
+      grid
+    )
+
+    expect(exact.map(chunk => chunk.panelNumbers)).toEqual([[1, 2, 3, 4, 5, 6]])
+    expect(fewer.map(chunk => chunk.panelNumbers)).toEqual([[1, 2, 3, 4]])
+    expect(more.map(chunk => chunk.panelNumbers)).toEqual([[1, 2, 3, 4, 5, 6], [7, 8]])
+    expect(nonContiguous.map(chunk => ({
+      pageNumber: chunk.pageNumber,
+      panelNumbers: chunk.panelNumbers,
+    }))).toEqual([
+      { pageNumber: 1, panelNumbers: [1, 3, 7, 9, 11, 13] },
+      { pageNumber: 2, panelNumbers: [15] },
     ])
   })
 

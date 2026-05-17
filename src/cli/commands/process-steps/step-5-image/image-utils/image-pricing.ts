@@ -208,8 +208,8 @@ export const logImageEstimate = (estimate: ImageCostEstimate): void => {
     ['Provider', estimate.provider],
     ['Model', estimate.model],
     ['Image Count', String(estimate.imageCount)],
-    ['Cost Per Image', `${estimate.costPerImageCents.toFixed(4)}¢`],
-    ['Total Cost', `${estimate.totalCost.toFixed(5)}¢`],
+    ['Cost Per Image', `${estimate.costPerImageCents.toFixed(3)}¢`],
+    ['Total Cost', `${estimate.totalCost.toFixed(3)}¢`],
     ...(estimate.note ? [['Note', estimate.note] as const] : [])
   ]
   l.write('info', `Estimated image cost for ${estimate.provider}/${estimate.model}`, {

@@ -1,20 +1,22 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readdir } from 'node:fs/promises'
-import { l, err, bold, cyan, green, red } from '../../utils/logger'
+import { err, comicLog, formatCompactCost, formatDuration } from '../../utils/logger'
 import { generatePanelImages } from './generate-panel-images'
 import { generateComicPages } from './generate-comic-pages'
+import { generateComicGridPages } from './generate-comic-grid-pages'
 import {
+  COMIC_GRID_PANEL_SIZE,
   DEFAULT_PANELS_PER_IMAGE,
   panelSelectionToSketchRange,
+  validateComicGridOptions,
 } from './comic-page-utils'
 import { draftScenesCommand } from '../draft-scenes/draft-scenes-command'
 import { panelPromptsCommand } from '../panel-prompts/panel-prompts-command'
 import { generateSketchesCommand } from '../generate-sketches/generate-sketches-command'
-import { DEFAULT_IMAGE_MODEL, isGeminiImageModel } from '../../models/model-registry'
+import { DEFAULT_IMAGE_MODEL } from '../../models/model-registry'
 import { validateImageSizeForModels } from '../../utils/image-size'
 import { getImagePromptVariationLabel } from './prompt-variations'
 import {
-  COMIC_OUTPUT_ROOT,
   getPanelPromptsDirectory,
   getSceneJsonPath,
   getSceneOutputDirectory,
@@ -27,23 +29,26 @@ import type {
   GenerateImagesCommandOptions,
   GeneratePanelImagesOptions,
   GenerateSketchesCommandOptions,
+  ImageRunStats,
   ImageGenerationQuality,
   ImageGenerationSize,
   PanelPromptsCommandOptions,
 } from '../../types'
+import type { SourceCoverageReport } from '../../utils/source-coverage-utils'
 
 
 
-const DEFAULT_IMAGE_SIZE: ImageGenerationSize = '1536x1024'
+const DEFAULT_IMAGE_SIZE: ImageGenerationSize = COMIC_GRID_PANEL_SIZE
 const DEFAULT_IMAGE_QUALITY: ImageGenerationQuality = 'high'
 
 export type GenerateImagesWorkflowDependencies = {
-  runDraftScenes?: (options: DraftScenesCommandOptions) => Promise<void>
-  runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<void>
-  runSketches?: (options: GenerateSketchesCommandOptions) => Promise<void>
-  runImages?: (options: GenerateImagesCommandOptions) => Promise<void>
+  runDraftScenes?: (options: DraftScenesCommandOptions) => Promise<unknown>
+  runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<unknown>
+  runSketches?: (options: GenerateSketchesCommandOptions) => Promise<ImageRunStats | void>
+  runImages?: (options: GenerateImagesCommandOptions) => Promise<ImageRunStats | void>
   checkScenesExist?: (sceneSlug: string) => Promise<boolean>
   checkPromptsExist?: (sceneSlug: string) => Promise<boolean>
+  checkPanelPromptSourceCoverage?: (sceneSlug: string) => Promise<SourceCoverageReport>
 }
 
 const getGenerateImagesTarget = (target: GenerateImagesCommandOptions['target']): GenerateImagesTarget => {
@@ -57,67 +62,88 @@ const panelPromptsExist = async (sceneSlug: string): Promise<boolean> => {
   return entries.some(entry => entry.isDirectory() && !entry.name.startsWith('.'))
 }
 
-export const runFinalPanelImageStage = async (options: GenerateImagesCommandOptions): Promise<void> => {
+const createEmptyImageStats = (): ImageRunStats => ({
+  imagesGenerated: 0,
+  imagesSkipped: 0,
+  totalInputTokens: 0,
+  totalInputTextTokens: 0,
+  totalInputImageTokens: 0,
+  totalInputUnattributedTokens: 0,
+  totalOutputTokens: 0,
+  totalOutputTextTokens: 0,
+  totalOutputImageTokens: 0,
+  totalOutputUnattributedTokens: 0,
+  totalCost: 0,
+  totalDurationMs: 0,
+})
+
+const mergeImageStats = (target: ImageRunStats, source: ImageRunStats | void): void => {
+  if (!source) return
+
+  target.imagesGenerated += source.imagesGenerated
+  target.imagesSkipped += source.imagesSkipped
+  target.totalInputTokens += source.totalInputTokens
+  target.totalInputTextTokens += source.totalInputTextTokens
+  target.totalInputImageTokens += source.totalInputImageTokens
+  target.totalInputUnattributedTokens += source.totalInputUnattributedTokens
+  target.totalOutputTokens += source.totalOutputTokens
+  target.totalOutputTextTokens += source.totalOutputTextTokens
+  target.totalOutputImageTokens += source.totalOutputImageTokens
+  target.totalOutputUnattributedTokens += source.totalOutputUnattributedTokens
+  target.totalCost += source.totalCost
+  target.totalDurationMs += source.totalDurationMs
+}
+
+const formatPanelSelection = (panels: GenerateImagesCommandOptions['panels']): string => {
+  if (!panels || panels === 'all') return 'all'
+  return panels.join(',')
+}
+
+export const runFinalPanelImageStage = async (options: GenerateImagesCommandOptions): Promise<ImageRunStats> => {
   const { sceneSlug } = options
   const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
-  const usePageMode = panelsPerImage > 1
+  const usePageMode = !options.grid && panelsPerImage > 1
+  const stageLabel = options.grid ? 'Grid' : usePageMode ? 'Page' : 'Image'
 
   const models = options.imageModels ?? [DEFAULT_IMAGE_MODEL]
   const size: ImageGenerationSize = options.size ?? DEFAULT_IMAGE_SIZE
   const quality: ImageGenerationQuality = options.quality ?? DEFAULT_IMAGE_QUALITY
   const force = options.force ?? false
   validateImageSizeForModels(size, models)
-
-  l(`${bold('USS Acampo')} - Generating comic ${usePageMode ? 'page' : 'panel'} images for ${sceneSlug}`)
-  l(`${cyan('═'.repeat(50))}\n`)
-
-  const startTime = Date.now()
-  const stats = {
-    init: { success: false, error: '' },
-    generateImages: { success: false, error: '' },
-  }
+  validateComicGridOptions(options.grid, {
+    target: 'images',
+    size,
+    panelsPerImage,
+  })
 
   try {
-    l(`${cyan('Step 1/2:')} Initializing`)
-    l(`${cyan('━'.repeat(50))}\n`)
-
     await mkdir(getSceneOutputDirectory(sceneSlug), { recursive: true })
     await assertPanelPromptSourceCoverage(sceneSlug)
-
-    l.dim(`Image models: ${models.join(', ')}`)
-    l.dim(`Image size: ${size}`)
-    l.dim(`Image quality: ${quality}`)
-    if (models.some(isGeminiImageModel)) {
-      l.dim('Gemini image models map CLI sizes to aspect ratio + 1K and ignore --quality')
-    }
-    if (options.variations !== undefined) {
-      l.dim(`Variations: ${options.variations.map(getImagePromptVariationLabel).join(', ')}`)
-    }
-    if (usePageMode) {
-      const panelSelection = options.panels ?? 'all'
-      l.dim(`Panels: ${panelSelection === 'all' ? 'all' : panelSelection.join(', ')}`)
-      l.dim(`Panels per image: ${panelsPerImage}`)
-    } else {
-      if (options.panels) {
-        l.dim(`Panels: ${options.panels === 'all' ? 'all' : options.panels.join(', ')}`)
-      }
-    }
-    if (force) {
-      l.dim(`Existing comic ${usePageMode ? 'page' : 'panel'} images will be overwritten`)
-    }
-
-    stats.init.success = true
-    l.success('Initialization complete')
-    l('')
   } catch (error) {
-    stats.init.error = error instanceof Error ? error.message : String(error)
-    err('Initialization failed:', stats.init.error)
+    err('Image initialization failed:', error instanceof Error ? error.message : String(error))
     throw new Error('Failed at initialization step')
   }
 
   try {
-    l(`${cyan('Step 2/2:')} Generating ${usePageMode ? 'page' : 'panel'} images via ${models.join(', ')}`)
-    l(`${cyan('━'.repeat(50))}\n`)
+    if (options.grid) {
+      const panelStats = await generatePanelImages(sceneSlug, {
+        models,
+        size,
+        quality,
+        force,
+        ...(options.panels !== undefined ? { panels: options.panels } : {}),
+        ...(options.variations !== undefined ? { variations: options.variations } : {}),
+      })
+      const gridStats = await generateComicGridPages(sceneSlug, {
+        models,
+        force,
+        panels: options.panels ?? 'all',
+        grid: options.grid,
+        ...(options.variations !== undefined ? { variations: options.variations } : {}),
+      })
+      mergeImageStats(panelStats, gridStats)
+      return panelStats
+    }
 
     if (usePageMode) {
       const pageOptions: GenerateComicPagesOptions = {
@@ -129,7 +155,7 @@ export const runFinalPanelImageStage = async (options: GenerateImagesCommandOpti
         panelsPerImage,
         ...(options.variations !== undefined ? { variations: options.variations } : {}),
       }
-      await generateComicPages(sceneSlug, pageOptions)
+      return await generateComicPages(sceneSlug, pageOptions)
     } else {
       const generationOptions: GeneratePanelImagesOptions = {
         models,
@@ -139,31 +165,12 @@ export const runFinalPanelImageStage = async (options: GenerateImagesCommandOpti
         ...(options.panels !== undefined ? { panels: options.panels } : {}),
         ...(options.variations !== undefined ? { variations: options.variations } : {}),
       }
-      await generatePanelImages(sceneSlug, generationOptions)
+      return await generatePanelImages(sceneSlug, generationOptions)
     }
-
-    stats.generateImages.success = true
-    l.success(`${usePageMode ? 'Page' : 'Image'} generation complete`)
-    l('')
   } catch (error) {
-    stats.generateImages.error = error instanceof Error ? error.message : String(error)
-    err(`${usePageMode ? 'Page' : 'Image'} generation failed:`, stats.generateImages.error)
-    throw new Error(`Failed at ${usePageMode ? 'page' : 'image'} generation step`)
+    err(`${stageLabel} generation failed:`, error instanceof Error ? error.message : String(error))
+    throw new Error(`Failed at ${options.grid ? 'grid' : usePageMode ? 'page' : 'image'} generation step`)
   }
-
-  const endTime = Date.now()
-  const duration = ((endTime - startTime) / 1000).toFixed(2)
-
-  l(`${cyan('═'.repeat(50))}`)
-  l(bold(`${usePageMode ? 'Page' : 'Image'} Generation Complete`))
-  l(`${cyan('═'.repeat(50))}\n`)
-
-  l(`  ${stats.init.success ? green('✓') : red('✗')} Initialization`)
-  l(`  ${stats.generateImages.success ? green('✓') : red('✗')} ${usePageMode ? 'Page' : 'Image'} generation (${models.join(', ')})`)
-  l('')
-
-  l.dim(`Output directory: ${COMIC_OUTPUT_ROOT}/${sceneSlug}`)
-  l.success(`All operations completed in ${duration}s`)
 }
 
 export const generateImagesCommand = async (
@@ -172,10 +179,28 @@ export const generateImagesCommand = async (
 ): Promise<void> => {
   const { sceneSlug } = options
   const target = getGenerateImagesTarget(options.target)
-  const runDraftScenes = dependencies.runDraftScenes ?? draftScenesCommand
+  const runDraftScenes = dependencies.runDraftScenes ?? ((opts: DraftScenesCommandOptions) => draftScenesCommand(opts, {}, 'nested'))
   const runPanelPrompts = dependencies.runPanelPrompts ?? panelPromptsCommand
   const runSketches = dependencies.runSketches ?? generateSketchesCommand
   const runImages = dependencies.runImages ?? runFinalPanelImageStage
+  const checkPanelPromptSourceCoverage = dependencies.checkPanelPromptSourceCoverage ?? assertPanelPromptSourceCoverage
+  const models = options.imageModels ?? [DEFAULT_IMAGE_MODEL]
+  const size: ImageGenerationSize = options.size ?? DEFAULT_IMAGE_SIZE
+  const quality: ImageGenerationQuality = options.quality ?? DEFAULT_IMAGE_QUALITY
+  const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
+  const startedAt = Date.now()
+  const totals = createEmptyImageStats()
+
+  validateImageSizeForModels(size, models)
+  validateComicGridOptions(options.grid, {
+    target,
+    size,
+    panelsPerImage,
+  })
+  comicLog.header('comic generate-images', [
+    `scene=${sceneSlug}`,
+    `target=${target}`,
+  ])
 
   const checkScenesExist = dependencies.checkScenesExist ?? (async (slug: string) => {
     return existsSync(getSceneJsonPath(slug))
@@ -184,6 +209,8 @@ export const generateImagesCommand = async (
 
   const shouldRunDraftScenes = options.force === true
     || !(await checkScenesExist(sceneSlug))
+  let draftStatus = 'existing'
+  let promptStatus = 'existing'
 
   if (shouldRunDraftScenes) {
     await runDraftScenes({
@@ -191,8 +218,8 @@ export const generateImagesCommand = async (
       sceneSlug,
       ...(options.llmModel ? { llmModel: options.llmModel } : {}),
     })
-  } else {
-    l.dim('Scene drafts already exist, skipping draft-scenes (use --force to rebuild)')
+    draftStatus = 'rebuilt'
+    promptStatus = 'from-draft-scenes'
   }
 
   const shouldBuildPrompts = !shouldRunDraftScenes
@@ -202,36 +229,67 @@ export const generateImagesCommand = async (
     )
 
   if (shouldRunDraftScenes) {
-    l.dim('Panel prompt bundles prepared by draft-scenes')
+    promptStatus = 'from-draft-scenes'
   } else if (shouldBuildPrompts) {
     await runPanelPrompts({
       sceneSlug,
       ...(options.force !== undefined ? { force: options.force } : {}),
     })
-  } else {
-    l.dim('Panel prompt bundles already exist, skipping rebuild (use --force to rebuild)')
+    promptStatus = 'rebuilt'
   }
 
-  const coverageReport = await assertPanelPromptSourceCoverage(sceneSlug)
-  l.dim(
-    `Panel prompt source coverage verified: ` +
-    `${coverageReport.coveredSegments}/${coverageReport.totalSegments} segment(s)`
-  )
+  const coverageReport = await checkPanelPromptSourceCoverage(sceneSlug)
+  comicLog.line('inputs ready', [
+    `draft=${draftStatus}`,
+    `prompts=${promptStatus}`,
+    `coverage=${coverageReport.coveredSegments}/${coverageReport.totalSegments}`,
+  ])
+  comicLog.line('config', [
+    `target=${target}`,
+    `models=${models.join(',')}`,
+    `size=${size}`,
+    `quality=${quality}`,
+    `panels=${formatPanelSelection(options.panels)}`,
+    `panelsPerImage=${panelsPerImage}`,
+    options.grid ? `grid=${options.grid.columns}x${options.grid.rows}` : undefined,
+    options.variations !== undefined
+      ? `variations=${options.variations.map(getImagePromptVariationLabel).join(',')}`
+      : undefined,
+    options.force ? 'force=true' : undefined,
+  ])
 
   if (target === 'sketches' || target === 'both') {
     const sketchPanels = panelSelectionToSketchRange(options.panels)
-    await runSketches({
+    const sketchStats = await runSketches({
       sceneSlug,
-      ...(options.imageModels ? { imageModels: options.imageModels } : {}),
-      ...(options.size ? { size: options.size } : {}),
-      ...(options.quality ? { quality: options.quality } : {}),
+      imageModels: models,
+      size,
+      quality,
       ...(options.force !== undefined ? { force: options.force } : {}),
       ...(sketchPanels !== undefined ? { sketchPanels } : {}),
-      ...(options.panelsPerImage !== undefined ? { panelsPerImage: options.panelsPerImage } : {}),
+      panelsPerImage,
     })
+    mergeImageStats(totals, sketchStats)
   }
 
   if (target === 'images' || target === 'both') {
-    await runImages(options)
+    const imageStats = await runImages({
+      ...options,
+      imageModels: models,
+      size,
+      quality,
+      panelsPerImage,
+    })
+    mergeImageStats(totals, imageStats)
   }
+
+  comicLog.summary([
+    `generated=${totals.imagesGenerated}`,
+    `skipped=${totals.imagesSkipped}`,
+    `tokens=${(totals.totalInputTokens + totals.totalOutputTokens).toLocaleString()}`,
+    `cost=${formatCompactCost(totals.totalCost)}`,
+    `api=${formatDuration(totals.totalDurationMs)}`,
+    `duration=${formatDuration(Date.now() - startedAt)}`,
+  ])
+  comicLog.outputDirectory(getSceneOutputDirectory(sceneSlug))
 }

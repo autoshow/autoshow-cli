@@ -28,7 +28,7 @@ import { resolveSelectedFiles } from './path-selection'
 import { withEmptyPriceConfig } from './price-command-config'
 import { E2E_TEST_TIMEOUT_MS } from '../test-utils/timeouts'
 
-const formatCents = (cents: number): string => `${cents.toFixed(4)}¢`
+const formatCents = (cents: number): string => `${cents.toFixed(3)}¢`
 const budgetHundredthCentsToCents = (budgetHundredthCents: number): number => budgetHundredthCents / 100
 const formatBudgetHundredthCents = (budgetHundredthCents: number): string => formatCents(budgetHundredthCentsToCents(budgetHundredthCents))
 

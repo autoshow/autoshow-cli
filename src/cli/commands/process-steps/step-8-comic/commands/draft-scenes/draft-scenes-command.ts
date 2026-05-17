@@ -1,10 +1,10 @@
-import { l, bold, cyan, green, red } from '../../utils/logger'
+import { comicLog, formatDuration } from '../../utils/logger'
 import { generateSceneJson } from './generate-scene-json'
 import { DEFAULT_LLM_MODEL } from '../../models/model-registry'
 import { structureScriptsCommand } from '../structure-scripts/structure-scripts-command'
 import { draftPromptsCommand } from '../draft-prompts/draft-prompts-command'
 import { panelPromptsCommand } from '../panel-prompts/panel-prompts-command'
-import { COMIC_OUTPUT_ROOT } from '../../utils/project-paths'
+import { getSceneOutputDirectory } from '../../utils/project-paths'
 import type {
   DraftScenesCommandOptions,
   DraftScenesStage,
@@ -16,65 +16,53 @@ import type {
 const DRAFT_SCENE_STAGE_ORDER: DraftScenesStage[] = ['structure', 'prompt', 'scene', 'panel-prompts']
 
 export type DraftScenesWorkflowDependencies = {
-  runStructureScripts?: (options: DraftScenesCommandOptions) => Promise<void>
-  runDraftPrompts?: (options: DraftScenesCommandOptions) => Promise<void>
-  runSceneDraft?: (options: DraftScenesCommandOptions) => Promise<void>
-  runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<void>
+  runStructureScripts?: (options: DraftScenesCommandOptions) => Promise<unknown>
+  runDraftPrompts?: (options: DraftScenesCommandOptions) => Promise<unknown>
+  runSceneDraft?: (options: DraftScenesCommandOptions) => Promise<unknown>
+  runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<unknown>
+}
+
+export type DraftScenesLogMode = 'standalone' | 'nested'
+
+export type DraftScenesWorkflowResult = {
+  stages: DraftScenesStage[]
+  durationMs: number
 }
 
 const getDraftSceneStages = (only: DraftScenesCommandOptions['only']): DraftScenesStage[] => {
   return only ? [only] : DRAFT_SCENE_STAGE_ORDER
 }
 
-export const runSceneDraftStage = async (options: DraftScenesCommandOptions): Promise<void> => {
+export const runSceneDraftStage = async (options: DraftScenesCommandOptions) => {
   const llmModel = options.llmModel ?? DEFAULT_LLM_MODEL
 
-  l(`${bold('USS Acampo')} - Drafting scene JSON for ${options.sceneSlug}`)
-  l(`${cyan('═'.repeat(50))}\n`)
-
-  const startTime = Date.now()
-  const stats = {
-    generateSceneJson: { success: false, error: '' }
-  }
-
   try {
-    l(`${cyan('Step 1/1:')} Generating scene JSON via ${llmModel}`)
-    l(`${cyan('━'.repeat(50))}\n`)
-
-    await generateSceneJson(options.sceneSlug, { model: llmModel })
-
-    stats.generateSceneJson.success = true
-    l.success(`Scene JSON generation complete`)
-    l('')
-  } catch (error) {
-    stats.generateSceneJson.error = error instanceof Error ? error.message : String(error)
+    return await generateSceneJson(options.sceneSlug, { model: llmModel })
+  } catch {
     throw new Error('Failed at scene JSON generation step')
   }
-
-  const endTime = Date.now()
-  const duration = ((endTime - startTime) / 1000).toFixed(2)
-
-  l(`${cyan('═'.repeat(50))}`)
-  l(bold('Scene Drafting Complete'))
-  l(`${cyan('═'.repeat(50))}\n`)
-
-  l(`  ${stats.generateSceneJson.success ? green('✓') : red('✗')} Scene JSON generation (${llmModel})`)
-  l('')
-
-  l.dim(`Scene output directory: ${COMIC_OUTPUT_ROOT}/${options.sceneSlug}`)
-  l.success(`All operations completed in ${duration}s`)
 }
 
 export const draftScenesCommand = async (
   options: DraftScenesCommandOptions,
-  dependencies: DraftScenesWorkflowDependencies = {}
-): Promise<void> => {
+  dependencies: DraftScenesWorkflowDependencies = {},
+  logMode: DraftScenesLogMode = 'standalone'
+): Promise<DraftScenesWorkflowResult> => {
   const runStructureScripts = dependencies.runStructureScripts ?? structureScriptsCommand
   const runDraftPrompts = dependencies.runDraftPrompts ?? ((opts: DraftScenesCommandOptions) => draftPromptsCommand({ sceneSlug: opts.sceneSlug }))
   const runSceneDraft = dependencies.runSceneDraft ?? runSceneDraftStage
   const runPanelPrompts = dependencies.runPanelPrompts ?? panelPromptsCommand
+  const stages = getDraftSceneStages(options.only)
+  const startTime = Date.now()
 
-  for (const stage of getDraftSceneStages(options.only)) {
+  if (logMode === 'standalone') {
+    comicLog.header('comic draft-scenes', [
+      `scene=${options.sceneSlug}`,
+      `stages=${stages.join(',')}`,
+    ])
+  }
+
+  for (const stage of stages) {
     if (stage === 'structure') {
       await runStructureScripts(options)
       continue
@@ -92,4 +80,16 @@ export const draftScenesCommand = async (
 
     await runPanelPrompts({ sceneSlug: options.sceneSlug })
   }
+
+  const durationMs = Date.now() - startTime
+
+  if (logMode === 'standalone') {
+    comicLog.summary([
+      `stages=${stages.length}`,
+      `duration=${formatDuration(durationMs)}`,
+    ])
+    comicLog.outputDirectory(getSceneOutputDirectory(options.sceneSlug))
+  }
+
+  return { stages, durationMs }
 }

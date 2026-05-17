@@ -26,8 +26,11 @@ import type {
   ParsedLlmModel,
 } from '../types'
 import {
+  COMIC_GRID_PANEL_SIZE,
   DEFAULT_PANELS_PER_IMAGE,
+  parseComicGridSpec,
   parsePanelSelector,
+  validateComicGridOptions,
 } from '../commands/generate-images/comic-page-utils'
 
 
@@ -50,7 +53,7 @@ export const HELP_TEXT = `USS Acampo
 
 Usage:
   bun as comic ${DRAFT_SCENES_COMMAND} <script-path> [--only structure|prompt|scene|panel-prompts] [--price]
-  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--panels-per-image <n>] [--variation <name[,name...]>] [--force] [--price]
+  bun as comic ${GENERATE_IMAGES_COMMAND} <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--panels-per-image <n>] [--grid <columns>x<rows>] [--variation <name[,name...]>] [--force] [--price]
   bun as comic ${CHARACTER_SKETCH_COMMAND} --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 
 Commands:
@@ -59,7 +62,7 @@ Commands:
   ${CHARACTER_SKETCH_COMMAND.padEnd(18, ' ')}Generate 3 outline-only character sketch refs, or combine a sketch directory into one sheet
 
 Arguments:
-  <script-path>              Path to a script markdown file (e.g. input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md)
+  <script-path>              Path to a script markdown file, or NN-SC shorthand (e.g. 05-01 or input/episode-scripts/05-script/01-paddy-goes-on-vacation.md)
 
 Options:
   --only <stage>             (${DRAFT_SCENES_COMMAND}) Run one stage: structure, prompt, scene, or panel-prompts
@@ -79,6 +82,7 @@ Advanced:
   --size <size>              Image size: ${IMAGE_SIZE_HELP}
   --quality <quality>        Image quality: ${IMAGE_GENERATION_QUALITIES.join(', ')}
   --panels-per-image <n>     (${GENERATE_IMAGES_COMMAND}) Panels per generated image (default: ${DEFAULT_PANELS_PER_IMAGE})
+  --grid <columns>x<rows>    (${GENERATE_IMAGES_COMMAND}) Compose individual final panels into local page grids; requires --panels-per-image 1 and --size ${COMIC_GRID_PANEL_SIZE}
 `
 
 const readFlagValue = (args: string[], index: number, flag: string): string => {
@@ -171,9 +175,9 @@ export const parseDraftScenesArgs = (args: string[]): ParsedDraftCommandArgs => 
       }
       case '-e':
       case '--episode':
-        throw new Error('--episode was removed. Pass a script file path directly: bun as comic draft-scenes path/to/script.md')
+        throw new Error('--episode was removed. Pass a script file path or NN-SC shorthand: bun as comic draft-scenes 05-01')
       case '--script':
-        throw new Error('--script was removed. Pass a script file path directly: bun as comic draft-scenes path/to/script.md')
+        throw new Error('--script was removed. Pass a script file path or NN-SC shorthand: bun as comic draft-scenes 05-01')
       case '--concurrency':
         throw new Error('--concurrency was removed. Commands now process a single script.')
       default: {
@@ -355,10 +359,10 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
       }
       case '-e':
       case '--episode':
-        throw new Error('--episode was removed. Pass a script file path directly: bun as comic generate-images path/to/script.md')
+        throw new Error('--episode was removed. Pass a script file path or NN-SC shorthand: bun as comic generate-images 05-01')
       case '-s':
       case '--scene':
-        throw new Error('--scene was removed. Pass a script file path directly: bun as comic generate-images path/to/script.md')
+        throw new Error('--scene was removed. Pass a script file path or NN-SC shorthand: bun as comic generate-images 05-01')
       case '--concurrency':
         throw new Error('--concurrency was removed. Commands now process a single script.')
       case '--panel':
@@ -385,6 +389,15 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
         }
 
         parsed.panelsPerImage = Number(panelsPerImage)
+        index++
+        break
+      }
+      case '--grid': {
+        if (parsed.grid !== undefined) {
+          throw new Error('Grid can only be specified once')
+        }
+
+        parsed.grid = parseComicGridSpec(readFlagValue(args, index, argument))
         index++
         break
       }
@@ -468,6 +481,11 @@ export const parseGenerateImagesArgs = (args: string[]): ParsedGenerateImagesArg
   }
 
   validateImageSizeForModels(parsed.size, parsed.imageModels)
+  validateComicGridOptions(parsed.grid, {
+    target,
+    size: parsed.size ?? COMIC_GRID_PANEL_SIZE,
+    panelsPerImage: parsed.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE,
+  })
 
   return parsed as ParsedGenerateImagesArgs
 }

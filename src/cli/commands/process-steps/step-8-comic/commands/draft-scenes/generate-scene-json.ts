@@ -1,5 +1,5 @@
 import { mkdir } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { basename, dirname } from 'node:path'
 import {
   createOpenAIResponse,
   extractOpenAIResponseText,
@@ -9,7 +9,7 @@ import {
   type GeminiGenerateContentUsageMetadata,
 } from '~/utils/gemini/gemini-rest'
 import * as v from 'valibot'
-import { l, err } from '../../utils/logger'
+import { l, err, comicLog, formatCompactCost, formatDuration } from '../../utils/logger'
 import { ScenePromptDataSchema, SCENE_JSON_SCHEMA, StructuredScriptDataSchema } from '../../schemas/schemas'
 import {
   getDraftPromptPath,
@@ -23,6 +23,7 @@ import { isGeminiLlmModel, isOpenAiLlmModel } from '../../models/model-registry'
 import { getOpenAIClientConfig } from '../../utils/openai-client'
 import { LLM_MODEL_PRICING, openAiLlmSupportsStructuredOutputs } from '../../models/openai-models'
 import { parseJsonFile } from '../../utils/json-prompt-utils'
+import { validateSceneRecapMontageExpansion } from '../../utils/recap-montage-utils'
 import { validateSceneSourceSegmentCoverage } from '../../utils/source-coverage-utils'
 import type {
   DraftSceneResponseUsage,
@@ -34,12 +35,6 @@ import type {
   SceneResponseResult,
 } from '../../types'
 
-
-const formatCost = (dollars: number): string => {
-  return dollars < 0.01
-    ? `$${dollars.toFixed(4)}`
-    : `$${dollars.toFixed(2)}`
-}
 
 const SCENE_JSON_RESPONSE_FORMAT = {
   type: 'json_schema' as const,
@@ -244,8 +239,6 @@ export const generateSceneJson = async (
   sceneSlug: string,
   options: GenerateSceneJsonOptions
 ): Promise<DraftSceneRunStats> => {
-  l(`Generating scene JSON from draft prompt via ${options.model}`)
-
   const stats: DraftSceneRunStats = {
     filesProcessed: 0,
     totalInputTokens: 0,
@@ -264,43 +257,20 @@ export const generateSceneJson = async (
       return stats
     }
 
-    l.dim(`Sending to ${options.model}: ${sceneSlug}`)
-
     const requestStart = Date.now()
     const responseResult = await createSceneResponse(content, options.model)
     const requestDurationMs = Date.now() - requestStart
     const { response, usesStructuredOutputs } = responseResult
 
-    // Log usage details
     const usage = response.usage
-    l.dim(`  Model:            ${response.model}`)
-    if (response.requestId) {
-      l.dim(`  Response ID:      ${response.requestId}`)
-    }
-    if (response.status) {
-      l.dim(`  Status:           ${response.status}`)
-    }
     if (usage) {
       const cachedTokens = usage.input_tokens_details?.cached_tokens ?? 0
       const cost = calculateCost(options.model, usage)
-
-      l.dim(`  Input tokens:     ${usage.input_tokens.toLocaleString()}${cachedTokens > 0 ? ` (${cachedTokens.toLocaleString()} cached)` : ''}`)
-      l.dim(`  Output tokens:    ${usage.output_tokens.toLocaleString()}`)
-      l.dim(`  Total tokens:     ${usage.total_tokens.toLocaleString()}`)
-      l.dim(`  Cost:             ${formatCost(cost)}`)
-      l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
-
-      const reasoningTokens = usage.output_tokens_details?.reasoning_tokens
-      if (reasoningTokens && reasoningTokens > 0) {
-        l.dim(`  Reasoning tokens: ${reasoningTokens.toLocaleString()}`)
-      }
 
       stats.totalInputTokens += usage.input_tokens
       stats.totalOutputTokens += usage.output_tokens
       stats.totalCachedTokens += cachedTokens
       stats.totalCost += cost
-    } else {
-      l.dim(`  Duration: ${(requestDurationMs / 1000).toFixed(2)}s (no usage data returned)`)
     }
 
     stats.totalDurationMs += requestDurationMs
@@ -334,6 +304,7 @@ export const generateSceneJson = async (
     )
     try {
       validateSceneSourceSegmentCoverage(validated, structuredScript.sourceSegments)
+      await validateSceneRecapMontageExpansion(validated, structuredScript)
     } catch (coverageError) {
       const invalidOutputPath = getInvalidSceneJsonPath(sceneSlug)
       try {
@@ -355,10 +326,13 @@ export const generateSceneJson = async (
     await Bun.write(outputPath, JSON.stringify(validated, null, 2))
 
     stats.filesProcessed++
-    l.dim(`Generated: ${sceneSlug}.json`)
-
-    l('')
-    l.success(`Scene JSON file generated: ${stats.filesProcessed}`)
+    comicLog.line('scene-json generated', [
+      `file=${basename(outputPath)}`,
+      `model=${response.model}`,
+      usage ? `tokens=${usage.total_tokens.toLocaleString()}` : 'tokens=unavailable',
+      usage ? `cost=${formatCompactCost(stats.totalCost)}` : 'cost=unavailable',
+      `api=${formatDuration(requestDurationMs)}`,
+    ])
   } catch (error) {
     err(`Failed to generate scene JSON for ${sceneSlug}:`, error instanceof Error ? error.message : String(error))
     throw error

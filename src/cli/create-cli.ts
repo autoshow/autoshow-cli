@@ -11,6 +11,7 @@ import { videoCommand } from '~/cli/commands/process-steps/step-6-video/define-v
 import { musicCommand } from '~/cli/commands/process-steps/step-7-music/define-music-command'
 import { comicCommand } from '~/cli/commands/process-steps/step-8-comic/define-comic-command'
 import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-setup-command'
+import { sockCommand } from '~/cli/commands/setup-and-utilities/sock/define-sock-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
 import { isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
@@ -93,6 +94,7 @@ const HELP_COMMAND_GROUP_BY_NAME: Readonly<Record<string, HelpCommandGroupKey>> 
   config: 'setup',
   cache: 'setup',
   setup: 'setup',
+  sock: 'setup',
   links: 'setup',
   resume: 'setup',
   metadata: 'processing',
@@ -111,6 +113,7 @@ const COMMAND_DEFINITIONS = [
   configCommand,
   cacheCommand,
   setupCommand,
+  sockCommand,
   linksCommand,
   metadataCommand,
   downloadCommand,

@@ -36,6 +36,25 @@ export const red = (text: string): string => {
   return `${RED}${text}${RESET}`
 }
 
+export const formatDuration = (durationMs: number): string => {
+  return `${(durationMs / 1000).toFixed(2)}s`
+}
+
+export const formatCompactCost = (dollars: number): string => {
+  return dollars < 0.01
+    ? `$${dollars.toFixed(4)}`
+    : `$${dollars.toFixed(2)}`
+}
+
+export const compactParts = (
+  parts: Array<string | number | false | null | undefined>
+): string => {
+  return parts
+    .filter((part): part is string | number => part !== false && part !== null && part !== undefined && String(part).length > 0)
+    .map(String)
+    .join(' ')
+}
+
 const logBase = (...messages: unknown[]): void => {
   const firstMessage = messages[0]
   const restMessages = messages.slice(1)
@@ -56,6 +75,32 @@ logBase.success = (message: string): void => {
 }
 
 export const l = logBase
+
+export const comicLog = {
+  header(command: string, details: Array<string | number | false | null | undefined> = []): void {
+    l(`${bold(command)}${details.length > 0 ? ` ${compactParts(details)}` : ''}`)
+  },
+
+  line(label: string, details: Array<string | number | false | null | undefined> = []): void {
+    l.dim(`${label}${details.length > 0 ? ` ${compactParts(details)}` : ''}`)
+  },
+
+  output(
+    status: 'generated' | 'skipped' | 'combined',
+    kind: string,
+    details: Array<string | number | false | null | undefined>
+  ): void {
+    l.dim(compactParts([status, kind, ...details]))
+  },
+
+  summary(details: Array<string | number | false | null | undefined>): void {
+    l.dim(compactParts(['summary', ...details]))
+  },
+
+  outputDirectory(path: string): void {
+    l.dim(`output directory: ${path}`)
+  },
+}
 
 const errBase = (...messages: unknown[]): void => {
   if (messages.length === 1 && v.isValiError(messages[0])) {

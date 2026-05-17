@@ -96,7 +96,7 @@ export const runGeminiVideoGen = async (
     status: 'completed',
     processingTimeMs: processingTime,
     outputCount: 1,
-    detail: `Actual billed cost was not returned by the API; estimate ${estimate.totalCost.toFixed(4)}¢`
+    detail: `Actual billed cost was not returned by the API; estimate ${estimate.totalCost.toFixed(3)}¢`
   })
 
   const metadata: Step6VideoMetadata = {

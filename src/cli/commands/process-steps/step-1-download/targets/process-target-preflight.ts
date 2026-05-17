@@ -59,7 +59,7 @@ export const reportSuitePriceEstimate = async (
   return suiteTotalEstimatedCost
 }
 
-export const formatCents = (amount: number): string => `${amount.toFixed(4)}¢`
+export const formatCents = (amount: number): string => `${amount.toFixed(3)}¢`
 
 export const shouldRunCommandPreflight = (
   opts: Pick<RuntimeOptions, 'price'>,

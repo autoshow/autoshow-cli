@@ -1,9 +1,14 @@
 import { mkdir } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { basename, dirname } from 'node:path'
 import * as v from 'valibot'
-import { l, err } from './logger'
+import { err, comicLog } from './logger'
 import { CHARACTER_NAMES, CHARACTER_REFERENCE_ALIASES, StructuredScriptDataSchema } from '../schemas/schemas'
 import { getStructuredScriptPath, getDraftPromptPath } from './project-paths'
+import {
+  formatRecapMontagePromptSection,
+  resolveRecapMontageExpansions,
+  type RecapMontageExpansion,
+} from './recap-montage-utils'
 import type {
   StructuredScriptData,
 } from '../types'
@@ -58,6 +63,7 @@ Please convert the structured script JSON above into a JSON file with comic book
 10. **Panel numbers must be sequential** - Start at \`1\` and increment by \`1\` for each panel
 11. **Every panel must include \`sourceSegmentIds\`** - Assign each panel the exact source segment IDs it represents
 12. **Cover every source segment ID at least once** - Do not omit, invent, or rewrite IDs from \`sourceSegments\`
+13. **Treat \`TEXT ON SCREEN\` as a directive** - Do not render the literal words "TEXT ON SCREEN"; render only authored on-screen text that follows the directive
 
 ## Valid Character Names:
 The character references in "speech" and panel "characters" arrays must use these exact names:
@@ -163,7 +169,12 @@ const formatSourceSegmentChecklist = (structuredScript: StructuredScriptData): s
     .join('\n')
 }
 
-const formatStructuredScriptPrompt = (structuredScript: StructuredScriptData): string => {
+const formatStructuredScriptPrompt = (
+  structuredScript: StructuredScriptData,
+  recapMontageExpansions: RecapMontageExpansion[]
+): string => {
+  const recapMontageSection = formatRecapMontagePromptSection(recapMontageExpansions)
+
   return [
     '# Structured Script JSON',
     '',
@@ -179,30 +190,36 @@ const formatStructuredScriptPrompt = (structuredScript: StructuredScriptData): s
     'Before returning JSON, verify that every exact ID below appears in at least one panel `sourceSegmentIds` array.',
     '',
     formatSourceSegmentChecklist(structuredScript),
+    ...(recapMontageSection ? ['', recapMontageSection] : []),
   ].join('\n')
 }
 
 export const generateJsonPrompt = async (
   sceneSlug: string
-): Promise<{ filesProcessed: number }> => {
-  l('Generating draft prompt bundle from structured script JSON')
-
+): Promise<{ filesProcessed: number; sourceSegments: number; recapMontages: number }> => {
   const stats = { filesProcessed: 0 }
 
   try {
     const structuredScriptPath = getStructuredScriptPath(sceneSlug)
     const structuredScript = await parseJsonFile(structuredScriptPath, StructuredScriptDataSchema)
+    const recapMontageExpansions = await resolveRecapMontageExpansions(structuredScript)
 
     const outputPath = getDraftPromptPath(sceneSlug)
     await mkdir(dirname(outputPath), { recursive: true })
-    const combinedContent = formatStructuredScriptPrompt(structuredScript)
+    const combinedContent = formatStructuredScriptPrompt(structuredScript, recapMontageExpansions)
 
     await Bun.write(outputPath, combinedContent)
     stats.filesProcessed++
-    l.dim(`Prompted: ${sceneSlug}`)
-
-    l('')
-    l.success(`Files processed: ${stats.filesProcessed}`)
+    comicLog.line('draft-prompt generated', [
+      `file=${basename(outputPath)}`,
+      `sourceSegments=${structuredScript.sourceSegments.length}`,
+      recapMontageExpansions.length > 0 ? `recapMontages=${recapMontageExpansions.length}` : undefined,
+    ])
+    return {
+      ...stats,
+      sourceSegments: structuredScript.sourceSegments.length,
+      recapMontages: recapMontageExpansions.length,
+    }
   } catch (error) {
     err(
       `Failed to process ${sceneSlug}:`,
@@ -210,6 +227,4 @@ export const generateJsonPrompt = async (
     )
     throw error
   }
-
-  return stats
 }

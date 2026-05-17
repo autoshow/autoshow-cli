@@ -1,6 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { l, err, bold, cyan, green, red } from '../../utils/logger'
+import { err, comicLog, formatCompactCost, formatDuration } from '../../utils/logger'
 import {
   CHARACTER_SKETCH_VIEWS,
   getCharacterByImagePath,
@@ -12,18 +12,15 @@ import {
 } from '../process-scenes/character-utils'
 import {
   combineCharacterSketchSheet,
-  describeCharacterSketchSheetSources,
   selectCharacterSketchSheetSources,
 } from './character-sketch-sheet'
 import {
   createImage,
   createImageRunStats,
-  estimateImageOutputCost,
-  formatCost,
-  logUsageAndUpdateStats,
+  updateImageRunStatsWithCostFallback,
   writeGeneratedImage,
 } from '../../image-services'
-import { DEFAULT_IMAGE_MODEL, isGeminiImageModel } from '../../models/model-registry'
+import { DEFAULT_IMAGE_MODEL } from '../../models/model-registry'
 import { validateImageSizeForModels } from '../../utils/image-size'
 import { loadPromptsConfig } from '../../utils/scene-utils'
 import type {
@@ -94,33 +91,49 @@ const combineCharacterSketchDirectory = async (
 ): Promise<void> => {
   const force = options.force ?? false
   const selection = selectCharacterSketchSheetSources(sketchesDirectory)
+  const startTime = Date.now()
 
-  l(`${bold('USS Acampo')} - Combining character sketch sheet for ${basename(sketchesDirectory)}`)
-  l(`${cyan('═'.repeat(50))}\n`)
-  l(`${cyan('Step 1/1:')} Combining local sketch refs`)
-  l(`${cyan('━'.repeat(50))}\n`)
-  l.dim(`Sketch directory: ${sketchesDirectory}`)
-  l.dim(`Selected variant: ${selection.variant}`)
-  l.dim(`Source sketches:  ${describeCharacterSketchSheetSources(selection)}`)
+  comicLog.header('comic character-sketch', [
+    'mode=combine',
+    `source=${basename(sketchesDirectory)}`,
+  ])
+  comicLog.line('config', [
+    `variant=${selection.variant}`,
+    `refs=${selection.sources.length}`,
+    force ? 'force=true' : undefined,
+  ])
 
   const outputExists = await Bun.file(selection.outputPath).exists()
   if (!force && outputExists) {
-    l.dim(`Skipping existing output: ${selection.outputPath}`)
-    l.success('Character sketch sheet already exists')
+    comicLog.output('skipped', 'sheet', [
+      `variant=${selection.variant}`,
+      `path=${selection.outputPath}`,
+    ])
+    comicLog.summary([
+      'generated=0',
+      'skipped=1',
+      `duration=${formatDuration(Date.now() - startTime)}`,
+    ])
+    comicLog.outputDirectory(sketchesDirectory)
     return
   }
 
-  if (force && outputExists) {
-    l.dim('Existing character sketch sheet will be overwritten')
-  }
-
-  const startTime = Date.now()
   const sheetSize = await combineCharacterSketchSheet(selection)
-  const duration = ((Date.now() - startTime) / 1000).toFixed(2)
+  const durationMs = Date.now() - startTime
 
-  l.dim(`Sheet size:      ${sheetSize.width}x${sheetSize.height}`)
-  l.dim(`Wrote:           ${selection.outputPath}`)
-  l.success(`Character sketch sheet combined in ${duration}s`)
+  comicLog.output('combined', 'sheet', [
+    `variant=${selection.variant}`,
+    `refs=${selection.sources.length}`,
+    `size=${sheetSize.width}x${sheetSize.height}`,
+    `duration=${formatDuration(durationMs)}`,
+    `path=${selection.outputPath}`,
+  ])
+  comicLog.summary([
+    'generated=1',
+    'skipped=0',
+    `duration=${formatDuration(durationMs)}`,
+  ])
+  comicLog.outputDirectory(sketchesDirectory)
 }
 
 export const characterSketchCommand = async (
@@ -158,56 +171,32 @@ export const characterSketchCommand = async (
   }
   validateImageSizeForModels(generationOptions.size, generationOptions.models)
 
-  l(`${bold('USS Acampo')} - Generating character sketches for ${describeTargetImage(resolvedImagePath)}`)
-  l(`${cyan('═'.repeat(50))}\n`)
-
   const startTime = Date.now()
-  const stats = {
-    init: { success: false, error: '' },
-    generateSketches: { success: false, error: '' },
-  }
+  comicLog.header('comic character-sketch', [
+    `image=${describeTargetImage(resolvedImagePath)}`,
+  ])
+  comicLog.line('config', [
+    `models=${generationOptions.models.join(',')}`,
+    `size=${generationOptions.size}`,
+    `quality=${generationOptions.quality}`,
+    `views=${CHARACTER_SKETCH_VIEWS.join(',')}`,
+    generationOptions.revise ? 'revise=true' : undefined,
+    generationOptions.force ? 'force=true' : undefined,
+  ])
 
   try {
-    l(`${cyan('Step 1/2:')} Initializing`)
-    l(`${cyan('━'.repeat(50))}\n`)
-
     await mkdir(getCharacterSketchesDirectory(resolvedImagePath), { recursive: true })
-
-    l.dim(`Character image: ${resolvedImagePath}`)
-    l.dim(`Image models: ${generationOptions.models.join(', ')}`)
-    l.dim(`Image size: ${generationOptions.size}`)
-    l.dim(`Image quality: ${generationOptions.quality}`)
-    l.dim(`Sketch views: ${CHARACTER_SKETCH_VIEWS.join(', ')}`)
-    if (generationOptions.revise) {
-      l.dim(`Revision mode: enabled`)
-      l.dim(`Revision notes: ${generationOptions.notes}`)
-    }
-    if (generationOptions.models.some(isGeminiImageModel)) {
-      l.dim('Gemini image models map CLI sizes to aspect ratio + 1K and ignore --quality')
-    }
-    if (generationOptions.force) {
-      l.dim('Existing character sketch outputs will be overwritten')
-    }
-
-    stats.init.success = true
-    l.success('Initialization complete')
-    l('')
   } catch (error) {
-    stats.init.error = error instanceof Error ? error.message : String(error)
-    err('Initialization failed:', stats.init.error)
+    err('Initialization failed:', error instanceof Error ? error.message : String(error))
     throw new Error('Failed at initialization step')
   }
 
   try {
-    l(`${cyan('Step 2/2:')} Generating character sketches via ${generationOptions.models.join(', ')}`)
-    l(`${cyan('━'.repeat(50))}\n`)
-
     const prompts = await loadPromptsConfig()
     const characterSketchPrompts = prompts['Character Sketch Prompts']
     const character = await getCharacterByImagePath(resolvedImagePath)
     const imageRunStats = createImageRunStats()
     const useModelSpecificFilenames = generationOptions.models.length > 1
-    let estimatedCostRequests = 0
 
     for (const view of CHARACTER_SKETCH_VIEWS) {
       const sketchesDir = getCharacterSketchesDirectory(resolvedImagePath)
@@ -223,8 +212,6 @@ export const characterSketchCommand = async (
           isRevising = true
         } else {
           referenceImages = [resolvedImagePath]
-          l.dim(`  View:             ${VIEW_LABELS[view]}`)
-          l.dim(`  No prior sketch found at ${canonicalPath}; generating from source image`)
         }
       } else {
         referenceImages = [resolvedImagePath]
@@ -252,8 +239,12 @@ export const characterSketchCommand = async (
 
         if (!generationOptions.force && await Bun.file(outputPath).exists()) {
           imageRunStats.imagesSkipped++
-          l.dim(`  View:             ${VIEW_LABELS[view]}`)
-          l.dim(`  Skipping existing output: ${outputPath}`)
+          comicLog.output('skipped', 'character-sketch', [
+            `view=${VIEW_LABELS[view]}`,
+            `model=${model}`,
+            `refs=${referenceImages.length}`,
+            `path=${outputPath}`,
+          ])
           continue
         }
 
@@ -274,107 +265,41 @@ export const characterSketchCommand = async (
           imageResponse.result.mimeType,
         )
 
-        l.dim(`  View:             ${VIEW_LABELS[view]}${isRevising ? ' (revising)' : ''}`)
-        l.dim(`  Model:            ${model}`)
-        l.dim(`  Mode:             ${imageResponse.mode}`)
-        if (imageResponse.inputFidelity) {
-          l.dim(`  Input fidelity:   ${imageResponse.inputFidelity}`)
-        }
-        l.dim(
-          isRevising
-            ? `  References:       2 (${basename(resolvedImagePath)}, ${stem}--outline-${view}.png)`
-            : `  References:       1 (${basename(resolvedImagePath)})`
+        const { costLabel } = updateImageRunStatsWithCostFallback(
+          model,
+          imageResponse.result.usage,
+          imageRunStats,
+          generationOptions.quality,
+          generationOptions.size,
         )
-        l.dim(`  Size:             ${imageResponse.result.providerSizeLabel ?? generationOptions.size}`)
-        l.dim(`  Quality:          ${imageResponse.result.providerQualityLabel ?? generationOptions.quality}`)
-        if (imageResponse.result.mimeType && imageResponse.result.mimeType !== 'image/png') {
-          l.dim(`  Source MIME:      ${imageResponse.result.mimeType} (normalized to PNG)`)
-        }
 
-        const usageCost = logUsageAndUpdateStats(model, imageResponse.result.usage, imageRunStats)
-        if (usageCost === null) {
-          const estimatedCost = estimateImageOutputCost(model, generationOptions.quality, generationOptions.size)
-          const costUnavailableReason = imageResponse.result.usage
-            ? 'no usable modality breakdown was returned'
-            : 'no usage data returned'
-
-          if (estimatedCost !== null) {
-            imageRunStats.totalCost += estimatedCost
-            estimatedCostRequests++
-            l.dim(`  Cost:             ${formatCost(estimatedCost)} (estimated output only; ${costUnavailableReason})`)
-          } else {
-            l.dim(`  Cost:             unavailable (${costUnavailableReason})`)
-          }
-        }
-
-        l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
-        l.dim(`  Wrote:            ${outputPath}`)
+        comicLog.output('generated', 'character-sketch', [
+          `view=${VIEW_LABELS[view]}`,
+          isRevising ? 'revise=true' : undefined,
+          `model=${model}`,
+          `mode=${imageResponse.mode}`,
+          imageResponse.inputFidelity ? `fidelity=${imageResponse.inputFidelity}` : undefined,
+          `refs=${referenceImages.length}`,
+          `cost=${costLabel}`,
+          `duration=${formatDuration(requestDurationMs)}`,
+          `path=${outputPath}`,
+        ])
 
         imageRunStats.imagesGenerated++
       }
     }
 
-    l('')
-    l.success(`Character sketches generated: ${imageRunStats.imagesGenerated}`)
-    if (imageRunStats.imagesSkipped > 0) {
-      l.dim(`Character sketches skipped: ${imageRunStats.imagesSkipped}`)
-    }
-
-    if (imageRunStats.imagesGenerated > 0) {
-      l('')
-      l(`${cyan('━'.repeat(50))}`)
-      l(bold('Character Sketch Summary'))
-      l(`${cyan('━'.repeat(50))}`)
-      l.dim(
-        `  Total input tokens:  ${imageRunStats.totalInputTokens.toLocaleString()} ` +
-        `(${[
-          `${imageRunStats.totalInputTextTokens.toLocaleString()} text`,
-          `${imageRunStats.totalInputImageTokens.toLocaleString()} image`,
-          ...(imageRunStats.totalInputUnattributedTokens > 0
-            ? [`${imageRunStats.totalInputUnattributedTokens.toLocaleString()} unattributed`]
-            : []),
-        ].join(', ')})`
-      )
-      l.dim(
-        `  Total output tokens: ${imageRunStats.totalOutputTokens.toLocaleString()} ` +
-        `(${[
-          `${imageRunStats.totalOutputTextTokens.toLocaleString()} text`,
-          `${imageRunStats.totalOutputImageTokens.toLocaleString()} image`,
-          ...(imageRunStats.totalOutputUnattributedTokens > 0
-            ? [`${imageRunStats.totalOutputUnattributedTokens.toLocaleString()} unattributed`]
-            : []),
-        ].join(', ')})`
-      )
-      l.dim(
-        `  Total tokens:        ${(imageRunStats.totalInputTokens + imageRunStats.totalOutputTokens).toLocaleString()}`
-      )
-      l.dim(`  Total cost:          ${formatCost(imageRunStats.totalCost)}`)
-      if (estimatedCostRequests > 0) {
-        l.dim(`  Cost estimate note:  ${estimatedCostRequests} request(s) used output-only estimates`)
-      }
-      l.dim(`  Total API time:      ${(imageRunStats.totalDurationMs / 1000).toFixed(2)}s`)
-    }
-
-    stats.generateSketches.success = true
-    l.success('Character sketch generation complete')
-    l('')
+    comicLog.summary([
+      `generated=${imageRunStats.imagesGenerated}`,
+      `skipped=${imageRunStats.imagesSkipped}`,
+      `tokens=${(imageRunStats.totalInputTokens + imageRunStats.totalOutputTokens).toLocaleString()}`,
+      `cost=${formatCompactCost(imageRunStats.totalCost)}`,
+      `api=${formatDuration(imageRunStats.totalDurationMs)}`,
+      `duration=${formatDuration(Date.now() - startTime)}`,
+    ])
+    comicLog.outputDirectory(getCharacterSketchesDirectory(resolvedImagePath))
   } catch (error) {
-    stats.generateSketches.error = error instanceof Error ? error.message : String(error)
-    err('Character sketch generation failed:', stats.generateSketches.error)
+    err('Character sketch generation failed:', error instanceof Error ? error.message : String(error))
     throw new Error('Failed at character sketch generation step')
   }
-
-  const endTime = Date.now()
-  const duration = ((endTime - startTime) / 1000).toFixed(2)
-
-  l(`${cyan('═'.repeat(50))}`)
-  l(bold('Character Sketch Generation Complete'))
-  l(`${cyan('═'.repeat(50))}\n`)
-
-  l(`  ${stats.init.success ? green('✓') : red('✗')} Initialization`)
-  l(`  ${stats.generateSketches.success ? green('✓') : red('✗')} Character sketch generation (${generationOptions.models.join(', ')})`)
-  l('')
-
-  l.dim(`Character sketch output directory: ${getCharacterSketchesDirectory(resolvedImagePath)}`)
-  l.success(`All operations completed in ${duration}s`)
 }

@@ -121,7 +121,7 @@ bun as write input/examples/document/1-epub.epub --epub-bun --llama --out json
 | Models | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4-nano
 bun as write input/examples/audio/1-audio.mp3 --gcloud-stt --openai gpt-5.4
 bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --openai gpt-5.4-mini
 bun as write ./output/demo/text/01-track-one.md --openai gpt-5.4 --prompt folkSong

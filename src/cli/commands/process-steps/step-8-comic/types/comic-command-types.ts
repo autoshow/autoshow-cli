@@ -93,6 +93,11 @@ export type GenerateImagesTarget = 'images' | 'sketches' | 'both'
 
 export type ImagePromptVariation = 'canonical' | 'animation-polish' | 'cinematic-depth'
 
+export type ComicGridSpec = {
+  columns: number
+  rows: number
+}
+
 export type SketchPanelRange =
   | 'all'
   | {
@@ -111,6 +116,7 @@ export type GenerateImagesCommandOptions = {
   llmModel?: LlmModel
   panels?: ComicPanelSelection
   panelsPerImage?: number
+  grid?: ComicGridSpec
   variations?: ImagePromptVariation[]
 }
 
@@ -137,6 +143,14 @@ export type GenerateComicPagesOptions = {
   variations?: ImagePromptVariation[]
 }
 
+export type GenerateComicGridPagesOptions = {
+  models: ImageGenerationModel[]
+  force: boolean
+  panels: ComicPanelSelection
+  grid: ComicGridSpec
+  variations?: ImagePromptVariation[]
+}
+
 export type ComicPagePanelSource = {
   panelDirectory: string
   panelEntries: Dirent[]
@@ -149,6 +163,8 @@ export type ComicPageChunk<T> = {
   panelNumbers: number[]
   panels: T[]
 }
+
+export type ComicGridChunk<T> = ComicPageChunk<T>
 
 export type GenerateComicPagesDependencies = {
   requestImage?: (input: {

@@ -9,7 +9,7 @@ import {
   type GeminiGenerateContentUsageMetadata,
 } from '~/utils/gemini/gemini-rest'
 import * as v from 'valibot'
-import { l, err, cyan, bold } from './logger'
+import { l, err, comicLog, formatCompactCost, formatDuration } from './logger'
 import {
   CHARACTER_NAMES,
   CHARACTER_REFERENCE_ALIASES,
@@ -97,12 +97,6 @@ const CHARACTER_NAME_SET = new Set<string>(CHARACTER_NAMES)
 const CHARACTER_ALIAS_GUIDANCE = Object.entries(CHARACTER_REFERENCE_ALIASES)
   .map(([alias, character]) => `${alias} -> ${character}`)
   .join(', ')
-
-const formatCost = (dollars: number): string => {
-  return dollars < 0.01
-    ? `$${dollars.toFixed(4)}`
-    : `$${dollars.toFixed(2)}`
-}
 
 const calculateOpenAiCost = (model: OpenAiLlmModel, usage: StructuredScriptResponseUsage): number => {
   const pricing = LLM_MODEL_PRICING[model]
@@ -1226,8 +1220,6 @@ export const generateStructuredScript = async (
   sceneSlug: string,
   options: GenerateStructuredScriptsOptions = {}
 ): Promise<StructuredScriptRunStats> => {
-  l(`Generating structured script JSON from ${basename(scriptPath)}${options.llmModel ? ` with ${options.llmModel} review` : ''}`)
-
   const stats: StructuredScriptRunStats = {
     filesProcessed: 0,
     llmReviews: 0,
@@ -1247,40 +1239,20 @@ export const generateStructuredScript = async (
     }
 
     let structuredScript = parseScriptMarkdownToStructuredData(content, scriptPath)
+    let reviewModel: string | undefined
 
     if (options.llmModel) {
-      l.dim(`Reviewing with ${options.llmModel}: ${basename(scriptPath)}`)
-
       const review = await reviewStructuredScriptWithLlm(content, structuredScript, options.llmModel)
       const usage = review.response.usage
-      l.dim(`  Model:            ${review.response.model}`)
-      if (review.response.requestId) {
-        l.dim(`  Response ID:      ${review.response.requestId}`)
-      }
-      if (review.response.status) {
-        l.dim(`  Status:           ${review.response.status}`)
-      }
+      reviewModel = review.response.model
       if (usage) {
         const cachedTokens = usage.input_tokens_details?.cached_tokens ?? 0
         const cost = calculateCost(options.llmModel, usage)
-
-        l.dim(`  Input tokens:     ${usage.input_tokens.toLocaleString()}${cachedTokens > 0 ? ` (${cachedTokens.toLocaleString()} cached)` : ''}`)
-        l.dim(`  Output tokens:    ${usage.output_tokens.toLocaleString()}`)
-        l.dim(`  Total tokens:     ${usage.total_tokens.toLocaleString()}`)
-        l.dim(`  Cost:             ${formatCost(cost)}`)
-        l.dim(`  Duration:         ${(review.durationMs / 1000).toFixed(2)}s`)
-
-        const reasoningTokens = usage.output_tokens_details?.reasoning_tokens
-        if (reasoningTokens && reasoningTokens > 0) {
-          l.dim(`  Reasoning tokens: ${reasoningTokens.toLocaleString()}`)
-        }
 
         stats.totalInputTokens += usage.input_tokens
         stats.totalOutputTokens += usage.output_tokens
         stats.totalCachedTokens += cachedTokens
         stats.totalCost += cost
-      } else {
-        l.dim(`  Duration:         ${(review.durationMs / 1000).toFixed(2)}s (no usage data returned)`)
       }
 
       stats.llmReviews++
@@ -1292,23 +1264,14 @@ export const generateStructuredScript = async (
     await mkdir(dirname(outputPath), { recursive: true })
     await Bun.write(outputPath, JSON.stringify(structuredScript, null, 2))
     stats.filesProcessed++
-    l.dim(`${options.llmModel ? 'Structured + reviewed' : 'Structured'}: ${basename(scriptPath)}`)
-
-    l('')
-    l.success(`Structured script file generated: ${stats.filesProcessed}`)
-
-    if (stats.llmReviews > 0) {
-      l('')
-      l(`${cyan('━'.repeat(50))}`)
-      l(bold('LLM Review Summary'))
-      l(`${cyan('━'.repeat(50))}`)
-      l.dim(`  Files reviewed:     ${stats.llmReviews.toLocaleString()}`)
-      l.dim(`  Total input tokens: ${stats.totalInputTokens.toLocaleString()}${stats.totalCachedTokens > 0 ? ` (${stats.totalCachedTokens.toLocaleString()} cached)` : ''}`)
-      l.dim(`  Total output tokens: ${stats.totalOutputTokens.toLocaleString()}`)
-      l.dim(`  Total tokens:       ${(stats.totalInputTokens + stats.totalOutputTokens).toLocaleString()}`)
-      l.dim(`  Total cost:         ${formatCost(stats.totalCost)}`)
-      l.dim(`  Total LLM time:     ${(stats.totalDurationMs / 1000).toFixed(2)}s`)
-    }
+    comicLog.line('structured-script generated', [
+      `source=${basename(scriptPath)}`,
+      `file=${basename(outputPath)}`,
+      reviewModel ? `model=${reviewModel}` : undefined,
+      stats.llmReviews > 0 ? `tokens=${(stats.totalInputTokens + stats.totalOutputTokens).toLocaleString()}` : undefined,
+      stats.llmReviews > 0 ? `cost=${formatCompactCost(stats.totalCost)}` : undefined,
+      stats.totalDurationMs > 0 ? `api=${formatDuration(stats.totalDurationMs)}` : undefined,
+    ])
   } catch (error) {
     if (v.isValiError(error)) {
       err(`Invalid structured script output for ${basename(scriptPath)}`)

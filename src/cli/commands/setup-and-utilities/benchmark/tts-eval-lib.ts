@@ -271,7 +271,7 @@ export function formatCents(cents: number | null): string {
   if (cents === null) {
     return "n/a";
   }
-  return `${cents.toFixed(4)}\u00A2 ($${(cents / 100).toFixed(4)})`;
+  return `${cents.toFixed(3)}\u00A2 ($${(cents / 100).toFixed(4)})`;
 }
 
 export function formatProcessingSeconds(milliseconds: number | null): string {

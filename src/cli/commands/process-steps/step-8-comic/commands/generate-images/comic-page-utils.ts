@@ -1,19 +1,67 @@
 import * as v from 'valibot'
 import { ExpandedScenePromptDataSchema } from '../../schemas/schemas'
 import type {
+  ComicGridChunk,
+  ComicGridSpec,
   ComicPageChunk,
   ComicPanelSelection,
   ExpandedScenePromptData,
+  GenerateImagesTarget,
+  ImageGenerationSize,
   SketchPanelRange,
 } from '../../types'
 
 const PANEL_SELECTOR_PART_PATTERN = /^(\d+)(?:-(\d+))?$/
+const GRID_SPEC_PATTERN = /^([1-9]\d*)x([1-9]\d*)$/i
 
 export const DEFAULT_PANELS_PER_IMAGE = 6
+export const COMIC_GRID_PANEL_SIZE: ImageGenerationSize = '1536x1024'
 
 const assertPositiveInteger = (value: number, label: string): void => {
   if (!Number.isInteger(value) || value < 1) {
     throw new Error(`${label} must be a positive integer`)
+  }
+}
+
+export const parseComicGridSpec = (value: string): ComicGridSpec => {
+  const trimmed = value.trim()
+  const match = trimmed.match(GRID_SPEC_PATTERN)
+  const columns = match?.[1] ? Number(match[1]) : 0
+  const rows = match?.[2] ? Number(match[2]) : 0
+
+  if (
+    !match
+    || !Number.isSafeInteger(columns)
+    || !Number.isSafeInteger(rows)
+  ) {
+    throw new Error(`Invalid grid "${value}". Expected positive columns x rows like 2x3`)
+  }
+
+  return { columns, rows }
+}
+
+export const validateComicGridOptions = (
+  grid: ComicGridSpec | undefined,
+  options: {
+    target: GenerateImagesTarget
+    size: ImageGenerationSize
+    panelsPerImage: number
+  }
+): void => {
+  if (!grid) {
+    return
+  }
+
+  if (options.target !== 'images' && options.target !== 'both') {
+    throw new Error('--grid only applies when --target is images or both')
+  }
+
+  if (options.size !== COMIC_GRID_PANEL_SIZE) {
+    throw new Error(`--grid requires --size ${COMIC_GRID_PANEL_SIZE}`)
+  }
+
+  if (options.panelsPerImage !== 1) {
+    throw new Error('--grid requires --panels-per-image 1')
   }
 }
 
@@ -164,6 +212,25 @@ export const chunkComicPagePanels = <T extends { panelNumber: number }>(
   }
 
   return chunks
+}
+
+export const getComicGridCapacity = (grid: ComicGridSpec): number => {
+  assertPositiveInteger(grid.columns, 'Grid columns')
+  assertPositiveInteger(grid.rows, 'Grid rows')
+
+  const capacity = grid.columns * grid.rows
+  if (!Number.isSafeInteger(capacity)) {
+    throw new Error('Grid capacity is too large')
+  }
+
+  return capacity
+}
+
+export const chunkComicGridPanels = <T extends { panelNumber: number }>(
+  panels: T[],
+  grid: ComicGridSpec
+): Array<ComicGridChunk<T>> => {
+  return chunkComicPagePanels(panels, getComicGridCapacity(grid))
 }
 
 export const buildComicPagePromptData = (

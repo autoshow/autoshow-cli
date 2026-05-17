@@ -219,6 +219,7 @@ export type CliFlagName =
   | 'panels'
   | 'panel-limit'
   | 'panels-per-image'
+  | 'grid'
   | 'variation'
   | 'image-model'
   | 'size'
@@ -258,6 +259,7 @@ export type ParsedGenerateBaseArgs = {
   scriptPath?: string
   panels?: ComicPanelSelection
   panelsPerImage?: number
+  grid?: GenerateImagesCommandOptions['grid']
   variations?: GenerateImagesCommandOptions['variations']
   target?: NonNullable<GenerateImagesCommandOptions['target']>
   llmModel?: ParsedLlmModel

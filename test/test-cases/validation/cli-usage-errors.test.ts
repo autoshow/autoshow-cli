@@ -1,10 +1,13 @@
 import { afterEach, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { STABLE_LOCAL_AUDIO_PATH, runCommand } from '../../test-utils/test-helpers'
 
 const tempDirs: string[] = []
+const repoFixtureFiles: string[] = []
+const repoFixtureDirs: string[] = []
 
 const makeTempRoot = async (prefix: string): Promise<string> => {
   const root = await mkdtemp(join(tmpdir(), prefix))
@@ -17,6 +20,8 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
 }
 
 afterEach(async () => {
+  await Promise.all(repoFixtureFiles.splice(0).map((path) => rm(path, { force: true })))
+  await Promise.all(repoFixtureDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
 
@@ -27,6 +32,22 @@ const expectUsageExit = async (args: string[], expectedMessage: string): Promise
 
   expect(result.exitCode).toBe(2)
   expect(`${result.stdout}\n${result.stderr}`).toContain(expectedMessage)
+}
+
+const ensureEpisodeTwoScriptFixture = async (): Promise<void> => {
+  const dir = join('input', 'episode-scripts', '02-script')
+  const path = join(dir, '01-co-work-smarter.md')
+
+  if (!existsSync(dir)) {
+    repoFixtureDirs.push(dir)
+  }
+
+  await mkdir(dir, { recursive: true })
+
+  if (!existsSync(path)) {
+    repoFixtureFiles.push(path)
+    await writeFile(path, '# Co-Work Smarter\n')
+  }
 }
 
 test('unknown command exits 2', async () => {
@@ -224,33 +245,33 @@ test('music lyric-video mode rejects price mode', async () => {
 
 test('comic generate-images rejects invalid page selection flags', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels', '4-2', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panels', '4-2', '--price'],
     'Invalid panels "4-2"'
   )
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels-per-image', '0', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panels-per-image', '0', '--price'],
     'Invalid panels per image "0"'
   )
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panel-limit', 'nope', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panel-limit', 'nope', '--price'],
     '--panel-limit was removed'
   )
 })
 
 test('comic generate-images rejects invalid and duplicate image models', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--image-model', 'not-a-model', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--image-model', 'not-a-model', '--price'],
     'Invalid image model "not-a-model"'
   )
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--image-model', 'gpt-image-2,gpt-image-2', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--image-model', 'gpt-image-2,gpt-image-2', '--price'],
     'Duplicate image model "gpt-image-2" is not allowed'
   )
 })
 
 test('comic generate-images rejects removed --panel flag', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panel', '1', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panel', '1', '--price'],
     '--panel was removed'
   )
 })
@@ -260,7 +281,7 @@ test('comic generate-images accepts --panels-per-image with sketch target', asyn
     'src/cli/create-cli.ts',
     'comic',
     'generate-images',
-    'input/episode-scripts/ep02-scripts/01-co-work-smarter.md',
+    'input/episode-scripts/02-script/01-co-work-smarter.md',
     '--target',
     'sketches',
     '--panels-per-image',
@@ -277,31 +298,108 @@ test('comic generate-images accepts --panels-per-image with sketch target', asyn
   expect(result.stdout).toContain('Panels per sketch: 6')
 })
 
+test('comic commands accept strict episode-scene shorthand for price preflight', async () => {
+  await ensureEpisodeTwoScriptFixture()
+
+  const draftResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'comic',
+    'draft-scenes',
+    '02-01',
+    '--price',
+  ], {
+    env: { NO_COLOR: '1' }
+  })
+  const imageResult = await runCommand([
+    'src/cli/create-cli.ts',
+    'comic',
+    'generate-images',
+    '02-01',
+    '--target',
+    'sketches',
+    '--panels-per-image',
+    '6',
+    '--price',
+  ], {
+    env: { NO_COLOR: '1' }
+  })
+
+  expect(draftResult.exitCode).toBe(0)
+  expect(draftResult.stdout).toContain('Price Estimate: draft-scenes')
+  expect(imageResult.exitCode).toBe(0)
+  expect(imageResult.stdout).toContain('Price Estimate: generate-images --target sketches')
+})
+
+test('comic shorthand resolution errors name the expected directory and prefix', async () => {
+  await expectUsageExit(
+    ['comic', 'draft-scenes', '99-01', '--price'],
+    'Expected exactly one Markdown file in "input/episode-scripts/99-script" beginning with "01-"'
+  )
+})
+
+test('comic non-strict shorthand remains an ordinary script path', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'comic',
+    'draft-scenes',
+    '2-1',
+    '--price',
+  ], {
+    env: { NO_COLOR: '1' }
+  })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('Price Estimate: draft-scenes')
+})
+
 test('comic generate-images rejects removed prompts target with migration', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'prompts', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--target', 'prompts', '--price'],
     'bun as comic draft-scenes <script-path> --only panel-prompts'
   )
 })
 
 test('comic generate-images rejects variations with non-final targets', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--target', 'sketches', '--variation', 'cinematic-depth', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--target', 'sketches', '--variation', 'cinematic-depth', '--price'],
     '--variation only applies when --target is images or both'
+  )
+})
+
+test('comic generate-images rejects invalid grid options', async () => {
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md', '--panels-per-image', '1', '--grid', '0x3', '--price'],
+    'Invalid grid "0x3"'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md', '--panels-per-image', '1', '--grid', '2x3', '--grid', '3x2', '--price'],
+    'Grid can only be specified once'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md', '--target', 'sketches', '--panels-per-image', '1', '--grid', '2x3', '--price'],
+    '--grid only applies when --target is images or both'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md', '--grid', '2x3', '--price'],
+    '--grid requires --panels-per-image 1'
+  )
+  await expectUsageExit(
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md', '--panels-per-image', '1', '--grid', '2x3', '--size', '1024x1024', '--price'],
+    '--grid requires --size 1536x1024'
   )
 })
 
 test('comic generate-images rejects invalid page selection flags', async () => {
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels-per-image', '0', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panels-per-image', '0', '--price'],
     'Invalid panels per image "0"'
   )
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panel-limit', 'nope', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panel-limit', 'nope', '--price'],
     '--panel-limit was removed'
   )
   await expectUsageExit(
-    ['comic', 'generate-images', 'input/episode-scripts/ep02-scripts/01-co-work-smarter.md','--panels', '4-2', '--price'],
+    ['comic', 'generate-images', 'input/episode-scripts/02-script/01-co-work-smarter.md','--panels', '4-2', '--price'],
     'Invalid panels "4-2"'
   )
 })

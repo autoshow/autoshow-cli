@@ -7,6 +7,7 @@ import { processOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-o
 import { buildDocumentPrompt } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/doc-prompt-utils'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
+import { writeShowNoteArtifacts } from '~/cli/commands/process-steps/step-3-write/show-note-artifacts'
 import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumentWriteEstimatedCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -354,6 +355,12 @@ export const runDocumentWrite = async (
     }])
   }
 
+  const showNoteArtifacts = await writeShowNoteArtifacts({
+    outputDir: extraction.outputDir,
+    results: step3Runs,
+    sourceText: extraction.result.text
+  })
+
   const step3Serialized: Step3Metadata | Step3Metadata[] = step3Results.length === 1 ? step3Results[0]! : step3Results
   const llmInputTokenCount = step3Results.reduce((sum, item) => sum + item.inputTokenCount, 0)
   const llmOutputTokenCount = step3Results.reduce((sum, item) => sum + item.outputTokenCount, 0)
@@ -363,7 +370,8 @@ export const runDocumentWrite = async (
   const artifactFiles: Record<string, string> = {
     prompt: 'prompt.md',
     run: 'run.json',
-    ...renderedArtifacts.internalArtifacts
+    ...renderedArtifacts.internalArtifacts,
+    ...showNoteArtifacts.internalArtifacts
   }
   appendChapterExportArtifacts(artifactFiles, extraction.step2Metadata)
   if (step3Results.length === 1) {

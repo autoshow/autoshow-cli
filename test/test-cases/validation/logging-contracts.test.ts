@@ -12,6 +12,7 @@ import {
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-logging'
 import {
   buildSttCleanupArtifactsTable,
+  buildSttCacheTable,
   buildSttDiarizationConfigTable,
   buildSttProviderSpeakerCountHintsTable,
   buildSttProviderConcurrencyTable,
@@ -30,6 +31,7 @@ import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-p
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 import { buildProviderReadinessTable } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 import { createLogger } from '~/utils/logger/core'
+import { formatCost } from '~/utils/logger/formatters'
 import { createReporter } from '~/utils/logger/reporter'
 import { createHumanTable, createKeyValueTable, createLocationsTable, renderHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
@@ -136,6 +138,11 @@ const createCapturingLogger = (): {
 }
 
 describe('logging contracts', () => {
+  test('formatCost renders exact cents with three fractional digits', () => {
+    expect(formatCost(0.07343)).toBe('0.073\u00a2')
+    expect(formatCost(0.0736)).toBe('0.074\u00a2')
+  })
+
   test('human sink routes interactive info logs to stdout with table output', () => {
     const sink = createHumanSink({ interactive: true })
     const captured = captureConsole(() => {
@@ -582,6 +589,19 @@ describe('logging contracts', () => {
       speakers: 2
     }).columns).toEqual(['key', 'value'])
 
+    expect(buildSttCacheTable({
+      artifact: 'source_media',
+      status: 'hit',
+      key: 'cache-key'
+    })).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'artifact', value: 'source_media' },
+        { key: 'status', value: 'hit' },
+        { key: 'key', value: 'cache-key' }
+      ]
+    })
+
     const cleanupRendered = stripAnsi(renderHumanTable(buildSttCleanupArtifactsTable([
       { artifact: 'ctm', path: '/tmp/out/reverb-output/file.ctm' }
     ])))
@@ -792,7 +812,7 @@ describe('logging contracts', () => {
     })
 
     expect(writes.map(write => write.message)).toEqual([
-      'Total estimated cost: free (0.00000\u00a2)',
+      'Total estimated cost: free (0.000\u00a2)',
       'Cost Estimate'
     ])
     expect(writes[1]?.options?.humanTable).toBeDefined()
@@ -1027,7 +1047,7 @@ describe('logging contracts', () => {
         { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2' }
       ]
     })
-    expect(writes[0]?.message).toBe('Total estimated cost: $2.01 (201.25500\u00a2)')
+    expect(writes[0]?.message).toBe('Total estimated cost: $2.01 (201.255\u00a2)')
     expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
 
     if (!humanTable) throw new Error('Expected cost estimate human table')

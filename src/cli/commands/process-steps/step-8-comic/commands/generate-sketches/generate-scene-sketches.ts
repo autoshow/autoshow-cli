@@ -2,14 +2,12 @@ import type { Dirent } from 'node:fs'
 import { mkdir, readdir } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import * as v from 'valibot'
-import { l, err, cyan, bold } from '../../utils/logger'
+import { err, comicLog, formatDuration } from '../../utils/logger'
 import { ExpandedScenePromptDataSchema } from '../../schemas/schemas'
 import {
   createImage,
   createImageRunStats,
-  estimateImageOutputCost,
-  formatCost,
-  logUsageAndUpdateStats,
+  updateImageRunStatsWithCostFallback,
   writeGeneratedImage,
 } from '../../image-services'
 import {
@@ -319,8 +317,6 @@ export const generateSceneSketches = async (
   options: GenerateSceneSketchesOptions,
   dependencies: GenerateSceneSketchesDependencies = {}
 ) => {
-  l(`Generating review sketches from stable panel prompt bundles via ${options.models.join(', ')}`)
-
   const prompts = await loadPromptsConfig()
   const sketchPrompts = prompts['Sketch Prompts']
   const requestImage = dependencies.requestImage ?? (async input => {
@@ -336,7 +332,6 @@ export const generateSceneSketches = async (
 
   const stats = createImageRunStats()
   let errorCount = 0
-  let estimatedCostRequests = 0
   const useModelSpecificFilenames = options.models.length > 1
 
   try {
@@ -354,22 +349,15 @@ export const generateSceneSketches = async (
         sceneSlug,
       )
 
-      if (options.sketchPanels !== undefined) {
-        const firstSelectedChunk = selectedSketchChunks[0]
-        const lastSelectedChunk = selectedSketchChunks.at(-1)
-        l.dim(
-          `Scene: ${sceneSlug} ` +
-          (firstSelectedChunk && lastSelectedChunk
-            ? `(${selectedSketchChunks.length} selected sketch chunk${selectedSketchChunks.length !== 1 ? 's' : ''}, ` +
-              `${formatSketchChunkLabel(firstSelectedChunk.startPanelNumber, lastSelectedChunk.endPanelNumber)})`
-            : '(no selected sketch panels)')
-        )
-      } else {
-        l.dim(
-          `Scene: ${sceneSlug} ` +
-          `(${sketchChunks.length} sketch chunk${sketchChunks.length !== 1 ? 's' : ''})`
-        )
-      }
+      const firstSelectedChunk = selectedSketchChunks[0]
+      const lastSelectedChunk = selectedSketchChunks.at(-1)
+      comicLog.line('sketch inputs', [
+        `scene=${sceneSlug}`,
+        `chunks=${selectedSketchChunks.length}/${sketchChunks.length}`,
+        firstSelectedChunk && lastSelectedChunk
+          ? `range=${formatSketchChunkLabel(firstSelectedChunk.startPanelNumber, lastSelectedChunk.endPanelNumber)}`
+          : undefined,
+      ])
 
       await mkdir(getSketchesDirectory(sceneSlug), { recursive: true })
 
@@ -406,8 +394,13 @@ export const generateSceneSketches = async (
 
             if (!options.force && await Bun.file(outputPath).exists()) {
               stats.imagesSkipped++
-              l.dim(`  Sketch chunk:     ${chunkLabel}`)
-              l.dim(`  Skipping existing output: ${outputPath}`)
+              comicLog.output('skipped', 'sketch', [
+                `id=${chunkLabel}`,
+                `panels=${sketchChunk.startPanelNumber}-${sketchChunk.endPanelNumber}`,
+                `model=${model}`,
+                `refs=${resolvedReferences.all.length}`,
+                `path=${outputPath}`,
+              ])
               continue
             }
 
@@ -428,47 +421,25 @@ export const generateSceneSketches = async (
               imageResponse.result.mimeType,
             )
 
-            l.dim(`  Sketch chunk:     ${chunkLabel}`)
-            l.dim(`  Source panels:    ${sketchChunk.panels.map(panel => formatPanelDirectoryName(panel.panelNumber)).join(', ')}`)
-            l.dim(`  Model:            ${model}`)
-            l.dim(`  Mode:             ${imageResponse.mode}`)
-            if (imageResponse.inputFidelity) {
-              l.dim(`  Input fidelity:   ${imageResponse.inputFidelity}`)
-            }
-            l.dim(`  References:       ${resolvedReferences.all.length}`)
-            if (resolvedReferences.primaryCharacterRefs.length > 0) {
-              l.dim(`  Character refs:   ${resolvedReferences.primaryCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.sketchCharacterRefs.length > 0) {
-              l.dim(`  Sketch refs:      ${resolvedReferences.sketchCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            if (resolvedReferences.canonicalCharacterRefs.length > 0) {
-              l.dim(`  Canonical refs:   ${resolvedReferences.canonicalCharacterRefs.map(path => basename(path)).join(', ')}`)
-            }
-            l.dim(`  Size:             ${imageResponse.result.providerSizeLabel ?? options.size}`)
-            l.dim(`  Quality:          ${imageResponse.result.providerQualityLabel ?? options.quality}`)
-            if (imageResponse.result.mimeType && imageResponse.result.mimeType !== 'image/png') {
-              l.dim(`  Source MIME:      ${imageResponse.result.mimeType} (normalized to PNG)`)
-            }
+            const { costLabel } = updateImageRunStatsWithCostFallback(
+              model,
+              imageResponse.result.usage,
+              stats,
+              options.quality,
+              options.size,
+            )
 
-            const usageCost = logUsageAndUpdateStats(model, imageResponse.result.usage, stats)
-            if (usageCost === null) {
-              const estimatedCost = estimateImageOutputCost(model, options.quality, options.size)
-              const costUnavailableReason = imageResponse.result.usage
-                ? 'no usable modality breakdown was returned'
-                : 'no usage data returned'
-
-              if (estimatedCost !== null) {
-                stats.totalCost += estimatedCost
-                estimatedCostRequests++
-                l.dim(`  Cost:             ${formatCost(estimatedCost)} (estimated output only; ${costUnavailableReason})`)
-              } else {
-                l.dim(`  Cost:             unavailable (${costUnavailableReason})`)
-              }
-            }
-
-            l.dim(`  Duration:         ${(requestDurationMs / 1000).toFixed(2)}s`)
-            l.dim(`  Wrote:            ${outputPath}`)
+            comicLog.output('generated', 'sketch', [
+              `id=${chunkLabel}`,
+              `panels=${sketchChunk.panels.map(panel => formatPanelDirectoryName(panel.panelNumber)).join(',')}`,
+              `model=${model}`,
+              `mode=${imageResponse.mode}`,
+              imageResponse.inputFidelity ? `fidelity=${imageResponse.inputFidelity}` : undefined,
+              `refs=${resolvedReferences.all.length}`,
+              `cost=${costLabel}`,
+              `duration=${formatDuration(requestDurationMs)}`,
+              `path=${outputPath}`,
+            ])
 
             stats.imagesGenerated++
           }
@@ -482,44 +453,6 @@ export const generateSceneSketches = async (
       err(`Failed to process scene ${sceneSlug}:`, error instanceof Error ? error.message : String(error))
     }
 
-    l('')
-    l.success(`Sketches generated: ${stats.imagesGenerated}`)
-    if (stats.imagesSkipped > 0) {
-      l.dim(`Sketches skipped: ${stats.imagesSkipped}`)
-    }
-
-    if (stats.imagesGenerated > 0) {
-      l('')
-      l(`${cyan('━'.repeat(50))}`)
-      l(bold('Sketch Generation Summary'))
-      l(`${cyan('━'.repeat(50))}`)
-      l.dim(
-        `  Total input tokens:  ${stats.totalInputTokens.toLocaleString()} ` +
-        `(${[
-          `${stats.totalInputTextTokens.toLocaleString()} text`,
-          `${stats.totalInputImageTokens.toLocaleString()} image`,
-          ...(stats.totalInputUnattributedTokens > 0
-            ? [`${stats.totalInputUnattributedTokens.toLocaleString()} unattributed`]
-            : []),
-        ].join(', ')})`
-      )
-      l.dim(
-        `  Total output tokens: ${stats.totalOutputTokens.toLocaleString()} ` +
-        `(${[
-          `${stats.totalOutputTextTokens.toLocaleString()} text`,
-          `${stats.totalOutputImageTokens.toLocaleString()} image`,
-          ...(stats.totalOutputUnattributedTokens > 0
-            ? [`${stats.totalOutputUnattributedTokens.toLocaleString()} unattributed`]
-            : []),
-        ].join(', ')})`
-      )
-      l.dim(`  Total tokens:        ${(stats.totalInputTokens + stats.totalOutputTokens).toLocaleString()}`)
-      l.dim(`  Total cost:          ${formatCost(stats.totalCost)}`)
-      if (estimatedCostRequests > 0) {
-        l.dim(`  Cost estimate note:  ${estimatedCostRequests} request(s) used output-only estimates`)
-      }
-      l.dim(`  Total API time:      ${(stats.totalDurationMs / 1000).toFixed(2)}s`)
-    }
   } catch (error) {
     err('Fatal error:', error instanceof Error ? error.message : String(error))
     throw error

@@ -9,11 +9,14 @@
 
 ## Quick Start
 
-AutoShow currently exposes 15 named commands, plus built-in `help` and `version`.
+AutoShow currently exposes 16 named commands, plus built-in `help` and `version`.
 
 ```bash
 # install/setup local runtimes and tools
 bun as setup
+
+# read-only dependency insight report through a system Socket CLI
+bun as sock
 
 # extract only (no LLM summary)
 bun as extract input/examples/audio/1-audio.mp3
@@ -142,6 +145,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 - `setup` / model pre-downloads / sample fixtures: [setup](./commands/process-steps/step-0-setup/setup.md)
 - `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
 - `cache`: [cache](./commands/setup-and-utilities/cache/cache.md)
+- `sock`: [sock](./commands/setup-and-utilities/sock/sock.md)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)
 - `extract`: [extract](./commands/process-steps/step-2-extract/01-extract.md) — routes media to STT, documents/images to OCR, article HTML to URL extraction, and X/Twitter Space or post links to the X API.
 - `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
@@ -158,6 +162,7 @@ bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate
 ## Selection Guide
 
 - Use `metadata` for quick metadata inspection without downloading.
+- Use `sock` for a read-only dependency inventory plus Socket package score, scan, and upgrade/security guidance reports.
 - Use `download` for downloading media/documents and collecting metadata.
 - Use `extract` when you only need step-2 extraction or transcription without LLM writing, or to collect X Space metadata.
 - Use `resume` to backfill missing media transcription or document OCR providers in an existing output directory, including `extract` parent batches.
@@ -211,9 +216,9 @@ bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
 bun as video "a sunset timelapse" --runway-video gen4.5 --video-duration 5 --price
 bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
 bun as video "a sunset timelapse" --all-video --price
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --panels 1-16 --price
-bun as comic draft-scenes --episode ep02 --script 01-co-work-smarter --price
-bun as comic generate-images --episode ep02 --scene 01-co-work-smarter --target images --price
+bun as comic generate-images 02-01 --target images --panels 1-16 --price
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --price
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --price
 bun as comic character-sketch --image input/characters/01-peaches.webp --price
 ```
 

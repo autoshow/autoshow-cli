@@ -33,6 +33,7 @@ import { prepareSttMedia } from './step-2-extract/step-2-stt/media'
 import { runLLM } from './step-3-write/run-llm'
 import { buildPrompt } from './step-3-write/write-utils/prompt-utils'
 import { writeRenderedTextArtifacts } from './step-3-write/text-input-utils'
+import { writeShowNoteArtifacts } from './step-3-write/show-note-artifacts'
 import { resolvePromptNames } from '~/prompts/prompt-loader'
 import { runTts } from './step-4-tts/run-tts'
 import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets } from './step-4-tts/tts-targets'
@@ -425,6 +426,19 @@ export const processVideo = async (
 	      }
 	    }
 
+	    const showNoteSourceText = formatTranscriptText(finalizedTranscriptionResult.result.segments) || finalizedTranscriptionResult.result.text
+	    const showNoteArtifacts = step3RunResults.length > 0
+	      ? await writeShowNoteArtifacts({
+	          outputDir,
+	          results: step3RunResults,
+	          sourceText: showNoteSourceText,
+	          step4Metadata,
+	          step5Metadata,
+	          step6Metadata,
+	          step7Metadata
+	        })
+	      : { internalArtifacts: {} }
+
 	    const step3Serialized = step3Results.length === 1
 	      ? step3Results[0]
 	      : step3Results.length > 1
@@ -713,7 +727,8 @@ export const processVideo = async (
     audio: step1Metadata.audioFileName,
     transcript: 'transcription.txt',
     result: 'result.json',
-    ...renderedArtifacts.internalArtifacts
+    ...renderedArtifacts.internalArtifacts,
+    ...showNoteArtifacts.internalArtifacts
   }
   if (step2Entries.some((entry) => entry.transcriptionService === YOUTUBE_CAPTIONS_SERVICE)) {
     artifactFiles['captions'] = 'youtube-captions.vtt'

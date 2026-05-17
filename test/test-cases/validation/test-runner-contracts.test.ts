@@ -315,8 +315,8 @@ describe('test-runner contracts', () => {
   })
 
   test('estimated-cost parser accepts readable totals and exact parenthetical cents', () => {
-    expect(parseCommandEstimatedTotal('Total estimated cost: $3.59 (358.69030¢)')).toBe(358.69030)
-    expect(parseCommandEstimatedTotal('Total estimated cost: free (0.00000¢)')).toBe(0)
+    expect(parseCommandEstimatedTotal('Total estimated cost: $3.59 (358.690¢)')).toBe(358.690)
+    expect(parseCommandEstimatedTotal('Total estimated cost: free (0.000¢)')).toBe(0)
     expect(parseCommandEstimatedTotal('Suite total estimated cost: $3.59')).toBe(359)
     expect(parseCommandEstimatedTotal('Total estimated cost: 16.00¢')).toBe(16)
     expect(parseCommandEstimatedTotal('Total estimated cost: free')).toBe(0)

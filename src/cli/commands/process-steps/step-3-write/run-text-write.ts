@@ -41,6 +41,7 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { serializeOneOrMany } from '~/cli/commands/process-steps/target-runner'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
+import { writeShowNoteArtifacts } from './show-note-artifacts'
 
 const buildTextInputMetadata = (inputPath: string): VideoMetadata => {
   const title = getTextInputTitle(inputPath)
@@ -258,6 +259,16 @@ export const runTextWrite = async (
     step6Metadata = videoResult?.metadata ?? null
   }
 
+  const showNoteArtifacts = await writeShowNoteArtifacts({
+    outputDir,
+    results: step3RunResults,
+    sourceText,
+    step4Metadata,
+    step5Metadata,
+    step6Metadata,
+    step7Metadata
+  })
+
   const step3Serialized = step3Results.length === 1
     ? step3Results[0]
     : step3Results
@@ -380,7 +391,8 @@ export const runTextWrite = async (
   const artifactFiles: Record<string, string> = {
     prompt: 'prompt.md',
     run: 'run.json',
-    ...renderedArtifacts.internalArtifacts
+    ...renderedArtifacts.internalArtifacts,
+    ...showNoteArtifacts.internalArtifacts
   }
 
   if (step3Results.length === 1) {

@@ -42,4 +42,4 @@ export const runPreflight = async (
   return { estimate, shouldExit: false }
 }
 
-const formatCents = (amount: number): string => `${amount.toFixed(4)}¢`
+const formatCents = (amount: number): string => `${amount.toFixed(3)}¢`

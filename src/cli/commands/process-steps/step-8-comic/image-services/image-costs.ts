@@ -176,7 +176,7 @@ const formatTokenBreakdown = (breakdown: TokenBreakdown): string => {
   return `(${parts.join(', ')})`
 }
 
-export const logUsageAndUpdateStats = (
+export const updateImageRunStatsFromUsage = (
   model: ImageGenerationModel,
   usage: ImageUsage | undefined,
   stats: ImageRunStats
@@ -198,6 +198,47 @@ export const logUsageAndUpdateStats = (
   stats.totalOutputImageTokens += outputBreakdown.imageTokens
   stats.totalOutputUnattributedTokens += outputBreakdown.unattributedTokens
 
+  if (cost !== null) {
+    stats.totalCost += cost
+  }
+
+  return cost
+}
+
+export const updateImageRunStatsWithCostFallback = (
+  model: ImageGenerationModel,
+  usage: ImageUsage | undefined,
+  stats: ImageRunStats,
+  quality: ImageGenerationQuality,
+  size: ImageGenerationSize
+): { costLabel: string; estimated: boolean } => {
+  const usageCost = updateImageRunStatsFromUsage(model, usage, stats)
+  if (usageCost !== null) {
+    return { costLabel: formatCost(usageCost), estimated: false }
+  }
+
+  const estimatedCost = estimateImageOutputCost(model, quality, size)
+  if (estimatedCost !== null) {
+    stats.totalCost += estimatedCost
+    return { costLabel: `${formatCost(estimatedCost)} estimated`, estimated: true }
+  }
+
+  return { costLabel: 'unavailable', estimated: false }
+}
+
+export const logUsageAndUpdateStats = (
+  model: ImageGenerationModel,
+  usage: ImageUsage | undefined,
+  stats: ImageRunStats
+): number | null => {
+  if (!usage) {
+    return null
+  }
+
+  const inputBreakdown = getInputBreakdown(model, usage)
+  const outputBreakdown = getOutputBreakdown(model, usage)
+  const cost = updateImageRunStatsFromUsage(model, usage, stats)
+
   l.dim(
     `  Input tokens:     ${usage.input_tokens.toLocaleString()} ` +
     `${formatTokenBreakdown(inputBreakdown)}`
@@ -209,7 +250,6 @@ export const logUsageAndUpdateStats = (
   l.dim(`  Total tokens:     ${usage.total_tokens.toLocaleString()}`)
 
   if (cost !== null) {
-    stats.totalCost += cost
     l.dim(`  Cost:             ${formatCost(cost)}`)
   }
 

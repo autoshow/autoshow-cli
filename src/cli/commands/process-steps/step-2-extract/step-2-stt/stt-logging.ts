@@ -378,19 +378,15 @@ export const buildSttProviderDiarizationHintTable = (
     ...(diarizationOptions?.speakerCount !== undefined ? { speakerCount: diarizationOptions.speakerCount } : {})
   })
 
-export const buildSttCacheRows = (
-  event: SttCacheEvent
-): Array<{ artifact: string, status: string, key: string, detail: string }> => [{
-  artifact: event.artifact,
-  status: event.status,
-  key: event.key,
-  detail: event.detail ?? ''
-}]
-
 export const buildSttCacheTable = (
   event: SttCacheEvent
 ): HumanLogTable =>
-  createHumanTable(buildSttCacheRows(event), ['artifact', 'status', 'key', 'detail'])
+  createKeyValueTable([
+    ['artifact', event.artifact],
+    ['status', event.status],
+    ['key', event.key],
+    ...(event.detail ? [['detail', event.detail] as const] : [])
+  ])
 
 export const logSttCacheEvent = (
   logger: TableLogger,

@@ -12,7 +12,7 @@ import {
   parseDraftScenesArgs,
   parseGenerateImagesArgs,
 } from './utils/cli-args'
-import { resolveSceneSlug } from './utils/project-paths'
+import { resolveComicScriptReference, resolveSceneSlug } from './utils/project-paths'
 import {
   estimateCharacterSketchPrice,
   estimateDraftScenesPrice,
@@ -52,6 +52,14 @@ const parseArgsOrUsage = <T>(parse: () => T): T => {
   }
 }
 
+const resolveComicScriptReferenceOrUsage = async (scriptReference: string): Promise<string> => {
+  try {
+    return await resolveComicScriptReference(scriptReference)
+  } catch (error) {
+    throw CLIUsageError(error instanceof Error ? error.message : String(error))
+  }
+}
+
 const stripNativeGlobalFlags = (rawArgs: string[]): string[] => {
   const args: string[] = []
 
@@ -86,8 +94,9 @@ const comicSubcommands = [
       if (!parsed.scriptPath) {
         throw CLIUsageError('Missing script path. Usage: bun as comic draft-scenes <script-path>')
       }
-      const sceneSlug = resolveSceneSlug(parsed.scriptPath)
-      const options = { ...parsed, scriptPath: parsed.scriptPath, sceneSlug }
+      const scriptPath = await resolveComicScriptReferenceOrUsage(parsed.scriptPath)
+      const sceneSlug = resolveSceneSlug(scriptPath)
+      const options = { ...parsed, scriptPath, sceneSlug }
       if (parsed.price) {
         await estimateDraftScenesPrice(options)
         return
@@ -107,8 +116,9 @@ const comicSubcommands = [
       if (!parsed.scriptPath) {
         throw CLIUsageError('Missing script path. Usage: bun as comic generate-images <script-path>')
       }
-      const sceneSlug = resolveSceneSlug(parsed.scriptPath)
-      const options = { ...parsed, scriptPath: parsed.scriptPath, sceneSlug }
+      const scriptPath = await resolveComicScriptReferenceOrUsage(parsed.scriptPath)
+      const sceneSlug = resolveSceneSlug(scriptPath)
+      const options = { ...parsed, scriptPath, sceneSlug }
       if (parsed.price) {
         await estimateGenerateImagesPrice(options)
         return
@@ -175,9 +185,9 @@ export const comicCommand = defineCliCommand({
   passThroughHelpAfterFirstPositional: true,
   help: {
     examples: [
-      ['bun as comic draft-scenes input/episode-scripts/ep01-scripts/01-co-work-smarter.md', 'Draft structured scene JSON'],
-      ['bun as comic draft-scenes input/episode-scripts/ep01-scripts/01-co-work-smarter.md --only panel-prompts', 'Build panel prompt bundles'],
-      ['bun as comic generate-images input/episode-scripts/ep01-scripts/01-co-work-smarter.md --panels-per-image 6', 'Generate page images'],
+      ['bun as comic draft-scenes 05-01', 'Draft structured scene JSON'],
+      ['bun as comic draft-scenes input/episode-scripts/05-script/01-paddy-goes-on-vacation.md --only panel-prompts', 'Build panel prompt bundles'],
+      ['bun as comic generate-images 05-01 --panels-per-image 6', 'Generate page images'],
       ['bun as comic character-sketch --image input/characters/03-duco.webp', 'Generate character sketch references'],
       ['bun as comic draft-scenes --help', 'Show comic subcommand help']
     ],

@@ -24,6 +24,12 @@ const getEffectiveLlmOutputCount = (opts: RuntimeOptions): number => {
   ].filter((value): value is string => typeof value === 'string' && value.length > 0).length
 }
 
+const getExpectedLlmJsonArtifact = (llmOutputCount: number): string =>
+  llmOutputCount <= 1 ? 'text.json' : 'text-<model>.json'
+
+const getExpectedShowNoteArtifact = (llmOutputCount: number): string =>
+  llmOutputCount <= 1 ? 'show-note.md' : 'show-note-<model>.md'
+
 const getExpectedOcrArtifact = (opts: RuntimeOptions): string => {
   if (opts.out === 'tsv') {
     return 'extraction.tsv'
@@ -95,9 +101,12 @@ export const buildExpectedFilesList = async (
   if (command === 'write' && opts.textInput) {
     const llmOutputCount = getEffectiveLlmOutputCount(opts)
     const canRunPostGeneration = llmOutputCount === 1
-    const files = [llmOutputCount <= 1 ? 'text.json' : 'text-<provider>.json']
+    const files = [
+      getExpectedLlmJsonArtifact(llmOutputCount),
+      getExpectedShowNoteArtifact(llmOutputCount)
+    ]
     if (opts.renderedText) {
-      files.push(llmOutputCount <= 1 ? 'text.md' : 'text-<provider>.md')
+      files.push(llmOutputCount <= 1 ? 'text.md' : 'text-<model>.md')
     }
     if (typeof opts.renderedOutDir === 'string' && opts.renderedOutDir.length > 0) {
       files.push(`${opts.renderedOutDir}/*.md`)
@@ -124,13 +133,16 @@ export const buildExpectedFilesList = async (
     files.push('run.json')
     return files
   }
-  const summaryFile = 'text.json'
+  const llmOutputCount = getEffectiveLlmOutputCount(opts)
+  const summaryFile = getExpectedLlmJsonArtifact(llmOutputCount)
+  const showNoteFile = getExpectedShowNoteArtifact(llmOutputCount)
   const documentWrite = command === 'write'
     && (routing?.family === 'document' || routing?.family === 'html_article')
   if (documentWrite) {
     const files = opts.useEpubBun || opts.useEpubCalibre
       ? [summaryFile, 'run.json (includes EPUB inspection payload)']
       : [getExpectedOcrArtifact(opts), summaryFile]
+    files.push(showNoteFile)
     files.push(...getExpectedOcrExportArtifacts(opts))
     const htmlArticleInput = routing?.family === 'html_article'
     if (!htmlArticleInput && collectExplicitOcrTargets(opts).length > 1) {
@@ -142,7 +154,11 @@ export const buildExpectedFilesList = async (
     }
     return files
   }
-  const files = ['Audio file', 'transcription.txt', 'result.json', summaryFile]
+  const files = ['Audio file', 'transcription.txt', 'result.json']
+  if (!opts.skipLLM) {
+    files.push(summaryFile)
+    files.push(showNoteFile)
+  }
   if (collectSttTargets(opts).length > 1) {
     files.push('providers/<service>-<model>/transcription.txt')
     files.push('providers/<service>-<model>/result.json')
@@ -151,7 +167,7 @@ export const buildExpectedFilesList = async (
   const imageTargets = collectImageTargets(opts)
   const videoTargets = collectVideoTargets(opts)
   const musicTargets = collectMusicTargets(opts)
-  const canRunPostGeneration = getEffectiveLlmOutputCount(opts) === 1
+  const canRunPostGeneration = !opts.skipLLM && llmOutputCount === 1
   if (ttsTargets.length > 0 && canRunPostGeneration) {
     for (const target of ttsTargets) {
       files.push(getTtsArtifactFileName(target, ttsTargets.length === 1))

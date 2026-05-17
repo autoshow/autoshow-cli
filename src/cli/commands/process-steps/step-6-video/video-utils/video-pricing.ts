@@ -242,8 +242,8 @@ export const logVideoEstimate = (estimate: VideoCostEstimate): void => {
     ['Model', estimate.model],
     ['Requested Duration', `${estimate.durationSeconds}s`],
     ['Billed Duration', `${estimate.billedDurationSeconds}s`],
-    ['Cost Per Second', `${estimate.costPerSecond.toFixed(4)}¢`],
-    ['Total Cost', `${estimate.totalCost.toFixed(5)}¢`],
+    ['Cost Per Second', `${estimate.costPerSecond.toFixed(3)}¢`],
+    ['Total Cost', `${estimate.totalCost.toFixed(3)}¢`],
     ...(estimate.note ? [['Note', estimate.note] as const] : [])
   ]
   l.write('info', `Estimated video cost for ${estimate.provider}/${estimate.model}`, {

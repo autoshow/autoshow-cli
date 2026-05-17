@@ -1,5 +1,5 @@
 export const formatCost = (amount: number): string => {
-  return `${amount.toFixed(5)}\u00A2`
+  return `${amount.toFixed(3)}\u00A2`
 }
 
 export const formatEstimatedCost = (amount: number): string => {

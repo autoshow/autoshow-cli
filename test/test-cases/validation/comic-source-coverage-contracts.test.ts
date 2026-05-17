@@ -15,6 +15,11 @@ import { processScene } from '~/cli/commands/process-steps/step-8-comic/commands
 import { parseScriptMarkdownToStructuredData } from '~/cli/commands/process-steps/step-8-comic/utils/structured-script-utils'
 import { generateJsonPrompt } from '~/cli/commands/process-steps/step-8-comic/utils/json-prompt-utils'
 import {
+  isRecapMontageBeat,
+  resolvePreviousEpisodeScriptsDirectory,
+  validateSceneRecapMontageExpansion,
+} from '~/cli/commands/process-steps/step-8-comic/utils/recap-montage-utils'
+import {
   assertSourceCoverageReportComplete,
   formatSourceSegmentsMarkdown,
   validateSceneSourceSegmentCoverage,
@@ -22,6 +27,8 @@ import {
 } from '~/cli/commands/process-steps/step-8-comic/utils/source-coverage-utils'
 import { writeGeneratedImage } from '~/cli/commands/process-steps/step-8-comic/image-services/image-writer'
 import { combineCharacterSketchSheet } from '~/cli/commands/process-steps/step-8-comic/commands/character-sketch/character-sketch-sheet'
+import { composeComicGridPage } from '~/cli/commands/process-steps/step-8-comic/commands/generate-images/comic-grid-composer'
+import { generateComicGridPages } from '~/cli/commands/process-steps/step-8-comic/commands/generate-images/generate-comic-grid-pages'
 import { CHARACTER_SKETCH_VIEWS } from '~/cli/commands/process-steps/step-8-comic/commands/process-scenes/character-utils'
 import type {
   ScenePromptData,
@@ -29,7 +36,8 @@ import type {
   StructuredScriptSourceSegment,
 } from '~/cli/commands/process-steps/step-8-comic/types'
 
-const episode5ScriptPath = 'input/episode-scripts/ep05-scripts/01-paddy-goes-on-vacation.md'
+const episode5ScriptPath = 'input/episode-scripts/05-script/01-paddy-goes-on-vacation.md'
+const episode4RecapScriptPath = 'input/episode-scripts/04-script/01-previously-on-uss-acampo.md'
 const comicSourceRoot = 'src/cli/commands/process-steps/step-8-comic'
 const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const redDotPng = new Uint8Array([
@@ -53,10 +61,22 @@ type BunImageEncoded = {
   bytes: () => Promise<Uint8Array>
 }
 
+type BunImageMetadataReader = {
+  metadata: () => Promise<{ width?: number | undefined; height?: number | undefined }>
+}
+
 const getBunImageCodec = (): new (source: Uint8Array) => BunImageCodec => {
   const imageConstructor = (Bun as unknown as { Image?: new (source: Uint8Array) => BunImageCodec }).Image
   if (!imageConstructor) {
     throw new Error('Bun.Image is required for image writer contracts')
+  }
+  return imageConstructor
+}
+
+const getBunImageMetadataReader = (): new (source: ArrayBuffer) => BunImageMetadataReader => {
+  const imageConstructor = (Bun as unknown as { Image?: new (source: ArrayBuffer) => BunImageMetadataReader }).Image
+  if (!imageConstructor) {
+    throw new Error('Bun.Image is required for image metadata contracts')
   }
   return imageConstructor
 }
@@ -101,6 +121,18 @@ const buildSceneData = (sourceSegmentIds: string[]): ScenePromptData => ({
     speech: [],
     sourceSegmentIds,
   }],
+})
+
+const buildRecapSceneData = (panelCount: number, sourceSegmentId: string): ScenePromptData => ({
+  title: 'Previously on USS Acampo',
+  location: 'USS ACAMPO',
+  panels: Array.from({ length: panelCount }, (_value, index) => ({
+    number: index + 1,
+    description: 'High-speed recap panel with motion blur, speed lines, and under 30 seconds pacing.',
+    characters: [],
+    speech: [],
+    sourceSegmentIds: [sourceSegmentId],
+  })),
 })
 
 describe('comic source coverage contracts', () => {
@@ -162,6 +194,62 @@ describe('comic source coverage contracts', () => {
       expect(outputBytes.subarray(0, pngSignature.length)).toEqual(pngSignature)
     } finally {
       await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('comic grid composition uses ImageMagick and leaves partial cells blank', async () => {
+    if (!Bun.which('magick') && !Bun.which('convert')) {
+      return
+    }
+
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-comic-grid-page-'))
+
+    try {
+      const sources = await Promise.all([1, 2, 3].map(async (panelNumber) => {
+        const path = join(dir, `panel-${panelNumber}.png`)
+        await writeFile(path, redDotPng)
+        return path
+      }))
+      const outputPath = join(dir, 'page.png')
+      const dimensions = await composeComicGridPage({
+        sources,
+        outputPath,
+        grid: { columns: 2, rows: 2 },
+        cellSize: { width: 1, height: 1 },
+      })
+      const outputBytes = new Uint8Array(await Bun.file(outputPath).arrayBuffer())
+      const Image = getBunImageMetadataReader()
+      const metadata = await new Image(await Bun.file(outputPath).arrayBuffer()).metadata()
+
+      expect(dimensions).toEqual({ width: 2, height: 2 })
+      expect(metadata.width).toBe(2)
+      expect(metadata.height).toBe(2)
+      expect(outputBytes.subarray(0, pngSignature.length)).toEqual(pngSignature)
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('comic grid generation reports missing panel PNG paths before composition', async () => {
+    const sceneSlug = `grid-missing-${Date.now()}`
+    const sceneRoot = getSceneOutputDirectory(sceneSlug)
+    const expectedPanelPath = join(sceneRoot, 'panels', 'panel-01.png')
+
+    try {
+      await mkdir(join(getPanelPromptsDirectory(sceneSlug), 'panel-01'), { recursive: true })
+
+      await expect(generateComicGridPages(sceneSlug, {
+        models: ['gpt-image-2'],
+        force: false,
+        panels: 'all',
+        grid: { columns: 2, rows: 3 },
+      }, {
+        composeGridPage: async () => {
+          throw new Error('compose should not run without panel PNGs')
+        },
+      })).rejects.toThrow(expectedPanelPath)
+    } finally {
+      await rm(sceneRoot, { recursive: true, force: true })
     }
   })
 
@@ -316,6 +404,84 @@ describe('comic source coverage contracts', () => {
     expect(beat?.characters).toEqual([])
     expect(segment?.type).toBe('dialogue')
     expect(segment?.speakerLabel).toBe('RADIO V.O.')
+  })
+
+  test('recap montage resolver maps Episode 4 scripts to Episode 3 scripts', () => {
+    expect(resolvePreviousEpisodeScriptsDirectory(episode4RecapScriptPath))
+      .toBe(join('input', 'episode-scripts', '03-script'))
+  })
+
+  test('recap montage cue detection requires both episode and montage in the same beat', () => {
+    expect(isRecapMontageBeat({
+      text: 'Cue a rapid montage of Episode 3, every scene sped up.',
+    })).toBe(true)
+
+    expect(isRecapMontageBeat({
+      text: 'Cue a rapid montage of prior chaos.',
+    })).toBe(false)
+
+    expect(isRecapMontageBeat({
+      text: 'Episode 3 ended badly for everyone.',
+    })).toBe(false)
+  })
+
+  test('draft prompt expands recap montage with all prior scene titles and exact panel count', async () => {
+    const sceneSlug = `comic-recap-montage-${Date.now()}`
+    const sceneOutputDirectory = getSceneOutputDirectory(sceneSlug)
+    const script = await Bun.file(episode4RecapScriptPath).text()
+    const structuredScript = {
+      ...parseScriptMarkdownToStructuredData(script, episode4RecapScriptPath),
+      scriptSlug: sceneSlug,
+    }
+    const priorSceneTitles = [
+      'Work Smarter, Not Peaches',
+      'Unaccounted For',
+      'Gentle Capture',
+      'Split the Difference',
+      'The Magic Show Begins',
+      'Not Forgotten',
+      'Unrest',
+    ]
+
+    try {
+      await mkdir(sceneOutputDirectory, { recursive: true })
+      await writeFile(getStructuredScriptPath(sceneSlug), JSON.stringify(structuredScript, null, 2))
+
+      await generateJsonPrompt(sceneSlug)
+
+      const prompt = await Bun.file(getDraftPromptPath(sceneSlug)).text()
+      expect(prompt).toContain('## Recap Montage Expansion')
+      expect(prompt).toContain('Required recap montage panel count for `beat-0004`: exactly 7.')
+      expect(prompt).toContain('Every recap montage panel must include `beat-0004` in `sourceSegmentIds`.')
+      expect(prompt).toContain('Every recap montage panel must use `"speech": []`')
+      expect(prompt).toContain('motion blur, speed lines, and under 30 seconds pacing')
+      expect(prompt).toContain('Do not render the literal words "TEXT ON SCREEN"')
+      priorSceneTitles.forEach(title => {
+        expect(prompt).toContain(title)
+      })
+    } finally {
+      await rm(sceneOutputDirectory, { recursive: true, force: true })
+    }
+  })
+
+  test('scene validation rejects a one-panel recap when seven prior scenes are available', async () => {
+    const script = await Bun.file(episode4RecapScriptPath).text()
+    const structured = parseScriptMarkdownToStructuredData(script, episode4RecapScriptPath)
+
+    await expect(validateSceneRecapMontageExpansion(
+      buildRecapSceneData(1, 'beat-0004'),
+      structured,
+    )).rejects.toThrow(/beat-0004 appears in 1 panel\(s\).*7 prior scene\(s\)/)
+  })
+
+  test('scene validation accepts seven recap panels referencing the montage source segment', async () => {
+    const script = await Bun.file(episode4RecapScriptPath).text()
+    const structured = parseScriptMarkdownToStructuredData(script, episode4RecapScriptPath)
+
+    await expect(validateSceneRecapMontageExpansion(
+      buildRecapSceneData(7, 'beat-0004'),
+      structured,
+    )).resolves.toBeUndefined()
   })
 
   test('scene source segment coverage validation rejects missing and unknown IDs', () => {

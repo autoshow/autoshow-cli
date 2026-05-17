@@ -45,10 +45,14 @@ import {
   getPanelNumberFromName,
 } from './panel-prompt-utils'
 import {
+  COMIC_GRID_PANEL_SIZE,
   DEFAULT_PANELS_PER_IMAGE,
+  chunkComicGridPanels,
   chunkComicPagePanels,
+  getComicGridCapacity,
   panelSelectionToSketchRange,
   selectComicPanels,
+  validateComicGridOptions,
 } from '../commands/generate-images/comic-page-utils'
 import {
   getImagePromptVariationLabel,
@@ -145,6 +149,62 @@ const estimatePanelPromptsPrice = (): void => {
   l(`${bold('USS Acampo')} - Price Estimate: draft-scenes --only panel-prompts`)
   l(`${cyan('='.repeat(50))}\n`)
   l('  The panel-prompt stage makes no LLM or image generation API calls.')
+  l('')
+}
+
+const printGridCompositeEstimate = (
+  sceneSlug: string,
+  selectedPanelNumbers: number[],
+  options: {
+    grid: NonNullable<GenerateImagesCommandOptions['grid']>
+    models: ImageGenerationModel[]
+    variations: ImagePromptVariation[]
+    useVariationOutputPaths: boolean
+    useModelSpecificFilenames: boolean
+    force: boolean
+  }
+): void => {
+  const gridChunks = chunkComicGridPanels(
+    selectedPanelNumbers.map(panelNumber => ({ panelNumber })),
+    options.grid,
+  )
+  const capacity = getComicGridCapacity(options.grid)
+  let skipped = 0
+
+  if (!options.force) {
+    for (const gridChunk of gridChunks) {
+      for (const variation of options.variations) {
+        for (const model of options.models) {
+          const outputPath = getPageComicImagePath(
+            sceneSlug,
+            gridChunk.pageNumber,
+            gridChunk.panelNumbers,
+            options.useVariationOutputPaths ? model : options.useModelSpecificFilenames ? model : undefined,
+            options.useVariationOutputPaths ? variation : undefined
+          )
+          if (existsSync(outputPath)) {
+            skipped++
+          }
+        }
+      }
+    }
+  }
+
+  const totalCompositeOutputs = (
+    gridChunks.length *
+    options.variations.length *
+    options.models.length
+  ) - skipped
+  const skipNote = skipped > 0 ? ` (${skipped} skipped -- already exist)` : ''
+
+  l('  Grid pages:')
+  l(
+    `    ${sceneSlug.padEnd(40, ' ')}  ` +
+    `${totalCompositeOutputs} composite${totalCompositeOutputs !== 1 ? 's' : ''} ` +
+    `(${options.grid.columns}x${options.grid.rows}, ${capacity} cells)${skipNote}`
+  )
+  l('')
+  l.dim('  Grid pages are local ImageMagick composites and add no API cost.')
   l('')
 }
 
@@ -377,17 +437,23 @@ export const estimateCharacterSketchPrice = async (
 const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptions): Promise<void> => {
   const { sceneSlug } = options
   const models = options.imageModels ?? [DEFAULT_IMAGE_MODEL]
-  const size: ImageGenerationSize = options.size ?? '1536x1024'
+  const size: ImageGenerationSize = options.size ?? COMIC_GRID_PANEL_SIZE
   const quality: ImageGenerationQuality = options.quality ?? 'high'
   const force = options.force ?? false
   const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
-  const usePageMode = panelsPerImage > 1
+  const useGridMode = options.grid !== undefined
+  const usePageMode = !useGridMode && panelsPerImage > 1
   const useModelSpecificFilenames = models.length > 1
   const variations: ImagePromptVariation[] = options.variations ?? ['canonical']
   const useVariationOutputPaths = options.variations !== undefined
   validateImageSizeForModels(size, models)
+  validateComicGridOptions(options.grid, {
+    target: 'images',
+    size,
+    panelsPerImage,
+  })
 
-  l(`${bold('USS Acampo')} - Price Estimate: generate-images${usePageMode ? ' (page mode)' : ''}`)
+  l(`${bold('USS Acampo')} - Price Estimate: generate-images${useGridMode ? ' (grid mode)' : usePageMode ? ' (page mode)' : ''}`)
   l(`${cyan('='.repeat(50))}\n`)
   l(`  Models:  ${models.join(', ')}`)
   if (options.variations !== undefined) {
@@ -396,6 +462,9 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
   l(`  Size:    ${size}  Quality: ${quality}`)
   if (usePageMode) {
     l(`  Panels per image: ${panelsPerImage}`)
+  }
+  if (options.grid) {
+    l(`  Grid:    ${options.grid.columns}x${options.grid.rows} local composites from individual panels`)
   }
   l('')
 
@@ -470,6 +539,9 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
     .sort()
 
   let panelList = panelDirs
+  let selectedPanelNumbers = panelDirs
+    .map(name => getPanelNumberFromName(name))
+    .filter((panelNumber): panelNumber is number => panelNumber !== null)
   if (options.panels !== undefined) {
     const availablePanelNumbers = panelDirs
       .map(name => getPanelNumberFromName(name))
@@ -481,6 +553,7 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
       sceneSlug,
     )
     panelList = selected.map(s => s.name)
+    selectedPanelNumbers = selected.map(s => s.panelNumber)
   }
 
   let skipped = 0
@@ -514,10 +587,30 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
 
   if (totalPanels === 0) {
     l('  All panels already exist. Nothing to generate.')
+    if (options.grid) {
+      printGridCompositeEstimate(sceneSlug, selectedPanelNumbers, {
+        grid: options.grid,
+        models,
+        variations,
+        useVariationOutputPaths,
+        useModelSpecificFilenames,
+        force,
+      })
+    }
     return
   }
 
   printImageEstimateTable(models, quality, size, totalPanels, 'panel')
+  if (options.grid) {
+    printGridCompositeEstimate(sceneSlug, selectedPanelNumbers, {
+      grid: options.grid,
+      models,
+      variations,
+      useVariationOutputPaths,
+      useModelSpecificFilenames,
+      force,
+    })
+  }
 }
 
 export const estimateGenerateSketchesPrice = async (
@@ -619,6 +712,13 @@ export const estimateGenerateImagesPrice = async (
 ): Promise<void> => {
   const { sceneSlug } = options
   const sceneJsonExists = existsSync(getSceneJsonPath(sceneSlug))
+  const target = options.target ?? 'images'
+
+  validateComicGridOptions(options.grid, {
+    target,
+    size: options.size ?? COMIC_GRID_PANEL_SIZE,
+    panelsPerImage: options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE,
+  })
 
   if (!sceneJsonExists || options.force) {
     await estimateStructureScriptsPrice({
@@ -644,8 +744,6 @@ export const estimateGenerateImagesPrice = async (
       l('')
     }
   }
-
-  const target = options.target ?? 'images'
 
   if (target === 'sketches' || target === 'both') {
     const sketchPanels = panelSelectionToSketchRange(options.panels)

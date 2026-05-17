@@ -51,7 +51,7 @@ Canonical project-root paths:
 
 | Artifact | Path |
 |----------|------|
-| Episode scripts | `input/episode-scripts/ep02-scripts/*.md` |
+| Episode scripts | `input/episode-scripts/NN-script/*.md` |
 | Character source images | `input/characters/` |
 | Generated prompts and scenes | `output/episode-prompts/` |
 | Comic images | `output/episode-comics/` |
@@ -61,22 +61,26 @@ Canonical project-root paths:
 
 ```bash
 bun as comic draft-scenes <script-path> [--only structure|prompt|scene|panel-prompts] [--price]
-bun as comic generate-images <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--panels-per-image <n>] [--variation <name[,name...]>] [--force] [--price]
+bun as comic generate-images <script-path> [--target images|sketches|both] [--panels <all|range|list>] [--panels-per-image <n>] [--grid <columns>x<rows>] [--variation <name[,name...]>] [--force] [--price]
 bun as comic character-sketch --image <source-image|sketch-dir> [--force] [--revise --notes <text>] [--price]
 ```
+
+The `<script-path>` argument also accepts strict episode-scene shorthand: `02-01` resolves to the single Markdown file in `input/episode-scripts/02-script/` whose filename starts with `01-`.
 
 ## Walkthrough: 01-co-work-smarter
 
 This walkthrough starts from:
 
 ```text
-input/episode-scripts/ep02-scripts/01-co-work-smarter.md
+input/episode-scripts/02-script/01-co-work-smarter.md
 ```
+
+The equivalent shorthand is `02-01`.
 
 To run the complete script-to-page pipeline:
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1-16
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --panels 1-16
 ```
 
 This writes grouped final page images under `output/episode-comics/episode-02-comic-images/01-co-work-smarter/pages/`.
@@ -84,19 +88,19 @@ This writes grouped final page images under `output/episode-comics/episode-02-co
 ### 1. Create structured script JSON
 
 ```bash
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only structure
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only structure
 ```
 
 ### 2. Build the scene-drafting prompt
 
 ```bash
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only prompt
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only prompt
 ```
 
 ### 3. Draft scene JSON
 
 ```bash
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only scene
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only scene
 ```
 
 This stage calls the selected text model. Use `--price` first when you want a side-effect-free cost estimate.
@@ -118,7 +122,7 @@ bun as comic character-sketch --image output/characters/sketches/03-duco
 ### 5. Build stable panel prompt bundles
 
 ```bash
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only panel-prompts
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only panel-prompts
 ```
 
 Review these prompt bundles before spending image-generation cost.
@@ -126,7 +130,7 @@ Review these prompt bundles before spending image-generation cost.
 ### 6. Generate review sketches
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target sketches
 ```
 
 Panel prompt bundles from the previous step are detected automatically and reused. Use `--force` to rebuild them.
@@ -134,13 +138,13 @@ Panel prompt bundles from the previous step are detected automatically and reuse
 ### 7. Generate final panel images
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images
 ```
 
 To generate review sketches and final panel images in one run after scene JSON exists, use:
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target both
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target both
 ```
 
 ## draft-scenes
@@ -163,11 +167,11 @@ bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smart
 ### Examples
 
 ```bash
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only structure
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only prompt
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only scene
-bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.md --only panel-prompts
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only structure
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only prompt
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only scene
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --only panel-prompts
 ```
 
 ### Behavior
@@ -202,20 +206,22 @@ bun as comic draft-scenes input/episode-scripts/ep02-scripts/01-co-work-smarter.
 | `--size <size>` | Image size such as `1536x1024`, `1024x1024`, `1024x1536`, or `auto` | `1536x1024` |
 | `--quality <quality>` | `low`, `medium`, `high`, or `auto`; Gemini ignores this compatibility flag | `high` |
 | `--panels-per-image <n>` | Number of ordered panels per generated image: page images for final images, sketch chunks for review sketches; use `1` for individual final panels | `6` |
+| `--grid <columns>x<rows>` | Compose generated individual final panels into local page grids, such as `2x3`; requires `--panels-per-image 1` and `--size 1536x1024` | none |
 
 ### Examples
 
 ```bash
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target both
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1-16
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --panels 1,3,7
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches --panels 5-8
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target sketches --panels-per-image 6 --quality high
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --image-model gpt-image-2
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --image-model gpt-image-2,gemini-3.1-flash-image-preview
-bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smarter.md --target images --variation animation-polish,cinematic-depth
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target sketches
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target both
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --panels 1-16
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --panels 1,3,7
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --panels 1-16 --panels-per-image 1 --grid 2x3
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target sketches --panels 5-8
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target sketches --panels-per-image 6 --quality high
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --image-model gpt-image-2
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --image-model gpt-image-2,gemini-3.1-flash-image-preview
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --variation animation-polish,cinematic-depth
 ```
 
 ### Behavior
@@ -228,6 +234,7 @@ bun as comic generate-images input/episode-scripts/ep02-scripts/01-co-work-smart
 - Review sketch selections must be contiguous because each sketch output is one panel range; use `--target images` for non-contiguous final panel lists like `1,3,7`.
 - Non-overlapping panel selections, non-contiguous missing panels, and likely typos such as `--panels 1,99` still fail.
 - `--panels-per-image` controls grouped final page images and review sketch chunks. The default is `6`; use `--panels-per-image 1` for individual final panel images.
+- `--grid <columns>x<rows>` first generates individual final panel PNGs, then combines them locally into full-size white-backed page grids under `pages/`. For example, `--grid 2x3 --size 1536x1024` writes 3072x3072 page PNGs and leaves unused trailing cells blank on partial final pages.
 - `--variation` only applies to final images (`--target images` or `--target both`). When omitted, legacy final image paths are preserved. When provided, outputs are grouped under `pages/<variation>/<model>/` or `panels/<variation>/<model>/`.
 - Review sketches and final images use the defaults shown above (`gpt-image-1.5`, `1536x1024`, `high`).
 - Multi-model runs write model-specific filenames.
@@ -323,7 +330,7 @@ The following options were removed. Using them will produce an informative error
 
 | Removed Flag | Replacement |
 |---|---|
-| `--episode`, `--scene` | Pass a script file path directly |
+| `--episode`, `--scene` | Pass a script file path or `NN-SC` shorthand directly |
 | `--concurrency` | Commands now process a single script |
 | `--panel <n>` | Use `--panels <n>` |
 | `--panel-limit <n>` | Use `--panels <range>` directly (e.g. `--panels 1-4`) |
