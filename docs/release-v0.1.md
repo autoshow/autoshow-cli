@@ -102,11 +102,11 @@ bun as extract https://ajcwebdev.com --url-backend firecrawl
 bun as extract https://ajcwebdev.com --all-url
 bun as extract https://x.com/i/spaces/1DXxyRYNejbKM
 bun as write ./notes/source.md --text-input --openai gpt-5.4 --prompt folkSong
-bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8
-bun as image "a clean product photo of a red enamel camping mug" --openai-image gpt-image-2 --image-size 1024x1024
-bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview
+bun as tts input/examples/tts/1-tts.md --kitten kitten-tts-nano-0.8-int8
+bun as image "a clean product photo of a red enamel camping mug" --openai gpt-image-2 --image-size 1024x1024
+bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
-bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
+bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
 bun as benchmark docs/benchmarks/tts/<run> --tts --tts-mode local
 bun as comic draft-scenes 05-01
 bun as comic generate-images 05-01 --panels-per-image 6

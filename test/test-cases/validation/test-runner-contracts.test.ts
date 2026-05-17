@@ -274,7 +274,7 @@ describe('test-runner contracts', () => {
   })
 
   test('price config isolation appends empty config to mapped tts price commands', () => {
-    const args = ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai-tts', 'gpt-4o-mini-tts', '--price']
+    const args = ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--openai', 'gpt-4o-mini-tts', '--price']
 
     expect(withEmptyPriceConfig(args)).toEqual([
       ...args,
@@ -298,7 +298,7 @@ describe('test-runner contracts', () => {
       'src/cli/create-cli.ts',
       'tts',
       'input/examples/tts/1-tts.md',
-      '--openai-tts',
+      '--openai',
       'gpt-4o-mini-tts',
       '--price',
       '--config-path=config/custom-autoshow.json',
@@ -793,8 +793,8 @@ describe('test-runner contracts', () => {
       },
       {
         source: 'runCommand',
-        command: 'bun src/cli/create-cli.ts extract input/examples/document/1-document.pdf --tesseract-ocr',
-        args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--tesseract-ocr'],
+        command: 'bun src/cli/create-cli.ts extract input/examples/document/1-document.pdf --tesseract',
+        args: ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--tesseract'],
         exitCode: 0,
         durationMs: 3000,
         outputDir: docOutputDir,

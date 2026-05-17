@@ -16,6 +16,22 @@ const createReader = (files: Record<string, string>): EpubContentReader => ({
   }
 })
 
+const WINDOWS_1252_TEST_BYTES: Record<string, number> = {
+  '\u201c': 0x93,
+  '\u201d': 0x94,
+  '\u2014': 0x97,
+  '\u2026': 0x85
+}
+
+const encodeLegacyPuaText = (text: string): string =>
+  Array.from(text).map((char) => {
+    const byte = WINDOWS_1252_TEST_BYTES[char] ?? char.codePointAt(0)
+    if (byte === undefined || byte > 0xff) {
+      throw new Error(`Test helper cannot encode character: ${char}`)
+    }
+    return String.fromCodePoint(0xf000 + byte)
+  }).join('')
+
 test('EPUB chapter export groups spine fragments by TOC starts', async () => {
   const inspected = await inspectEpubWithReader(createReader({
     'META-INF/container.xml': `
@@ -204,4 +220,94 @@ test('EPUB chapter export splits multiple TOC fragments within one spine file', 
   expect(files[3]?.text).not.toContain('Chapter Three')
   expect(files[4]?.text).toStartWith('Chapter Three')
   expect(files[4]?.text).not.toContain('Two body continues in the next spine file before chapter three.')
+})
+
+test('EPUB chapter export ignores page-list TOCs and groups decoded heading sections', async () => {
+  const inspected = await inspectEpubWithReader(createReader({
+    'META-INF/container.xml': `
+      <container>
+        <rootfiles>
+          <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+        </rootfiles>
+      </container>
+    `,
+    'OEBPS/content.opf': `
+      <package>
+        <manifest>
+          <item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+          <item id="page1" href="Text/page1.xhtml" media-type="application/xhtml+xml"/>
+          <item id="page2" href="Text/page2.xhtml" media-type="application/xhtml+xml"/>
+          <item id="page3" href="Text/page3.xhtml" media-type="application/xhtml+xml"/>
+          <item id="page4" href="Text/page4.xhtml" media-type="application/xhtml+xml"/>
+        </manifest>
+        <spine toc="toc">
+          <itemref idref="page1"/>
+          <itemref idref="page2"/>
+          <itemref idref="page3"/>
+          <itemref idref="page4"/>
+        </spine>
+      </package>
+    `,
+    'OEBPS/toc.ncx': `
+      <ncx>
+        <navMap>
+          <navPoint id="page1" playOrder="1">
+            <navLabel><text>page1</text></navLabel>
+            <content src="Text/page1.xhtml"/>
+          </navPoint>
+          <navPoint id="page2" playOrder="2">
+            <navLabel><text>page2</text></navLabel>
+            <content src="Text/page2.xhtml"/>
+          </navPoint>
+          <navPoint id="page3" playOrder="3">
+            <navLabel><text>page3</text></navLabel>
+            <content src="Text/page3.xhtml"/>
+          </navPoint>
+          <navPoint id="page4" playOrder="4">
+            <navLabel><text>page4</text></navLabel>
+            <content src="Text/page4.xhtml"/>
+          </navPoint>
+        </navMap>
+      </ncx>
+    `,
+    'OEBPS/Text/page1.xhtml': `
+      <html><body>
+        <p>${encodeLegacyPuaText('Introduction:')}</p>
+        <p>${encodeLegacyPuaText('Opening \u201cdecoded\u201d text.')}</p>
+      </body></html>
+    `,
+    'OEBPS/Text/page2.xhtml': `
+      <html><body>
+        <p>${encodeLegacyPuaText('This page continues the introduction \u2014 without a new heading.')}</p>
+      </body></html>
+    `,
+    'OEBPS/Text/page3.xhtml': `
+      <html><body>
+        <p>${encodeLegacyPuaText('Chapter 1:')}</p>
+        <p>${encodeLegacyPuaText('First chapter starts here.')}</p>
+      </body></html>
+    `,
+    'OEBPS/Text/page4.xhtml': `
+      <html><body>
+        <p>${encodeLegacyPuaText('Finality')}</p>
+        <p>${encodeLegacyPuaText('Closing thought\u2026')}</p>
+      </body></html>
+    `
+  }), 'bun')
+
+  const output = buildEpubTextOutput('book', inspected.payload.chapters, { chapterFiles: true })
+  const files = output.exportPlan?.files ?? []
+
+  expect(output.text).toContain('Opening \u201cdecoded\u201d text.')
+  expect(output.text).not.toMatch(/[\uf020-\uf0ff]/)
+  expect(output.exportPlan?.summary.logicalChapterSource).toBe('heading')
+  expect(output.exportPlan?.summary.tocStartSections).toBe(4)
+  expect(output.exportPlan?.summary.pageLikeTocStartsIgnored).toBe(4)
+  expect(files.map((file) => file.relativePath)).toEqual([
+    'chapters/001-introduction.txt',
+    'chapters/002-chapter-1.txt',
+    'chapters/003-finality.txt'
+  ])
+  expect(files[0]?.text).toContain('This page continues the introduction \u2014 without a new heading.')
+  expect(files[0]?.relativePath).not.toContain('page')
 })

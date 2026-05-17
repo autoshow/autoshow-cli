@@ -70,43 +70,23 @@ Complete trace of a real CLI command from input to output, plus environment vari
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │  API Keys                                                                    │
-│  ├── OPENAI_API_KEY                  Required for --openai, --openai-stt,    │
-│  │                                   --openai-ocr, --openai-tts,             │
-│  │                                   --openai-image models                   │
-│  ├── GROQ_API_KEY                    Required for --groq, --groq-stt,        │
-│  │                                   --groq-tts models                       │
-│  ├── ANTHROPIC_API_KEY               Required for --anthropic,               │
-│  │                                   --anthropic-ocr models                  │
-│  ├── GEMINI_API_KEY                  Required for --gemini, --gemini-stt,    │
-│  │                                   --gemini-ocr, --gemini-tts,             │
-│  │                                   --gemini-image,                         │
-│  │                                   --gemini-video, --gemini-music models  │
-│  ├── DEEPINFRA_API_KEY               Required for --deepinfra-stt and        │
-│  │                                   --deepinfra-ocr models                  │
-│  ├── DEAPI_API_KEY                   Required for --deapi-stt, --deapi-tts,  │
-│  │                                   --deapi-image,                         │
-│  │                                   --deapi-video, --deapi-music models     │
-│  ├── MINIMAX_API_KEY                 Required for --minimax, --minimax-tts,  │
-│  │                                   --minimax-image, --minimax-video,       │
-│  │                                   --minimax-music models; clone mode also │
-│  │                                   needs local reference audio             │
-│  ├── ELEVENLABS_API_KEY              Required for --elevenlabs-stt,          │
-│  │                                   --elevenlabs-tts, --elevenlabs-music    │
-│  ├── GLM_API_KEY                     Required for --glm, --glm-ocr,          │
-│  │                                   --glm-stt, --glm-image, --glm-video     │
-│  │                                   models                                  │
-│  ├── KIMI_API_KEY                    Required for --kimi and --kimi-ocr      │
-│  │                                   models                                  │
-│  ├── XAI_API_KEY                     Required for --grok, --grok-stt,        │
-│  │                                   --grok-tts, --grok-image,               │
-│  │                                   --grok-video models                     │
-│  ├── RUNWAYML_API_SECRET             Required for --runway-image and         │
-│  │                                   --runway-video models                   │
-│  ├── SPEECHIFY_API_KEY               Required for --speechify-tts models     │
-│  ├── HUME_API_KEY                    Required for --hume-tts models          │
-│  ├── CARTESIA_API_KEY                Required for --cartesia-tts models      │
-│  ├── TOGETHER_API_KEY                Required for --together-stt models      │
-│  ├── BFL_API_KEY                     Required for --bfl-image models         │
+│  ├── OPENAI_API_KEY                  Required for OpenAI flags           │
+│  ├── GROQ_API_KEY                    Required for Groq flags             │
+│  ├── ANTHROPIC_API_KEY               Required for Anthropic flags        │
+│  ├── GEMINI_API_KEY                  Required for Gemini flags           │
+│  ├── DEEPINFRA_API_KEY               Required for DeepInfra flags        │
+│  ├── DEAPI_API_KEY                   Required for deAPI flags            │
+│  ├── MINIMAX_API_KEY                 Required for MiniMax flags          │
+│  ├── ELEVENLABS_API_KEY              Required for ElevenLabs flags       │
+│  ├── GLM_API_KEY                     Required for GLM flags              │
+│  ├── KIMI_API_KEY                    Required for Kimi flags             │
+│  ├── XAI_API_KEY                     Required for Grok/xAI flags         │
+│  ├── RUNWAYML_API_SECRET             Required for Runway flags           │
+│  ├── SPEECHIFY_API_KEY               Required for Speechify flags        │
+│  ├── HUME_API_KEY                    Required for Hume flags             │
+│  ├── CARTESIA_API_KEY                Required for Cartesia flags         │
+│  ├── TOGETHER_API_KEY                Required for Together flags         │
+│  ├── BFL_API_KEY                     Required for BFL flags              │
 │  └── HF_TOKEN                        HuggingFace private model access         │
 │                                                                              │
 │  Common Provider Base URL Overrides                                          │

@@ -17,6 +17,13 @@ import { planProcessTargetBatchExecution, resolveProcessTargetPlan } from './pro
 import { formatCents, reportSuitePriceEstimate, shouldRunCommandPreflight } from './process-target-preflight'
 import { buildUnsupportedExtractInputMessage, validateWriteStep2ProviderSelection } from './process-target-validation'
 import { getYtDlpBinary, hasYtDlpBinary } from '../audio/yt-dlp-binary'
+import {
+  expandExtractPublicSelectorExplicitFlags,
+  hasExtractPublicSelectorFlags,
+  normalizeExtractPublicSelectorFlags,
+  stripExtractPublicSelectorFlags,
+  type ExtractSelectorInputRoutes
+} from '~/cli/commands/process-steps/service-selector-normalization'
 
 export { buildExpectedFilesList } from './expected-output'
 export { shouldRunCommandPreflight } from './process-target-preflight'
@@ -83,6 +90,41 @@ export const runRawYtDlp = async (args: string[]): Promise<void> => {
   }
 }
 
+const addExtractSelectorRoute = (
+  routes: ExtractSelectorInputRoutes,
+  family: string
+): void => {
+  if (family === 'media') {
+    routes.media = true
+  } else if (family === 'document') {
+    routes.document = true
+  }
+}
+
+const resolveExtractSelectorInputRoutes = async (
+  command: ProcessCommand,
+  plan: Awaited<ReturnType<typeof resolveProcessTargetPlan>>,
+  opts: RuntimeOptions,
+  resolvedTarget: string
+): Promise<ExtractSelectorInputRoutes> => {
+  const routes: ExtractSelectorInputRoutes = { media: false, document: false }
+  if (!isExtractCommand(command)) {
+    return routes
+  }
+
+  if (plan.kind === 'single') {
+    const routing = await resolveInputRoutingForCommand(command, plan.target, opts)
+    addExtractSelectorRoute(routes, routing.family)
+    return routes
+  }
+
+  const batchPlan = await planProcessTargetBatchExecution(plan, command, opts, resolvedTarget)
+  for (const plannedInput of batchPlan?.plannedInputs ?? []) {
+    addExtractSelectorRoute(routes, plannedInput.inputFamily)
+  }
+  return routes
+}
+
 export const handleProcessTarget = async (
   command: ProcessCommand,
   target: string | undefined,
@@ -98,17 +140,44 @@ export const handleProcessTarget = async (
   const configPathOverride = typeof rawFlags['config-path'] === 'string' ? rawFlags['config-path'] : undefined
   const resolvedConfigPath = await resolveConfigPath(configPathOverride)
   const config = await loadConfig(resolvedConfigPath)
-  const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
-  const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, explicitFlags)
+  const rawArgv = Bun.argv.slice(2)
+  const parsedExplicitFlags = extractExplicitFlags(rawArgv)
+  const configExplicitFlags = isExtractCommand(command)
+    ? expandExtractPublicSelectorExplicitFlags(parsedExplicitFlags)
+    : parsedExplicitFlags
+  const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, configExplicitFlags)
+  let optionFlags = mergedFlags
+  let explicitFlags = configExplicitFlags
+  let selectorPlan: Awaited<ReturnType<typeof resolveProcessTargetPlan>> | undefined
+
+  if (isExtractCommand(command) && hasExtractPublicSelectorFlags(mergedFlags)) {
+    const preliminaryFlags = stripExtractPublicSelectorFlags(mergedFlags)
+    const preliminaryOpts: RuntimeOptions = {
+      ...buildOptsFromFlags(
+        true,
+        preliminaryFlags,
+        doubleDash,
+        {},
+        configExplicitFlags,
+        rawArgv
+      ),
+      configPath: resolvedConfigPath
+    }
+    selectorPlan = await resolveProcessTargetPlan(command, resolvedDoubleDash.resolvedTarget, preliminaryOpts)
+    const selectorRoutes = await resolveExtractSelectorInputRoutes(command, selectorPlan, preliminaryOpts, resolvedDoubleDash.resolvedTarget)
+    const normalized = normalizeExtractPublicSelectorFlags(mergedFlags, configExplicitFlags, selectorRoutes)
+    optionFlags = normalized.flags
+    explicitFlags = normalized.explicitFlags
+  }
 
   const opts: RuntimeOptions = {
     ...buildOptsFromFlags(
       isExtractCommand(command) || command === 'download' || command === 'metadata',
-      mergedFlags,
+      optionFlags,
       doubleDash,
       {},
       explicitFlags,
-      Bun.argv.slice(2)
+      rawArgv
     ),
     configPath: resolvedConfigPath
   }
@@ -142,7 +211,7 @@ export const handleProcessTarget = async (
 
   validateWriteStep2ProviderSelection(command, effectiveOpts)
 
-  const plan = await resolveProcessTargetPlan(command, resolvedTarget, effectiveOpts)
+  const plan = selectorPlan ?? await resolveProcessTargetPlan(command, resolvedTarget, effectiveOpts)
   const singleRouting = plan.kind === 'single' && isExtractCommand(command)
     ? await resolveInputRoutingForCommand(command, plan.target, effectiveOpts)
     : undefined

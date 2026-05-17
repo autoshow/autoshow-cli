@@ -15,3 +15,24 @@ export const withHelpGroup = (flags: CliFlagsDefinition, group: string): CliFlag
   }
   return grouped
 }
+
+export const renameFlags = (
+  flags: CliFlagsDefinition,
+  publicNameByInternalName: Record<string, string>
+): CliFlagsDefinition => {
+  const renamed: CliFlagsDefinition = {}
+  for (const [name, definition] of Object.entries(flags)) {
+    renamed[publicNameByInternalName[name] ?? name] = definition
+  }
+  return renamed
+}
+
+export const omitFlags = (
+  flags: CliFlagsDefinition,
+  names: readonly string[]
+): CliFlagsDefinition => {
+  const omitted = new Set(names)
+  return Object.fromEntries(
+    Object.entries(flags).filter(([name]) => !omitted.has(name))
+  ) as CliFlagsDefinition
+}

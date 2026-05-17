@@ -45,7 +45,7 @@ bun as setup --step sample
 PaddleOCR can also be prepared lazily on first use:
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --paddle-ocr
+bun as extract input/examples/document/1-document.pdf --paddle
 ```
 
 `--epub-calibre` is kept as a compatibility alias for the native Bun EPUB inspector and does not require Calibre.
@@ -77,8 +77,8 @@ bun as setup --gcloud
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, `--mistral-ocr`, `--glm-ocr`, `--kimi-ocr`, `--openai-ocr`, `--anthropic-ocr`, `--gemini-ocr`, `--deepinfra-ocr`, `--aws-textract`, `--gcloud-docai` |
-| EPUB | cleaned native extraction (`epub-text`) | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle`, `--mistral`, `--glm`, `--kimi`, `--openai`, `--anthropic`, `--gemini`, `--deepinfra`, `--aws`, `--gcloud` |
+| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
 | RTF | native RTF text extraction | OCR flags are ignored with a warning |
@@ -170,13 +170,13 @@ bun as extract input/examples/document/3-document.pdf --chapters --pdf-chapter-m
 
 | Option | Value |
 |--------|-------|
-| Selector | default PDF/image path, or `--tesseract-ocr` |
+| Selector | default PDF/image path, or `--tesseract` |
 | Language | `--lang <codes>` such as `eng` or `eng+fra` |
 | Tuning | `--psm <n>`, `--oem <n>`, `--page-separator <text>`, `--preserve-spaces`, `--rotate <degrees>` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --tesseract-ocr
-bun as extract input/examples/document/1-document.pdf --tesseract-ocr --lang eng+fra --dpi 300
+bun as extract input/examples/document/1-document.pdf --tesseract
+bun as extract input/examples/document/1-document.pdf --tesseract --lang eng+fra --dpi 300
 ```
 
 Tesseract tuning flags work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md). Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
@@ -196,23 +196,23 @@ bun as extract input/examples/document/1-document.pdf --ocrmypdf
 
 | Option | Value |
 |--------|-------|
-| Selector | `--paddle-ocr` |
+| Selector | `--paddle` |
 | Setup | Can be prepared lazily on first use |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --paddle-ocr
+bun as extract input/examples/document/1-document.pdf --paddle
 ```
 
 ### Mistral OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--mistral-ocr <model>` |
+| Selector | `--mistral <model>` |
 | Models | cheapest supported model, or `mistral-ocr-2512` |
 | Direct input support | PDF and standard images (`PNG`, `JPG`, `TIF`) |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --mistral-ocr mistral-ocr-2512
+bun as extract input/examples/document/1-document.pdf --mistral mistral-ocr-2512
 ```
 
 No numeric Mistral OCR file-size/page-count caps were found in `project/links/all-all-links.md`, so this CLI does not enforce any new numeric limits for that provider from that source.
@@ -221,12 +221,12 @@ No numeric Mistral OCR file-size/page-count caps were found in `project/links/al
 
 | Option | Value |
 |--------|-------|
-| Selector | `--glm-ocr <model>` |
+| Selector | `--glm <model>` |
 | Models | cheapest supported model, or `glm-ocr` |
 | Direct input support | PDF plus `PNG` and `JPG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --glm-ocr glm-ocr
+bun as extract input/examples/document/1-document.pdf --glm glm-ocr
 ```
 
 GLM OCR currently enforces the bundled docs caps from `project/links/glm-all-links.md`: images up to 10 MB, PDFs up to 50 MB, and PDFs up to 100 pages.
@@ -235,13 +235,13 @@ GLM OCR currently enforces the bundled docs caps from `project/links/glm-all-lin
 
 | Option | Value |
 |--------|-------|
-| Selector | `--kimi-ocr <model>` |
+| Selector | `--kimi <model>` |
 | Models | `kimi-k2.6` |
 | Direct input support | `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
-bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6 --price
+bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6 --price
 ```
 
 Kimi OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. Direct or rendered image uploads are capped at 100 MB.
@@ -259,12 +259,12 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 
 | Option | Value |
 |--------|-------|
-| Selector | `--openai-ocr <model>` |
+| Selector | `--openai <model>` |
 | Models | `gpt-5.4`, `gpt-5.4-nano` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
+bun as extract input/examples/document/1-document.pdf --openai gpt-5.4-nano
 ```
 
 OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. OpenAI OCR currently enforces the bundled PDF size cap from `project/links/openai-all-links.md`: PDFs up to 50 MB.
@@ -273,12 +273,12 @@ OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when Im
 
 | Option | Value |
 |--------|-------|
-| Selector | `--anthropic-ocr <model>` |
+| Selector | `--anthropic <model>` |
 | Models | `claude-haiku-4-5` |
 | Direct input support | Standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
+bun as extract input/examples/document/1-document.pdf --anthropic claude-haiku-4-5
 ```
 
 Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run.
@@ -287,12 +287,12 @@ Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gemini-ocr <model>` |
+| Selector | `--gemini <model>` |
 | Models | cheapest supported model, or `gemini-3.1-flash-lite-preview` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --gemini-ocr gemini-3.1-flash-lite-preview
+bun as extract input/examples/document/1-document.pdf --gemini gemini-3.1-flash-lite-preview
 ```
 
 Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled docs caps from `project/links/gemini-all-links.md`: inline PDFs up to 50 MB, inline non-PDF inputs up to 100 MB, Files API uploads up to 2 GB per file, and PDFs up to 1000 pages.
@@ -301,14 +301,14 @@ Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when Im
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deepinfra-ocr <model>` |
+| Selector | `--deepinfra <model>` |
 | Models | `Qwen/Qwen3-VL-235B-A22B-Instruct`, `Qwen/Qwen3-VL-30B-A3B-Instruct` |
 | Direct input support | `PNG`, `JPG/JPEG`, and `WEBP`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct
-bun as extract input/examples/document/1-document.jpg --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct
-bun as extract input/examples/document/1-document.pdf --deepinfra-ocr Qwen/Qwen3-VL-30B-A3B-Instruct --price
+bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct
+bun as extract input/examples/document/1-document.jpg --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct
+bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct --price
 ```
 
 DeepInfra OCR normalizes `GIF`, `BMP`, and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. Uploads are capped at 20 MB per direct or rendered image and omit OpenAI's `detail` parameter.
@@ -328,12 +328,12 @@ DeepInfra OCR uses token pricing estimates and recorded usage when available.
 
 | Option | Value |
 |--------|-------|
-| Selector | `--aws-textract <model>` |
+| Selector | `--aws <model>` |
 | Models | `detect-text` |
 | Staging | S3 bucket shared with AWS Transcribe for PDFs and large async inputs; AutoShow can create and save one on first use, or you can pass `--aws-region` / `--aws-bucket` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --aws-textract detect-text
+bun as extract input/examples/document/1-document.pdf --aws detect-text
 ```
 
 AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available. `detect-text` is text-only at $1.50 per 1,000 pages. Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging. AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
@@ -344,12 +344,12 @@ For async inputs, AutoShow resolves the region from `--aws-region`, saved config
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gcloud-docai <model>` |
+| Selector | `--gcloud <model>` |
 | Models | `ocr` |
 | Setup | `bun as setup --gcloud --gcloud-project PROJECT_ID` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --gcloud-docai ocr
+bun as extract input/examples/document/1-document.pdf --gcloud ocr
 ```
 
 Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use.

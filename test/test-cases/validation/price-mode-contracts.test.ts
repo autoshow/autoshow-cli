@@ -33,12 +33,12 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   },
   {
     label: 'extract',
-    args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', 'tiny', '--price'],
+    args: ['extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'tiny', '--price'],
     expected: 'Total estimated cost'
   },
   {
     label: 'Kimi OCR',
-    args: ['extract', 'input/examples/document/1-document.pdf', '--kimi-ocr', 'kimi-k2.6', '--price'],
+    args: ['extract', 'input/examples/document/1-document.pdf', '--kimi', 'kimi-k2.6', '--price'],
     expected: 'Total estimated cost'
   },
   {
@@ -48,7 +48,7 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   },
   {
     label: 'tts',
-    args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--openai', 'gpt-4o-mini-tts', '--price'],
     expected: 'speech'
   },
   {
@@ -58,86 +58,86 @@ const priceCases: Array<{ label: string; args: string[]; expected: string; env?:
   },
   {
     label: 'Speechify TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--speechify-tts', 'simba-english', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--speechify', 'simba-english', '--price'],
     expected: 'speech'
   },
   {
     label: 'Speechify custom voice TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--speechify-tts', 'simba-english', '--speechify-tts-ref-audio', 'input/voices/my-voice-sample.mp3', '--speechify-tts-consent-name', 'Anthony Example', '--speechify-tts-consent-email', 'anthony@example.com', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--speechify', 'simba-english', '--speechify-tts-ref-audio', 'input/voices/my-voice-sample.mp3', '--speechify-tts-consent-name', 'Anthony Example', '--speechify-tts-consent-email', 'anthony@example.com', '--price'],
     expected: 'speech'
   },
   {
     label: 'Google Cloud TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--gcloud-tts', 'chirp3-hd', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--gcloud', 'chirp3-hd', '--price'],
     expected: 'speech'
   },
   {
     label: 'Mistral TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--mistral-tts', 'voxtral-mini-tts-2603', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--mistral', 'voxtral-mini-tts-2603', '--price'],
     expected: 'speech'
   },
   {
     label: 'Mistral dialogue TTS',
-    args: ['tts', 'input/examples/tts/tts-dialogue.txt', '--mistral-tts', 'voxtral-mini-tts-2603', '--tts-dialogue-format', 'labeled', '--tts-speaker-ref-audio', 'Host=input/examples/audio/anthony-voice.mp3', '--tts-speaker-ref-audio', 'Guest=input/examples/audio/1-audio.mp3', '--price'],
+    args: ['tts', 'input/examples/tts/tts-dialogue.txt', '--mistral', 'voxtral-mini-tts-2603', '--tts-dialogue-format', 'labeled', '--tts-speaker-ref-audio', 'Host=input/examples/audio/anthony-voice.mp3', '--tts-speaker-ref-audio', 'Guest=input/examples/audio/1-audio.mp3', '--price'],
     expected: 'dialogue-normalized.txt'
   },
   {
     label: 'OpenAI custom voice TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--openai-tts', 'gpt-4o-mini-tts', '--openai-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--openai', 'gpt-4o-mini-tts', '--openai-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
     expected: 'speech',
     env: { OPENAI_API_KEY: '', OPENAI_BASE_URL: '' }
   },
   {
     label: 'ElevenLabs IVC TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_v3', '--elevenlabs-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs', 'eleven_v3', '--elevenlabs-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
     expected: 'speech',
     env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
   {
     label: 'ElevenLabs PVC setup TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs-tts', 'eleven_v3', '--elevenlabs-tts-pvc-sample', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs', 'eleven_v3', '--elevenlabs-tts-pvc-sample', 'input/examples/audio/anthony-voice.mp3', '--price'],
     expected: 'elevenlabs-pvc-status.json',
     env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
   {
     label: 'deAPI voice clone TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--deapi-tts', 'Qwen3_TTS_12Hz_1_7B_Base', '--deapi-tts-ref-audio', 'input/examples/audio/0-audio-short.mp3', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--deapi', 'Qwen3_TTS_12Hz_1_7B_Base', '--deapi-tts-ref-audio', 'input/examples/audio/0-audio-short.mp3', '--price'],
     expected: 'speech',
     env: { DEAPI_API_KEY: '', DEAPI_BASE_URL: '' }
   },
   {
     label: 'image',
-    args: ['image', 'a sunset over a lake', '--openai-image', 'gpt-image-1.5', '--price'],
+    args: ['image', 'a sunset over a lake', '--openai', 'gpt-image-1.5', '--price'],
     expected: 'generated-image'
   },
   {
     label: 'deAPI image',
-    args: ['image', 'a sunset over a lake', '--deapi-image', 'Flux1schnell', '--price'],
+    args: ['image', 'a sunset over a lake', '--deapi', 'Flux1schnell', '--price'],
     expected: 'generated-image'
   },
   {
     label: 'BFL image',
-    args: ['image', 'a sunset over a lake', '--bfl-image', 'flux-2-pro-preview', '--price'],
+    args: ['image', 'a sunset over a lake', '--bfl', 'flux-2-pro-preview', '--price'],
     expected: 'generated-image'
   },
   {
     label: 'video',
-    args: ['video', 'a sunset over a lake', '--gemini-video', 'veo-3.1-fast-generate-preview', '--price'],
+    args: ['video', 'a sunset over a lake', '--gemini', 'veo-3.1-fast-generate-preview', '--price'],
     expected: 'video'
   },
   {
     label: 'deAPI video',
-    args: ['video', 'a sunset over a lake', '--deapi-video', 'Ltxv_13B_0_9_8_Distilled_FP8', '--price'],
+    args: ['video', 'a sunset over a lake', '--deapi', 'Ltxv_13B_0_9_8_Distilled_FP8', '--price'],
     expected: 'video'
   },
   {
     label: 'music',
-    args: ['music', 'an ambient piano song', '--minimax-music', 'music-2.5', '--price'],
+    args: ['music', 'an ambient piano song', '--minimax', 'music-2.5', '--price'],
     expected: 'music'
   },
   {
     label: 'Gemini music',
-    args: ['music', 'an ambient piano song', '--gemini-music', 'lyria-3-clip-preview', '--price'],
+    args: ['music', 'an ambient piano song', '--gemini', 'lyria-3-clip-preview', '--price'],
     expected: 'gemini'
   }
 ]
@@ -234,7 +234,7 @@ describe('price mode contracts', () => {
       'gpt-5.4',
       '--groq',
       'openai/gpt-oss-20b',
-      '--kitten-tts',
+      '--kitten',
       'kitten-tts-mini',
       '--price',
       '--json'

@@ -110,6 +110,69 @@ const buildSections = (chapters: EpubChapter[]): EpubTextSection[] =>
 const normalizeSectionKey = (value: string): string =>
   sanitizeTitleSlug(value, CHAPTER_SLUG_MAX_LENGTH)
 
+type LogicalChapterSource = 'toc' | 'spine' | 'heading'
+
+const PAGE_LIKE_TOC_RATIO = 0.8
+
+const normalizePageLikeKey = (value: string): string =>
+  normalizeInlineWhitespace(value).toLowerCase().replace(/[\s_.-]+/g, '')
+
+const isPageLikeTocTitle = (value: string): boolean =>
+  /^page(?:\d+|[ivxlcdm]+)$/.test(normalizePageLikeKey(value))
+
+const stripTrailingHeadingPunctuation = (value: string): string =>
+  value.replace(/\s*[:.;-]\s*$/g, '').trim()
+
+const chapterNumberPattern = '(?:\\d+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)'
+const chapterHeadingRegex = new RegExp(`^(chapter|chatper)\\s+(${chapterNumberPattern})(?:\\s*[:.;-]\\s*(.*))?$`, 'i')
+const namedHeadingRegex = /^(introduction|prologue|preface|foreword|afterword|epilogue|conclusion|finality)(?:\s*[:.;-]\s*(.*))?$/i
+
+const extractSemanticHeadingTitle = (line: string): string | undefined => {
+  const normalized = normalizeInlineWhitespace(line)
+  if (normalized.length === 0 || normalized.length > 140 || isPageLikeTocTitle(normalized)) {
+    return undefined
+  }
+
+  const chapterMatch = normalized.match(chapterHeadingRegex)
+  if (chapterMatch) {
+    const prefix = `${chapterMatch[1] ?? 'Chapter'} ${chapterMatch[2] ?? ''}`.trim()
+    const subtitle = normalizeInlineWhitespace(chapterMatch[3] ?? '')
+    return subtitle.length > 0 ? `${prefix}: ${subtitle}` : stripTrailingHeadingPunctuation(prefix)
+  }
+
+  const namedMatch = normalized.match(namedHeadingRegex)
+  if (namedMatch) {
+    const title = stripTrailingHeadingPunctuation(namedMatch[1] ?? normalized)
+    const subtitle = normalizeInlineWhitespace(namedMatch[2] ?? '')
+    return subtitle.length > 0 ? `${title}: ${subtitle}` : title
+  }
+
+  return undefined
+}
+
+const findSectionHeadingTitle = (section: EpubTextSection): string | undefined => {
+  const candidateLines = section.text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .slice(0, 6)
+
+  const looksLikeContentsPage = candidateLines.some((line) => /^(?:table of )?contents$/i.test(line))
+    && candidateLines.some((line) => /^chapter\s+/i.test(line))
+  if (looksLikeContentsPage) {
+    return undefined
+  }
+
+  for (const line of candidateLines) {
+    const headingTitle = extractSemanticHeadingTitle(line)
+    if (headingTitle) {
+      return headingTitle
+    }
+  }
+
+  return undefined
+}
+
 const isStandalonePartDivider = (section: EpubTextSection): boolean => {
   const normalizedText = normalizeInlineWhitespace(section.text)
   const normalizedTitle = normalizeInlineWhitespace(section.title)
@@ -218,9 +281,10 @@ const groupSectionsByTocStarts = (
   sections: EpubTextSection[]
 ): {
   sections: EpubTextSection[]
-  logicalChapterSource: 'toc' | 'spine'
+  logicalChapterSource: LogicalChapterSource
   tocStartSections: number
   prefaceSectionsDropped: number
+  pageLikeTocStartsIgnored?: number
 } => {
   const tocStartSections = sections.filter((section) => section.isTocStart === true).length
   if (tocStartSections === 0) {
@@ -229,6 +293,30 @@ const groupSectionsByTocStarts = (
       logicalChapterSource: 'spine',
       tocStartSections,
       prefaceSectionsDropped: 0
+    }
+  }
+
+  const pageLikeTocStarts = sections.filter((section) => section.isTocStart === true && isPageLikeTocTitle(section.title)).length
+  const hasPageListToc = pageLikeTocStarts > 0
+    && pageLikeTocStarts / tocStartSections >= PAGE_LIKE_TOC_RATIO
+    && (pageLikeTocStarts >= 3 || pageLikeTocStarts === tocStartSections)
+
+  if (hasPageListToc) {
+    const headingGrouped = groupSectionsByHeadingStarts(sections)
+    if (headingGrouped.sections.length > 0) {
+      return {
+        ...headingGrouped,
+        tocStartSections,
+        pageLikeTocStartsIgnored: pageLikeTocStarts
+      }
+    }
+
+    return {
+      sections: sections.map((section) => isPageLikeTocTitle(section.title) ? { ...section, title: '' } : section),
+      logicalChapterSource: 'spine',
+      tocStartSections,
+      prefaceSectionsDropped: 0,
+      pageLikeTocStartsIgnored: pageLikeTocStarts
     }
   }
 
@@ -261,6 +349,46 @@ const groupSectionsByTocStarts = (
     sections: grouped,
     logicalChapterSource: 'toc',
     tocStartSections,
+    prefaceSectionsDropped
+  }
+}
+
+const groupSectionsByHeadingStarts = (
+  sections: EpubTextSection[]
+): {
+  sections: EpubTextSection[]
+  logicalChapterSource: 'heading'
+  prefaceSectionsDropped: number
+} => {
+  const grouped: EpubTextSection[] = []
+  let current: EpubTextSection | undefined
+  let prefaceSectionsDropped = 0
+
+  for (const section of sections) {
+    const headingTitle = findSectionHeadingTitle(section)
+    if (headingTitle) {
+      if (current) {
+        grouped.push({ ...current, index: grouped.length + 1 })
+      }
+      current = { ...section, title: headingTitle }
+      continue
+    }
+
+    if (!current) {
+      prefaceSectionsDropped += 1
+      continue
+    }
+
+    current = appendSectionText(current, section)
+  }
+
+  if (current) {
+    grouped.push({ ...current, index: grouped.length + 1 })
+  }
+
+  return {
+    sections: grouped,
+    logicalChapterSource: 'heading',
     prefaceSectionsDropped
   }
 }
@@ -347,6 +475,7 @@ export const buildEpubTextOutput = (
           logicalChapterSource: logicalChapters.logicalChapterSource,
           tocStartSections: logicalChapters.tocStartSections,
           prefaceSectionsDropped: logicalChapters.prefaceSectionsDropped,
+          ...(typeof logicalChapters.pageLikeTocStartsIgnored === 'number' ? { pageLikeTocStartsIgnored: logicalChapters.pageLikeTocStartsIgnored } : {}),
           filesWritten: files.length,
           chapterFilesWritten: files.length,
           directories: ['chapters']

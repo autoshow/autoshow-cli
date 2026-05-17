@@ -1,8 +1,10 @@
 import { defineCliCommand } from '~/cli/native'
-import { imageGenFlags } from '~/cli/flags'
+import { imageCommandFlags } from '~/cli/flags'
+import { IMAGE_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/image-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { runImageGen } from './run-image-gen'
 import { buildImageArtifactMap, collectImageTargets, getExpectedImageArtifactFileNames, getExpectedImageCount } from './image-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -17,17 +19,17 @@ export const imageCommand = defineCliCommand({
   name: 'image',
   description: 'Generate an image from a text prompt',
   parameters: [{ key: '<prompt>', description: 'Text prompt for image generation' }],
-  flags: imageGenFlags,
+  flags: imageCommandFlags,
   help: {
     examples: [
-      ['bun as image "a dramatic fox portrait in snow" --gemini-image imagen-4.0-fast-generate-001', 'Generate with Gemini'],
-      ['bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1.5 --image-size 1024x1024', 'Generate with OpenAI'],
-      ['bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low', 'Generate low-cost OpenAI drafts'],
-      ['bun as image "a clean product photo of a red enamel camping mug" --glm-image glm-image', 'Generate with Z.AI GLM'],
-      ['bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-image --image-size 1K', 'Generate with Grok'],
-      ['bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-size 720p', 'Generate with Runway'],
-      ['bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024', 'Generate with BFL'],
-      ['bun as image "a cozy cabin at dusk" --deapi-image Flux1schnell --image-size 768x768', 'Generate with deAPI']
+      ['bun as image "a dramatic fox portrait in snow" --gemini imagen-4.0-fast-generate-001', 'Generate with Gemini'],
+      ['bun as image "an oil painting of a lighthouse" --openai gpt-image-1.5 --image-size 1024x1024', 'Generate with OpenAI'],
+      ['bun as image "a product sketch of a travel mug" --openai gpt-image-2 --image-size 1024x1024 --image-quality low', 'Generate low-cost OpenAI drafts'],
+      ['bun as image "a clean product photo of a red enamel camping mug" --glm glm-image', 'Generate with Z.AI GLM'],
+      ['bun as image "a futuristic observatory at sunset" --grok grok-imagine-image --image-size 1K', 'Generate with Grok'],
+      ['bun as image "a cinematic product photo of a red enamel camping mug" --runway gen4_image --image-size 720p', 'Generate with Runway'],
+      ['bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024', 'Generate with BFL'],
+      ['bun as image "a cozy cabin at dusk" --deapi Flux1schnell --image-size 768x768', 'Generate with deAPI']
     ]
   }
 }, async (ctx) => {
@@ -36,10 +38,11 @@ export const imageCommand = defineCliCommand({
 
   const imageMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
-  const imageOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, explicitFlags, Bun.argv.slice(2))
+  const normalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, IMAGE_COMMAND_SELECTOR_FLAGS)
+  const imageOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, Bun.argv.slice(2))
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {
-    throw CLIUsageError('No image provider specified. Use --gemini-image, --openai-image, --minimax-image, --glm-image, --grok-image, --runway-image, --bfl-image, or --deapi-image.')
+    throw CLIUsageError('No image provider specified. Use --gemini, --openai, --minimax, --glm, --grok, --runway, --bfl, or --deapi.')
   }
 
   const { shouldExit: imageShouldExit } = await runPreflight('image', prompt, imageOpts, imageMaxCents)

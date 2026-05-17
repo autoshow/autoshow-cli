@@ -70,8 +70,8 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | `--price` | Show the aggregated estimate and exit |
 
 ```bash
-bun as image "a sunset over the lake" --gemini-image imagen-4.0-generate-001 --openai-image gpt-image-1.5 --imagen-count 2
-bun as image "a sunset over the lake" --openai-image gpt-image-1.5 --openai-image gpt-image-2
+bun as image "a sunset over the lake" --gemini imagen-4.0-generate-001 --openai gpt-image-1.5 --imagen-count 2
+bun as image "a sunset over the lake" --openai gpt-image-1.5 --openai gpt-image-2
 ```
 
 ## Image Services
@@ -80,29 +80,29 @@ bun as image "a sunset over the lake" --openai-image gpt-image-1.5 --openai-imag
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gemini-image <model>` |
+| Selector | `--gemini <model>` |
 | Models | `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001`, `imagen-4.0-fast-generate-001` |
 | Size | `--image-size 1K\|2K\|4K` (Imagen models); rejected for `imagen-4.0-fast-generate-001` |
 | Aspect ratio | `--image-aspect-ratio <ratio>` |
 | Count | `--imagen-count <n>` for Imagen 4 models |
 
 ```bash
-bun as image "a serene mountain lake at dawn" --gemini-image imagen-4.0-generate-001 --imagen-count 4 --image-aspect-ratio 16:9
+bun as image "a serene mountain lake at dawn" --gemini imagen-4.0-generate-001 --imagen-count 4 --image-aspect-ratio 16:9
 ```
 
 ### OpenAI
 
 | Option | Value |
 |--------|-------|
-| Selector | `--openai-image <model>` |
+| Selector | `--openai <model>` |
 | Models | `gpt-image-1.5`, `gpt-image-2` |
 | Size | `auto`, `1024x1024`, `1536x1024`, `1024x1536`; `gpt-image-2` also accepts constrained `WIDTHxHEIGHT` values |
 | Quality | `--image-quality low\|medium\|high\|auto` |
 | Format/background | `--image-format png\|jpeg\|webp`, `--image-background transparent\|opaque\|auto` |
 
 ```bash
-bun as image "an oil painting of a lighthouse" --openai-image gpt-image-1.5 --image-quality high --image-size 1536x1024
-bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --image-size 1024x1024 --image-quality low
+bun as image "an oil painting of a lighthouse" --openai gpt-image-1.5 --image-quality high --image-size 1536x1024
+bun as image "a product sketch of a travel mug" --openai gpt-image-2 --image-size 1024x1024 --image-quality low
 ```
 
 `gpt-image-2` accepts `auto` or `WIDTHxHEIGHT` when max edge is 3840 or less, both edges are multiples of 16, aspect ratio is at most 3:1, and total pixels are 655,360 through 8,294,400. It rejects `--image-background transparent`.
@@ -111,37 +111,37 @@ bun as image "a product sketch of a travel mug" --openai-image gpt-image-2 --ima
 
 | Option | Value |
 |--------|-------|
-| Selector | `--minimax-image <model>` |
+| Selector | `--minimax <model>` |
 | Models | `image-01` |
 | Aspect ratio | `--image-aspect-ratio <ratio>` |
 
 ```bash
-bun as image "a dramatic fox portrait in snow" --minimax-image image-01 --image-aspect-ratio 16:9
+bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-aspect-ratio 16:9
 ```
 
 ### Z.AI GLM
 
 | Option | Value |
 |--------|-------|
-| Selector | `--glm-image <model>` |
+| Selector | `--glm <model>` |
 | Models | `glm-image`, `cogView-4-250304` |
 | Size | `--image-size WIDTHxHEIGHT`, 512x512 through 2048x2048, multiples of 32 |
 
 ```bash
-bun as image "a clean product photo of a red enamel camping mug" --glm-image glm-image --image-size 1280x1280
+bun as image "a clean product photo of a red enamel camping mug" --glm glm-image --image-size 1280x1280
 ```
 
 ### Grok
 
 | Option | Value |
 |--------|-------|
-| Selector | `--grok-image <model>` |
+| Selector | `--grok <model>` |
 | Models | `grok-imagine-image` |
 | Size | `--image-size 1K\|2K` |
 | Aspect ratio | `--image-aspect-ratio <ratio>` |
 
 ```bash
-bun as image "a futuristic observatory at sunset" --grok-image grok-imagine-image --image-aspect-ratio 16:9 --image-size 1K
+bun as image "a futuristic observatory at sunset" --grok grok-imagine-image --image-aspect-ratio 16:9 --image-size 1K
 ```
 
 Grok pricing is represented as an approximate flat per-image estimate; xAI account pricing should be checked in the console for exact billing.
@@ -150,13 +150,13 @@ Grok pricing is represented as an approximate flat per-image estimate; xAI accou
 
 | Option | Value |
 |--------|-------|
-| Selector | `--runway-image <model>` |
+| Selector | `--runway <model>` |
 | Models | `gen4_image` |
 | Size | `--image-size 720p\|1080p` |
 | Aspect ratio | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, or `21:9` |
 
 ```bash
-bun as image "a cinematic product photo of a red enamel camping mug" --runway-image gen4_image --image-aspect-ratio 1:1 --image-size 720p
+bun as image "a cinematic product photo of a red enamel camping mug" --runway gen4_image --image-aspect-ratio 1:1 --image-size 720p
 ```
 
 Runway rejects OpenAI-only flags: `--image-format`, `--image-background`, and `--image-quality`.
@@ -165,13 +165,13 @@ Runway rejects OpenAI-only flags: `--image-format`, `--image-background`, and `-
 
 | Option | Value |
 |--------|-------|
-| Selector | `--bfl-image <model>` |
+| Selector | `--bfl <model>` |
 | Models | `flux-2-klein-4b`, `flux-2-klein-9b-preview`, `flux-2-klein-9b`, `flux-2-pro-preview`, `flux-2-pro`, `flux-2-max`, `flux-2-flex` |
 | Size | `--image-size WIDTHxHEIGHT` |
 | Format | `--image-format jpeg\|png\|webp` |
 
 ```bash
-bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024 --image-format jpeg
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024 --image-format jpeg
 ```
 
 BFL rejects `--image-aspect-ratio`, `--image-quality`, `--image-background`, and `--imagen-count`.
@@ -180,12 +180,12 @@ BFL rejects `--image-aspect-ratio`, `--image-quality`, `--image-background`, and
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi-image <model>` |
+| Selector | `--deapi <model>` |
 | Models | `Flux1schnell`, `ZImageTurbo_INT8`, `Flux_2_Klein_4B_BF16` |
 | Size | `--image-size WIDTHxHEIGHT` |
 
 ```bash
-bun as image "a cozy cabin at dusk" --deapi-image Flux1schnell --image-size 768x768
+bun as image "a cozy cabin at dusk" --deapi Flux1schnell --image-size 768x768
 ```
 
 deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--image-background`, and `--imagen-count`.

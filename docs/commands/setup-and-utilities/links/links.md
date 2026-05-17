@@ -81,6 +81,7 @@ Accepted provider selectors are the lowercase names below.
 | `--claude` | `general`, `text`, `ocr` |
 | `--assembly` | `stt` |
 | `--aws` | `stt`, `ocr` |
+| `--better-auth` | `general` |
 | `--bfl` | `image` |
 | `--cartesia` | `general`, `tts` |
 | `--gcloud` | `stt`, `tts`, `ocr` |
@@ -131,6 +132,9 @@ bun as links urls.md
 
 # Fetch every curated OpenAI doc
 bun as links --openai
+
+# Fetch Better Auth documentation
+bun as links --better-auth
 
 # Fetch DeepInfra OCR docs, including normal HTML doc pages
 bun as links --deepinfra ocr

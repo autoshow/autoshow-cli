@@ -60,7 +60,7 @@ DEAPI_BASE_URL=...
 | `--price` | Show the estimate and exit |
 
 ```bash
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --runway-video gen4.5
+bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-fast-generate-preview --minimax MiniMax-Hailuo-2.3 --runway gen4.5
 bun as video "a rainy neon city street, slow camera pan" --all-video --price
 ```
 
@@ -70,17 +70,17 @@ bun as video "a rainy neon city street, slow camera pan" --all-video --price
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gemini-video <model>` |
+| Selector | `--gemini <model>` |
 | Models | `veo-3.1-generate-preview`, `veo-3.1-fast-generate-preview`, `veo-3.1-lite-generate-preview` |
 | Duration | `--video-duration <seconds>`, normalized to `4`, `6`, or `8` |
 | Resolution | `--video-resolution 720p\|1080p` |
 | Aspect ratio | `--video-aspect-ratio <ratio>` |
 
 ```bash
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-generate-preview --video-duration 8 --video-aspect-ratio 16:9 --video-resolution 1080p
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-lite-generate-preview --video-duration 4 --video-resolution 720p
-bun as video "a sunset timelapse" --gemini-video veo-3.1-fast-generate-preview --video-duration 8 --price
+bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-fast-generate-preview
+bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-generate-preview --video-duration 8 --video-aspect-ratio 16:9 --video-resolution 1080p
+bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-lite-generate-preview --video-duration 4 --video-resolution 720p
+bun as video "a sunset timelapse" --gemini veo-3.1-fast-generate-preview --video-duration 8 --price
 ```
 
 Gemini Veo price estimates use normalized billed duration and current per-second Gemini API pricing:
@@ -97,14 +97,14 @@ The timing values are CLI planning heuristics, not provider SLAs. Google documen
 
 | Option | Value |
 |--------|-------|
-| Selector | `--minimax-video <model>` |
+| Selector | `--minimax <model>` |
 | Models | `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-02`, `T2V-01-Director`, `T2V-01` |
 | Duration/resolution | `--video-duration <seconds>`, `--video-resolution 720p\|1080p` where supported |
 
 ```bash
-bun as video "a rainy neon city street, slow camera pan" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --video-resolution 720p
-bun as video "a rainy neon city street, slow camera pan" --minimax-video T2V-01
-bun as video "a sunset timelapse" --minimax-video MiniMax-Hailuo-2.3 --video-duration 10 --price
+bun as video "a rainy neon city street, slow camera pan" --minimax MiniMax-Hailuo-2.3 --video-duration 10 --video-resolution 720p
+bun as video "a rainy neon city street, slow camera pan" --minimax T2V-01
+bun as video "a sunset timelapse" --minimax MiniMax-Hailuo-2.3 --video-duration 10 --price
 ```
 
 MiniMax durations are normalized to the provider-supported values for the selected model and resolution.
@@ -113,14 +113,14 @@ MiniMax durations are normalized to the provider-supported values for the select
 
 | Option | Value |
 |--------|-------|
-| Selector | `--glm-video <model>` |
+| Selector | `--glm <model>` |
 | Models | `cogvideox-3`, `viduq1-text` |
 | Size/aspect ratio | `--video-size 1920x1080`, `1280x720`, `720x1280`, or `--video-aspect-ratio <ratio>` depending on model |
 
 ```bash
-bun as video "a cat playing with yarn" --glm-video cogvideox-3 --video-duration 10 --video-size 1920x1080
-bun as video "an anime character dancing" --glm-video viduq1-text --video-aspect-ratio 16:9
-bun as video "a sunset timelapse" --glm-video cogvideox-3 --price
+bun as video "a cat playing with yarn" --glm cogvideox-3 --video-duration 10 --video-size 1920x1080
+bun as video "an anime character dancing" --glm viduq1-text --video-aspect-ratio 16:9
+bun as video "a sunset timelapse" --glm cogvideox-3 --price
 ```
 
 GLM `cogvideox-3` durations are normalized to `5` or `10` seconds. `viduq1-text` is fixed at `5` seconds. GLM prompts are capped at 512 characters.
@@ -129,13 +129,13 @@ GLM `cogvideox-3` durations are normalized to `5` or `10` seconds. `viduq1-text`
 
 | Option | Value |
 |--------|-------|
-| Selector | `--grok-video <model>` |
+| Selector | `--grok <model>` |
 | Models | `grok-imagine-video` |
 | Duration/resolution | `--video-duration <seconds>`, `--video-resolution 480p\|720p` |
 
 ```bash
-bun as video "a cat playing piano" --grok-video grok-imagine-video --video-duration 8 --video-resolution 720p
-bun as video "a sunset timelapse" --grok-video grok-imagine-video --price
+bun as video "a cat playing piano" --grok grok-imagine-video --video-duration 8 --video-resolution 720p
+bun as video "a sunset timelapse" --grok grok-imagine-video --price
 ```
 
 Grok durations are clamped to `1` through `15` seconds and default to `8`.
@@ -144,14 +144,14 @@ Grok durations are clamped to `1` through `15` seconds and default to `8`.
 
 | Option | Value |
 |--------|-------|
-| Selector | `--runway-video <model>` |
+| Selector | `--runway <model>` |
 | Models | `gen4.5` |
 | Duration | `--video-duration <seconds>` |
 | Aspect ratio | `--video-aspect-ratio 16:9\|9:16`; mapped to `1280:720` or `720:1280` |
 
 ```bash
-bun as video "a cinematic mountain sunrise" --runway-video gen4.5 --video-duration 5 --video-aspect-ratio 16:9
-bun as video "a sunset timelapse" --runway-video gen4.5 --video-duration 5 --price
+bun as video "a cinematic mountain sunrise" --runway gen4.5 --video-duration 5 --video-aspect-ratio 16:9
+bun as video "a sunset timelapse" --runway gen4.5 --video-duration 5 --price
 ```
 
 Runway `gen4.5` durations are clamped to `2` through `10` seconds and default to `5`; prompts are capped at 1000 UTF-16 code units.
@@ -160,20 +160,20 @@ Runway `gen4.5` durations are clamped to `2` through `10` seconds and default to
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi-video <model>` |
+| Selector | `--deapi <model>` |
 | Models | `Ltxv_13B_0_9_8_Distilled_FP8`, `Ltx2_19B_Dist_FP8`, `Ltx2_3_22B_Dist_INT8` |
 | Size/duration | `--video-size WIDTHxHEIGHT`, `--video-duration <seconds>` |
 
 ```bash
-bun as video "a cat playing" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-size 512x512 --video-duration 2
-bun as video "a sunset timelapse" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
+bun as video "a cat playing" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-size 512x512 --video-duration 2
+bun as video "a sunset timelapse" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
 ```
 
 deAPI uses `--video-size WIDTHxHEIGHT`; `--video-aspect-ratio` and `--video-resolution` are rejected. Durations are converted to model frames and clamped to the model frame range, then metadata records the normalized duration.
 
 ```bash
 # Same provider, multiple models
-bun as video "a rainy neon city street, slow camera pan" --gemini-video veo-3.1-fast-generate-preview --gemini-video veo-3.1-generate-preview --gemini-video veo-3.1-lite-generate-preview
+bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-fast-generate-preview --gemini veo-3.1-generate-preview --gemini veo-3.1-lite-generate-preview
 
 # Write pipeline
 bun as write "https://youtube.com/..." --gemini gemini-3.1-flash-lite-preview --gemini-video veo-3.1-fast-generate-preview

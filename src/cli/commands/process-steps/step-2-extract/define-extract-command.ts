@@ -1,5 +1,5 @@
 import { defineCliCommand } from '~/cli/native'
-import { ocrCommandFlags, sttFlags } from '~/cli/flags'
+import { extractStep2CommandFlags } from '~/cli/flags'
 import { handleProcessTarget } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { validateEpubInspectCommandFlags } from './step-2-ocr/command-validation'
 import { runExtractTranscriptVideo } from './transcript-video/run-transcript-video'
@@ -9,8 +9,7 @@ import type { CliFlagsDefinition } from '~/cli/native'
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, URL list (.md/.txt), or X Space link' }] as const
 
 const extractFlags = {
-  ...sttFlags,
-  ...ocrCommandFlags,
+  ...extractStep2CommandFlags,
   'transcript-video': {
     description: 'Render a transcript video from a media extract output directory or manual audio/transcript files',
     type: Boolean,
@@ -58,8 +57,8 @@ export const extractCommand = defineCliCommand({
   help: {
     examples: [
       ['bun as extract https://youtube.com/watch?v=abc', 'Transcribe media with the default Whisper tiny STT model'],
-      ['bun as extract file.mp3 --assemblyai-stt universal-3-pro', 'Transcribe media with AssemblyAI STT'],
-      ['bun as extract document.pdf --mistral-ocr mistral-ocr-2512', 'Extract text from a document with Mistral OCR'],
+      ['bun as extract file.mp3 --assemblyai universal-3-pro', 'Transcribe media with AssemblyAI STT'],
+      ['bun as extract document.pdf --mistral mistral-ocr-2512', 'Extract text from a document with Mistral OCR'],
       ['bun as extract https://example.com/article --url-backend spider', 'Extract a remote article with a URL backend'],
       ['bun as extract output/<extract-run-dir> --transcript-video', 'Render a synced speaker transcript video from a media extract run'],
       ['bun as extract --transcript-video --audio input/audio.mp3 --transcript-result output/<extract-run-dir>/result.json', 'Render a transcript video from explicit files'],

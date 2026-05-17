@@ -29,6 +29,39 @@ const RUNWAY_ALL_LINKS = [
   ...RUNWAY_GENERAL_LINKS
 ]
 
+const BETTER_AUTH_GENERAL_LINKS = [
+  'https://www.better-auth.com/llms.txt',
+  'https://www.better-auth.com/llms.txt/docs/introduction.md',
+  'https://www.better-auth.com/llms.txt/docs/comparison.md',
+  'https://www.better-auth.com/llms.txt/docs/installation.md',
+  'https://www.better-auth.com/llms.txt/docs/basic-usage.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/api.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/client.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/database.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/session-management.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/users-accounts.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/oauth.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/email.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/cookies.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/hooks.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/rate-limit.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/typescript.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/plugins.md',
+  'https://www.better-auth.com/llms.txt/docs/concepts/cli.md',
+  'https://www.better-auth.com/llms.txt/docs/plugins.md',
+  'https://www.better-auth.com/llms.txt/docs/reference/options.md',
+  'https://www.better-auth.com/llms.txt/docs/reference/security.md',
+  'https://www.better-auth.com/llms.txt/docs/reference/errors.md',
+  'https://www.better-auth.com/llms.txt/docs/reference/faq.md',
+  'https://www.better-auth.com/llms.txt/docs/ai-resources.md',
+  'https://www.better-auth.com/llms.txt/docs/ai-resources/mcp.md',
+  'https://www.better-auth.com/llms.txt/docs/ai-resources/skills.md'
+]
+
+const BETTER_AUTH_ALL_LINKS = [
+  ...BETTER_AUTH_GENERAL_LINKS
+]
+
 const AWS_STT_LINKS = [
   'https://docs.aws.amazon.com/transcribe/latest/dg/what-is.md',
   'https://docs.aws.amazon.com/transcribe/latest/dg/getting-started-cli.md',
@@ -801,6 +834,63 @@ test('links selector accepts runway provider and general section', async () => {
     '--runway',
     'tts'
   ])).rejects.toThrow('Unknown links section(s) for --runway: tts')
+})
+
+test('links selector accepts better-auth provider with general section', async () => {
+  const betterAuthSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--better-auth'
+  ])
+
+  expect(betterAuthSelection.serviceSelections.get('better-auth')).toEqual([])
+  expect(collectLinks(
+    betterAuthSelection.serviceSelections,
+    betterAuthSelection.globalSections
+  )).toEqual(BETTER_AUTH_ALL_LINKS)
+  expect(getDefaultLinksOutputFileName(
+    betterAuthSelection.serviceSelections,
+    betterAuthSelection.globalSections
+  )).toBe('better-auth-all-links.md')
+
+  const betterAuthGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--better-auth',
+    'general'
+  ])
+
+  expect(collectLinks(
+    betterAuthGeneralSelection.serviceSelections,
+    betterAuthGeneralSelection.globalSections
+  )).toEqual(BETTER_AUTH_GENERAL_LINKS)
+  expect(getDefaultLinksOutputFileName(
+    betterAuthGeneralSelection.serviceSelections,
+    betterAuthGeneralSelection.globalSections
+  )).toBe('better-auth-general-links.md')
+
+  const globalGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    'general'
+  ])
+
+  expect(collectLinks(
+    globalGeneralSelection.serviceSelections,
+    globalGeneralSelection.globalSections
+  )).toEqual(expect.arrayContaining(BETTER_AUTH_GENERAL_LINKS))
+  expect(collectLinks(new Map(), [])).toEqual(expect.arrayContaining(BETTER_AUTH_GENERAL_LINKS))
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--better-auth',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --better-auth: tts')
 })
 
 test('links selector accepts aws provider with stt and ocr sections', () => {

@@ -212,8 +212,9 @@ export type ChapterExportSummary = {
   sectionsDropped: number
   dividerSectionsMerged: number
   logicalChapterCount?: number
-  logicalChapterSource?: 'toc' | 'spine'
+  logicalChapterSource?: 'toc' | 'spine' | 'heading'
   tocStartSections?: number
+  pageLikeTocStartsIgnored?: number
   prefaceSectionsDropped?: number
   filesWritten: number
   chapterFilesWritten?: number
@@ -233,8 +234,9 @@ export type EpubExportPlan = {
     sectionsDropped: number
     dividerSectionsMerged: number
     logicalChapterCount?: number
-    logicalChapterSource?: 'toc' | 'spine'
+    logicalChapterSource?: 'toc' | 'spine' | 'heading'
     tocStartSections?: number
+    pageLikeTocStartsIgnored?: number
     prefaceSectionsDropped?: number
     filesWritten: number
     chapterFilesWritten?: number

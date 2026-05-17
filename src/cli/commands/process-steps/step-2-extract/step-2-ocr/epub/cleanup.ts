@@ -84,6 +84,134 @@ const ENTITY_REPLACEMENTS: Record<string, string> = {
   trade: '\u2122'
 }
 
+const LEGACY_PUA_BYTE_OFFSET = 0xf000
+const LEGACY_PUA_MIN = 0xf020
+const LEGACY_PUA_MAX = 0xf0ff
+
+const WINDOWS_1252_CONTROL_REPLACEMENTS: Record<number, string> = {
+  0x80: '\u20ac',
+  0x82: '\u201a',
+  0x83: '\u0192',
+  0x84: '\u201e',
+  0x85: '\u2026',
+  0x86: '\u2020',
+  0x87: '\u2021',
+  0x88: '\u02c6',
+  0x89: '\u2030',
+  0x8a: '\u0160',
+  0x8b: '\u2039',
+  0x8c: '\u0152',
+  0x8e: '\u017d',
+  0x91: '\u2018',
+  0x92: '\u2019',
+  0x93: '\u201c',
+  0x94: '\u201d',
+  0x95: '\u2022',
+  0x96: '\u2013',
+  0x97: '\u2014',
+  0x98: '\u02dc',
+  0x99: '\u2122',
+  0x9a: '\u0161',
+  0x9b: '\u203a',
+  0x9c: '\u0153',
+  0x9e: '\u017e',
+  0x9f: '\u0178'
+}
+
+const isLegacyPuaByteCodePoint = (codePoint: number): boolean =>
+  codePoint >= LEGACY_PUA_MIN && codePoint <= LEGACY_PUA_MAX
+
+const decodeWindows1252Byte = (byte: number): string =>
+  WINDOWS_1252_CONTROL_REPLACEMENTS[byte] ?? String.fromCodePoint(byte)
+
+const decodeLegacyPuaDirectChar = (char: string): string => {
+  const codePoint = char.codePointAt(0)
+  if (codePoint === undefined || !isLegacyPuaByteCodePoint(codePoint)) {
+    return char
+  }
+  return decodeWindows1252Byte(codePoint - LEGACY_PUA_BYTE_OFFSET)
+}
+
+const decodeLegacyPuaReversedChar = (char: string): string => {
+  const codePoint = char.codePointAt(0)
+  if (codePoint === undefined || !isLegacyPuaByteCodePoint(codePoint)) {
+    return char
+  }
+
+  const byte = codePoint - LEGACY_PUA_BYTE_OFFSET
+  if (byte === 0x20) {
+    return ' '
+  }
+
+  return decodeWindows1252Byte(0x120 - byte)
+}
+
+const scoreDecodedLegacyText = (value: string): number => {
+  let score = 0
+  for (const char of Array.from(value)) {
+    const codePoint = char.codePointAt(0)
+    if (codePoint === undefined) continue
+    if (/[A-Za-z0-9]/.test(char)) {
+      score += 3
+      continue
+    }
+    if (/\s/.test(char) || /[.,;:!?'"()[\]{}-]/.test(char)) {
+      score += 1
+      continue
+    }
+    if (codePoint >= 0x00c0 && codePoint <= 0x00ff) {
+      score -= 3
+      continue
+    }
+    if (codePoint < 0x20 || (codePoint >= 0x7f && codePoint <= 0x9f)) {
+      score -= 5
+      continue
+    }
+  }
+  return score
+}
+
+export const decodeLegacyPuaText = (value: string): string => {
+  if (!/[\uf020-\uf0ff]/.test(value)) {
+    return value
+  }
+
+  const chars = Array.from(value)
+  let legacyCount = 0
+  let legacySpaceCount = 0
+  let visibleCount = 0
+
+  for (const char of chars) {
+    const codePoint = char.codePointAt(0)
+    if (codePoint === undefined) continue
+    if (!/\s/u.test(char)) {
+      visibleCount += 1
+    }
+    if (!isLegacyPuaByteCodePoint(codePoint)) continue
+    legacyCount += 1
+    if (codePoint === 0xf020) {
+      legacySpaceCount += 1
+    }
+  }
+
+  if (legacyCount === 0) {
+    return value
+  }
+
+  if (legacyCount === legacySpaceCount) {
+    return value.replace(/\uf020/g, ' ')
+  }
+
+  const legacyRatio = legacyCount / Math.max(1, visibleCount)
+  if (legacyRatio < 0.6 || (legacyCount < 3 && legacyCount !== visibleCount)) {
+    return value
+  }
+
+  const direct = chars.map(decodeLegacyPuaDirectChar).join('')
+  const reversed = chars.map(decodeLegacyPuaReversedChar).join('')
+  return scoreDecodedLegacyText(reversed) > scoreDecodedLegacyText(direct) ? reversed : direct
+}
+
 const decodeEpubEntities = (value: string): string =>
   value.replace(/&(#x[0-9a-f]+|#[0-9]+|[a-z][a-z0-9-]*);/gi, (match, entity: string) => {
     if (entity.startsWith('#x') || entity.startsWith('#X')) {
@@ -349,7 +477,7 @@ export const cleanEpubHtmlToText = async (html: string): Promise<string> => {
         return
       }
 
-      appendToActiveOutputs(state, (value) => appendInlineText(value, decodeEpubEntities(text.text)))
+      appendToActiveOutputs(state, (value) => appendInlineText(value, decodeLegacyPuaText(decodeEpubEntities(text.text))))
     }
   })
 

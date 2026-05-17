@@ -20,7 +20,7 @@ import type {
   EpubMetadata,
   EpubTocItem
 } from '~/types'
-import { cleanEpubHtmlToText } from './cleanup'
+import { cleanEpubHtmlToText, decodeLegacyPuaText } from './cleanup'
 
 const stripNsPrefixes = (xml: string): string =>
   xml.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*:/g, match => (match[1] === '/' ? '</' : '<'))
@@ -153,7 +153,8 @@ const parseNcxNavPoint = (
   const playOrderRaw = readAttr(start, 'playOrder')
   const playOrder = playOrderRaw ? Number.parseInt(playOrderRaw, 10) : undefined
   const navLabelBlock = firstTagBlock(block, 'navLabel')
-  const label = navLabelBlock ? firstTagText(navLabelBlock, 'text') : undefined
+  const labelRaw = navLabelBlock ? firstTagText(navLabelBlock, 'text') : undefined
+  const label = labelRaw ? decodeLegacyPuaText(labelRaw) : undefined
   const src = firstTagAttr(block, 'content', 'src')
   const hrefParts = src ? splitTocHref(src) : undefined
   const href = hrefParts?.href
@@ -447,9 +448,10 @@ const buildChapterFromFullSpineItem = async (
   html: string,
   tocItem?: EpubTocItem
 ): Promise<void> => {
-  const title = tocItem?.title
+  const titleRaw = tocItem?.title
     ?? firstTagText(html, 'h1')
     ?? firstTagText(html, 'title')
+  const title = titleRaw ? decodeLegacyPuaText(titleRaw) : undefined
   const text = await cleanEpubHtmlToText(html)
   appendChapter(chapters, spineItem, text, {
     path: spinePath,

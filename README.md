@@ -43,7 +43,7 @@ bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Hosted Grok speech-to-text
-bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
+bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
 
 # Render a synced speaker transcript video from a previous media extract run
 bun as extract output/<extract-run-dir> --transcript-video
@@ -70,49 +70,52 @@ bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
 bun as extract input/examples/document/1-document.pdf --out json
 
 # Hosted Kimi OCR for a document
-bun as extract input/examples/document/1-document.pdf --kimi-ocr kimi-k2.6
+bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
 
 # Standalone text-to-speech from local text
-bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts
 
 # OpenAI custom voice from reference audio and an existing consent recording
-bun as tts input/examples/tts/1-tts.md --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
 # ElevenLabs Instant Voice Cloning
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # ElevenLabs Professional Voice Clone synthesis
-bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 
 # Hosted Grok text-to-speech
-bun as tts input/examples/tts/1-tts.md --grok-tts grok-tts --grok-tts-voice eve
+bun as tts input/examples/tts/1-tts.md --grok grok-tts --grok-tts-voice eve
 
 # Hosted Mistral Voxtral text-to-speech
-bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # MiniMax hosted text-to-speech
-bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 
 # Hume Octave 2 text-to-speech
-bun as tts input/examples/tts/1-tts.md --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male English Actor"
 
 # Cartesia Sonic text-to-speech
-bun as tts input/examples/tts/1-tts.md --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
 # deAPI Qwen3 voice cloning
-bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
 # Prompt-driven generation
-bun as image "a dramatic fox portrait in snow" --minimax-image image-01
-bun as image "a cinematic product photo of a red enamel camping mug" --bfl-image flux-2-pro-preview --image-size 1024x1024
-bun as video "a timelapse storm over downtown chicago" --gemini-video veo-3.1-lite-generate-preview --runway-video gen4.5
-bun as music "an ambient piano instrumental" --minimax-music music-2.5
-bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview
+bun as image "a dramatic fox portrait in snow" --minimax image-01
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024
+bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
+bun as music "an ambient piano instrumental" --minimax music-2.5
+bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
 bun as extract output/<extract-run-dir> --transcript-video
 
 # Fetch curated OpenAI docs into project/links/openai-all-links.md
 bun as links --openai
+
+# Fetch Better Auth docs into project/links/better-auth-all-links.md
+bun as links --better-auth
 
 # Fetch curated Kimi docs into project/links/kimi-all-links.md
 bun as links --kimi
@@ -150,7 +153,7 @@ bun as <command> --help
 bun as --version
 ```
 
-- Use `bun as extract <input> --whisper-stt tiny`, not `bun as --whisper-stt tiny extract <input>`.
+- Use `bun as extract <input> --whisper tiny`, not `bun as --whisper tiny extract <input>`.
 - Inputs can be URLs, local files, directories, `.md`/`.txt` URL lists, or prompt strings for `image`, `video`, and `music`.
 - If an input begins with `-`, end flag parsing first: `bun as write -- -myfile`.
 - If the literal input collides with a command name, use the explicit command form: `bun as metadata setup`.

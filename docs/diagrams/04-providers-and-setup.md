@@ -148,14 +148,14 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | Command | Required Dependencies |
 |---------|----------------------|
 | `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected STT provider readiness: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, or Together) |
-| `extract --reverb-stt` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/hosted OCR provider readiness) |
-| `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
-| `extract --gemini-ocr` | `GEMINI_API_KEY` |
-| `extract --kimi-ocr` | `KIMI_API_KEY` |
-| `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
-| `extract --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
-| `extract --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
+| `extract --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle`/hosted OCR provider readiness) |
+| `extract --anthropic` | `ANTHROPIC_API_KEY` |
+| `extract --gemini` | `GEMINI_API_KEY` |
+| `extract --kimi` | `KIMI_API_KEY` |
+| `extract --deepinfra` | `DEEPINFRA_API_KEY` |
+| `extract --aws` | AWS CLI auth, region, and S3 staging bucket for async jobs |
+| `extract --gcloud` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
 | `extract --url-backend firecrawl` | `FIRECRAWL_API_KEY`, unless `FIRECRAWL_API_URL` points at a compatible self-hosted or mock endpoint |
 | `extract --url-backend glm-reader` | `GLM_API_KEY` |
 | `extract --url-backend spider` | `SPIDER_API_KEY`, unless `SPIDER_API_URL` points at a compatible mock endpoint |
@@ -166,36 +166,36 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `write --glm` | `GLM_API_KEY` |
 | `write --kimi` | `KIMI_API_KEY` |
 | `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
-| `tts --kitten-tts` | Kitten TTS Python venv + models |
-| `tts --elevenlabs-tts` | `ELEVENLABS_API_KEY`; IVC/PVC setup flags also need local sample or verification audio |
-| `tts --minimax-tts` | `MINIMAX_API_KEY` |
-| `tts --groq-tts` | `GROQ_API_KEY` |
-| `tts --grok-tts` | `XAI_API_KEY` |
-| `tts --mistral-tts` | `MISTRAL_API_KEY`; reference audio is optional per run |
-| `tts --openai-tts` | `OPENAI_API_KEY`; custom voice creation also needs `--openai-tts-ref-audio` plus `--openai-tts-consent-id` or `--openai-tts-consent-audio` |
-| `tts --gemini-tts` | `GEMINI_API_KEY` |
-| `tts --deepgram-tts` | `DEEPGRAM_API_KEY` |
-| `tts --speechify-tts` | `SPEECHIFY_API_KEY` |
-| `tts --hume-tts` | `HUME_API_KEY` |
-| `tts --cartesia-tts` | `CARTESIA_API_KEY` |
-| `tts --gcloud-tts` | Google Cloud CLI auth or credentials plus Text-to-Speech API readiness |
-| `tts --deapi-tts` | `DEAPI_API_KEY` |
-| `image --gemini-image` | `GEMINI_API_KEY` |
-| `image --openai-image` | `OPENAI_API_KEY` |
-| `image --minimax-image` | `MINIMAX_API_KEY` |
-| `image --glm-image` | `GLM_API_KEY` |
-| `image --grok-image` | `XAI_API_KEY` |
-| `image --runway-image` | `RUNWAYML_API_SECRET` |
-| `image --bfl-image` | `BFL_API_KEY` |
-| `image --deapi-image` | `DEAPI_API_KEY` |
-| `video --gemini-video` | `GEMINI_API_KEY` |
-| `video --minimax-video` | `MINIMAX_API_KEY` |
-| `video --glm-video` | `GLM_API_KEY` |
-| `video --grok-video` | `XAI_API_KEY` |
-| `video --runway-video` | `RUNWAYML_API_SECRET` |
-| `video --deapi-video` | `DEAPI_API_KEY` |
-| `music --elevenlabs-music` | `ELEVENLABS_API_KEY` |
-| `music --minimax-music` | `MINIMAX_API_KEY` |
-| `music --deapi-music` | `DEAPI_API_KEY` |
-| `music --gemini-music` | `GEMINI_API_KEY` |
+| `tts --kitten` | Kitten TTS Python venv + models |
+| `tts --elevenlabs` | `ELEVENLABS_API_KEY`; IVC/PVC setup flags also need local sample or verification audio |
+| `tts --minimax` | `MINIMAX_API_KEY` |
+| `tts --groq` | `GROQ_API_KEY` |
+| `tts --grok` | `XAI_API_KEY` |
+| `tts --mistral` | `MISTRAL_API_KEY`; reference audio is optional per run |
+| `tts --openai` | `OPENAI_API_KEY`; custom voice creation also needs `--openai-tts-ref-audio` plus `--openai-tts-consent-id` or `--openai-tts-consent-audio` |
+| `tts --gemini` | `GEMINI_API_KEY` |
+| `tts --deepgram` | `DEEPGRAM_API_KEY` |
+| `tts --speechify` | `SPEECHIFY_API_KEY` |
+| `tts --hume` | `HUME_API_KEY` |
+| `tts --cartesia` | `CARTESIA_API_KEY` |
+| `tts --gcloud` | Google Cloud CLI auth or credentials plus Text-to-Speech API readiness |
+| `tts --deapi` | `DEAPI_API_KEY` |
+| `image --gemini` | `GEMINI_API_KEY` |
+| `image --openai` | `OPENAI_API_KEY` |
+| `image --minimax` | `MINIMAX_API_KEY` |
+| `image --glm` | `GLM_API_KEY` |
+| `image --grok` | `XAI_API_KEY` |
+| `image --runway` | `RUNWAYML_API_SECRET` |
+| `image --bfl` | `BFL_API_KEY` |
+| `image --deapi` | `DEAPI_API_KEY` |
+| `video --gemini` | `GEMINI_API_KEY` |
+| `video --minimax` | `MINIMAX_API_KEY` |
+| `video --glm` | `GLM_API_KEY` |
+| `video --grok` | `XAI_API_KEY` |
+| `video --runway` | `RUNWAYML_API_SECRET` |
+| `video --deapi` | `DEAPI_API_KEY` |
+| `music --elevenlabs` | `ELEVENLABS_API_KEY` |
+| `music --minimax` | `MINIMAX_API_KEY` |
+| `music --deapi` | `DEAPI_API_KEY` |
+| `music --gemini` | `GEMINI_API_KEY` |
 | `music --audio` / `music --batch` | `ffmpeg`, `ffprobe`, `whisper-cli`, and a local Whisper model (`large-v3-turbo` via `setup --step music`) |

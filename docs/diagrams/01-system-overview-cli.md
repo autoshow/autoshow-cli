@@ -119,15 +119,15 @@ src/cli/flags/
 
 ┌─────────────────────────────────────────────────────────────┐
 │  transcriptionFlags (part of mediaFlags)                   │
-│  ├── --whisper-stt MODEL     tiny|base|small|medium|large-v3-turbo│
-│  ├── --reverb-stt            Use Reverb ASR                │
-│  ├── --gcloud-stt / --aws-stt / --deepinfra-stt / --deapi-stt│
-│  ├── --elevenlabs-stt / --deepgram-stt / --soniox-stt      │
-│  ├── --speechmatics-stt / --rev-stt / --happyscribe-stt    │
-│  ├── --groq-stt / --grok-stt / --mistral-stt               │
-│  ├── --assemblyai-stt / --gladia-stt / --supadata-stt      │
-│  ├── --openai-stt / --gemini-stt / --glm-stt               │
-│  ├── --together-stt                                        │
+│  ├── --whisper MODEL     tiny|base|small|medium|large-v3-turbo│
+│  ├── --reverb            Use Reverb ASR                │
+│  ├── --gcloud / --aws / --deepinfra / --deapi│
+│  ├── --elevenlabs / --deepgram / --soniox      │
+│  ├── --speechmatics / --rev / --happyscribe    │
+│  ├── --groq / --grok / --mistral               │
+│  ├── --assemblyai / --gladia / --supadata      │
+│  ├── --openai / --gemini / --glm               │
+│  ├── --together                                        │
 │  ├── --speaker-count N   Diarization speaker hint          │
 │  └── --split             Split audio into 30-min segments  │
 └─────────────────────────────────────────────────────────────┘
@@ -152,16 +152,16 @@ src/cli/flags/
 │  ├── --out FORMAT        text|json|tsv|hocr                │
 │  ├── --password VALUE    Encrypted PDF password            │
 │  ├── --ocrmypdf          Use OCRmyPDF engine (PDF only)    │
-│  ├── --paddle-ocr        Use PaddleOCR engine              │
-│  ├── --mistral-ocr MODEL Mistral OCR (API)                 │
-│  ├── --glm-ocr MODEL     GLM OCR (API)                     │
-│  ├── --kimi-ocr MODEL    Kimi OCR (API)                    │
-│  ├── --openai-ocr MODEL  OpenAI OCR (API)                  │
-│  ├── --anthropic-ocr MODEL Anthropic OCR (API)             │
-│  ├── --gemini-ocr MODEL  Gemini OCR (API)                  │
-│  ├── --deepinfra-ocr MODEL DeepInfra OCR (API)             │
-│  ├── --aws-textract MODEL AWS Textract                     │
-│  ├── --gcloud-docai MODEL Google Cloud Document AI         │
+│  ├── --paddle        Use PaddleOCR engine              │
+│  ├── --mistral MODEL Mistral OCR (API)                 │
+│  ├── --glm MODEL     GLM OCR (API)                     │
+│  ├── --kimi MODEL    Kimi OCR (API)                    │
+│  ├── --openai MODEL  OpenAI OCR (API)                  │
+│  ├── --anthropic MODEL Anthropic OCR (API)             │
+│  ├── --gemini MODEL  Gemini OCR (API)                  │
+│  ├── --deepinfra MODEL DeepInfra OCR (API)             │
+│  ├── --aws MODEL AWS Textract                     │
+│  ├── --gcloud MODEL Google Cloud Document AI         │
 │  ├── --primary-ocr NAME  top-level artifact provider       │
 │  ├── --url-backend NAME  defuddle|firecrawl|glm-reader|spider|zyte │
 │  ├── --all-url          run all URL article backends       │

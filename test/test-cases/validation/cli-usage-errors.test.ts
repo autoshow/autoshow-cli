@@ -111,8 +111,8 @@ test('legacy step-2 command names are not public commands', async () => {
   }
 })
 
-test('extract rejects write LLM provider flags as unknown flags', async () => {
-  await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--glm'], 'Unexpected flag: glm')
+test('extract rejects LLM-only provider flags as unknown flags', async () => {
+  await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--llama'], 'Unexpected flag: llama')
 })
 
 test('extract rejects unsupported URL article option flags', async () => {
@@ -138,36 +138,47 @@ test('write rejects all URL article backend mode', async () => {
 
 test('extract rejects removed OpenAI OCR models', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--openai-ocr', 'gpt-5.4-mini', '--price'],
+    ['extract', 'input/examples/document/1-document.pdf', '--openai', 'gpt-5.4-mini', '--price'],
     'Invalid --openai-ocr model "gpt-5.4-mini". Allowed values: gpt-5.4, gpt-5.4-nano'
   )
 })
 
 test('extract rejects removed Anthropic Opus OCR model', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--anthropic-ocr', 'claude-opus-4-7', '--price'],
+    ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-opus-4-7', '--price'],
     'Invalid --anthropic-ocr model "claude-opus-4-7". Allowed values: claude-haiku-4-5'
   )
 })
 
 test('extract rejects removed Google Document AI layout parser model', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--gcloud-docai', 'layout-parser', '--price'],
+    ['extract', 'input/examples/document/1-document.pdf', '--gcloud', 'layout-parser', '--price'],
     'Invalid --gcloud-docai model "layout-parser". Allowed values: ocr'
   )
 })
 
 test('extract rejects removed DeepInfra PaddleOCR model', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--deepinfra-ocr', 'PaddlePaddle/PaddleOCR-VL-0.9B', '--price'],
+    ['extract', 'input/examples/document/1-document.pdf', '--deepinfra', 'PaddlePaddle/PaddleOCR-VL-0.9B', '--price'],
     'Invalid --deepinfra-ocr model "PaddlePaddle/PaddleOCR-VL-0.9B". Allowed values: Qwen/Qwen3-VL-235B-A22B-Instruct, Qwen/Qwen3-VL-30B-A3B-Instruct'
   )
 })
 
 test('extract rejects removed AWS Textract analyze-document model', async () => {
   await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--aws-textract', 'analyze-document', '--price'],
+    ['extract', 'input/examples/document/1-document.pdf', '--aws', 'analyze-document', '--price'],
     'Invalid --aws-textract model "analyze-document". Allowed values: detect-text'
+  )
+})
+
+test('extract rejects old suffixed provider selector flags', async () => {
+  await expectUsageExit(
+    ['extract', 'input/examples/document/1-document.pdf', '--glm-ocr', 'glm-ocr', '--price'],
+    'Unexpected flag: glmOcr'
+  )
+  await expectUsageExit(
+    ['extract', STABLE_LOCAL_AUDIO_PATH, '--glm-stt', 'glm-asr-2512', '--price'],
+    'Unexpected flag: glmStt'
   )
 })
 
@@ -181,24 +192,24 @@ test('extract rejects removed deAPI OCR flag', async () => {
 test('tts rejects removed MiniMax clone flags as unknown flags', async () => {
   await expectUsageExit(
     ['tts', 'input/examples/tts/1-tts.md', '--minimax-tts', 'speech-2.8-turbo', '--minimax-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
-    'Unexpected flag: minimaxTtsRefAudio'
+    'Unexpected flags: minimaxTts, minimaxTtsRefAudio'
   )
 })
 
 test('extract rejects removed Supadata STT modes', async () => {
   await expectUsageExit(
-    ['extract', 'https://example.com/audio.mp3', '--supadata-stt', 'native', '--price'],
+    ['extract', 'https://example.com/audio.mp3', '--supadata', 'native', '--price'],
     'Invalid --supadata-stt model "native". Allowed values: auto'
   )
   await expectUsageExit(
-    ['extract', 'https://example.com/audio.mp3', '--supadata-stt', 'generate', '--price'],
+    ['extract', 'https://example.com/audio.mp3', '--supadata', 'generate', '--price'],
     'Invalid --supadata-stt model "generate". Allowed values: auto'
   )
 })
 
 test('extract rejects unsupported ScrapeCreators STT modes', async () => {
   await expectUsageExit(
-    ['extract', 'https://www.youtube.com/watch?v=MORMZXEaONk', '--scrapecreators-stt', 'auto', '--price'],
+    ['extract', 'https://www.youtube.com/watch?v=MORMZXEaONk', '--scrapecreators', 'auto', '--price'],
     'Invalid --scrapecreators-stt model "auto". Allowed values: youtube-transcript'
   )
 })
@@ -227,7 +238,7 @@ test('music lyric-video mode rejects missing audio or batch', async () => {
 
 test('music rejects mixed hosted generation and lyric-video modes', async () => {
   await expectUsageExit(
-    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--minimax-music', 'music-2.5'],
+    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'music-2.5'],
     'Do not combine hosted music flags'
   )
   await expectUsageExit(

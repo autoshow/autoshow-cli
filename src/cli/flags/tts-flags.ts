@@ -17,6 +17,24 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
+import { renameFlags } from './flag-utils'
+
+export const TTS_COMMAND_SELECTOR_FLAGS = {
+  'kitten-tts': 'kitten',
+  'elevenlabs-tts': 'elevenlabs',
+  'minimax-tts': 'minimax',
+  'groq-tts': 'groq',
+  'grok-tts': 'grok',
+  'mistral-tts': 'mistral',
+  'openai-tts': 'openai',
+  'gemini-tts': 'gemini',
+  'deepgram-tts': 'deepgram',
+  'deapi-tts': 'deapi',
+  'speechify-tts': 'speechify',
+  'hume-tts': 'hume',
+  'cartesia-tts': 'cartesia',
+  'gcloud-tts': 'gcloud'
+} as const satisfies Record<string, string>
 
 export const ttsFlags = {
   'all-tts': {
@@ -466,3 +484,5 @@ export const ttsFlags = {
   },
   ...priceFlag
 } as const satisfies CliFlagsDefinition
+
+export const ttsCommandFlags = renameFlags(ttsFlags, TTS_COMMAND_SELECTOR_FLAGS)

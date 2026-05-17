@@ -58,7 +58,7 @@ src/cli/commands/process-steps/process-video.ts
 │         Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together               │
 │                                    │                                         │
 │           (no engine flag) → Whisper.cpp (local binary)                      │
-│           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo        │
+│           --whisper MODEL: tiny|base|small|medium|large-v3-turbo        │
 │                                                                              │
 │           --split: split audio into 30-min chunks, transcribe each           │
 │                                    │                                         │
@@ -195,7 +195,7 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │                      │  │ OCR via  │  │  (no external deps)     │        │
 │  │  --ocrmypdf →        │  │ Tesseract│  │                         │        │
 │  │    OCRmyPDF (PDF)    │  │          │  │  docx → word/document   │        │
-│  │  --paddle-ocr →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
+│  │  --paddle →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
 │  │    PaddleOCR         │  │ --lang   │  │  xlsx → sharedStrings   │        │
 │  │  hosted OCR flags →  │  │ --psm   │  │                         │        │
 │  │    API providers     │  │ --oem    │  └────────────┬────────────┘        │

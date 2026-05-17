@@ -9,6 +9,16 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
+import { renameFlags } from './flag-utils'
+
+export const VIDEO_COMMAND_SELECTOR_FLAGS = {
+  'gemini-video': 'gemini',
+  'minimax-video': 'minimax',
+  'glm-video': 'glm',
+  'grok-video': 'grok',
+  'runway-video': 'runway',
+  'deapi-video': 'deapi'
+} as const satisfies Record<string, string>
 
 export const videoGenFlags = {
   'all-video': {
@@ -69,3 +79,5 @@ export const videoGenFlags = {
   },
   ...priceFlag
 } as const satisfies CliFlagsDefinition
+
+export const videoCommandFlags = renameFlags(videoGenFlags, VIDEO_COMMAND_SELECTOR_FLAGS)

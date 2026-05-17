@@ -5,7 +5,9 @@ import type { MetricContext, ServiceModelPair, TestContext } from './types'
 
 const COMMAND_KIND_NAMES = new Set(['setup', 'download', 'transcribe', 'extract', 'write', 'tts', 'image', 'video', 'music'])
 
-const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
+type ArgServiceFlag = { service: string, kind: string }
+
+const ARG_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
   '--openai': { service: 'openai', kind: 'write' },
   '--anthropic': { service: 'anthropic', kind: 'write' },
   '--gemini': { service: 'gemini', kind: 'write' },
@@ -66,10 +68,105 @@ const ARG_SERVICE_FLAGS: Record<string, { service: string, kind: string }> = {
   '--deapi-image': { service: 'deapi', kind: 'image' },
   '--gemini-video': { service: 'gemini', kind: 'video' },
   '--minimax-video': { service: 'minimax', kind: 'video' },
+  '--glm-video': { service: 'glm', kind: 'video' },
+  '--grok-video': { service: 'grok', kind: 'video' },
+  '--runway-video': { service: 'runway', kind: 'video' },
   '--deapi-video': { service: 'deapi', kind: 'video' },
   '--elevenlabs-music': { service: 'elevenlabs', kind: 'music' },
   '--minimax-music': { service: 'minimax', kind: 'music' },
+  '--deapi-music': { service: 'deapi', kind: 'music' },
+  '--gemini-music': { service: 'gemini', kind: 'music' },
+  '--aws-textract': { service: 'aws', kind: 'extract' },
+  '--gcloud-docai': { service: 'gcloud', kind: 'extract' },
+  '--ocrmypdf': { service: 'ocrmypdf', kind: 'extract' },
 }
+
+const COMMAND_PUBLIC_SERVICE_FLAGS: Record<string, Record<string, ArgServiceFlag>> = {
+  tts: {
+    '--kitten': { service: 'kitten', kind: 'tts' },
+    '--elevenlabs': { service: 'elevenlabs', kind: 'tts' },
+    '--minimax': { service: 'minimax', kind: 'tts' },
+    '--groq': { service: 'groq', kind: 'tts' },
+    '--grok': { service: 'grok', kind: 'tts' },
+    '--mistral': { service: 'mistral', kind: 'tts' },
+    '--openai': { service: 'openai', kind: 'tts' },
+    '--gemini': { service: 'gemini', kind: 'tts' },
+    '--deepgram': { service: 'deepgram', kind: 'tts' },
+    '--speechify': { service: 'speechify', kind: 'tts' },
+    '--hume': { service: 'hume', kind: 'tts' },
+    '--cartesia': { service: 'cartesia', kind: 'tts' },
+    '--gcloud': { service: 'gcloud', kind: 'tts' },
+    '--deapi': { service: 'deapi', kind: 'tts' },
+  },
+  image: {
+    '--gemini': { service: 'gemini', kind: 'image' },
+    '--openai': { service: 'openai', kind: 'image' },
+    '--minimax': { service: 'minimax', kind: 'image' },
+    '--glm': { service: 'glm', kind: 'image' },
+    '--grok': { service: 'grok', kind: 'image' },
+    '--runway': { service: 'runway', kind: 'image' },
+    '--bfl': { service: 'bfl', kind: 'image' },
+    '--deapi': { service: 'deapi', kind: 'image' },
+  },
+  video: {
+    '--gemini': { service: 'gemini', kind: 'video' },
+    '--minimax': { service: 'minimax', kind: 'video' },
+    '--glm': { service: 'glm', kind: 'video' },
+    '--grok': { service: 'grok', kind: 'video' },
+    '--runway': { service: 'runway', kind: 'video' },
+    '--deapi': { service: 'deapi', kind: 'video' },
+  },
+  music: {
+    '--elevenlabs': { service: 'elevenlabs', kind: 'music' },
+    '--minimax': { service: 'minimax', kind: 'music' },
+    '--deapi': { service: 'deapi', kind: 'music' },
+    '--gemini': { service: 'gemini', kind: 'music' },
+  },
+}
+
+const EXTRACT_PUBLIC_STT_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
+  '--whisper': { service: 'whisper', kind: 'transcribe' },
+  '--reverb': { service: 'reverb', kind: 'transcribe' },
+  '--gcloud': { service: 'gcloud', kind: 'transcribe' },
+  '--aws': { service: 'aws', kind: 'transcribe' },
+  '--deepinfra': { service: 'deepinfra', kind: 'transcribe' },
+  '--deapi': { service: 'deapi', kind: 'transcribe' },
+  '--elevenlabs': { service: 'elevenlabs', kind: 'transcribe' },
+  '--deepgram': { service: 'deepgram', kind: 'transcribe' },
+  '--soniox': { service: 'soniox', kind: 'transcribe' },
+  '--speechmatics': { service: 'speechmatics', kind: 'transcribe' },
+  '--rev': { service: 'rev', kind: 'transcribe' },
+  '--groq': { service: 'groq', kind: 'transcribe' },
+  '--grok': { service: 'grok', kind: 'transcribe' },
+  '--mistral': { service: 'mistral', kind: 'transcribe' },
+  '--assemblyai': { service: 'assemblyai', kind: 'transcribe' },
+  '--gladia': { service: 'gladia', kind: 'transcribe' },
+  '--happyscribe': { service: 'happyscribe', kind: 'transcribe' },
+  '--supadata': { service: 'supadata', kind: 'transcribe' },
+  '--scrapecreators': { service: 'scrapecreators', kind: 'transcribe' },
+  '--openai': { service: 'openai-stt', kind: 'transcribe' },
+  '--gemini': { service: 'gemini-stt', kind: 'transcribe' },
+  '--glm': { service: 'glm-stt', kind: 'transcribe' },
+  '--together': { service: 'together', kind: 'transcribe' },
+}
+
+const EXTRACT_PUBLIC_OCR_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
+  '--tesseract': { service: 'tesseract', kind: 'extract' },
+  '--ocrmypdf': { service: 'ocrmypdf', kind: 'extract' },
+  '--paddle': { service: 'paddle', kind: 'extract' },
+  '--mistral': { service: 'mistral', kind: 'extract' },
+  '--glm': { service: 'glm', kind: 'extract' },
+  '--kimi': { service: 'kimi', kind: 'extract' },
+  '--openai': { service: 'openai', kind: 'extract' },
+  '--anthropic': { service: 'anthropic', kind: 'extract' },
+  '--gemini': { service: 'gemini', kind: 'extract' },
+  '--deepinfra': { service: 'deepinfra', kind: 'extract' },
+  '--aws': { service: 'aws', kind: 'extract' },
+  '--gcloud': { service: 'gcloud', kind: 'extract' },
+}
+
+const MEDIA_INPUT_PATTERN = /\.(?:mp3|m4a|aac|wav|flac|ogg|opus|webm|mp4|mov|mkv|avi|m4v)(?:[?#]|$)/i
+const DOCUMENT_INPUT_PATTERN = /\.(?:pdf|epub|mobi|azw3|fb2|lit|docx|pptx|xlsx|odt|ods|odp|rtf|csv|cbz|png|jpe?g|tiff?|webp|bmp|gif)(?:[?#]|$)/i
 
 const KNOWN_SERVICE_HINTS: Array<{ pattern: RegExp, service: string }> = [
   { pattern: /\bopenai\b/i, service: 'openai' },
@@ -169,7 +266,7 @@ export const isControlE2ETest = (name: string): boolean => {
 }
 
 const parseMetricCommandKind = (metric: ParsedCommandMetric): string | null => {
-  const subcommand = metric.args[1]
+  const subcommand = metric.args.find(arg => COMMAND_KIND_NAMES.has(arg))
   if (subcommand && COMMAND_KIND_NAMES.has(subcommand)) {
     return subcommand
   }
@@ -181,8 +278,74 @@ const parseMetricCommandKind = (metric: ParsedCommandMetric): string | null => {
   return null
 }
 
+const getMetricCommandInput = (metric: ParsedCommandMetric): string | null => {
+  const commandIndex = metric.args.findIndex(arg => COMMAND_KIND_NAMES.has(arg))
+  if (commandIndex < 0) return null
+
+  for (let index = commandIndex + 1; index < metric.args.length; index++) {
+    const arg = metric.args[index]
+    if (!arg || arg.startsWith('--')) {
+      continue
+    }
+
+    const previous = metric.args[index - 1]
+    if (previous?.startsWith('--')) {
+      continue
+    }
+
+    return arg
+  }
+
+  return null
+}
+
+const inferExtractRouteKind = (metric: ParsedCommandMetric): 'transcribe' | 'extract' | null => {
+  const input = getMetricCommandInput(metric)
+  if (!input) return null
+
+  if (MEDIA_INPUT_PATTERN.test(input) || /\b(?:youtube\.com|youtu\.be|twitch\.tv)\b/i.test(input)) {
+    return 'transcribe'
+  }
+
+  if (DOCUMENT_INPUT_PATTERN.test(input)) {
+    return 'extract'
+  }
+
+  return null
+}
+
+const resolveExtractPublicServiceFlag = (
+  arg: string,
+  metric: ParsedCommandMetric
+): ArgServiceFlag | null => {
+  const routeKind = inferExtractRouteKind(metric)
+  if (routeKind === 'transcribe') {
+    return EXTRACT_PUBLIC_STT_SERVICE_FLAGS[arg] ?? null
+  }
+  if (routeKind === 'extract') {
+    return EXTRACT_PUBLIC_OCR_SERVICE_FLAGS[arg] ?? null
+  }
+
+  return EXTRACT_PUBLIC_STT_SERVICE_FLAGS[arg] ?? EXTRACT_PUBLIC_OCR_SERVICE_FLAGS[arg] ?? null
+}
+
+const resolveArgServiceFlag = (
+  arg: string,
+  commandKind: string | null,
+  metric: ParsedCommandMetric
+): ArgServiceFlag | null => {
+  if (commandKind === 'extract') {
+    const extractFlag = resolveExtractPublicServiceFlag(arg, metric)
+    if (extractFlag) return extractFlag
+  }
+
+  const commandFlag = commandKind ? COMMAND_PUBLIC_SERVICE_FLAGS[commandKind]?.[arg] : null
+  return commandFlag ?? ARG_SERVICE_FLAGS[arg] ?? null
+}
+
 const buildPairsFromMetricArgs = (metric: ParsedCommandMetric): ServiceModelPair[] => {
   const pairs: ServiceModelPair[] = []
+  const commandKind = parseMetricCommandKind(metric)
 
   for (let index = 0; index < metric.args.length; index++) {
     const arg = metric.args[index]
@@ -202,7 +365,7 @@ const buildPairsFromMetricArgs = (metric: ParsedCommandMetric): ServiceModelPair
       continue
     }
 
-    const flag = ARG_SERVICE_FLAGS[arg]
+    const flag = resolveArgServiceFlag(arg, commandKind, metric)
     if (!flag) continue
 
     const next = metric.args[index + 1]

@@ -8,6 +8,14 @@ import {
 import { SUPPORTED_WHISPER_MODELS } from '~/cli/commands/setup-and-utilities/models/stt-models'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
+import { renameFlags } from './flag-utils'
+
+export const MUSIC_COMMAND_SELECTOR_FLAGS = {
+  'elevenlabs-music': 'elevenlabs',
+  'minimax-music': 'minimax',
+  'deapi-music': 'deapi',
+  'gemini-music': 'gemini'
+} as const satisfies Record<string, string>
 
 export const musicGenFlags = {
   'all-music': {
@@ -93,6 +101,6 @@ const musicLyricVideoFlags = {
 } as const satisfies CliFlagsDefinition
 
 export const musicCommandFlags = {
-  ...musicGenFlags,
+  ...renameFlags(musicGenFlags, MUSIC_COMMAND_SELECTOR_FLAGS),
   ...musicLyricVideoFlags
 } as const satisfies CliFlagsDefinition

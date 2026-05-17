@@ -11,6 +11,18 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { priceFlag } from './shared-flags'
+import { renameFlags } from './flag-utils'
+
+export const IMAGE_COMMAND_SELECTOR_FLAGS = {
+  'gemini-image': 'gemini',
+  'openai-image': 'openai',
+  'minimax-image': 'minimax',
+  'glm-image': 'glm',
+  'grok-image': 'grok',
+  'runway-image': 'runway',
+  'bfl-image': 'bfl',
+  'deapi-image': 'deapi'
+} as const satisfies Record<string, string>
 
 export const imageGenFlags = {
   'all-image': {
@@ -87,3 +99,5 @@ export const imageGenFlags = {
   },
   ...priceFlag
 } as const satisfies CliFlagsDefinition
+
+export const imageCommandFlags = renameFlags(imageGenFlags, IMAGE_COMMAND_SELECTOR_FLAGS)

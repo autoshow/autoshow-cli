@@ -24,7 +24,7 @@ test('usage-error output redacts Google Cloud voice cloning keys', async () => {
     'src/cli/create-cli.ts',
     'tts',
     'input/examples/tts/1-tts.md',
-    '--gcloud-tts',
+    '--gcloud',
     'definitely-not-a-model',
     '--gcloud-tts-voice-cloning-key',
     secret
@@ -40,7 +40,7 @@ test('usage-error output redacts Speechify custom voice consent email', async ()
     'src/cli/create-cli.ts',
     'tts',
     'input/examples/tts/1-tts.md',
-    '--speechify-tts',
+    '--speechify',
     'definitely-not-a-model',
     '--speechify-tts-consent-email',
     secret

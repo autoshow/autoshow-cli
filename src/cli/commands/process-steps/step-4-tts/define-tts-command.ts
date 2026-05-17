@@ -1,8 +1,10 @@
 import { defineCliCommand } from '~/cli/native'
-import { ttsFlags } from '~/cli/flags'
+import { ttsCommandFlags } from '~/cli/flags'
+import { TTS_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/tts-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { runTts } from './run-tts'
 import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets, getTtsArtifactFileName } from './tts-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -45,16 +47,16 @@ export const ttsCommand = defineCliCommand({
   name: 'tts',
   description: 'Generate speech audio from a text file (.md or .txt)',
   parameters: [{ key: '<input>', description: 'Path to .md or .txt file' }],
-  flags: ttsFlags,
+  flags: ttsCommandFlags,
   help: {
     examples: [
-      ['bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
-      ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3', 'Generate speech with ElevenLabs'],
-      ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Clone a voice with ElevenLabs IVC'],
-      ['bun as tts input/examples/tts/1-tts.md --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123', 'Generate speech with an ElevenLabs PVC voice'],
-      ['bun as tts input/examples/tts/1-tts.md --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator', 'Use a MiniMax voice ID'],
-      ['bun as tts input/examples/tts/1-tts.md --mistral-tts voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Generate speech with Mistral Voxtral'],
-      ['bun as tts input/examples/tts/1-tts.md --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3', 'Clone a voice with deAPI']
+      ['bun as tts input/examples/tts/1-tts.md --kitten kitten-tts-nano-0.8-int8', 'Generate speech with local Kitten TTS'],
+      ['bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3', 'Generate speech with ElevenLabs'],
+      ['bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Clone a voice with ElevenLabs IVC'],
+      ['bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123', 'Generate speech with an ElevenLabs PVC voice'],
+      ['bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator', 'Use a MiniMax voice ID'],
+      ['bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Generate speech with Mistral Voxtral'],
+      ['bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3', 'Clone a voice with deAPI']
     ]
   }
 }, async (ctx) => {
@@ -77,7 +79,8 @@ export const ttsCommand = defineCliCommand({
 
   const maxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
-  const ttsOptions = buildOptsFromFlags(true, flags as Record<string, unknown>, [], { defaultTtsEngine: 'kitten' }, explicitFlags, Bun.argv.slice(2))
+  const normalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, TTS_COMMAND_SELECTOR_FLAGS)
+  const ttsOptions = buildOptsFromFlags(true, normalized.flags, [], { defaultTtsEngine: 'kitten' }, normalized.explicitFlags, Bun.argv.slice(2))
   const targets = collectTtsTargets(ttsOptions)
   const pvcSetupRequested = isElevenLabsTtsPvcSetupRequested(ttsOptions)
   const dialogueRequested = isDialogueTtsRequested(ttsOptions)

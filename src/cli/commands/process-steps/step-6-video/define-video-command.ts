@@ -1,8 +1,10 @@
 import { defineCliCommand } from '~/cli/native'
-import { videoGenFlags } from '~/cli/flags'
+import { videoCommandFlags } from '~/cli/flags'
+import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { runVideoGen } from './run-video-gen'
 import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } from './video-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -17,15 +19,15 @@ export const videoCommand = defineCliCommand({
   name: 'video',
   description: 'Generate a video from a text prompt',
   parameters: [{ key: '<prompt>', description: 'Text prompt for video generation' }],
-  flags: videoGenFlags,
+  flags: videoCommandFlags,
   help: {
     examples: [
-      ['bun as video "a cinematic mountain sunrise" --gemini-video veo-3.1-lite-generate-preview', 'Generate video with Gemini Veo'],
-      ['bun as video "a cinematic mountain sunrise" --minimax-video MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo'],
-      ['bun as video "a cat playing with yarn" --glm-video cogvideox-3', 'Generate video with GLM CogVideoX'],
-      ['bun as video "a cat playing piano" --grok-video grok-imagine-video', 'Generate video with Grok'],
-      ['bun as video "a cinematic mountain sunrise" --runway-video gen4.5', 'Generate video with Runway Gen-4.5'],
-      ['bun as video "a cat playing" --deapi-video Ltxv_13B_0_9_8_Distilled_FP8 --video-size 512x512', 'Generate video with deAPI']
+      ['bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview', 'Generate video with Gemini Veo'],
+      ['bun as video "a cinematic mountain sunrise" --minimax MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo'],
+      ['bun as video "a cat playing with yarn" --glm cogvideox-3', 'Generate video with GLM CogVideoX'],
+      ['bun as video "a cat playing piano" --grok grok-imagine-video', 'Generate video with Grok'],
+      ['bun as video "a cinematic mountain sunrise" --runway gen4.5', 'Generate video with Runway Gen-4.5'],
+      ['bun as video "a cat playing" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-size 512x512', 'Generate video with deAPI']
     ]
   }
 }, async (ctx) => {
@@ -34,10 +36,11 @@ export const videoCommand = defineCliCommand({
 
   const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
-  const videoOpts = buildOptsFromFlags(true, flags as Record<string, unknown>, [], {}, explicitFlags, Bun.argv.slice(2))
+  const normalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, VIDEO_COMMAND_SELECTOR_FLAGS)
+  const videoOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, Bun.argv.slice(2))
   const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
-    throw CLIUsageError('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, --runway-video <model>, or --deapi-video <model>')
+    throw CLIUsageError('Specify a video generation provider: --gemini <model>, --minimax <model>, --glm <model>, --grok <model>, --runway <model>, or --deapi <model>')
   }
 
   const { shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)

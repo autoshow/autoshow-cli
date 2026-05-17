@@ -1,8 +1,10 @@
 import { defineCliCommand } from '~/cli/native'
 import { musicCommandFlags } from '~/cli/flags'
+import { MUSIC_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/music-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags as extractConfigExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
+import { normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { runMusicGen } from './run-music-gen'
 import { runMusicLyricVideo } from './lyrics-video/run-lyrics-video'
 import { buildMusicArtifactMap, collectMusicTargets, getMusicArtifactFileName } from './music-targets'
@@ -18,10 +20,10 @@ import { isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-
 
 const HOSTED_MUSIC_FLAGS = [
   'all-music',
-  'elevenlabs-music',
-  'minimax-music',
-  'deapi-music',
-  'gemini-music',
+  'elevenlabs',
+  'minimax',
+  'deapi',
+  'gemini',
   'music-duration',
   'music-lyrics-file',
   'music-instrumental',
@@ -65,11 +67,12 @@ const runHostedMusicGeneration = async (
 
   const musicMaxCents = await resolveMaxCentsFromFlags(flags)
   const explicitRuntimeFlags = extractConfigExplicitFlags(Bun.argv.slice(2))
-  const musicOpts = buildOptsFromFlags(true, flags, [], {}, explicitRuntimeFlags, Bun.argv.slice(2))
+  const normalized = normalizeCommandSelectorFlags(flags, explicitRuntimeFlags, MUSIC_COMMAND_SELECTOR_FLAGS)
+  const musicOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, Bun.argv.slice(2))
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {
-    throw CLIUsageError('Specify a music generation provider: --elevenlabs-music <model>, --minimax-music <model>, --deapi-music <model>, or --gemini-music <model>')
+    throw CLIUsageError('Specify a music generation provider: --elevenlabs <model>, --minimax <model>, --deapi <model>, or --gemini <model>')
   }
 
   const { shouldExit: musicShouldExit } = await runPreflight('music', prompt, musicOpts, musicMaxCents)
@@ -143,11 +146,11 @@ export const musicCommand = defineCliCommand({
   flags: musicCommandFlags,
   help: {
     examples: [
-      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs-music music_v1', 'Generate music with ElevenLabs'],
-      ['bun as music "an ambient piano instrumental" --minimax-music music-2.6 --music-instrumental', 'Generate instrumental music with MiniMax'],
-      ['bun as music "upbeat electronic dance music" --deapi-music AceStep_1_5_Turbo --music-duration 30', 'Generate music with deAPI'],
-      ['bun as music "bright 90s pop rock with a huge chorus" --gemini-music lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
-      ['bun as music input/examples/tts/1-tts.md --minimax-music music-2.6', 'Use a local markdown file as the prompt body'],
+      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs music_v1', 'Generate music with ElevenLabs'],
+      ['bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental', 'Generate instrumental music with MiniMax'],
+      ['bun as music "upbeat electronic dance music" --deapi AceStep_1_5_Turbo --music-duration 30', 'Generate music with deAPI'],
+      ['bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
+      ['bun as music input/examples/tts/1-tts.md --minimax music-2.6', 'Use a local markdown file as the prompt body'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
       ['bun as music --batch --model small', 'Render lyric videos for every supported audio file under input']
@@ -177,7 +180,7 @@ export const musicCommand = defineCliCommand({
     throw CLIUsageError(
       hostedFlags.length > 0
         ? 'Missing hosted music prompt input'
-        : 'Missing music mode: provide a prompt with --elevenlabs-music/--minimax-music/--deapi-music/--gemini-music, or use --audio/--batch for lyric-video rendering'
+        : 'Missing music mode: provide a prompt with --elevenlabs/--minimax/--deapi/--gemini, or use --audio/--batch for lyric-video rendering'
     )
   }
 

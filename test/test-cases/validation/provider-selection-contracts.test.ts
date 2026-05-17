@@ -9,6 +9,14 @@ import {
   collectStep2ProviderSpecs,
   getStep2ProviderSelectionFlagNames
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
+import {
+  normalizeCommandSelectorFlags,
+  normalizeExtractPublicSelectorFlags
+} from '~/cli/commands/process-steps/service-selector-normalization'
+import { IMAGE_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/image-flags'
+import { MUSIC_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/music-flags'
+import { TTS_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/tts-flags'
+import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 
 describe('provider selection contracts', () => {
   test('STT provider canonical ordering is stable', () => {
@@ -194,6 +202,67 @@ describe('provider selection contracts', () => {
       'gemini:lyria-3-clip-preview',
       'gemini:lyria-3-pro-preview'
     ])
+  })
+
+  test('dedicated command bare provider selectors normalize to existing runtime option keys', () => {
+    const ttsNormalized = normalizeCommandSelectorFlags({
+      openai: ['gpt-4o-mini-tts'],
+      elevenlabs: ['eleven_v3']
+    }, new Set(['openai', 'elevenlabs']), TTS_COMMAND_SELECTOR_FLAGS)
+    const imageNormalized = normalizeCommandSelectorFlags({
+      minimax: ['image-01'],
+      glm: ['glm-image']
+    }, new Set(['minimax', 'glm']), IMAGE_COMMAND_SELECTOR_FLAGS)
+    const videoNormalized = normalizeCommandSelectorFlags({
+      gemini: ['veo-3.1-lite-generate-preview'],
+      runway: ['gen4.5']
+    }, new Set(['gemini', 'runway']), VIDEO_COMMAND_SELECTOR_FLAGS)
+    const musicNormalized = normalizeCommandSelectorFlags({
+      minimax: ['music-2.5'],
+      gemini: ['lyria-3-clip-preview']
+    }, new Set(['minimax', 'gemini']), MUSIC_COMMAND_SELECTOR_FLAGS)
+
+    const ttsOpts = buildOptsFromFlags(false, ttsNormalized.flags, [], {}, ttsNormalized.explicitFlags)
+    const imageOpts = buildOptsFromFlags(false, imageNormalized.flags, [], {}, imageNormalized.explicitFlags)
+    const videoOpts = buildOptsFromFlags(false, videoNormalized.flags, [], {}, videoNormalized.explicitFlags)
+    const musicOpts = buildOptsFromFlags(false, musicNormalized.flags, [], {}, musicNormalized.explicitFlags)
+
+    expect(ttsOpts.openaiTtsModels).toEqual(['gpt-4o-mini-tts'])
+    expect(ttsOpts.elevenlabsTtsModels).toEqual(['eleven_v3'])
+    expect(collectImageTargets(imageOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'minimax:image-01',
+      'glm:glm-image'
+    ])
+    expect(collectVideoTargets(videoOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'gemini:veo-3.1-lite-generate-preview',
+      'runway:gen4.5'
+    ])
+    expect(collectMusicTargets(musicOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+      'minimax:music-2.5',
+      'gemini:lyria-3-clip-preview'
+    ])
+  })
+
+  test('extract bare provider selectors route to STT or OCR internal keys', () => {
+    const mediaNormalized = normalizeExtractPublicSelectorFlags({
+      glm: ['glm-asr-2512']
+    }, new Set(['glm']), { media: true, document: false })
+    const documentNormalized = normalizeExtractPublicSelectorFlags({
+      glm: ['glm-ocr']
+    }, new Set(['glm']), { media: false, document: true })
+    const mixedDefaultNormalized = normalizeExtractPublicSelectorFlags({
+      glm: [true]
+    }, new Set(['glm']), { media: true, document: true })
+
+    expect(buildOptsFromFlags(false, mediaNormalized.flags, [], {}, mediaNormalized.explicitFlags).glmSttModels).toEqual(['glm-asr-2512'])
+    expect(buildOptsFromFlags(false, documentNormalized.flags, [], {}, documentNormalized.explicitFlags).glmOcrModels).toEqual(['glm-ocr'])
+    const mixedDefaultOpts = buildOptsFromFlags(false, mixedDefaultNormalized.flags, [], {}, mixedDefaultNormalized.explicitFlags)
+    expect(mixedDefaultOpts.glmSttModels).toEqual(['glm-asr-2512'])
+    expect(mixedDefaultOpts.glmOcrModels).toEqual(['glm-ocr'])
+
+    expect(() => normalizeExtractPublicSelectorFlags({
+      glm: ['glm-ocr']
+    }, new Set(['glm']), { media: true, document: true })).toThrow('--glm <model> is ambiguous')
   })
 
   test('gpt-image-2 accepts flexible valid OpenAI image sizes', () => {

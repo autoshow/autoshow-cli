@@ -1,5 +1,6 @@
 import assemblyLinks from './model-links/assembly.json'
 import awsLinks from './model-links/aws.json'
+import betterAuthLinks from './model-links/better-auth.json'
 import bflLinks from './model-links/bfl.json'
 import cartesiaLinks from './model-links/cartesia.json'
 import claudeLinks from './model-links/claude.json'
@@ -52,6 +53,7 @@ const providerLinks = [
   claudeLinks,
   assemblyLinks,
   awsLinks,
+  betterAuthLinks,
   bflLinks,
   cartesiaLinks,
   gcloudLinks,

@@ -17,6 +17,34 @@ const createReader = (files: Record<string, string>): EpubContentReader => ({
   }
 })
 
+const WINDOWS_1252_TEST_BYTES: Record<string, number> = {
+  '\u2018': 0x91,
+  '\u2019': 0x92,
+  '\u201c': 0x93,
+  '\u201d': 0x94,
+  '\u2013': 0x96,
+  '\u2014': 0x97,
+  '\u2026': 0x85
+}
+
+const encodeLegacyPuaText = (text: string): string =>
+  Array.from(text).map((char) => {
+    const byte = WINDOWS_1252_TEST_BYTES[char] ?? char.codePointAt(0)
+    if (byte === undefined || byte > 0xff) {
+      throw new Error(`Test helper cannot encode character: ${char}`)
+    }
+    return String.fromCodePoint(0xf000 + byte)
+  }).join('')
+
+const encodeReversedLegacyPuaText = (text: string): string =>
+  Array.from(text).map((char) => {
+    const byte = WINDOWS_1252_TEST_BYTES[char] ?? char.codePointAt(0)
+    if (byte === undefined || byte > 0xff) {
+      throw new Error(`Test helper cannot encode character: ${char}`)
+    }
+    return String.fromCodePoint(0xf000 + (byte === 0x20 ? 0x20 : 0x120 - byte))
+  }).join('')
+
 test('EPUB cleanup prefers body output and falls back to document text without body', async () => {
   await expect(cleanEpubHtmlToText('<section><p>Document fallback text.</p></section>'))
     .resolves.toBe('Document fallback text.')
@@ -85,6 +113,29 @@ test('EPUB cleanup decodes numeric, XML, and common EPUB named entities', async 
   `)
 
   expect(text).toBe('A B & C \u2013 D \u2014 E \u2018F\u2019 \u201cG\u201d \u2026 \u00a9 \u00ae \u2122 \u00a9 \u2014 &unknown;')
+})
+
+test('EPUB cleanup decodes dense legacy PUA Windows-1252 text content', async () => {
+  const encodedText = encodeLegacyPuaText('He said \u201cHello\u201d \u2014 then left...')
+  const text = await cleanEpubHtmlToText(`
+    <html><body>
+      <p data-title="${encodedText}">${encodedText}</p>
+    </body></html>
+  `)
+
+  expect(text).toBe('He said \u201cHello\u201d \u2014 then left...')
+})
+
+test('EPUB cleanup decodes reversed legacy PUA byte mapping', async () => {
+  const encodedText = encodeReversedLegacyPuaText('Top: H.G. Wells. \u201cOnly\u201d')
+  const text = await cleanEpubHtmlToText(`
+    <html><body>
+      <p>${encodedText}</p>
+      <p>Chapter <span>${encodeReversedLegacyPuaText('28')}</span>:</p>
+    </body></html>
+  `)
+
+  expect(text).toBe('Top: H.G. Wells. \u201cOnly\u201d\n\nChapter 28:')
 })
 
 test('EPUB TOC heading matching uses cleaned HTML fragments', async () => {

@@ -131,10 +131,10 @@ bun as setup --step reverb
 
 ```bash
 # Prefer YouTube captions, then fall back to STT
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --youtube-captions --deepgram-stt nova-3
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --youtube-captions --deepgram nova-3
 
 # Split a long file before transcription
-bun as extract input/examples/video/2-video.mp4 --whisper-stt large-v3-turbo --split
+bun as extract input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
 
 # Process a whole YouTube channel batch with caption-first routing
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
@@ -170,14 +170,14 @@ These services either work best with provider-side URLs or have source-URL-speci
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi-stt <model>` |
+| Selector | `--deapi <model>` |
 | Models | `WhisperLargeV3` |
 | Diarization | Not enabled by default; `--speaker-count` is ignored |
 | Pricing | Exact provider quote support when the quote endpoint succeeds |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --deapi-stt WhisperLargeV3
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi-stt WhisperLargeV3 --price
+bun as extract input/examples/audio/1-audio.mp3 --deapi WhisperLargeV3
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi WhisperLargeV3 --price
 ```
 
 Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
@@ -186,15 +186,15 @@ Supported passthrough URLs use remote URL mode, while local files and unsupporte
 
 | Option | Value |
 |--------|-------|
-| Selector | `--happyscribe-stt <model>` |
+| Selector | `--happyscribe <model>` |
 | Models | `auto` |
 | Organization | `--happyscribe-organization-id <id>` |
 | Language | Fixed to `en-US` in v1 |
 | Diarization | Enabled by default; `--speaker-count` is ignored |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt auto
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe-stt --happyscribe-organization-id org_123
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe auto
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe --happyscribe-organization-id org_123
 ```
 
 Organization resolution order is CLI `--happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
@@ -203,16 +203,16 @@ Organization resolution order is CLI `--happyscribe-organization-id`, config def
 
 | Option | Value |
 |--------|-------|
-| Selector | `--supadata-stt auto` |
+| Selector | `--supadata auto` |
 | Language | `--supadata-lang <code>` when a native transcript is available |
 | Required env | `SUPADATA_API_KEY` |
 | Optional env | `SUPADATA_BASE_URL` |
 | Input support | Public YouTube, TikTok, Instagram, X/Twitter, Facebook, or direct media/file URLs |
 
 ```bash
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --supadata-stt auto --supadata-lang en
-bun as extract https://www.tiktok.com/@example/video/1234567890 --supadata-stt auto
-bun as extract https://example.com/audio/interview.mp3 --supadata-stt auto --price
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --supadata auto --supadata-lang en
+bun as extract https://www.tiktok.com/@example/video/1234567890 --supadata auto
+bun as extract https://example.com/audio/interview.mp3 --supadata auto --price
 ```
 
 Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. AutoShow exposes only Supadata `auto` mode: it tries provider-native transcripts first and generates a transcript when needed. Supadata treats direct media/file URLs as generated transcripts. `--supadata-lang` is sent with the auto request, but generated transcripts ignore that flag.
@@ -221,33 +221,33 @@ Supadata requires a public source URL and cannot transcribe local file inputs th
 
 | Option | Value |
 |--------|-------|
-| Selector | `--scrapecreators-stt youtube-transcript` |
+| Selector | `--scrapecreators youtube-transcript` |
 | Language | `--scrapecreators-lang <code>`, default `en` |
 | Required env | `SCRAPECREATORS_API_KEY` |
 | Optional env | `SCRAPECREATORS_BASE_URL` |
 | Input support | Public `youtube.com` and `youtu.be` URLs only |
 
 ```bash
-bun as extract "https://www.youtube.com/watch?v=MORMZXEaONk" --scrapecreators-stt youtube-transcript
-bun as extract https://youtu.be/dQw4w9WgXcQ --scrapecreators-stt youtube-transcript --scrapecreators-lang es
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --scrapecreators-stt youtube-transcript --deapi-stt WhisperLargeV3
+bun as extract "https://www.youtube.com/watch?v=MORMZXEaONk" --scrapecreators youtube-transcript
+bun as extract https://youtu.be/dQw4w9WgXcQ --scrapecreators youtube-transcript --scrapecreators-lang es
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --scrapecreators youtube-transcript --deapi WhisperLargeV3
 ```
 
 ScrapeCreators is transcript retrieval, not general audio transcription. AutoShow calls `GET /v1/youtube/video/transcript` with the source URL and requested language, then normalizes returned timed transcript entries into `transcription.txt` and structured STT artifacts. It does not replace `--youtube-captions`; use ScrapeCreators when you want it as an explicit paid provider in the same target set as other STT providers.
 
-ScrapeCreators skips local files, direct media URLs, and non-YouTube URLs as non-retryable provider skips so multi-provider runs can fall back. A `transcript: null` response means the requested language is unavailable and is also treated as a skipped, non-retryable provider result. Pair it with a generating provider such as `--deapi-stt WhisperLargeV3` or `--happyscribe-stt auto` when a missing YouTube transcript should still produce an STT result. `--split` has no effect because ScrapeCreators uses the source URL directly.
+ScrapeCreators skips local files, direct media URLs, and non-YouTube URLs as non-retryable provider skips so multi-provider runs can fall back. A `transcript: null` response means the requested language is unavailable and is also treated as a skipped, non-retryable provider result. Pair it with a generating provider such as `--deapi WhisperLargeV3` or `--happyscribe auto` when a missing YouTube transcript should still produce an STT result. `--split` has no effect because ScrapeCreators uses the source URL directly.
 
 ### Gladia
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gladia-stt <model>` |
+| Selector | `--gladia <model>` |
 | Models | `default` |
 | Diarization | Supports exact `--speaker-count` hints |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --gladia-stt default
-bun as extract input/examples/audio/1-audio.mp3 --gladia-stt --speaker-count 2
+bun as extract input/examples/audio/1-audio.mp3 --gladia default
+bun as extract input/examples/audio/1-audio.mp3 --gladia --speaker-count 2
 ```
 
 ## Non-diarized STT
@@ -258,92 +258,92 @@ These providers are documented as single-speaker or non-diarized in the CLI.
 
 | Option | Value |
 |--------|-------|
-| Selector | default, or `--whisper-stt <model>` |
+| Selector | default, or `--whisper <model>` |
 | Models | `tiny`, `base`, `small`, `medium`, `large-v3-turbo` |
 | Runtime | Local `whisper.cpp` |
 
 ```bash
 bun as extract input/examples/audio/1-audio.mp3
-bun as extract input/examples/audio/1-audio.mp3 --whisper-stt large-v3-turbo
+bun as extract input/examples/audio/1-audio.mp3 --whisper large-v3-turbo
 ```
 
 ### Groq
 
 | Option | Value |
 |--------|-------|
-| Selector | `--groq-stt <model>` |
+| Selector | `--groq <model>` |
 | Models | `whisper-large-v3-turbo`, `whisper-large-v3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --groq-stt
+bun as extract input/examples/audio/1-audio.mp3 --groq
 ```
 
 ### DeepInfra
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deepinfra-stt <model>` |
+| Selector | `--deepinfra <model>` |
 | Models | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --deepinfra-stt
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra
 ```
 
 ### Together
 
 | Option | Value |
 |--------|-------|
-| Selector | `--together-stt <model>` |
+| Selector | `--together <model>` |
 | Models | `openai/whisper-large-v3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --together-stt
+bun as extract input/examples/audio/1-audio.mp3 --together
 ```
 
 ### OpenAI STT
 
 | Option | Value |
 |--------|-------|
-| Selector | `--openai-stt <model>` |
+| Selector | `--openai <model>` |
 | Models | `gpt-4o-mini-transcribe`, `gpt-4o-transcribe` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --openai-stt gpt-4o-mini-transcribe
+bun as extract input/examples/audio/1-audio.mp3 --openai gpt-4o-mini-transcribe
 ```
 
 ### Gemini STT
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gemini-stt <model>` |
+| Selector | `--gemini <model>` |
 | Models | `gemini-3-flash-preview` |
 | Behavior | Prompted JSON transcription via Gemini multimodal input |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --gemini-stt
+bun as extract input/examples/audio/1-audio.mp3 --gemini
 ```
 
 ### GLM STT
 
 | Option | Value |
 |--------|-------|
-| Selector | `--glm-stt <model>` |
+| Selector | `--glm <model>` |
 | Models | `glm-asr-2512` |
 | Behavior | Single-speaker transcription with a 30-second auto-split policy |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --glm-stt
+bun as extract input/examples/audio/1-audio.mp3 --glm
 ```
 
 ### Mistral
 
 | Option | Value |
 |--------|-------|
-| Selector | `--mistral-stt <model>` |
+| Selector | `--mistral <model>` |
 | Models | `voxtral-mini-2602` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --mistral-stt
+bun as extract input/examples/audio/1-audio.mp3 --mistral
 ```
 
 Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request. Requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
@@ -356,24 +356,24 @@ These engines either support diarization directly or AutoShow enables diarizatio
 
 | Option | Value |
 |--------|-------|
-| Selector | `--reverb-stt` |
+| Selector | `--reverb` |
 | Style | `--reverb-verbatimicity <0-1>` |
 | Runtime | Local diarized transcription |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --reverb-stt --reverb-verbatimicity 0.5
+bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 ```
 
 ### Grok STT
 
 | Option | Value |
 |--------|-------|
-| Selector | `--grok-stt <model>` |
+| Selector | `--grok <model>` |
 | Models | `speech-to-text` |
 | Behavior | REST STT with formatted output, word timestamps, and diarization enabled |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --grok-stt speech-to-text
+bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
 ```
 
 Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST STT endpoint and records word timing, confidence, and speaker evidence when the response includes it.
@@ -382,96 +382,96 @@ Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST ST
 
 | Option | Value |
 |--------|-------|
-| Selector | `--elevenlabs-stt <model>` |
+| Selector | `--elevenlabs <model>` |
 | Models | `scribe_v2` |
 | Diarization | Supports `--speaker-count` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --elevenlabs-stt scribe_v2 --speaker-count 2
+bun as extract input/examples/audio/1-audio.mp3 --elevenlabs scribe_v2 --speaker-count 2
 ```
 
 ### Deepgram
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deepgram-stt <model>` |
+| Selector | `--deepgram <model>` |
 | Models | `nova-3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --deepgram-stt nova-3
+bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3
 ```
 
 ### Soniox
 
 | Option | Value |
 |--------|-------|
-| Selector | `--soniox-stt <model>` |
+| Selector | `--soniox <model>` |
 | Models | `stt-async-v4` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --soniox-stt
+bun as extract input/examples/audio/1-audio.mp3 --soniox
 ```
 
 ### Speechmatics
 
 | Option | Value |
 |--------|-------|
-| Selector | `--speechmatics-stt <model>` |
+| Selector | `--speechmatics <model>` |
 | Models | `standard`, `enhanced` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --speechmatics-stt standard --speechmatics-stt enhanced
+bun as extract input/examples/audio/1-audio.mp3 --speechmatics standard --speechmatics enhanced
 ```
 
 ### Rev
 
 | Option | Value |
 |--------|-------|
-| Selector | `--rev-stt <model>` |
+| Selector | `--rev <model>` |
 | Models | `machine`, `low_cost` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --rev-stt low_cost
+bun as extract input/examples/audio/1-audio.mp3 --rev low_cost
 ```
 
 ### Google Cloud STT
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gcloud-stt <model>` |
+| Selector | `--gcloud <model>` |
 | Models | `chirp_3` |
 | Diarization | Always enabled; supports exact `--speaker-count` hints |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt
-bun as extract input/examples/audio/1-audio.mp3 --gcloud-stt --speaker-count 2
+bun as extract input/examples/audio/1-audio.mp3 --gcloud
+bun as extract input/examples/audio/1-audio.mp3 --gcloud --speaker-count 2
 ```
 
 ### AWS Transcribe
 
 | Option | Value |
 |--------|-------|
-| Selector | `--aws-stt <model>` |
+| Selector | `--aws <model>` |
 | Models | `standard` |
 | Region | `--aws-region <region>` |
 | Staging bucket | `--aws-bucket <bucket>` |
 | Diarization | Always enabled; `--speaker-count` maps to `MaxSpeakerLabels` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --aws-stt
-bun as extract input/examples/audio/1-audio.mp3 --aws-stt --speaker-count 2
+bun as extract input/examples/audio/1-audio.mp3 --aws
+bun as extract input/examples/audio/1-audio.mp3 --aws --speaker-count 2
 ```
 
 ### AssemblyAI
 
 | Option | Value |
 |--------|-------|
-| Selector | `--assemblyai-stt <model>` |
+| Selector | `--assemblyai <model>` |
 | Models | `universal-3-pro` |
 | Diarization | Supports `--speaker-count` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --assemblyai-stt
+bun as extract input/examples/audio/1-audio.mp3 --assemblyai
 ```
 
 ## STT Pricing And Manifests
