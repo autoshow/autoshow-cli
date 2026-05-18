@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
-import { collectImageTargets } from '~/cli/commands/process-steps/step-5-image/image-targets'
+import { collectImageTargets, getExpectedImageArtifactFileNames, getExpectedImageCount } from '~/cli/commands/process-steps/step-5-image/image-targets'
 import { collectVideoTargets } from '~/cli/commands/process-steps/step-6-video/video-targets'
 import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
 import {
@@ -329,6 +329,7 @@ describe('provider selection contracts', () => {
     const multiOpts = buildOptsFromFlags(false, {
       'openai-image': ['gpt-image-1.5'],
       'gemini-image': ['imagen-4.0-generate-001'],
+      'minimax-image': ['image-01'],
       'grok-image': ['grok-imagine-image-quality'],
       'image-count': '3'
     })
@@ -336,11 +337,11 @@ describe('provider selection contracts', () => {
     expect(targets.map((target) => `${target.service}:${target.model}`)).toEqual([
       'gemini:imagen-4.0-generate-001',
       'openai:gpt-image-1.5',
+      'minimax:image-01',
       'grok:grok-imagine-image-quality'
     ])
 
     for (const [flag, model, providerName] of [
-      ['minimax-image', 'image-01', 'MiniMax'],
       ['glm-image', 'glm-image', 'GLM'],
       ['runway-image', 'gen4_image', 'Runway'],
       ['bfl-image', 'flux-2-pro-preview', 'BFL'],
@@ -378,7 +379,17 @@ describe('provider selection contracts', () => {
         'minimax-image': ['image-01'],
         'image-input': [imagePath]
       })
-      expect(() => collectImageTargets(minimaxEditOpts)).toThrow('MiniMax/image-01')
+      expect(collectImageTargets(minimaxEditOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+        'minimax:image-01'
+      ])
+
+      const bflEditOpts = buildOptsFromFlags(false, {
+        'bfl-image': ['flux-2-pro-preview'],
+        'image-input': [imagePath]
+      })
+      expect(collectImageTargets(bflEditOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+        'bfl:flux-2-pro-preview'
+      ])
 
       const missingPath = join(tempDir, 'missing.png')
       const missingInputOpts = buildOptsFromFlags(false, {
@@ -386,6 +397,60 @@ describe('provider selection contracts', () => {
         'image-input': [missingPath]
       })
       expect(() => collectImageTargets(missingInputOpts)).toThrow(`--image-input file "${missingPath}" does not exist`)
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('MiniMax, BFL, and GLM accept newly mapped shared image options', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'autoshow-image-provider-flags-'))
+    const imagePath = join(tempDir, 'reference.png')
+    writeFileSync(imagePath, new Uint8Array([1, 2, 3]))
+
+    try {
+      const minimaxOpts = buildOptsFromFlags(false, {
+        'minimax-image': ['image-01'],
+        'image-input': [imagePath],
+        'image-count': '9',
+        'image-size': '1024x768'
+      })
+      const minimaxTargets = collectImageTargets(minimaxOpts)
+      expect(minimaxTargets.map((target) => `${target.service}:${target.model}`)).toEqual([
+        'minimax:image-01'
+      ])
+      expect(getExpectedImageCount(minimaxTargets[0]!, minimaxOpts)).toBe(9)
+      const minimaxFiles = getExpectedImageArtifactFileNames(minimaxTargets[0]!, minimaxOpts, true)
+      expect(minimaxFiles).toHaveLength(9)
+      expect(minimaxFiles.slice(0, 3)).toEqual([
+        'generated-image.jpeg',
+        'generated-image-2.jpeg',
+        'generated-image-3.jpeg'
+      ])
+      expect(minimaxFiles[8]).toBe('generated-image-9.jpeg')
+
+      const bflOpts = buildOptsFromFlags(false, {
+        'bfl-image': ['flux-2-pro-preview'],
+        'image-input': [imagePath]
+      })
+      expect(collectImageTargets(bflOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+        'bfl:flux-2-pro-preview'
+      ])
+
+      const glmOpts = buildOptsFromFlags(false, {
+        'glm-image': ['glm-image'],
+        'image-quality': 'hd'
+      })
+      expect(collectImageTargets(glmOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+        'glm:glm-image'
+      ])
+
+      for (const invalidQuality of ['low', 'medium', 'high', 'auto']) {
+        const invalidGlmOpts = buildOptsFromFlags(false, {
+          'glm-image': ['glm-image'],
+          'image-quality': invalidQuality
+        })
+        expect(() => collectImageTargets(invalidGlmOpts)).toThrow(`Invalid --image-quality value "${invalidQuality}" for GLM`)
+      }
     } finally {
       rmSync(tempDir, { recursive: true, force: true })
     }

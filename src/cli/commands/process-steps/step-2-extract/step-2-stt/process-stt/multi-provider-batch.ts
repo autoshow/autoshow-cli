@@ -16,7 +16,7 @@ import type {
 import type { MistralSttPassController } from '../stt-services/mistral/mistral-stt-pass-controller'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import { logLocationsTable } from '~/utils/logger/human-table'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { logRunManifestLocation } from '../../../write-manifest-log'
@@ -548,7 +548,10 @@ export const runMultiProviderSttBatch = async ({
   logSttProviderFailures(l, failures)
   logSttProviderSkips(l, skippedProviderStates)
   l.warn('Output directory preserved for retry/backfill')
-  logLocationsTable(l, [{ artifact: 'retryOutputDir', path: outputDir }], { level: 'warn' })
+  l.write('warn', 'Locations', {
+    category: 'artifact',
+    humanTable: createKeyValueTable([['retryOutputDir', outputDir]], 'artifact', 'path')
+  })
 
   throw new SttPartialCompletionError(
     outputDir,

@@ -49,6 +49,23 @@ export type Step6VideoMetadata = {
   videoFileName: string
   videoFileSize: number
   videoDuration: number | undefined
+  requestMode?: string | undefined
+  videoResolution?: string | undefined
+  videoAspectRatio?: string | undefined
+  inputImage?: string | undefined
+  lastFrameImage?: string | undefined
+  referenceImages?: string[] | undefined
+  inputVideo?: string | undefined
+  providerRequestId?: string | undefined
+  providerReturnedModel?: string | undefined
+  providerVideoUrl?: string | undefined
+  providerVideoUri?: string | undefined
+  providerProgress?: number | undefined
+  providerModeration?: unknown
+  providerFileOutput?: unknown
+  providerStorageError?: unknown
+  providerCostCents?: number | undefined
+  providerCostSource?: 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
 }
 
 export type Step7MusicMetadata = {

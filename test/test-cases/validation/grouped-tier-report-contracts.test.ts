@@ -138,14 +138,16 @@ describe('grouped tier report contracts', () => {
           thirdParty: { count: number, tiers: Array<{ count: number }> }
         }
       }
-      overall?: unknown
-      providers?: unknown
+      overall: { count: number, providers: Array<{ overallRank: number, overallScore: number }> }
+      providers: Array<{ rank: number, providerKey: string, overallRank: number, overallScore: number }>
     }
 
     expect(hasOwnKeyDeep(report, deprecatedTierSplitKey)).toBe(false)
     expect(hasOwnKeyDeep(report, deprecatedOverallTierKey)).toBe(false)
-    expect(report.overall).toBeUndefined()
-    expect(report.providers).toBeUndefined()
+    expect(report.overall.count).toBe(4)
+    expect(report.overall.providers.map((provider) => provider.overallRank)).toEqual([1, 2, 3, 4])
+    expect(report.providers.map((provider) => provider.rank)).toEqual([1, 2, 3, 4])
+    expect(report.providers.every((provider) => provider.overallRank > 0 && provider.overallScore >= 0)).toBe(true)
     expectRankingSurfaces(report)
     expect(report.tiering.metric).toBe('balanced-overall')
     expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
@@ -158,10 +160,10 @@ describe('grouped tier report contracts', () => {
     expect([...report.providerGroups.local.providers, ...report.providerGroups.service.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'provider-comparison-report.md')).text()
-    expect(markdown).toContain('## Local Providers')
-    expect(markdown).toContain('## Service Providers')
-    expect(markdown).toContain('### Top 3 Highest Quality')
-    expect(markdown).not.toContain('## Overall Ranking')
+    expect(markdown).toContain('## Overall Ranking')
+    expect(markdown).toContain('## Tier Breakdown')
+    expect(markdown).toContain('## Ranking')
+    expect(markdown).toContain('| Rank | Provider | Score / 100 | WER | CER | Token Est. | Processing Time | Actual Cost |')
   })
 
   test('STT comparison report splits service tiers by diarization support', async () => {
@@ -305,14 +307,16 @@ describe('grouped tier report contracts', () => {
           thirdPartyNonDiarization: { count: number, tiers: Array<{ count: number }> }
         }
       }
-      overall?: unknown
-      providers?: unknown
+      overall: { count: number, providers: Array<{ overallRank: number, overallScore: number }> }
+      providers: Array<{ rank: number, provider: string, overallRank: number, overallScore: number }>
     }
 
     expect(hasOwnKeyDeep(report, deprecatedTierSplitKey)).toBe(false)
     expect(hasOwnKeyDeep(report, deprecatedOverallTierKey)).toBe(false)
-    expect(report.overall).toBeUndefined()
-    expect(report.providers).toBeUndefined()
+    expect(report.overall.count).toBe(5)
+    expect(report.overall.providers.map((provider) => provider.overallRank)).toEqual([1, 2, 3, 4, 5])
+    expect(report.providers.map((provider) => provider.rank)).toEqual([1, 2, 3, 4, 5])
+    expect(report.providers.every((provider) => provider.overallRank > 0 && provider.overallScore >= 0)).toBe(true)
     expectRankingSurfaces(report)
     expect(report.tiering.metric).toBe('balanced-overall')
     expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
@@ -324,10 +328,10 @@ describe('grouped tier report contracts', () => {
     expect([...report.providerGroups.local.providers, ...report.providerGroups.service.providers].every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
-    expect(markdown).toContain('## Local Providers')
-    expect(markdown).toContain('## Service Providers')
-    expect(markdown).toContain('### Top 3 Highest Quality')
-    expect(markdown).not.toContain('## Overall Ranking')
+    expect(markdown).toContain('## Overall Ranking')
+    expect(markdown).toContain('## Tier Breakdown')
+    expect(markdown).toContain('## Ranking')
+    expect(markdown).toContain('| Rank | Provider | Tier Group | Group Rank | Group Tier | Diarization | Overall / 100 | Accuracy | Speed | Cost |')
   })
 
   test('TTS comparison report emits grouped tier JSON without provider APIs', async () => {

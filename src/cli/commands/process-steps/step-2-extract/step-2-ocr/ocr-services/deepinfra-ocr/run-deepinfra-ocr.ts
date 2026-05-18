@@ -1,13 +1,10 @@
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import * as v from 'valibot'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
-import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { withOcrPageRequestRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { getCachedRenderedPageImage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
-import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import {
   DEEPINFRA_OCR_IMAGE_BYTES,
   getDeepinfraOcrClientConfig
@@ -19,38 +16,6 @@ import {
 } from '~/utils/openai/client'
 
 const DEEPINFRA_OCR_MAX_TOKENS = 4092
-
-const DeepinfraOcrEnvelopeSchema = v.object({
-  pages: v.array(v.object({
-    pageNumber: v.pipe(v.number(), v.integer(), v.minValue(1)),
-    text: v.string()
-  }))
-})
-
-const DEEPINFRA_OCR_JSON_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['pages'],
-  properties: {
-    pages: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['pageNumber', 'text'],
-        properties: {
-          pageNumber: {
-            type: 'integer',
-            minimum: 1
-          },
-          text: {
-            type: 'string'
-          }
-        }
-      }
-    }
-  }
-} as const
 
 const getImageMimeType = (format: DocumentMetadata['format']): string => {
   switch (format) {
@@ -67,55 +32,12 @@ const getImageMimeType = (format: DocumentMetadata['format']): string => {
 
 const buildOcrPrompt = (): string => [
   'Perform OCR on the provided page image.',
-  'Return only JSON.',
+  'Return only the text visible on the page.',
   'Do not summarize, explain, or translate.',
   'Preserve the visible reading order.',
   'Preserve paragraph breaks and line breaks when they are meaningful.',
-  'If the page is blank or unreadable, return one page object with an empty string for text.',
-  'Return exactly one page object with pageNumber set to 1.'
+  'If the page is blank or unreadable, return an empty string.'
 ].join(' ')
-
-const normalizePages = (
-  value: unknown,
-  pageNumber: number
-): PageResult[] => {
-  const parsed = v.safeParse(DeepinfraOcrEnvelopeSchema, value)
-  if (!parsed.success) {
-    throw new Error('DeepInfra OCR response did not match the expected page schema.')
-  }
-
-  if (parsed.output.pages.length !== 1) {
-    throw new Error(`DeepInfra OCR returned ${parsed.output.pages.length} pages for a single page image.`)
-  }
-
-  const page = parsed.output.pages[0]
-  if (!page) {
-    throw new Error('DeepInfra OCR returned no pages.')
-  }
-
-  return [{
-    pageNumber,
-    method: 'ocr',
-    text: page.text
-  }]
-}
-
-const parseOcrResponse = (
-  rawText: string,
-  pageNumber: number
-): PageResult[] => {
-  const validation = parseAndValidateStructured(DeepinfraOcrEnvelopeSchema, rawText)
-  if (!validation.success) {
-    throw new OcrStructuredResponseError(validation.issue ?? 'DeepInfra OCR response was not valid JSON.', rawText)
-  }
-
-  try {
-    return normalizePages(validation.value, pageNumber)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new OcrStructuredResponseError(message, rawText)
-  }
-}
 
 const assertImageWithinLimits = async (filePath: string, pageLabel: string): Promise<void> => {
   const fileStats = await stat(filePath)
@@ -149,14 +71,6 @@ const runDeepinfraOcrImage = async (
       const response = await createOpenAIChatCompletion(config, {
         model,
         max_tokens: DEEPINFRA_OCR_MAX_TOKENS,
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'ocr_pages',
-            schema: DEEPINFRA_OCR_JSON_SCHEMA,
-            strict: true
-          }
-        },
         messages: [{
           role: 'user',
           content: [
@@ -168,12 +82,11 @@ const runDeepinfraOcrImage = async (
       const rawText = extractOpenAIChatCompletionText(response) ?? ''
 
       if (!rawText.trim()) {
-        throw new OcrStructuredResponseError('DeepInfra OCR returned no text output.', rawText)
+        throw new Error('DeepInfra OCR returned no text output.')
       }
 
-      const pages = parseOcrResponse(rawText, pageNumber)
       return {
-        page: pages[0]!,
+        page: { pageNumber, method: 'ocr', text: rawText.trim() },
         ...(typeof response.usage?.prompt_tokens === 'number' ? { promptTokens: response.usage.prompt_tokens } : {}),
         ...(typeof response.usage?.completion_tokens === 'number' ? { completionTokens: response.usage.completion_tokens } : {})
       }

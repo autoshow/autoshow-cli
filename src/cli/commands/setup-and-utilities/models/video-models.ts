@@ -13,14 +13,24 @@ export const SUPPORTED_MINIMAX_VIDEO_MODELS = [
   'T2V-01',
   'T2V-01-Director',
   'MiniMax-Hailuo-2.3',
-  'MiniMax-Hailuo-02'
+  'MiniMax-Hailuo-2.3-Fast',
+  'MiniMax-Hailuo-02',
+  'I2V-01-Director',
+  'I2V-01-live',
+  'I2V-01',
+  'S2V-01'
 ] as const satisfies readonly string[]
 
 export const validateMinimaxVideoModel = createModelValidator<MinimaxVideoModel>(SUPPORTED_MINIMAX_VIDEO_MODELS, 'minimax-video')
 
 export const SUPPORTED_GLM_VIDEO_MODELS = [
   'cogvideox-3',
-  'viduq1-text'
+  'viduq1-text',
+  'viduq1-image',
+  'viduq1-start-end',
+  'vidu2-image',
+  'vidu2-start-end',
+  'vidu2-reference'
 ] as const satisfies readonly string[]
 
 export const validateGlmVideoModel = createModelValidator<GlmVideoModel>(SUPPORTED_GLM_VIDEO_MODELS, 'glm-video')

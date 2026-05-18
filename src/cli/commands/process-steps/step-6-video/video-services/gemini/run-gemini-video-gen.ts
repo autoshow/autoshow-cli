@@ -8,6 +8,8 @@ import { normalizeGeminiDuration, normalizeGeminiResolution } from '~/cli/comman
 import { pollUntil } from '~/utils/retries'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { geminiDownloadFile, geminiGetOperation, geminiPredictLongRunning } from '~/utils/gemini/gemini-rest'
+import { videoMediaReferenceToGeminiInlineData } from '../../video-utils/video-media-inputs'
+import type { VideoMode } from '../../video-types'
 
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
@@ -15,7 +17,17 @@ const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 export const runGeminiVideoGen = async (
   prompt: string,
   outputDir: string,
-  options: { model: GeminiVideoModel, aspectRatio?: string | undefined, resolution?: string | undefined, durationSeconds?: number | undefined }
+  options: {
+    model: GeminiVideoModel
+    mode?: VideoMode | undefined
+    aspectRatio?: string | undefined
+    resolution?: string | undefined
+    durationSeconds?: number | undefined
+    inputImage?: string | undefined
+    lastFrameImage?: string | undefined
+    referenceImages?: string[] | undefined
+    inputVideo?: string | undefined
+  }
 ): Promise<{ videoPath: string, metadata: Step6VideoMetadata }> => {
   const apiKey = readEnv('GEMINI_API_KEY')
   if (!apiKey) {
@@ -32,13 +44,30 @@ export const runGeminiVideoGen = async (
   const estimate = estimateVideoCost({
     geminiVideoModel: options.model,
     videoDuration: options.durationSeconds,
-    videoResolution: options.resolution
+    videoResolution: options.resolution,
+    videoMode: options.mode
   })
   logVideoEstimate(estimate)
 
   await mkdir(outputDir, { recursive: true })
-  const normalizedResolution = normalizeGeminiResolution(options.resolution)
-  const normalizedDuration = normalizeGeminiDuration(options.durationSeconds, normalizedResolution)
+  const mode = options.mode ?? 'text'
+  const normalizedResolution = mode === 'extend' ? '720p' : normalizeGeminiResolution(options.resolution, options.model)
+  const normalizedDuration = normalizeGeminiDuration(options.durationSeconds, normalizedResolution, mode)
+  const image = options.inputImage
+    ? await videoMediaReferenceToGeminiInlineData(options.inputImage, 'image')
+    : undefined
+  const lastFrame = options.lastFrameImage
+    ? await videoMediaReferenceToGeminiInlineData(options.lastFrameImage, 'image')
+    : undefined
+  const referenceImages = options.referenceImages && options.referenceImages.length > 0
+    ? await Promise.all(options.referenceImages.map(async (input) => ({
+        image: await videoMediaReferenceToGeminiInlineData(input, 'image'),
+        referenceType: 'asset' as const
+      })))
+    : undefined
+  const inputVideo = options.inputVideo
+    ? await videoMediaReferenceToGeminiInlineData(options.inputVideo, 'video')
+    : undefined
 
   const startTime = Date.now()
   let operation = await geminiPredictLongRunning(apiKey, {
@@ -47,7 +76,11 @@ export const runGeminiVideoGen = async (
     ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
     resolution: normalizedResolution,
     durationSeconds: normalizedDuration,
-    numberOfVideos: 1
+    numberOfVideos: 1,
+    ...(image ? { image } : {}),
+    ...(lastFrame ? { lastFrame } : {}),
+    ...(referenceImages ? { referenceImages } : {}),
+    ...(inputVideo ? { video: inputVideo } : {})
   })
 
   const completedOp = await pollUntil({
@@ -105,7 +138,16 @@ export const runGeminiVideoGen = async (
     processingTime,
     videoFileName: 'generated-video.mp4',
     videoFileSize: videoFile.size,
-    videoDuration: normalizedDuration
+    videoDuration: normalizedDuration,
+    requestMode: mode,
+    videoResolution: normalizedResolution,
+    ...(options.aspectRatio ? { videoAspectRatio: options.aspectRatio } : {}),
+    ...(options.inputImage ? { inputImage: options.inputImage } : {}),
+    ...(options.lastFrameImage ? { lastFrameImage: options.lastFrameImage } : {}),
+    ...(options.referenceImages && options.referenceImages.length > 0 ? { referenceImages: options.referenceImages } : {}),
+    ...(options.inputVideo ? { inputVideo: options.inputVideo } : {}),
+    ...(video.uri ? { providerVideoUri: video.uri } : {}),
+    ...(video.mimeType ? { providerFileOutput: { mimeType: video.mimeType } } : {})
   }
 
   return { videoPath: outputPath, metadata }

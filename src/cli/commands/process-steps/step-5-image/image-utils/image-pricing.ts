@@ -123,12 +123,13 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   for (const rawModel of minimaxModels) {
     const model = validateMinimaxImageModel(rawModel)
     const costPerImageCents = getImageCost('minimax', model)
+    const imageCount = Math.max(1, options.imageCount ?? 1)
     estimates.push({
       provider: 'minimax',
       model,
-      imageCount: 1,
+      imageCount,
       costPerImageCents,
-      totalCost: costPerImageCents,
+      totalCost: costPerImageCents * imageCount,
       note: 'Approximate cost; see MiniMax pricing for exact rates'
     })
   }

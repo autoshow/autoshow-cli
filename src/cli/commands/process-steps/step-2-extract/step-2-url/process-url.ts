@@ -2,7 +2,7 @@ import { mkdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 import { ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import { estimateTokens } from '~/utils/text-utils'
@@ -571,10 +571,19 @@ export const processUrlArticle = async (
     }
     l.write('warn', 'Run Status', {
       category: 'pipeline',
-      humanTable: createHumanTable([runStatus], ['completionStatus', 'requested', 'succeeded', 'failed', 'missing']),
+      humanTable: createKeyValueTable([
+        ['completionStatus', runStatus.completionStatus],
+        ['requested', runStatus.requested],
+        ['succeeded', runStatus.succeeded],
+        ['failed', runStatus.failed],
+        ['missing', runStatus.missing]
+      ]),
       metadata: runStatus
     })
-    logLocationsTable(l, [{ artifact: 'retryOutputDir', path: outputDir }], { level: 'warn' })
+    l.write('warn', 'Locations', {
+      category: 'artifact',
+      humanTable: createKeyValueTable([['retryOutputDir', outputDir]], 'artifact', 'path')
+    })
   } else {
     l.report.complete(outputDir, artifactFiles, allUrlMode
       ? {

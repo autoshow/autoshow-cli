@@ -1,6 +1,6 @@
 import { basename } from 'node:path'
 import * as l from '~/utils/logger'
-import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -106,7 +106,13 @@ export const processOcrSingle = async (
     }
     l.write('warn', 'Run Status', {
       category: 'pipeline',
-      humanTable: createHumanTable([runStatus], ['completionStatus', 'requested', 'succeeded', 'failed', 'missing']),
+      humanTable: createKeyValueTable([
+        ['completionStatus', runStatus.completionStatus],
+        ['requested', runStatus.requested],
+        ['succeeded', runStatus.succeeded],
+        ['failed', runStatus.failed],
+        ['missing', runStatus.missing]
+      ]),
       metadata: runStatus
     })
 
@@ -151,10 +157,16 @@ export const processOcrSingle = async (
       }
     }
 
-    logLocationsTable(l, [{ artifact: 'retryOutputDir', path: extraction.outputDir }], { level: 'warn' })
+    l.write('warn', 'Locations', {
+      category: 'artifact',
+      humanTable: createKeyValueTable([['retryOutputDir', extraction.outputDir]], 'artifact', 'path')
+    })
     l.write('warn', 'Retry OCR', {
       category: 'pipeline',
-      humanTable: createHumanTable([{ action: 'resume', command: 'bun as resume <retryOutputDir>' }], ['action', 'command']),
+      humanTable: createKeyValueTable([
+        ['action', 'resume'],
+        ['command', 'bun as resume <retryOutputDir>']
+      ]),
       metadata: {
         command: `bun as resume ${extraction.outputDir}`,
         outputDir: extraction.outputDir

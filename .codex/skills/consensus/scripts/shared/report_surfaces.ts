@@ -54,6 +54,17 @@ interface RankingSurfaces {
   service: SurfaceGroup;
 }
 
+type ProviderGroups = {
+  local: {
+    count: number;
+    providers: Array<Record<string, unknown>>;
+  };
+  service: {
+    count: number;
+    providers: Array<Record<string, unknown>>;
+  };
+};
+
 const CATEGORY_TITLES: Record<ConsensusCategory, string> = {
   image: "Image",
   music: "Music",
@@ -396,6 +407,40 @@ function qualityUnavailableReason(category: ConsensusCategory, group: ProviderGr
   return `No quality evidence metric was available for ${group} providers.`;
 }
 
+function dropCombinedOverallFields(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(dropCombinedOverallFields);
+  }
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const sanitized: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value)) {
+    if (key === "overallRank" || key === "overallScore" || key === "overallComponents") {
+      continue;
+    }
+    sanitized[key] = dropCombinedOverallFields(child);
+  }
+  return sanitized;
+}
+
+function reportNotes(sourceReport: Record<string, unknown>): string[] {
+  if (!Array.isArray(sourceReport.notes)) {
+    return [];
+  }
+  return sourceReport.notes.filter((note): note is string => {
+    if (typeof note !== "string") {
+      return false;
+    }
+    return !/^Best overall provider:/i.test(note) && !/^Worst overall provider:/i.test(note);
+  });
+}
+
+function preservesCombinedOverallReport(category: ConsensusCategory): boolean {
+  return category === "ocr" || category === "stt";
+}
+
 function buildRankingSurfaces(category: ConsensusCategory, providers: ProviderSummary[]): RankingSurfaces {
   const buildGroup = (group: ProviderGroup): SurfaceGroup => {
     const groupProviders = providers.filter((provider) => provider.group === group);
@@ -438,7 +483,21 @@ function providerDetail(provider: ProviderSummary): Record<string, unknown> {
     qualityWarnings: provider.source.qualityWarnings ?? [],
     segmentStats: provider.source.segmentStats ?? null,
     duplicateGroupId: provider.source.duplicateGroupId ?? null,
-    overallComponents: provider.source.overallComponents ?? null,
+  };
+}
+
+function buildProviderGroups(providers: ProviderSummary[]): ProviderGroups {
+  const localProviders = providers.filter((provider) => provider.group === "local");
+  const serviceProviders = providers.filter((provider) => provider.group === "service");
+  return {
+    local: {
+      count: localProviders.length,
+      providers: localProviders.map(providerDetail),
+    },
+    service: {
+      count: serviceProviders.length,
+      providers: serviceProviders.map(providerDetail),
+    },
   };
 }
 
@@ -449,8 +508,22 @@ function buildJsonReport(
   rankingSurfaces: RankingSurfaces,
 ): Record<string, unknown> {
   const runDir = asString(sourceReport.runDir) ?? "";
-  const localProviders = providers.filter((provider) => provider.group === "local");
-  const serviceProviders = providers.filter((provider) => provider.group === "service");
+  const providerGroups = buildProviderGroups(providers);
+
+  if (preservesCombinedOverallReport(category)) {
+    return {
+      ...sourceReport,
+      schemaVersion: asNumber(sourceReport.schemaVersion) ?? 2,
+      kind: `${category}-provider-comparison`,
+      category,
+      runDir,
+      runName: runDir ? basename(runDir) : null,
+      generatedAt: new Date().toISOString(),
+      providerCount: providers.length,
+      providerGroups,
+      rankingSurfaces,
+    };
+  }
 
   return {
     schemaVersion: 2,
@@ -461,25 +534,14 @@ function buildJsonReport(
     generatedAt: new Date().toISOString(),
     metric: sourceReport.metric ?? null,
     scoreFormula: sourceReport.scoreFormula ?? null,
-    overallMetric: sourceReport.overallMetric ?? null,
-    overallWeights: sourceReport.overallWeights ?? null,
-    tiering: sourceReport.tiering ?? null,
+    tiering: dropCombinedOverallFields(sourceReport.tiering ?? null),
     duplicateGroups: sourceReport.duplicateGroups ?? [],
     normalization: sourceReport.normalization ?? null,
     providerCount: providers.length,
-    providerGroups: {
-      local: {
-        count: localProviders.length,
-        providers: localProviders.map(providerDetail),
-      },
-      service: {
-        count: serviceProviders.length,
-        providers: serviceProviders.map(providerDetail),
-      },
-    },
+    providerGroups,
     rankingSurfaces,
     combinedLeaderboardPolicy: "omitted: local and service providers are not ranked against each other",
-    notes: Array.isArray(sourceReport.notes) ? sourceReport.notes : [],
+    notes: reportNotes(sourceReport),
   };
 }
 
@@ -538,9 +600,7 @@ function buildMarkdownReport(
   rankingSurfaces: RankingSurfaces,
 ): string {
   const runDir = asString(sourceReport.runDir) ?? "";
-  const notes = Array.isArray(sourceReport.notes)
-    ? sourceReport.notes.filter((note): note is string => typeof note === "string")
-    : [];
+  const notes = reportNotes(sourceReport);
   const localProviders = providers.filter((provider) => provider.group === "local");
   const serviceProviders = providers.filter((provider) => provider.group === "service");
   const notesBlock = notes.length > 0 ? notes.map((note) => `- ${note}`).join("\n") : "- No additional notes.";
@@ -578,11 +638,14 @@ export function rewriteComparisonReports(options: RewriteOptions): void {
   if (!isRecord(sourceReport)) {
     throw new Error(`Expected JSON object in ${options.jsonPath}`);
   }
+  const sourceMarkdown = readFileSync(options.markdownPath, "utf8");
 
   const providers = extractProviders(options.category, sourceReport);
   const rankingSurfaces = buildRankingSurfaces(options.category, providers);
   const jsonReport = buildJsonReport(options.category, sourceReport, providers, rankingSurfaces);
-  const markdownReport = buildMarkdownReport(options.category, sourceReport, providers, rankingSurfaces);
+  const markdownReport = preservesCombinedOverallReport(options.category)
+    ? sourceMarkdown.endsWith("\n") ? sourceMarkdown : `${sourceMarkdown}\n`
+    : buildMarkdownReport(options.category, sourceReport, providers, rankingSurfaces);
 
   writeFileSync(options.jsonPath, `${JSON.stringify(jsonReport, null, 2)}\n`);
   writeFileSync(options.markdownPath, markdownReport);

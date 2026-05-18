@@ -9,7 +9,7 @@ import type {
   RetryPolicy
 } from '~/types'
 import * as l from '~/utils/logger'
-import { createHumanTable } from '~/utils/logger/human-table'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 
 const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 422])
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504])
@@ -184,7 +184,13 @@ export type RetryAttemptLog = {
 export const buildRetryAttemptTable = (
   summary: RetryAttemptLog
 ): HumanLogTable =>
-  createHumanTable([summary], ['operation', 'attempt', 'maxAttempts', 'reason', 'delayMs'])
+  createKeyValueTable([
+    ['operation', summary.operation],
+    ['attempt', summary.attempt],
+    ['maxAttempts', summary.maxAttempts],
+    ['reason', summary.reason],
+    ['delayMs', summary.delayMs]
+  ])
 
 export const logRetryAttempt = (
   summary: RetryAttemptLog,

@@ -92,5 +92,4 @@ Unavailable: No roundtrip WER or explicit voice-quality metric was available for
 - The cheapest cloud providers were `deapi/Kokoro`, `deapi/Chatterbox`, and `deapi/Qwen3_TTS_12Hz_1_7B_CustomVoice` at 0.0220¢ ($0.0002).
 - Fastest local model: `kitten/kitten-tts-nano` at 6.08s.
 - Fastest cloud service: `gcloud/studio` at 1.80s.
-- No roundtrip STT data or explicit voice-quality metric was available. Highest-quality rankings are unavailable for both provider groups.
-- Combined local/service leaderboards are omitted; local and service providers are not ranked against each other.
+- No roundtrip STT data was available. Existing local/cloud ranking used a composite of speaking rate naturalness (60%), cost (20%), and speed (20%); overall ranking used neutral 50/100 accuracy components for providers without roundtrip data.

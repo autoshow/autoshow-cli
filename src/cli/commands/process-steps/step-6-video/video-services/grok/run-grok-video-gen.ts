@@ -6,12 +6,15 @@ import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-step
 import {
   normalizeGrokVideoAspectRatio,
   normalizeGrokVideoDuration,
+  normalizeGrokVideoExtensionDuration,
   normalizeGrokVideoResolution
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
+import { videoMediaReferenceToGrokUrlObject } from '../../video-utils/video-media-inputs'
+import type { VideoMode } from '../../video-types'
 
 const DEFAULT_XAI_BASE_URL = 'https://api.x.ai/v1'
 const POLL_INTERVAL_MS = 10_000
@@ -24,8 +27,17 @@ const GrokCreateVideoResponseSchema = v.object({
 const GrokPollVideoResponseSchema = v.object({
   status: v.string(),
   error: v.optional(v.unknown(), undefined),
+  model: v.optional(v.string(), undefined),
+  progress: v.optional(v.number(), undefined),
+  usage: v.optional(v.object({
+    cost_in_usd_ticks: v.optional(v.number(), undefined)
+  }), undefined),
   video: v.optional(v.object({
-    url: v.optional(v.string(), undefined)
+    url: v.optional(v.nullable(v.string()), undefined),
+    duration: v.optional(v.number(), undefined),
+    respect_moderation: v.optional(v.boolean(), undefined),
+    file_output: v.optional(v.unknown(), undefined),
+    storage_error: v.optional(v.unknown(), undefined)
   }), undefined)
 })
 
@@ -42,7 +54,18 @@ const formatGrokError = (value: unknown): string => {
 export const runGrokVideoGen = async (
   prompt: string,
   outputDir: string,
-  options: { model: GrokVideoModel, durationSeconds?: number | undefined, aspectRatio?: string | undefined, resolution?: string | undefined }
+  options: {
+    model: GrokVideoModel
+    mode?: VideoMode | undefined
+    durationSeconds?: number | undefined
+    aspectRatio?: string | undefined
+    resolution?: string | undefined
+    inputImage?: string | undefined
+    referenceImages?: string[] | undefined
+    inputVideo?: string | undefined
+    storageFilename?: string | undefined
+    storageExpiresAfter?: number | undefined
+  }
 ): Promise<{ videoPath: string, metadata: Step6VideoMetadata }> => {
   const apiKey = readEnv('XAI_API_KEY')
   if (!apiKey) {
@@ -50,9 +73,23 @@ export const runGrokVideoGen = async (
   }
 
   const baseURL = (readEnv('XAI_BASE_URL') ?? DEFAULT_XAI_BASE_URL).replace(/\/+$/, '')
-  const duration = normalizeGrokVideoDuration(options.durationSeconds)
-  const aspectRatio = normalizeGrokVideoAspectRatio(options.aspectRatio)
-  const resolution = normalizeGrokVideoResolution(options.resolution)
+  const mode = options.mode ?? 'text'
+  const duration = mode === 'extend'
+    ? normalizeGrokVideoExtensionDuration(options.durationSeconds)
+    : normalizeGrokVideoDuration(options.durationSeconds)
+  const aspectRatio = mode === 'edit' || mode === 'extend' ? undefined : normalizeGrokVideoAspectRatio(options.aspectRatio)
+  const resolution = mode === 'edit' || mode === 'extend' ? undefined : normalizeGrokVideoResolution(options.resolution)
+  const storageOptions = options.storageFilename || options.storageExpiresAfter !== undefined
+    ? {
+        ...(options.storageFilename ? { filename: options.storageFilename } : {}),
+        ...(options.storageExpiresAfter !== undefined ? { expires_after: options.storageExpiresAfter } : {})
+      }
+    : undefined
+  const endpoint = mode === 'edit'
+    ? '/videos/edits'
+    : mode === 'extend'
+      ? '/videos/extensions'
+      : '/videos/generations'
 
   logMediaGenerationStatus(l, {
     mediaType: 'video',
@@ -64,29 +101,52 @@ export const runGrokVideoGen = async (
   const estimate = estimateVideoCost({
     grokVideoModel: options.model,
     videoDuration: options.durationSeconds,
-    videoResolution: options.resolution
+    videoResolution: options.resolution,
+    videoMode: options.mode
   })
   logVideoEstimate(estimate)
 
   const startTime = Date.now()
-  const createResp = await fetch(`${baseURL}/videos/generations`, {
+  const image = options.inputImage
+    ? await videoMediaReferenceToGrokUrlObject(options.inputImage, 'image')
+    : undefined
+  const referenceImages = options.referenceImages && options.referenceImages.length > 0
+    ? await Promise.all(options.referenceImages.map(async (input) => await videoMediaReferenceToGrokUrlObject(input, 'image')))
+    : undefined
+  const inputVideo = options.inputVideo
+    ? await videoMediaReferenceToGrokUrlObject(options.inputVideo, 'video')
+    : undefined
+
+  const requestBody: Record<string, unknown> = {
+    model: options.model,
+    prompt,
+    ...(storageOptions ? { storage_options: storageOptions } : {})
+  }
+  if (mode === 'edit') {
+    requestBody['video'] = inputVideo
+  } else if (mode === 'extend') {
+    requestBody['video'] = inputVideo
+    requestBody['duration'] = duration
+  } else {
+    requestBody['duration'] = duration
+    requestBody['aspect_ratio'] = aspectRatio
+    requestBody['resolution'] = resolution
+    if (image) requestBody['image'] = image
+    if (referenceImages && referenceImages.length > 0) requestBody['reference_images'] = referenceImages
+  }
+
+  const createResp = await fetch(`${baseURL}${endpoint}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      model: options.model,
-      prompt,
-      duration,
-      aspect_ratio: aspectRatio,
-      resolution
-    })
+    body: JSON.stringify(requestBody)
   })
 
   if (!createResp.ok) {
     const body = await createResp.text()
-    throw new Error(`Grok video generation request failed (${createResp.status}): ${body || 'No response body'}`)
+    throw new Error(`Grok video ${mode} request failed (${createResp.status}): ${body || 'No response body'}`)
   }
 
   const createData = validateData(
@@ -133,6 +193,9 @@ export const runGrokVideoGen = async (
   })
 
   const videoUrl = taskData.video?.url
+  if (!videoUrl && taskData.video?.respect_moderation === false) {
+    throw new Error('Grok video generation was blocked by moderation and no video URL was returned')
+  }
   if (!videoUrl) {
     throw new Error('Grok video generation succeeded but no video.url was returned')
   }
@@ -165,7 +228,26 @@ export const runGrokVideoGen = async (
       processingTime,
       videoFileName: 'generated-video.mp4',
       videoFileSize: videoFile.size,
-      videoDuration: duration
+      videoDuration: taskData.video?.duration ?? duration,
+      requestMode: mode,
+      ...(resolution ? { videoResolution: resolution } : {}),
+      ...(aspectRatio ? { videoAspectRatio: aspectRatio } : {}),
+      ...(options.inputImage ? { inputImage: options.inputImage } : {}),
+      ...(options.referenceImages && options.referenceImages.length > 0 ? { referenceImages: options.referenceImages } : {}),
+      ...(options.inputVideo ? { inputVideo: options.inputVideo } : {}),
+      providerRequestId: createData.request_id,
+      ...(taskData.model ? { providerReturnedModel: taskData.model } : {}),
+      providerVideoUrl: videoUrl,
+      ...(typeof taskData.progress === 'number' ? { providerProgress: taskData.progress } : {}),
+      ...(taskData.video?.respect_moderation !== undefined ? { providerModeration: taskData.video.respect_moderation } : {}),
+      ...(taskData.video?.file_output !== undefined ? { providerFileOutput: taskData.video.file_output } : {}),
+      ...(taskData.video?.storage_error !== undefined ? { providerStorageError: taskData.video.storage_error } : {}),
+      ...(typeof taskData.usage?.cost_in_usd_ticks === 'number'
+        ? {
+            providerCostCents: taskData.usage.cost_in_usd_ticks / 100_000_000,
+            providerCostSource: 'provider_usage' as const
+          }
+        : {})
     }
   }
 }

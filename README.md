@@ -102,10 +102,17 @@ bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice
 # deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
-# Prompt-driven generation, then edit the generated image
+# Prompt-driven generation, then edit/reference the generated image; run this block in order
 bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
-bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024
+bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+
+# Video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
+bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
+bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
+bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
+
 bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
 bun as music "an ambient piano instrumental" --minimax music-2.5
 bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview

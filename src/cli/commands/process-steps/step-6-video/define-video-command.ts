@@ -71,7 +71,8 @@ export const videoCommand = defineCliCommand({
     videoDuration: videoOpts.videoDuration,
     videoSize: videoOpts.videoSize,
     videoAspectRatio: videoOpts.videoAspectRatio,
-    videoResolution: videoOpts.videoResolution
+    videoResolution: videoOpts.videoResolution,
+    videoMode: videoOpts.videoMode
   })
   const actual = computeActualCosts({ step6: metadata })
   const cost = { estimated, actual }

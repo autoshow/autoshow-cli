@@ -10,8 +10,18 @@ test('resume surface is reachable through help', async () => {
 
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('bun as resume')
+  expect(result.stdout).toContain('<outputDir>')
   expect(result.stdout).toContain('--whisper-stt')
   expect(result.stdout).toContain('--tesseract-ocr')
+})
+
+test('resume requires an explicit output directory', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'resume'], {
+    env: { NO_COLOR: '1' }
+  })
+
+  expect(result.exitCode).toBe(2)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Missing required parameter: outputDir')
 })
 
 test('resume provider filter validation rejects invalid provider models', async () => {

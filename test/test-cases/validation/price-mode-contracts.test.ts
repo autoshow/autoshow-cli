@@ -10,6 +10,7 @@ import {
   ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
   ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
+import { estimateOcrTokenUsage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts, resolveExtractionProviderModel } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
@@ -332,9 +333,19 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
+    expect(resolveCheapestModelForFlag('minimax-video')).toBe('T2V-01')
+    expect(resolveCheapestModelForFlag('glm-video')).toBe('cogvideox-3')
     expect(selectCheapestVideoSelection('gemini')).toMatchObject({
       provider: 'gemini',
       model: 'veo-3.1-lite-generate-preview'
+    })
+    expect(selectCheapestVideoSelection('minimax')).toMatchObject({
+      provider: 'minimax',
+      model: 'T2V-01'
+    })
+    expect(selectCheapestVideoSelection('glm')).toMatchObject({
+      provider: 'glm',
+      model: 'cogvideox-3'
     })
     expect(selectCheapestVideoSelection('deapi')).toMatchObject({
       provider: 'deapi',
@@ -979,8 +990,8 @@ describe('price mode contracts', () => {
       provider: 'openai',
       model: 'gpt-5.4-nano',
       pageCount: 2,
-      promptTokens: 6152,
-      completionTokens: 579,
+      promptTokens: 5972,
+      completionTokens: 3688,
       estimateType: 'heuristic'
     })
     expect(cost.totalCost).toBe(
@@ -1034,8 +1045,8 @@ describe('price mode contracts', () => {
     })
     expect(predicted).toMatchObject({
       pageCount: 2,
-      promptTokens: 6152,
-      completionTokens: 579,
+      promptTokens: 5972,
+      completionTokens: 3688,
       estimateType: 'heuristic'
     })
     expect(actualInputs).toMatchObject({
@@ -1095,9 +1106,57 @@ describe('price mode contracts', () => {
     expect(fallbackEstimated.steps[0]).toMatchObject({
       provider: 'openai',
       model: 'gpt-5.4-nano',
-      promptTokens: 6152,
-      completionTokens: 579
+      promptTokens: 5972,
+      completionTokens: 3688
     })
     expect(findPricingNoteKeys(fallbackEstimated)).toEqual([])
+  })
+
+  test('OCR token heuristics reflect the latest one-page hosted calibration', () => {
+    const estimateOnePageCost = (
+      target: NonNullable<Parameters<typeof computeEstimatedCosts>[0]['extractTargets']>[number]
+    ): number => computeEstimatedCosts({ extractTargets: [target] }).totalCost
+
+    expect(estimateOcrTokenUsage('kimi', 'kimi-k2.6', 1)).toEqual({
+      promptTokens: 4232,
+      completionTokens: 2068
+    })
+    expect(estimateOnePageCost({ provider: 'kimi', model: 'kimi-k2.6', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(1.22924, 5)
+
+    expect(estimateOcrTokenUsage('openai', 'gpt-5.4', 1)).toEqual({
+      promptTokens: 2986,
+      completionTokens: 1903
+    })
+    expect(estimateOnePageCost({ provider: 'openai', model: 'gpt-5.4', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(3.601, 5)
+
+    expect(estimateOcrTokenUsage('openai', 'gpt-5.4-mini', 1)).toEqual({
+      promptTokens: 2986,
+      completionTokens: 1868
+    })
+    expect(estimateOnePageCost({ provider: 'openai', model: 'gpt-5.4-mini', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(1.06455, 5)
+
+    expect(estimateOcrTokenUsage('openai', 'gpt-5.4-nano', 1)).toEqual({
+      promptTokens: 2986,
+      completionTokens: 1844
+    })
+    expect(estimateOnePageCost({ provider: 'openai', model: 'gpt-5.4-nano', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(0.29022, 5)
+
+    expect(estimateOcrTokenUsage('gemini', 'gemini-3.1-pro-preview', 1)).toEqual({
+      promptTokens: 1157,
+      completionTokens: 2063
+    })
+    expect(estimateOnePageCost({ provider: 'gemini', model: 'gemini-3.1-pro-preview', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(2.707, 5)
+
+    expect(estimateOcrTokenUsage('gemini', 'gemini-3.1-flash-lite-preview', 1)).toEqual({
+      promptTokens: 1157,
+      completionTokens: 1626
+    })
+    expect(estimateOnePageCost({ provider: 'gemini', model: 'gemini-3.1-flash-lite-preview', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(0.272825, 5)
+
+    expect(estimateOcrTokenUsage('deepinfra', 'Qwen/Qwen3-VL-235B-A22B-Instruct', 1)).toEqual({
+      promptTokens: 16343,
+      completionTokens: 1755
+    })
+    expect(estimateOnePageCost({ provider: 'deepinfra', model: 'Qwen/Qwen3-VL-235B-A22B-Instruct', pageCount: 1, estimateType: 'heuristic' })).toBeCloseTo(0.4813, 5)
   })
 })

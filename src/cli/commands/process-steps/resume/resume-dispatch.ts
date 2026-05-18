@@ -1,7 +1,4 @@
-import { readdir } from 'node:fs/promises'
 import { join, resolve as resolvePath } from 'node:path'
-import * as l from '~/utils/logger'
-import { logLocationsTable } from '~/utils/logger/human-table'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { readBatchManifest, readExtractBatchManifest, readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import {
@@ -12,10 +9,9 @@ import {
   loadConfig,
   resolveConfigPath
 } from '~/cli/commands/setup-and-utilities/config/config-loader'
-import type { BatchManifest, ExtractRoute, RunManifest, RuntimeOptions } from '~/types'
+import type { BatchManifest, ExtractRoute, RunManifest } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
-import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
 import type { ResumeTarget, ResumeTargetKind } from '~/types'
 
 const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['extract', 'tts', 'image', 'video', 'music'])
@@ -111,86 +107,6 @@ const resolveExplicitResumeTarget = async (
   throw CLIUsageError(`Could not find extract-batch.json, batch.json, or run.json under ${dir}.`)
 }
 
-const discoverLatestResumeTarget = async (
-  outputRootInput: string,
-  opts: RuntimeOptions,
-  explicitFlags: Set<string>
-): Promise<ResumeTarget> => {
-  const outputRoot = resolvePath(outputRootInput)
-  let dirNames: string[]
-
-  try {
-    const entries = await readdir(outputRoot, { withFileTypes: true })
-    dirNames = entries
-      .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name)
-      .sort((left, right) => right.localeCompare(left))
-  } catch {
-    dirNames = []
-  }
-
-  for (const dirName of dirNames) {
-    const candidateDir = join(outputRoot, dirName)
-    const extractBatchManifest = await readExtractBatchManifest(candidateDir)
-    if (extractBatchManifest) {
-      const target: ResumeTarget = {
-        kind: 'extract',
-        scope: 'batch',
-        dir: candidateDir,
-        manifestPath: extractBatchManifest.manifestPath
-      }
-      const handler = getResumeHandler(target.kind)
-      if (handler && await handler.hasResumableWork(target, opts, explicitFlags)) {
-        return target
-      }
-      continue
-    }
-
-    const batchManifest = await readBatchManifest(candidateDir)
-    if (batchManifest) {
-      const target = toResumeTarget(
-        batchManifest.manifest.kind,
-        'batch',
-        candidateDir,
-        batchManifest.manifestPath,
-        inferExtractRouteFromBatchManifest(batchManifest.manifest)
-      )
-      if (!target) {
-        continue
-      }
-
-      const handler = getResumeHandler(target.kind)
-      if (handler && await handler.hasResumableWork(target, opts, explicitFlags)) {
-        return target
-      }
-      continue
-    }
-
-    const runManifest = await readRunManifest(candidateDir)
-    if (!runManifest) {
-      continue
-    }
-
-    const target = toResumeTarget(
-      runManifest.kind,
-      'single',
-      candidateDir,
-      join(candidateDir, 'run.json'),
-      inferExtractRouteFromRunManifest(runManifest)
-    )
-    if (!target) {
-      continue
-    }
-
-    const handler = getResumeHandler(target.kind)
-    if (handler && await handler.hasResumableWork(target, opts, explicitFlags)) {
-      return target
-    }
-  }
-
-  throw CLIUsageError(`Could not find a resumable output under ${outputRootInput}.`)
-}
-
 export const dispatchResume = async (
   outputDirInput: string | undefined,
   rawFlags: Record<string, unknown>,
@@ -205,26 +121,14 @@ export const dispatchResume = async (
     ...buildOptsFromFlags(false, mergedFlags, doubleDash, {}, explicitFlags, Bun.argv.slice(2)),
     configPath: resolvedConfigPath
   }
-  const resolvedOutputDirInput = typeof outputDirInput === 'string' && outputDirInput.trim().length > 0
-    ? outputDirInput
-    : doubleDash.length === 1
-      ? doubleDash[0]
-      : undefined
-  if ((!outputDirInput || outputDirInput.trim().length === 0) && doubleDash.length > 1) {
-    throw CLIUsageError(`Too many positional outputs for "resume": ${doubleDash.join(' ')}. Run: bun as help resume`)
+  if (doubleDash.length > 0) {
+    throw CLIUsageError(`Unexpected positional outputs after "--" for "resume": ${doubleDash.join(' ')}. Run: bun as help resume`)
+  }
+  if (typeof outputDirInput !== 'string' || outputDirInput.trim().length === 0) {
+    throw CLIUsageError('Missing required output directory. Usage: bun as resume <output-dir> [flags]')
   }
 
-  const target = typeof resolvedOutputDirInput === 'string' && resolvedOutputDirInput.trim().length > 0
-    ? await resolveExplicitResumeTarget(resolvedOutputDirInput)
-    : await discoverLatestResumeTarget(getOutputRoot(), opts, explicitFlags)
-
-  if (typeof resolvedOutputDirInput !== 'string' || resolvedOutputDirInput.trim().length === 0) {
-    l.write('info', `Auto-discovered resumable ${target.kind.toUpperCase()} ${target.scope === 'batch' ? 'batch' : 'output'}`)
-    logLocationsTable(l, [{
-      artifact: target.scope === 'batch' ? 'resumeBatch' : 'resumeOutput',
-      path: target.dir
-    }])
-  }
+  const target = await resolveExplicitResumeTarget(outputDirInput)
 
   const handler = getResumeHandler(target.kind)
   if (!handler) {

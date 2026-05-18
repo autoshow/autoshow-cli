@@ -6,6 +6,7 @@ import {
   normalizeGeminiResolution,
   normalizeGlmDuration,
   normalizeGrokVideoDuration,
+  normalizeGrokVideoExtensionDuration,
   normalizeGrokVideoResolution,
   normalizeMinimaxDuration,
   normalizeMinimaxResolution,
@@ -17,27 +18,31 @@ import {
 import * as l from '~/utils/logger'
 import { createKeyValueTable } from '~/utils/logger/human-table'
 
-const GEMINI_MODEL_COST_FALLBACKS: Record<GeminiVideoModel, { cents720p: number, cents1080p: number }> = {
-  'veo-3.1-fast-generate-preview': { cents720p: 10, cents1080p: 12 },
-  'veo-3.1-generate-preview': { cents720p: 40, cents1080p: 40 },
-  'veo-3.1-lite-generate-preview': { cents720p: 5, cents1080p: 8 }
+const GEMINI_MODEL_COST_FALLBACKS: Record<GeminiVideoModel, { cents720p: number, cents1080p: number, cents4k: number }> = {
+  'veo-3.1-fast-generate-preview': { cents720p: 10, cents1080p: 12, cents4k: 12 },
+  'veo-3.1-generate-preview': { cents720p: 40, cents1080p: 40, cents4k: 40 },
+  'veo-3.1-lite-generate-preview': { cents720p: 5, cents1080p: 8, cents4k: 8 }
 }
 
 const estimateGeminiModelCost = (
   model: GeminiVideoModel,
   duration: number | undefined,
-  resolution: string | undefined
+  resolution: string | undefined,
+  mode?: string | undefined
 ): VideoCostEstimate => {
   const meta = getVideoModelMeta('gemini', model)
-  const normalizedResolution = normalizeGeminiResolution(resolution)
-  const durationSeconds = normalizeGeminiDuration(duration, normalizedResolution)
+  const normalizedResolution = mode === 'extend' ? '720p' : normalizeGeminiResolution(resolution, model)
+  const normalizedMode: 'reference-to-video' | 'extend' | undefined = mode === 'reference-to-video' || mode === 'extend' ? mode : undefined
+  const durationSeconds = normalizeGeminiDuration(duration, normalizedResolution, normalizedMode)
   const billedDurationSeconds = durationSeconds
   const fallback = GEMINI_MODEL_COST_FALLBACKS[model]
-  const costPerSecond = normalizedResolution === '1080p'
-    ? (meta?.baseCostPerSecondCents !== undefined
-      ? meta.baseCostPerSecondCents * (meta.resolutionMultiplier1080p ?? 1)
-      : fallback.cents1080p)
-    : (meta?.baseCostPerSecondCents ?? fallback.cents720p)
+  const costPerSecond = normalizedResolution === '4k'
+    ? fallback.cents4k
+    : normalizedResolution === '1080p'
+      ? (meta?.baseCostPerSecondCents !== undefined
+        ? meta.baseCostPerSecondCents * (meta.resolutionMultiplier1080p ?? 1)
+        : fallback.cents1080p)
+      : (meta?.baseCostPerSecondCents ?? fallback.cents720p)
 
   return {
     provider: 'gemini',
@@ -46,7 +51,9 @@ const estimateGeminiModelCost = (
     billedDurationSeconds,
     costPerSecond,
     totalCost: billedDurationSeconds * costPerSecond,
-    note: `Approximate estimate using ${normalizedResolution} per-second pricing${normalizedResolution === '1080p' ? '; 1080p is normalized to 8s' : ''}`
+    note: normalizedResolution === '4k'
+      ? 'Approximate estimate using 4k execution with fallback per-second pricing; Gemini 4k is normalized to 8s'
+      : `Approximate estimate using ${normalizedResolution} per-second pricing${normalizedResolution === '1080p' ? '; 1080p is normalized to 8s' : ''}`
   }
 }
 
@@ -81,7 +88,7 @@ const estimateMinimaxCost = (model: MinimaxVideoModel, options: EstimateVideoCos
 }
 
 const estimateGeminiCost = (model: GeminiVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
-  return estimateGeminiModelCost(model, options.videoDuration, options.videoResolution)
+  return estimateGeminiModelCost(model, options.videoDuration, options.videoResolution, options.videoMode)
 }
 
 const estimateGlmCost = (model: GlmVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
@@ -101,10 +108,15 @@ const estimateGlmCost = (model: GlmVideoModel, options: EstimateVideoCostOptions
 
 const estimateGrokCost = (model: GrokVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
   const meta = getVideoModelMeta('grok', model)
-  const durationSeconds = normalizeGrokVideoDuration(options.videoDuration)
+  const durationSeconds = options.videoMode === 'extend'
+    ? normalizeGrokVideoExtensionDuration(options.videoDuration)
+    : normalizeGrokVideoDuration(options.videoDuration)
   const normalizedResolution = normalizeGrokVideoResolution(options.videoResolution)
-  const resolutionMultiplier = normalizedResolution === '720p'
-    ? (meta?.resolutionMultiplier720p ?? 1.4) : 1
+  const resolutionMultiplier = normalizedResolution === '1080p'
+    ? 2
+    : normalizedResolution === '720p'
+      ? (meta?.resolutionMultiplier720p ?? 1.4)
+      : 1
   const costPerSecond = (meta?.baseCostPerSecondCents ?? 5) * resolutionMultiplier
   return {
     provider: 'grok',
@@ -189,7 +201,7 @@ export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCost
   }
 
   if (estimates.length === 0) {
-    estimates.push(estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution))
+    estimates.push(estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution, options.videoMode))
   }
 
   return estimates
@@ -233,7 +245,7 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
     return estimateDeapiCost(model, options)
   }
 
-  return estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution)
+  return estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution, options.videoMode)
 }
 
 export const logVideoEstimate = (estimate: VideoCostEstimate): void => {

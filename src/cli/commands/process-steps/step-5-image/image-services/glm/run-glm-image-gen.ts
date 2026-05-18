@@ -7,6 +7,8 @@ import { ensureGlmApiKey, resolveGlmBaseUrl } from '~/cli/commands/process-steps
 import { validateData } from '~/utils/validate/validation'
 
 const DEFAULT_GLM_IMAGE_SIZE = '1280x1280'
+const GLM_IMAGE_QUALITIES = ['hd', 'standard'] as const
+type GlmImageQuality = typeof GLM_IMAGE_QUALITIES[number]
 
 const GlmImageResponseSchema = v.object({
   data: v.pipe(v.array(v.object({ url: v.string() })), v.minLength(1))
@@ -31,14 +33,27 @@ export const normalizeGlmImageSize = (size: string | undefined): string => {
   return value
 }
 
+export const normalizeGlmImageQuality = (quality: string | undefined): GlmImageQuality | undefined => {
+  if (quality === undefined || quality.length === 0) {
+    return undefined
+  }
+
+  if ((GLM_IMAGE_QUALITIES as readonly string[]).includes(quality)) {
+    return quality as GlmImageQuality
+  }
+
+  throw CLIUsageError(`Invalid --image-quality value "${quality}" for GLM. Supported values: hd, standard.`)
+}
+
 export const runGlmImageGen = async (
   prompt: string,
   outputDir: string,
-  options: { model: GlmImageModel, size?: string | undefined }
+  options: { model: GlmImageModel, size?: string | undefined, quality?: string | undefined }
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
   const apiKey = ensureGlmApiKey('GLM Image')
   const baseURL = resolveGlmBaseUrl()
   const size = normalizeGlmImageSize(options.size)
+  const quality = normalizeGlmImageQuality(options.quality)
   const startTime = Date.now()
   const outputPath = `${outputDir}/generated-image.png`
 
@@ -58,7 +73,8 @@ export const runGlmImageGen = async (
     body: JSON.stringify({
       model: options.model,
       prompt,
-      size
+      size,
+      ...(quality ? { quality } : {})
     })
   })
 
@@ -110,6 +126,7 @@ export const runGlmImageGen = async (
       imageFileSize: imageFile.size,
       imageWidth: undefined,
       imageHeight: undefined,
+      ...(quality ? { imageQuality: quality } : {}),
       requestMode: 'generation'
     }
   }

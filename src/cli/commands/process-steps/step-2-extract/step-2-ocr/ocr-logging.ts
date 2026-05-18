@@ -1,4 +1,4 @@
-import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
+import { createKeyValueTable } from '~/utils/logger/human-table'
 import type { HumanLogTable, HumanLogTableRow, LogLevel, TableLogger } from '~/types'
 
 const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
@@ -72,6 +72,18 @@ const formatDimensions = (
 const compactDetail = (detail: string): string =>
   detail.replace(/\s+/g, ' ').trim()
 
+type KeyValueEntry = readonly [string, unknown]
+
+const addOptionalEntry = (
+  entries: KeyValueEntry[],
+  key: string,
+  value: unknown
+): void => {
+  if (value !== undefined && value !== '') {
+    entries.push([key, value])
+  }
+}
+
 const parseOcrmypdfPageLine = (
   detail: string
 ): { page: number, detail: string } | undefined => {
@@ -123,24 +135,15 @@ export const buildOcrProviderLifecycleRows = (
 export const buildOcrProviderLifecycleTable = (
   lifecycle: OcrProviderLifecycle
 ): HumanLogTable => {
-  const table = createHumanTable(
-    buildOcrProviderLifecycleRows(lifecycle),
-    ['provider', 'model', 'status', 'elapsedMs', 'reason']
-  )
-  if (!lifecycle.detail) {
-    return table
-  }
-
-  return {
-    ...table,
-    details: [
-      ...(table.details ?? []),
-      {
-        label: `${lifecycle.provider}/${lifecycle.model} detail`,
-        value: lifecycle.detail
-      }
-    ]
-  }
+  const entries: KeyValueEntry[] = [
+    ['provider', lifecycle.provider],
+    ['model', lifecycle.model],
+    ['status', lifecycle.status]
+  ]
+  addOptionalEntry(entries, 'elapsedMs', lifecycle.elapsedMs)
+  addOptionalEntry(entries, 'reason', lifecycle.reason)
+  addOptionalEntry(entries, 'detail', lifecycle.detail)
+  return createKeyValueTable(entries)
 }
 
 export const logOcrProviderLifecycle = (
@@ -176,10 +179,13 @@ export const buildOcrPagesProgressRows = (
 export const buildOcrPagesProgressTable = (
   progress: OcrPagesProgress
 ): HumanLogTable =>
-  createHumanTable(
-    buildOcrPagesProgressRows(progress),
-    ['status', 'ocrPages', 'totalPages', 'renderConcurrency', 'ocrConcurrency']
-  )
+  createKeyValueTable([
+    ['status', progress.status],
+    ['ocrPages', progress.ocrPages],
+    ['totalPages', progress.totalPages],
+    ['renderConcurrency', progress.renderConcurrency],
+    ['ocrConcurrency', progress.ocrConcurrency]
+  ])
 
 export const logOcrPagesProgress = (
   logger: TableLogger,
@@ -206,11 +212,17 @@ export const buildOcrJobProgressRows = (
 
 export const buildOcrJobProgressTable = (
   job: OcrJobProgress
-): HumanLogTable =>
-  createHumanTable(
-    buildOcrJobProgressRows(job),
-    ['provider', 'action', 'remoteId', 'state', 'pages', 'detail']
-  )
+): HumanLogTable => {
+  const entries: KeyValueEntry[] = [
+    ['provider', job.provider],
+    ['action', job.action]
+  ]
+  addOptionalEntry(entries, 'remoteId', job.remoteId)
+  entries.push(['state', job.state])
+  addOptionalEntry(entries, 'pages', job.pages)
+  addOptionalEntry(entries, 'detail', job.detail)
+  return createKeyValueTable(entries)
+}
 
 export const logOcrJobProgress = (
   logger: TableLogger,
@@ -277,11 +289,14 @@ export const buildOcrmypdfOutputRows = (
 
 export const buildOcrmypdfOutputTable = (
   event: OcrmypdfOutputEvent
-): HumanLogTable =>
-  createHumanTable(
-    buildOcrmypdfOutputRows(event),
-    event.page !== undefined ? ['stream', 'page', 'detail'] : ['stream', 'detail']
-  )
+): HumanLogTable => {
+  const entries: KeyValueEntry[] = [
+    ['stream', event.stream]
+  ]
+  addOptionalEntry(entries, 'page', event.page)
+  entries.push(['detail', event.detail])
+  return createKeyValueTable(entries)
+}
 
 export const logOcrmypdfOutput = (
   logger: TableLogger,

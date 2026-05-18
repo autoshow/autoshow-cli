@@ -514,8 +514,8 @@ export function buildReport(runDir: string, consensusPath: string) {
   const localData = providerDataWithOverall.filter((p) => p.group === "local");
   const cloudData = providerDataWithOverall.filter((p) => p.group === "cloud");
 
-  function rankGroup(group: OverallScoredProvider[], groupLabel: ProviderGroup): RankedProviderWithoutTier[] {
-    return [...group]
+  function rankByAccuracy(providersToRank: OverallScoredProvider[]): RankedProviderWithoutTier[] {
+    return [...providersToRank]
       .sort((left, right) => {
         if (left.wer !== right.wer) {
           return left.wer - right.wer;
@@ -525,11 +525,12 @@ export function buildReport(runDir: string, consensusPath: string) {
         }
         return left.providerKey.localeCompare(right.providerKey);
       })
-      .map((provider, index) => ({ ...provider, group: groupLabel, rank: index + 1 }));
+      .map((provider, index) => ({ ...provider, rank: index + 1 }));
   }
 
-  const rankedLocalWithoutTiers = rankGroup(localData, "local");
-  const rankedCloudWithoutTiers = rankGroup(cloudData, "cloud");
+  const rankedProvidersWithoutTiers = rankByAccuracy(providerDataWithOverall);
+  const rankedLocalWithoutTiers = rankByAccuracy(localData);
+  const rankedCloudWithoutTiers = rankByAccuracy(cloudData);
   const rankedOverallWithoutTiers = [...rankedLocalWithoutTiers, ...rankedCloudWithoutTiers].sort((left, right) => {
     if (left.overallRank !== right.overallRank) {
       return left.overallRank - right.overallRank;
@@ -537,6 +538,7 @@ export function buildReport(runDir: string, consensusPath: string) {
     return left.providerKey.localeCompare(right.providerKey);
   });
   const { tiering, providerAnnotations } = buildTiering(rankedOverallWithoutTiers);
+  const rankedProviders = addTierAnnotations(rankedProvidersWithoutTiers, providerAnnotations);
   const rankedLocal = addTierAnnotations(rankedLocalWithoutTiers, providerAnnotations);
   const rankedCloud = addTierAnnotations(rankedCloudWithoutTiers, providerAnnotations);
   const rankedOverall = addTierAnnotations(rankedOverallWithoutTiers, providerAnnotations);
@@ -618,40 +620,14 @@ export function buildReport(runDir: string, consensusPath: string) {
     overallWeights: OVERALL_WEIGHTS,
     tiering,
     overall: { count: rankedOverall.length, providers: rankedOverall },
+    providers: rankedProviders,
     local: { count: rankedLocal.length, providers: rankedLocal },
     cloud: { count: rankedCloud.length, providers: rankedCloud },
     notes,
   };
 
-  function buildRankingTable(rankedProviders: RankedProvider[], includeCost: boolean): string {
-    const headerCols = ["Rank", "Provider", "Score / 100", "WER", "CER", "Token Est.", "Processing Time"];
-    if (includeCost) {
-      headerCols.push("Cost");
-    }
-    const headerRow = `| ${headerCols.join(" | ")} |`;
-    const separatorRow = `| ${headerCols.map(() => "---:").join(" | ")} |`;
-    const rows = rankedProviders
-      .map((p) => {
-        const cols = [
-          String(p.rank),
-          `\`${p.providerKey}\``,
-          p.score.toFixed(2),
-          percentage(p.wer),
-          percentage(p.cer),
-          p.tokenEstimate !== null ? String(p.tokenEstimate) : "n/a",
-          formatProcessingSeconds(p.processingTimeMs),
-        ];
-        if (includeCost) {
-          cols.push(formatCents(p.costCents));
-        }
-        return `| ${cols.join(" | ")} |`;
-      })
-      .join("\n");
-    return `${headerRow}\n${separatorRow}\n${rows}`;
-  }
-
   function buildOverallRankingTable(rankedProviders: RankedProvider[]): string {
-    const headerCols = ["Rank", "Provider", "Group", "Group Rank", "Group Tier", "Overall / 100", "Accuracy", "Speed", "Cost"];
+    const headerCols = ["Rank", "Provider", "Tier Group", "Group Rank", "Group Tier", "Overall / 100", "Accuracy", "Speed", "Cost"];
     const headerRow = `| ${headerCols.join(" | ")} |`;
     const separatorRow = `| ${headerCols.map(() => "---:").join(" | ")} |`;
     const rows = rankedProviders
@@ -659,7 +635,7 @@ export function buildReport(runDir: string, consensusPath: string) {
         const cols = [
           String(p.overallRank),
           `\`${p.providerKey}\``,
-          p.group,
+          p.tierGroup,
           String(p.groupOverallRank),
           String(p.groupTier),
           p.overallScore.toFixed(2),
@@ -706,36 +682,16 @@ export function buildReport(runDir: string, consensusPath: string) {
     ].join("\n");
   }
 
-  const localList = rankedLocal.map((p) => `  - \`${p.providerKey}\``).join("\n");
-  const cloudList = rankedCloud.map((p) => `  - \`${p.providerKey}\``).join("\n");
+  const providerList = rankedProviders.map((p) => `  - \`${p.providerKey}\``).join("\n");
   const notesBlock = notes.map((note) => `- ${note}`).join("\n");
   const consensusFileName = basename(consensusPath);
 
-  const allRanked = [...rankedLocal, ...rankedCloud];
-  const breakdownRows = allRanked
+  const breakdownRows = rankedProviders
     .map(
       (p) =>
         `| \`${p.providerKey}\` | ${p.werBreakdown.substitutions} | ${p.werBreakdown.deletions} | ${p.werBreakdown.insertions} | ${p.werBreakdown.referenceCount} |`,
     )
     .join("\n");
-
-  const localSection = rankedLocal.length > 0
-    ? `### Local Models (${rankedLocal.length})
-
-${localList}
-
-${buildRankingTable(rankedLocal, false)}
-`
-    : "";
-
-  const cloudSection = rankedCloud.length > 0
-    ? `### Cloud Services (${rankedCloud.length})
-
-${cloudList}
-
-${buildRankingTable(rankedCloud, true)}
-`
-    : "";
 
   const totalProviders = rankedLocal.length + rankedCloud.length;
 
@@ -744,6 +700,8 @@ ${buildRankingTable(rankedCloud, true)}
 ## Summary
 
 - Consensus extraction: \`${consensusFileName}\` (${charCount} characters, ${wordCount} words)
+- Compared providers:
+${providerList}
 - Total providers: ${totalProviders} (${rankedLocal.length} local, ${rankedCloud.length} cloud)
 - Ranking metric: word error rate (WER) against consensus extraction
 - Score formula: \`${scoreFormula}\`
@@ -756,7 +714,7 @@ ${buildRankingTable(rankedCloud, true)}
 - Text normalization applied before comparison: lowercasing, curly quote/dash normalization, contraction expansion (it's -> it is), abbreviation expansion (mr. -> mister), currency symbol conversion ($50 -> 50 dollars), and remaining punctuation stripping.
 - WER compares the provider's full word stream against the gold extraction word stream.
 - CER compares normalized character sequences for finer-grained accuracy.
-- Providers are separated into local models and cloud services for independent comparison.
+- Ranking uses exact unrounded WER, with CER included for context and tie-breaking.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
 - Tier breakdown assigns local and third-party providers independently using balanced overall group rank.
 
@@ -770,7 +728,10 @@ ${buildTierBreakdownBlock(tiering.groups)}
 
 ## Ranking
 
-${localSection}${cloudSection}
+| Rank | Provider | Score / 100 | WER | CER | Token Est. | Processing Time | Actual Cost |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+${rankedProviders.map((p) => `| ${p.rank} | \`${p.providerKey}\` | ${p.score.toFixed(2)} | ${percentage(p.wer)} | ${percentage(p.cer)} | ${p.tokenEstimate !== null ? String(p.tokenEstimate) : "n/a"} | ${formatProcessingSeconds(p.processingTimeMs)} | ${formatCents(p.costCents)} |`).join("\n")}
+
 ## Error Breakdown (WER)
 
 | Provider | Substitutions | Deletions | Insertions | Ref. Words |

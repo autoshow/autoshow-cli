@@ -190,6 +190,13 @@ const VideoDefaultsSchema = v.strictObject({
   videoSize: v.optional(v.string(), undefined),
   videoAspectRatio: v.optional(v.string(), undefined),
   videoResolution: v.optional(v.string(), undefined),
+  videoMode: v.optional(v.string(), undefined),
+  videoInputImage: v.optional(v.string(), undefined),
+  videoLastFrame: v.optional(v.string(), undefined),
+  videoReferenceImages: v.optional(v.array(v.string()), undefined),
+  videoInputVideo: v.optional(v.string(), undefined),
+  grokVideoStorageFilename: v.optional(v.string(), undefined),
+  grokVideoStorageExpiresAfter: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(2592000)), undefined),
   providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })

@@ -338,10 +338,18 @@ export type RuntimeOptions = {
   runwayVideoModel: string | undefined
   deapiVideoModels: string[] | undefined
   deapiVideoModel: string | undefined
+  allVideo: boolean | undefined
   videoDuration: number | undefined
   videoSize: string | undefined
   videoAspectRatio: string | undefined
   videoResolution: string | undefined
+  videoMode: string | undefined
+  videoInputImage: string | undefined
+  videoLastFrame: string | undefined
+  videoReferenceImages: string[] | undefined
+  videoInputVideo: string | undefined
+  grokVideoStorageFilename: string | undefined
+  grokVideoStorageExpiresAfter: number | undefined
 
   markdown: boolean
   save: boolean

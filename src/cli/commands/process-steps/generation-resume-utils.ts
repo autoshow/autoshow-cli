@@ -2,24 +2,55 @@ import * as l from '~/utils/logger'
 import { readRunManifest, writeRunManifest } from './manifest-utils'
 import { getGenerationTargetKey } from './generation-command-utils'
 import { logResumeItem, logResumeSummary } from './resume/resume-logging'
+import {
+  getResumeProviderKey,
+  resolveAdditiveResumeProviderSelection,
+  uniqueResumeProviders,
+  type ResumeProviderIdentity
+} from './resume/resume-provider-selection'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { ResumeTarget, RunManifestKind, RuntimeOptions } from '~/types'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+export const buildUpdatedGenerationCostTiming = (
+  currentMetadata: Record<string, unknown>,
+  actual: unknown,
+  actualTiming: unknown
+): Record<string, unknown> => ({
+  cost: {
+    ...(isRecord(currentMetadata['cost']) ? currentMetadata['cost'] : {}),
+    actual
+  },
+  timing: {
+    ...(isRecord(currentMetadata['timing']) ? currentMetadata['timing'] : {}),
+    actual: actualTiming
+  }
+})
+
 type GenerationResumeConfig<TTarget extends { service: string, model: string }, TMetadata> = {
   kind: RunManifestKind
   metadataKey: string
   stepLabel: string
+  providerFlags: readonly string[]
   getSuccessKey: (entry: TMetadata) => string
   collectTargets: (opts: RuntimeOptions) => TTarget[]
+  collectTargetsForProviders: (
+    providers: Array<{ service: string, model: string }>,
+    opts: RuntimeOptions
+  ) => TTarget[]
   runMissingTargets: (
     targets: TTarget[],
     input: string,
     outputDir: string,
     opts: RuntimeOptions
   ) => Promise<TMetadata[]>
+  rebuildRunMetadata?: (
+    metadata: TMetadata[],
+    currentManifestMetadata: Record<string, unknown>,
+    input: string
+  ) => Record<string, unknown>
 }
 
 const parseGenerationManifest = (
@@ -49,10 +80,43 @@ const parseGenerationManifest = (
   return { input, requestedProviders, existingEntries }
 }
 
+const hasExplicitGenerationProviderSelection = (
+  providerFlags: readonly string[],
+  explicitFlags: Set<string>
+): boolean =>
+  providerFlags.some((flag) => explicitFlags.has(flag))
+
+const toProviderIdentity = (
+  provider: ResumeProviderIdentity
+): ResumeProviderIdentity => ({
+  service: provider.service,
+  model: provider.model
+})
+
+const selectTargetsForProviders = <TTarget extends { service: string, model: string }>(
+  providers: ResumeProviderIdentity[],
+  selectedTargets: TTarget[],
+  buildTargets: (providers: ResumeProviderIdentity[]) => TTarget[]
+): TTarget[] => {
+  if (providers.length === 0) {
+    return []
+  }
+
+  const providerKeys = new Set(providers.map(getResumeProviderKey))
+  const selected = uniqueResumeProviders(selectedTargets)
+    .filter((target) => providerKeys.has(getResumeProviderKey(target)))
+  if (selected.length > 0) {
+    return selected
+  }
+
+  return buildTargets(providers)
+}
+
 export const hasResumableGenerationWork = async <TTarget extends { service: string, model: string }, TMetadata>(
   target: ResumeTarget,
   config: GenerationResumeConfig<TTarget, TMetadata>,
-  opts: RuntimeOptions
+  opts: RuntimeOptions,
+  explicitFlags: Set<string> = new Set()
 ): Promise<boolean> => {
   const manifest = await readRunManifest(target.dir, config.kind)
   if (!manifest) {
@@ -68,29 +132,30 @@ export const hasResumableGenerationWork = async <TTarget extends { service: stri
     (parsed.existingEntries as TMetadata[]).map(config.getSuccessKey)
   )
 
-  const selectedTargets = config.collectTargets(opts)
-  const selectedKeys = selectedTargets.length > 0
-    ? new Set(selectedTargets.map((t) => getGenerationTargetKey(t.service, t.model)))
+  const storedMissingProviders = parsed.requestedProviders.filter(
+    (provider) => !successKeys.has(getGenerationTargetKey(provider.service, provider.model))
+  )
+  const selectedTargets = hasExplicitGenerationProviderSelection(config.providerFlags, explicitFlags)
+    ? config.collectTargets(opts)
+    : []
+  const selectedProviders = selectedTargets.length > 0
+    ? selectedTargets.map(toProviderIdentity)
     : undefined
+  const resolved = resolveAdditiveResumeProviderSelection({
+    storedProviders: parsed.requestedProviders,
+    runnableStoredProviders: storedMissingProviders,
+    ...(selectedProviders ? { selectedProviders } : {}),
+    successfulProviderKeys: successKeys
+  })
 
-  for (const provider of parsed.requestedProviders) {
-    const key = getGenerationTargetKey(provider.service, provider.model)
-    if (successKeys.has(key)) {
-      continue
-    }
-    if (selectedKeys && !selectedKeys.has(key)) {
-      continue
-    }
-    return true
-  }
-
-  return false
+  return resolved.providersToRun.length > 0
 }
 
 export const resumeGenerationTarget = async <TTarget extends { service: string, model: string }, TMetadata>(
   target: ResumeTarget,
   config: GenerationResumeConfig<TTarget, TMetadata>,
-  opts: RuntimeOptions
+  opts: RuntimeOptions,
+  explicitFlags: Set<string> = new Set()
 ): Promise<void> => {
   const manifest = await readRunManifest(target.dir, config.kind)
   if (!manifest) {
@@ -109,35 +174,23 @@ export const resumeGenerationTarget = async <TTarget extends { service: string, 
     (parsed.existingEntries as TMetadata[]).map(config.getSuccessKey)
   )
 
-  const allTargets = config.collectTargets(opts)
-  const selectedKeys = allTargets.length > 0
-    ? new Set(allTargets.map((t) => getGenerationTargetKey(t.service, t.model)))
+  const storedMissingProviders = parsed.requestedProviders.filter(
+    (provider) => !successKeys.has(getGenerationTargetKey(provider.service, provider.model))
+  )
+  const selectedTargets = hasExplicitGenerationProviderSelection(config.providerFlags, explicitFlags)
+    ? config.collectTargets(opts)
+    : []
+  const selectedProviders = selectedTargets.length > 0
+    ? selectedTargets.map(toProviderIdentity)
     : undefined
-
-  if (selectedKeys) {
-    const requestedKeys = new Set(
-      parsed.requestedProviders.map((p) => getGenerationTargetKey(p.service, p.model))
-    )
-    const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
-    if (unexpected.length > 0) {
-      throw CLIUsageError(
-        `Requested resume providers are not a subset of the original providers: ${unexpected.join(', ')}`
-      )
-    }
-  }
-
-  const missingProviders = parsed.requestedProviders.filter((provider) => {
-    const key = getGenerationTargetKey(provider.service, provider.model)
-    if (successKeys.has(key)) {
-      return false
-    }
-    if (selectedKeys && !selectedKeys.has(key)) {
-      return false
-    }
-    return true
+  const resolved = resolveAdditiveResumeProviderSelection({
+    storedProviders: parsed.requestedProviders,
+    runnableStoredProviders: storedMissingProviders,
+    ...(selectedProviders ? { selectedProviders } : {}),
+    successfulProviderKeys: successKeys
   })
 
-  if (missingProviders.length === 0) {
+  if (resolved.providersToRun.length === 0) {
     logResumeItem(l, {
       item: '1/1',
       status: 'full',
@@ -149,16 +202,15 @@ export const resumeGenerationTarget = async <TTarget extends { service: string, 
     return
   }
 
-  const missingKeys = new Set(
-    missingProviders.map((p) => getGenerationTargetKey(p.service, p.model))
-  )
-  const targetsToRun = allTargets.filter((t) =>
-    missingKeys.has(getGenerationTargetKey(t.service, t.model))
+  const targetsToRun = selectTargetsForProviders(
+    resolved.providersToRun,
+    selectedTargets,
+    (providers) => config.collectTargetsForProviders(providers, opts)
   )
 
   if (targetsToRun.length === 0) {
     throw CLIUsageError(
-      `Could not reconstruct targets for missing providers: ${missingProviders.map((p) => `${p.service}/${p.model}`).join(', ')}. `
+      `Could not reconstruct targets for missing providers: ${resolved.providersToRun.map((p) => `${p.service}/${p.model}`).join(', ')}. `
       + 'Pass explicit provider flags matching the original models.'
     )
   }
@@ -194,12 +246,17 @@ export const resumeGenerationTarget = async <TTarget extends { service: string, 
   const mergedMetadata = [...(parsed.existingEntries as TMetadata[]), ...newMetadata]
 
   const mergedSuccessKeys = new Set(mergedMetadata.map(config.getSuccessKey))
-  const stillMissing = parsed.requestedProviders.filter(
+  const stillMissing = resolved.requestedProviders.filter(
     (p) => !mergedSuccessKeys.has(getGenerationTargetKey(p.service, p.model))
   )
+  const rebuiltMetadata = config.rebuildRunMetadata
+    ? config.rebuildRunMetadata(mergedMetadata, manifest.metadata, parsed.input)
+    : {}
 
   await writeRunManifest(target.dir, config.kind, {
     ...manifest.metadata,
+    ...rebuiltMetadata,
+    requestedProviders: resolved.requestedProviders.map(toProviderIdentity),
     [config.metadataKey]: mergedMetadata
   })
 

@@ -64,11 +64,11 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | `--image-local-concurrency <n>` | Local image providers to run concurrently per item; default `1` |
 | `--image-aspect-ratio <ratio>` | Provider-dependent aspect ratio control |
 | `--image-size <size>` | Provider-dependent size or resolution control |
-| `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |
+| `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto`; GLM quality: `hd` or `standard` |
 | `--image-format <fmt>` | OpenAI/BFL output format: `png`, `jpeg`, or `webp` |
 | `--image-background <bg>` | OpenAI background mode: `transparent`, `opaque`, or `auto` |
-| `--image-count <n>` | Number of images in one request for OpenAI, Grok, or Gemini Imagen |
-| `--image-input <path-or-url>` | Repeatable source/reference image for OpenAI, Grok, or native Gemini edits |
+| `--image-count <n>` | Number of images in one request for OpenAI/Grok `1-10`, MiniMax `1-9`, or Gemini Imagen `1-4` |
+| `--image-input <path-or-url>` | Repeatable source/reference image for OpenAI, Grok, native Gemini, MiniMax, or BFL edits/references |
 | `--image-mask <path>` | OpenAI mask image for inpainting/edit workflows |
 | `--image-compression <0-100>` | OpenAI JPEG/WebP output compression |
 | `--image-response-mode <image\|text-image>` | Native Gemini response mode |
@@ -84,7 +84,7 @@ bun as image "turn this into a premium catalog product photo with a soft gray ba
 
 ## Workflow: Generate, Then Edit
 
-Image runs write their files under `output/<timestamp>_image-gen/` unless you pass `--out <dir>` or `--output-dir <dir>`. Generate a base asset first, then pass that generated image into an edit/reference provider.
+Image runs write their files under `output/<timestamp>_image-gen/` unless you pass `--out <dir>` or `--output-dir <dir>`. Run the commands in this block in order: the later commands read the file created by the first command.
 
 ```bash
 # 1. Generate the base image.
@@ -94,11 +94,13 @@ bun as image "a clean studio product photo of a red enamel camping mug on white 
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 ```
 
-The same generated file can also be used as a reference input for native Gemini or Grok workflows:
+The same generated file can also be used as a reference input for native Gemini, MiniMax, Grok, or BFL workflows:
 
 ```bash
-bun as image "restyle this product image as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png
-bun as image "turn this into a glossy magazine ad on a warm kitchen counter" --grok grok-imagine-image-quality --image-input output/mug-base/generated-image.png --image-size 1K
+bun as image "restyle this product image as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
+bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --out output/mug-minimax
+bun as image "turn this into a glossy magazine ad on a warm kitchen counter" --grok grok-imagine-image-quality --image-input output/mug-base/generated-image.png --image-size 1K --out output/mug-grok
+bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
 ```
 
 ## Image Services
@@ -148,9 +150,14 @@ bun as image "a product sketch of the same travel mug concept" --openai gpt-imag
 | Selector | `--minimax <model>` |
 | Models | `image-01` |
 | Aspect ratio | `--image-aspect-ratio <ratio>` |
+| Size | `--image-size WIDTHxHEIGHT`, 512x512 through 2048x2048, multiples of 8; ignored when `--image-aspect-ratio` is provided |
+| Count | `--image-count 1-9` |
+| References | Repeatable `--image-input`; local files are sent as data URLs and HTTP(S) URLs pass through |
 
 ```bash
 bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-aspect-ratio 16:9
+bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-size 1024x768 --image-count 3
+bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
 ```
 
 ### Z.AI GLM
@@ -160,9 +167,10 @@ bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-aspect
 | Selector | `--glm <model>` |
 | Models | `glm-image`, `cogView-4-250304` |
 | Size | `--image-size WIDTHxHEIGHT`, 512x512 through 2048x2048, multiples of 32 |
+| Quality | `--image-quality hd\|standard` |
 
 ```bash
-bun as image "a clean product photo of a red enamel camping mug" --glm glm-image --image-size 1280x1280
+bun as image "a clean product photo of a red enamel camping mug" --glm glm-image --image-size 1280x1280 --image-quality hd
 ```
 
 ### Grok
@@ -177,7 +185,7 @@ bun as image "a clean product photo of a red enamel camping mug" --glm glm-image
 | Edit/reference | Up to three `--image-input` values with `grok-imagine-image-quality` |
 
 ```bash
-bun as image "turn the generated mug into a glossy magazine ad on a warm kitchen counter" --grok grok-imagine-image-quality --image-input output/mug-base/generated-image.png --image-size 1K
+bun as image "turn the generated mug into a glossy magazine ad on a warm kitchen counter" --grok grok-imagine-image-quality --image-input output/mug-base/generated-image.png --image-size 1K --out output/mug-grok
 bun as image "a futuristic observatory at sunset" --grok grok-imagine-image-quality --image-aspect-ratio 16:9 --image-size 1K --image-count 4
 ```
 
@@ -206,12 +214,14 @@ Runway rejects OpenAI-only flags, edit inputs, and `--image-count`; it is single
 | Models | `flux-2-klein-4b`, `flux-2-klein-9b-preview`, `flux-2-klein-9b`, `flux-2-pro-preview`, `flux-2-pro`, `flux-2-max`, `flux-2-flex` |
 | Size | `--image-size WIDTHxHEIGHT` |
 | Format | `--image-format jpeg\|png\|webp` |
+| References | Repeatable `--image-input`; up to four images for Klein models and up to eight for Pro/Max/Flex models |
 
 ```bash
 bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024 --image-format jpeg
+bun as image "place the same mug in a cozy cabin kitchen" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
 ```
 
-BFL rejects `--image-aspect-ratio`, `--image-quality`, `--image-background`, edit inputs, and `--image-count`.
+BFL rejects `--image-aspect-ratio`, `--image-quality`, `--image-background`, `--image-mask`, and `--image-count`.
 
 ### deAPI
 
@@ -232,7 +242,7 @@ deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--im
 - Standalone `image` runs always write `run.json`.
 - Gemini writes `generated-image.png`, plus numbered variants when multiple Imagen images are returned.
 - OpenAI writes `generated-image.<format>`, plus numbered variants for `--image-count`.
-- MiniMax writes `generated-image.jpeg`.
+- MiniMax writes `generated-image.jpeg`, plus numbered variants for `--image-count`.
 - GLM writes `generated-image.png`.
 - Grok writes `generated-image.<format>`, plus numbered variants for `--image-count`.
 - Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.

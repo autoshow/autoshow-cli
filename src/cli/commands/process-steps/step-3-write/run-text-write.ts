@@ -307,7 +307,9 @@ export const runTextWrite = async (
     })),
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
+    videoAspectRatio: opts.videoAspectRatio,
     videoResolution: opts.videoResolution,
+    videoMode: opts.videoMode,
     musicTargets: attemptedMusicTargets.map((entry) => ({
       service: entry.service,
       model: entry.model,

@@ -100,7 +100,7 @@ function categoryHelp(category: ConsensusCategory): string {
     `  bun scripts/run.ts ${category} build-report <run_dir> [--input-text <path>] [--roundtrip-dir <path>]`,
     "",
     inputTextNote,
-    "Generated reports are rewritten to keep local and service provider rankings separate.",
+    "Generated reports are normalized with local and service ranking surfaces; OCR and STT also preserve their combined overall reports.",
   ].join("\n");
 }
 

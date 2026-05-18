@@ -484,7 +484,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
     const meta = getVideoModelMeta(step6Entry.videoGenService, step6Entry.videoGenModel)
     let cost = 0
     const videoDuration = step6Entry.videoDuration ?? 0
-    if (meta) {
+    if (typeof step6Entry.providerCostCents === 'number') {
+      cost = step6Entry.providerCostCents
+    } else if (meta) {
       if (meta.blockSizeSec && (meta.blockCost720pCents || meta.blockCost1080pCents)) {
         const blockCount = Math.max(1, Math.ceil(videoDuration / meta.blockSizeSec))
         cost = blockCount * (meta.blockCost720pCents ?? 0)

@@ -92,7 +92,8 @@ export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] =
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
     videoAspectRatio: opts.videoAspectRatio,
-    videoResolution: opts.videoResolution
+    videoResolution: opts.videoResolution,
+    videoMode: opts.videoMode
   }).map((estimate) => {
     const estimation = getVideoEstimation(estimate.provider, estimate.model)
     return {

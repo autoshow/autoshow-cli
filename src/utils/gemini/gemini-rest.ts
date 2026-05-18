@@ -99,6 +99,18 @@ export type GeminiVideo = {
   mimeType?: string | undefined
 }
 
+export type GeminiInlineMedia = {
+  inlineData: {
+    mimeType: string
+    data: string
+  }
+}
+
+export type GeminiVideoReferenceImage = {
+  image: GeminiInlineMedia
+  referenceType: 'asset'
+}
+
 export type GeminiGeneratedVideo = {
   video?: GeminiVideo | undefined
 }
@@ -376,10 +388,20 @@ export const geminiPredictLongRunning = async (
     durationSeconds: number
     resolution: string
     aspectRatio?: string | undefined
+    image?: GeminiInlineMedia | undefined
+    lastFrame?: GeminiInlineMedia | undefined
+    referenceImages?: GeminiVideoReferenceImage[] | undefined
+    video?: GeminiInlineMedia | undefined
   }
 ): Promise<GeminiVideoOperation> => {
   const body: Record<string, unknown> = {
-    instances: [{ prompt: params.prompt }],
+    instances: [{
+      prompt: params.prompt,
+      ...(params.image ? { image: params.image } : {}),
+      ...(params.lastFrame ? { lastFrame: params.lastFrame } : {}),
+      ...(params.referenceImages && params.referenceImages.length > 0 ? { referenceImages: params.referenceImages } : {}),
+      ...(params.video ? { video: params.video } : {})
+    }],
     parameters: {
       sampleCount: params.numberOfVideos,
       durationSeconds: params.durationSeconds,

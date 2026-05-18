@@ -1,0 +1,9 @@
+{
+  "message": "AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ocr. Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or discover the processor, then set the printed environment values or save the processor ID explicitly.",
+  "category": "unknown",
+  "error": {
+    "name": "Error",
+    "message": "AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ocr. Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or discover the processor, then set the printed environment values or save the processor ID explicitly.",
+    "stack": "Error: AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ocr. Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or discover the processor, then set the printed environment values or save the processor ID explicitly.\n    at <anonymous> (/Users/ajc/c/as/autoshow-cli/src/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gcloud-docai/gcloud-docai.ts:95:15)\n    at processTicksAndRejections (native:7:39)"
+  }
+}

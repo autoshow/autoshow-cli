@@ -97,6 +97,7 @@ Accepted provider selectors are the lowercase names below.
 | `--hume` | `general`, `tts` |
 | `--deapi` | `general`, `image`, `ocr`, `video`, `tts`, `music`, `stt` |
 | `--supadata` | `stt` |
+| `--unstructured` | `ocr` |
 | `--scrapecreators` | `general`, `stt`, `url` |
 | `--zyte` | `general`, `url` |
 | `--firecrawl` | `general`, `url` |
@@ -138,6 +139,9 @@ bun as links --better-auth
 
 # Fetch DeepInfra OCR docs, including normal HTML doc pages
 bun as links --deepinfra ocr
+
+# Fetch Unstructured OCR docs
+bun as links --unstructured ocr
 
 # Fetch Kimi text and OCR docs
 bun as links --kimi text ocr

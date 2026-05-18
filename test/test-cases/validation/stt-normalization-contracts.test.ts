@@ -228,13 +228,15 @@ describe('STT normalization contracts', () => {
           }>
         }
       }
-      overall?: unknown
-      providers?: unknown
+      overall: { count: number, providers: Array<{ overallRank: number, overallScore: number }> }
+      providers: Array<{ rank: number, provider: string, overallRank: number, overallScore: number }>
     }
     const serviceProviders = report.providerGroups.service.providers
     expect(report.duplicateGroups).toHaveLength(1)
-    expect(report.overall).toBeUndefined()
-    expect(report.providers).toBeUndefined()
+    expect(report.overall.count).toBe(4)
+    expect(report.overall.providers.map((provider) => provider.overallRank)).toEqual([1, 2, 3, 4])
+    expect(report.providers.map((provider) => provider.rank)).toEqual([1, 2, 3, 4])
+    expect(report.providers.every((provider) => provider.overallRank > 0 && provider.overallScore >= 0)).toBe(true)
     expect(Array.isArray(report.rankingSurfaces.local.fastest)).toBe(true)
     expect(Array.isArray(report.rankingSurfaces.service.highestQuality)).toBe(true)
     expect(serviceProviders.find((provider) => provider.provider === 'deapi-WhisperLargeV3')?.qualityWarnings.join(' ')).toContain('deAPI raw response')
@@ -256,9 +258,9 @@ describe('STT normalization contracts', () => {
     expect(serviceProviders.every((provider) => !(deprecatedOverallTierKey in provider))).toBe(true)
 
     const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
-    expect(markdown).toContain('## Local Providers')
-    expect(markdown).toContain('## Service Providers')
-    expect(markdown).toContain('### Top 3 Highest Quality')
-    expect(markdown).not.toContain('## Overall Ranking')
+    expect(markdown).toContain('## Overall Ranking')
+    expect(markdown).toContain('## Tier Breakdown')
+    expect(markdown).toContain('## Ranking')
+    expect(markdown).toContain('| Rank | Provider | Tier Group | Group Rank | Group Tier | Diarization | Overall / 100 | Accuracy | Speed | Cost |')
   })
 })

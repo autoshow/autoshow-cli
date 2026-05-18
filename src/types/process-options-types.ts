@@ -273,10 +273,18 @@ export const ProcessingOptionsSchema = v.pipe(
     runwayVideoModel: v.optional(v.string(), undefined),
     deapiVideoModels: v.optional(v.array(v.string()), undefined),
     deapiVideoModel: v.optional(v.string(), undefined),
+    allVideo: v.optional(v.boolean(), undefined),
     videoDuration: v.optional(v.number(), undefined),
     videoSize: v.optional(v.string(), undefined),
     videoAspectRatio: v.optional(v.string(), undefined),
-    videoResolution: v.optional(v.string(), undefined)
+    videoResolution: v.optional(v.string(), undefined),
+    videoMode: v.optional(v.string(), undefined),
+    videoInputImage: v.optional(v.string(), undefined),
+    videoLastFrame: v.optional(v.string(), undefined),
+    videoReferenceImages: v.optional(v.array(v.string()), undefined),
+    videoInputVideo: v.optional(v.string(), undefined),
+    grokVideoStorageFilename: v.optional(v.string(), undefined),
+    grokVideoStorageExpiresAfter: v.optional(v.number(), undefined)
   }),
   v.check((obj): boolean => {
     const hasUrl = typeof obj.url === 'string' && obj.url.length > 0

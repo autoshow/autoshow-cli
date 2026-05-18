@@ -5,7 +5,7 @@ Backfill missing provider outputs in an existing run, child batch, or parent `ex
 ## Outline
 
 - [Usage](#usage)
-- [Target Discovery](#target-discovery)
+- [Target Resolution](#target-resolution)
 - [Provider Selection](#provider-selection)
 - [Examples](#examples)
 - [Flags](#flags)
@@ -21,32 +21,31 @@ Backfill missing provider outputs in an existing run, child batch, or parent `ex
 ## Usage
 
 ```bash
-bun as resume [output-dir] [flags]
+bun as resume <output-dir> [flags]
 ```
 
 `resume` does not accept a new source input. It only works against an existing output directory.
 
-`[output-dir]` can point at either:
+`<output-dir>` is required and can point at either:
 
 - a single run directory containing `run.json`
 - a batch directory containing `batch.json`
 - an `extract` parent batch directory containing `extract-batch.json`
 
-If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the first resumable target it finds.
-
-## Target Discovery
+## Target Resolution
 
 - `resume` supports `extract`, TTS, image, video, and music `run.json` / `batch.json` targets plus parent `extract-batch.json` targets.
 - A single-run target must contain `run.json`.
 - A batch target must contain `batch.json`.
 - An extract parent batch must contain `extract-batch.json`.
-- Auto-discovery only considers targets that still have missing provider work to backfill.
 - Generation steps (TTS, image, video, music) require `run.json` to contain `requestedProviders` and `input` fields (written automatically by recent versions of the generation commands).
 
 ## Provider Selection
 
 - With no provider flags, `resume` uses the original requested providers stored in the manifest and reruns only the missing ones.
-- Explicit provider flags narrow the rerun set, but they must be a subset of the original requested providers for that run or batch.
+- Explicit provider flags are additive: a selected provider/model runs when it was previously missing or failed, or when it was not already requested by the stored run.
+- Selected provider/models that already succeeded are skipped, not rerun.
+- Stored provider order is preserved in `requestedProviders`; newly selected provider/models are appended in the order selected.
 - `extract` media-route runs accept STT provider/runtime flags.
 - `extract` document-route runs accept OCR provider/runtime flags.
 - TTS runs accept the resume-specific TTS provider/voice flags listed below. Omitting explicit provider flags still uses the original requested providers stored in the manifest.
@@ -58,9 +57,6 @@ If you omit `[output-dir]`, `resume` scans `./output` newest-first and picks the
 ## Examples
 
 ```bash
-# Resume the newest incomplete output under ./output
-bun as resume
-
 # Resume a single run directory in place
 bun as resume ./output/2026-04-22_12-00-00-000_item
 
@@ -70,50 +66,50 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch
 # Resume an extract parent batch in place
 bun as resume ./output/2026-04-22_12-00-00-000_batch
 
-# Resume only missing GLM OCR outputs in that target
+# Retry missing GLM OCR outputs, or append GLM OCR to that target
 bun as resume ./output/2026-04-22_12-00-00-000_batch --glm-ocr glm-ocr
 
-# Resume only missing Kimi OCR outputs in that target
+# Retry missing Kimi OCR outputs, or append Kimi OCR to that target
 bun as resume ./output/2026-04-22_12-00-00-000_batch --kimi-ocr kimi-k2.6
 
-# Resume only Deepgram outputs from an extract media batch
+# Retry missing Deepgram outputs from an extract media batch, or append Deepgram
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
 
-# Resume only DeepInfra Whisper outputs from an extract media batch
+# Retry missing DeepInfra Whisper outputs, or append DeepInfra
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepinfra-stt
 
-# Resume only deAPI outputs from an extract media batch
+# Retry missing deAPI outputs, or append deAPI
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deapi-stt WhisperLargeV3
 
-# Resume only Happy Scribe outputs from an extract media batch
+# Retry missing Happy Scribe outputs, or append Happy Scribe
 bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --happyscribe-organization-id org_123
 
-# Resume missing ElevenLabs TTS outputs
+# Retry missing ElevenLabs TTS outputs, or append ElevenLabs TTS
 bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3
 bun as resume ./output/2026-04-22_12-00-00-000_run --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 
-# Resume missing OpenAI custom voice TTS outputs
+# Retry missing OpenAI custom voice TTS outputs, or append OpenAI TTS
 bun as resume ./output/2026-04-22_12-00-00-000_run --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
-# Resume missing Hume TTS outputs
+# Retry missing Hume TTS outputs, or append Hume TTS
 bun as resume ./output/2026-04-22_12-00-00-000_run --hume-tts octave-2 --hume-tts-voice "Male English Actor"
 
-# Resume missing Cartesia TTS outputs
+# Retry missing Cartesia TTS outputs, or append Cartesia TTS
 bun as resume ./output/2026-04-22_12-00-00-000_run --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
-# Resume missing Gemini image outputs
+# Retry missing Gemini image outputs, or append Gemini image
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
 
-# Resume missing deAPI image outputs
+# Retry missing deAPI image outputs, or append deAPI image
 bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-image Flux1schnell
 
-# Resume missing Runway video outputs
+# Retry missing Runway video outputs, or append Runway video
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5
 
-# Resume missing MiniMax music outputs
+# Retry missing MiniMax music outputs, or append MiniMax music
 bun as resume ./output/2026-04-22_12-00-00-000_run --minimax-music music-2.6
 
-# Resume missing Gemini Lyria music outputs
+# Retry missing Gemini Lyria music outputs, or append Gemini music
 bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-preview
 ```
 
@@ -259,11 +255,11 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--deapi-image <model>` | Select one or more deAPI image models |
 | `--image-aspect-ratio <ratio>` | Image aspect ratio |
 | `--image-size <size>` | Image size/resolution |
-| `--image-quality <quality>` | Image quality (OpenAI) |
+| `--image-quality <quality>` | Image quality (OpenAI or GLM) |
 | `--image-format <format>` | Image output format (OpenAI/BFL) |
 | `--image-background <bg>` | Image background (OpenAI) |
 | `--image-count <n>` | Number of images to generate in one supported provider request |
-| `--image-input <path-or-url>` | Reference/source image for image edits |
+| `--image-input <path-or-url>` | Reference/source image for image edits or provider references |
 | `--image-mask <path>` | Mask image for OpenAI image edits |
 | `--image-response-mode <image\|text-image>` | Native Gemini response mode |
 | `--gemini-person-generation <mode>` | Gemini Imagen person generation mode |

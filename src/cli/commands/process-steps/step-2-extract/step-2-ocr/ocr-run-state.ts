@@ -2,6 +2,8 @@ import { join } from 'node:path'
 import {
   ExtractionMetadataSchema,
   ExtractionResultSchema,
+  type ExtractionMetadata,
+  type ExtractionResult,
   type OcrProviderFailureCategory,
   type OcrTarget
 } from '~/types'
@@ -260,6 +262,79 @@ const parseSuccessfulProviderKeys = (
   return keys
 }
 
+const metadataMatchesTarget = (
+  metadata: ExtractionMetadata,
+  target: OcrTarget
+): boolean => {
+  if (metadata.ocrService === target.service && metadata.ocrModel === target.model) {
+    return true
+  }
+
+  if (target.service === 'tesseract') {
+    return metadata.extractionMethod.includes('tesseract')
+  }
+  if (target.service === 'ocrmypdf') {
+    return metadata.extractionMethod.includes('ocrmypdf')
+  }
+  if (target.service === 'paddle-ocr') {
+    return metadata.extractionMethod.includes('paddle-ocr')
+  }
+
+  return false
+}
+
+const parseRootExtractionMetadata = (
+  entry: Record<string, unknown>,
+  target: OcrTarget
+): ExtractionMetadata | undefined => {
+  const values = Array.isArray(entry['step2'])
+    ? entry['step2']
+    : entry['step2'] === undefined
+      ? []
+      : [entry['step2']]
+
+  for (const value of values) {
+    try {
+      const metadata = validateData(ExtractionMetadataSchema, value, 'stored OCR metadata')
+      if (metadataMatchesTarget(metadata, target)) {
+        return metadata
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return undefined
+}
+
+const readRootExtractionResult = async (
+  outputDir: string,
+  metadata: ExtractionMetadata
+): Promise<ExtractionResult | undefined> => {
+  const resultPath = join(outputDir, 'result.json')
+  if (await Bun.file(resultPath).exists()) {
+    try {
+      return validateData(ExtractionResultSchema, await Bun.file(resultPath).json(), 'stored OCR result')
+    } catch {
+      // Fall back to extraction.txt for text-only single-provider outputs.
+    }
+  }
+
+  const textPath = join(outputDir, 'extraction.txt')
+  const text = await Bun.file(textPath).text().catch(() => undefined)
+  if (text === undefined) {
+    return undefined
+  }
+
+  return {
+    text,
+    pages: [],
+    totalPages: metadata.totalPages,
+    ocrPages: metadata.ocrPages,
+    textPages: metadata.textPages
+  }
+}
+
 export const inferStoredCompletionStatus = (
   entry: Record<string, unknown>,
   requestedTargets: OcrTarget[]
@@ -334,9 +409,26 @@ export const readExistingOcrRun = async (
   }
 
   await Promise.all(requestedTargets.map(async (target, index) => {
+    const key = getOcrTargetKey(target)
     const providerDir = join(outputDir, getOcrProviderArtifactDir(target))
     const providerResult = await readProviderResultEntry(providerDir)
     if (!providerResult) {
+      if (storedProviderStates.get(key)?.artifactDir === '.') {
+        const metadata = parseRootExtractionMetadata(raw, target)
+        if (!metadata) {
+          return
+        }
+        const result = await readRootExtractionResult(outputDir, metadata)
+        if (!result) {
+          return
+        }
+        successes[index] = {
+          target,
+          metadata,
+          result,
+          relativeDir: '.'
+        }
+      }
       return
     }
 

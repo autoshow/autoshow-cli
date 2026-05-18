@@ -4,7 +4,8 @@
     "type": "api",
     "resolutions": [
       "720p",
-      "1080p"
+      "1080p",
+      "4k"
     ],
     "billedDurations": [
       4,
@@ -68,6 +69,18 @@
           "msPerSecond": 15516
         }
       },
+      "MiniMax-Hailuo-2.3-Fast": {
+        "description": "MiniMax Hailuo 2.3 Fast — fast image-to-video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.28,
+        "blockCost720pCents": 28,
+        "blockCost1080pUSD": 0.49,
+        "blockCost1080pCents": 49,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 12000
+        }
+      },
       "MiniMax-Hailuo-02": {
         "description": "MiniMax Hailuo 02 — balanced video model",
         "blockSizeSec": 6,
@@ -92,6 +105,46 @@
       },
       "T2V-01": {
         "description": "T2V-01 — text-to-video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.19,
+        "blockCost720pCents": 19,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 31209
+        }
+      },
+      "I2V-01-Director": {
+        "description": "I2V-01-Director — camera-control focused image-to-video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.19,
+        "blockCost720pCents": 19,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 38000
+        }
+      },
+      "I2V-01-live": {
+        "description": "I2V-01-live — image-to-video model tuned for live subjects",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.19,
+        "blockCost720pCents": 19,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 31209
+        }
+      },
+      "I2V-01": {
+        "description": "I2V-01 — image-to-video model",
+        "blockSizeSec": 6,
+        "blockCost720pUSD": 0.19,
+        "blockCost720pCents": 19,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 31209
+        }
+      },
+      "S2V-01": {
+        "description": "S2V-01 — subject-reference video model",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -128,6 +181,31 @@
         "description": "Vidu Q1 text-to-video model",
         "baseJobFeeUSD": 0.4,
         "baseJobFeeCents": 40
+      },
+      "viduq1-image": {
+        "description": "Vidu Q1 image-to-video model",
+        "baseJobFeeUSD": 0.4,
+        "baseJobFeeCents": 40
+      },
+      "viduq1-start-end": {
+        "description": "Vidu Q1 first-and-last-frame video model",
+        "baseJobFeeUSD": 0.4,
+        "baseJobFeeCents": 40
+      },
+      "vidu2-image": {
+        "description": "Vidu 2 image-to-video model",
+        "baseJobFeeUSD": 0.2,
+        "baseJobFeeCents": 20
+      },
+      "vidu2-start-end": {
+        "description": "Vidu 2 first-and-last-frame video model",
+        "baseJobFeeUSD": 0.2,
+        "baseJobFeeCents": 20
+      },
+      "vidu2-reference": {
+        "description": "Vidu 2 reference-based video model",
+        "baseJobFeeUSD": 0.4,
+        "baseJobFeeCents": 40
       }
     }
   },
@@ -136,7 +214,8 @@
     "type": "api",
     "resolutions": [
       "480p",
-      "720p"
+      "720p",
+      "1080p"
     ],
     "billedDurations": [
       1,

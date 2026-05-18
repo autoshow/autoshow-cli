@@ -37,6 +37,10 @@ export const videoGenFlags = {
     type: String,
     default: '1'
   },
+  'video-mode': {
+    description: 'Video generation mode: text|image-to-video|reference-to-video|interpolate|extend|edit',
+    type: String
+  },
   'gemini-video': {
     description: buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS),
     type: [String] as [StringConstructor]
@@ -74,7 +78,31 @@ export const videoGenFlags = {
     type: String
   },
   'video-resolution': {
-    description: 'Video resolution: 720p|1080p (Gemini)',
+    description: 'Video resolution: 720p|1080p|4k (Gemini; 4k requires Veo 3.1 standard/Fast)',
+    type: String
+  },
+  'video-input-image': {
+    description: 'Video input image path, URL, or data URL for image-to-video and interpolation first frame',
+    type: String
+  },
+  'video-last-frame': {
+    description: 'Video last-frame image path, URL, or data URL for interpolation',
+    type: String
+  },
+  'video-reference-image': {
+    description: 'Reference image path, URL, or data URL for reference-to-video; repeat up to 3 times',
+    type: [String] as [StringConstructor]
+  },
+  'video-input-video': {
+    description: 'Input MP4 path, URL, or data URL for video extension or editing',
+    type: String
+  },
+  'grok-video-storage-filename': {
+    description: 'Grok video storage filename for generated file output',
+    type: String
+  },
+  'grok-video-storage-expires-after': {
+    description: 'Grok video storage expiration in seconds (max 2592000)',
     type: String
   },
   ...priceFlag

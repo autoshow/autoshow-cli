@@ -4,15 +4,9 @@
   "category": "tts",
   "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/tts/2026-05-17_03-58-13-084_tts-long",
   "runName": "2026-05-17_03-58-13-084_tts-long",
-  "generatedAt": "2026-05-17T09:03:38.017Z",
+  "generatedAt": "2026-05-18T14:06:30.695Z",
   "metric": "composite",
   "scoreFormula": "composite: 60% speaking-rate-naturalness + 20% cost + 20% speed",
-  "overallMetric": "balanced-overall",
-  "overallWeights": {
-    "accuracy": 0.5,
-    "processingSpeed": 0.25,
-    "costEfficiency": 0.25
-  },
   "tiering": {
     "metric": "balanced-overall",
     "method": "equal-thirds-by-group-overall-rank",
@@ -40,25 +34,7 @@
                 "providerKey": "kitten/kitten-tts-nano",
                 "tierGroup": "local",
                 "groupOverallRank": 1,
-                "groupTier": 1,
-                "overallRank": 2,
-                "overallScore": 73.64508499443488,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 94.58033997773956,
-                    "source": "processing-time",
-                    "processingTimeMs": 6083
-                  },
-                  "costEfficiency": {
-                    "score": 100,
-                    "source": "local-zero-cost",
-                    "costCents": 0
-                  }
-                }
+                "groupTier": 1
               }
             ]
           },
@@ -76,25 +52,7 @@
                 "providerKey": "kitten/kitten-tts-nano-0.8-int8",
                 "tierGroup": "local",
                 "groupOverallRank": 2,
-                "groupTier": 2,
-                "overallRank": 4,
-                "overallScore": 73.08983861175756,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 92.35935444703026,
-                    "source": "processing-time",
-                    "processingTimeMs": 7839
-                  },
-                  "costEfficiency": {
-                    "score": 100,
-                    "source": "local-zero-cost",
-                    "costCents": 0
-                  }
-                }
+                "groupTier": 2
               }
             ]
           },
@@ -112,49 +70,13 @@
                 "providerKey": "kitten/kitten-tts-micro",
                 "tierGroup": "local",
                 "groupOverallRank": 3,
-                "groupTier": 3,
-                "overallRank": 5,
-                "overallScore": 73.08920621268845,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 92.35682485075381,
-                    "source": "processing-time",
-                    "processingTimeMs": 7841
-                  },
-                  "costEfficiency": {
-                    "score": 100,
-                    "source": "local-zero-cost",
-                    "costCents": 0
-                  }
-                }
+                "groupTier": 3
               },
               {
                 "providerKey": "kitten/kitten-tts-mini",
                 "tierGroup": "local",
                 "groupOverallRank": 4,
-                "groupTier": 3,
-                "overallRank": 6,
-                "overallScore": 72.70945057168876,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 90.83780228675504,
-                    "source": "processing-time",
-                    "processingTimeMs": 9042
-                  },
-                  "costEfficiency": {
-                    "score": 100,
-                    "source": "local-zero-cost",
-                    "costCents": 0
-                  }
-                }
+                "groupTier": 3
               }
             ]
           }
@@ -182,97 +104,25 @@
                 "providerKey": "deapi/Kokoro",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 1,
-                "groupTier": 1,
-                "overallRank": 1,
-                "overallScore": 73.88587236289588,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 96.02473945158353,
-                    "source": "processing-time",
-                    "processingTimeMs": 4941
-                  },
-                  "costEfficiency": {
-                    "score": 99.51875,
-                    "source": "reported-cost",
-                    "costCents": 0.022021999999999996
-                  }
-                }
+                "groupTier": 1
               },
               {
                 "providerKey": "grok/grok-tts",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 2,
-                "groupTier": 1,
-                "overallRank": 3,
-                "overallScore": 73.37649562379843,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 96.13098249519376,
-                    "source": "processing-time",
-                    "processingTimeMs": 4857
-                  },
-                  "costEfficiency": {
-                    "score": 97.375,
-                    "source": "reported-cost",
-                    "costCents": 0.12011999999999999
-                  }
-                }
+                "groupTier": 1
               },
               {
                 "providerKey": "openai/gpt-4o-mini-tts",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 3,
-                "groupTier": 1,
-                "overallRank": 7,
-                "overallScore": 71.98462954062532,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 95.81351816250127,
-                    "source": "processing-time",
-                    "processingTimeMs": 5108
-                  },
-                  "costEfficiency": {
-                    "score": 92.125,
-                    "source": "reported-cost",
-                    "costCents": 0.36036
-                  }
-                }
+                "groupTier": 1
               },
               {
                 "providerKey": "deapi/Chatterbox",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 4,
-                "groupTier": 1,
-                "overallRank": 8,
-                "overallScore": 70.37953572422342,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 81.99939289689365,
-                    "source": "processing-time",
-                    "processingTimeMs": 16030
-                  },
-                  "costEfficiency": {
-                    "score": 99.51875,
-                    "source": "reported-cost",
-                    "costCents": 0.022021999999999996
-                  }
-                }
+                "groupTier": 1
               }
             ]
           },
@@ -290,97 +140,25 @@
                 "providerKey": "gcloud/chirp3-hd",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 5,
-                "groupTier": 2,
-                "overallRank": 9,
-                "overallScore": 70.01147804310432,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 98.79591217241727,
-                    "source": "processing-time",
-                    "processingTimeMs": 2750
-                  },
-                  "costEfficiency": {
-                    "score": 81.25,
-                    "source": "reported-cost",
-                    "costCents": 0.8579999999999999
-                  }
-                }
+                "groupTier": 2
               },
               {
                 "providerKey": "groq/canopylabs/orpheus-v1-english",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 6,
-                "groupTier": 2,
-                "overallRank": 10,
-                "overallScore": 69.25187190124456,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 97.00748760497825,
-                    "source": "processing-time",
-                    "processingTimeMs": 4164
-                  },
-                  "costEfficiency": {
-                    "score": 80,
-                    "source": "reported-cost",
-                    "costCents": 0.9152
-                  }
-                }
+                "groupTier": 2
               },
               {
                 "providerKey": "deepgram/aura-2-thalia-en",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 7,
-                "groupTier": 2,
-                "overallRank": 11,
-                "overallScore": 67.90021375088536,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 90.35085500354143,
-                    "source": "processing-time",
-                    "processingTimeMs": 9427
-                  },
-                  "costEfficiency": {
-                    "score": 81.25,
-                    "source": "reported-cost",
-                    "costCents": 0.8579999999999999
-                  }
-                }
+                "groupTier": 2
               },
               {
                 "providerKey": "gemini/gemini-3.1-flash-tts-preview",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 8,
-                "groupTier": 2,
-                "overallRank": 12,
-                "overallScore": 67.82000973894566,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 84.40503895578266,
-                    "source": "processing-time",
-                    "processingTimeMs": 14128
-                  },
-                  "costEfficiency": {
-                    "score": 86.875,
-                    "source": "reported-cost",
-                    "costCents": 0.6006
-                  }
-                }
+                "groupTier": 2
               }
             ]
           },
@@ -398,121 +176,31 @@
                 "providerKey": "minimax/speech-2.8-turbo",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 9,
-                "groupTier": 3,
-                "overallRank": 13,
-                "overallScore": 62.531936152989985,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 87.62774461195994,
-                    "source": "processing-time",
-                    "processingTimeMs": 11580
-                  },
-                  "costEfficiency": {
-                    "score": 62.5,
-                    "source": "reported-cost",
-                    "costCents": 1.7159999999999997
-                  }
-                }
+                "groupTier": 3
               },
               {
                 "providerKey": "elevenlabs/eleven_v3",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 10,
-                "groupTier": 3,
-                "overallRank": 14,
-                "overallScore": 56.33632247293332,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 87.84528989173327,
-                    "source": "processing-time",
-                    "processingTimeMs": 11408
-                  },
-                  "costEfficiency": {
-                    "score": 37.5,
-                    "source": "reported-cost",
-                    "costCents": 2.86
-                  }
-                }
+                "groupTier": 3
               },
               {
                 "providerKey": "deapi/Qwen3_TTS_12Hz_1_7B_CustomVoice",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 11,
-                "groupTier": 3,
-                "overallRank": 15,
-                "overallScore": 54.909473496155016,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 20.11914398462006,
-                    "source": "processing-time",
-                    "processingTimeMs": 64955
-                  },
-                  "costEfficiency": {
-                    "score": 99.51875,
-                    "source": "reported-cost",
-                    "costCents": 0.022021999999999996
-                  }
-                }
+                "groupTier": 3
               },
               {
                 "providerKey": "gcloud/studio",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 12,
-                "groupTier": 3,
-                "overallRank": 16,
-                "overallScore": 50,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 100,
-                    "source": "processing-time",
-                    "processingTimeMs": 1798
-                  },
-                  "costEfficiency": {
-                    "score": 0,
-                    "source": "reported-cost",
-                    "costCents": 4.576
-                  }
-                }
+                "groupTier": 3
               },
               {
                 "providerKey": "minimax/speech-2.8-hd",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 13,
-                "groupTier": 3,
-                "overallRank": 17,
-                "overallScore": 34.375,
-                "overallComponents": {
-                  "accuracy": {
-                    "score": 50,
-                    "source": "missing-roundtrip-accuracy"
-                  },
-                  "processingSpeed": {
-                    "score": 0,
-                    "source": "processing-time",
-                    "processingTimeMs": 80862
-                  },
-                  "costEfficiency": {
-                    "score": 37.5,
-                    "source": "reported-cost",
-                    "costCents": 2.86
-                  }
-                }
+                "groupTier": 3
               }
             ]
           }
@@ -553,23 +241,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 92.35682485075381,
-              "source": "processing-time",
-              "processingTimeMs": 7841
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "kitten/kitten-tts-mini",
@@ -597,23 +269,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 90.83780228675504,
-              "source": "processing-time",
-              "processingTimeMs": 9042
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "kitten/kitten-tts-nano",
@@ -641,23 +297,7 @@
           "groupTier": 1,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 94.58033997773956,
-              "source": "processing-time",
-              "processingTimeMs": 6083
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "kitten/kitten-tts-nano-0.8-int8",
@@ -685,23 +325,7 @@
           "groupTier": 2,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 92.35935444703026,
-              "source": "processing-time",
-              "processingTimeMs": 7839
-            },
-            "costEfficiency": {
-              "score": 100,
-              "source": "local-zero-cost",
-              "costCents": 0
-            }
-          }
+          "duplicateGroupId": null
         }
       ]
     },
@@ -734,23 +358,7 @@
           "groupTier": 1,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 81.99939289689365,
-              "source": "processing-time",
-              "processingTimeMs": 16030
-            },
-            "costEfficiency": {
-              "score": 99.51875,
-              "source": "reported-cost",
-              "costCents": 0.022021999999999996
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "deapi/Kokoro",
@@ -778,23 +386,7 @@
           "groupTier": 1,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 96.02473945158353,
-              "source": "processing-time",
-              "processingTimeMs": 4941
-            },
-            "costEfficiency": {
-              "score": 99.51875,
-              "source": "reported-cost",
-              "costCents": 0.022021999999999996
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "deapi/Qwen3_TTS_12Hz_1_7B_CustomVoice",
@@ -822,23 +414,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 20.11914398462006,
-              "source": "processing-time",
-              "processingTimeMs": 64955
-            },
-            "costEfficiency": {
-              "score": 99.51875,
-              "source": "reported-cost",
-              "costCents": 0.022021999999999996
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "deepgram/aura-2-thalia-en",
@@ -866,23 +442,7 @@
           "groupTier": 2,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 90.35085500354143,
-              "source": "processing-time",
-              "processingTimeMs": 9427
-            },
-            "costEfficiency": {
-              "score": 81.25,
-              "source": "reported-cost",
-              "costCents": 0.8579999999999999
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "elevenlabs/eleven_v3",
@@ -910,23 +470,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 87.84528989173327,
-              "source": "processing-time",
-              "processingTimeMs": 11408
-            },
-            "costEfficiency": {
-              "score": 37.5,
-              "source": "reported-cost",
-              "costCents": 2.86
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "gcloud/chirp3-hd",
@@ -954,23 +498,7 @@
           "groupTier": 2,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 98.79591217241727,
-              "source": "processing-time",
-              "processingTimeMs": 2750
-            },
-            "costEfficiency": {
-              "score": 81.25,
-              "source": "reported-cost",
-              "costCents": 0.8579999999999999
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "gcloud/studio",
@@ -998,23 +526,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 100,
-              "source": "processing-time",
-              "processingTimeMs": 1798
-            },
-            "costEfficiency": {
-              "score": 0,
-              "source": "reported-cost",
-              "costCents": 4.576
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "gemini/gemini-3.1-flash-tts-preview",
@@ -1042,23 +554,7 @@
           "groupTier": 2,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 84.40503895578266,
-              "source": "processing-time",
-              "processingTimeMs": 14128
-            },
-            "costEfficiency": {
-              "score": 86.875,
-              "source": "reported-cost",
-              "costCents": 0.6006
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "grok/grok-tts",
@@ -1086,23 +582,7 @@
           "groupTier": 1,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 96.13098249519376,
-              "source": "processing-time",
-              "processingTimeMs": 4857
-            },
-            "costEfficiency": {
-              "score": 97.375,
-              "source": "reported-cost",
-              "costCents": 0.12011999999999999
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "groq/canopylabs/orpheus-v1-english",
@@ -1130,23 +610,7 @@
           "groupTier": 2,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 97.00748760497825,
-              "source": "processing-time",
-              "processingTimeMs": 4164
-            },
-            "costEfficiency": {
-              "score": 80,
-              "source": "reported-cost",
-              "costCents": 0.9152
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "minimax/speech-2.8-hd",
@@ -1174,23 +638,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 0,
-              "source": "processing-time",
-              "processingTimeMs": 80862
-            },
-            "costEfficiency": {
-              "score": 37.5,
-              "source": "reported-cost",
-              "costCents": 2.86
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "minimax/speech-2.8-turbo",
@@ -1218,23 +666,7 @@
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 87.62774461195994,
-              "source": "processing-time",
-              "processingTimeMs": 11580
-            },
-            "costEfficiency": {
-              "score": 62.5,
-              "source": "reported-cost",
-              "costCents": 1.7159999999999997
-            }
-          }
+          "duplicateGroupId": null
         },
         {
           "providerKey": "openai/gpt-4o-mini-tts",
@@ -1262,23 +694,7 @@
           "groupTier": 1,
           "qualityWarnings": [],
           "segmentStats": null,
-          "duplicateGroupId": null,
-          "overallComponents": {
-            "accuracy": {
-              "score": 50,
-              "source": "missing-roundtrip-accuracy"
-            },
-            "processingSpeed": {
-              "score": 95.81351816250127,
-              "source": "processing-time",
-              "processingTimeMs": 5108
-            },
-            "costEfficiency": {
-              "score": 92.125,
-              "source": "reported-cost",
-              "costCents": 0.36036
-            }
-          }
+          "duplicateGroupId": null
         }
       ]
     }
@@ -1432,7 +848,6 @@
     "The cheapest cloud providers were `deapi/Kokoro`, `deapi/Chatterbox`, and `deapi/Qwen3_TTS_12Hz_1_7B_CustomVoice` at 0.0220¢ ($0.0002).",
     "Fastest local model: `kitten/kitten-tts-nano` at 6.08s.",
     "Fastest cloud service: `gcloud/studio` at 1.80s.",
-    "No roundtrip STT data or explicit voice-quality metric was available. Highest-quality rankings are unavailable for both provider groups.",
-    "Combined local/service leaderboards are omitted; local and service providers are not ranked against each other."
+    "No roundtrip STT data was available. Existing local/cloud ranking used a composite of speaking rate naturalness (60%), cost (20%), and speed (20%); overall ranking used neutral 50/100 accuracy components for providers without roundtrip data."
   ]
 }

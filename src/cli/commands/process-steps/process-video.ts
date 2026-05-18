@@ -491,6 +491,7 @@ export const processVideo = async (
 	        videoSize: processingOptions.videoSize,
 	        videoAspectRatio: processingOptions.videoAspectRatio,
 	        videoResolution: processingOptions.videoResolution,
+	        videoMode: processingOptions.videoMode,
 	        musicTargets: attemptedMusicTargets.map((t) => ({
 	          service: t.service,
 	          model: t.model,

@@ -17,7 +17,6 @@ import { processOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-o
 import { downloadDocumentUrlToTempFile } from '../../step-1-download/document/resolve-document-source'
 import {
   buildMissingTargetsFromEntry,
-  getOcrTargetKey,
   inferStoredCompletionStatus,
   parseStoredRequestedTargets
 } from './ocr-run-state'
@@ -25,6 +24,7 @@ import { readOcrRunManifestEntry, writeOcrBatchManifest, writeOcrRunManifest } f
 import { readBatchManifest } from '../../manifest-utils'
 import type { ResumeTarget } from '~/types'
 import type { ResumeOcrEntry } from '~/types'
+import { resolveAdditiveResumeProviderSelection } from '../../resume/resume-provider-selection'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -81,29 +81,25 @@ const parseResumeEntry = async (
     return undefined
   }
 
-  const requestedTargets = parseStoredRequestedTargets(entry)
-  if (requestedTargets.length === 0) {
+  const storedRequestedTargets = parseStoredRequestedTargets(entry)
+  if (storedRequestedTargets.length === 0 && (!selectedTargets || selectedTargets.length === 0)) {
     return undefined
   }
 
-  const selectedKeys = selectedTargets ? new Set(selectedTargets.map(getOcrTargetKey)) : undefined
-  if (selectedKeys) {
-    const requestedKeys = new Set(requestedTargets.map(getOcrTargetKey))
-    const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
-    if (unexpected.length > 0) {
-      throw CLIUsageError(`Requested resume providers are not a subset of the original providers: ${unexpected.join(', ')}`)
-    }
-  }
-
   const source = toStoredSource(entry)
-  const missingTargets = buildMissingTargetsFromEntry(entry, requestedTargets)
-    .filter((target) => selectedKeys ? selectedKeys.has(getOcrTargetKey(target)) : true)
+  const storedMissingTargets = buildMissingTargetsFromEntry(entry, storedRequestedTargets)
+  const resolvedTargets = resolveAdditiveResumeProviderSelection({
+    storedProviders: storedRequestedTargets,
+    runnableStoredProviders: storedMissingTargets,
+    ...(selectedTargets ? { selectedProviders: selectedTargets } : {})
+  })
+  const requestedTargets = resolvedTargets.requestedProviders
 
   return {
     outputDir,
     source,
     requestedTargets,
-    missingTargets,
+    missingTargets: resolvedTargets.providersToRun,
     completionStatus: inferStoredCompletionStatus(entry, requestedTargets),
     rawEntry: entry
   }

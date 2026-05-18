@@ -1,6 +1,6 @@
 ---
 name: consensus
-description: Use this skill when the user needs a gold-reference extraction/transcript, consensus evaluation, or provider comparison report from a multi-provider AutoShow image, music, OCR, STT, TTS, URL, or video run. Apply it to build category-specific consensus packets, generate reports, and compare providers without ranking local options against paid or hosted services.
+description: Use this skill when the user needs a gold-reference extraction/transcript, consensus evaluation, or provider comparison report from a multi-provider AutoShow image, music, OCR, STT, TTS, URL, or video run. Apply it to build category-specific consensus packets, generate reports, and compare providers with category-appropriate ranking and tier summaries.
 compatibility: Requires Bun
 allowed-tools: Bash Read Edit Write Glob Grep
 metadata:
@@ -36,7 +36,8 @@ Progress:
 - [ ] Build the packet with `scripts/run.ts <category> build-packet`.
 - [ ] Write the category consensus artifact when the workflow requires agent reconciliation.
 - [ ] Generate reports with `scripts/run.ts <category> build-report`.
-- [ ] Verify that markdown and JSON reports keep local and service providers separated.
+- [ ] Verify that JSON reports include the required local and service ranking surfaces.
+- [ ] For OCR and STT, verify the combined overall ranking and tier breakdown are preserved.
 
 ## Commands
 
@@ -77,7 +78,7 @@ If omitted, the report command uses the category default file in the run directo
 
 ## Ranking Contract
 
-Reports must not rank local options against service options in the same table.
+Reports expose separate local and service ranking surfaces so cost, speed, and quality can be inspected within each provider class.
 
 Every JSON report generated through `scripts/run.ts <category> build-report` includes:
 
@@ -89,6 +90,13 @@ Every JSON report generated through `scripts/run.ts <category> build-report` inc
 6. `rankingSurfaces.service.highestQuality`
 
 If a group or metric is unavailable, the surface is an empty list and has an adjacent `*UnavailableReason` field.
+
+OCR and STT reports additionally preserve a combined report structure:
+
+1. `## Overall Ranking` using `balanced-overall`
+2. `## Tier Breakdown` with local and third-party tier groups
+3. `## Ranking` as the combined WER accuracy ranking
+4. JSON `overall`, `providers`, and `tiering` fields with overall scores, component scores, group ranks, and tiers
 
 ## Category Notes
 
@@ -105,13 +113,14 @@ TTS reports use roundtrip WER when present, or explicit voice-quality data if a 
 ## Validation Checklist
 
 1. Confirm the consensus artifact exists when required by the category.
-2. Confirm the markdown report has separate Local Providers and Service Providers sections.
+2. Confirm the markdown report exposes the category's expected ranking structure.
 3. Confirm all six JSON `rankingSurfaces` paths exist.
 4. Confirm unavailable quality rankings explain why they are unavailable.
 5. Confirm local cheapest rankings only compare local providers and use zero monetary cost.
-6. Confirm no combined local-vs-service leaderboard remains in the markdown or JSON report.
-7. Delete temporary packet files unless the user explicitly wants to keep them.
-8. If a script fails, report the exact command, run directory, and first actionable error line.
+6. For OCR and STT, confirm combined overall ranking and tier breakdowns remain in markdown and JSON.
+7. For categories without a combined-overall contract, confirm no combined local-vs-service leaderboard remains in the markdown or JSON report.
+8. Delete temporary packet files unless the user explicitly wants to keep them.
+9. If a script fails, report the exact command, run directory, and first actionable error line.
 
 ## Reporting
 
@@ -119,5 +128,5 @@ When you finish, report:
 
 1. Which run directory and category were processed.
 2. Which final deliverables were written.
-3. Whether local and service providers were separated.
+3. Whether required ranking surfaces and any category-specific combined ranking were present.
 4. Which verification commands were run.

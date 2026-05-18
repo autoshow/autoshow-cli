@@ -32,6 +32,7 @@ import speechifyLinks from './model-links/speechify.json'
 import speechmaticsLinks from './model-links/speechmatics.json'
 import supadataLinks from './model-links/supadata.json'
 import togetherLinks from './model-links/together.json'
+import unstructuredLinks from './model-links/unstructured.json'
 import xLinks from './model-links/x.json'
 import zyteLinks from './model-links/zyte.json'
 import type { ModelLinksData } from '~/types'
@@ -69,6 +70,7 @@ const providerLinks = [
   humeLinks,
   deapiLinks,
   supadataLinks,
+  unstructuredLinks,
   scrapecreatorsLinks,
   zyteLinks,
   firecrawlLinks,

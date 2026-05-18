@@ -236,6 +236,13 @@ export const mergeConfigIntoRawFlags = (
     inject('video-size', d.post.video.videoSize)
     inject('video-aspect-ratio', d.post.video.videoAspectRatio)
     inject('video-resolution', d.post.video.videoResolution)
+    inject('video-mode', d.post.video.videoMode)
+    inject('video-input-image', d.post.video.videoInputImage)
+    inject('video-last-frame', d.post.video.videoLastFrame)
+    inject('video-reference-image', d.post.video.videoReferenceImages)
+    inject('video-input-video', d.post.video.videoInputVideo)
+    inject('grok-video-storage-filename', d.post.video.grokVideoStorageFilename)
+    inject('grok-video-storage-expires-after', d.post.video.grokVideoStorageExpiresAfter)
     inject('video-provider-concurrency', d.post.video.providerConcurrency)
     inject('video-local-concurrency', d.post.video.localConcurrency)
   }
@@ -435,6 +442,13 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'video-size':        ['defaults', 'post', 'video', 'videoSize'],
   'video-aspect-ratio': ['defaults', 'post', 'video', 'videoAspectRatio'],
   'video-resolution':  ['defaults', 'post', 'video', 'videoResolution'],
+  'video-mode':        ['defaults', 'post', 'video', 'videoMode'],
+  'video-input-image': ['defaults', 'post', 'video', 'videoInputImage'],
+  'video-last-frame':  ['defaults', 'post', 'video', 'videoLastFrame'],
+  'video-reference-image': ['defaults', 'post', 'video', 'videoReferenceImages'],
+  'video-input-video': ['defaults', 'post', 'video', 'videoInputVideo'],
+  'grok-video-storage-filename': ['defaults', 'post', 'video', 'grokVideoStorageFilename'],
+  'grok-video-storage-expires-after': ['defaults', 'post', 'video', 'grokVideoStorageExpiresAfter'],
   'video-provider-concurrency': ['defaults', 'post', 'video', 'providerConcurrency'],
   'video-local-concurrency': ['defaults', 'post', 'video', 'localConcurrency'],
   'elevenlabs-music':  ['defaults', 'post', 'music', 'elevenlabsMusic'],

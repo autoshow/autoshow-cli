@@ -111,12 +111,21 @@ bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice
 # text-to-speech with deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
-# image generation, then edit the generated image
+# image generation, then edit/reference the generated image; run this block in order
 bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 
 # image reference with native Gemini
-bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png
+bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
+
+# image references with MiniMax and BFL
+bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
+bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+
+# video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
+bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
+bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
+bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
 
 # image generation with deAPI
 bun as image "a sunset over mountains" --deapi Flux1schnell --image-size 768x768
@@ -208,6 +217,8 @@ bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --price
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
 bun as image "a sunset" --openai gpt-image-2 --image-size 1024x1024 --image-quality low --price
+bun as image "a sunset" --minimax image-01 --image-count 3 --price
+bun as image "a sunset" --glm glm-image --image-quality standard --price
 bun as image "a sunset" --bfl flux-2-klein-4b --price
 bun as image "a sunset" --deapi Flux1schnell --price
 bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental --price

@@ -450,7 +450,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       videoDuration: input.videoTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.videoDuration,
       videoSize: input.videoSize,
       videoAspectRatio: input.videoAspectRatio,
-      videoResolution: input.videoResolution
+      videoResolution: input.videoResolution,
+      videoMode: input.videoMode
     })
     for (const estimate of videoEstimates) {
       const estimation = getVideoEstimation(estimate.provider, estimate.model)

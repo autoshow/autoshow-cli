@@ -2354,6 +2354,133 @@ describe('option resolution contracts', () => {
     expect(deepgramTargets.map((target) => target.model)).toEqual(['aura-2-thalia-en', 'aura-2-andromeda-en'])
   })
 
+  test('video mode defaults to text and validates media inputs', () => {
+    const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
+    const videoDataUrl = `data:video/mp4;base64,${Buffer.from([4, 5, 6]).toString('base64')}`
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-fast-generate-preview',
+      'video-input-image': imageDataUrl
+    }))).toThrow('--video-input-image is not valid with --video-mode text')
+
+    expect(collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-fast-generate-preview'
+    })).map(target => target.service)).toEqual(['gemini'])
+
+    expect(collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-fast-generate-preview',
+      'video-mode': 'image-to-video',
+      'video-input-image': imageDataUrl
+    })).map(target => target.service)).toEqual(['gemini'])
+
+    expect(collectVideoTargets(buildOptsFromFlags(false, {
+      'minimax-video': 'I2V-01',
+      'video-mode': 'image-to-video',
+      'video-input-image': imageDataUrl
+    })).map(target => target.service)).toEqual(['minimax'])
+
+    expect(collectVideoTargets(buildOptsFromFlags(false, {
+      'glm-video': 'vidu2-image',
+      'video-mode': 'image-to-video',
+      'video-input-image': imageDataUrl
+    })).map(target => target.service)).toEqual(['glm'])
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'grok-video': 'grok-imagine-video',
+      'video-mode': 'reference-to-video',
+      'video-reference-image': [imageDataUrl, imageDataUrl, imageDataUrl, imageDataUrl]
+    }))).toThrow('--video-reference-image supports at most 3 reference images')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-fast-generate-preview',
+      'video-mode': 'interpolate',
+      'video-input-image': imageDataUrl
+    }))).toThrow('--video-mode interpolate requires --video-last-frame')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'grok-video': 'grok-imagine-video',
+      'video-mode': 'edit',
+      'video-input-video': videoDataUrl,
+      'video-duration': '8'
+    }))).toThrow('--video-duration is not valid with --video-mode edit')
+  })
+
+  test('GLM and MiniMax video media modes enforce model capability limits', () => {
+    const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'minimax-video': 'S2V-01'
+    }))).toThrow('--video-mode text is not supported by minimax/S2V-01')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'minimax-video': 'T2V-01',
+      'video-mode': 'image-to-video',
+      'video-input-image': imageDataUrl
+    }))).toThrow('--video-mode image-to-video is not supported by minimax/T2V-01')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'minimax-video': 'S2V-01',
+      'video-mode': 'reference-to-video',
+      'video-reference-image': [imageDataUrl, imageDataUrl]
+    }))).toThrow('MiniMax S2V-01 supports exactly one --video-reference-image')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'glm-video': 'vidu2-reference',
+      'video-mode': 'image-to-video',
+      'video-input-image': imageDataUrl
+    }))).toThrow('--video-mode image-to-video is not supported by glm/vidu2-reference')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'glm-video': 'viduq1-start-end'
+    }))).toThrow('--video-mode text is not supported by glm/viduq1-start-end')
+
+    expect(collectVideoTargets(buildOptsFromFlags(false, {
+      'glm-video': 'vidu2-reference',
+      'video-mode': 'reference-to-video',
+      'video-reference-image': [imageDataUrl, imageDataUrl, imageDataUrl]
+    })).map(target => target.model)).toEqual(['vidu2-reference'])
+
+    const allReferenceTargets = collectVideoTargets(buildOptsFromFlags(false, {
+      'all-video': true,
+      'video-mode': 'reference-to-video',
+      'video-reference-image': imageDataUrl
+    }))
+    expect(allReferenceTargets.map(target => `${target.service}/${target.model}`)).toEqual([
+      'gemini/veo-3.1-fast-generate-preview',
+      'gemini/veo-3.1-generate-preview',
+      'minimax/S2V-01',
+      'glm/vidu2-reference',
+      'grok/grok-imagine-video'
+    ])
+  })
+
+  test('Gemini video media modes enforce Lite and 4k capability limits', () => {
+    const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
+    const videoDataUrl = `data:video/mp4;base64,${Buffer.from([4, 5, 6]).toString('base64')}`
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-lite-generate-preview',
+      'video-resolution': '4k'
+    }))).toThrow('Veo 3.1 Lite does not support --video-resolution 4k')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-lite-generate-preview',
+      'video-mode': 'reference-to-video',
+      'video-reference-image': imageDataUrl
+    }))).toThrow('--video-mode reference-to-video is not supported by gemini/veo-3.1-lite-generate-preview')
+
+    expect(() => collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-lite-generate-preview',
+      'video-mode': 'extend',
+      'video-input-video': videoDataUrl
+    }))).toThrow('--video-mode extend is not supported by gemini/veo-3.1-lite-generate-preview')
+
+    expect(collectVideoTargets(buildOptsFromFlags(false, {
+      'gemini-video': 'veo-3.1-generate-preview',
+      'video-resolution': '4k'
+    }))).toHaveLength(1)
+  })
+
   test('OCR provider pools enforce hosted and local limits independently', async () => {
     const targets: OcrTarget[] = [
       { service: 'tesseract', model: 'tesseract' },

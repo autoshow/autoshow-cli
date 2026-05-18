@@ -579,14 +579,14 @@ describe('logging contracts', () => {
       reason: 'retryable status 429',
       delayMs: 1000
     })).toEqual({
-      columns: ['operation', 'attempt', 'maxAttempts', 'reason', 'delayMs'],
-      rows: [{
-        operation: 'supadata-poll-transcript',
-        attempt: 2,
-        maxAttempts: 4,
-        reason: 'retryable status 429',
-        delayMs: 1000
-      }]
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'operation', value: 'supadata-poll-transcript' },
+        { key: 'attempt', value: 2 },
+        { key: 'maxAttempts', value: 4 },
+        { key: 'reason', value: 'retryable status 429' },
+        { key: 'delayMs', value: 1000 }
+      ]
     })
   })
 
@@ -728,21 +728,20 @@ describe('logging contracts', () => {
     })
   })
 
-  test('ocr log table builders produce structured progress rows', () => {
+  test('ocr log table builders use key/value rows for single-record progress', () => {
     expect(buildOcrProviderLifecycleTable({
       provider: 'openai',
       model: 'gpt-5.4-nano',
       status: 'succeeded',
       elapsedMs: 1234
     })).toEqual({
-      columns: ['provider', 'model', 'status', 'elapsedMs', 'reason'],
-      rows: [{
-        provider: 'openai',
-        model: 'gpt-5.4-nano',
-        status: 'succeeded',
-        elapsedMs: 1234,
-        reason: ''
-      }]
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'provider', value: 'openai' },
+        { key: 'model', value: 'gpt-5.4-nano' },
+        { key: 'status', value: 'succeeded' },
+        { key: 'elapsedMs', value: 1234 }
+      ]
     })
 
     expect(buildOcrPagesProgressTable({
@@ -751,13 +750,16 @@ describe('logging contracts', () => {
       totalPages: 5,
       renderConcurrency: 4,
       ocrConcurrency: 2
-    }).rows).toEqual([{
-      status: 'running',
-      ocrPages: 2,
-      totalPages: 5,
-      renderConcurrency: 4,
-      ocrConcurrency: 2
-    }])
+    })).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'status', value: 'running' },
+        { key: 'ocrPages', value: 2 },
+        { key: 'totalPages', value: 5 },
+        { key: 'renderConcurrency', value: 4 },
+        { key: 'ocrConcurrency', value: 2 }
+      ]
+    })
 
     expect(buildOcrJobProgressTable({
       provider: 'aws-textract',
@@ -767,16 +769,26 @@ describe('logging contracts', () => {
       pages: 7,
       detail: 'attempt 10'
     })).toEqual({
-      columns: ['provider', 'action', 'remoteId', 'state', 'pages', 'detail'],
-      rows: [{
-        provider: 'aws-textract',
-        action: 'poll',
-        remoteId: 'job-123',
-        state: 'in_progress',
-        pages: 7,
-        detail: 'attempt 10'
-      }]
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'provider', value: 'aws-textract' },
+        { key: 'action', value: 'poll' },
+        { key: 'remoteId', value: 'job-123' },
+        { key: 'state', value: 'in_progress' },
+        { key: 'pages', value: 7 },
+        { key: 'detail', value: 'attempt 10' }
+      ]
     })
+
+    expect(buildOcrJobProgressTable({
+      provider: 'aws-textract',
+      action: 'launch',
+      state: 'queued'
+    }).rows).toEqual([
+      { key: 'provider', value: 'aws-textract' },
+      { key: 'action', value: 'launch' },
+      { key: 'state', value: 'queued' }
+    ])
   })
 
   test('ocr log table builders use key/value rows for single-operation details', () => {
@@ -785,34 +797,43 @@ describe('logging contracts', () => {
       input: '/tmp/input.pdf',
       jobs: 2,
       languages: 'eng'
-    }).rows).toEqual([
-      { key: 'status', value: 'running' },
-      { key: 'input', value: '/tmp/input.pdf' },
-      { key: 'jobs', value: 2 },
-      { key: 'languages', value: 'eng' }
-    ])
+    })).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'status', value: 'running' },
+        { key: 'input', value: '/tmp/input.pdf' },
+        { key: 'jobs', value: 2 },
+        { key: 'languages', value: 'eng' }
+      ]
+    })
 
     expect(buildPaddleOcrPrepareTable({
       status: 'downsampled',
       input: 'page-001.png',
       dimensions: { width: 2400, height: 3200 },
       maxSide: 1000
-    }).rows).toEqual([
-      { key: 'status', value: 'downsampled' },
-      { key: 'input', value: 'page-001.png' },
-      { key: 'dimensions', value: '2400x3200' },
-      { key: 'maxSide', value: 1000 }
-    ])
+    })).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'status', value: 'downsampled' },
+        { key: 'input', value: 'page-001.png' },
+        { key: 'dimensions', value: '2400x3200' },
+        { key: 'maxSide', value: 1000 }
+      ]
+    })
 
     expect(buildOcrTransferTable({
       action: 'upload',
       file: 'document.pdf',
       destination: 's3://bucket/document.pdf'
-    }).rows).toEqual([
-      { key: 'action', value: 'upload' },
-      { key: 'file', value: 'document.pdf' },
-      { key: 'destination', value: 's3://bucket/document.pdf' }
-    ])
+    })).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'action', value: 'upload' },
+        { key: 'file', value: 'document.pdf' },
+        { key: 'destination', value: 's3://bucket/document.pdf' }
+      ]
+    })
   })
 
   test('ocrmypdf output parser creates compact stream/page rows', () => {
@@ -826,17 +847,23 @@ describe('logging contracts', () => {
 
     if (!event) throw new Error('Expected OCRmyPDF output event')
     expect(buildOcrmypdfOutputTable(event)).toEqual({
-      columns: ['stream', 'page', 'detail'],
-      rows: [{
-        stream: 'stderr',
-        page: 3,
-        detail: 'deskew complete'
-      }]
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'stream', value: 'stderr' },
+        { key: 'page', value: 3 },
+        { key: 'detail', value: 'deskew complete' }
+      ]
     })
 
     const noPage = parseOcrmypdfOutputLine('stdout', 'Scanning contents')
     if (!noPage) throw new Error('Expected OCRmyPDF output event')
-    expect(buildOcrmypdfOutputTable(noPage).columns).toEqual(['stream', 'detail'])
+    expect(buildOcrmypdfOutputTable(noPage)).toEqual({
+      columns: ['key', 'value'],
+      rows: [
+        { key: 'stream', value: 'stdout' },
+        { key: 'detail', value: 'Scanning contents' }
+      ]
+    })
   })
 
   test('reporter ignores estimate notes in human pricing output', () => {
@@ -904,15 +931,15 @@ describe('logging contracts', () => {
       },
       cost: {
         estimated: {
-          totalCost: 0.195415,
+          totalCost: 0.58044,
           steps: [{
             step: 'extract',
             provider: 'openai',
             model: 'gpt-5.4-nano',
-            cost: 0.195415,
+            cost: 0.58044,
             pageCount: 2,
-            promptTokens: 6152,
-            completionTokens: 579,
+            promptTokens: 5972,
+            completionTokens: 3688,
             inputCostPer1MCents: 20,
             outputCostPer1MCents: 125,
             estimateType: 'heuristic'
@@ -936,12 +963,12 @@ describe('logging contracts', () => {
           model: 'gpt-5.4-nano',
           pages: 2,
           predictedCostInputs: {
-            costCents: 0.195415,
+            costCents: 0.58044,
             pageCount: 2,
             inputMetric: 'tokens',
-            inputValue: 6731,
-            promptTokens: 6152,
-            completionTokens: 579,
+            inputValue: 9660,
+            promptTokens: 5972,
+            completionTokens: 3688,
             estimateType: 'heuristic'
           },
           actualCostInputs: {
@@ -957,8 +984,8 @@ describe('logging contracts', () => {
             outputCostPer1MCents: 125
           },
           delta: {
-            costCents: 0.11208499999999999,
-            percent: 57.35741882659979
+            costCents: -0.27294,
+            percent: -47.02294810833162
           }
         }]
       }
@@ -968,22 +995,23 @@ describe('logging contracts', () => {
     expect(summary.runSummary?.rows[0]).toMatchObject({
       step: 'Extract',
       providerModel: 'openai/gpt-5.4-nano',
-      predictedCostCents: 0.195415,
+      predictedCostCents: 0.58044,
       actualCostCents: 0.3075
     })
     expect(summary.promptUsage?.rows[0]).toMatchObject({
       step: 'Extract',
       providerModel: 'openai/gpt-5.4-nano',
-      usage: '6000/1500 tokens'
+      usage: '6000/1500 tok'
     })
     expect(summary.ocrCostCalculation?.rows[0]).toMatchObject({
       providerModel: 'openai/gpt-5.4-nano',
       pages: 2,
-      predictedInputs: '6152/579 tokens',
-      actualInputs: '6000/1500 tokens',
-      predictedCostCents: 0.195415,
+      predictedInputs: '5972/3688 tok',
+      actualInputs: '6000/1500 tok',
+      rates: '20\u00a2/1M in / 125\u00a2/1M out',
+      predictedCostCents: 0.58044,
       actualCostCents: 0.3075,
-      deltaCents: 0.11208499999999999
+      deltaCents: -0.27294
     })
 
     const { logger, writes } = createCapturingLogger()
@@ -994,6 +1022,10 @@ describe('logging contracts', () => {
       'Prompt Usage',
       'OCR Cost Calculation'
     ])
+    expect(writes[0]?.options?.humanTable).toMatchObject({
+      columns: ['artifact', 'path'],
+      rows: [{ artifact: 'runManifest', path: '/tmp/autoshow-run/run.json' }]
+    })
     expect(writes[3]?.options?.humanTable?.columns).toEqual([
       'providerModel',
       'pages',
@@ -1047,7 +1079,7 @@ describe('logging contracts', () => {
     expect(summary.promptUsage?.rows[0]).toMatchObject({
       step: 'Transcribe',
       providerModel: 'reverb/reverb_asr_v1',
-      usage: '1234 tokens'
+      usage: '1234 tok'
     })
   })
 

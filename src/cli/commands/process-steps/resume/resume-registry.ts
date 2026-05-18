@@ -245,34 +245,34 @@ const extractResumeHandler: ResumeHandler = {
 
 const ttsResumeHandler: ResumeHandler = {
   kind: 'tts',
-  hasResumableWork: async (target, opts, _explicitFlags) =>
-    await hasResumableTtsWork(target, opts),
-  resume: async (target, opts, _explicitFlags) =>
-    await resumeTtsTarget(target, opts)
+  hasResumableWork: async (target, opts, explicitFlags) =>
+    await hasResumableTtsWork(target, opts, explicitFlags),
+  resume: async (target, opts, explicitFlags) =>
+    await resumeTtsTarget(target, opts, explicitFlags)
 }
 
 const imageResumeHandler: ResumeHandler = {
   kind: 'image',
-  hasResumableWork: async (target, opts, _explicitFlags) =>
-    await hasResumableImageWork(target, opts),
-  resume: async (target, opts, _explicitFlags) =>
-    await resumeImageTarget(target, opts)
+  hasResumableWork: async (target, opts, explicitFlags) =>
+    await hasResumableImageWork(target, opts, explicitFlags),
+  resume: async (target, opts, explicitFlags) =>
+    await resumeImageTarget(target, opts, explicitFlags)
 }
 
 const videoResumeHandler: ResumeHandler = {
   kind: 'video',
-  hasResumableWork: async (target, opts, _explicitFlags) =>
-    await hasResumableVideoWork(target, opts),
-  resume: async (target, opts, _explicitFlags) =>
-    await resumeVideoTarget(target, opts)
+  hasResumableWork: async (target, opts, explicitFlags) =>
+    await hasResumableVideoWork(target, opts, explicitFlags),
+  resume: async (target, opts, explicitFlags) =>
+    await resumeVideoTarget(target, opts, explicitFlags)
 }
 
 const musicResumeHandler: ResumeHandler = {
   kind: 'music',
-  hasResumableWork: async (target, opts, _explicitFlags) =>
-    await hasResumableMusicWork(target, opts),
-  resume: async (target, opts, _explicitFlags) =>
-    await resumeMusicTarget(target, opts)
+  hasResumableWork: async (target, opts, explicitFlags) =>
+    await hasResumableMusicWork(target, opts, explicitFlags),
+  resume: async (target, opts, explicitFlags) =>
+    await resumeMusicTarget(target, opts, explicitFlags)
 }
 
 const RESUME_HANDLERS: Readonly<Record<ResumeTargetKind, ResumeHandler>> = {

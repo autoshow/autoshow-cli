@@ -385,7 +385,8 @@ export const buildMissingTargetsFromEntry = (
 
   for (const target of requestedTargets) {
     const key = getSttTargetKey(target)
-    if (!successKeys.has(key) && !isSkippedProviderState(providerStates.get(key))) {
+    const state = providerStates.get(key)
+    if (!successKeys.has(key) && state?.status !== 'succeeded' && !isSkippedProviderState(state)) {
       missingTargets.set(key, target)
     }
   }
@@ -410,9 +411,23 @@ export const readExistingSttRun = async (
   }
 
   await Promise.all(requestedTargets.map(async (target, index) => {
+    const key = getSttTargetKey(target)
     const providerDir = join(outputDir, getSttProviderArtifactDir(target))
-    const providerResult = await readProviderResultEntry(providerDir)
+    let providerResult = await readProviderResultEntry(providerDir)
+    let relativeDir = getSttProviderArtifactDir(target)
+    let transcriptPath = join(outputDir, getSttProviderArtifactDir(target), 'transcription.txt')
+    if (!providerResult && storedProviderStates.get(key)?.artifactDir === '.') {
+      providerResult = await readProviderResultEntry(outputDir)
+      relativeDir = '.'
+      transcriptPath = join(outputDir, 'transcription.txt')
+    }
     if (!providerResult) {
+      return
+    }
+    if (
+      providerResult.provider !== target.service
+      || (typeof providerResult.model === 'string' && providerResult.model !== target.model)
+    ) {
       return
     }
 
@@ -421,13 +436,12 @@ export const readExistingSttRun = async (
       return
     }
 
-    const transcriptPath = join(outputDir, getSttProviderArtifactDir(target), 'transcription.txt')
     const transcriptText = await Bun.file(transcriptPath).text().catch(() => '')
     successes[index] = {
       target,
       metadata,
       result: parseTranscriptText(transcriptText),
-      relativeDir: getSttProviderArtifactDir(target)
+      relativeDir
     }
   }))
 

@@ -195,6 +195,7 @@ export type ComputeEstimatedCostsInput = {
   videoSize?: string | undefined
   videoAspectRatio?: string | undefined
   videoResolution?: string | undefined
+  videoMode?: string | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
   deapiMusicModel?: string | undefined

@@ -1,42 +1,80 @@
 # URL Provider Comparison Report
 
-Run directory: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_22-06-36-105_autogenerate-show-notes-with-whisper-cpp-llama-cpp-and-node-js`
-Consensus extraction: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_22-06-36-105_autogenerate-show-notes-with-whisper-cpp-llama-cpp-and-node-js/consensus-extraction.txt`
-Providers scored: 5
-Best overall: firecrawl (0.9597)
-Worst overall: zyte (0.5311)
+## Summary
 
-## Overall Ranking
+- Run directory: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_22-06-36-105_autogenerate-show-notes-with-whisper-cpp-llama-cpp-and-node-js`
+- Total providers: 5 (1 local, 4 service)
+- Local and service providers are intentionally not ranked against each other.
+- Reports expose separate fastest, cheapest, and highest-quality surfaces for each group.
 
-| Rank | Provider | WER | CER | Coverage | Time | Cost | Overall | Tier |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | firecrawl | 1.61% | 1.38% | 99.67% | 1.82s | 0.0830c | 0.9597 | Tier 1 |
-| 2 | defuddle | 8.22% | 8.89% | 89.88% | 0.49s | 0.0000c | 0.9557 | Tier 1 |
-| 3 | spider | 1.32% | 1.26% | 100.00% | 1.67s | 0.1200c | 0.9547 | Tier 1 |
-| 4 | glm-reader | 12.28% | 10.87% | 96.70% | 3.48s | 1.0000c | 0.6247 | Tier 2 |
-| 5 | zyte | 46.86% | 49.44% | 84.82% | 10.20s | 0.1600c | 0.5311 | Tier 2 |
+## Method
+
+- Fastest rankings use processing time when present.
+- Cheapest local rankings use zero monetary cost and compare only local providers.
+- Cheapest service rankings use reported monetary cost when present.
+- Highest-quality rankings use only explicit quality evidence for the category.
 
 ## Local Providers
 
-| Rank | Provider | WER | CER | Coverage | Time | Overall | Tier |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 2 | defuddle | 8.22% | 8.89% | 89.88% | 0.49s | 0.9557 | Tier 1 |
+### Top 3 Fastest
 
-## Hosted Providers
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `defuddle` | 0.49s |
 
-| Rank | Provider | WER | CER | Coverage | Time | Cost | Overall | Tier |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | firecrawl | 1.61% | 1.38% | 99.67% | 1.82s | 0.0830c | 0.9597 | Tier 1 |
-| 3 | spider | 1.32% | 1.26% | 100.00% | 1.67s | 0.1200c | 0.9547 | Tier 1 |
-| 4 | glm-reader | 12.28% | 10.87% | 96.70% | 3.48s | 1.0000c | 0.6247 | Tier 2 |
-| 5 | zyte | 46.86% | 49.44% | 84.82% | 10.20s | 0.1600c | 0.5311 | Tier 2 |
+### Top 3 Cheapest
 
-## Tier Breakdown
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `defuddle` | $0.00 local monetary cost |
 
-Tier 1: firecrawl, defuddle, spider
-Tier 2: glm-reader, zyte
-Tier 3: None
+### Top 3 Highest Quality
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `defuddle` | 8.22% WER, 8.89% CER, 89.88% coverage |
+
+### Provider Detail
+
+| Provider | Quality Evidence | Processing Time | Monetary Cost |
+| --- | --- | ---: | ---: |
+| `defuddle` | 8.22% WER, 8.89% CER, 89.88% coverage | 0.49s | $0.00 |
+
+## Service Providers
+
+### Top 3 Fastest
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `spider` | 1.67s |
+| 2 | `firecrawl` | 1.82s |
+| 3 | `glm-reader` | 3.48s |
+
+### Top 3 Cheapest
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `firecrawl` | $0.0008 |
+| 2 | `spider` | $0.0012 |
+| 3 | `zyte` | $0.0016 |
+
+### Top 3 Highest Quality
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `spider` | 1.32% WER, 1.26% CER, 100.00% coverage |
+| 2 | `firecrawl` | 1.61% WER, 1.38% CER, 99.67% coverage |
+| 3 | `glm-reader` | 12.28% WER, 10.87% CER, 96.70% coverage |
+
+### Provider Detail
+
+| Provider | Quality Evidence | Processing Time | Monetary Cost |
+| --- | --- | ---: | ---: |
+| `firecrawl` | 1.61% WER, 1.38% CER, 99.67% coverage | 1.82s | $0.0008 |
+| `glm-reader` | 12.28% WER, 10.87% CER, 96.70% coverage | 3.48s | $0.0100 |
+| `spider` | 1.32% WER, 1.26% CER, 100.00% coverage | 1.67s | $0.0012 |
+| `zyte` | 46.86% WER, 49.44% CER, 84.82% coverage | 10.20s | $0.0016 |
 
 ## Notes
 
-No missing cost or timing data detected.
+- No additional notes.

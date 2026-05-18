@@ -23,12 +23,13 @@ import {
   isSttPartialCompletionError,
   parseStoredRequestedTargets
 } from './stt-batch/stt-run-state'
-import { collectSttTargets, formatSttTargetLabel, getSttTargetKey } from './stt-targets'
+import { collectSttTargets, formatSttTargetLabel } from './stt-targets'
 import { readSttRunManifestEntry, writeSttBatchManifest, writeSttRunManifest } from './manifest'
 import { readBatchManifest } from '../../manifest-utils'
 import { YOUTUBE_CAPTIONS_SERVICE } from './youtube-captions'
 import type { ResumeTarget } from '~/types'
 import { logResumeItem, logResumeSummary } from '../../resume/resume-logging'
+import { resolveAdditiveResumeProviderSelection } from '../../resume/resume-provider-selection'
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -83,23 +84,15 @@ const parseResumeEntry = async (
   const storedCaptionOnly = storedRequestedTargets.length === 1
     && storedRequestedTargets[0]?.service === YOUTUBE_CAPTIONS_SERVICE
 
-  const requestedTargets = storedCaptionOnly && !options.youtubeCaptions
+  const requestedBaseTargets = storedCaptionOnly && !options.youtubeCaptions
+    ? []
+    : storedRequestedTargets
+  const fallbackSelectedTargets = storedCaptionOnly && !options.youtubeCaptions
     ? (selectedTargets && selectedTargets.length > 0 ? selectedTargets : options.currentTargets)
-    : storedRequestedTargets.length > 0
-      ? storedRequestedTargets
-      : selectedTargets
+    : selectedTargets
 
-  if (!requestedTargets || requestedTargets.length === 0) {
+  if (requestedBaseTargets.length === 0 && (!fallbackSelectedTargets || fallbackSelectedTargets.length === 0)) {
     throw CLIUsageError('Could not determine the original STT provider set for this output. Re-run with explicit provider flags.')
-  }
-
-  const selectedKeys = selectedTargets ? new Set(selectedTargets.map(getSttTargetKey)) : undefined
-  if (selectedKeys && !(storedCaptionOnly && options.youtubeCaptions)) {
-    const requestedKeys = new Set(requestedTargets.map(getSttTargetKey))
-    const unexpected = [...selectedKeys].filter((key) => !requestedKeys.has(key))
-    if (unexpected.length > 0) {
-      throw CLIUsageError(`Requested resume providers are not a subset of the original providers: ${unexpected.join(', ')}`)
-    }
   }
 
   let source: { url?: string, filePath?: string }
@@ -113,15 +106,20 @@ const parseResumeEntry = async (
     throw error
   }
 
+  const storedMissingTargets = buildMissingTargetsFromEntry(entry, requestedBaseTargets)
+  const resolvedTargets = resolveAdditiveResumeProviderSelection({
+    storedProviders: requestedBaseTargets,
+    runnableStoredProviders: storedMissingTargets,
+    ...(fallbackSelectedTargets ? { selectedProviders: fallbackSelectedTargets } : {})
+  })
+  const requestedTargets = resolvedTargets.requestedProviders
   const completionStatus = inferStoredCompletionStatus(entry, requestedTargets)
-  const missingTargets = buildMissingTargetsFromEntry(entry, requestedTargets)
-    .filter((target) => selectedKeys ? selectedKeys.has(getSttTargetKey(target)) : true)
 
   return {
     outputDir,
     source,
     requestedTargets,
-    missingTargets,
+    missingTargets: resolvedTargets.providersToRun,
     completionStatus,
     rawEntry: entry
   }

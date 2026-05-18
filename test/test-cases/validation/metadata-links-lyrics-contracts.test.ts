@@ -285,6 +285,31 @@ const KIMI_OCR_LINKS = [
   'https://platform.kimi.ai/docs/guide/use-kimi-vision-model.md'
 ]
 
+const UNSTRUCTURED_OCR_LINKS = [
+  'https://docs.unstructured.io/api-reference/supported-file-types.md',
+  'https://docs.unstructured.io/api-reference/quickstart.md',
+  'https://docs.unstructured.io/api-reference/workflow/overview.md',
+  'https://docs.unstructured.io/api-reference/workflow/workflows.md',
+  'https://docs.unstructured.io/api-reference/workflow/jobs.md',
+  'https://docs.unstructured.io/api-reference/workflow/models.md',
+  'https://docs.unstructured.io/concepts/overview.md',
+  'https://docs.unstructured.io/concepts/document-elements.md',
+  'https://docs.unstructured.io/api-reference/api/job/job-apis.md',
+  'https://docs.unstructured.io/concepts/structured-data-extractor/data-extractor.md',
+  'https://docs.unstructured.io/concepts/structured-data-extractor/llm-options.md',
+  'https://docs.unstructured.io/concepts/chunking.md',
+  'https://docs.unstructured.io/api-reference/api/job/list-jobs.md',
+  'https://docs.unstructured.io/api-reference/api/job/get-job.md',
+  'https://docs.unstructured.io/api-reference/api/job/create-job.md',
+  'https://docs.unstructured.io/api-reference/api/job/download-job-output.md',
+  'https://docs.unstructured.io/api-reference/api/job/get-job-failed-files.md',
+  'https://docs.unstructured.io/api-reference/api/job/get-job-details.md',
+  'https://docs.unstructured.io/api-reference/api/workflow/workflow-apis.md',
+  'https://docs.unstructured.io/api-reference/api/workflow/get-workflow.md',
+  'https://docs.unstructured.io/api-reference/api/workflow/create-workflow.md',
+  'https://docs.unstructured.io/api-reference/api/workflow/run-workflow.md'
+]
+
 const MISTRAL_GENERAL_LINKS = [
   'https://docs.mistral.ai/resources/sdks',
   'https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/README.md',
@@ -1577,6 +1602,50 @@ test('links selector accepts kimi provider with general text and ocr sections', 
     '--kimi',
     'tts'
   ])).rejects.toThrow('Unknown links section(s) for --kimi: tts')
+})
+
+test('links selector accepts unstructured provider with only ocr section', async () => {
+  const unstructuredSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--unstructured'
+  ])
+
+  expect(unstructuredSelection.serviceSelections.get('unstructured')).toEqual([])
+  expect(collectLinks(
+    unstructuredSelection.serviceSelections,
+    unstructuredSelection.globalSections
+  )).toEqual(UNSTRUCTURED_OCR_LINKS)
+  expect(getDefaultLinksOutputFileName(
+    unstructuredSelection.serviceSelections,
+    unstructuredSelection.globalSections
+  )).toBe('unstructured-all-links.md')
+
+  const unstructuredOcrSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--unstructured',
+    'ocr'
+  ])
+
+  expect(collectLinks(
+    unstructuredOcrSelection.serviceSelections,
+    unstructuredOcrSelection.globalSections
+  )).toEqual(UNSTRUCTURED_OCR_LINKS)
+  expect(getDefaultLinksOutputFileName(
+    unstructuredOcrSelection.serviceSelections,
+    unstructuredOcrSelection.globalSections
+  )).toBe('unstructured-ocr-links.md')
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--unstructured',
+    'general'
+  ])).rejects.toThrow('Unknown links section(s) for --unstructured: general')
 })
 
 test('links selector accepts mistral provider with general stt ocr and tts sections', () => {

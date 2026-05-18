@@ -73,6 +73,24 @@ const qualityRank = (selection: { size?: string | undefined, resolution?: string
   return 1
 }
 
+const isDefaultVideoSelectionModel = (
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi',
+  model: string
+): boolean => {
+  if (provider === 'minimax') {
+    return model === 'MiniMax-Hailuo-2.3'
+      || model === 'MiniMax-Hailuo-02'
+      || model === 'T2V-01-Director'
+      || model === 'T2V-01'
+  }
+
+  if (provider === 'glm') {
+    return model === 'cogvideox-3' || model === 'viduq1-text'
+  }
+
+  return true
+}
+
 export const selectCheapestSttModel = (service: string): string => {
   const serviceConfig = getModelRegistry().stt[service]
   if (!serviceConfig) {
@@ -189,7 +207,7 @@ export const selectCheapestVideoSelection = (
     throw new Error(`Missing video service config: ${provider}`)
   }
 
-  const models = Object.keys(serviceConfig.models)
+  const models = Object.keys(serviceConfig.models).filter((model) => isDefaultVideoSelectionModel(provider, model))
   const durations = serviceConfig.billedDurations && serviceConfig.billedDurations.length > 0
     ? serviceConfig.billedDurations
     : [4]
@@ -204,16 +222,21 @@ export const selectCheapestVideoSelection = (
     for (const duration of durations) {
       for (const size of sizes) {
         for (const resolution of resolutions) {
-          const estimate = estimateVideoCost({
-            ...(provider === 'gemini' ? { geminiVideoModel: model } : {}),
-            ...(provider === 'minimax' ? { minimaxVideoModel: model } : {}),
-            ...(provider === 'glm' ? { glmVideoModel: model } : {}),
-            ...(provider === 'grok' ? { grokVideoModel: model } : {}),
-            ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
-            ...(provider === 'deapi' ? { deapiVideoModel: model } : {}),
-            videoDuration: duration,
-            videoResolution: resolution
-          })
+          let estimate: ReturnType<typeof estimateVideoCost>
+          try {
+            estimate = estimateVideoCost({
+              ...(provider === 'gemini' ? { geminiVideoModel: model } : {}),
+              ...(provider === 'minimax' ? { minimaxVideoModel: model } : {}),
+              ...(provider === 'glm' ? { glmVideoModel: model } : {}),
+              ...(provider === 'grok' ? { grokVideoModel: model } : {}),
+              ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
+              ...(provider === 'deapi' ? { deapiVideoModel: model } : {}),
+              videoDuration: duration,
+              videoResolution: resolution
+            })
+          } catch {
+            continue
+          }
 
           const candidate: CheapestVideoSelection = {
             provider,

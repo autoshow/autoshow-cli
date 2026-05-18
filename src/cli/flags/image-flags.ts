@@ -78,11 +78,11 @@ export const imageGenFlags = {
     type: String
   },
   'image-size': {
-    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, 512x512 through 2048x2048 multiples of 32 (GLM), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
+    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, WIDTHxHEIGHT 512-2048 multiples of 32 (GLM) or 8 (MiniMax when no aspect ratio), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
     type: String
   },
   'image-quality': {
-    description: 'Image quality: low|medium|high|auto (OpenAI, default: auto)',
+    description: 'Image quality: low|medium|high|auto (OpenAI, default: auto) or hd|standard (GLM)',
     type: String
   },
   'image-format': {
@@ -94,11 +94,11 @@ export const imageGenFlags = {
     type: String
   },
   'image-count': {
-    description: 'Number of images to generate in one provider request where supported (OpenAI/Grok 1-10, Gemini Imagen 1-4; default: 1)',
+    description: 'Number of images to generate in one provider request where supported (OpenAI/Grok 1-10, MiniMax 1-9, Gemini Imagen 1-4; default: 1)',
     type: String
   },
   'image-input': {
-    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native)',
+    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native, MiniMax, BFL)',
     type: [String] as [StringConstructor]
   },
   'image-mask': {

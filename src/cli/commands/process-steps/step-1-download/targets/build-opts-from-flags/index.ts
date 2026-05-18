@@ -399,6 +399,7 @@ export const buildOptsFromFlags = (
     runwayVideoModel,
     deapiVideoModels,
     deapiVideoModel,
+    allVideo: allShortcutFlags['all-video'],
     videoDuration: (() => {
       const v = readOptionalStringFlag(mergedFlags, 'video-duration')
       if (v === undefined) return undefined
@@ -408,6 +409,17 @@ export const buildOptsFromFlags = (
     videoSize: readOptionalStringFlag(mergedFlags, 'video-size'),
     videoAspectRatio: readOptionalStringFlag(mergedFlags, 'video-aspect-ratio'),
     videoResolution: readOptionalStringFlag(mergedFlags, 'video-resolution'),
+    videoMode: readOptionalStringFlag(mergedFlags, 'video-mode'),
+    videoInputImage: readOptionalStringFlag(mergedFlags, 'video-input-image'),
+    videoLastFrame: readOptionalStringFlag(mergedFlags, 'video-last-frame'),
+    videoReferenceImages: readOptionalStringListFlag(mergedFlags, 'video-reference-image'),
+    videoInputVideo: readOptionalStringFlag(mergedFlags, 'video-input-video'),
+    grokVideoStorageFilename: readOptionalStringFlag(mergedFlags, 'grok-video-storage-filename'),
+    grokVideoStorageExpiresAfter: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'grok-video-storage-expires-after'), 'grok-video-storage-expires-after', {
+      min: 1,
+      max: 2592000,
+      integer: true
+    }),
 
     markdown: readBooleanFlag(mergedFlags, 'markdown'),
     save: readBooleanFlag(mergedFlags, 'save'),

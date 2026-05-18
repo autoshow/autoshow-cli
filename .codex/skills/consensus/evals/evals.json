@@ -29,11 +29,11 @@
       "category": "ocr",
       "prompt": "Use the consensus skill to generate OCR provider comparison reports from the fixture run.",
       "assertions": [
-        "provider-comparison-report.md has separate Local Providers and Service Providers sections",
+        "provider-comparison-report.md has STT-style Overall Ranking, Tier Breakdown, and combined Ranking sections",
         "provider-comparison-report.json contains all six ranking surface arrays",
+        "provider-comparison-report.json preserves overall, providers, and tiering data with combined balanced-overall scores",
         "OCR highest-quality rankings use WER/CER evidence",
-        "local cheapest rankings use zero monetary cost",
-        "no combined local-vs-service ranked leaderboard remains"
+        "local cheapest ranking surfaces use zero monetary cost"
       ],
       "files": [
         "evals/files/ocr/run.json",
@@ -47,10 +47,11 @@
       "category": "stt",
       "prompt": "Use the consensus skill to generate STT provider comparison reports from the fixture run.",
       "assertions": [
-        "reference-comparison-report.md has separate Local Providers and Service Providers sections",
+        "reference-comparison-report.md has Overall Ranking, Tier Breakdown, and combined Ranking sections",
         "reference-comparison-report.json contains all six ranking surface arrays",
+        "reference-comparison-report.json preserves overall, providers, and tiering data with combined balanced-overall scores",
         "STT highest-quality rankings use speaker-aware WER evidence",
-        "no combined local-vs-service ranked leaderboard remains"
+        "local cheapest ranking surfaces use zero monetary cost"
       ],
       "files": [
         "evals/files/stt/run.json",

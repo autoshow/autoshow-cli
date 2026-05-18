@@ -1,6 +1,12 @@
+import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { loadConfig, resolveConfigPath } from '~/cli/commands/setup-and-utilities/config/config-loader'
+import { writeConfig } from '~/cli/commands/setup-and-utilities/config/config-writer'
+import {
+  ensureDocumentAiOcrProcessor,
+  ensureGcloudDocaiBucket
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud-docai-setup'
 
 export const GCLOUD_DOCAI_SYNC_BYTES = 20 * 1024 * 1024
 export const GCLOUD_DOCAI_BATCH_BYTES = 1 * 1024 * 1024 * 1024
@@ -72,6 +78,32 @@ const readSavedDocaiDefaults = async (): Promise<SavedDocaiDefaults> => {
   }
 }
 
+const persistDocaiAutoSetupDefaults = async (
+  location: string,
+  ocrProcessorId: string,
+  bucket: string
+): Promise<void> => {
+  const configPath = await resolveConfigPath()
+  const current = await loadConfig(configPath)
+  const currentOcr = current.defaults?.extract?.ocr
+  const next = {
+    ...current,
+    defaults: {
+      ...current.defaults,
+      extract: {
+        ...current.defaults?.extract,
+        ocr: {
+          ...currentOcr,
+          gcloudDocaiLocation: location,
+          gcloudDocaiOcrProcessorId: ocrProcessorId,
+          gcloudDocaiBucket: bucket
+        }
+      }
+    }
+  }
+  await writeConfig(configPath, next as unknown as Record<string, unknown>)
+}
+
 export const ensureGcloudDocaiSetup = async (): Promise<GcloudDocaiRuntimeConfig> => {
   if (!hasGcloudCli()) {
     throw new Error('gcloud CLI is required for Google Cloud Document AI OCR. Install the gcloud CLI and rerun `bun as setup --gcloud`.')
@@ -90,12 +122,47 @@ export const ensureGcloudDocaiSetup = async (): Promise<GcloudDocaiRuntimeConfig
 
   const location = envLocation ?? savedDefaults.location ?? 'us'
 
-  const processorId = envProcessorId ?? savedDefaults.ocrProcessorId
+  let processorId = envProcessorId ?? savedDefaults.ocrProcessorId
+  let bucket = envBucket ?? savedDefaults.bucket
+
   if (!processorId) {
-    throw new Error(
-      'AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID or saved AutoShow config is required for Google Cloud Document AI --gcloud-docai ocr. ' +
-      'Run `bun as setup --gcloud --gcloud-project PROJECT_ID` to create or discover the processor, then set the printed environment values or save the processor ID explicitly.'
-    )
+    l.write('warn', `Document AI OCR processor not configured for project ${projectId}. Running automatic setup...`)
+
+    try {
+      const accessToken = await getAccessToken()
+
+      const processorResult = await ensureDocumentAiOcrProcessor(
+        projectId, location, accessToken, undefined
+      )
+      if (!processorResult.processorId) {
+        throw new Error('Could not find or create a processor.')
+      }
+      processorId = processorResult.processorId
+      l.write('info', `Document AI OCR processor ${processorResult.detail}`)
+
+      if (!bucket) {
+        const bucketResult = await ensureGcloudDocaiBucket(projectId, location, undefined)
+        if (bucketResult.ok && bucketResult.bucket) {
+          bucket = bucketResult.bucket
+          l.write('info', `Document AI GCS bucket ${bucketResult.detail}`)
+        } else {
+          l.write('warn', `Document AI GCS bucket setup issue: ${bucketResult.detail}. Large-file batch OCR may not work.`)
+        }
+      }
+
+      if (processorId && bucket) {
+        await persistDocaiAutoSetupDefaults(location, processorId, bucket)
+        l.write('info', 'Document AI OCR setup saved to config. Future runs will reuse these settings.')
+      }
+
+      return { projectId, location, processorId, accessToken, bucket }
+    } catch (autoSetupError) {
+      const detail = autoSetupError instanceof Error ? autoSetupError.message : String(autoSetupError)
+      throw new Error(
+        `Automatic Document AI OCR setup failed: ${detail}. ` +
+        `Run \`bun as setup --gcloud --gcloud-project ${projectId}\` to set up manually.`
+      )
+    }
   }
 
   const accessToken = await getAccessToken()
@@ -105,6 +172,6 @@ export const ensureGcloudDocaiSetup = async (): Promise<GcloudDocaiRuntimeConfig
     location,
     processorId,
     accessToken,
-    bucket: envBucket ?? savedDefaults.bucket
+    bucket
   }
 }

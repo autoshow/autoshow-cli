@@ -1,42 +1,80 @@
 # URL Provider Comparison Report
 
-Run directory: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_21-18-14-082_anthony-campolos-home-page`
-Consensus extraction: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_21-18-14-082_anthony-campolos-home-page/consensus-extraction.txt`
-Providers scored: 5
-Best overall: defuddle (0.9858)
-Worst overall: glm-reader (0.4064)
+## Summary
 
-## Overall Ranking
+- Run directory: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_21-18-14-082_anthony-campolos-home-page`
+- Total providers: 5 (1 local, 4 service)
+- Local and service providers are intentionally not ranked against each other.
+- Reports expose separate fastest, cheapest, and highest-quality surfaces for each group.
 
-| Rank | Provider | WER | CER | Coverage | Time | Cost | Overall | Tier |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | defuddle | 2.83% | 2.50% | 96.83% | 0.26s | 0.0000c | 0.9858 | Tier 1 |
-| 2 | firecrawl | 3.58% | 2.01% | 98.59% | 1.77s | 0.0830c | 0.9598 | Tier 1 |
-| 3 | spider | 7.36% | 4.37% | 97.89% | 1.95s | 0.1200c | 0.9333 | Tier 1 |
-| 4 | zyte | 48.30% | 47.90% | 59.15% | 14.26s | 0.1600c | 0.4973 | Tier 2 |
-| 5 | glm-reader | 66.60% | 64.07% | 61.62% | 3.00s | 1.0000c | 0.4064 | Tier 2 |
+## Method
+
+- Fastest rankings use processing time when present.
+- Cheapest local rankings use zero monetary cost and compare only local providers.
+- Cheapest service rankings use reported monetary cost when present.
+- Highest-quality rankings use only explicit quality evidence for the category.
 
 ## Local Providers
 
-| Rank | Provider | WER | CER | Coverage | Time | Overall | Tier |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | defuddle | 2.83% | 2.50% | 96.83% | 0.26s | 0.9858 | Tier 1 |
+### Top 3 Fastest
 
-## Hosted Providers
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `defuddle` | 0.26s |
 
-| Rank | Provider | WER | CER | Coverage | Time | Cost | Overall | Tier |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2 | firecrawl | 3.58% | 2.01% | 98.59% | 1.77s | 0.0830c | 0.9598 | Tier 1 |
-| 3 | spider | 7.36% | 4.37% | 97.89% | 1.95s | 0.1200c | 0.9333 | Tier 1 |
-| 4 | zyte | 48.30% | 47.90% | 59.15% | 14.26s | 0.1600c | 0.4973 | Tier 2 |
-| 5 | glm-reader | 66.60% | 64.07% | 61.62% | 3.00s | 1.0000c | 0.4064 | Tier 2 |
+### Top 3 Cheapest
 
-## Tier Breakdown
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `defuddle` | $0.00 local monetary cost |
 
-Tier 1: defuddle, firecrawl, spider
-Tier 2: zyte, glm-reader
-Tier 3: None
+### Top 3 Highest Quality
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `defuddle` | 2.83% WER, 2.50% CER, 96.83% coverage |
+
+### Provider Detail
+
+| Provider | Quality Evidence | Processing Time | Monetary Cost |
+| --- | --- | ---: | ---: |
+| `defuddle` | 2.83% WER, 2.50% CER, 96.83% coverage | 0.26s | $0.00 |
+
+## Service Providers
+
+### Top 3 Fastest
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `firecrawl` | 1.77s |
+| 2 | `spider` | 1.95s |
+| 3 | `glm-reader` | 3.00s |
+
+### Top 3 Cheapest
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `firecrawl` | $0.0008 |
+| 2 | `spider` | $0.0012 |
+| 3 | `zyte` | $0.0016 |
+
+### Top 3 Highest Quality
+
+| Rank | Provider | Evidence |
+| ---: | --- | --- |
+| 1 | `firecrawl` | 3.58% WER, 2.01% CER, 98.59% coverage |
+| 2 | `spider` | 7.36% WER, 4.37% CER, 97.89% coverage |
+| 3 | `zyte` | 48.30% WER, 47.90% CER, 59.15% coverage |
+
+### Provider Detail
+
+| Provider | Quality Evidence | Processing Time | Monetary Cost |
+| --- | --- | ---: | ---: |
+| `firecrawl` | 3.58% WER, 2.01% CER, 98.59% coverage | 1.77s | $0.0008 |
+| `glm-reader` | 66.60% WER, 64.07% CER, 61.62% coverage | 3.00s | $0.0100 |
+| `spider` | 7.36% WER, 4.37% CER, 97.89% coverage | 1.95s | $0.0012 |
+| `zyte` | 48.30% WER, 47.90% CER, 59.15% coverage | 14.26s | $0.0016 |
 
 ## Notes
 
-No missing cost or timing data detected.
+- No additional notes.

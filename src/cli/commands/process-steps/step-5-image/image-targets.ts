@@ -23,14 +23,16 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { getBflImageExtension, normalizeBflImageOutputFormat, normalizeBflImageSize, runBflImageGen } from './image-services/bfl/run-bfl-image-gen'
 import { normalizeDeapiImageSize, runDeapiImageGen } from './image-services/deapi/run-deapi-image-gen'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
-import { normalizeGlmImageSize, runGlmImageGen } from './image-services/glm/run-glm-image-gen'
+import { normalizeGlmImageQuality, normalizeGlmImageSize, runGlmImageGen } from './image-services/glm/run-glm-image-gen'
 import { normalizeGrokImageResolution, runGrokImageGen } from './image-services/grok/run-grok-image-gen'
-import { runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
+import { normalizeMinimaxImageSize, runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
 import { normalizeRunwayImageRatio, normalizeRunwayImageResolution, runRunwayImageGen } from './image-services/runway/run-runway-image-gen'
 import {
+  BFL_IMAGE_INPUT_MIME_TYPES,
   GEMINI_IMAGE_INPUT_MIME_TYPES,
   GROK_IMAGE_INPUT_MIME_TYPES,
+  MINIMAX_IMAGE_INPUT_MIME_TYPES,
   OPENAI_IMAGE_INPUT_MIME_TYPES,
   OPENAI_IMAGE_MASK_MIME_TYPES,
   validateImageInputReferences,
@@ -57,6 +59,9 @@ const GEMINI_RESPONSE_MODES = new Set(['image', 'text-image'])
 const GEMINI_PERSON_GENERATION_VALUES = new Set(['dont_allow', 'allow_adult', 'allow_all'])
 const GROK_ASPECT_RATIOS = new Set(['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '2:1', '1:2', '19.5:9', '9:19.5', '20:9', '9:20', 'auto'])
 const MINIMAX_ASPECT_RATIOS = new Set(['1:1', '16:9', '4:3', '3:2', '2:3', '3:4', '9:16', '21:9'])
+
+const getBflImageInputLimit = (model: BflImageModel): number =>
+  model.includes('klein') ? 4 : 8
 
 const hasEditInputs = (options: Pick<ImageGenOptions, 'imageInputs' | 'imageMask'>): boolean =>
   (options.imageInputs?.length ?? 0) > 0 || options.imageMask !== undefined
@@ -224,7 +229,7 @@ export const getExpectedImageCount = (
   target: Pick<ImageTarget, 'service' | 'model'>,
   options: ImageGenOptions
 ): number => {
-  if (target.service === 'openai' || target.service === 'grok') {
+  if (target.service === 'openai' || target.service === 'grok' || target.service === 'minimax') {
     return Math.max(1, options.imageCount ?? 1)
   }
 
@@ -460,14 +465,15 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
 
   for (const rawModel of minimaxModels) {
     const model: MinimaxImageModel = validateMinimaxImageModel(rawModel)
-    rejectImageCountForSingleImageProvider('MiniMax', model, options.imageCount)
+    validateImageCount('MiniMax', model, options.imageCount, 1, 9)
     validateEnumOption('MiniMax', model, 'image-aspect-ratio', options.imageAspectRatio, MINIMAX_ASPECT_RATIOS)
+    if (!options.imageAspectRatio) {
+      normalizeMinimaxImageSize(options.imageSize)
+    }
     const unsupported = collectUnsupportedCommonFlags(options, [
-      'imageSize',
       'imageQuality',
       'imageFormat',
       'imageBackground',
-      'imageInputs',
       'imageMask',
       'imageResponseMode',
       'geminiPersonGeneration',
@@ -475,8 +481,13 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     ], IMAGE_OPTION_LABELS)
     if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
     if (unsupported.length > 0) {
-      throw unsupportedFlagError('MiniMax', model, unsupported, 'Supported MiniMax image options: --image-aspect-ratio. MiniMax is single-image-only and does not expose an edit endpoint here.')
+      throw unsupportedFlagError('MiniMax', model, unsupported, 'Supported MiniMax image options: --image-aspect-ratio, --image-size WIDTHxHEIGHT when no aspect ratio is provided, --image-count 1-9, and --image-input references.')
     }
+    validateImageInputReferences(options.imageInputs, {
+      provider: 'MiniMax',
+      model,
+      allowedMimeTypes: MINIMAX_IMAGE_INPUT_MIME_TYPES
+    })
 
     targets.push({
       service: 'minimax',
@@ -484,7 +495,10 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
       run: async (prompt, outputDir) => {
         return await runMinimaxImageGen(prompt, outputDir, {
           model,
-          aspectRatio: options.imageAspectRatio
+          aspectRatio: options.imageAspectRatio,
+          count: options.imageCount,
+          imageSize: options.imageSize,
+          inputs: options.imageInputs
         })
       }
     })
@@ -495,7 +509,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     rejectImageCountForSingleImageProvider('GLM', model, options.imageCount)
     const unsupported = collectUnsupportedCommonFlags(options, [
       'imageAspectRatio',
-      'imageQuality',
       'imageFormat',
       'imageBackground',
       'imageInputs',
@@ -506,9 +519,10 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     ], IMAGE_OPTION_LABELS)
     if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
     if (unsupported.length > 0) {
-      throw unsupportedFlagError('GLM', model, unsupported, 'Supported GLM image option: --image-size WIDTHxHEIGHT with dimensions 512-2048 and divisible by 32.')
+      throw unsupportedFlagError('GLM', model, unsupported, 'Supported GLM image options: --image-size WIDTHxHEIGHT with dimensions 512-2048 divisible by 32 and --image-quality hd|standard.')
     }
     normalizeGlmImageSize(options.imageSize)
+    normalizeGlmImageQuality(options.imageQuality)
 
     targets.push({
       service: 'glm',
@@ -516,7 +530,8 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
       run: async (prompt, outputDir) => {
         return await runGlmImageGen(prompt, outputDir, {
           model,
-          size: options.imageSize
+          size: options.imageSize,
+          quality: options.imageQuality
         })
       }
     })
@@ -607,15 +622,20 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     if (options.imageQuality) unsupported.push('--image-quality')
     if (options.imageBackground) unsupported.push('--image-background')
     if (options.imageCount !== undefined) unsupported.push('--image-count')
-    if ((options.imageInputs?.length ?? 0) > 0) unsupported.push('--image-input')
     if (options.imageMask !== undefined) unsupported.push('--image-mask')
     if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
     if (options.geminiPersonGeneration !== undefined) unsupported.push('--gemini-person-generation')
     if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
     if (options.imageCompression !== undefined) unsupported.push('--image-compression')
     if (unsupported.length > 0) {
-      throw unsupportedFlagError('BFL', model, unsupported, 'Use --image-size WIDTHxHEIGHT for BFL dimensions and --image-format jpeg|png|webp for output format. BFL is single-image-only here.')
+      throw unsupportedFlagError('BFL', model, unsupported, 'Use --image-size WIDTHxHEIGHT for BFL dimensions, --image-format jpeg|png|webp for output format, and --image-input references.')
     }
+    validateImageInputReferences(options.imageInputs, {
+      provider: 'BFL',
+      model,
+      allowedMimeTypes: BFL_IMAGE_INPUT_MIME_TYPES,
+      maxInputs: getBflImageInputLimit(model)
+    })
     normalizeBflImageSize(options.imageSize)
     normalizeBflImageOutputFormat(options.imageFormat)
 
@@ -627,7 +647,8 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
         return await runBflImageGen(prompt, outputDir, {
           model,
           imageSize: options.imageSize,
-          outputFormat: options.imageFormat
+          outputFormat: options.imageFormat,
+          inputs: options.imageInputs
         })
       }
     })

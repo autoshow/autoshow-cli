@@ -1,6 +1,6 @@
 import { l } from '~/utils/logger'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
-import { createHumanTable, logLocationsTable } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { resolveReverbModelLabel } from './step-2-extract/step-2-stt/stt-model-labels'
 import type {
   ActualCostBreakdown,
@@ -110,6 +110,11 @@ const formatNumber = (value: number): string => {
 const formatCount = (value: number, singular: string, plural: string): string => {
   const rounded = Number.isInteger(value) ? value.toFixed(0) : trimTrailingZeroes(value.toFixed(1))
   return `${rounded} ${value === 1 ? singular : plural}`
+}
+
+const formatTokenCount = (value: number): string => {
+  const rounded = Number.isInteger(value) ? value.toFixed(0) : trimTrailingZeroes(value.toFixed(1))
+  return `${rounded} tok`
 }
 
 const formatSecondsShort = (value: number): string =>
@@ -374,7 +379,7 @@ export const formatWriteManifestThroughput = (
 }
 
 const formatPromptUsageTokenPair = (left: number, right: number): string =>
-  `${formatCount(left, 'token', 'tokens').replace(/ tokens?$/, '')}/${formatCount(right, 'token', 'tokens').replace(/ tokens?$/, '')} tokens`
+  `${formatTokenCount(left).replace(/ tok$/, '')}/${formatTokenCount(right).replace(/ tok$/, '')} tok`
 
 const getNumber = (record: Record<string, unknown>, key: string): number | undefined =>
   typeof record[key] === 'number' && Number.isFinite(record[key])
@@ -404,7 +409,7 @@ const formatInputSummary = (record: Record<string, unknown> | undefined): string
       case 'pages':
         return formatCount(inputValue, 'page', 'pages')
       case 'tokens':
-        return formatCount(inputValue, 'token', 'tokens')
+        return formatTokenCount(inputValue)
       case 'outputCharacters':
       case 'characters':
         return formatCount(inputValue, 'char', 'chars')
@@ -419,11 +424,14 @@ const formatInputSummary = (record: Record<string, unknown> | undefined): string
 
 const formatRatesSummary = (record: Record<string, unknown> | undefined): string | null => {
   if (!record) return null
+  const formatRateCost = (value: number): string =>
+    Number.isInteger(value) ? `${value}\u00A2` : formatCost(value)
+
   const parts = [
-    getNumber(record, 'inputCostPer1MCents') !== undefined ? `${formatCost(getNumber(record, 'inputCostPer1MCents') as number)}/1M in` : null,
-    getNumber(record, 'outputCostPer1MCents') !== undefined ? `${formatCost(getNumber(record, 'outputCostPer1MCents') as number)}/1M out` : null,
-    getNumber(record, 'costPer1kPagesCents') !== undefined ? `${formatCost(getNumber(record, 'costPer1kPagesCents') as number)}/1k pages` : null,
-    getNumber(record, 'costPer1kOutputCharsCents') !== undefined ? `${formatCost(getNumber(record, 'costPer1kOutputCharsCents') as number)}/1k chars` : null
+    getNumber(record, 'inputCostPer1MCents') !== undefined ? `${formatRateCost(getNumber(record, 'inputCostPer1MCents') as number)}/1M in` : null,
+    getNumber(record, 'outputCostPer1MCents') !== undefined ? `${formatRateCost(getNumber(record, 'outputCostPer1MCents') as number)}/1M out` : null,
+    getNumber(record, 'costPer1kPagesCents') !== undefined ? `${formatRateCost(getNumber(record, 'costPer1kPagesCents') as number)}/1k pages` : null,
+    getNumber(record, 'costPer1kOutputCharsCents') !== undefined ? `${formatRateCost(getNumber(record, 'costPer1kOutputCharsCents') as number)}/1k chars` : null
   ].filter((value): value is string => typeof value === 'string')
   return parts.length > 0 ? parts.join(' / ') : null
 }
@@ -536,7 +544,7 @@ const buildPromptUsage = (
       step: 'Transcribe',
       providerModel: buildProviderModelLabel(entry.transcriptionService, model),
       promptSource: null,
-      usage: formatCount(entry.tokenCount, 'token', 'tokens')
+      usage: formatTokenCount(entry.tokenCount)
     })
   }
 
@@ -679,8 +687,9 @@ export const logRunManifestLocation = (
   kind = 'write'
 ): string => {
   const manifestPath = `${outputDir}/run.json`
-  logLocationsTable(logger, [{ artifact: 'runManifest', path: manifestPath }], {
+  logger.write('info', 'Locations', {
     category: 'artifact',
+    humanTable: createKeyValueTable([['runManifest', manifestPath]], 'artifact', 'path'),
     metadata: {
       path: manifestPath,
       kind

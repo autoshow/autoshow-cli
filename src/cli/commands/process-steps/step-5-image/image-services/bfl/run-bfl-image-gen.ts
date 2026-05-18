@@ -7,6 +7,7 @@ import { estimateImageCosts, logImageEstimate } from '~/cli/commands/process-ste
 import { pollUntil } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
+import { imageReferenceToUrlOrDataUrl } from '../../image-utils/image-inputs'
 import { ensureBflImageGenSetup, getBflBaseUrl } from './bfl-image-gen'
 
 const POLL_INTERVAL_MS = 5_000
@@ -134,11 +135,13 @@ const downloadBflImage = async (
 export const runBflImageGen = async (
   prompt: string,
   outputDir: string,
-  options: { model: BflImageModel, imageSize?: string | undefined, outputFormat?: string | undefined }
+  options: { model: BflImageModel, imageSize?: string | undefined, outputFormat?: string | undefined, inputs?: string[] | undefined }
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
   const apiKey = await ensureBflImageGenSetup()
   const dimensions = normalizeBflImageSize(options.imageSize)
   const outputFormat = normalizeBflImageOutputFormat(options.outputFormat)
+  const inputs = options.inputs ?? []
+  const mode = inputs.length > 0 ? 'edit' : 'generation'
   const ext = outputFormat === 'jpeg' ? 'jpg' : outputFormat
   const fileName = `generated-image.${ext}`
   const outputPath = `${outputDir}/${fileName}`
@@ -152,13 +155,21 @@ export const runBflImageGen = async (
     mediaType: 'image',
     provider: 'bfl',
     model: options.model,
-    status: 'started'
+    status: 'started',
+    detail: mode
   })
 
   const startTime = Date.now()
+  const inputFields = Object.fromEntries(
+    await Promise.all(inputs.map(async (input, index) => [
+      index === 0 ? 'input_image' : `input_image_${index + 1}`,
+      await imageReferenceToUrlOrDataUrl(input)
+    ] as const))
+  )
   const body = {
     prompt,
     output_format: outputFormat,
+    ...inputFields,
     ...(dimensions ? { width: dimensions.width, height: dimensions.height } : {})
   }
 
@@ -242,7 +253,7 @@ export const runBflImageGen = async (
       imageFileSize: imageFile.size,
       imageWidth: dimensions?.width,
       imageHeight: dimensions?.height,
-      requestMode: 'generation',
+      requestMode: mode,
       ...(providerCostCents !== undefined ? {
         providerCostCents,
         providerCostSource: providerCostCredits !== undefined ? 'provider_quote' : 'registry_fallback'

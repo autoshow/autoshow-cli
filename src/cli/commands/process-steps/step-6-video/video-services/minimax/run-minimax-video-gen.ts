@@ -14,6 +14,8 @@ import {
   isMinimaxTaskSuccess,
   isMinimaxTaskFailure
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
+import { videoMediaReferenceToUrlOrDataUrl } from '../../video-utils/video-media-inputs'
+import type { VideoMode } from '../../video-types'
 
 const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 10_000
@@ -52,7 +54,15 @@ const readTaskStatus = (query: v.InferOutput<typeof MinimaxQueryVideoResponseSch
 export const runMinimaxVideoGen = async (
   prompt: string,
   outputDir: string,
-  options: { model: MinimaxVideoModel, durationSeconds?: number | undefined, resolution?: string | undefined }
+  options: {
+    model: MinimaxVideoModel
+    mode?: VideoMode | undefined
+    durationSeconds?: number | undefined
+    resolution?: string | undefined
+    inputImage?: string | undefined
+    lastFrameImage?: string | undefined
+    referenceImages?: string[] | undefined
+  }
 ): Promise<{ videoPath: string, metadata: Step6VideoMetadata }> => {
   const apiKey = readEnv('MINIMAX_API_KEY')
   if (!apiKey) {
@@ -60,6 +70,7 @@ export const runMinimaxVideoGen = async (
   }
 
   const baseURL = readEnv('MINIMAX_BASE_URL') ?? MINIMAX_DEFAULT_BASE_URL
+  const mode = options.mode ?? 'text'
   const resolutionForApi = normalizeMinimaxResolutionForApi(options.model, options.resolution)
   const durationForApi = normalizeMinimaxDurationForApi(options.model, resolutionForApi, options.durationSeconds)
 
@@ -73,23 +84,44 @@ export const runMinimaxVideoGen = async (
   const estimate = estimateVideoCost({
     minimaxVideoModel: options.model,
     videoDuration: options.durationSeconds,
-    videoResolution: options.resolution
+    videoResolution: options.resolution,
+    videoMode: mode
   })
   logVideoEstimate(estimate)
 
   const startTime = Date.now()
+  const inputImage = options.inputImage
+    ? await videoMediaReferenceToUrlOrDataUrl(options.inputImage, 'image')
+    : undefined
+  const lastFrameImage = options.lastFrameImage
+    ? await videoMediaReferenceToUrlOrDataUrl(options.lastFrameImage, 'image')
+    : undefined
+  const referenceImage = options.referenceImages?.[0]
+    ? await videoMediaReferenceToUrlOrDataUrl(options.referenceImages[0], 'image')
+    : undefined
+
+  const requestBody: Record<string, unknown> = {
+    model: options.model,
+    prompt
+  }
+  if (mode === 'reference-to-video') {
+    requestBody['subject_reference'] = referenceImage
+      ? [{ type: 'character', image: [referenceImage] }]
+      : []
+  } else {
+    requestBody['duration'] = durationForApi
+    requestBody['resolution'] = resolutionForApi
+    if (inputImage) requestBody['first_frame_image'] = inputImage
+    if (lastFrameImage) requestBody['last_frame_image'] = lastFrameImage
+  }
+
   const createResp = await fetch(`${baseURL}/v1/video_generation`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      model: options.model,
-      prompt,
-      duration: durationForApi,
-      resolution: resolutionForApi
-    })
+    body: JSON.stringify(requestBody)
   })
 
   if (!createResp.ok) {
@@ -205,7 +237,12 @@ export const runMinimaxVideoGen = async (
     processingTime,
     videoFileName: 'generated-video.mp4',
     videoFileSize: videoFile.size,
-    videoDuration: durationForApi
+    videoDuration: durationForApi,
+    requestMode: mode,
+    ...(mode !== 'reference-to-video' ? { videoResolution: resolutionForApi } : {}),
+    ...(options.inputImage ? { inputImage: options.inputImage } : {}),
+    ...(options.lastFrameImage ? { lastFrameImage: options.lastFrameImage } : {}),
+    ...(options.referenceImages && options.referenceImages.length > 0 ? { referenceImages: options.referenceImages } : {})
   }
 
   return { videoPath: outputPath, metadata }

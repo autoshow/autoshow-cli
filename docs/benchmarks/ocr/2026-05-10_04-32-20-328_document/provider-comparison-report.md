@@ -3,6 +3,22 @@
 ## Summary
 
 - Consensus extraction: `consensus-extraction.txt` (5955 characters, 1092 words)
+- Compared providers:
+  - `gemini/gemini-3.1-flash-lite-preview`
+  - `openai/gpt-5.4`
+  - `mistral/mistral-ocr-2512`
+  - `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct`
+  - `anthropic/claude-haiku-4-5`
+  - `gemini/gemini-3.1-pro-preview`
+  - `kimi/kimi-k2.6`
+  - `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct`
+  - `glm/glm-ocr`
+  - `aws-textract/detect-text`
+  - `gcloud-docai/ocr`
+  - `tesseract/tesseract`
+  - `openai/gpt-5.4-nano`
+  - `ocrmypdf/ocrmypdf`
+  - `paddle-ocr/paddle-ocr`
 - Total providers: 15 (3 local, 12 cloud)
 - Ranking metric: word error rate (WER) against consensus extraction
 - Score formula: `max(0, 100 * (1 - WER))`
@@ -15,29 +31,29 @@
 - Text normalization applied before comparison: lowercasing, curly quote/dash normalization, contraction expansion (it's -> it is), abbreviation expansion (mr. -> mister), currency symbol conversion ($50 -> 50 dollars), and remaining punctuation stripping.
 - WER compares the provider's full word stream against the gold extraction word stream.
 - CER compares normalized character sequences for finer-grained accuracy.
-- Providers are separated into local models and cloud services for independent comparison.
+- Ranking uses exact unrounded WER, with CER included for context and tie-breaking.
 - Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
 - Tier breakdown assigns local and third-party providers independently using balanced overall group rank.
 
 ## Overall Ranking
 
-| Rank | Provider | Group | Group Rank | Group Tier | Overall / 100 | Accuracy | Speed | Cost |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | `gemini/gemini-3.1-flash-lite-preview` | cloud | 1 | 1 | 96.15 | 98.08 | 95.07 | 93.36 |
-| 2 | `mistral/mistral-ocr-2512` | cloud | 2 | 1 | 92.80 | 95.33 | 100.00 | 80.53 |
+| Rank | Provider | Tier Group | Group Rank | Group Tier | Overall / 100 | Accuracy | Speed | Cost |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | `gemini/gemini-3.1-flash-lite-preview` | thirdParty | 1 | 1 | 96.15 | 98.08 | 95.07 | 93.36 |
+| 2 | `mistral/mistral-ocr-2512` | thirdParty | 2 | 1 | 92.80 | 95.33 | 100.00 | 80.53 |
 | 3 | `tesseract/tesseract` | local | 1 | 1 | 87.78 | 76.47 | 98.18 | 100.00 |
 | 4 | `ocrmypdf/ocrmypdf` | local | 2 | 2 | 86.93 | 75.73 | 96.24 | 100.00 |
-| 5 | `glm/glm-ocr` | cloud | 3 | 1 | 85.68 | 80.95 | 81.50 | 99.33 |
-| 6 | `aws-textract/detect-text` | cloud | 4 | 1 | 83.89 | 78.48 | 93.21 | 85.40 |
-| 7 | `openai/gpt-5.4-nano` | cloud | 5 | 2 | 81.12 | 76.47 | 79.37 | 92.19 |
-| 8 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | cloud | 6 | 2 | 80.89 | 92.86 | 48.08 | 89.76 |
-| 9 | `gcloud-docai/ocr` | cloud | 7 | 2 | 76.08 | 77.75 | 63.41 | 85.40 |
-| 10 | `anthropic/claude-haiku-4-5` | cloud | 8 | 2 | 75.35 | 91.48 | 55.07 | 63.36 |
-| 11 | `kimi/kimi-k2.6` | cloud | 9 | 3 | 67.44 | 89.01 | 45.92 | 45.82 |
-| 12 | `openai/gpt-5.4` | cloud | 10 | 3 | 66.64 | 96.34 | 73.88 | 0.00 |
+| 5 | `glm/glm-ocr` | thirdParty | 3 | 1 | 85.68 | 80.95 | 81.50 | 99.33 |
+| 6 | `aws-textract/detect-text` | thirdParty | 4 | 1 | 83.89 | 78.48 | 93.21 | 85.40 |
+| 7 | `openai/gpt-5.4-nano` | thirdParty | 5 | 2 | 81.12 | 76.47 | 79.37 | 92.19 |
+| 8 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | thirdParty | 6 | 2 | 80.89 | 92.86 | 48.08 | 89.76 |
+| 9 | `gcloud-docai/ocr` | thirdParty | 7 | 2 | 76.08 | 77.75 | 63.41 | 85.40 |
+| 10 | `anthropic/claude-haiku-4-5` | thirdParty | 8 | 2 | 75.35 | 91.48 | 55.07 | 63.36 |
+| 11 | `kimi/kimi-k2.6` | thirdParty | 9 | 3 | 67.44 | 89.01 | 45.92 | 45.82 |
+| 12 | `openai/gpt-5.4` | thirdParty | 10 | 3 | 66.64 | 96.34 | 73.88 | 0.00 |
 | 13 | `paddle-ocr/paddle-ocr` | local | 3 | 3 | 66.05 | 69.69 | 24.84 | 100.00 |
-| 14 | `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct` | cloud | 11 | 3 | 64.84 | 86.81 | 0.00 | 85.73 |
-| 15 | `gemini/gemini-3.1-pro-preview` | cloud | 12 | 3 | 56.69 | 91.30 | 1.79 | 42.35 |
+| 14 | `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct` | thirdParty | 11 | 3 | 64.84 | 86.81 | 0.00 | 85.73 |
+| 15 | `gemini/gemini-3.1-pro-preview` | thirdParty | 12 | 3 | 56.69 | 91.30 | 1.79 | 42.35 |
 
 ## Tier Breakdown
 
@@ -106,36 +122,11 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | 12 | 15 | `gemini/gemini-3.1-pro-preview` | 56.69 | 91.30 | 1.79 | 42.35 |
 
 
+
 ## Ranking
 
-### Local Models (3)
-
-  - `tesseract/tesseract`
-  - `ocrmypdf/ocrmypdf`
-  - `paddle-ocr/paddle-ocr`
-
-| Rank | Provider | Score / 100 | WER | CER | Token Est. | Processing Time |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | `tesseract/tesseract` | 76.47 | 23.53% | 6.61% | 1081 | 6.53s |
-| 2 | `ocrmypdf/ocrmypdf` | 75.73 | 24.27% | 6.89% | 1082 | 7.96s |
-| 3 | `paddle-ocr/paddle-ocr` | 69.69 | 30.31% | 8.81% | 980 | 60.47s |
-### Cloud Services (12)
-
-  - `gemini/gemini-3.1-flash-lite-preview`
-  - `openai/gpt-5.4`
-  - `mistral/mistral-ocr-2512`
-  - `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct`
-  - `anthropic/claude-haiku-4-5`
-  - `gemini/gemini-3.1-pro-preview`
-  - `kimi/kimi-k2.6`
-  - `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct`
-  - `glm/glm-ocr`
-  - `aws-textract/detect-text`
-  - `gcloud-docai/ocr`
-  - `openai/gpt-5.4-nano`
-
-| Rank | Provider | Score / 100 | WER | CER | Token Est. | Processing Time | Cost |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Rank | Provider | Score / 100 | WER | CER | Token Est. | Processing Time | Actual Cost |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | `gemini/gemini-3.1-flash-lite-preview` | 98.08 | 1.92% | 0.89% | 1062 | 8.82s | 0.3409¢ ($0.0034) |
 | 2 | `openai/gpt-5.4` | 96.34 | 3.66% | 1.84% | 1036 | 24.41s | 5.1355¢ ($0.0514) |
 | 3 | `mistral/mistral-ocr-2512` | 95.33 | 4.67% | 1.80% | 1087 | 5.20s | 1.0000¢ ($0.0100) |
@@ -147,15 +138,15 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | 9 | `glm/glm-ocr` | 80.95 | 19.05% | 14.60% | 931 | 18.80s | 0.0345¢ ($0.0003) |
 | 10 | `aws-textract/detect-text` | 78.48 | 21.52% | 5.89% | 1081 | 10.19s | 0.7500¢ ($0.0075) |
 | 11 | `gcloud-docai/ocr` | 77.75 | 22.25% | 5.21% | 1086 | 32.10s | 0.7500¢ ($0.0075) |
-| 12 | `openai/gpt-5.4-nano` | 76.47 | 23.53% | 17.07% | 962 | 20.37s | 0.4011¢ ($0.0040) |
+| 12 | `tesseract/tesseract` | 76.47 | 23.53% | 6.61% | 1081 | 6.53s | 0.0000¢ ($0.0000) |
+| 13 | `openai/gpt-5.4-nano` | 76.47 | 23.53% | 17.07% | 962 | 20.37s | 0.4011¢ ($0.0040) |
+| 14 | `ocrmypdf/ocrmypdf` | 75.73 | 24.27% | 6.89% | 1082 | 7.96s | 0.0000¢ ($0.0000) |
+| 15 | `paddle-ocr/paddle-ocr` | 69.69 | 30.31% | 8.81% | 980 | 60.47s | 0.0000¢ ($0.0000) |
 
 ## Error Breakdown (WER)
 
 | Provider | Substitutions | Deletions | Insertions | Ref. Words |
 | --- | ---: | ---: | ---: | ---: |
-| `tesseract/tesseract` | 216 | 7 | 34 | 1092 |
-| `ocrmypdf/ocrmypdf` | 224 | 7 | 34 | 1092 |
-| `paddle-ocr/paddle-ocr` | 248 | 58 | 25 | 1092 |
 | `gemini/gemini-3.1-flash-lite-preview` | 10 | 1 | 10 | 1092 |
 | `openai/gpt-5.4` | 14 | 20 | 6 | 1092 |
 | `mistral/mistral-ocr-2512` | 17 | 1 | 33 | 1092 |
@@ -167,7 +158,10 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | `glm/glm-ocr` | 63 | 132 | 13 | 1092 |
 | `aws-textract/detect-text` | 194 | 4 | 37 | 1092 |
 | `gcloud-docai/ocr` | 169 | 6 | 68 | 1092 |
+| `tesseract/tesseract` | 216 | 7 | 34 | 1092 |
 | `openai/gpt-5.4-nano` | 84 | 128 | 45 | 1092 |
+| `ocrmypdf/ocrmypdf` | 224 | 7 | 34 | 1092 |
+| `paddle-ocr/paddle-ocr` | 248 | 58 | 25 | 1092 |
 
 ## Notes
 

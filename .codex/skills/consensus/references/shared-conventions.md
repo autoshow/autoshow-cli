@@ -9,11 +9,11 @@ bun scripts/run.ts <category> build-packet <run_dir> [--input-text <path>] [--ou
 bun scripts/run.ts <category> build-report <run_dir> [--input-text <path>] [--roundtrip-dir <path>]
 ```
 
-The dispatcher calls category-specific scripts and then rewrites reports into the consolidated ranking contract.
+The dispatcher calls category-specific scripts and then normalizes reports into the consolidated ranking contract. OCR and STT keep their category-specific combined overall reports and are augmented with the same JSON ranking surfaces.
 
 ## Local And Service Separation
 
-Never rank local providers against hosted, cloud, paid, or API-backed services in the same table.
+Always expose local and service provider ranking surfaces separately, so local zero-cost tools are not hidden inside service cost comparisons.
 
 Use two report groups:
 
@@ -21,6 +21,8 @@ Use two report groups:
 2. `service` for hosted, cloud, or third-party providers with possible monetary cost, quota, or billing.
 
 Local cheapest rankings treat each local provider as zero monetary cost and only compare local providers with each other.
+
+OCR and STT are combined-overall exceptions: their markdown and JSON preserve balanced-overall leaderboards across all providers, with component scores and group tier annotations, while the JSON still exposes the local/service ranking surfaces.
 
 ## Required Ranking Surfaces
 
@@ -37,7 +39,7 @@ rankingSurfaces.service.highestQuality
 
 Each surface contains up to three providers. If unavailable, it is an empty array and the adjacent unavailable reason field explains why.
 
-Markdown reports must expose matching sections:
+Markdown reports normally expose matching sections:
 
 1. Local Providers / Top 3 Fastest
 2. Local Providers / Top 3 Cheapest
@@ -45,6 +47,8 @@ Markdown reports must expose matching sections:
 4. Service Providers / Top 3 Fastest
 5. Service Providers / Top 3 Cheapest
 6. Service Providers / Top 3 Highest Quality
+
+OCR and STT markdown follow the combined report structure: Summary, Method, Overall Ranking, Tier Breakdown, Ranking, Error Breakdown, and Notes. Use their JSON `rankingSurfaces` for local/service top-three surfaces.
 
 ## Quality Evidence Rules
 

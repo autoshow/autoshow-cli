@@ -1,406 +1,12 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "kind": "url-provider-comparison",
+  "category": "url",
   "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_21-18-14-082_anthony-campolos-home-page",
   "runName": "2026-05-13_21-18-14-082_anthony-campolos-home-page",
-  "consensusPath": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-13_21-18-14-082_anthony-campolos-home-page/consensus-extraction.txt",
-  "generatedAt": "2026-05-14T03:00:06.109Z",
-  "providerCount": 5,
-  "overallMetric": "balanced-url-extraction",
-  "overallWeights": {
-    "accuracy": 0.5,
-    "processingSpeed": 0.25,
-    "costEfficiency": 0.25
-  },
-  "providers": [
-    {
-      "provider": "defuddle",
-      "model": "defuddle",
-      "providerKey": "defuddle",
-      "group": "local",
-      "directoryName": "defuddle",
-      "rank": 1,
-      "groupRank": 1,
-      "overallRank": 1,
-      "overallScore": 0.9858415125172728,
-      "groupTier": 1,
-      "wer": 0.02830188679245283,
-      "cer": 0.02497398543184183,
-      "contentCoverage": 0.9683098591549296,
-      "accuracyScore": 0.9716830250345455,
-      "wordBreakdown": {
-        "substitutions": 0,
-        "deletions": 15,
-        "insertions": 0,
-        "referenceCount": 530
-      },
-      "characterBreakdown": {
-        "substitutions": 0,
-        "deletions": 67,
-        "insertions": 5,
-        "referenceCount": 2883
-      },
-      "tokenEstimate": 576,
-      "processingTimeMs": 259,
-      "actualCostCents": 0,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.9716830250345455,
-          "source": "wer-cer-coverage",
-          "wer": 0.02830188679245283,
-          "cer": 0.02497398543184183,
-          "contentCoverage": 0.9683098591549296
-        },
-        "processingSpeed": {
-          "score": 1,
-          "source": "processing-time",
-          "processingTimeMs": 259
-        },
-        "costEfficiency": {
-          "score": 1,
-          "source": "local-zero-cost",
-          "costCents": 0
-        }
-      }
-    },
-    {
-      "provider": "firecrawl",
-      "model": "firecrawl",
-      "providerKey": "firecrawl",
-      "group": "hosted",
-      "directoryName": "firecrawl",
-      "rank": 2,
-      "groupRank": 1,
-      "overallRank": 2,
-      "overallScore": 0.9598198512486708,
-      "groupTier": 1,
-      "wer": 0.035849056603773584,
-      "cer": 0.020117932708983696,
-      "contentCoverage": 0.9859154929577465,
-      "accuracyScore": 0.973524861760304,
-      "wordBreakdown": {
-        "substitutions": 4,
-        "deletions": 4,
-        "insertions": 11,
-        "referenceCount": 530
-      },
-      "characterBreakdown": {
-        "substitutions": 0,
-        "deletions": 0,
-        "insertions": 58,
-        "referenceCount": 2883
-      },
-      "tokenEstimate": 607,
-      "processingTimeMs": 1768,
-      "actualCostCents": 0.083,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.973524861760304,
-          "source": "wer-cer-coverage",
-          "wer": 0.035849056603773584,
-          "cer": 0.020117932708983696,
-          "contentCoverage": 0.9859154929577465
-        },
-        "processingSpeed": {
-          "score": 0.8922296814740751,
-          "source": "processing-time",
-          "processingTimeMs": 1768
-        },
-        "costEfficiency": {
-          "score": 1,
-          "source": "reported-cost",
-          "costCents": 0.083
-        }
-      }
-    },
-    {
-      "provider": "spider",
-      "model": "spider",
-      "providerKey": "spider",
-      "group": "hosted",
-      "directoryName": "spider",
-      "rank": 3,
-      "groupRank": 2,
-      "overallRank": 3,
-      "overallScore": 0.9332562219703144,
-      "groupTier": 1,
-      "wer": 0.07358490566037736,
-      "cer": 0.043704474505723206,
-      "contentCoverage": 0.9788732394366197,
-      "accuracyScore": 0.9469997384025355,
-      "wordBreakdown": {
-        "substitutions": 6,
-        "deletions": 4,
-        "insertions": 29,
-        "referenceCount": 530
-      },
-      "characterBreakdown": {
-        "substitutions": 2,
-        "deletions": 0,
-        "insertions": 124,
-        "referenceCount": 2883
-      },
-      "tokenEstimate": 602,
-      "processingTimeMs": 1948,
-      "actualCostCents": 0.12,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.9469997384025355,
-          "source": "wer-cer-coverage",
-          "wer": 0.07358490566037736,
-          "cer": 0.043704474505723206,
-          "contentCoverage": 0.9788732394366197
-        },
-        "processingSpeed": {
-          "score": 0.879374375089273,
-          "source": "processing-time",
-          "processingTimeMs": 1948
-        },
-        "costEfficiency": {
-          "score": 0.9596510359869138,
-          "source": "reported-cost",
-          "costCents": 0.12
-        }
-      }
-    },
-    {
-      "provider": "zyte",
-      "model": "zyte",
-      "providerKey": "zyte",
-      "group": "hosted",
-      "directoryName": "zyte",
-      "rank": 4,
-      "groupRank": 3,
-      "overallRank": 4,
-      "overallScore": 0.4973197142011005,
-      "groupTier": 2,
-      "wer": 0.4830188679245283,
-      "cer": 0.47901491501907734,
-      "contentCoverage": 0.5915492957746479,
-      "accuracyScore": 0.5366241612266285,
-      "wordBreakdown": {
-        "substitutions": 0,
-        "deletions": 256,
-        "insertions": 0,
-        "referenceCount": 530
-      },
-      "characterBreakdown": {
-        "substitutions": 0,
-        "deletions": 1381,
-        "insertions": 0,
-        "referenceCount": 2883
-      },
-      "tokenEstimate": 276,
-      "processingTimeMs": 14261,
-      "actualCostCents": 0.16,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.5366241612266285,
-          "source": "wer-cer-coverage",
-          "wer": 0.4830188679245283,
-          "cer": 0.47901491501907734,
-          "contentCoverage": 0.5915492957746479
-        },
-        "processingSpeed": {
-          "score": 0,
-          "source": "processing-time",
-          "processingTimeMs": 14261
-        },
-        "costEfficiency": {
-          "score": 0.916030534351145,
-          "source": "reported-cost",
-          "costCents": 0.16
-        }
-      }
-    },
-    {
-      "provider": "glm-reader",
-      "model": "glm-reader",
-      "providerKey": "glm-reader",
-      "group": "hosted",
-      "directoryName": "glm-reader",
-      "rank": 5,
-      "groupRank": 4,
-      "overallRank": 5,
-      "overallScore": 0.40642284601943923,
-      "groupTier": 2,
-      "wer": 0.6660377358490566,
-      "cer": 0.6406520985084981,
-      "contentCoverage": 0.6161971830985915,
-      "accuracyScore": 0.4108674032229951,
-      "wordBreakdown": {
-        "substitutions": 20,
-        "deletions": 239,
-        "insertions": 94,
-        "referenceCount": 530
-      },
-      "characterBreakdown": {
-        "substitutions": 1064,
-        "deletions": 726,
-        "insertions": 57,
-        "referenceCount": 2883
-      },
-      "tokenEstimate": 432,
-      "processingTimeMs": 3004,
-      "actualCostCents": 1,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.4108674032229951,
-          "source": "wer-cer-coverage",
-          "wer": 0.6660377358490566,
-          "cer": 0.6406520985084981,
-          "contentCoverage": 0.6161971830985915
-        },
-        "processingSpeed": {
-          "score": 0.8039565776317669,
-          "source": "processing-time",
-          "processingTimeMs": 3004
-        },
-        "costEfficiency": {
-          "score": 0,
-          "source": "reported-cost",
-          "costCents": 1
-        }
-      }
-    }
-  ],
-  "overall": [
-    {
-      "rank": 1,
-      "provider": "defuddle",
-      "model": "defuddle",
-      "providerKey": "defuddle",
-      "group": "local",
-      "overallScore": 0.9858415125172728,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.9716830250345455,
-          "source": "wer-cer-coverage",
-          "wer": 0.02830188679245283,
-          "cer": 0.02497398543184183,
-          "contentCoverage": 0.9683098591549296
-        },
-        "processingSpeed": {
-          "score": 1,
-          "source": "processing-time",
-          "processingTimeMs": 259
-        },
-        "costEfficiency": {
-          "score": 1,
-          "source": "local-zero-cost",
-          "costCents": 0
-        }
-      }
-    },
-    {
-      "rank": 2,
-      "provider": "firecrawl",
-      "model": "firecrawl",
-      "providerKey": "firecrawl",
-      "group": "hosted",
-      "overallScore": 0.9598198512486708,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.973524861760304,
-          "source": "wer-cer-coverage",
-          "wer": 0.035849056603773584,
-          "cer": 0.020117932708983696,
-          "contentCoverage": 0.9859154929577465
-        },
-        "processingSpeed": {
-          "score": 0.8922296814740751,
-          "source": "processing-time",
-          "processingTimeMs": 1768
-        },
-        "costEfficiency": {
-          "score": 1,
-          "source": "reported-cost",
-          "costCents": 0.083
-        }
-      }
-    },
-    {
-      "rank": 3,
-      "provider": "spider",
-      "model": "spider",
-      "providerKey": "spider",
-      "group": "hosted",
-      "overallScore": 0.9332562219703144,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.9469997384025355,
-          "source": "wer-cer-coverage",
-          "wer": 0.07358490566037736,
-          "cer": 0.043704474505723206,
-          "contentCoverage": 0.9788732394366197
-        },
-        "processingSpeed": {
-          "score": 0.879374375089273,
-          "source": "processing-time",
-          "processingTimeMs": 1948
-        },
-        "costEfficiency": {
-          "score": 0.9596510359869138,
-          "source": "reported-cost",
-          "costCents": 0.12
-        }
-      }
-    },
-    {
-      "rank": 4,
-      "provider": "zyte",
-      "model": "zyte",
-      "providerKey": "zyte",
-      "group": "hosted",
-      "overallScore": 0.4973197142011005,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.5366241612266285,
-          "source": "wer-cer-coverage",
-          "wer": 0.4830188679245283,
-          "cer": 0.47901491501907734,
-          "contentCoverage": 0.5915492957746479
-        },
-        "processingSpeed": {
-          "score": 0,
-          "source": "processing-time",
-          "processingTimeMs": 14261
-        },
-        "costEfficiency": {
-          "score": 0.916030534351145,
-          "source": "reported-cost",
-          "costCents": 0.16
-        }
-      }
-    },
-    {
-      "rank": 5,
-      "provider": "glm-reader",
-      "model": "glm-reader",
-      "providerKey": "glm-reader",
-      "group": "hosted",
-      "overallScore": 0.40642284601943923,
-      "overallComponents": {
-        "accuracy": {
-          "score": 0.4108674032229951,
-          "source": "wer-cer-coverage",
-          "wer": 0.6660377358490566,
-          "cer": 0.6406520985084981,
-          "contentCoverage": 0.6161971830985915
-        },
-        "processingSpeed": {
-          "score": 0.8039565776317669,
-          "source": "processing-time",
-          "processingTimeMs": 3004
-        },
-        "costEfficiency": {
-          "score": 0,
-          "source": "reported-cost",
-          "costCents": 1
-        }
-      }
-    }
-  ],
+  "generatedAt": "2026-05-18T14:06:16.790Z",
+  "metric": null,
+  "scoreFormula": null,
   "tiering": {
     "metric": "balanced-url-extraction",
     "method": "equal-thirds-by-provider-group",
@@ -424,5 +30,306 @@
         "tier3": []
       }
     }
-  }
+  },
+  "duplicateGroups": [],
+  "normalization": null,
+  "providerCount": 5,
+  "providerGroups": {
+    "local": {
+      "count": 1,
+      "providers": [
+        {
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "processingTimeMs": 259,
+          "costCents": 0,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.02830188679245283,
+          "qualityLabel": "2.83% WER, 2.50% CER, 96.83% coverage",
+          "metrics": {
+            "wer": 0.02830188679245283,
+            "cer": 0.02497398543184183,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.9683098591549296,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 1,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        }
+      ]
+    },
+    "service": {
+      "count": 4,
+      "providers": [
+        {
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "processingTimeMs": 1768,
+          "costCents": 0.083,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.035849056603773584,
+          "qualityLabel": "3.58% WER, 2.01% CER, 98.59% coverage",
+          "metrics": {
+            "wer": 0.035849056603773584,
+            "cer": 0.020117932708983696,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.9859154929577465,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 1,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "processingTimeMs": 3004,
+          "costCents": 1,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.6660377358490566,
+          "qualityLabel": "66.60% WER, 64.07% CER, 61.62% coverage",
+          "metrics": {
+            "wer": 0.6660377358490566,
+            "cer": 0.6406520985084981,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.6161971830985915,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 2,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "processingTimeMs": 1948,
+          "costCents": 0.12,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.07358490566037736,
+          "qualityLabel": "7.36% WER, 4.37% CER, 97.89% coverage",
+          "metrics": {
+            "wer": 0.07358490566037736,
+            "cer": 0.043704474505723206,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.9788732394366197,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 1,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "processingTimeMs": 14261,
+          "costCents": 0.16,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.4830188679245283,
+          "qualityLabel": "48.30% WER, 47.90% CER, 59.15% coverage",
+          "metrics": {
+            "wer": 0.4830188679245283,
+            "cer": 0.47901491501907734,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.5915492957746479,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 2,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        }
+      ]
+    }
+  },
+  "rankingSurfaces": {
+    "local": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 259,
+          "label": "0.26s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        }
+      ],
+      "highestQuality": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "WER/CER/coverage",
+          "value": 0.02830188679245283,
+          "label": "2.83% WER, 2.50% CER, 96.83% coverage"
+        }
+      ],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": null
+    },
+    "service": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 1768,
+          "label": "1.77s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 1948,
+          "label": "1.95s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 3004,
+          "label": "3.00s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.083,
+          "label": "$0.0008"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.12,
+          "label": "$0.0012"
+        },
+        {
+          "rank": 3,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.16,
+          "label": "$0.0016"
+        }
+      ],
+      "highestQuality": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "WER/CER/coverage",
+          "value": 0.035849056603773584,
+          "label": "3.58% WER, 2.01% CER, 98.59% coverage"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "WER/CER/coverage",
+          "value": 0.07358490566037736,
+          "label": "7.36% WER, 4.37% CER, 97.89% coverage"
+        },
+        {
+          "rank": 3,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "WER/CER/coverage",
+          "value": 0.4830188679245283,
+          "label": "48.30% WER, 47.90% CER, 59.15% coverage"
+        }
+      ],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": null
+    }
+  },
+  "combinedLeaderboardPolicy": "omitted: local and service providers are not ranked against each other",
+  "notes": []
 }
