@@ -1,6 +1,7 @@
 import {
   EXCLUDED_SERVICES,
   OUTPUT_PATH,
+  RAW_BENCHMARKS_DIR,
   STEP_DEFINITIONS,
   TOP_PICK_BUCKET_DISPLAY_ORDER,
   TOP_PICK_TARGET_COUNT
@@ -26,6 +27,7 @@ import type {
   RankingRow,
   RawReportFile,
   ReportStats,
+  SttDiarizationGroup,
   StepKey,
   TopBenchmarkPick,
   TopBenchmarkPickSelection
@@ -48,6 +50,8 @@ const formatQuality = (value: number): string => value.toFixed(2)
 
 const plural = (count: number, singular: string, pluralForm = `${singular}s`): string =>
   `${count} ${count === 1 ? singular : pluralForm}`
+
+const formatReportTimestamp = (): string => new Date().toISOString()
 
 const formatTopPickMetric = (pick: TopBenchmarkPick): string => {
   if (pick.metric === 'price') {
@@ -143,6 +147,61 @@ const topPicksTable = (selection: TopBenchmarkPickSelection): string => {
   return lines.join('\n')
 }
 
+const appendRankingSections = (
+  lines: string[],
+  {
+    priceRows,
+    speedRows,
+    qualityRows,
+    noQualityNote,
+    headingLevel
+  }: {
+    priceRows: readonly RankingRow[]
+    speedRows: readonly RankingRow[]
+    qualityRows: readonly RankingRow[]
+    noQualityNote: string
+    headingLevel: number
+  }
+): void => {
+  const heading = '#'.repeat(headingLevel)
+
+  lines.push(`${heading} ${topPickLabel()} Picks`)
+  lines.push('')
+  lines.push(topPicksTable(selectTopBenchmarkPicks({ priceRows, speedRows, qualityRows })))
+  lines.push('')
+  lines.push(`${heading} Price`)
+  lines.push('')
+  lines.push(metricTable(priceRows, 'price'))
+  lines.push('')
+  lines.push(`${heading} Speed`)
+  lines.push('')
+  lines.push(metricTable(speedRows, 'speed'))
+  lines.push('')
+
+  if (qualityRows.length > 0) {
+    lines.push(`${heading} Quality`)
+    lines.push('')
+    lines.push(metricTable(qualityRows, 'quality'))
+    lines.push('')
+  } else {
+    lines.push(`Quality: ${noQualityNote}`)
+    lines.push('')
+  }
+}
+
+const filterSttDiarizationAggregates = (
+  stepAggregates: Map<string, ProviderAggregate>,
+  group: SttDiarizationGroup
+): Map<string, ProviderAggregate> => {
+  const filtered = new Map<string, ProviderAggregate>()
+  for (const [key, aggregate] of stepAggregates) {
+    if (aggregate.sttDiarizationGroups.has(group)) {
+      filtered.set(key, aggregate)
+    }
+  }
+  return filtered
+}
+
 const buildReport = (
   aggregates: Map<StepKey, Map<string, ProviderAggregate>>,
   stats: ReportStats,
@@ -153,16 +212,23 @@ const buildReport = (
   const contributedSources = [...stats.contributedSources].sort()
   const dashboardSourcePaths = dashboardReports.map((report) => report.relPath).sort()
   const rawSourcePaths = rawReports.map((report) => report.relPath).sort()
+  const skippedBenchmarkDashboardsWithDocsRaw = stats.benchmarkDashboardsSkipped - stats.benchmarkDashboardsWithoutDocsRaw
+  const projectOnlyBenchmarkDashboardText = stats.benchmarkDashboardsWithoutDocsRaw === 1
+    ? '1 was a historical project-only benchmark dashboard'
+    : `${stats.benchmarkDashboardsWithoutDocsRaw} were historical project-only benchmark dashboards`
 
   lines.push('# Benchmark Ranking Report')
   lines.push('')
   lines.push('This report averages available benchmark rows into per-step third-party provider/model rankings. It intentionally does not compute a combined overall score.')
   lines.push('')
+  lines.push(`Updated: ${formatReportTimestamp()}`)
+  lines.push('')
   lines.push('## Source Summary')
   lines.push('')
+  lines.push(`- Scanned \`${relativeToProject(RAW_BENCHMARKS_DIR)}/{ocr,stt,tts,url}\` for raw benchmark comparison reports.`)
   lines.push(`- Reconciled \`project/reports/results/index.json\` with ${stats.indexFiles} listed dashboard report files.`)
-  lines.push(`- Used ${stats.rawReportsRead} raw comparison reports and ${stats.dashboardReportsRead} test-run dashboard reports.`)
-  lines.push(`- Skipped ${stats.benchmarkDashboardsSkipped} benchmark dashboard reports because matching raw comparison reports are canonical for those runs.`)
+  lines.push(`- Used ${stats.rawReportsRead} docs benchmark comparison reports and ${stats.dashboardReportsRead} test-run dashboard reports.`)
+  lines.push(`- Skipped ${stats.benchmarkDashboardsSkipped} project benchmark dashboard reports; ${skippedBenchmarkDashboardsWithDocsRaw} had matching docs benchmark reports and ${projectOnlyBenchmarkDashboardText} outside the scanned docs directories.`)
   lines.push(`- Saw ${plural(stats.totalRowsSeen, 'provider/test row')}: included ${stats.includedRows}, excluded ${plural(stats.excludedNonThirdPartyRows, 'local or non-third-party row')}, omitted ${plural(stats.omittedFailedRows, 'failed row')}, skipped ${plural(stats.unsupportedCategoryRows, 'unsupported-category row')}, and skipped ${plural(stats.noMetricRows, 'row')} with no measurable metrics.`)
   lines.push(`- Filled ${plural(stats.priceRowsFilledFromRunEstimates, 'raw price row')} from sibling run estimates where raw comparison costs were zero or missing.`)
   lines.push(`- Missing metrics among otherwise included rows: price ${stats.missingPriceRows}, speed ${stats.missingSpeedRows}, quality ${stats.missingQualityRows} in quality-ranked steps.`)
@@ -192,28 +258,32 @@ const buildReport = (
       continue
     }
 
-    lines.push(`### ${topPickLabel()} Picks`)
-    lines.push('')
-    lines.push(topPicksTable(selectTopBenchmarkPicks({ priceRows, speedRows, qualityRows })))
-    lines.push('')
-    lines.push('### Price')
-    lines.push('')
-    lines.push(metricTable(priceRows, 'price'))
-    lines.push('')
-    lines.push('### Speed')
-    lines.push('')
-    lines.push(metricTable(speedRows, 'speed'))
-    lines.push('')
-
-    if (qualityRows.length > 0) {
-      lines.push('### Quality')
-      lines.push('')
-      lines.push(metricTable(qualityRows, 'quality'))
-      lines.push('')
-    } else {
-      lines.push(`Quality: ${definition.noQualityNote}`)
-      lines.push('')
+    if (definition.key === 'transcription') {
+      for (const section of [
+        { title: 'Diarization Models', group: 'diarization' as const },
+        { title: 'Non-Diarization Models', group: 'nonDiarization' as const }
+      ]) {
+        const sectionAggregates = filterSttDiarizationAggregates(stepAggregates, section.group)
+        lines.push(`### ${section.title}`)
+        lines.push('')
+        appendRankingSections(lines, {
+          priceRows: rankingRows(sectionAggregates, 'price'),
+          speedRows: rankingRows(sectionAggregates, 'speed'),
+          qualityRows: rankingRows(sectionAggregates, 'quality'),
+          noQualityNote: definition.noQualityNote,
+          headingLevel: 4
+        })
+      }
+      continue
     }
+
+    appendRankingSections(lines, {
+      priceRows,
+      speedRows,
+      qualityRows,
+      noQualityNote: definition.noQualityNote,
+      headingLevel: 3
+    })
   }
 
   lines.push('## Footnotes')
@@ -221,6 +291,7 @@ const buildReport = (
   lines.push('- Price averages use USD per successful measurable row. Raw comparison rows use positive actual costs first, then positive reported costs, then positive sibling `run.json` `metadata.cost.estimated.steps` estimates when raw costs are zero or missing; raw cents are converted to USD and dashboard costs already reported in USD are used as-is.')
   lines.push('- Speed averages use actual processing time where present, converted from milliseconds to seconds.')
   lines.push('- Quality rankings are shown only for pure quality metrics: OCR WER-derived accuracy, URL extraction accuracy, and STT speaker-aware WER scores. Dashboard smoke/e2e rows do not contain pure quality metrics and therefore contribute only price and speed.')
+  lines.push('- STT rankings are split by diarization support using raw STT `supportsDiarization` metadata; dashboard-only STT rows use the service defaults from the benchmark ranking generator.')
   lines.push(`- Zero-cost third-party rows remain in price rankings. Local and non-third-party services are excluded, including ${excludedServicesFootnoteList()}.`)
   lines.push(`- Omitted ${plural(stats.omittedFailedRows, 'failed row')}. Missing metric counts are reported in the source summary and those missing values were omitted only from the affected metric average.`)
   lines.push('')

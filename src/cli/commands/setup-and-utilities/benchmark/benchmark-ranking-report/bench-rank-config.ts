@@ -1,9 +1,9 @@
 import { join } from 'node:path'
 import { PROJECT_ROOT } from '~/utils/runtime-paths'
-import type { StepDefinition, StepKey, TopPickBucket } from './bench-rank-types'
+import type { StepDefinition, StepKey, SttDiarizationGroup, TopPickBucket } from './bench-rank-types'
 
 export const RESULTS_DIR = join(PROJECT_ROOT, 'project/reports/results')
-export const RAW_BENCHMARKS_DIR = join(RESULTS_DIR, 'raw-benchmarks')
+export const RAW_BENCHMARKS_DIR = join(PROJECT_ROOT, 'docs/benchmarks')
 export const OUTPUT_PATH = join(PROJECT_ROOT, 'docs/benchmarks/benchmark-ranking-report.md')
 
 export const STEP_DEFINITIONS: readonly StepDefinition[] = [
@@ -91,6 +91,33 @@ export const EXCLUDED_SERVICES = new Set([
   'defuddle',
   'reverb'
 ])
+
+export const STT_DIARIZATION_GROUP_BY_SERVICE = new Map<string, SttDiarizationGroup>([
+  ['assemblyai', 'diarization'],
+  ['aws', 'diarization'],
+  ['deepgram', 'diarization'],
+  ['elevenlabs', 'diarization'],
+  ['gcloud', 'diarization'],
+  ['gladia', 'diarization'],
+  ['grok', 'diarization'],
+  ['happyscribe', 'diarization'],
+  ['mistral', 'diarization'],
+  ['rev', 'diarization'],
+  ['reverb', 'diarization'],
+  ['soniox', 'diarization'],
+  ['speechmatics', 'diarization'],
+  ['deapi', 'nonDiarization'],
+  ['deepinfra', 'nonDiarization'],
+  ['gemini-stt', 'nonDiarization'],
+  ['glm-stt', 'nonDiarization'],
+  ['groq', 'nonDiarization'],
+  ['openai-stt', 'nonDiarization'],
+  ['scrapecreators', 'nonDiarization'],
+  ['supadata', 'nonDiarization'],
+  ['together', 'nonDiarization'],
+  ['whisper', 'nonDiarization'],
+  ['youtube-captions', 'nonDiarization']
+] as const)
 
 export const QUALITY_STEPS = new Set<StepKey>(['documentOcr', 'urlExtraction', 'transcription'])
 

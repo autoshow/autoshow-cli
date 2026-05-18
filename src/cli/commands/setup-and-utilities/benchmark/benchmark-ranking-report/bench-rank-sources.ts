@@ -6,11 +6,13 @@ import {
   QUALITY_STEPS,
   RAW_BENCHMARKS_DIR,
   RAW_STEP_BY_TYPE,
-  RESULTS_DIR
+  RESULTS_DIR,
+  STT_DIARIZATION_GROUP_BY_SERVICE
 } from './bench-rank-config'
 import {
   firstPathSegment,
   getArray,
+  getBoolean,
   getNestedNumber,
   getNumber,
   getObject,
@@ -29,12 +31,14 @@ import type {
   RawReportFile,
   ReportStats,
   SourceSample,
+  SttDiarizationGroup,
   StepKey
 } from './bench-rank-types'
 
 export const createStats = (): ReportStats => ({
   indexFiles: 0,
   benchmarkDashboardsSkipped: 0,
+  benchmarkDashboardsWithoutDocsRaw: 0,
   dashboardReportsRead: 0,
   rawReportsRead: 0,
   totalRowsSeen: 0,
@@ -54,6 +58,11 @@ export const createStats = (): ReportStats => ({
 const serviceFromKey = (key: string): string => {
   const service = key.split('/')[0]
   return (service ?? key).trim().toLowerCase()
+}
+
+const sttDiarizationGroupFromService = (key: string): SttDiarizationGroup | undefined => {
+  const group = STT_DIARIZATION_GROUP_BY_SERVICE.get(serviceFromKey(key))
+  return group
 }
 
 export const isExcludedService = (keyOrService: string): boolean =>
@@ -148,10 +157,19 @@ const rawSpeedMs = (provider: JsonObject): number | undefined =>
 const rawQualityScore = (provider: JsonObject, rawType: string): number | undefined => {
   if (rawType === 'url') {
     const accuracyScore = getNumber(provider, 'accuracyScore')
-    if (accuracyScore === undefined) {
-      return undefined
+    if (accuracyScore !== undefined) {
+      return accuracyScore <= 1 ? accuracyScore * 100 : accuracyScore
     }
-    return accuracyScore <= 1 ? accuracyScore * 100 : accuracyScore
+
+    const metrics = getObject(provider, 'metrics')
+    const wer = metrics ? getNumber(metrics, 'wer') : undefined
+    const cer = metrics ? getNumber(metrics, 'cer') : undefined
+    const contentCoverage = metrics ? getNumber(metrics, 'contentCoverage') : undefined
+    if (wer !== undefined && cer !== undefined && contentCoverage !== undefined) {
+      return Math.max(0, Math.min(100, ((1 - wer) * 0.5 + (1 - cer) * 0.25 + contentCoverage * 0.25) * 100))
+    }
+
+    return undefined
   }
 
   if (rawType === 'tts') {
@@ -173,12 +191,38 @@ const rawQualityMetric = (rawType: string): string | undefined => {
   return QUALITY_METRIC_BY_RAW_TYPE.get(rawType)
 }
 
+const rawSttDiarizationGroup = (provider: JsonObject, key: string): SttDiarizationGroup | undefined => {
+  const supportsDiarization = getBoolean(provider, 'supportsDiarization')
+  if (supportsDiarization !== undefined) {
+    return supportsDiarization ? 'diarization' : 'nonDiarization'
+  }
+
+  const diarizationSupport = getString(provider, 'diarizationSupport')?.toLowerCase()
+  if (diarizationSupport === 'supported') {
+    return 'diarization'
+  }
+  if (diarizationSupport === 'not-supported') {
+    return 'nonDiarization'
+  }
+
+  return sttDiarizationGroupFromService(key)
+}
+
 const providerRowsFromRawReport = (json: unknown, rawType: string): JsonObject[] => {
   if (!isObject(json)) {
     return []
   }
 
+  const providerGroups = getObject(json, 'providerGroups')
+  const providerGroupRows = providerGroups
+    ? Object.values(providerGroups).filter(isObject).flatMap((group) => getObjectArray(group, 'providers'))
+    : []
+
   if (rawType === 'tts') {
+    if (providerGroupRows.length > 0) {
+      return providerGroupRows
+    }
+
     const local = getObject(json, 'local')
     const cloud = getObject(json, 'cloud')
     return [
@@ -198,6 +242,10 @@ const providerRowsFromRawReport = (json: unknown, rawType: string): JsonObject[]
   const providers = getObjectArray(json, 'providers')
   if (providers.length > 0) {
     return providers
+  }
+
+  if (providerGroupRows.length > 0) {
+    return providerGroupRows
   }
 
   return getArray(json, 'overall').filter(isObject)
@@ -252,7 +300,8 @@ const aggregateSample = (
       qualityValues: [],
       qualityMetrics: new Set(),
       sources: new Set(),
-      sourceKinds: new Set()
+      sourceKinds: new Set(),
+      sttDiarizationGroups: new Set()
     }
     stepAggregates.set(sample.key, aggregate)
   }
@@ -268,6 +317,9 @@ const aggregateSample = (
   }
   if (sample.qualityMetric !== undefined) {
     aggregate.qualityMetrics.add(sample.qualityMetric)
+  }
+  if (sample.sttDiarizationGroup !== undefined) {
+    aggregate.sttDiarizationGroups.add(sample.sttDiarizationGroup)
   }
 
   aggregate.sources.add(sample.sourcePath)
@@ -323,6 +375,13 @@ export const processRawReport = async (
       key,
       sourcePath: report.relPath,
       sourceKind: 'raw'
+    }
+
+    if (step === 'transcription') {
+      const sttDiarizationGroup = rawSttDiarizationGroup(provider, key)
+      if (sttDiarizationGroup !== undefined) {
+        sample.sttDiarizationGroup = sttDiarizationGroup
+      }
     }
 
     const { priceUsd, usedEstimateFallback } = resolveRawCostUsd(provider, estimatedCostCentsByKey)
@@ -389,6 +448,13 @@ export const processDashboardReport = async (
       key,
       sourcePath: report.relPath,
       sourceKind: 'dashboard'
+    }
+
+    if (step === 'transcription') {
+      const sttDiarizationGroup = sttDiarizationGroupFromService(key)
+      if (sttDiarizationGroup !== undefined) {
+        sample.sttDiarizationGroup = sttDiarizationGroup
+      }
     }
 
     const priceUsd = dashboardCostUsd(test)
@@ -466,7 +532,7 @@ export const reconcileRawReports = (rawReports: RawReportFile[], stats: ReportSt
 
   for (const runId of benchmarkRunIds) {
     if (!rawRunIds.has(runId)) {
-      throw new Error(`Benchmark dashboard ${runId} does not have a matching raw comparison report`)
+      stats.benchmarkDashboardsWithoutDocsRaw++
     }
   }
 }

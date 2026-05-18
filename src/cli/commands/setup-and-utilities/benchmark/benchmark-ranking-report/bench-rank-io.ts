@@ -29,6 +29,11 @@ export const getNumber = (object: JsonObject, key: string): number | undefined =
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+export const getBoolean = (object: JsonObject, key: string): boolean | undefined => {
+  const value = object[key]
+  return typeof value === 'boolean' ? value : undefined
+}
+
 export const getNestedNumber = (object: JsonObject | undefined, key: string): number | undefined =>
   object ? getNumber(object, key) : undefined
 

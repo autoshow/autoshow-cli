@@ -2,6 +2,8 @@ export type JsonObject = Record<string, unknown>
 
 export type SourceKind = 'raw' | 'dashboard'
 
+export type SttDiarizationGroup = 'diarization' | 'nonDiarization'
+
 export type StepKey =
   | 'download'
   | 'documentOcr'
@@ -28,6 +30,7 @@ export interface SourceSample {
   speedMs?: number
   qualityScore?: number
   qualityMetric?: string
+  sttDiarizationGroup?: SttDiarizationGroup
 }
 
 export interface ProviderAggregate {
@@ -38,6 +41,7 @@ export interface ProviderAggregate {
   qualityMetrics: Set<string>
   sources: Set<string>
   sourceKinds: Set<SourceKind>
+  sttDiarizationGroups: Set<SttDiarizationGroup>
 }
 
 export interface DashboardFile {
@@ -85,6 +89,7 @@ export interface TopBenchmarkPickSelection {
 export interface ReportStats {
   indexFiles: number
   benchmarkDashboardsSkipped: number
+  benchmarkDashboardsWithoutDocsRaw: number
   dashboardReportsRead: number
   rawReportsRead: number
   totalRowsSeen: number
