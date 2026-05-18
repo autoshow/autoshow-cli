@@ -3,6 +3,16 @@
     "description": "Google Gemini image generation",
     "type": "api",
     "models": {
+      "gemini-3.1-flash-image-preview": {
+        "description": "Gemini 3.1 Flash Image Preview — native multimodal image generation and editing",
+        "costPerImageUSD": 0.067,
+        "costPerImageCents": 6.7,
+        "nativeGeminiImage": true,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 12000
+        }
+      },
       "imagen-4.0-generate-001": {
         "description": "Imagen 4.0 — dedicated image generation",
         "costPerImageUSD": 0.04,
@@ -102,10 +112,19 @@
     "description": "xAI Grok image generation",
     "type": "api",
     "models": {
+      "grok-imagine-image-quality": {
+        "description": "Grok Imagine Image Quality — higher-fidelity image generation and editing",
+        "costPerImageUSD": 0.05,
+        "costPerImageCents": 5,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 12000
+        }
+      },
       "grok-imagine-image": {
         "description": "Grok Imagine text-to-image generation",
-        "costPerImageUSD": 0.07,
-        "costPerImageCents": 7,
+        "costPerImageUSD": 0.02,
+        "costPerImageCents": 2,
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 7896

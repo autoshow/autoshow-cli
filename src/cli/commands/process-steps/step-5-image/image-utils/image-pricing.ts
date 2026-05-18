@@ -94,7 +94,7 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
 
   for (const rawModel of geminiModels) {
     const model = validateGeminiImageModel(rawModel)
-    const imageCount = isNativeGeminiImageModel(model) ? 1 : Math.max(1, options.imagenCount ?? 1)
+    const imageCount = isNativeGeminiImageModel(model) ? 1 : Math.max(1, options.imageCount ?? 1)
     const costPerImageCents = getImageCost('gemini', model) || 4
     estimates.push({
       provider: 'gemini',
@@ -109,12 +109,13 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   for (const rawModel of openaiModels) {
     const model = validateOpenAIImageModel(rawModel)
     const { costPerImageCents, note } = estimateOpenAIImageCost(model, options)
+    const imageCount = Math.max(1, options.imageCount ?? 1)
     estimates.push({
       provider: 'openai',
       model,
-      imageCount: 1,
+      imageCount,
       costPerImageCents,
-      totalCost: costPerImageCents,
+      totalCost: costPerImageCents * imageCount,
       note
     })
   }
@@ -148,12 +149,13 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   for (const rawModel of grokModels) {
     const model = validateGrokImageModel(rawModel)
     const costPerImageCents = getImageCost('grok', model)
+    const imageCount = Math.max(1, options.imageCount ?? 1)
     estimates.push({
       provider: 'grok',
       model,
-      imageCount: 1,
+      imageCount,
       costPerImageCents,
-      totalCost: costPerImageCents,
+      totalCost: costPerImageCents * imageCount,
       note: 'Approximate cost; xAI publishes flat per-image billing and exact account pricing may vary'
     })
   }

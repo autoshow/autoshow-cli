@@ -49,6 +49,7 @@ export type GeminiGenerateContentResponse = {
       parts?: GeminiPart[] | undefined
       [key: string]: unknown
     } | undefined
+    groundingMetadata?: unknown
     [key: string]: unknown
   }> | undefined
   usageMetadata?: GeminiGenerateContentUsageMetadata | undefined
@@ -288,6 +289,7 @@ export const geminiGenerateContent = async (
     model: string
     contents: string | GeminiPart | GeminiContent | Array<string | GeminiPart | GeminiContent>
     generationConfig?: Record<string, unknown> | undefined
+    tools?: unknown[] | undefined
     systemInstruction?: string | GeminiContent | undefined
     abortSignal?: AbortSignal | undefined
   }
@@ -297,6 +299,9 @@ export const geminiGenerateContent = async (
   }
   if (params.generationConfig) {
     body['generationConfig'] = params.generationConfig
+  }
+  if (params.tools) {
+    body['tools'] = params.tools
   }
   if (params.systemInstruction) {
     body['systemInstruction'] = typeof params.systemInstruction === 'string'
@@ -323,6 +328,7 @@ export const geminiGenerateImages = async (
     numberOfImages: number
     aspectRatio?: string | undefined
     imageSize?: string | undefined
+    personGeneration?: string | undefined
   }
 ): Promise<GeminiGenerateImagesResponse> => {
   const body: Record<string, unknown> = {
@@ -330,7 +336,8 @@ export const geminiGenerateImages = async (
     parameters: {
       sampleCount: params.numberOfImages,
       ...(params.aspectRatio ? { aspectRatio: params.aspectRatio } : {}),
-      ...(params.imageSize ? { sampleImageSize: params.imageSize } : {})
+      ...(params.imageSize ? { sampleImageSize: params.imageSize } : {}),
+      ...(params.personGeneration ? { personGeneration: params.personGeneration } : {})
     }
   }
   const modelPath = normalizeGeminiModelPath(params.model)

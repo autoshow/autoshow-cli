@@ -4,11 +4,13 @@ import type { BuildOptsDefaults, OutputFormat, RuntimeOptions } from '~/types'
 import {
   parseFloatWithDefault,
   parseIntWithDefault,
+  parseOptionalNumberFlag,
   parseOptionalPositiveIntFlag,
   parsePdfChapterMode,
   readBatchOrder,
   readBooleanFlag,
   readOptionalStringFlag,
+  readOptionalStringListFlag,
   readStringFlag
 } from '../options/flag-readers'
 import { parseRepeatableModelFlagOccurrences, readAllShortcutFlags, resolveStep2SelectionOrigins } from '../options/model-flag-selection'
@@ -358,12 +360,17 @@ export const buildOptsFromFlags = (
     imageQuality: readOptionalStringFlag(mergedFlags, 'image-quality'),
     imageFormat: readOptionalStringFlag(mergedFlags, 'image-format'),
     imageBackground: readOptionalStringFlag(mergedFlags, 'image-background'),
-    imagenCount: (() => {
-      const v = readOptionalStringFlag(mergedFlags, 'imagen-count')
-      if (v === undefined) return undefined
-      const n = parseInt(v, 10)
-      return Number.isFinite(n) ? n : undefined
-    })(),
+    imageCount: parseOptionalPositiveIntFlag(readOptionalStringFlag(mergedFlags, 'image-count'), 'image-count'),
+    imageInputs: readOptionalStringListFlag(mergedFlags, 'image-input'),
+    imageMask: readOptionalStringFlag(mergedFlags, 'image-mask'),
+    imageResponseMode: readOptionalStringFlag(mergedFlags, 'image-response-mode'),
+    geminiPersonGeneration: readOptionalStringFlag(mergedFlags, 'gemini-person-generation'),
+    geminiSearchGrounding: readBooleanFlag(mergedFlags, 'gemini-search-grounding') ? true : undefined,
+    imageCompression: parseOptionalNumberFlag(readOptionalStringFlag(mergedFlags, 'image-compression'), 'image-compression', {
+      min: 0,
+      max: 100,
+      integer: true
+    }),
     elevenlabsMusicModels,
     elevenlabsMusicModel,
     minimaxMusicModels,

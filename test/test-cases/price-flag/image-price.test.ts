@@ -1,4 +1,6 @@
 import { expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
 import { defineImageServicePriceTests } from '../../test-utils/define-image-service-test'
 import { runCommand } from '../../test-utils/test-helpers'
 
@@ -15,7 +17,7 @@ defineImageServicePriceTests({
   models: [
     { model: 'imagen-4.0-ultra-generate-001', prompt: 'a simple green square on white background' },
     { model: 'imagen-4.0-fast-generate-001', prompt: 'a simple yellow star on white background' },
-    { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--imagen-count', '1', '--image-aspect-ratio', '1:1'] },
+    { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--image-count', '1', '--image-aspect-ratio', '1:1'] },
   ],
   cliFlag: '--gemini-image',
   imageService: 'gemini',
@@ -119,7 +121,7 @@ test('--price allows multiple image providers and reports each image step', asyn
 
 test('--price allows Gemini with another image provider', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1.5', '--imagen-count', '2', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1.5', '--image-count', '2', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
@@ -129,4 +131,28 @@ test('--price allows Gemini with another image provider', async () => {
   expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001.png')
   expect(output).toContain('generated-image-gemini-imagen-4.0-generate-001-2.png')
   expect(output).toContain('generated-image-openai-gpt-image-1.5.png')
+})
+
+test('image --out in price mode reports explicit output directory without creating it', async () => {
+  const outputDir = 'output/test-image'
+  const existedBefore = existsSync(outputDir)
+
+  try {
+    expect(existedBefore).toBe(false)
+
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'image', 'a sunset over a lake', '--openai', 'gpt-image-1.5', '--out', outputDir, '--price'],
+    )
+    const output = `${result.stdout}\n${result.stderr}`
+
+    expect(result.exitCode).toBe(0)
+    expect(result.outputDir).toBeNull()
+    expect(output).toContain('Expected files')
+    expect(output).toContain('output/test-image/')
+    expect(existsSync(outputDir)).toBe(false)
+  } finally {
+    if (!existedBefore) {
+      await rm(outputDir, { recursive: true, force: true })
+    }
+  }
 })

@@ -99,7 +99,6 @@ export type ProviderRunStateBase<TService, TError> = {
   artifactDir: string
   status: 'succeeded' | 'missing' | 'failed' | 'skipped'
   attempts: number
-  retryable?: boolean | undefined
   lastError?: TError | undefined
 }
 

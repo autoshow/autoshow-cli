@@ -111,11 +111,12 @@ bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice
 # text-to-speech with deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
-# image generation
-bun as image "a sunset over mountains" --gemini imagen-4.0-fast-generate-001
+# image generation, then edit the generated image
+bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
+bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 
-# image generation with OpenAI GPT Image 2 low quality
-bun as image "a product sketch of a travel mug" --openai gpt-image-2 --image-size 1024x1024 --image-quality low
+# image reference with native Gemini
+bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png
 
 # image generation with deAPI
 bun as image "a sunset over mountains" --deapi Flux1schnell --image-size 768x768
@@ -145,8 +146,7 @@ bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-previ
 ## Command Map
 
 - `metadata`: [metadata](./commands/setup-and-utilities/metadata/metadata.md)
-- `setup` / model pre-downloads / sample fixtures: [setup](./commands/process-steps/step-0-setup/setup.md)
-- `sample fixtures`: [setup --sample](./commands/setup-and-utilities/sample/sample.md)
+- `setup` / model pre-downloads: [setup](./commands/process-steps/step-0-setup/setup.md)
 - `cache`: [cache](./commands/setup-and-utilities/cache/cache.md)
 - `sock`: [sock](./commands/setup-and-utilities/sock/sock.md)
 - `download`: [download](./commands/process-steps/step-1-download/download-file.md)

@@ -5,16 +5,13 @@ import { runCompleteSetup, runSetupStep } from './run-complete-setup'
 import { runDoctor } from './run-doctor'
 import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 import { setupGcloudStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
-import { runSampleFixtures } from '~/cli/commands/setup-and-utilities/sample/run-sample-fixtures'
 import { runModelDownloads } from '~/cli/commands/setup-and-utilities/models/run-model-downloads'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 import type { SetupStepId } from '~/types'
 
-const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'defuddle', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'video', 'music', 'sample']
-const SAMPLE_ONLY_FLAGS = ['--out', '--refresh', '--verify-only', '--valid-only'] as const
+const VALID_SETUP_STEPS: SetupStepId[] = ['uv', 'yt-dlp', 'defuddle', 'whisper-binary', 'whisper-model', 'llama-binary', 'reverb', 'calibre', 'all', 'transcription', 'write', 'tts', 'image', 'video', 'music']
 const FOCUSED_SETUP_CONFLICT_FLAGS = [
-  '--sample',
   '--models',
   '--gcloud',
   '--gcloud-project',
@@ -62,7 +59,6 @@ export const setupCommand = defineCliCommand({
       ['bun as setup --aws', 'Check AWS CLI auth/config for Amazon Transcribe and Textract staging'],
       ['bun as setup --aws --aws-create-bucket', 'Create a shared S3 staging bucket for Amazon Transcribe and Textract'],
       ['bun as setup --gcloud --aws', 'Check and save Google Cloud and AWS setup values'],
-      ['bun as setup --sample --verify-only', 'Validate deterministic sample fixtures without regenerating'],
       ['bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF', 'Download Whisper and llama.cpp models without running inference'],
       ['bun as setup --doctor', 'Check prerequisites without installing'],
       ['bun as setup --step defuddle', 'Install the managed Defuddle CLI'],
@@ -76,10 +72,8 @@ export const setupCommand = defineCliCommand({
   const gcloudProjectName = typeof ctx.flags['gcloud-project-name'] === 'string' ? ctx.flags['gcloud-project-name'] : undefined
   const gcloudOrganization = typeof ctx.flags['gcloud-organization'] === 'string' ? ctx.flags['gcloud-organization'] : undefined
   const gcloudFolder = typeof ctx.flags['gcloud-folder'] === 'string' ? ctx.flags['gcloud-folder'] : undefined
-  const sampleMode = ctx.flags.sample === true
   const usedModelsFlag = hasLongFlag(rawArgv, '--models')
   const modelTargets = normalizeStringArrayFlag(ctx.flags.models)
-  const usedSampleOnlyFlags = getUsedLongFlags(rawArgv, SAMPLE_ONLY_FLAGS)
   const configPathOverride = typeof ctx.flags['config-path'] === 'string' ? ctx.flags['config-path'] : undefined
 
   const gcloudSpecificFlags: string[] = []
@@ -134,14 +128,11 @@ export const setupCommand = defineCliCommand({
   if (!ctx.flags.aws && awsSpecificFlags.length > 0) {
     throw CLIUsageError(`${awsSpecificFlags.join(', ')} require --aws`)
   }
-  if (!sampleMode && usedSampleOnlyFlags.length > 0) {
-    throw CLIUsageError(`${usedSampleOnlyFlags.join(', ')} require --sample`)
-  }
   if (usedModelsFlag && modelTargets.length === 0) {
     throw CLIUsageError('--models requires at least one value')
   }
-  if (sampleMode || usedModelsFlag) {
-    const modeFlag = sampleMode ? '--sample' : '--models'
+  if (usedModelsFlag) {
+    const modeFlag = '--models'
     const conflicts = getUsedLongFlags(
       rawArgv,
       FOCUSED_SETUP_CONFLICT_FLAGS.filter((flag) => flag !== modeFlag)
@@ -199,18 +190,6 @@ export const setupCommand = defineCliCommand({
           configPathOverride
         })
       }
-    })
-    return
-  }
-
-  if (sampleMode) {
-    await runWithLogContext({ step: 'setup' }, async () => {
-      await runSampleFixtures({
-        out: ctx.flags.out as string,
-        refresh: ctx.flags.refresh as boolean,
-        verifyOnly: ctx.flags['verify-only'] as boolean,
-        validOnly: ctx.flags['valid-only'] as boolean
-      })
     })
     return
   }

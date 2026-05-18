@@ -234,7 +234,7 @@ describe('price mode contracts', () => {
       'gpt-5.4',
       '--groq',
       'openai/gpt-oss-20b',
-      '--kitten',
+      '--kitten-tts',
       'kitten-tts-mini',
       '--price',
       '--json'
@@ -636,7 +636,8 @@ describe('price mode contracts', () => {
         imageHeight: 1024,
         imageSize: '1024x1024',
         imageQuality: 'low',
-        imageFormat: 'png'
+        imageFormat: 'png',
+        requestMode: 'generation'
       }
     })
 

@@ -221,7 +221,7 @@ export const mergeConfigIntoRawFlags = (
     inject('image-quality', d.post.image.imageQuality)
     inject('image-format', d.post.image.imageFormat)
     inject('image-background', d.post.image.imageBackground)
-    inject('imagen-count', d.post.image.imagenCount)
+    inject('image-count', d.post.image.imageCount)
     inject('image-provider-concurrency', d.post.image.providerConcurrency)
     inject('image-local-concurrency', d.post.image.localConcurrency)
   }
@@ -422,7 +422,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'image-quality':     ['defaults', 'post', 'image', 'imageQuality'],
   'image-format':      ['defaults', 'post', 'image', 'imageFormat'],
   'image-background':  ['defaults', 'post', 'image', 'imageBackground'],
-  'imagen-count':      ['defaults', 'post', 'image', 'imagenCount'],
+  'image-count':       ['defaults', 'post', 'image', 'imageCount'],
   'image-provider-concurrency': ['defaults', 'post', 'image', 'providerConcurrency'],
   'image-local-concurrency': ['defaults', 'post', 'image', 'localConcurrency'],
   'gemini-video':      ['defaults', 'post', 'video', 'geminiVideo'],
@@ -513,7 +513,7 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
   }
   if (typeof rawValue !== 'string') return rawValue
   const numericFlags = new Set([
-    'speaker-count', 'reverb-verbatimicity', 'imagen-count', 'video-duration',
+    'speaker-count', 'reverb-verbatimicity', 'image-count', 'video-duration',
     'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'length', 'batch-limit', 'batch-concurrency',
     'max-cents',
     'llm-provider-concurrency', 'llm-local-concurrency',

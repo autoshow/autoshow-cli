@@ -1,19 +1,18 @@
-import * as l from '~/utils/logger'
 import type { GrokImageModel, Step5Metadata } from '~/types'
+import * as l from '~/utils/logger'
 import { CLIUsageError } from '~/utils/error-handler'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
-import { createOpenAIImage } from '~/utils/openai/client'
+import { createOpenAIImage, openAIJsonRequest, type OpenAIImageResponse } from '~/utils/openai/client'
+import { imageReferenceToDataUrl, isHttpUrl } from '../../image-utils/image-inputs'
+import {
+  getFirstRevisedPrompt,
+  getImageFileNames,
+  getProviderReturnedModel,
+  writeOpenAIImageResponseData
+} from '../../image-utils/image-output'
 
 const XAI_BASE_URL = 'https://api.x.ai/v1'
-
-const mimeToExtension = (mimeType: string | null | undefined): string => {
-  const normalized = mimeType?.toLowerCase()
-  if (normalized === 'image/jpeg' || normalized === 'image/jpg') return 'jpg'
-  if (normalized === 'image/webp') return 'webp'
-  if (normalized === 'image/png') return 'png'
-  return 'png'
-}
 
 export const normalizeGrokImageResolution = (size: string | undefined): string | undefined => {
   if (size === undefined || size.length === 0) return undefined
@@ -27,9 +26,11 @@ export const runGrokImageGen = async (
   outputDir: string,
   options: {
     model: GrokImageModel
+    mode?: 'generation' | 'edit' | undefined
+    inputs?: string[] | undefined
+    count?: number | undefined
     aspectRatio?: string | undefined
     imageSize?: string | undefined
-    quality?: string | undefined
   }
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
   const apiKey = readEnv('XAI_API_KEY')
@@ -38,37 +39,59 @@ export const runGrokImageGen = async (
   }
 
   const resolution = normalizeGrokImageResolution(options.imageSize)
+  const mode = options.mode ?? 'generation'
+  const count = Math.max(1, options.count ?? 1)
   const startTime = Date.now()
 
   logMediaGenerationStatus(l, {
     mediaType: 'image',
     provider: 'grok',
     model: options.model,
-    status: 'started'
+    status: 'started',
+    detail: mode
   })
 
-  const result = await createOpenAIImage({ apiKey, baseURL: XAI_BASE_URL }, {
-    model: options.model,
-    prompt,
-    response_format: 'b64_json',
-    ...(options.quality ? { quality: options.quality } : {}),
-    ...(options.aspectRatio ? { aspect_ratio: options.aspectRatio } : {}),
-    ...(resolution ? { resolution } : {})
-  }, { errorMessagePrefix: 'Grok image generation failed' })
+  const clientConfig = { apiKey, baseURL: XAI_BASE_URL }
+  const result = mode === 'edit'
+    ? await (async () => {
+        const imageRefs = await Promise.all((options.inputs ?? []).map(async (input) => ({
+          type: 'image_url',
+          url: isHttpUrl(input) ? input : await imageReferenceToDataUrl(input)
+        })))
+        const body = {
+          model: options.model,
+          prompt,
+          response_format: 'b64_json',
+          n: count,
+          ...(imageRefs.length === 1 ? { image: imageRefs[0] } : { images: imageRefs }),
+          ...(options.aspectRatio ? { aspect_ratio: options.aspectRatio } : {}),
+          ...(resolution ? { resolution } : {})
+        }
+        return await openAIJsonRequest<OpenAIImageResponse>(clientConfig, '/images/edits', body, {
+          errorMessagePrefix: 'Grok image edit failed'
+        })
+      })()
+    : await createOpenAIImage(clientConfig, {
+        model: options.model,
+        prompt,
+        response_format: 'b64_json',
+        n: count,
+        ...(options.aspectRatio ? { aspect_ratio: options.aspectRatio } : {}),
+        ...(resolution ? { resolution } : {})
+      }, { errorMessagePrefix: 'Grok image generation failed' })
 
-  const imageBase64 = result.data?.[0]?.b64_json
-  if (!imageBase64) {
+  const imagePaths = await writeOpenAIImageResponseData(result, outputDir, 'jpg')
+  if (imagePaths.length === 0) {
     throw new Error('No image data in Grok response')
   }
 
-  const mimeType = result.data?.[0]?.mime_type
-  const ext = mimeToExtension(mimeType)
-  const fileName = `generated-image.${ext}`
-  const outputPath = `${outputDir}/${fileName}`
-  await Bun.write(outputPath, Buffer.from(imageBase64, 'base64'))
-
   const processingTime = Date.now() - startTime
-  const imageFile = Bun.file(outputPath)
+  const imageFile = Bun.file(imagePaths[0] as string)
+  const usageCostRaw = typeof result.usage?.['cost_in_usd_ticks'] === 'number'
+    ? result.usage['cost_in_usd_ticks']
+    : undefined
+  const providerCostCents = usageCostRaw !== undefined ? usageCostRaw / 100_000_000 : undefined
+  const moderation = result.data?.[0]?.['respect_moderation'] ?? result['respect_moderation']
 
   logMediaGenerationStatus(l, {
     mediaType: 'image',
@@ -76,20 +99,26 @@ export const runGrokImageGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: imagePaths.length
   })
 
   return {
-    imagePaths: [outputPath],
+    imagePaths,
     metadata: {
       imageService: 'grok',
       imageModel: options.model,
       processingTime,
-      imageCount: 1,
-      imageFileNames: [fileName],
+      imageCount: imagePaths.length,
+      imageFileNames: getImageFileNames(imagePaths),
       imageFileSize: imageFile.size,
       imageWidth: undefined,
-      imageHeight: undefined
+      imageHeight: undefined,
+      requestMode: mode,
+      ...(getFirstRevisedPrompt(result) ? { revisedPrompt: getFirstRevisedPrompt(result) } : {}),
+      ...(getProviderReturnedModel(options.model, result) ? { providerReturnedModel: getProviderReturnedModel(options.model, result) } : {}),
+      ...(usageCostRaw !== undefined ? { usageCostRaw } : {}),
+      ...(providerCostCents !== undefined ? { providerCostCents, providerCostSource: 'provider_usage' as const } : {}),
+      ...(moderation !== undefined ? { providerModeration: moderation } : {})
     }
   }
 }

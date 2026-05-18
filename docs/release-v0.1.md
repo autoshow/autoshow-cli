@@ -222,7 +222,6 @@ bun as setup
 bun as setup --gcloud
 bun as setup --aws
 bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF
-bun as setup --sample --verify-only
 ```
 
 Most artifact-producing runs write a timestamped directory under `output/`.

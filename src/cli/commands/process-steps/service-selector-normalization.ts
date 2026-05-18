@@ -61,6 +61,34 @@ export const normalizeCommandSelectorFlags = (
   }
 }
 
+export const normalizeCommandSelectorArgs = (
+  argv: string[],
+  publicNameByInternalName: SelectorFlagMap
+): string[] => {
+  const internalNameByPublicName = new Map(
+    Object.entries(publicNameByInternalName).map(([internalName, publicName]) => [publicName, internalName])
+  )
+
+  return argv.map((arg) => {
+    if (!arg.startsWith('--') || arg === '--') {
+      return arg
+    }
+
+    const raw = arg.slice(2)
+    const eqIndex = raw.indexOf('=')
+    const name = eqIndex === -1 ? raw : raw.slice(0, eqIndex)
+    const internalName = internalNameByPublicName.get(name)
+    if (!internalName) {
+      return arg
+    }
+
+    if (eqIndex === -1) {
+      return `--${internalName}`
+    }
+    return `--${internalName}=${raw.slice(eqIndex + 1)}`
+  })
+}
+
 export type ExtractSelectorInputRoutes = {
   media: boolean
   document: boolean

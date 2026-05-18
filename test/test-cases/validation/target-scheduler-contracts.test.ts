@@ -23,7 +23,8 @@ const imageMetadata = (target: ImageTarget, fileName: string): Step5Metadata => 
   imageCount: 1,
   imageFileSize: 0,
   imageWidth: undefined,
-  imageHeight: undefined
+  imageHeight: undefined,
+  requestMode: 'generation'
 })
 
 describe('target scheduler contracts', () => {
@@ -140,7 +141,13 @@ describe('target scheduler contracts', () => {
           imageQuality: undefined,
           imageFormat: undefined,
           imageBackground: undefined,
-          imagenCount: undefined,
+          imageCount: undefined,
+          imageInputs: undefined,
+          imageMask: undefined,
+          imageResponseMode: undefined,
+          geminiPersonGeneration: undefined,
+          geminiSearchGrounding: undefined,
+          imageCompression: undefined,
           imageProviderConcurrency: 2,
           imageLocalConcurrency: 1
         }

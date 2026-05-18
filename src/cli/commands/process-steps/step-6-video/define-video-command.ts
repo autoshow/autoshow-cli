@@ -4,14 +4,14 @@ import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
-import { normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
+import { normalizeCommandSelectorArgs, normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { runVideoGen } from './run-video-gen'
 import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } from './video-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
+import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExpectedOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 
@@ -37,7 +37,8 @@ export const videoCommand = defineCliCommand({
   const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const normalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, VIDEO_COMMAND_SELECTOR_FLAGS)
-  const videoOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, Bun.argv.slice(2))
+  const normalizedArgs = normalizeCommandSelectorArgs(Bun.argv.slice(2), VIDEO_COMMAND_SELECTOR_FLAGS)
+  const videoOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, normalizedArgs)
   const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
     throw CLIUsageError('Specify a video generation provider: --gemini <model>, --minimax <model>, --glm <model>, --grok <model>, --runway <model>, or --deapi <model>')
@@ -46,14 +47,14 @@ export const videoCommand = defineCliCommand({
   const { shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)
   if (videoShouldExit) {
     const singleTarget = videoTargets.length === 1
-    l.report.expectedOutput('./output/<timestamp>_video-gen/', [
+    l.report.expectedOutput(getGenerationExpectedOutputDir(flags as Record<string, unknown>, './output/<timestamp>_video-gen/'), [
       ...videoTargets.map((t) => getVideoArtifactFileName(t, singleTarget)),
       'run.json'
     ])
     return
   }
 
-  const outputDir = await createGenerationOutputDir('video-gen')
+  const outputDir = await createGenerationOutputDir('video-gen', flags as Record<string, unknown>)
 
   const { metadata } = await runWithLogContext({ step: 'step-6-video' }, async () =>
     await runVideoGen(prompt, outputDir, videoOpts)

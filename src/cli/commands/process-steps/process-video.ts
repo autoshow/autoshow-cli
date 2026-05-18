@@ -269,7 +269,6 @@ export const processVideo = async (
               service: failure.service,
               model: failure.model,
               message: failure.message,
-              retryable: failure.retryable,
               skipped: true,
               ...(failure.stage ? { stage: failure.stage } : {}),
               ...(typeof failure.status === 'number' ? { status: failure.status } : {})
@@ -585,10 +584,8 @@ export const processVideo = async (
 	          artifactDir: target.service === YOUTUBE_CAPTIONS_SERVICE ? '.' : `providers/${getSttTargetDirectoryName(target)}`,
 	          status: failure.skipped === true ? 'skipped' : 'failed',
 	          attempts: 1,
-	          retryable: failure.retryable,
 	          lastError: {
 	            message: failure.message,
-	            retryable: failure.retryable,
 	            ...(failure.skipped === true ? { skipped: true } : {}),
 	            ...(failure.stage ? { stage: failure.stage } : {}),
 	            ...(typeof failure.status === 'number' ? { status: failure.status } : {})

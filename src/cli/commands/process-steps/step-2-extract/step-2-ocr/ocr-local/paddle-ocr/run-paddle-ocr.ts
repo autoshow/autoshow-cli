@@ -10,6 +10,7 @@ import { paddleOcrUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { stripAnsi } from '../../ocr-run-state'
 import { logPaddleOcrPrepare } from '../../ocr-logging'
+import { readImageDimensionsWithBun } from '../../ocr-utils/bun-image-utils'
 
 const SCRIPT_PATH = join(import.meta.dir, 'scripts/run-paddle-ocr.py')
 type PaddleModelProfile = 'auto' | 'mobile'
@@ -43,6 +44,9 @@ export const parsePaddleImageDimensions = (output: string): { width: number, hei
 
   return { width, height }
 }
+
+export const readPaddleImageDimensions = async (inputPath: string): Promise<{ width: number, height: number }> =>
+  await readImageDimensionsWithBun(inputPath)
 
 const signalNameForExitCode = (exitCode: number): string | undefined => {
   const signalNumber = exitCode - 128
@@ -105,25 +109,21 @@ export const buildPaddlePreparedImagePath = (
 }
 
 const preparePaddleImage = async (inputPath: string, workDir: string, maxImageSidePx: number): Promise<string> => {
-  if (!commandExists('identify') || !commandExists('convert')) {
-    l.warn('ImageMagick not found; using original image for PaddleOCR which may increase memory pressure')
+  if (!commandExists('convert')) {
+    l.warn('ImageMagick convert not found; using original image for PaddleOCR which may increase memory pressure')
     return inputPath
   }
 
-  const imageFramePath = `${inputPath}[0]`
-  const dimensionsResult = await exec('identify', ['-format', '%w %h', imageFramePath])
-  if (dimensionsResult.exitCode !== 0) {
+  let dimensions: { width: number, height: number }
+  try {
+    dimensions = await readPaddleImageDimensions(inputPath)
+  } catch (error) {
     logPaddleOcrPrepare(l, {
       status: 'inspect-failed',
       input: basename(inputPath),
       maxSide: maxImageSidePx,
-      detail: dimensionsResult.stderr || dimensionsResult.stdout || 'ImageMagick identify failed.'
+      detail: error instanceof Error ? error.message : String(error)
     })
-    return inputPath
-  }
-
-  const dimensions = parsePaddleImageDimensions(dimensionsResult.stdout)
-  if (!dimensions) {
     return inputPath
   }
 
@@ -134,6 +134,7 @@ const preparePaddleImage = async (inputPath: string, workDir: string, maxImageSi
   }
 
   const preparedPath = buildPaddlePreparedImagePath(inputPath, workDir, maxImageSidePx)
+  const imageFramePath = `${inputPath}[0]`
   const resize = `${maxImageSidePx}x${maxImageSidePx}>`
   const result = await exec('convert', [
     imageFramePath,

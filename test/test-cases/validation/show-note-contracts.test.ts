@@ -195,7 +195,8 @@ test('show notes render generated media assets with relative embeds and links', 
       imageCount: 1,
       imageFileSize: 100,
       imageWidth: 1024,
-      imageHeight: 1024
+      imageHeight: 1024,
+      requestMode: 'generation'
     }]
     const step6Metadata: Step6VideoMetadata[] = [{
       videoGenService: 'gemini',

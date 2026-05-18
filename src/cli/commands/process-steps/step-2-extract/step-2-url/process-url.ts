@@ -50,7 +50,6 @@ import {
 
 type UrlProviderError = {
   message: string
-  retryable?: boolean | undefined
 }
 
 type UrlProviderState = ProviderRunStateBase<HtmlArticleBackend, UrlProviderError>
@@ -329,8 +328,7 @@ const buildProviderStates = (
       status: outcome.status,
       attempts: outcome.status === 'skipped' ? 0 : 1,
       lastError: {
-        message: outcome.message,
-        retryable: false
+        message: outcome.message
       }
     }
   })

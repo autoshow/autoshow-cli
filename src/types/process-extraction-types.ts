@@ -202,6 +202,8 @@ export type ProcessDocumentOutput = {
     service: string
     model: string
     message: string
+    category?: string
+    errorFile?: string
   }> | undefined
   outputDir: string
 }

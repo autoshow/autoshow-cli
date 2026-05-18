@@ -95,6 +95,7 @@ bun as tts <input> [flags]
 | `--tts-provider-concurrency <n>` | Hosted TTS providers/models to run concurrently per item; default `2`, or up to `8` for `--all-tts` |
 | `--tts-local-concurrency <n>` | Local TTS providers to run concurrently per item; default `1` |
 | `--price` | Show the aggregated estimate and exit |
+| `--out <dir>` / `--output-dir <dir>` | Use an exact run directory instead of a timestamped output directory |
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file. Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider.
 
@@ -399,3 +400,4 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - Google Cloud Instant Custom Voice runs record `speaker: "instant-custom-voice"` and do not store the raw voice cloning key in `run.json`.
 - `run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.
 - Reference-audio runs store only `speaker: "ref_audio:<basename>"`; the full path and reference transcript are not written to `run.json`.
+- `--out` / `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.

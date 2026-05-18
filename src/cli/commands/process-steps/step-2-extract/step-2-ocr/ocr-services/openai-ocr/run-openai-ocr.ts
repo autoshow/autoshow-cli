@@ -9,6 +9,7 @@ import { createOpenAIResponse, extractOpenAIResponseText } from '~/utils/openai/
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
   'gpt-5.4',
+  'gpt-5.4-mini',
   'gpt-5.4-nano'
 ])
 
@@ -78,6 +79,15 @@ const buildSchemaGuidedPrompt = (expectedPageCount: number): string => [
   JSON.stringify(OPENAI_OCR_JSON_SCHEMA)
 ].join('\n\n')
 
+const buildSinglePageTextPrompt = (): string => [
+  'Perform OCR on the provided single page.',
+  'Return only the visible text from the page.',
+  'Do not summarize, explain, translate, or wrap the text in JSON.',
+  'Preserve the visible reading order.',
+  'Preserve paragraph breaks and line breaks when they are meaningful.',
+  'If the page is blank or unreadable, return an empty response.'
+].join(' ')
+
 const normalizePages = (
   value: unknown,
   expectedPageCount: number
@@ -131,6 +141,18 @@ const parseOcrResponse = (
   }
 }
 
+const parseSinglePageOcrResponse = (rawText: string): PageResult[] => {
+  try {
+    return parseOcrResponse(rawText, 1)
+  } catch {
+    return [{
+      pageNumber: 1,
+      method: 'ocr' as const,
+      text: rawText.trim()
+    }]
+  }
+}
+
 const createInputContent = async (
   filePath: string,
   step1Metadata: DocumentMetadata
@@ -161,6 +183,7 @@ const createRequestBody = async (
 ): Promise<Record<string, unknown>> => {
   const inputContent = await createInputContent(filePath, step1Metadata)
   const nativeStructured = supportsNativeStructuredOutput(model)
+  const singlePageText = expectedPageCount === 1
 
   const requestBody: Record<string, unknown> = {
     model,
@@ -169,7 +192,9 @@ const createRequestBody = async (
       content: [
         {
           type: 'input_text',
-          text: nativeStructured
+          text: singlePageText
+            ? buildSinglePageTextPrompt()
+            : nativeStructured
             ? buildOcrPrompt(expectedPageCount)
             : buildSchemaGuidedPrompt(expectedPageCount)
         },
@@ -178,7 +203,11 @@ const createRequestBody = async (
     }]
   }
 
-  if (nativeStructured) {
+  if (singlePageText) {
+    requestBody['text'] = {
+      verbosity: 'low'
+    }
+  } else if (nativeStructured) {
     requestBody['text'] = {
       verbosity: 'low',
       format: {
@@ -225,10 +254,25 @@ export const runOpenAIOcr = async (
 
     try {
       if (!rawText.trim()) {
+        if (expectedPageCount === 1) {
+          return {
+            pages: [{
+              pageNumber: 1,
+              method: 'ocr',
+              text: ''
+            }],
+            extractionMethod: 'openai-ocr',
+            totalPages: 1,
+            ...(typeof response.usage?.input_tokens === 'number' ? { promptTokens: response.usage.input_tokens } : {}),
+            ...(typeof response.usage?.output_tokens === 'number' ? { completionTokens: response.usage.output_tokens } : {})
+          }
+        }
         throw new Error('OpenAI OCR returned no text output.')
       }
 
-      const pages = parseOcrResponse(rawText, expectedPageCount)
+      const pages = expectedPageCount === 1
+        ? parseSinglePageOcrResponse(rawText)
+        : parseOcrResponse(rawText, expectedPageCount)
 
       return {
         pages,

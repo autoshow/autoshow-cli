@@ -1,3 +1,4 @@
+import { mkdir, stat } from 'node:fs/promises'
 import * as l from '~/utils/logger'
 import { createKeyValueTable, logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
@@ -5,6 +6,7 @@ import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-d
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
 import { joinOutputRoot } from '~/cli/commands/process-steps/output-root'
 import { writeRunManifest } from './manifest-utils'
+import { CLIUsageError } from '~/utils/error-handler'
 import type {
   CostStep,
   HumanLogTable,
@@ -48,7 +50,63 @@ export const resolveMaxCentsFromFlags = async (flags: Record<string, unknown>): 
   return resolveMaxCents(config.pricing)
 }
 
-export const createGenerationOutputDir = async (label: string): Promise<string> => {
+const ensureTrailingSlash = (path: string): string =>
+  path.endsWith('/') ? path : `${path}/`
+
+const readExplicitGenerationOutputDir = (flags: Record<string, unknown>): string | undefined => {
+  const outputDir = typeof flags['output-dir'] === 'string' ? flags['output-dir'] : undefined
+  const out = typeof flags['out'] === 'string' ? flags['out'] : undefined
+
+  if (outputDir !== undefined && out !== undefined) {
+    throw CLIUsageError('Use only one of --output-dir or --out.')
+  }
+
+  const explicitOutputDir = outputDir ?? out
+  if (explicitOutputDir !== undefined && explicitOutputDir.trim().length === 0) {
+    throw CLIUsageError('Output directory cannot be empty.')
+  }
+
+  return explicitOutputDir
+}
+
+const ensureExplicitOutputDirectory = async (outputDir: string): Promise<void> => {
+  try {
+    const stats = await stat(outputDir)
+    if (!stats.isDirectory()) {
+      throw CLIUsageError(`Output path exists and is not a directory: ${outputDir}`)
+    }
+    return
+  } catch (error) {
+    if (error instanceof Error && error.name === 'CLIUsageError') {
+      throw error
+    }
+    const code = error !== null && typeof error === 'object' && 'code' in error
+      ? (error as { code?: unknown }).code
+      : undefined
+    if (code !== 'ENOENT') {
+      throw error
+    }
+  }
+
+  await mkdir(outputDir, { recursive: true })
+}
+
+export const getGenerationExpectedOutputDir = (
+  flags: Record<string, unknown>,
+  defaultOutputDir: string
+): string => ensureTrailingSlash(readExplicitGenerationOutputDir(flags) ?? defaultOutputDir)
+
+export const createGenerationOutputDir = async (
+  label: string,
+  flags: Record<string, unknown> = {}
+): Promise<string> => {
+  const explicitOutputDir = readExplicitGenerationOutputDir(flags)
+  if (explicitOutputDir !== undefined) {
+    await ensureExplicitOutputDirectory(explicitOutputDir)
+    logLocationsTable(l, [{ artifact: 'outputDir', path: explicitOutputDir }])
+    return explicitOutputDir
+  }
+
   const uniqueDirName = createUniqueDirectoryName(label)
   const outputDir = joinOutputRoot(uniqueDirName)
   await ensureDirectory(outputDir)

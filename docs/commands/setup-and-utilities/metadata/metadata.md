@@ -192,7 +192,6 @@ src/cli/commands/
     config/
     links/
     resume/
-    sample/
     setup/
     models/
     sock/

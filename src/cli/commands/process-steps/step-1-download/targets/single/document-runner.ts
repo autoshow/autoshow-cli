@@ -113,16 +113,53 @@ export const processOcrSingle = async (
     if (failedCount > 0 && extraction.step2Errors) {
       const failureRows = extraction.step2Errors.map((failure) => ({
         provider: `${failure.service}/${failure.model}`,
-        detail: failure.message
+        category: failure.category ?? 'unknown',
+        errorFile: failure.errorFile ?? '',
+        reason: failure.category ?? 'failed'
       }))
+      const failureTable = createHumanTable(failureRows, ['provider', 'category', 'errorFile', 'reason'])
       l.write('warn', 'Provider Failures', {
         category: 'pipeline',
-        humanTable: createHumanTable(failureRows, ['provider', 'detail']),
-        metadata: { failures: failureRows }
+        humanTable: {
+          ...failureTable,
+          details: [
+            ...(failureTable.details ?? []),
+            ...extraction.step2Errors.map((failure) => ({
+              label: `${failure.service}/${failure.model} detail`,
+              value: failure.message
+            }))
+          ]
+        },
+        metadata: { failures: extraction.step2Errors }
       })
     }
 
+    if (requestedMultipleProviders && Array.isArray(extraction.providerStates)) {
+      const outputRows = extraction.providerStates
+        .filter((state) => state['status'] === 'succeeded')
+        .map((state) => ({
+          provider: `${String(state['service'])}/${String(state['model'])}`,
+          status: 'succeeded',
+          output: `${extraction.outputDir}/${String(state['artifactDir'])}/result.json`
+        }))
+      if (outputRows.length > 0) {
+        l.write('warn', 'Provider Outputs', {
+          category: 'artifact',
+          humanTable: createHumanTable(outputRows, ['provider', 'status', 'output']),
+          metadata: { outputs: outputRows }
+        })
+      }
+    }
+
     logLocationsTable(l, [{ artifact: 'retryOutputDir', path: extraction.outputDir }], { level: 'warn' })
+    l.write('warn', 'Retry OCR', {
+      category: 'pipeline',
+      humanTable: createHumanTable([{ action: 'resume', command: 'bun as resume <retryOutputDir>' }], ['action', 'command']),
+      metadata: {
+        command: `bun as resume ${extraction.outputDir}`,
+        outputDir: extraction.outputDir
+      }
+    })
     return { outputDir: extraction.outputDir }
   }
 

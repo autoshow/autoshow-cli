@@ -90,8 +90,30 @@ const pathLikeColumnNames = new Set<string>([
   'workdir'
 ])
 
+const alwaysLiftVerboseColumnNames = new Set<string>([
+  'error',
+  'errors',
+  'lasterror',
+  'stderr',
+  'stdout',
+  'stack'
+])
+
+const conditionallyLiftVerboseColumnNames = new Set<string>([
+  'detail',
+  'details',
+  'message',
+  'messages'
+])
+
 const normalizeColumnName = (column: string): string =>
   column.trim().replace(/[^a-z0-9]+/gi, '').toLowerCase()
+
+const isAlwaysLiftVerboseColumnName = (column: string): boolean =>
+  alwaysLiftVerboseColumnNames.has(normalizeColumnName(column))
+
+const isConditionallyLiftVerboseColumnName = (column: string): boolean =>
+  conditionallyLiftVerboseColumnNames.has(normalizeColumnName(column))
 
 const isPathLikeColumnName = (column: string): boolean => {
   const normalized = normalizeColumnName(column)
@@ -187,6 +209,135 @@ type WidePathDetailContext = {
 const detailLabelFromCell = (value: HumanLogTableCell | undefined): string | undefined => {
   const label = formatTableCell(value).trim()
   return label.length > 0 ? label : undefined
+}
+
+const getKeyValueDetailLabel = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string
+): string | undefined => {
+  if (columns.length !== 2 || column !== columns[1]) {
+    return undefined
+  }
+
+  return detailLabelFromCell(row[columns[0] as string])
+}
+
+const getProviderDetailPrefix = (row: HumanLogTableRow): string | undefined => {
+  const provider = detailLabelFromCell(row['provider'])
+  if (!provider) {
+    return undefined
+  }
+
+  const model = detailLabelFromCell(row['model'])
+  return model ? `${provider}/${model}` : provider
+}
+
+const buildCellDetailLabel = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string
+): string => {
+  const keyValueLabel = getKeyValueDetailLabel(row, columns, column)
+  const label = keyValueLabel ?? column
+  const providerPrefix = getProviderDetailPrefix(row)
+  return providerPrefix && !label.includes(providerPrefix)
+    ? `${providerPrefix} ${label}`
+    : label
+}
+
+const getEffectiveVerboseColumnName = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string
+): string => getKeyValueDetailLabel(row, columns, column) ?? column
+
+const VERBOSE_DETAIL_VISIBLE_LENGTH = 96
+const lineBreakPattern = /\r|\n/
+const stackLikePattern = /(?:^|\n)\s*at\s+\S+|Traceback \(most recent call last\)|\b(?:Error|Exception):\s|\bstack trace\b/i
+const rawStreamLikePattern = /\b(?:stderr|stdout)\b\s*[:=]|\bexit code\b|\bexited with code\b/i
+
+const isVerboseDetailValue = (
+  value: HumanLogTableCell
+): boolean => {
+  const visibleValue = stripAnsi(formatTableCell(value))
+  return lineBreakPattern.test(visibleValue)
+    || visibleValue.length > VERBOSE_DETAIL_VISIBLE_LENGTH
+    || stackLikePattern.test(visibleValue)
+    || rawStreamLikePattern.test(visibleValue)
+}
+
+const shouldLiftVerboseCell = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string,
+  value: HumanLogTableCell | undefined
+): value is HumanLogTableCell => {
+  if (value === undefined) {
+    return false
+  }
+
+  const visibleValue = stripAnsi(formatTableCell(value)).trim()
+  if (visibleValue.length === 0) {
+    return false
+  }
+
+  const effectiveColumn = getEffectiveVerboseColumnName(row, columns, column)
+  if (isAlwaysLiftVerboseColumnName(effectiveColumn)) {
+    return typeof value === 'string'
+  }
+
+  if (lineBreakPattern.test(visibleValue)) {
+    return true
+  }
+
+  return isConditionallyLiftVerboseColumnName(effectiveColumn)
+    && isVerboseDetailValue(value)
+}
+
+const getLiftedCellSummary = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string
+): string => {
+  const effectiveColumn = getEffectiveVerboseColumnName(row, columns, column)
+  if (normalizeColumnName(effectiveColumn) === 'stack') {
+    return 'see stack'
+  }
+  return 'see details'
+}
+
+const extractVerboseCellDetails = (table: HumanLogTable): HumanLogTable => {
+  const columns = resolveTableColumns(table)
+  const rows = table.rows.map(row => ({ ...row }))
+  const details: HumanLogTableDetail[] = table.details ? [...table.details] : []
+  let lifted = false
+
+  for (const row of rows) {
+    for (const column of columns) {
+      const value = row[column]
+      if (!shouldLiftVerboseCell(row, columns, column, value)) {
+        continue
+      }
+
+      details.push({
+        label: buildCellDetailLabel(row, columns, column),
+        value
+      })
+      row[column] = getLiftedCellSummary(row, columns, column)
+      lifted = true
+    }
+  }
+
+  if (!lifted) {
+    return table
+  }
+
+  return {
+    ...table,
+    rows,
+    details
+  }
 }
 
 const getWidePathDetailContext = (
@@ -355,11 +506,13 @@ export const createHumanTable = (
   columns?: readonly string[],
   options: Pick<HumanLogTable, 'align'> = {}
 ): HumanLogTable =>
-  extractWidePathDetails({
-    rows,
-    ...(columns ? { columns } : {}),
-    ...(options.align ? { align: options.align } : {})
-  })
+  extractWidePathDetails(
+    extractVerboseCellDetails({
+      rows,
+      ...(columns ? { columns } : {}),
+      ...(options.align ? { align: options.align } : {})
+    })
+  )
 
 export const createKeyValueTable = (
   entries: ReadonlyArray<readonly [string, unknown]>,
@@ -491,30 +644,41 @@ const renderHumanTableDetails = (details: readonly HumanLogTableDetail[] | undef
   return details
     .map((detail) => {
       const value = formatTableCell(detail.value)
-      const coloredValue = colorizeHumanTableCell({
+      const valueLines = value.split(/\r?\n/).map(line => colorizeHumanTableCell({
         column: detail.label,
-        value,
-        row: { [detail.label]: value }
-      })
-      return `${tableIndent}${detail.label}: ${coloredValue}`
+        value: line,
+        row: { [detail.label]: line }
+      }))
+      const [firstLine = '', ...restLines] = valueLines
+      const renderedFirstLine = `${tableIndent}${detail.label}: ${firstLine}`
+      if (restLines.length === 0) {
+        return renderedFirstLine
+      }
+
+      const continuationIndent = `${tableIndent}${' '.repeat(detail.label.length + 2)}`
+      return [
+        renderedFirstLine,
+        ...restLines.map(line => `${continuationIndent}${line}`)
+      ].join('\n')
     })
     .join('\n')
 }
 
 export const renderHumanTable = (table: HumanLogTable): string => {
-  const renderedDetails = renderHumanTableDetails(table.details)
+  const normalizedTable = extractWidePathDetails(extractVerboseCellDetails(table))
+  const renderedDetails = renderHumanTableDetails(normalizedTable.details)
 
-  if (table.rows.length === 0) {
+  if (normalizedTable.rows.length === 0) {
     return renderedDetails.length > 0 ? renderedDetails : `${tableIndent}(empty)`
   }
 
-  const columns = resolveTableColumns(table)
+  const columns = resolveTableColumns(normalizedTable)
   if (columns.length === 0) {
     return renderedDetails.length > 0 ? renderedDetails : `${tableIndent}(empty)`
   }
 
   const renderHeader = shouldRenderHeader(columns)
-  const rows = table.rows.map(row => columns.map(column => formatTableCell(row[column])))
+  const rows = normalizedTable.rows.map(row => columns.map(column => formatTableCell(row[column])))
   const widths = columns.map((column, index) => Math.max(
     renderHeader ? column.length : 0,
     ...rows.map(row => row[index]?.length ?? 0)
@@ -523,11 +687,11 @@ export const renderHumanTable = (table: HumanLogTable): string => {
     renderBorder(tableChars.topLeft, tableChars.topJoin, tableChars.topRight, widths),
     ...(renderHeader
       ? [
-          renderTableRow(columns, widths, columns, { header: true, align: table.align }),
+          renderTableRow(columns, widths, columns, { header: true, align: normalizedTable.align }),
           renderBorder(tableChars.leftJoin, tableChars.crossJoin, tableChars.rightJoin, widths)
         ]
       : []),
-    ...rows.map(row => renderTableRow(row, widths, columns, { align: table.align })),
+    ...rows.map(row => renderTableRow(row, widths, columns, { align: normalizedTable.align })),
     renderBorder(tableChars.bottomLeft, tableChars.bottomJoin, tableChars.bottomRight, widths)
   ]
 

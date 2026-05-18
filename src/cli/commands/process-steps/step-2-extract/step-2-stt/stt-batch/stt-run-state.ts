@@ -167,10 +167,9 @@ export const toRequestedProvider = (target: SttTarget): SttRequestedProvider => 
 })
 
 export const toRecordedProviderError = (
-  failure: SttProviderFailureSummary
+  failure: Pick<SttProviderFailureSummary, 'message' | 'skipped' | 'stage' | 'status' | 'retryAfterMs' | 'errorFile' | 'rawResponseFile'>
 ): SttRecordedProviderError => ({
   message: failure.message,
-  retryable: failure.retryable,
   ...(failure.skipped === true ? { skipped: true } : {}),
   ...(failure.stage ? { stage: failure.stage } : {}),
   ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
@@ -217,7 +216,6 @@ export const parseStoredProviderState = (value: unknown): SttProviderState | und
   const lastError = isRecord(value['lastError']) && typeof value['lastError']['message'] === 'string'
     ? {
         message: value['lastError']['message'],
-        retryable: value['lastError']['retryable'] === true,
         ...(value['lastError']['skipped'] === true ? { skipped: true } : {}),
         ...(typeof value['lastError']['stage'] === 'string' ? { stage: value['lastError']['stage'] } : {}),
         ...(typeof value['lastError']['status'] === 'number' ? { status: value['lastError']['status'] } : {}),
@@ -234,7 +232,6 @@ export const parseStoredProviderState = (value: unknown): SttProviderState | und
     artifactDir: value['artifactDir'],
     status: value['status'],
     attempts: value['attempts'],
-    ...(typeof value['retryable'] === 'boolean' ? { retryable: value['retryable'] } : {}),
     ...(lastError ? { lastError } : {})
   }
 }
@@ -370,27 +367,30 @@ export const inferStoredCompletionStatus = (
 
 export const buildMissingTargetsFromEntry = (
   entry: Record<string, unknown>,
-  requestedTargets: SttTarget[],
-  retryableOnly: boolean
+  requestedTargets: SttTarget[]
 ): SttTarget[] => {
   const explicitMissing = Array.isArray(entry['missingProviders'])
     ? entry['missingProviders'].map(parseStoredRequestedTarget).filter((target): target is SttTarget => target !== undefined)
     : []
   const providerStates = parseStoredProviderStateMap(entry)
   const successKeys = parseSuccessfulProviderKeys(entry)
+  const missingTargets = new Map<string, SttTarget>()
 
-  const missingTargets = explicitMissing.length > 0
-    ? explicitMissing.filter((target) => !isSkippedProviderState(providerStates.get(getSttTargetKey(target))))
-    : requestedTargets.filter((target) => {
-        const key = getSttTargetKey(target)
-        return !successKeys.has(key) && !isSkippedProviderState(providerStates.get(key))
-      })
-
-  if (!retryableOnly) {
-    return missingTargets
+  for (const target of explicitMissing) {
+    const key = getSttTargetKey(target)
+    if (!isSkippedProviderState(providerStates.get(key))) {
+      missingTargets.set(key, target)
+    }
   }
 
-  return missingTargets.filter((target) => providerStates.get(getSttTargetKey(target))?.retryable === true)
+  for (const target of requestedTargets) {
+    const key = getSttTargetKey(target)
+    if (!successKeys.has(key) && !isSkippedProviderState(providerStates.get(key))) {
+      missingTargets.set(key, target)
+    }
+  }
+
+  return [...missingTargets.values()]
 }
 
 export const readExistingSttRun = async (
@@ -471,10 +471,8 @@ export const buildProviderStates = <
         artifactDir: getSttProviderArtifactDir(target),
         status: failure.skipped === true ? 'skipped' : 'failed',
         attempts: existing?.attempts ?? 0,
-        retryable: failure.retryable,
         lastError: toRecordedProviderError({
           message: failure.message,
-          retryable: failure.retryable,
           ...(failure.skipped === true ? { skipped: true } : {}),
           ...(failure.stage ? { stage: failure.stage } : {}),
           ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
@@ -492,7 +490,6 @@ export const buildProviderStates = <
       artifactDir: getSttProviderArtifactDir(target),
       status: existing?.status ?? 'missing',
       attempts: existing?.attempts ?? 0,
-      ...(existing?.retryable !== undefined ? { retryable: existing.retryable } : {}),
       ...(existing?.lastError ? { lastError: existing.lastError } : {})
     }
   })
@@ -533,7 +530,6 @@ export const buildMetadataErrorEntries = (
       ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
       ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
       ...(typeof state.lastError?.retryAfterMs === 'number' ? { retryAfterMs: state.lastError.retryAfterMs } : {}),
-      retryable: state.lastError?.retryable === true,
       ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {}),
       ...(state.lastError?.rawResponseFile ? { rawResponseFile: state.lastError.rawResponseFile } : {})
     }))

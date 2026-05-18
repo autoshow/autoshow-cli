@@ -21,6 +21,17 @@ export const priceFlag = {
   }
 } as const satisfies CliFlagsDefinition
 
+export const generationOutputFlags = {
+  'output-dir': {
+    description: 'Exact output directory for this generation run',
+    type: String
+  },
+  out: {
+    description: 'Alias for --output-dir on standalone generation commands',
+    type: String
+  }
+} as const satisfies CliFlagsDefinition
+
 export const batchFlags = {
   'batch-limit': {
     description: 'Batch: number of items to process (default 5)',

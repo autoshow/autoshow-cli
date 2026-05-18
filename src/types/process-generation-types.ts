@@ -32,8 +32,14 @@ export type Step5Metadata = {
   imageSize?: string | undefined
   imageQuality?: string | undefined
   imageFormat?: string | undefined
+  revisedPrompt?: string | undefined
+  providerReturnedModel?: string | undefined
+  requestMode: 'generation' | 'edit'
+  usageCostRaw?: number | undefined
+  groundingMetadata?: unknown
+  providerModeration?: unknown
   providerCostCents?: number | undefined
-  providerCostSource?: 'provider_quote' | 'registry_fallback' | undefined
+  providerCostSource?: 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
 }
 
 export type Step6VideoMetadata = {

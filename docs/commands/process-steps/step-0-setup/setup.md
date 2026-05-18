@@ -1,6 +1,6 @@
 # setup
 
-Install local runtimes and prerequisite tools. Focused setup utilities also cover fixture generation (`--sample`) and model pre-downloads (`--models`).
+Install local runtimes and prerequisite tools. Focused setup utilities also cover model pre-downloads (`--models`).
 
 ## Outline
 
@@ -9,7 +9,7 @@ Install local runtimes and prerequisite tools. Focused setup utilities also cove
 - [Doctor](#doctor)
 - [YouTube Cookies](#youtube-cookies)
 - [Targeted Setup Steps](#targeted-setup-steps)
-- [Sample Fixtures](#sample-fixtures)
+- [Model Downloads](#model-downloads)
 
 ## Step Setup Docs
 
@@ -91,7 +91,7 @@ The same precedence rules apply everywhere in the CLI:
 The `setup` command currently supports:
 
 ```text
-uv | yt-dlp | defuddle | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | video | music | sample
+uv | yt-dlp | defuddle | whisper-binary | whisper-model | llama-binary | reverb | calibre | all | transcription | write | tts | image | video | music
 ```
 
 Isolated steps assume their prerequisites are already present. On a clean machine, prefer `bun as setup`.
@@ -147,9 +147,6 @@ bun as setup --step video
 # and download large-v3-turbo for lyric-video rendering.
 bun as setup --step music
 
-# Verify fixture-generation prerequisites (ffmpeg, ffprobe)
-bun as setup --step sample
-
 # Remove existing artifacts before re-downloading
 bun as setup --step write --force-redownload
 
@@ -157,21 +154,10 @@ bun as setup --step write --force-redownload
 bun as setup --step tts --repeat 3
 ```
 
-## Sample Fixtures
+## Model Downloads
 
 ```bash
-# Generate fixtures under input/samples/
-bun as setup --sample
-
-# Verify an existing manifest without regenerating
-bun as setup --sample --verify-only
-
-# Regenerate fixtures even if the manifest is valid
-bun as setup --sample --refresh
-
 # Download a Whisper or llama.cpp model without running inference
 bun as setup --models base
 bun as setup --models ggml-org/gemma-3-270m-it-GGUF
 ```
-
-See [`sample.md`](../../setup-and-utilities/sample/sample.md) for the focused `setup --sample` reference.

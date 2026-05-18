@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { collectExplicitOcrTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-targets'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
@@ -10,6 +13,7 @@ import {
   getStep2ProviderSelectionFlagNames
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import {
+  normalizeCommandSelectorArgs,
   normalizeCommandSelectorFlags,
   normalizeExtractPublicSelectorFlags
 } from '~/cli/commands/process-steps/service-selector-normalization'
@@ -144,6 +148,12 @@ describe('provider selection contracts', () => {
       'veo-3.1-generate-preview',
       'veo-3.1-lite-generate-preview'
     ])
+    expect(allOpts.geminiImageModels).toEqual([
+      'gemini-3.1-flash-image-preview',
+      'imagen-4.0-fast-generate-001',
+      'imagen-4.0-generate-001',
+      'imagen-4.0-ultra-generate-001'
+    ])
     expect(allOpts.openaiImageModels).toEqual([
       'gpt-image-1.5',
       'gpt-image-2'
@@ -241,6 +251,20 @@ describe('provider selection contracts', () => {
       'minimax:music-2.5',
       'gemini:lyria-3-clip-preview'
     ])
+
+    expect(normalizeCommandSelectorArgs([
+      'image',
+      'a sunset',
+      '--openai',
+      'gpt-image-1.5',
+      '--gemini=imagen-4.0-generate-001'
+    ], IMAGE_COMMAND_SELECTOR_FLAGS)).toEqual([
+      'image',
+      'a sunset',
+      '--openai-image',
+      'gpt-image-1.5',
+      '--gemini-image=imagen-4.0-generate-001'
+    ])
   })
 
   test('extract bare provider selectors route to STT or OCR internal keys', () => {
@@ -298,6 +322,72 @@ describe('provider selection contracts', () => {
       'image-background': 'transparent'
     })
 
-    expect(() => collectImageTargets(opts)).toThrow('--image-background transparent is not supported by gpt-image-2')
+    expect(() => collectImageTargets(opts)).toThrow('--image-background transparent is not supported by OpenAI/gpt-image-2')
+  })
+
+  test('image-count maps only to providers with native multi-image request support', () => {
+    const multiOpts = buildOptsFromFlags(false, {
+      'openai-image': ['gpt-image-1.5'],
+      'gemini-image': ['imagen-4.0-generate-001'],
+      'grok-image': ['grok-imagine-image-quality'],
+      'image-count': '3'
+    })
+    const targets = collectImageTargets(multiOpts)
+    expect(targets.map((target) => `${target.service}:${target.model}`)).toEqual([
+      'gemini:imagen-4.0-generate-001',
+      'openai:gpt-image-1.5',
+      'grok:grok-imagine-image-quality'
+    ])
+
+    for (const [flag, model, providerName] of [
+      ['minimax-image', 'image-01', 'MiniMax'],
+      ['glm-image', 'glm-image', 'GLM'],
+      ['runway-image', 'gen4_image', 'Runway'],
+      ['bfl-image', 'flux-2-pro-preview', 'BFL'],
+      ['deapi-image', 'Flux1schnell', 'deAPI']
+    ] as const) {
+      const opts = buildOptsFromFlags(false, {
+        [flag]: [model],
+        'image-count': '2'
+      })
+      expect(() => collectImageTargets(opts)).toThrow(`${providerName}/${model}`)
+    }
+  })
+
+  test('image edit/reference flags validate provider and model support', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'autoshow-image-input-'))
+    const imagePath = join(tempDir, 'reference.png')
+    writeFileSync(imagePath, new Uint8Array([1, 2, 3]))
+
+    const openaiEditOpts = buildOptsFromFlags(false, {
+      'openai-image': ['gpt-image-1.5'],
+      'image-input': [imagePath]
+    })
+    try {
+      expect(collectImageTargets(openaiEditOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
+        'openai:gpt-image-1.5'
+      ])
+
+      const openaiUnsupportedModel = buildOptsFromFlags(false, {
+        'openai-image': ['gpt-image-2'],
+        'image-input': [imagePath]
+      })
+      expect(() => collectImageTargets(openaiUnsupportedModel)).toThrow('OpenAI/gpt-image-2')
+
+      const minimaxEditOpts = buildOptsFromFlags(false, {
+        'minimax-image': ['image-01'],
+        'image-input': [imagePath]
+      })
+      expect(() => collectImageTargets(minimaxEditOpts)).toThrow('MiniMax/image-01')
+
+      const missingPath = join(tempDir, 'missing.png')
+      const missingInputOpts = buildOptsFromFlags(false, {
+        'openai-image': ['gpt-image-1.5'],
+        'image-input': [missingPath]
+      })
+      expect(() => collectImageTargets(missingInputOpts)).toThrow(`--image-input file "${missingPath}" does not exist`)
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
   })
 })

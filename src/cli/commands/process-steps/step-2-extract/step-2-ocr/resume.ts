@@ -284,7 +284,7 @@ const runResumeOcrTarget = async (
         status: entry.completionStatus,
         outputDir: entry.outputDir,
         providers: 'none',
-        detail: 'no matching missing providers selected'
+        detail: 'no matching failed or missing providers selected'
       }, 'warn')
       const metadata = await readOutputMetadata(entry.outputDir)
       updatedEntries.push(withOutputDir(metadata, entry.outputDir))
@@ -303,7 +303,7 @@ const runResumeOcrTarget = async (
       status: 'processing',
       outputDir: entry.outputDir,
       providers: providerLabels,
-      detail: 'resuming missing providers'
+      detail: 'resuming providers'
     }, 'info')
 
     const preparedDocument = await readPreparedDocument(entry.outputDir)

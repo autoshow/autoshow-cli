@@ -38,7 +38,7 @@ const estimateImageTargetCost = (
   const imageCount = Math.max(1, target.count)
   const imageSize = target.imageSize ?? input.imageSize
   const imageQuality = target.imageQuality ?? input.imageQuality
-  const sharedOptions = { imageSize, imageQuality, imagenCount: imageCount }
+  const sharedOptions = { imageSize, imageQuality, imageCount }
   const estimate = (() => {
     switch (target.service) {
       case 'gemini':
@@ -409,7 +409,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         deapiImageModel: input.deapiImageModel,
         imageSize: input.imageSize,
         imageQuality: input.imageQuality,
-        imagenCount: input.imagenCount
+        imageCount: input.imageCount
       })
 
   for (const imageEstimate of imageEstimates) {

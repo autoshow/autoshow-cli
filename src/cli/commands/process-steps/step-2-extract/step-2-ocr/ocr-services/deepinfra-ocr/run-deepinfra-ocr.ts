@@ -5,7 +5,7 @@ import * as v from 'valibot'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
+import { withOcrPageRequestRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { getCachedRenderedPageImage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import {
@@ -143,12 +143,10 @@ const runDeepinfraOcrImage = async (
 ): Promise<{ page: PageResult, promptTokens?: number, completionTokens?: number }> => {
   await assertImageWithinLimits(imagePath, pageLabel)
   const imageUrl = await readImageDataUrl(imagePath, format)
-  let lastError: Error | undefined
-
-  for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
-    const response = await withOcrCreateRetry(
-      'deepinfra-ocr',
-      async (signal) => await createOpenAIChatCompletion(config, {
+  return await withOcrPageRequestRetry(
+    `deepinfra-ocr ${pageLabel}`,
+    async (signal) => {
+      const response = await createOpenAIChatCompletion(config, {
         model,
         max_tokens: DEEPINFRA_OCR_MAX_TOKENS,
         response_format: {
@@ -167,12 +165,10 @@ const runDeepinfraOcrImage = async (
           ]
         }]
       }, { signal, errorMessagePrefix: 'DeepInfra OCR request failed' })
-    )
-    const rawText = extractOpenAIChatCompletionText(response) ?? ''
+      const rawText = extractOpenAIChatCompletionText(response) ?? ''
 
-    try {
       if (!rawText.trim()) {
-        throw new Error('DeepInfra OCR returned no text output.')
+        throw new OcrStructuredResponseError('DeepInfra OCR returned no text output.', rawText)
       }
 
       const pages = parseOcrResponse(rawText, pageNumber)
@@ -181,15 +177,8 @@ const runDeepinfraOcrImage = async (
         ...(typeof response.usage?.prompt_tokens === 'number' ? { promptTokens: response.usage.prompt_tokens } : {}),
         ...(typeof response.usage?.completion_tokens === 'number' ? { completionTokens: response.usage.completion_tokens } : {})
       }
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
-      if (attempt < OCR_SCHEMA_RETRY_ATTEMPTS - 1) {
-        continue
-      }
     }
-  }
-
-  throw lastError ?? new Error('DeepInfra OCR failed')
+  )
 }
 
 export const runDeepinfraOcr = async (

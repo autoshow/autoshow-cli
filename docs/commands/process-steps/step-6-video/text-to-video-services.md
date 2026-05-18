@@ -58,6 +58,7 @@ DEAPI_BASE_URL=...
 | `--video-aspect-ratio <ratio>` | Provider-dependent aspect ratio |
 | `--video-resolution <res>` | Provider-dependent resolution control |
 | `--price` | Show the estimate and exit |
+| `--out <dir>` / `--output-dir <dir>` | Use an exact run directory instead of `output/<timestamp>_video-gen/` |
 
 ```bash
 bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-fast-generate-preview --minimax MiniMax-Hailuo-2.3 --runway gen4.5
@@ -204,6 +205,8 @@ output/YYYY-MM-DD_HH-mm-ss_video-gen/
 ```
 
 `run.json` includes `video`, `cost`, and `timing` sections. `video` is always an array, even when only one provider succeeds.
+
+`--out` / `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.
 
 ## Notes
 

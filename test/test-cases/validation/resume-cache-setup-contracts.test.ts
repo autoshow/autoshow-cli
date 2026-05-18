@@ -35,9 +35,9 @@ test('cache command rejects unknown actions with a usage error', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Unknown cache action "rotate"')
 })
 
-test('setup mutually exclusive flag guard fires', async () => {
-  const result = await runCommand(['src/cli/create-cli.ts', 'setup', '--sample', '--step', 'uv'])
+test('setup focused model downloads cannot be combined with targeted steps', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'setup', '--models', 'base', '--step', 'uv'])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('--sample cannot be combined with --step')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('--models cannot be combined with --step')
 })

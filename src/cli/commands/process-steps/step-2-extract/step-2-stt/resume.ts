@@ -63,7 +63,7 @@ const resolveStoredOutputDir = async (
 const parseResumeEntry = async (
   entry: unknown,
   selectedTargets: SttTarget[] | undefined,
-  options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
+  options: Pick<ResumeSttBatchRunOptions, 'ignoreUnresumableEntries'>
     & { youtubeCaptions: boolean, currentTargets: SttTarget[] }
 ): Promise<ResumeBatchEntry | undefined> => {
   if (!isRecord(entry)) {
@@ -114,7 +114,7 @@ const parseResumeEntry = async (
   }
 
   const completionStatus = inferStoredCompletionStatus(entry, requestedTargets)
-  const missingTargets = buildMissingTargetsFromEntry(entry, requestedTargets, options.retryableOnly === true)
+  const missingTargets = buildMissingTargetsFromEntry(entry, requestedTargets)
     .filter((target) => selectedKeys ? selectedKeys.has(getSttTargetKey(target)) : true)
 
   return {
@@ -177,7 +177,7 @@ const readResumeTargetManifest = async (
 const parseResumeEntries = async (
   entries: BatchManifestEntry[],
   selectedTargets: SttTarget[] | undefined,
-  options: Pick<ResumeSttBatchRunOptions, 'retryableOnly' | 'ignoreUnresumableEntries'>
+  options: Pick<ResumeSttBatchRunOptions, 'ignoreUnresumableEntries'>
     & { youtubeCaptions: boolean, currentTargets: SttTarget[] }
 ): Promise<Array<ResumeBatchEntry | undefined>> =>
   await Promise.all(entries.map(async (entry) =>
@@ -197,7 +197,6 @@ export const hasResumableSttTargetWork = async (
   for (const entry of manifest.entries) {
     try {
       const parsedEntry = await parseResumeEntry(entry, selectedTargets, {
-        retryableOnly: false,
         ignoreUnresumableEntries: true,
         ...options
       })
@@ -300,7 +299,7 @@ const runResumePass = async (
         status: entry.completionStatus,
         outputDir: entry.outputDir,
         providers: 'none',
-        detail: 'no matching missing providers selected'
+        detail: 'no matching failed or missing providers selected'
       }, 'warn')
       const metadata = await readOutputMetadata(entry.outputDir)
       updatedEntries.push(withOutputDir(metadata, entry.outputDir))
@@ -417,7 +416,6 @@ const runResumeSttTarget = async (
 ): Promise<ResumeSttBatchPassResult> => {
   const currentTargets = selectedTargets && selectedTargets.length > 0 ? selectedTargets : collectSttTargets(opts)
   const normalizedOptions: NormalizedResumeSttBatchRunOptions = {
-    retryableOnly: runOptions.retryableOnly === true,
     maxPasses: Math.max(1, runOptions.maxPasses ?? 1),
     ignoreUnresumableEntries: runOptions.ignoreUnresumableEntries === true
   }

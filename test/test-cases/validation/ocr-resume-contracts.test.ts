@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -21,7 +21,8 @@ import {
   summarizePaddleFailure
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/run-paddle-ocr'
 import { writeAwsTextractSyncDocumentFile } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/aws-textract/run-aws-textract'
-import type { OcrProviderState, OcrTarget } from '~/types'
+import { runHostedOcrWithPdfChunkFallback } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-chunk-fallback'
+import type { DocumentMetadata, HostedOcrRun, OcrProviderState, OcrTarget, PageResult } from '~/types'
 
 const requestedTargets: OcrTarget[] = [
   { service: 'tesseract', model: 'tesseract' },
@@ -32,36 +33,132 @@ const tesseractTarget = requestedTargets[0] as OcrTarget
 const paddleTarget = requestedTargets[1] as OcrTarget
 const anthropicTarget = requestedTargets[2] as OcrTarget
 
+const basePdfMetadata: DocumentMetadata = {
+  slug: 'document',
+  pageCount: 4,
+  format: 'pdf',
+  fileSize: 12_345
+}
+
+const pagesForRange = (startPage: number, endPage: number): PageResult[] => {
+  const pages: PageResult[] = []
+  for (let pageNumber = 1; pageNumber <= endPage - startPage + 1; pageNumber++) {
+    pages.push({
+      pageNumber,
+      method: 'ocr',
+      text: `page ${startPage + pageNumber - 1}`
+    })
+  }
+  return pages
+}
+
+const hostedRun = (
+  pages: PageResult[],
+  extras: Partial<HostedOcrRun> = {}
+): HostedOcrRun => ({
+  pages,
+  extractionMethod: 'openai-ocr',
+  ocrService: 'openai',
+  ocrModel: 'test-model',
+  ...extras
+})
+
+const pageCachePath = (dir: string, pageNumber: number): string =>
+  join(dir, 'page-results', `page-${String(pageNumber).padStart(6, '0')}.json`)
+
+const pageTextPath = (dir: string, pageNumber: number): string =>
+  join(dir, 'page-results', `page-${String(pageNumber).padStart(6, '0')}.txt`)
+
+const writeCachedPage = async (
+  dir: string,
+  pageNumber: number,
+  totalPages: number,
+  run: HostedOcrRun = hostedRun([{ pageNumber, method: 'ocr', text: `page ${pageNumber}` }], { totalPages: 1 })
+): Promise<void> => {
+  await mkdir(join(dir, 'page-results'), { recursive: true })
+  await Bun.write(pageCachePath(dir, pageNumber), JSON.stringify({
+    version: 1,
+    mode: 'single-page',
+    totalPages,
+    pageNumber,
+    run
+  }, null, 2) + '\n')
+}
+
 const providerState = (
   target: OcrTarget,
-  status: OcrProviderState['status'],
-  retryable?: boolean
+  status: OcrProviderState['status']
 ): OcrProviderState => ({
   service: target.service,
   model: target.model,
   artifactDir: `providers/${target.service}-${target.model}`,
   status,
   attempts: status === 'succeeded' ? 1 : 2,
-  ...(retryable !== undefined ? { retryable } : {}),
   ...(status === 'failed'
     ? {
         lastError: {
-          message: `${target.service} failed`,
-          retryable: retryable === true
+          message: `${target.service} failed`
         }
       }
     : {})
 })
 
 describe('OCR resume contracts', () => {
-  test('only retryable failed providers remain resumable when explicit missing providers are stored', () => {
+  test('all failed providers remain resumable when explicit missing providers are stored', () => {
     const entry = {
       requestedProviders: requestedTargets,
       missingProviders: [paddleTarget, anthropicTarget],
       providerStates: [
         providerState(tesseractTarget, 'succeeded'),
-        providerState(paddleTarget, 'failed', true),
-        providerState(anthropicTarget, 'failed', false)
+        providerState(paddleTarget, 'failed'),
+        providerState(anthropicTarget, 'failed')
+      ]
+    }
+
+    expect(buildMissingTargetsFromEntry(entry, requestedTargets)).toEqual([
+      paddleTarget,
+      anthropicTarget
+    ])
+  })
+
+  test('all provider failures are written as missing providers', () => {
+    const states = [
+      providerState(tesseractTarget, 'succeeded'),
+      providerState(paddleTarget, 'failed'),
+      providerState(anthropicTarget, 'failed')
+    ]
+
+    expect(buildMissingProviders(states, requestedTargets)).toEqual([
+      paddleTarget,
+      anthropicTarget
+    ])
+  })
+
+  test('resume targets include all failed providers even when missingProviders omits them', () => {
+    const entry = {
+      requestedProviders: requestedTargets,
+      missingProviders: [paddleTarget],
+      providerStates: [
+        providerState(tesseractTarget, 'succeeded'),
+        providerState(paddleTarget, 'failed'),
+        providerState(anthropicTarget, 'failed')
+      ]
+    }
+
+    expect(buildMissingTargetsFromEntry(entry, requestedTargets)).toEqual([
+      paddleTarget,
+      anthropicTarget
+    ])
+  })
+
+  test('resume targets detect failed providers from providerStates when missingProviders is empty', () => {
+    const entry = {
+      requestedProviders: requestedTargets,
+      missingProviders: [],
+      providerStates: [
+        providerState(tesseractTarget, 'succeeded'),
+        providerState(paddleTarget, 'failed'),
+        providerState(anthropicTarget, 'succeeded')
       ]
     }
 
@@ -70,36 +167,144 @@ describe('OCR resume contracts', () => {
     ])
   })
 
-  test('permanent provider failures are recorded but not written as missing providers', () => {
-    const states = [
-      providerState(tesseractTarget, 'succeeded'),
-      providerState(paddleTarget, 'failed', true),
-      providerState(anthropicTarget, 'failed', false)
-    ]
+  test('hosted PDF page fallback resume skips cached pages and starts at the first missing page', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-resume-'))
+    try {
+      await writeCachedPage(tempDir, 1, 4)
+      await writeCachedPage(tempDir, 2, 4)
 
-    expect(buildMissingProviders(states, requestedTargets)).toEqual([
-      paddleTarget
-    ])
+      let fullAttempts = 0
+      const attemptedPages: number[] = []
+      const result = await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: basePdfMetadata,
+        serviceLabel: 'Test OCR',
+        totalPages: 4,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          fullAttempts += 1
+          throw new Error('full OCR should be bypassed')
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          attemptedPages.push(range.startPage)
+          return hostedRun(pagesForRange(range.startPage, range.endPage), { totalPages: 1 })
+        }
+      })
+
+      expect(fullAttempts).toBe(0)
+      expect(attemptedPages).toEqual([3, 4])
+      expect(result.pages.map((page) => page.pageNumber)).toEqual([1, 2, 3, 4])
+      expect(await Bun.file(pageTextPath(tempDir, 1)).text()).toBe('page 1\n')
+      expect(await Bun.file(pageTextPath(tempDir, 4)).text()).toBe('page 4\n')
+      expect(await Bun.file(join(tempDir, 'partial-extraction.txt')).text()).toContain('Page 4\npage 4')
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
-  test('content filter failures are classified as non-retryable', () => {
+  test('hosted PDF fallback state bypasses full-document OCR even before page results exist', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-fallback-state-'))
+    try {
+      await Bun.write(join(tempDir, 'fallback-state.json'), JSON.stringify({
+        version: 1,
+        mode: 'single-page',
+        totalPages: 2,
+        serviceLabel: 'Test OCR',
+        sourceFile: 'input.pdf'
+      }, null, 2) + '\n')
+
+      let fullAttempts = 0
+      const attemptedPages: number[] = []
+      await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 2 },
+        serviceLabel: 'Test OCR',
+        totalPages: 2,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          fullAttempts += 1
+          throw new Error('full OCR should be bypassed')
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          attemptedPages.push(range.startPage)
+          return hostedRun(pagesForRange(range.startPage, range.endPage), { totalPages: 1 })
+        }
+      })
+
+      expect(fullAttempts).toBe(0)
+      expect(attemptedPages).toEqual([1, 2])
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('hosted PDF page fallback ignores corrupt or mismatched page cache files', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-cache-invalid-'))
+    try {
+      await mkdir(join(tempDir, 'page-results'), { recursive: true })
+      await Bun.write(pageCachePath(tempDir, 1), '{bad json')
+      await writeCachedPage(
+        tempDir,
+        2,
+        3,
+        hostedRun([{ pageNumber: 99, method: 'ocr', text: 'wrong page' }], { totalPages: 1 })
+      )
+      await writeCachedPage(tempDir, 3, 3)
+
+      let fullAttempts = 0
+      const attemptedPages: number[] = []
+      const result = await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 3 },
+        serviceLabel: 'Test OCR',
+        totalPages: 3,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          fullAttempts += 1
+          throw new Error('full OCR should be bypassed')
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          attemptedPages.push(range.startPage)
+          return hostedRun(pagesForRange(range.startPage, range.endPage), { totalPages: 1 })
+        }
+      })
+
+      expect(fullAttempts).toBe(0)
+      expect(attemptedPages).toEqual([1, 2])
+      expect(result.pages.map((page) => page.pageNumber)).toEqual([1, 2, 3])
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('content filter failures are classified by category', () => {
     const failure = classifyOcrProviderFailure(new Error(
       '400 {"type":"error","error":{"type":"invalid_request_error","message":"Output blocked by content filtering policy"}}'
     ))
 
-    expect(failure.retryable).toBe(false)
+    expect(failure.category).toBe('content_policy')
     expect(failure.message).toContain('Output blocked by content filtering policy')
   })
 
-  test('transient OCR failures are classified as retryable', () => {
+  test('transient OCR failures are classified by category', () => {
     const error = Object.assign(new Error('provider timed out while reading OCR response'), {
       status: 503
     })
 
-    expect(classifyOcrProviderFailure(error).retryable).toBe(true)
+    const failure = classifyOcrProviderFailure(error)
+    expect(failure.category).toBe('timeout')
   })
 
-  test('structured OCR validation failures are retryable and persist raw provider output', async () => {
+  test('structured OCR validation failures persist raw provider output', async () => {
     const failure = classifyOcrProviderFailure(new OcrStructuredResponseError(
       'OpenAI OCR response was not valid JSON.',
       '{"pages":'
@@ -110,7 +315,7 @@ describe('OCR resume contracts', () => {
         'OpenAI OCR response was not valid JSON.',
         '{"pages":'
       ))
-      expect(failure.retryable).toBe(true)
+      expect(failure.category).toBe('structured_response')
       expect(await Bun.file(join(tempDir, 'invalid-structured-response.txt')).text()).toBe('{"pages":')
       const diagnostic = await Bun.file(join(tempDir, 'invalid-structured-response.json')).json() as Record<string, unknown>
       expect(diagnostic['rawResponseFile']).toBe('invalid-structured-response.txt')
@@ -161,13 +366,12 @@ describe('OCR resume contracts', () => {
     ].join('\n'))).toBe('{"text":"hello","confidence":0.9}')
   })
 
-  test('Paddle log-only failures are ANSI-stripped without retry override', () => {
+  test('Paddle log-only failures are ANSI-stripped', () => {
     const failure = classifyOcrProviderFailure(new Error(
       'PaddleOCR exited with code 1 for page.png.\n\u001B[31mChecking connectivity to the model hosters\u001B[0m\nCreating model: PP-OCRv5\nResized image size exceeds max_side_limit'
     ))
 
     expect(failure.message).not.toContain('\u001B[')
-    expect(failure.retryable).toBe(false)
   })
 
   test('Paddle signal failures include signal context and stripped details', () => {
@@ -183,12 +387,11 @@ describe('OCR resume contracts', () => {
     expect(summary).not.toContain('\u001B[')
   })
 
-  test('Paddle retry summaries include model profile and max side attempts', () => {
+  test('Paddle failure summaries include model profile and max side attempts', () => {
     const failure = classifyOcrProviderFailure(new Error(
       'PaddleOCR failed for page.png after attempts: auto/3200px, auto/2400px, mobile/1800px.\nPaddleOCR exited with code 138 (SIGBUS) for page.png.'
     ))
 
-    expect(failure.retryable).toBe(true)
     expect(failure.message).toContain('mobile/1800px')
   })
 

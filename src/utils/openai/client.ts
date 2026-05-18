@@ -46,12 +46,16 @@ export type OpenAIChatCompletionResponse = {
 export type OpenAIImageResponse = {
   data?: Array<{
     b64_json?: string | undefined
+    url?: string | undefined
     mime_type?: string | null | undefined
+    revised_prompt?: string | undefined
     [key: string]: unknown
   }> | undefined
   usage?: Record<string, unknown> | undefined
   size?: string | undefined
   quality?: string | undefined
+  model?: string | undefined
+  revised_prompt?: string | undefined
   [key: string]: unknown
 }
 

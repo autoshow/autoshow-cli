@@ -1,7 +1,7 @@
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { convertDocumentToPdf, getDocumentInfo, showPdfObject } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
+import { convertDocumentToPdf, getDocumentInfo, isPdfEncryptedViaQpdf, showPdfObject } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import type { DocumentMetadata, ExtractionOptions, LocalExtractOcrEngine, PageResult } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/utils/logger'
@@ -46,6 +46,12 @@ export const isPdfEncrypted = async (
   filePath: string,
   password?: string
 ): Promise<boolean> => {
+  try {
+    const qpdfResult = await isPdfEncryptedViaQpdf(filePath)
+    if (qpdfResult !== undefined) return qpdfResult
+  } catch {
+    // qpdf unavailable or errored, fall through to mutool
+  }
   try {
     const result = await showPdfObject(filePath, 'trailer/Encrypt', password)
     if (result.exitCode !== 0) {

@@ -1,13 +1,13 @@
 import { mkdir } from 'node:fs/promises'
 import { basename, dirname, extname, join } from 'node:path'
 import type { ExtractionOptions, LocalExtractOcrEngine, PageResult } from '~/types'
-import { exec, commandExists } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
 import { assertNever } from '~/utils/validate/assert-never'
 import { runOcrmypdf } from './ocr-local/ocrmypdf/run-ocrmypdf'
 import { runPaddleOcrOnImage } from './ocr-local/paddle-ocr/run-paddle-ocr'
 import { ensureTesseractSetup, ocrImage } from './ocr-utils/tesseract-utils'
 import { openZip, readZipEntryData } from '~/cli/commands/process-steps/step-1-download/document/zip-xml-utils'
+import { normalizeImageToPngWithBun } from './ocr-utils/bun-image-utils'
 
 export const IMAGE_FORMATS = new Set(['png', 'jpg', 'tif', 'webp', 'bmp', 'gif'])
 
@@ -71,14 +71,12 @@ const normalizeImageForOcr = async (
 ): Promise<string> => {
   const ext = extname(imagePath).toLowerCase()
   if (ext === '.webp' || ext === '.bmp') {
-    if (!commandExists('convert')) {
-      l.warn(`ImageMagick not found; using ${ext} directly which may affect OCR quality`)
-      return imagePath
-    }
     const pngPath = join(tempDir, `${basename(imagePath, ext)}.png`)
-    const result = await exec('convert', [imagePath, pngPath])
-    if (result.exitCode !== 0) {
-      l.warn(`ImageMagick conversion failed for ${imagePath}: ${result.stderr}`)
+    try {
+      await normalizeImageToPngWithBun(imagePath, pngPath)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      l.warn(`Bun.Image conversion failed for ${imagePath}: ${message}`)
       return imagePath
     }
     return pngPath

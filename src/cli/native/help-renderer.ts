@@ -52,12 +52,15 @@ const flagGroup = (definition: CliFlagDefinition): string | undefined => {
   return typeof group === 'string' ? group : undefined
 }
 
+const isFlagHidden = (definition: CliFlagDefinition): boolean =>
+  definition.help?.hidden === true
+
 const formatFlagName = (name: string, definition: CliFlagDefinition): string => {
   return definition.short ? `--${name}, -${definition.short}` : `--${name}`
 }
 
 const renderFlagRows = (flags: CliFlagsDefinition, indent = '  '): string[] => {
-  const rows = Object.entries(flags).map(([name, definition]) => {
+  const rows = Object.entries(flags).filter(([, definition]) => !isFlagHidden(definition)).map(([name, definition]) => {
     const defaultSuffix = 'default' in definition ? ` ${formatDefault(definition.default)}` : ''
     return [
       formatFlagName(name, definition),

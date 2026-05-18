@@ -6,15 +6,22 @@ import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generatio
 import { isNativeGeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { geminiGenerateContent, geminiGenerateImages } from '~/utils/gemini/gemini-rest'
+import { imageReferenceToInlineDataPart } from '../../image-utils/image-inputs'
+import { getProviderReturnedModel } from '../../image-utils/image-output'
 
 export const runGeminiImageGen = async (
   prompt: string,
   outputDir: string,
   options: {
     model: GeminiImageModel
+    mode?: 'generation' | 'edit' | undefined
+    inputs?: string[] | undefined
     aspectRatio?: string | undefined
     imageSize?: string | undefined
-    imagenCount?: number | undefined
+    imageCount?: number | undefined
+    responseMode?: 'image' | 'text-image' | undefined
+    personGeneration?: string | undefined
+    searchGrounding?: boolean | undefined
   }
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
   const apiKey = readEnv('GEMINI_API_KEY')
@@ -24,6 +31,9 @@ export const runGeminiImageGen = async (
 
   const startTime = Date.now()
   const imagePaths: string[] = []
+  const mode = options.mode ?? 'generation'
+  let providerReturnedModel: string | undefined
+  let groundingMetadata: unknown
 
   await mkdir(outputDir, { recursive: true })
 
@@ -33,22 +43,27 @@ export const runGeminiImageGen = async (
       provider: 'gemini',
       model: options.model,
       status: 'started',
-      detail: 'native image'
+      detail: mode === 'edit' ? 'native image edit' : 'native image'
     })
+    const inputParts = await Promise.all((options.inputs ?? []).map(imageReferenceToInlineDataPart))
+    const responseModalities = options.responseMode === 'text-image' ? ['TEXT', 'IMAGE'] : ['IMAGE']
 
     const response = await geminiGenerateContent(apiKey, {
       model: options.model,
-      contents: prompt,
+      contents: [{ text: prompt }, ...inputParts],
       generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities,
         ...(options.aspectRatio || options.imageSize ? {
           imageConfig: {
             ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
             ...(options.imageSize ? { imageSize: options.imageSize } : {})
           }
         } : {})
-      }
+      },
+      ...(options.searchGrounding ? { tools: [{ googleSearch: {} }] } : {})
     })
+    providerReturnedModel = getProviderReturnedModel(options.model, response)
+    groundingMetadata = response.candidates?.find((candidate) => candidate.groundingMetadata !== undefined)?.groundingMetadata
 
     const candidates = response.candidates ?? []
     if (candidates.length === 0 || !candidates[0]?.content?.parts) {
@@ -76,14 +91,15 @@ export const runGeminiImageGen = async (
       status: 'started',
       detail: 'imagen'
     })
-    const numberOfImages = options.imagenCount ?? 1
+    const numberOfImages = options.imageCount ?? 1
 
     const response = await geminiGenerateImages(apiKey, {
       model: options.model,
       prompt,
       numberOfImages,
       ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-      ...(options.imageSize ? { imageSize: options.imageSize } : {})
+      ...(options.imageSize ? { imageSize: options.imageSize } : {}),
+      ...(options.personGeneration ? { personGeneration: options.personGeneration } : {})
     })
 
     const generatedImages = response.generatedImages ?? []
@@ -125,7 +141,10 @@ export const runGeminiImageGen = async (
     imageFileNames: imagePaths.map((imagePath) => basename(imagePath)),
     imageFileSize,
     imageWidth: undefined,
-    imageHeight: undefined
+    imageHeight: undefined,
+    requestMode: mode,
+    ...(providerReturnedModel ? { providerReturnedModel } : {}),
+    ...(groundingMetadata !== undefined ? { groundingMetadata } : {})
   }
 
   return { imagePaths, metadata }

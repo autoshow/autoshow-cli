@@ -29,7 +29,13 @@ export type ImageGenOptions = Pick<
   | 'imageQuality'
   | 'imageFormat'
   | 'imageBackground'
-  | 'imagenCount'
+  | 'imageCount'
+  | 'imageInputs'
+  | 'imageMask'
+  | 'imageResponseMode'
+  | 'geminiPersonGeneration'
+  | 'geminiSearchGrounding'
+  | 'imageCompression'
   | 'imageProviderConcurrency'
   | 'imageLocalConcurrency'
 >
@@ -67,5 +73,5 @@ export type EstimateImageCostOptions = {
   deapiImageModel?: string | undefined
   imageSize?: string | undefined
   imageQuality?: string | undefined
-  imagenCount?: number | undefined
+  imageCount?: number | undefined
 }

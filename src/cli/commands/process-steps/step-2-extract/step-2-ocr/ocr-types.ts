@@ -285,7 +285,8 @@ export type OcrRequestedProvider = {
 
 export type OcrRecordedProviderError = {
   message: string
-  retryable: boolean
+  category?: OcrProviderFailureCategory | undefined
+  errorFile?: string | undefined
 }
 
 export type OcrProviderState = ProviderRunStateBase<OcrTarget['service'], OcrRecordedProviderError>
@@ -304,8 +305,20 @@ export type ExistingOcrRun = {
 
 export type OcrProviderFailureSummary = {
   message: string
-  retryable?: boolean | undefined
+  category: OcrProviderFailureCategory
+  errorFile?: string | undefined
 }
+
+export type OcrProviderFailureCategory =
+  | 'structured_response'
+  | 'pdf_chunk_render'
+  | 'timeout'
+  | 'network'
+  | 'auth'
+  | 'rate_limit'
+  | 'content_policy'
+  | 'provider_limit'
+  | 'unknown'
 
 export type OpenAIOcrInputContent =
   | {
@@ -410,7 +423,7 @@ export type ResumeOcrEntry = {
 }
 
 export type OcrMetadataOptions = {
-  failures?: Array<{ service: string, model: string, message: string }>
+  failures?: Array<{ service: string, model: string, message: string, category?: string, errorFile?: string }>
   web?: ProcessDocumentOutput['web']
   source?: Step1SourceRef
   completionStatus?: OcrCompletionStatus

@@ -1083,7 +1083,7 @@ describe('option resolution contracts', () => {
     expect(expansions['kimi-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deepinfra-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deapi-ocr']).toBeUndefined()
-    expect(ocrOpts.openaiOcrModels).toEqual(['gpt-5.4', 'gpt-5.4-nano'])
+    expect(ocrOpts.openaiOcrModels).toEqual(['gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'])
     expect(ocrOpts.anthropicOcrModels).toEqual(['claude-haiku-4-5'])
     expect(ocrOpts.deepinfraOcrModels).toEqual(['Qwen/Qwen3-VL-235B-A22B-Instruct', 'Qwen/Qwen3-VL-30B-A3B-Instruct'])
     expect(ocrOpts.awsTextractModels).toEqual(['detect-text'])
@@ -1099,7 +1099,7 @@ describe('option resolution contracts', () => {
     expect(ocrTargets.map((target) => target.service)).toContain('openai')
     expect(ocrTargets.map((target) => target.service)).toContain('kimi')
     expect(ocrTargets.map((target) => target.service)).toContain('deepinfra')
-    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('openai:gpt-5.4-mini')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('openai:gpt-5.4-mini')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('anthropic:claude-opus-4-7')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('gcloud-docai:layout-parser')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('anthropic:claude-sonnet-4-6')
@@ -1108,15 +1108,15 @@ describe('option resolution contracts', () => {
     expect(ocrTargets.map((target) => target.service)).not.toContain('deapi')
   })
 
-  test('removed OCR models remain available only where they are still write models', () => {
+  test('OpenAI Mini OCR is available while removed provider OCR models stay rejected', () => {
     const openaiWriteOpts = buildOptsFromFlags(false, { openai: 'gpt-5.4-mini' })
+    const openaiOcrOpts = buildOptsFromFlags(false, { 'openai-ocr': 'gpt-5.4-mini' })
     const writeOpts = buildOptsFromFlags(false, { anthropic: 'claude-sonnet-4-6' })
 
     expect(openaiWriteOpts.openaiModel).toBe('gpt-5.4-mini')
+    expect(openaiOcrOpts.openaiOcrModel).toBe('gpt-5.4-mini')
+    expect(openaiOcrOpts.openaiOcrModels).toEqual(['gpt-5.4-mini'])
     expect(writeOpts.anthropicModel).toBe('claude-sonnet-4-6')
-    expect(() => buildOptsFromFlags(false, { 'openai-ocr': 'gpt-5.4-mini' })).toThrow(
-      'Invalid --openai-ocr model "gpt-5.4-mini". Allowed values: gpt-5.4, gpt-5.4-nano'
-    )
     expect(() => buildOptsFromFlags(false, { 'anthropic-ocr': 'claude-opus-4-7' })).toThrow(
       'Invalid --anthropic-ocr model "claude-opus-4-7". Allowed values: claude-haiku-4-5'
     )

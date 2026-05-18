@@ -306,7 +306,13 @@ export type RuntimeOptions = {
   imageQuality: string | undefined
   imageFormat: string | undefined
   imageBackground: string | undefined
-  imagenCount: number | undefined
+  imageCount: number | undefined
+  imageInputs: string[] | undefined
+  imageMask: string | undefined
+  imageResponseMode: string | undefined
+  geminiPersonGeneration: string | undefined
+  geminiSearchGrounding: boolean | undefined
+  imageCompression: number | undefined
 
   elevenlabsMusicModels: string[] | undefined
   elevenlabsMusicModel: string | undefined

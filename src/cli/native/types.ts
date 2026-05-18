@@ -10,7 +10,9 @@ export type CliFlagDefinition = {
   default?: unknown
   short?: string
   negatable?: boolean
-  help?: Record<string, unknown>
+  help?: Record<string, unknown> & {
+    hidden?: boolean
+  }
 }
 
 export type CliFlagsDefinition = Record<string, CliFlagDefinition>
@@ -49,7 +51,6 @@ export type CliFlagValues = Record<string, unknown> & {
   out?: unknown
   refresh?: unknown
   repeat?: unknown
-  sample?: unknown
   step?: unknown
 }
 

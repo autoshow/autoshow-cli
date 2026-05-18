@@ -2,11 +2,10 @@ import { join } from 'node:path'
 import {
   ExtractionMetadataSchema,
   ExtractionResultSchema,
-  type RetryClass,
+  type OcrProviderFailureCategory,
   type OcrTarget
 } from '~/types'
 import { validateData } from '~/utils/validate/validation'
-import { classifyFetchRetry } from '~/utils/retries'
 import { getOcrTargetDirectoryName } from './ocr-targets'
 import { readOcrRunManifestEntry } from './manifest'
 import { readProviderResultEntry } from '../../manifest-utils'
@@ -27,21 +26,29 @@ type ProviderErrorLike = Error & {
   cause?: unknown
   status?: unknown
   headers?: unknown
-  retryable?: unknown
-  retryClass?: unknown
+  category?: unknown
+  stage?: unknown
 }
 
 const CONTENT_POLICY_PATTERN = /content (?:filter|filtering|policy)|blocked by content|safety|policy violation|invalid_request_error/i
-const TRANSIENT_MESSAGE_PATTERN = /timed out|timeout|temporar(?:y|ily)|network|connection|socket|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|rate limit|too many requests/i
 const STRUCTURED_VALIDATION_PATTERN = /not valid json|malformed json|schema|expected page schema|returned \d+ pages|non-contiguous page numbers|returned no pages|returned no text output/i
-const PADDLE_NATIVE_CRASH_PATTERN = /PaddleOCR .*exited with code \d+ \((?:SIGBUS|SIGKILL|SIGSEGV)\)|PaddleOCR failed .*after attempts: .*?(?:SIGBUS|SIGKILL|SIGSEGV)/i
+const PDF_CHUNK_RENDER_PATTERN = /pdf chunk creation failed|mutool convert failed|stage=pdf_chunk_render/i
+const AUTH_MESSAGE_PATTERN = /(?:api key|environment variable is required|auth(?:entication|orization)?|unauthori[sz]ed|forbidden|invalid api key|permission denied|access denied|credential|not configured)/i
+const RATE_LIMIT_MESSAGE_PATTERN = /rate limit|too many requests|\b429\b/i
+const TIMEOUT_MESSAGE_PATTERN = /timed out|timeout|deadline exceeded|abort\/timeout/i
+const NETWORK_MESSAGE_PATTERN = /network|connection|socket|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|fetch failed|unavailable|overloaded/i
+const PROVIDER_LIMIT_MESSAGE_PATTERN = /exceeds|too large|supports .* up to|file upload limit|page(?:s)? .*limit|maximum|payload too large|\b413\b|split .*smaller chunks?|image input exceeds/i
 const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
-const RETRY_CLASSES = new Set<RetryClass>([
-  'setup_download',
-  'runtime_subprocess_transient',
-  'runtime_http_read',
-  'runtime_http_create_conservative',
-  'runtime_poll_loop'
+const OCR_PROVIDER_FAILURE_CATEGORIES = new Set<OcrProviderFailureCategory>([
+  'structured_response',
+  'pdf_chunk_render',
+  'timeout',
+  'network',
+  'auth',
+  'rate_limit',
+  'content_policy',
+  'provider_limit',
+  'unknown'
 ])
 
 const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
@@ -71,7 +78,51 @@ const resolveFailureMessage = (
 
   const outer = chain[0] as ProviderErrorLike
   const deepest = chain[chain.length - 1] as ProviderErrorLike
+  if (deepest.name === 'AbortError' || deepest.name === 'TimeoutError') {
+    const timeoutMessage = deepest.message || 'request timed out'
+    return stripAnsi(outer.message ? `${outer.message}: ${timeoutMessage}` : timeoutMessage)
+  }
   return stripAnsi(deepest.message || outer.message)
+}
+
+const resolveFailureCategory = (
+  chain: ProviderErrorLike[],
+  message: string,
+  status: number | undefined
+): OcrProviderFailureCategory => {
+  const explicitCategory = chain.find((entry) =>
+    typeof entry.category === 'string'
+    && OCR_PROVIDER_FAILURE_CATEGORIES.has(entry.category as OcrProviderFailureCategory)
+  )?.category
+  if (typeof explicitCategory === 'string') {
+    return explicitCategory as OcrProviderFailureCategory
+  }
+
+  if (chain.some((entry) => entry.stage === 'pdf_chunk_render') || PDF_CHUNK_RENDER_PATTERN.test(message)) {
+    return 'pdf_chunk_render'
+  }
+  if (CONTENT_POLICY_PATTERN.test(message)) {
+    return 'content_policy'
+  }
+  if (status === 401 || status === 403 || AUTH_MESSAGE_PATTERN.test(message)) {
+    return 'auth'
+  }
+  if (status === 429 || RATE_LIMIT_MESSAGE_PATTERN.test(message)) {
+    return 'rate_limit'
+  }
+  if (status === 413 || PROVIDER_LIMIT_MESSAGE_PATTERN.test(message)) {
+    return 'provider_limit'
+  }
+  if (STRUCTURED_VALIDATION_PATTERN.test(message)) {
+    return 'structured_response'
+  }
+  if (TIMEOUT_MESSAGE_PATTERN.test(message)) {
+    return 'timeout'
+  }
+  if (NETWORK_MESSAGE_PATTERN.test(message) || (typeof status === 'number' && status >= 500)) {
+    return 'network'
+  }
+  return 'unknown'
 }
 
 export const stripAnsi = (value: string): string => value.replace(ANSI_PATTERN, '')
@@ -81,40 +132,10 @@ export const classifyOcrProviderFailure = (
 ): OcrProviderFailureSummary => {
   const chain = collectErrorChain(error)
   const message = resolveFailureMessage(chain, error)
-  const explicitRetryableValue = chain.find((entry) => typeof entry.retryable === 'boolean')?.retryable
-  const explicitRetryable = typeof explicitRetryableValue === 'boolean'
-    ? explicitRetryableValue
-    : undefined
-  const retryClass = chain.find((entry) => typeof entry.retryClass === 'string')?.retryClass
-  const status = chain.find((entry) => typeof entry.status === 'number')?.status
-  const headers = chain.find((entry) => entry.headers instanceof Headers)?.headers
+  const status = chain.find((entry) => typeof entry.status === 'number')?.status as number | undefined
+  const category = resolveFailureCategory(chain, message, status)
 
-  let retryable = false
-  if (explicitRetryable !== undefined) {
-    retryable = explicitRetryable
-  } else if (CONTENT_POLICY_PATTERN.test(message)) {
-    retryable = false
-  } else if (STRUCTURED_VALIDATION_PATTERN.test(message)) {
-    retryable = true
-  } else if (PADDLE_NATIVE_CRASH_PATTERN.test(message)) {
-    retryable = true
-  } else if (typeof status === 'number' || retryClass) {
-    const normalizedRetryClass = typeof retryClass === 'string' && RETRY_CLASSES.has(retryClass as RetryClass)
-      ? retryClass as RetryClass
-      : 'runtime_http_read'
-    retryable = classifyFetchRetry(
-      Object.assign(new Error(message), {
-        ...(typeof status === 'number' ? { status } : {}),
-        ...(headers instanceof Headers ? { headers } : {})
-      }),
-      normalizedRetryClass,
-      { retryAbortOnConservative: true }
-    ).shouldRetry
-  } else if (TRANSIENT_MESSAGE_PATTERN.test(message)) {
-    retryable = true
-  }
-
-  return { message, retryable }
+  return { message, category }
 }
 
 export const getOcrTargetKey = (target: Pick<OcrTarget, 'service' | 'model'>): string =>
@@ -189,7 +210,8 @@ export const parseStoredProviderState = (value: unknown): OcrProviderState | und
   const lastError = isRecord(value['lastError']) && typeof value['lastError']['message'] === 'string'
     ? {
         message: value['lastError']['message'],
-        retryable: value['lastError']['retryable'] === true
+        ...(typeof value['lastError']['category'] === 'string' ? { category: value['lastError']['category'] as OcrProviderFailureCategory } : {}),
+        ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {})
       } satisfies OcrRecordedProviderError
     : undefined
 
@@ -199,7 +221,6 @@ export const parseStoredProviderState = (value: unknown): OcrProviderState | und
     artifactDir: value['artifactDir'],
     status: value['status'],
     attempts: value['attempts'],
-    ...(typeof value['retryable'] === 'boolean' ? { retryable: value['retryable'] } : {}),
     ...(lastError ? { lastError } : {})
   }
 }
@@ -261,38 +282,36 @@ export const buildMissingTargetsFromEntry = (
   const explicitMissing = Array.isArray(entry['missingProviders'])
     ? entry['missingProviders'].map(parseStoredRequestedTarget).filter((target): target is OcrTarget => target !== undefined)
     : []
+  const missingTargets = new Map<string, OcrTarget>()
+  const providerStates = parseStoredProviderStateMap(entry)
 
-  if (explicitMissing.length > 0) {
-    const providerStates = parseStoredProviderStateMap(entry)
-    return explicitMissing.filter((target) => {
-      const state = providerStates.get(getOcrTargetKey(target))
-      return isResumableProviderState(state)
-    })
+  for (const target of explicitMissing) {
+    const state = providerStates.get(getOcrTargetKey(target))
+    if (isRerunnableProviderState(state)) {
+      missingTargets.set(getOcrTargetKey(target), target)
+    }
   }
 
   const successfulKeys = parseSuccessfulProviderKeys(entry)
-  const providerStates = parseStoredProviderStateMap(entry)
-  return requestedTargets.filter((target) => {
+  for (const target of requestedTargets) {
     const key = getOcrTargetKey(target)
     if (successfulKeys.has(key)) {
-      return false
+      continue
     }
 
     const state = providerStates.get(key)
-    return isResumableProviderState(state)
-  })
+    if (isRerunnableProviderState(state)) {
+      missingTargets.set(key, target)
+    }
+  }
+
+  return [...missingTargets.values()]
 }
 
-const isResumableProviderState = (
+const isRerunnableProviderState = (
   state: OcrProviderState | undefined
 ): boolean => {
-  if (state === undefined || state.status === 'missing') {
-    return true
-  }
-  if (state.status !== 'failed') {
-    return false
-  }
-  if (state.retryable === true || state.lastError?.retryable === true) {
+  if (state === undefined || state.status === 'missing' || state.status === 'failed') {
     return true
   }
   return false
@@ -367,10 +386,10 @@ export const buildProviderStates = (
         artifactDir: getOcrProviderArtifactDir(target),
         status: 'failed',
         attempts: (existing?.attempts ?? 0) + 1,
-        retryable: failure.retryable === true,
         lastError: {
           message: failure.message,
-          retryable: failure.retryable === true
+          category: failure.category,
+          ...(failure.errorFile ? { errorFile: failure.errorFile } : {})
         }
       }
     }
@@ -381,7 +400,6 @@ export const buildProviderStates = (
       artifactDir: getOcrProviderArtifactDir(target),
       status: existing?.status ?? 'missing',
       attempts: existing?.attempts ?? 0,
-      ...(existing?.retryable !== undefined ? { retryable: existing.retryable } : {}),
       ...(existing?.lastError ? { lastError: existing.lastError } : {})
     }
   })
@@ -404,7 +422,7 @@ export const buildMissingProviders = (
 ): OcrRequestedProvider[] => {
   const missingKeys = new Set(
     providerStates
-      .filter(isResumableProviderState)
+      .filter(isRerunnableProviderState)
       .map((state) => getOcrTargetKey(state))
   )
 
@@ -422,5 +440,6 @@ export const buildMetadataErrorEntries = (
       service: state.service,
       model: state.model,
       message: state.lastError?.message,
-      retryable: state.lastError?.retryable === true
+      category: state.lastError?.category,
+      ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {})
     }))

@@ -109,7 +109,8 @@ export const runGlmImageGen = async (
       imageFileNames: ['generated-image.png'],
       imageFileSize: imageFile.size,
       imageWidth: undefined,
-      imageHeight: undefined
+      imageHeight: undefined,
+      requestMode: 'generation'
     }
   }
 }

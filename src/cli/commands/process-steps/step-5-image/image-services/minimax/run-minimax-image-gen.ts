@@ -111,7 +111,8 @@ export const runMinimaxImageGen = async (
     imageFileNames: ['generated-image.jpeg'],
     imageFileSize: imageFile.size,
     imageWidth: undefined,
-    imageHeight: undefined
+    imageHeight: undefined,
+    requestMode: 'generation'
   }
 
   return { imagePaths: [outputPath], metadata }

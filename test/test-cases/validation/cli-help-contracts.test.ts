@@ -246,6 +246,21 @@ test('image and video help expose BFL/deAPI provider flags', async () => {
   expect(videoResult.stdout).not.toContain('--deapi-video')
 })
 
+test('standalone generation help exposes deterministic output directory flags', async () => {
+  for (const command of ['image', 'tts', 'video', 'music'] as const) {
+    const result = await runCommand(['src/cli/create-cli.ts', command, '--help'], { env: helpEnv })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('--output-dir')
+    expect(result.stdout).toContain('--out')
+  }
+
+  const writeResult = await runCommand(['src/cli/create-cli.ts', 'write', '--help'], { env: helpEnv })
+  expect(writeResult.exitCode).toBe(0)
+  expect(writeResult.stdout).toContain('Output format: text, json, tsv, hocr')
+  expect(writeResult.stdout).not.toContain('Alias for --output-dir')
+})
+
 test('comic help exposes the generate-images command and page flags', async () => {
   const result = await runCommand(['src/cli/create-cli.ts', 'comic', 'generate-images', '--help'], { env: helpEnv })
 

@@ -186,10 +186,8 @@ export const runMultiProviderSttBatch = async ({
       artifactDir: relativeDir,
       status: 'skipped',
       attempts: options.attempts ?? providerStateMap.get(targetKey)?.attempts ?? 0,
-      retryable: reason.retryable,
       lastError: toRecordedProviderError({
         message: reason.message,
-        retryable: reason.retryable,
         skipped: true,
         ...(reason.stage ? { stage: reason.stage } : {}),
         ...(typeof reason.status === 'number' ? { status: reason.status } : {}),
@@ -335,10 +333,8 @@ export const runMultiProviderSttBatch = async ({
         artifactDir: relativeDir,
         status: 'failed',
         attempts: nextAttemptCount,
-        retryable: failure.retryable,
         lastError: toRecordedProviderError({
           message: failure.message,
-          retryable: failure.retryable,
           ...(failure.stage ? { stage: failure.stage } : {}),
           ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
           ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
@@ -374,7 +370,6 @@ export const runMultiProviderSttBatch = async ({
   if (!batchCoordinator) {
     for (let pass = 1; pass <= STT_RECOVERY_MAX_PASSES; pass++) {
       const recoveryIndices = [...failuresByIndex.values()]
-        .filter((failure) => failure.retryable)
         .map((failure) => failure.index)
 
       if (recoveryIndices.length === 0) {
@@ -385,7 +380,7 @@ export const runMultiProviderSttBatch = async ({
       logSttRecoveryPass(l, {
         pass,
         maxPasses: STT_RECOVERY_MAX_PASSES,
-        retryableFailures: recoveryIndices.length,
+        failures: recoveryIndices.length,
         providers: recoveryIndices.map((index) => `${requestedTargets[index]!.service}/${requestedTargets[index]!.model}`).join(', ')
       })
       await runTargetPool(recoveryIndices, 1, async (index) => {

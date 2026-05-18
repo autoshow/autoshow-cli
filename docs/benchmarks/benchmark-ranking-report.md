@@ -385,13 +385,12 @@ Quality: No TTS quality ranking is shown because roundtrip WER is null in the cu
 | 6 | gemini/imagen-4.0-fast-generate-001 | 0.020000 | 1 |
 | 7 | openai/gpt-image-1-mini | 0.020000 | 1 |
 | 8 | bfl/flux-2-pro-preview | 0.030000 | 1 |
-| 9 | gemini/gemini-3-pro-image-preview | 0.030000 | 1 |
-| 10 | gemini/imagen-4.0-generate-001 | 0.040000 | 1 |
-| 11 | openai/gpt-image-1 | 0.040000 | 1 |
-| 12 | runway/gen4_image | 0.050000 | 1 |
-| 13 | gemini/imagen-4.0-ultra-generate-001 | 0.060000 | 1 |
-| 14 | grok/grok-imagine-image | 0.070000 | 1 |
-| 15 | openai/gpt-image-1.5 | 0.080000 | 1 |
+| 9 | gemini/imagen-4.0-generate-001 | 0.040000 | 1 |
+| 10 | openai/gpt-image-1 | 0.040000 | 1 |
+| 11 | runway/gen4_image | 0.050000 | 1 |
+| 12 | gemini/imagen-4.0-ultra-generate-001 | 0.060000 | 1 |
+| 13 | grok/grok-imagine-image | 0.070000 | 1 |
+| 14 | openai/gpt-image-1.5 | 0.080000 | 1 |
 
 ### Speed
 
@@ -404,12 +403,11 @@ Quality: No TTS quality ranking is shown because roundtrip WER is null in the cu
 | 5 | gemini/imagen-4.0-ultra-generate-001 | 10.611 | 1 |
 | 6 | deapi/Flux_2_Klein_4B_BF16 | 10.648 | 4 |
 | 7 | bfl/flux-2-pro-preview | 11.713 | 1 |
-| 8 | gemini/gemini-3-pro-image-preview | 14.210 | 1 |
-| 9 | minimax/image-01 | 14.578 | 4 |
-| 10 | openai/gpt-image-1-mini | 21.644 | 1 |
-| 11 | openai/gpt-image-2 | 29.127 | 8 |
-| 12 | deapi/ZImageTurbo_INT8 | 29.433 | 4 |
-| 13 | runway/gen4_image | 30.984 | 1 |
+| 8 | minimax/image-01 | 14.578 | 4 |
+| 9 | openai/gpt-image-1-mini | 21.644 | 1 |
+| 10 | openai/gpt-image-2 | 29.127 | 8 |
+| 11 | deapi/ZImageTurbo_INT8 | 29.433 | 4 |
+| 12 | runway/gen4_image | 30.984 | 1 |
 | 14 | openai/gpt-image-1.5 | 48.361 | 1 |
 | 15 | openai/gpt-image-1 | 64.423 | 1 |
 
@@ -493,4 +491,3 @@ Quality: No pure music quality metric is present in these benchmark files.
 - Quality rankings are shown only for pure quality metrics: OCR WER-derived accuracy, URL extraction accuracy, and STT speaker-aware WER scores. Dashboard smoke/e2e rows do not contain pure quality metrics and therefore contribute only price and speed.
 - Zero-cost third-party rows remain in price rankings. Local and non-third-party services are excluded, including `unknown`, `extract`, `ocrmypdf`, `paddle-ocr`, `tesseract`, `whisper`, `kitten`, `llama.cpp`, `defuddle`, and `reverb`.
 - Omitted 1 failed row. Missing metric counts are reported in the source summary and those missing values were omitted only from the affected metric average.
-

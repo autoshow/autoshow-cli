@@ -8,7 +8,7 @@ import {
   SUPPORTED_RUNWAY_VIDEO_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { priceFlag } from './shared-flags'
+import { generationOutputFlags, priceFlag } from './shared-flags'
 import { renameFlags } from './flag-utils'
 
 export const VIDEO_COMMAND_SELECTOR_FLAGS = {
@@ -80,4 +80,7 @@ export const videoGenFlags = {
   ...priceFlag
 } as const satisfies CliFlagsDefinition
 
-export const videoCommandFlags = renameFlags(videoGenFlags, VIDEO_COMMAND_SELECTOR_FLAGS)
+export const videoCommandFlags = {
+  ...renameFlags(videoGenFlags, VIDEO_COMMAND_SELECTOR_FLAGS),
+  ...generationOutputFlags
+} as const satisfies CliFlagsDefinition

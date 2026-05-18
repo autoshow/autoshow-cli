@@ -82,6 +82,7 @@ Hosted generation flags:
 | `--music-lyrics-file <path>` | Lyrics file for MiniMax, deAPI, and Gemini |
 | `--music-instrumental` | Force instrumental generation for ElevenLabs, deAPI, Gemini, and MiniMax `music-2.6` / `music-2.6-free` |
 | `--price` | Show the estimate and exit |
+| `--out <dir>` / `--output-dir <dir>` | Use an exact hosted music run directory instead of `output/<timestamp>_music-gen/` |
 
 Lyric-video flags:
 
@@ -226,6 +227,8 @@ output/YYYY-MM-DD_HH-mm-ss_music-gen/
 ```
 
 `run.json` includes `music`, `cost`, and `timing` sections. `music` is always an array, even when only one provider succeeds.
+
+For hosted music generation, `--out` / `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.
 
 Lyric-video single runs write:
 

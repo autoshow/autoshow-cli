@@ -228,7 +228,8 @@ export const runDeapiImageGen = async (
       imageFileNames: ['generated-image.png'],
       imageFileSize: imageFile.size,
       imageWidth: width,
-      imageHeight: height
+      imageHeight: height,
+      requestMode: 'generation'
     }
   }
 }

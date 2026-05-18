@@ -8,6 +8,7 @@ export type OcrProviderLifecycle = {
   model: string
   status: string
   elapsedMs?: number | undefined
+  reason?: string | undefined
   detail?: string | undefined
 }
 
@@ -111,21 +112,36 @@ export const parseOcrmypdfOutputLine = (
 
 export const buildOcrProviderLifecycleRows = (
   lifecycle: OcrProviderLifecycle
-): Array<{ provider: string, model: string, status: string, elapsedMs: number | '', detail: string }> => [{
+): Array<{ provider: string, model: string, status: string, elapsedMs: number | '', reason: string }> => [{
   provider: lifecycle.provider,
   model: lifecycle.model,
   status: lifecycle.status,
   elapsedMs: lifecycle.elapsedMs ?? '',
-  detail: lifecycle.detail ?? ''
+  reason: lifecycle.reason ?? ''
 }]
 
 export const buildOcrProviderLifecycleTable = (
   lifecycle: OcrProviderLifecycle
-): HumanLogTable =>
-  createHumanTable(
+): HumanLogTable => {
+  const table = createHumanTable(
     buildOcrProviderLifecycleRows(lifecycle),
-    ['provider', 'model', 'status', 'elapsedMs', 'detail']
+    ['provider', 'model', 'status', 'elapsedMs', 'reason']
   )
+  if (!lifecycle.detail) {
+    return table
+  }
+
+  return {
+    ...table,
+    details: [
+      ...(table.details ?? []),
+      {
+        label: `${lifecycle.provider}/${lifecycle.model} detail`,
+        value: lifecycle.detail
+      }
+    ]
+  }
+}
 
 export const logOcrProviderLifecycle = (
   logger: TableLogger,

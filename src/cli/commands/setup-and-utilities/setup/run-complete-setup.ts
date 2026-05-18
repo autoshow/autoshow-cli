@@ -486,25 +486,6 @@ const runSetupMusic = async (): Promise<void> => {
   l.write('success', 'Music setup complete')
 }
 
-const runSetupSample = async (): Promise<void> => {
-  l.write('info', 'Sample setup: verifying required tools for fixture generation (ffmpeg, ffprobe)')
-  const { commandExists } = await import('~/utils/cli-utils')
-  const requiredTools = ['ffmpeg', 'ffprobe']
-  const missing: string[] = []
-  for (const tool of requiredTools) {
-    if (!commandExists(tool)) {
-      missing.push(tool)
-    }
-  }
-  if (missing.length > 0) {
-    throw new Error(
-      `Sample setup: missing required tools: ${missing.join(', ')}. ` +
-      'Install them via your system package manager or run: bun as setup'
-    )
-  }
-  l.write('success', 'Sample setup complete (all required tools found)')
-}
-
 const computeMedian = (values: number[]): number => {
   if (values.length === 0) return 0
   const sorted = [...values].sort((a, b) => a - b)
@@ -551,7 +532,7 @@ const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
     case 'music': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
     case 'all': return [whisperModelPath, llamaBinaryPath]
     case 'yt-dlp': return [ytDlpManagedBinaryPath]
-    case 'uv': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'video': case 'sample': return []
+    case 'uv': case 'calibre': case 'transcription': case 'write': case 'tts': case 'image': case 'video': return []
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
   }
 }
@@ -584,7 +565,6 @@ const executeStepOnce = async (step: SetupStepId): Promise<void> => {
     case 'image': await runSetupImage(); return
     case 'video': await runSetupVideo(); return
     case 'music': await runSetupMusic(); return
-    case 'sample': await runSetupSample(); return
     default: { const exhaustive: never = step; throw new Error(`Unknown setup step: ${exhaustive}`) }
   }
 }

@@ -168,7 +168,13 @@ const ImageDefaultsSchema = v.strictObject({
   imageQuality: v.optional(v.string(), undefined),
   imageFormat: v.optional(v.string(), undefined),
   imageBackground: v.optional(v.string(), undefined),
-  imagenCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  imageCount: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  imageInputs: v.optional(v.array(v.string()), undefined),
+  imageMask: v.optional(v.string(), undefined),
+  imageResponseMode: v.optional(v.string(), undefined),
+  geminiPersonGeneration: v.optional(v.string(), undefined),
+  geminiSearchGrounding: v.optional(v.boolean(), undefined),
+  imageCompression: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100)), undefined),
   providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
   localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })

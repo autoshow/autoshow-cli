@@ -121,7 +121,13 @@ const resumeImageFlags = pickFlags(imageGenFlags, [
   'image-quality',
   'image-format',
   'image-background',
-  'imagen-count',
+  'image-count',
+  'image-input',
+  'image-mask',
+  'image-response-mode',
+  'gemini-person-generation',
+  'gemini-search-grounding',
+  'image-compression',
   'image-provider-concurrency',
   'image-local-concurrency'
 ])

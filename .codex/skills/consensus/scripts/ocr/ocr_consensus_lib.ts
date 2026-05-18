@@ -1,6 +1,8 @@
 #!/usr/bin/env bun
 
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 
 export interface OcrPage {
@@ -171,6 +173,7 @@ const CURRENCY_PATTERNS: Array<[RegExp, string]> = [
 const LOCAL_SERVICES = new Set(["tesseract", "ocrmypdf", "paddle-ocr"]);
 
 const PAGE_DELIMITER_RE = /^---\s*Page\s+(\d+)\s*---$/;
+const LARGE_EDIT_SEQUENCE_THRESHOLD = 10_000;
 
 export function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
@@ -205,12 +208,85 @@ export interface WerBreakdown {
   insertions: number;
 }
 
+function gitDiffBreakdown(reference: string[], candidate: string[]): WerBreakdown {
+  if (reference.length === 0) {
+    return { distance: candidate.length, substitutions: 0, deletions: 0, insertions: candidate.length };
+  }
+  if (candidate.length === 0) {
+    return { distance: reference.length, substitutions: 0, deletions: reference.length, insertions: 0 };
+  }
+
+  const tmpDir = mkdtempSync(join(tmpdir(), "ocr-edit-distance-"));
+  const referencePath = join(tmpDir, "reference.txt");
+  const candidatePath = join(tmpDir, "candidate.txt");
+
+  try {
+    writeFileSync(referencePath, `${reference.join("\n")}\n`);
+    writeFileSync(candidatePath, `${candidate.join("\n")}\n`);
+
+    const diff = spawnSync(
+      "git",
+      ["diff", "--no-index", "--no-renames", "--unified=0", "--", referencePath, candidatePath],
+      { encoding: "utf8", maxBuffer: 1024 * 1024 * 64 },
+    );
+
+    if (diff.status === 0) {
+      return { distance: 0, substitutions: 0, deletions: 0, insertions: 0 };
+    }
+    if (diff.status !== 1) {
+      throw new Error((diff.stderr || diff.stdout || "git diff failed").trim());
+    }
+
+    let substitutions = 0;
+    let deletions = 0;
+    let insertions = 0;
+    let hunkDeletions = 0;
+    let hunkInsertions = 0;
+
+    function flushHunk() {
+      substitutions += Math.min(hunkDeletions, hunkInsertions);
+      deletions += Math.max(0, hunkDeletions - hunkInsertions);
+      insertions += Math.max(0, hunkInsertions - hunkDeletions);
+      hunkDeletions = 0;
+      hunkInsertions = 0;
+    }
+
+    for (const line of diff.stdout.split(/\r?\n/)) {
+      if (line.startsWith("@@")) {
+        flushHunk();
+        continue;
+      }
+      if (line.startsWith("---") || line.startsWith("+++") || line.startsWith("diff ") || line.startsWith("index ")) {
+        continue;
+      }
+      if (line.startsWith("-")) {
+        hunkDeletions += 1;
+      } else if (line.startsWith("+")) {
+        hunkInsertions += 1;
+      }
+    }
+    flushHunk();
+
+    return {
+      distance: substitutions + deletions + insertions,
+      substitutions,
+      deletions,
+      insertions,
+    };
+  } finally {
+    rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
 export function levenshteinDistance(left: string[], right: string[]): number {
   if (left.length === 0) {
     return right.length;
   }
   if (right.length === 0) {
     return left.length;
+  }
+  if (left.length > LARGE_EDIT_SEQUENCE_THRESHOLD || right.length > LARGE_EDIT_SEQUENCE_THRESHOLD) {
+    return gitDiffBreakdown(left, right).distance;
   }
   if (left.length < right.length) {
     return levenshteinDistance(right, left);
@@ -239,9 +315,8 @@ export function levenshteinBreakdown(reference: string[], candidate: string[]): 
   if (m === 0) {
     return { distance: n, substitutions: 0, deletions: n, insertions: 0 };
   }
-  if (n > 10_000 || m > 10_000) {
-    const distance = levenshteinDistance(reference, candidate);
-    return { distance, substitutions: -1, deletions: -1, insertions: -1 };
+  if (n > LARGE_EDIT_SEQUENCE_THRESHOLD || m > LARGE_EDIT_SEQUENCE_THRESHOLD) {
+    return gitDiffBreakdown(reference, candidate);
   }
 
   const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
@@ -529,6 +604,8 @@ export function loadOcrProviderRuns(runDir: string): { providers: OcrProviderRun
     const extractionPath = join(dirname(resultPath), "extraction.txt");
     const lookupKey = makeProviderLookupKey(provider, model);
 
+    const pageText = pages.map((page) => page.text).join("\n\n").trim();
+
     return {
       directoryName: basename(dirname(resultPath)),
       provider,
@@ -537,7 +614,7 @@ export function loadOcrProviderRuns(runDir: string): { providers: OcrProviderRun
       resultPath,
       extractionPath: existsSync(extractionPath) ? extractionPath : null,
       pages,
-      text: String(payload.result?.text ?? "").trim(),
+      text: pageText || String(payload.result?.text ?? "").trim(),
       tokenEstimate: payload.metadata?.tokenEstimate ?? null,
       processingTimeMs:
         timingLookup.get(lookupKey) ??

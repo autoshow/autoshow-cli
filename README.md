@@ -1,4 +1,4 @@
-# autoshow-bun-cli
+# autoshow-cli
 
 Bun-native CLI for turning media, documents, and text prompts into metadata, downloads, transcripts, OCR extracts, summaries, and generated speech, images, video, or music.
 
@@ -102,8 +102,9 @@ bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice
 # deAPI Qwen3 voice cloning
 bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
-# Prompt-driven generation
-bun as image "a dramatic fox portrait in snow" --minimax image-01
+# Prompt-driven generation, then edit the generated image
+bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
+bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024
 bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
 bun as music "an ambient piano instrumental" --minimax music-2.5
@@ -139,7 +140,6 @@ High-value notes:
 
 - `write` is the central orchestration command. It can summarize transcripts or extracted documents, write JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
 - `setup --models` lets you pre-download local runtimes without running inference, for example `bun as setup --models tiny` or `bun as setup --models ggml-org/gemma-3-270m-it-GGUF`.
-- `setup --sample` generates or validates the deterministic fixture set used by tests.
 - If YouTube starts blocking `yt-dlp`, follow [docs/cookies.md](./docs/cookies.md) to configure `YTDLP_COOKIES_FROM_BROWSER` or `YTDLP_COOKIES`.
 
 ## Usage Basics
@@ -225,7 +225,7 @@ FORCE_COLOR=1              # force ANSI color in redirected output
 
 ## Output Layout
 
-Most artifact-producing runs write a timestamped directory under `output/` with `run.json` plus the files for the steps that actually ran.
+Most artifact-producing runs write a timestamped directory under `output/` with `run.json` plus the files for the steps that actually ran. Standalone `tts`, `image`, `video`, and hosted `music` also accept `--out <dir>` or `--output-dir <dir>` to choose the run directory exactly.
 
 Typical artifacts include:
 
@@ -254,5 +254,4 @@ bun run check
 bun t
 ```
 
-- `bun t` uses the repo's custom test runner and performs setup/sample preflight, so run `bun as setup` first if local dependencies are missing.
-- `bun as setup --sample --verify-only` validates the deterministic fixture set used by tests.
+- `bun t` uses the repo's custom test runner, so run `bun as setup` first if local dependencies are missing.

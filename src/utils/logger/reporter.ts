@@ -329,10 +329,11 @@ const buildCompleteResultData = (
 
 export const createReporter = (logger: Logger): Reporter => {
   return {
-    expectedOutput: (_outputDir, files) => {
+    expectedOutput: (outputDir, files) => {
+      const prefix = outputDir.endsWith('/') ? outputDir : `${outputDir}/`
       logger.write('info', 'Expected files', {
         category: 'command',
-        humanTable: createHumanTable(files.map(file => ({ file })), ['file'])
+        humanTable: createHumanTable(files.map(file => ({ file: `${prefix}${file}` })), ['file'])
       })
     },
     estimate: (estimate) => {

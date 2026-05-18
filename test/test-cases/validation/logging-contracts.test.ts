@@ -359,6 +359,52 @@ describe('logging contracts', () => {
     expect(rendered).toContain('\u2502 audio \u2502 speech.wav')
   })
 
+  test('verbose error-like table cells render as sidecar details outside the box', () => {
+    const rawError = [
+      'Error: OpenAI OCR request failed',
+      '    at request (/tmp/autoshow/openai.ts:42:10)',
+      'stderr: provider returned a diagnostic line'
+    ].join('\n')
+    const table = createHumanTable([
+      { provider: 'openai', status: 'failed', error: rawError }
+    ], ['provider', 'status', 'error'])
+    const rendered = stripAnsi(renderHumanTable(table))
+    const boxedRows = rendered.split('\n').filter(line => line.includes('\u2502')).join('\n')
+
+    expect(table.rows).toEqual([{
+      provider: 'openai',
+      status: 'failed',
+      error: 'see details'
+    }])
+    expect(table.details).toEqual([{ label: 'openai error', value: rawError }])
+    expect(boxedRows).not.toContain('OpenAI OCR request failed')
+    expect(boxedRows).not.toContain('stderr: provider returned')
+    expect(rendered).toContain('  openai error: Error: OpenAI OCR request failed')
+    expect(rendered).toContain('    at request (/tmp/autoshow/openai.ts:42:10)')
+    expect(rendered).toContain('stderr: provider returned a diagnostic line')
+  })
+
+  test('raw stderr key/value cells render as details while short progress details stay inline', () => {
+    const rawStderr = 'fatal: first diagnostic line\nsecond diagnostic line'
+    const stderrTable = createKeyValueTable([
+      ['stderr', rawStderr]
+    ])
+    const renderedStderr = stripAnsi(renderHumanTable(stderrTable))
+    const boxedRows = renderedStderr.split('\n').filter(line => line.includes('\u2502')).join('\n')
+
+    expect(stderrTable.rows).toEqual([{ key: 'stderr', value: 'see details' }])
+    expect(stderrTable.details).toEqual([{ label: 'stderr', value: rawStderr }])
+    expect(boxedRows).not.toContain('fatal: first diagnostic line')
+    expect(renderedStderr).toContain('  stderr: fatal: first diagnostic line')
+    expect(renderedStderr).toContain('second diagnostic line')
+
+    const progressTable = createHumanTable([
+      { provider: 'aws-textract', detail: 'attempt 10' }
+    ], ['provider', 'detail'])
+    expect(progressTable.details).toBeUndefined()
+    expect(stripAnsi(renderHumanTable(progressTable))).toContain('\u2502 aws-textract \u2502 attempt 10')
+  })
+
   test('lifted path details are redacted like table cells', () => {
     const secret = 'secret-value-123'
     const longPath = `output/2026-05-13_12-34-56-789_process-video_with-a-very-long-title/OPENAI_API_KEY=${secret}/run.json`
@@ -689,13 +735,13 @@ describe('logging contracts', () => {
       status: 'succeeded',
       elapsedMs: 1234
     })).toEqual({
-      columns: ['provider', 'model', 'status', 'elapsedMs', 'detail'],
+      columns: ['provider', 'model', 'status', 'elapsedMs', 'reason'],
       rows: [{
         provider: 'openai',
         model: 'gpt-5.4-nano',
         status: 'succeeded',
         elapsedMs: 1234,
-        detail: ''
+        reason: ''
       }]
     })
 

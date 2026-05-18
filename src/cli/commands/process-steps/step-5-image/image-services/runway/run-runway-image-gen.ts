@@ -199,7 +199,8 @@ export const runRunwayImageGen = async (
       imageFileNames: [fileName],
       imageFileSize: imageFile.size,
       imageWidth: undefined,
-      imageHeight: undefined
+      imageHeight: undefined,
+      requestMode: 'generation'
     }
   }
 }

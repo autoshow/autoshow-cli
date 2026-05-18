@@ -84,6 +84,21 @@
           "completionTokensPerPage": 458.25
         }
       },
+      "gpt-5.4-mini": {
+        "description": "GPT-5.4 Mini OCR",
+        "costPerMInputTokensUSD": 0.75,
+        "costPerMOutputTokensUSD": 4.5,
+        "costPerMInputTokensCents": 75,
+        "costPerMOutputTokensCents": 450,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 3076,
+          "completionTokensPerPage": 458.25
+        }
+      },
       "gpt-5.4-nano": {
         "description": "GPT-5.4 nano OCR",
         "costPerMInputTokensUSD": 0.2,

@@ -461,7 +461,7 @@ describe('Gemini REST contracts', () => {
         model: 'imagen-4.0-generate-001',
         aspectRatio: '1:1',
         imageSize: '2K',
-        imagenCount: 2
+        imageCount: 2
       })
       expect(await Bun.file(result.imagePaths[0] as string).exists()).toBe(true)
     })

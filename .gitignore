@@ -6,7 +6,6 @@ node_modules/
 *.log
 **/*/__pycache__
 input/ajc
-input/samples
 input/examples/audio
 input/examples/video
 !input/examples/

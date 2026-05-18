@@ -262,7 +262,13 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--image-quality <quality>` | Image quality (OpenAI) |
 | `--image-format <format>` | Image output format (OpenAI/BFL) |
 | `--image-background <bg>` | Image background (OpenAI) |
-| `--imagen-count <n>` | Number of images to generate (Imagen 4) |
+| `--image-count <n>` | Number of images to generate in one supported provider request |
+| `--image-input <path-or-url>` | Reference/source image for image edits |
+| `--image-mask <path>` | Mask image for OpenAI image edits |
+| `--image-response-mode <image\|text-image>` | Native Gemini response mode |
+| `--gemini-person-generation <mode>` | Gemini Imagen person generation mode |
+| `--gemini-search-grounding` | Enable Gemini native image search grounding |
+| `--image-compression <0-100>` | OpenAI JPEG/WebP output compression |
 | `--image-provider-concurrency <n>` | Max hosted image providers/models running in parallel for one item |
 | `--image-local-concurrency <n>` | Max local image providers running in parallel for one item |
 

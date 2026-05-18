@@ -156,8 +156,8 @@ describe('Mistral REST contracts', () => {
       fileSize: 10
     }
 
-    const pdfResult = await runMistralOcr('input/samples/valid/1-document.pdf', pdfMetadata, 'mistral-ocr-latest')
-    const imageResult = await runMistralOcr('input/samples/valid/1-image.png', imageMetadata, 'mistral-ocr-latest')
+    const pdfResult = await runMistralOcr('input/examples/document/1-document.pdf', pdfMetadata, 'mistral-ocr-latest')
+    const imageResult = await runMistralOcr('input/examples/document/1-document.png', imageMetadata, 'mistral-ocr-latest')
 
     expect(pdfResult.pages[0]).toMatchObject({ pageNumber: 1, method: 'ocr', text: 'page 1' })
     expect(imageResult.pages[0]).toMatchObject({ pageNumber: 2, method: 'ocr', text: 'page 2' })

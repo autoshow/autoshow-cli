@@ -51,8 +51,10 @@ import {
 } from './ocr-engine-selection'
 import { isPdfEncrypted, resolvePdfPageCount } from './pdf-utils'
 import { runHostedOcrWithPdfChunkFallback } from './ocr-utils/pdf-chunk-fallback'
+import { isBunImagePngNormalizableFormat, normalizeImageToPngWithBun } from './ocr-utils/bun-image-utils'
 
 type HostedOcrService = HostedOcrRun['ocrService']
+type HostedOcrIdentity = Pick<HostedOcrRun, 'extractionMethod' | 'ocrService' | 'ocrModel'>
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`
@@ -132,54 +134,115 @@ export const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine)
     return 'The --glm-ocr engine supports PDF and standard image files (PNG/JPG) only.'
   }
   if (engine === 'kimi-ocr') {
-    return 'The --kimi-ocr engine sends PNG/JPG/WEBP/GIF images to Kimi directly; PDF pages are rendered to PNG. Convert BMP/TIF images to PNG/JPG/WebP/GIF first, or install ImageMagick so AutoShow can normalize them automatically.'
+    return 'The --kimi-ocr engine sends PNG/JPG/WEBP/GIF images to Kimi directly; PDF pages are rendered to PNG. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'mistral-ocr') {
     return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
   }
   if (engine === 'anthropic-ocr') {
-    return 'The --anthropic-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. Convert BMP/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
+    return 'The --anthropic-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'gemini-ocr') {
-    return 'The --gemini-ocr engine supports PDF and PNG/JPG/WEBP/BMP images directly. Convert GIF/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
+    return 'The --gemini-ocr engine supports PDF and PNG/JPG/WEBP/BMP images directly. AutoShow normalizes GIF images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'deepinfra-ocr') {
-    return 'The --deepinfra-ocr engine sends PNG/JPG/WEBP images to DeepInfra directly; PDF pages are rendered to PNG. Convert GIF/BMP/TIF images to PNG/JPG/WebP first, or install ImageMagick so AutoShow can normalize them automatically.'
+    return 'The --deepinfra-ocr engine sends PNG/JPG/WEBP images to DeepInfra directly; PDF pages are rendered to PNG. AutoShow normalizes GIF/BMP images locally with Bun.Image. Convert TIF images to PNG/JPG/WebP first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'aws-textract') {
-    return 'The --aws-textract engine supports PDF and PNG/JPG/TIF images directly. Convert BMP/WEBP/GIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
+    return 'The --aws-textract engine supports PDF and PNG/JPG/TIF images directly. AutoShow normalizes BMP/WEBP/GIF images locally with Bun.Image.'
   }
   if (engine === 'gcloud-docai') {
     return 'The --gcloud-docai engine supports PDF and PNG/JPG/TIF/GIF/BMP/WEBP images directly.'
   }
-  return 'The --openai-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. Convert BMP/TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize them automatically.'
+  return 'The --openai-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
 }
 
-const assertSupportedHostedDirectImageFormat = (
+type HostedDirectImageInputStrategy = 'direct' | 'bun-png' | 'imagemagick-png' | 'unsupported'
+
+type HostedDirectImageFormatSet = {
+  direct: Set<string>
+  bunToPng: Set<string>
+  imagemagickToPng: Set<string>
+}
+
+const hostedDirectImageFormats = (
+  direct: string[],
+  bunToPng: string[] = [],
+  imagemagickToPng: string[] = []
+): HostedDirectImageFormatSet => ({
+  direct: new Set(direct),
+  bunToPng: new Set(bunToPng),
+  imagemagickToPng: new Set(imagemagickToPng)
+})
+
+const HOSTED_DIRECT_IMAGE_FORMATS: Record<HostedExtractOcrEngine, HostedDirectImageFormatSet> = {
+  'glm-ocr': hostedDirectImageFormats(['png', 'jpg']),
+  'kimi-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
+  'mistral-ocr': hostedDirectImageFormats(['png', 'jpg', 'tif']),
+  'openai-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
+  'anthropic-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
+  'gemini-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'bmp'], ['gif'], ['tif']),
+  'deepinfra-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp'], ['gif', 'bmp'], ['tif']),
+  'aws-textract': hostedDirectImageFormats(['png', 'jpg', 'tif'], ['bmp', 'webp', 'gif']),
+  'gcloud-docai': hostedDirectImageFormats(['png', 'jpg', 'tif', 'gif', 'bmp', 'webp'])
+}
+
+export const resolveHostedDirectImageInputStrategy = (
   format: string,
   engine: HostedExtractOcrEngine
-): void => {
-  const supportedFormats = engine === 'glm-ocr'
-    ? new Set(['png', 'jpg'])
-    : engine === 'kimi-ocr'
-      ? new Set(['png', 'jpg', 'webp', 'gif'])
-      : engine === 'mistral-ocr'
-        ? new Set(['png', 'jpg', 'tif'])
-        : engine === 'anthropic-ocr'
-          ? new Set(['png', 'jpg', 'webp', 'gif'])
-          : engine === 'gemini-ocr'
-            ? new Set(['png', 'jpg', 'webp', 'bmp'])
-            : engine === 'deepinfra-ocr'
-              ? new Set(['png', 'jpg', 'webp'])
-              : engine === 'aws-textract'
-                ? new Set(['png', 'jpg', 'tif'])
-                : engine === 'gcloud-docai'
-                  ? new Set(['png', 'jpg', 'tif', 'gif', 'bmp', 'webp'])
-                  : new Set(['png', 'jpg', 'webp', 'gif'])
+): HostedDirectImageInputStrategy => {
+  const formats = HOSTED_DIRECT_IMAGE_FORMATS[engine]
+  if (formats.direct.has(format)) {
+    return 'direct'
+  }
+  if (formats.bunToPng.has(format)) {
+    return 'bun-png'
+  }
+  if (formats.imagemagickToPng.has(format)) {
+    return 'imagemagick-png'
+  }
+  return 'unsupported'
+}
 
-  if (!supportedFormats.has(format)) {
+const normalizeHostedImageWithBun = async (
+  imagePath: string,
+  engine: HostedExtractOcrEngine,
+  tempDir: string,
+  outputStem: string,
+  normalizedFormat: string
+): Promise<{ filePath: string, format: DocumentMetadata['format'] }> => {
+  if (!isBunImagePngNormalizableFormat(normalizedFormat)) {
     throw CLIUsageError(getHostedDirectImageSupportError(engine))
   }
+
+  const pngPath = join(tempDir, `${outputStem}.png`)
+  try {
+    await normalizeImageToPngWithBun(imagePath, pngPath)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --${engine}. Bun.Image could not convert ${normalizedFormat.toUpperCase()} to PNG: ${message}`)
+  }
+
+  return { filePath: pngPath, format: 'png' }
+}
+
+const normalizeHostedImageWithImageMagick = async (
+  imagePath: string,
+  engine: HostedExtractOcrEngine,
+  tempDir: string,
+  outputStem: string
+): Promise<{ filePath: string, format: DocumentMetadata['format'] }> => {
+  if (!commandExists('convert')) {
+    throw CLIUsageError(getHostedDirectImageSupportError(engine))
+  }
+
+  const pngPath = join(tempDir, `${outputStem}.png`)
+  const result = await exec('convert', [imagePath, pngPath])
+  if (result.exitCode !== 0) {
+    throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --${engine}. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
+  }
+
+  return { filePath: pngPath, format: 'png' }
 }
 
 export const normalizeHostedDirectImageInput = async (
@@ -195,110 +258,18 @@ export const normalizeHostedDirectImageInput = async (
       ? 'tif'
       : ext.slice(1).toLowerCase()
 
-  if (engine !== 'openai-ocr') {
-    if (engine === 'anthropic-ocr') {
-      if (normalizedFormat === 'bmp' || normalizedFormat === 'tif') {
-        if (!commandExists('convert')) {
-          throw CLIUsageError(getHostedDirectImageSupportError(engine))
-        }
-
-        const pngPath = join(tempDir, `${outputStem}.png`)
-        const result = await exec('convert', [imagePath, pngPath])
-        if (result.exitCode !== 0) {
-          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --anthropic-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-        }
-
-        return { filePath: pngPath, format: 'png' }
-      }
-    }
-
-    if (engine === 'gemini-ocr') {
-      if (normalizedFormat === 'gif' || normalizedFormat === 'tif') {
-        if (!commandExists('convert')) {
-          throw CLIUsageError(getHostedDirectImageSupportError(engine))
-        }
-
-        const pngPath = join(tempDir, `${outputStem}.png`)
-        const result = await exec('convert', [imagePath, pngPath])
-        if (result.exitCode !== 0) {
-          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --gemini-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-        }
-
-        return { filePath: pngPath, format: 'png' }
-      }
-    }
-
-    if (engine === 'aws-textract') {
-      if (normalizedFormat === 'bmp' || normalizedFormat === 'webp' || normalizedFormat === 'gif') {
-        if (!commandExists('convert')) {
-          throw CLIUsageError(getHostedDirectImageSupportError(engine))
-        }
-
-        const pngPath = join(tempDir, `${outputStem}.png`)
-        const result = await exec('convert', [imagePath, pngPath])
-        if (result.exitCode !== 0) {
-          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --aws-textract. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-        }
-
-        return { filePath: pngPath, format: 'png' }
-      }
-    }
-
-    if (engine === 'deepinfra-ocr') {
-      if (normalizedFormat === 'gif' || normalizedFormat === 'bmp' || normalizedFormat === 'tif') {
-        if (!commandExists('convert')) {
-          throw CLIUsageError(getHostedDirectImageSupportError(engine))
-        }
-
-        const pngPath = join(tempDir, `${outputStem}.png`)
-        const result = await exec('convert', [imagePath, pngPath])
-        if (result.exitCode !== 0) {
-          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --deepinfra-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-        }
-
-        return { filePath: pngPath, format: 'png' }
-      }
-    }
-
-    if (engine === 'kimi-ocr') {
-      if (normalizedFormat === 'bmp' || normalizedFormat === 'tif') {
-        if (!commandExists('convert')) {
-          throw CLIUsageError(getHostedDirectImageSupportError(engine))
-        }
-
-        const pngPath = join(tempDir, `${outputStem}.png`)
-        const result = await exec('convert', [imagePath, pngPath])
-        if (result.exitCode !== 0) {
-          throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --kimi-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-        }
-
-        return { filePath: pngPath, format: 'png' }
-      }
-    }
-
-    assertSupportedHostedDirectImageFormat(normalizedFormat, engine)
+  const strategy = resolveHostedDirectImageInputStrategy(normalizedFormat, engine)
+  if (strategy === 'direct') {
     return { filePath: imagePath, format: normalizedFormat as DocumentMetadata['format'] }
   }
-
-  if (normalizedFormat === 'png' || normalizedFormat === 'jpg' || normalizedFormat === 'webp' || normalizedFormat === 'gif') {
-    return { filePath: imagePath, format: normalizedFormat }
+  if (strategy === 'bun-png') {
+    return await normalizeHostedImageWithBun(imagePath, engine, tempDir, outputStem, normalizedFormat)
+  }
+  if (strategy === 'imagemagick-png') {
+    return await normalizeHostedImageWithImageMagick(imagePath, engine, tempDir, outputStem)
   }
 
-  if (normalizedFormat !== 'bmp' && normalizedFormat !== 'tif') {
-    throw CLIUsageError(getHostedDirectImageSupportError(engine))
-  }
-
-  if (!commandExists('convert')) {
-    throw CLIUsageError(getHostedDirectImageSupportError(engine))
-  }
-
-  const pngPath = join(tempDir, `${outputStem}.png`)
-  const result = await exec('convert', [imagePath, pngPath])
-  if (result.exitCode !== 0) {
-    throw CLIUsageError(`Failed to normalize ${basename(imagePath)} for --openai-ocr. ${result.stderr || result.stdout || 'ImageMagick convert failed.'}`)
-  }
-
-  return { filePath: pngPath, format: 'png' }
+  throw CLIUsageError(getHostedDirectImageSupportError(engine))
 }
 
 const resolveHostedOcrSelection = (
@@ -426,6 +397,7 @@ const runChunkableHostedPdfOcr = async (
   step1Metadata: DocumentMetadata,
   opts: ExtractionOptions,
   serviceLabel: string,
+  identity: HostedOcrIdentity,
   runProvider: (inputPath: string, inputMetadata: DocumentMetadata) => Promise<HostedOcrRun>
 ): Promise<HostedOcrRun> => {
   if (step1Metadata.format !== 'pdf') {
@@ -441,6 +413,7 @@ const runChunkableHostedPdfOcr = async (
     serviceLabel,
     totalPages: Math.max(1, step1Metadata.pageCount),
     password: opts.password,
+    fallbackDir: opts.outputDir,
     runFull: async () => withHostedUsageDetail(await runProvider(filePath, step1Metadata), {
       unit: 'document',
       pages: Math.max(1, step1Metadata.pageCount)
@@ -450,6 +423,17 @@ const runChunkableHostedPdfOcr = async (
       pageStart: range.startPage,
       pageEnd: range.endPage,
       pages: Math.max(1, chunkMetadata.pageCount)
+    }),
+    buildMalformedPageRun: (rawText, range) => ({
+      pages: [{
+        pageNumber: range.startPage,
+        method: 'ocr',
+        text: rawText
+      }],
+      extractionMethod: identity.extractionMethod,
+      ocrService: identity.ocrService,
+      ocrModel: identity.ocrModel,
+      totalPages: Math.max(1, range.endPage - range.startPage + 1)
     })
   })
 }
@@ -493,7 +477,11 @@ export const runHostedOcr = async (
     await ensureMistralOcrSetup()
     warnMistralOnlyFlags(opts)
     const ocrModel = opts.mistralOcrModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Mistral OCR', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Mistral OCR', {
+      extractionMethod: 'mistral-ocr',
+      ocrService: 'mistral',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runMistralOcr(inputPath, inputMetadata, ocrModel)
       return {
@@ -509,7 +497,11 @@ export const runHostedOcr = async (
     await ensureGlmOcrSetup()
     warnGlmOnlyFlags(opts)
     const ocrModel = opts.glmOcrModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'GLM OCR', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'GLM OCR', {
+      extractionMethod: 'glm-ocr',
+      ocrService: 'glm',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runGlmOcr(inputPath, inputMetadata, ocrModel)
       return {
@@ -551,7 +543,11 @@ export const runHostedOcr = async (
     await ensureOpenAIOcrSetup()
     warnOpenAIOnlyFlags(opts)
     const ocrModel = opts.openaiOcrModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'OpenAI OCR', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'OpenAI OCR', {
+      extractionMethod: 'openai-ocr',
+      ocrService: 'openai',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runOpenAIOcr(inputPath, inputMetadata, ocrModel)
       return {
@@ -570,7 +566,11 @@ export const runHostedOcr = async (
     await ensureAnthropicOcrSetup()
     warnAnthropicOnlyFlags(opts)
     const ocrModel = opts.anthropicOcrModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Anthropic OCR', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Anthropic OCR', {
+      extractionMethod: 'anthropic-ocr',
+      ocrService: 'anthropic',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runAnthropicOcr(inputPath, inputMetadata, ocrModel)
       return {
@@ -589,7 +589,11 @@ export const runHostedOcr = async (
     await ensureGeminiOcrSetup()
     warnGeminiOnlyFlags(opts)
     const ocrModel = opts.geminiOcrModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Gemini OCR', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Gemini OCR', {
+      extractionMethod: 'gemini-ocr',
+      ocrService: 'gemini',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runGeminiOcr(inputPath, inputMetadata, ocrModel, {
         ocrPreparationCache: opts.ocrPreparationCache
@@ -631,7 +635,11 @@ export const runHostedOcr = async (
   if (hasAwsTextract(opts)) {
     warnHostedOnlyFlags('aws-textract', opts)
     const ocrModel = opts.awsTextractModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'AWS Textract', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'AWS Textract', {
+      extractionMethod: 'aws-textract',
+      ocrService: 'aws-textract',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runAwsTextract(inputPath, inputMetadata, {
         region: opts.awsRegion,
@@ -652,7 +660,11 @@ export const runHostedOcr = async (
     const ocrModel = opts.gcloudDocaiModel as string
     await ensureGcloudDocaiSetup()
     warnHostedOnlyFlags('gcloud-docai', opts)
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Google Cloud Document AI', async (inputPath, inputMetadata) => {
+    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Google Cloud Document AI', {
+      extractionMethod: 'gcloud-docai',
+      ocrService: 'gcloud-docai',
+      ocrModel
+    }, async (inputPath, inputMetadata) => {
       await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
       const run = await runGcloudDocai(inputPath, inputMetadata)
       return {

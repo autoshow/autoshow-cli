@@ -1,4 +1,7 @@
 import { describe, expect, test } from 'bun:test'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import type { DocumentMetadata, HostedOcrRun, PageResult } from '~/types'
 import {
   DEFAULT_OCR_POLL_DEADLINE_MS,
@@ -7,17 +10,26 @@ import {
 } from '~/utils/timeouts'
 import {
   classifyOcrCreateRetry,
+  DEFAULT_OCR_PAGE_REQUEST_ATTEMPTS,
+  DEFAULT_OCR_PAGE_REQUEST_TIMEOUT_MS,
   OCR_CREATE_RETRY_POLICY,
-  OCR_SCHEMA_RETRY_ATTEMPTS
+  OCR_PAGE_REQUEST_RETRY_POLICY,
+  OCR_SCHEMA_RETRY_ATTEMPTS,
+  withOcrPageRequestRetry
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import {
-  buildOcrPdfChunkRanges,
-  DEFAULT_OCR_FALLBACK_CHUNK_PAGES,
+  createOcrPdfChunkRenderError,
+  HOSTED_OCR_PDF_PAGE_FALLBACK_THRESHOLD,
   runHostedOcrWithPdfChunkFallback,
   shouldFallbackToOcrPdfChunks,
   stitchHostedOcrChunkRuns
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-chunk-fallback'
 import { isRetryableDeapiOcrJobFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deapi-ocr/run-deapi-ocr'
+import { classifyOcrProviderFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-run-state'
+import {
+  OcrStructuredResponseError,
+  writeOcrProviderError
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 
 const basePdfMetadata: DocumentMetadata = {
   slug: 'document',
@@ -49,15 +61,35 @@ const hostedRun = (
   ...extras
 })
 
+const pageCachePath = (dir: string, pageNumber: number): string =>
+  join(dir, 'page-results', `page-${String(pageNumber).padStart(6, '0')}.json`)
+
+const pageTextPath = (dir: string, pageNumber: number): string =>
+  join(dir, 'page-results', `page-${String(pageNumber).padStart(6, '0')}.txt`)
+
+const invalidPageResponsePath = (dir: string, pageNumber: number): string =>
+  join(dir, 'page-results', `page-${String(pageNumber).padStart(6, '0')}-invalid-response.txt`)
+
+const pageInputPath = (dir: string, pageNumber: number): string =>
+  join(dir, 'page-inputs', `page-${String(pageNumber).padStart(6, '0')}.pdf`)
+
 describe('OCR resilience contracts', () => {
   test('OCR retry policy and timeout defaults are aggressive and env parsing is strict', () => {
     expect(DEFAULT_OCR_REQUEST_TIMEOUT_MS).toBe(60 * 60_000)
     expect(DEFAULT_OCR_POLL_DEADLINE_MS).toBe(60 * 60_000)
-    expect(DEFAULT_OCR_FALLBACK_CHUNK_PAGES).toBe(5)
+    expect(DEFAULT_OCR_PAGE_REQUEST_ATTEMPTS).toBe(2)
+    expect(DEFAULT_OCR_PAGE_REQUEST_TIMEOUT_MS).toBe(5 * 60_000)
+    expect(HOSTED_OCR_PDF_PAGE_FALLBACK_THRESHOLD).toBe(20)
     expect(OCR_SCHEMA_RETRY_ATTEMPTS).toBe(3)
     expect(OCR_CREATE_RETRY_POLICY).toMatchObject({
       maxAttempts: 4,
       maxDelayMs: 60_000,
+      jitter: true,
+      exponential: true
+    })
+    expect(OCR_PAGE_REQUEST_RETRY_POLICY).toMatchObject({
+      maxAttempts: 2,
+      maxDelayMs: 10_000,
       jitter: true,
       exponential: true
     })
@@ -81,68 +113,262 @@ describe('OCR resilience contracts', () => {
     }
   })
 
-  test('PDF chunk ranges use the fallback chunk size contract', () => {
-    expect(buildOcrPdfChunkRanges(12, 5)).toEqual([
-      { startPage: 1, endPage: 5 },
-      { startPage: 6, endPage: 10 },
-      { startPage: 11, endPage: 12 }
-    ])
-    expect(buildOcrPdfChunkRanges(3, 0)).toEqual([
-      { startPage: 1, endPage: 1 },
-      { startPage: 2, endPage: 2 },
-      { startPage: 3, endPage: 3 }
-    ])
+  test('PDFs over the hosted fallback threshold skip full-document OCR and start at page 1', async () => {
+    let fullAttempts = 0
+    const attemptedPages: number[] = []
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-threshold-'))
+    try {
+      const result = await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 21 },
+        serviceLabel: 'Test OCR',
+        totalPages: 21,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          fullAttempts += 1
+          throw new Error('full OCR should not run')
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          attemptedPages.push(range.startPage)
+          return hostedRun(pagesForRange(range.startPage, range.endPage), {
+            totalPages: 1
+          })
+        }
+      })
+
+      expect(fullAttempts).toBe(0)
+      expect(attemptedPages[0]).toBe(1)
+      expect(attemptedPages).toHaveLength(21)
+      expect(result.pages.map((page) => page.pageNumber)).toEqual(Array.from({ length: 21 }, (_value, index) => index + 1))
+      expect(await Bun.file(join(tempDir, 'fallback-state.json')).exists()).toBe(true)
+      expect(await Bun.file(pageInputPath(tempDir, 1)).exists()).toBe(true)
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
-  test('PDF chunk fallback recursively splits failing chunks and stitches global pages', async () => {
-    const attemptedRanges: string[] = []
+  test('PDFs at the hosted fallback threshold still try full-document OCR first', async () => {
+    let fullAttempts = 0
+    let pageAttempts = 0
     const result = await runHostedOcrWithPdfChunkFallback({
       filePath: '/virtual/input.pdf',
-      step1Metadata: basePdfMetadata,
+      step1Metadata: { ...basePdfMetadata, pageCount: 20 },
       serviceLabel: 'Test OCR',
-      totalPages: 6,
-      chunkPages: 5,
+      totalPages: 20,
       runFull: async () => {
-        throw Object.assign(new Error('provider timed out while reading OCR response'), { status: 503 })
+        fullAttempts += 1
+        return hostedRun(pagesForRange(1, 20), { totalPages: 20 })
       },
-      createChunk: async (_inputPath, outputPath, range) => {
-        await Bun.write(outputPath, `chunk ${range.startPage}-${range.endPage}`)
+      createChunk: async (_inputPath, outputPath) => {
+        await Bun.write(outputPath, 'page')
       },
-      runChunk: async (_chunkPath, _chunkMetadata, range) => {
-        attemptedRanges.push(`${range.startPage}-${range.endPage}`)
-        if (range.startPage === 1 && range.endPage === 5) {
-          throw new Error('OpenAI OCR returned malformed JSON.')
-        }
-        if (range.startPage === 1 && range.endPage === 3) {
-          throw new Error('OpenAI OCR returned non-contiguous page numbers.')
-        }
-
-        const pageCount = range.endPage - range.startPage + 1
-        return hostedRun(pagesForRange(range.startPage, range.endPage), {
-          totalPages: pageCount,
-          promptTokens: pageCount,
-          completionTokens: pageCount * 10,
-          providerCostCents: pageCount,
-          providerCostSource: range.startPage === 4 ? 'registry_fallback' : 'provider_quote'
-        })
+      runChunk: async () => {
+        pageAttempts += 1
+        return hostedRun(pagesForRange(1, 1), { totalPages: 1 })
       }
     })
 
-    expect(attemptedRanges).toEqual(['1-5', '1-3', '1-2', '3-3', '4-5', '6-6'])
-    expect(result.pages.map((page) => page.pageNumber)).toEqual([1, 2, 3, 4, 5, 6])
-    expect(result.pages.map((page) => page.text)).toEqual([
-      'page 1',
-      'page 2',
-      'page 3',
-      'page 4',
-      'page 5',
-      'page 6'
-    ])
-    expect(result.totalPages).toBe(6)
-    expect(result.promptTokens).toBe(6)
-    expect(result.completionTokens).toBe(60)
-    expect(result.providerCostCents).toBe(6)
-    expect(result.providerCostSource).toBe('registry_fallback')
+    expect(fullAttempts).toBe(1)
+    expect(pageAttempts).toBe(0)
+    expect(result.totalPages).toBe(20)
+  })
+
+  test('small PDF full-document failures fall back to individual cached pages', async () => {
+    const attemptedPages: number[] = []
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-fallback-'))
+    try {
+      const result = await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 3 },
+        serviceLabel: 'Test OCR',
+        totalPages: 3,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          throw Object.assign(new Error('provider timed out while reading OCR response'), { status: 503 })
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          attemptedPages.push(range.startPage)
+          return hostedRun(pagesForRange(range.startPage, range.endPage), {
+            totalPages: 1,
+            promptTokens: 1,
+            completionTokens: 10,
+            providerCostCents: 1,
+            providerCostSource: range.startPage === 2 ? 'registry_fallback' : 'provider_quote'
+          })
+        }
+      })
+
+      expect(attemptedPages).toEqual([1, 2, 3])
+      expect(result.pages.map((page) => page.pageNumber)).toEqual([1, 2, 3])
+      expect(result.promptTokens).toBe(3)
+      expect(result.completionTokens).toBe(30)
+      expect(result.providerCostCents).toBe(3)
+      expect(result.providerCostSource).toBe('registry_fallback')
+      expect(await Bun.file(pageCachePath(tempDir, 1)).exists()).toBe(true)
+      expect(await Bun.file(pageCachePath(tempDir, 2)).exists()).toBe(true)
+      expect(await Bun.file(pageCachePath(tempDir, 3)).exists()).toBe(true)
+      expect(await Bun.file(pageTextPath(tempDir, 1)).text()).toBe('page 1\n')
+      expect(await Bun.file(pageTextPath(tempDir, 2)).text()).toBe('page 2\n')
+      expect(await Bun.file(pageTextPath(tempDir, 3)).text()).toBe('page 3\n')
+      expect(await Bun.file(join(tempDir, 'partial-extraction.txt')).text()).toContain('Page 3\npage 3')
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('successful fallback pages are cached before the next page runs', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-cache-order-'))
+    try {
+      await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 2 },
+        serviceLabel: 'Test OCR',
+        totalPages: 2,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          throw Object.assign(new Error('provider timed out while reading OCR response'), { status: 503 })
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          if (range.startPage === 2) {
+            expect(await Bun.file(pageCachePath(tempDir, 1)).exists()).toBe(true)
+            expect(await Bun.file(pageTextPath(tempDir, 1)).text()).toBe('page 1\n')
+            expect(await Bun.file(join(tempDir, 'partial-extraction.txt')).text()).toContain('Page 1\npage 1')
+          }
+          return hostedRun(pagesForRange(range.startPage, range.endPage), {
+            totalPages: 1
+          })
+        }
+      })
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('malformed structured fallback pages are accepted as raw text and processing continues', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-invalid-'))
+    const attemptedPages: number[] = []
+    const rawMalformedText = 'raw page OCR text\nsecond line'
+    try {
+      const result = await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 2 },
+        serviceLabel: 'Test OCR',
+        totalPages: 2,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          throw Object.assign(new Error('provider timed out while reading OCR response'), { status: 503 })
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          attemptedPages.push(range.startPage)
+          if (range.startPage === 1) {
+            throw new OcrStructuredResponseError('Response was not valid JSON', rawMalformedText)
+          }
+          return hostedRun(pagesForRange(range.startPage, range.endPage), { totalPages: 1 })
+        },
+        buildMalformedPageRun: (rawText, range) => hostedRun([{
+          pageNumber: range.startPage,
+          method: 'ocr',
+          text: rawText
+        }], { totalPages: 1 })
+      })
+
+      expect(attemptedPages).toEqual([1, 2])
+      expect(result.pages.map((page) => page.text)).toEqual([rawMalformedText, 'page 2'])
+      expect(await Bun.file(invalidPageResponsePath(tempDir, 1)).text()).toBe(rawMalformedText)
+      expect(await Bun.file(pageTextPath(tempDir, 1)).text()).toBe(`${rawMalformedText}\n`)
+      expect(await Bun.file(pageTextPath(tempDir, 2)).text()).toBe('page 2\n')
+      expect(await Bun.file(join(tempDir, 'partial-extraction.txt')).text()).toContain(`Page 1\n${rawMalformedText}`)
+
+      const cached = await Bun.file(pageCachePath(tempDir, 1)).json() as Record<string, unknown>
+      const cachedRun = cached['run'] as HostedOcrRun
+      expect(cachedRun.extractionMethod).toBe('openai-ocr')
+      expect(cachedRun.ocrService).toBe('openai')
+      expect(cachedRun.ocrModel).toBe('test-model')
+      expect(cachedRun.pages[0]?.text).toBe(rawMalformedText)
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('structured fallback pages with empty raw output remain fatal', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-empty-invalid-'))
+    try {
+      await expect(runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 1 },
+        serviceLabel: 'Test OCR',
+        totalPages: 1,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          throw Object.assign(new Error('provider timed out while reading OCR response'), { status: 503 })
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async () => {
+          throw new OcrStructuredResponseError('DeepInfra OCR returned no text output.', '')
+        },
+        buildMalformedPageRun: (rawText, range) => hostedRun([{
+          pageNumber: range.startPage,
+          method: 'ocr',
+          text: rawText
+        }], { totalPages: 1 })
+      })).rejects.toThrow('DeepInfra OCR returned no text output.')
+
+      expect(await Bun.file(pageCachePath(tempDir, 1)).exists()).toBe(false)
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('malformed fallback pages force stitched text to use complete page text when canonical text would be partial', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-page-canonical-invalid-'))
+    try {
+      const result = await runHostedOcrWithPdfChunkFallback({
+        filePath: '/virtual/input.pdf',
+        step1Metadata: { ...basePdfMetadata, pageCount: 2 },
+        serviceLabel: 'Test OCR',
+        totalPages: 2,
+        fallbackDir: tempDir,
+        runFull: async () => {
+          throw Object.assign(new Error('provider timed out while reading OCR response'), { status: 503 })
+        },
+        createChunk: async (_inputPath, outputPath, range) => {
+          await Bun.write(outputPath, `page ${range.startPage}`)
+        },
+        runChunk: async (_chunkPath, _chunkMetadata, range) => {
+          if (range.startPage === 1) {
+            throw new OcrStructuredResponseError('Response was not valid JSON', 'raw page OCR text')
+          }
+          return hostedRun(pagesForRange(range.startPage, range.endPage), {
+            canonicalText: 'canonical page 2',
+            totalPages: 1
+          })
+        },
+        buildMalformedPageRun: (rawText, range) => hostedRun([{
+          pageNumber: range.startPage,
+          method: 'ocr',
+          text: rawText
+        }], { totalPages: 1 })
+      })
+
+      expect(result.pages.map((page) => page.text)).toEqual(['raw page OCR text', 'page 2'])
+      expect(result.canonicalText).toBeUndefined()
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 
   test('chunk stitching sorts pages and aggregates usage metadata', () => {
@@ -210,12 +436,75 @@ describe('OCR resilience contracts', () => {
     ])
   })
 
-  test('PDF fallback classifier splits retryable and limit failures but not auth or policy failures', () => {
+  test('PDF fallback classifier splits transient and limit failures but not auth or policy failures', () => {
     expect(shouldFallbackToOcrPdfChunks(Object.assign(new Error('provider timed out'), { status: 503 }))).toBe(true)
     expect(shouldFallbackToOcrPdfChunks(new Error('Gemini OCR supports PDF inputs up to 1000 pages. Got 1200 pages.'))).toBe(true)
     expect(shouldFallbackToOcrPdfChunks(new Error('OpenAI OCR returned malformed JSON.'))).toBe(true)
     expect(shouldFallbackToOcrPdfChunks(new Error('OPENAI_API_KEY environment variable is required for OpenAI OCR'))).toBe(false)
     expect(shouldFallbackToOcrPdfChunks(new Error('Output blocked by content filtering policy'))).toBe(false)
+  })
+
+  test('PDF chunk render failures are concise and persist raw stderr diagnostics', async () => {
+    const rawStderr = [
+      'warning: ICC support is not available',
+      'error: cannot render page tree for encrypted object',
+      'more raw stderr detail'
+    ].join('\n')
+    const error = createOcrPdfChunkRenderError(
+      { startPage: 6, endPage: 10 },
+      {
+        exitCode: 1,
+        stderr: rawStderr,
+        stdout: '',
+        command: 'mutool convert -F pdf -o chunk.pdf input.pdf 6-10'
+      }
+    )
+    const failure = classifyOcrProviderFailure(error)
+
+    expect(failure).toMatchObject({
+      category: 'pdf_chunk_render'
+    })
+    expect(failure.message).toContain('PDF chunk creation failed for pages 6-10')
+    expect(failure.message).toContain('warning: ICC support is not available')
+    expect(failure.message).not.toContain('more raw stderr detail')
+
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-error-artifact-'))
+    try {
+      await writeOcrProviderError(tempDir, error, failure)
+      const diagnostic = await Bun.file(join(tempDir, 'error.json')).json() as Record<string, unknown>
+      expect(diagnostic['category']).toBe('pdf_chunk_render')
+      expect(diagnostic).not.toHaveProperty('retryable')
+      expect((diagnostic['error'] as Record<string, unknown>)['stderr']).toBe(rawStderr)
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('DeepInfra page OCR uses bounded request retries and timeout classification keeps page context', async () => {
+    let attempts = 0
+    await expect(withOcrPageRequestRetry(
+      'deepinfra-ocr page 7',
+      async () => {
+        attempts += 1
+        throw new OcrStructuredResponseError('DeepInfra OCR returned no text output.', '')
+      },
+      {
+        attempts: 2,
+        timeoutMs: 1000,
+        classifier: () => ({ shouldRetry: true, delayMs: 1, reason: 'structured_response' })
+      }
+    )).rejects.toThrow('deepinfra-ocr page 7 failed after 2 attempts')
+    expect(attempts).toBe(2)
+
+    const timeoutCause = new Error('The operation was aborted due to timeout')
+    timeoutCause.name = 'AbortError'
+    const timeoutError = new Error('deepinfra-ocr page 7 failed after 2 attempts (600000ms elapsed)', {
+      cause: timeoutCause
+    })
+    const failure = classifyOcrProviderFailure(timeoutError)
+    expect(failure.category).toBe('timeout')
+    expect(failure.message).toContain('deepinfra-ocr page 7')
+    expect(failure.message).toContain('timeout')
   })
 
   test('deAPI terminal unknown OCR job failures are retryable at job level', () => {

@@ -196,7 +196,6 @@ export const writeProviderFailureArtifacts = async (
     service: failure.service,
     model: failure.model,
     message: failure.message,
-    retryable: failure.retryable,
     ...(failure.stage ? { stage: failure.stage } : {}),
     ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
     ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
@@ -225,7 +224,6 @@ export const writeSkippedProviderArtifact = async (
     service: reason.service,
     model: reason.model,
     message: reason.message,
-    retryable: reason.retryable,
     skipped: true,
     ...(reason.stage ? { stage: reason.stage } : {}),
     ...(typeof reason.status === 'number' ? { status: reason.status } : {}),
@@ -242,8 +240,7 @@ export const writeSkippedProviderArtifact = async (
 export const formatProviderFailure = (failure: ProviderFailure): string => {
   const context = [
     failure.stage ? `stage=${failure.stage}` : undefined,
-    typeof failure.status === 'number' ? `status=${failure.status}` : undefined,
-    failure.retryable ? 'retryable=true' : undefined
+    typeof failure.status === 'number' ? `status=${failure.status}` : undefined
   ].filter((entry): entry is string => typeof entry === 'string')
 
   return context.length > 0

@@ -54,6 +54,13 @@ test('unknown command exits 2', async () => {
   await expectUsageExit(['definitely-not-a-command'], 'Unknown command "definitely-not-a-command"')
 })
 
+test('image command rejects removed imagen-count flag', async () => {
+  await expectUsageExit(
+    ['image', 'a sunset', '--gemini', 'imagen-4.0-generate-001', '--imagen-count', '2', '--price'],
+    'Unexpected flag: imagenCount'
+  )
+})
+
 test('benchmark --tts rejects missing TTS run directory', async () => {
   const root = await makeTempRoot('autoshow-tts-benchmark-missing-')
 
@@ -136,11 +143,14 @@ test('write rejects all URL article backend mode', async () => {
   )
 })
 
-test('extract rejects removed OpenAI OCR models', async () => {
-  await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--openai', 'gpt-5.4-mini', '--price'],
-    'Invalid --openai-ocr model "gpt-5.4-mini". Allowed values: gpt-5.4, gpt-5.4-nano'
+test('extract accepts OpenAI Mini OCR in price mode', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--openai', 'gpt-5.4-mini', '--price'],
+    { env: { NO_COLOR: '1' } }
   )
+
+  expect(result.exitCode).toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('gpt-5.4-mini')
 })
 
 test('extract rejects removed Anthropic Opus OCR model', async () => {
@@ -242,8 +252,19 @@ test('music rejects mixed hosted generation and lyric-video modes', async () => 
     'Do not combine hosted music flags'
   )
   await expectUsageExit(
+    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--out', 'output/music-run'],
+    'Do not combine hosted music flags'
+  )
+  await expectUsageExit(
     ['music', 'ambient piano', '--model', 'tiny'],
     'Do not combine lyric-video flags'
+  )
+})
+
+test('standalone generation output directory aliases are mutually exclusive', async () => {
+  await expectUsageExit(
+    ['image', 'a sunset', '--openai', 'gpt-image-1.5', '--output-dir', 'output/image-a', '--out', 'output/image-b', '--price'],
+    'Use only one of --output-dir or --out.'
   )
 })
 

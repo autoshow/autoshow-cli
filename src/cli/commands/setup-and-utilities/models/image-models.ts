@@ -3,6 +3,7 @@ import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/m
 import type { BflImageModel, DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
+  'gemini-3.1-flash-image-preview',
   'imagen-4.0-fast-generate-001',
   'imagen-4.0-generate-001',
   'imagen-4.0-ultra-generate-001'
@@ -42,6 +43,7 @@ export const SUPPORTED_GLM_IMAGE_MODELS = [
 export const validateGlmImageModel = createModelValidator<GlmImageModel>(SUPPORTED_GLM_IMAGE_MODELS, 'glm-image')
 
 export const SUPPORTED_GROK_IMAGE_MODELS = [
+  'grok-imagine-image-quality',
   'grok-imagine-image'
 ] as const satisfies readonly string[]
 

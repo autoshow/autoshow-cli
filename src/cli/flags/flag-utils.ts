@@ -27,6 +27,28 @@ export const renameFlags = (
   return renamed
 }
 
+export const aliasFlags = (
+  flags: CliFlagsDefinition,
+  publicNameByInternalName: Record<string, string>
+): CliFlagsDefinition => {
+  const aliased = renameFlags(flags, publicNameByInternalName)
+
+  for (const [internalName, definition] of Object.entries(flags)) {
+    if (!(internalName in publicNameByInternalName)) {
+      continue
+    }
+    aliased[internalName] = {
+      ...definition,
+      help: {
+        ...(definition.help ?? {}),
+        hidden: true
+      }
+    }
+  }
+
+  return aliased
+}
+
 export const omitFlags = (
   flags: CliFlagsDefinition,
   names: readonly string[]

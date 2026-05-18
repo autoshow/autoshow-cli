@@ -87,44 +87,6 @@ export type AutoshowConfig = InferOutput<typeof AutoshowConfigSchema>
 
 export type ModelRegistry = InferOutput<typeof ModelRegistrySchema>
 
-export type SampleSupportLevel = 'current' | 'planned'
-export type FixtureKind = 'valid' | 'invalid'
-
-export type FixtureDescriptor = {
-  path: string
-  format: string
-  supportLevel: SampleSupportLevel
-  validity: FixtureKind
-  requiredTools: ToolName[]
-  invalidReason?: string | undefined
-}
-
-export type SampleFixtureEntry = FixtureDescriptor & {
-  verified: boolean
-}
-
-export type SampleSkippedEntry = {
-  path: string
-  reason: string
-  requiredTools: string[]
-}
-
-export type SampleManifestSummary = {
-  total: number
-  generated: number
-  skipped: number
-  verified: number
-}
-
-export type SampleManifest = {
-  schemaVersion: number
-  generatedAt: string
-  mode: 'full' | 'partial'
-  fixtures: SampleFixtureEntry[]
-  skipped: SampleSkippedEntry[]
-  summary: SampleManifestSummary
-}
-
 export type RunResult = {
   stdout: string
   stderr: string
@@ -273,33 +235,6 @@ export type CheapestVideoSelection = {
   totalCost: number
 }
 
-export type ToolName = 'ffmpeg' | 'ffprobe' | 'calibre' | 'imagemagick'
-
-export type ToolStatus = {
-  available: boolean
-  command: string
-  remediation: string
-}
-
-export type FixtureDef = FixtureDescriptor
-
-export type GenerateResult = {
-  generated: boolean
-  reason?: string
-}
-
-export type ValidateResult = {
-  valid: boolean
-  reason?: string
-}
-
-export type SampleFixtureOptions = {
-  out?: string
-  refresh?: boolean
-  verifyOnly?: boolean
-  validOnly?: boolean
-}
-
 export type CheckResult = {
   label: string
   ok: boolean
@@ -315,4 +250,4 @@ export type SetupToolStatus = {
 export type SetupStepId =
   | 'uv' | 'yt-dlp' | 'defuddle' | 'whisper-binary' | 'whisper-model' | 'llama-binary'
   | 'reverb' | 'calibre' | 'all'
-  | 'transcription' | 'write' | 'tts' | 'image' | 'video' | 'music' | 'sample'
+  | 'transcription' | 'write' | 'tts' | 'image' | 'video' | 'music'

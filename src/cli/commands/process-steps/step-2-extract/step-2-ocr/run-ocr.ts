@@ -11,6 +11,7 @@ import type {
   PageResult
 } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
+import { writeFile } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
 import { buildPdfChapterArtifacts } from './chapters'
 import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
@@ -36,6 +37,7 @@ import {
   ocrSingleImage
 } from './image-ocr'
 import {
+  buildCombinedText,
   extractRtfFile,
   isZipXmlFormat,
   runZipXmlExtract
@@ -111,6 +113,20 @@ export const runOcr = async (
 
   if (step1Metadata.format !== 'epub' && (useEpubBun || useEpubCalibre)) {
     l.write('info', EPUB_INSPECT_NON_EPUB_INFO)
+  }
+
+  const writeExtractionTextCheckpoint = async (): Promise<void> => {
+    if (opts.outputFormat !== 'text' || extractionMethod === 'epub-bun' || extractionMethod === 'epub-calibre') {
+      return
+    }
+
+    const text = opts.preparedMarkdown
+      ? opts.preparedMarkdown.trim()
+      : typeof canonicalText === 'string' && canonicalText.trim().length > 0
+        ? canonicalText.trim()
+        : buildCombinedText(pages, opts.pageSeparator, extractionMethod !== 'epub-text')
+
+    await writeFile(`${opts.outputDir}/extraction.txt`, text)
   }
 
   const format = step1Metadata.format
@@ -359,6 +375,7 @@ export const runOcr = async (
   }
 
   if (pdfChapterFilesRequested && format === 'pdf') {
+    await writeExtractionTextCheckpoint()
     l.write('info', `Detecting PDF chapters with ${opts.pdfChapterMode} mode`)
     const pdfChapterOutput = await buildPdfChapterArtifacts({
       filePath,

@@ -3,10 +3,9 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
-import { exec } from '~/utils/cli-utils'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
-import { ensureMutoolSetup } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
+import { splitPdfPages } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { getAnthropicClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/anthropic/anthropic-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
@@ -228,10 +227,9 @@ const createPdfChunk = async (
   outputPath: string,
   pageRange: string
 ): Promise<void> => {
-  await ensureMutoolSetup()
-  const result = await exec('mutool', ['convert', '-F', 'pdf', '-o', outputPath, inputPath, pageRange])
-  if (result.exitCode !== 0) {
-    throw new Error(result.stderr || result.stdout || `mutool convert failed for pages ${pageRange}`)
+  const result = await splitPdfPages(inputPath, outputPath, pageRange)
+  if (result.exitCode !== 0 && !(result.exitCode === 3 && result.tool === 'qpdf')) {
+    throw new Error(result.stderr || result.stdout || `PDF page split failed for pages ${pageRange}`)
   }
 }
 

@@ -16,7 +16,6 @@ export type BatchPolicy = {
 
 export type ResumePolicy = {
   path?: string | undefined
-  retryableOnly?: boolean | undefined
 }
 
 export type ProviderCheckpoint = {

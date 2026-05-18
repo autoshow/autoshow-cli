@@ -220,7 +220,6 @@ export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local'
 
 export type SttRecordedProviderError = {
   message: string
-  retryable: boolean
   skipped?: boolean | undefined
   stage?: string | undefined
   status?: number | undefined
@@ -266,13 +265,11 @@ export type ResumeBatchEntry = {
 }
 
 export type ResumeSttBatchRunOptions = {
-  retryableOnly?: boolean | undefined
   maxPasses?: number | undefined
   ignoreUnresumableEntries?: boolean | undefined
 }
 
 export type NormalizedResumeSttBatchRunOptions = {
-  retryableOnly: boolean
   maxPasses: number
   ignoreUnresumableEntries: boolean
 }

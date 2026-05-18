@@ -356,7 +356,7 @@ export type WriteDocumentOutputMetadataOptions = {
   providerStates?: Array<Record<string, unknown>> | undefined
   missingProviders?: Array<{ service: string, model: string }> | undefined
   web?: WebArticleMetadata | undefined
-  errors?: Array<{ service: string, model: string, message: string }> | undefined
+  errors?: Array<{ service: string, model: string, message: string, category?: string, errorFile?: string }> | undefined
 }
 
 export type BatchManifestEntry = Record<string, unknown>

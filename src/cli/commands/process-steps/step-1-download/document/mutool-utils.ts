@@ -1,5 +1,7 @@
+import { stat } from 'node:fs/promises'
 import { exec, commandExists } from '~/utils/cli-utils'
 import { setupDocumentTools } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/document'
+import * as l from '~/utils/logger'
 import type { MutoolDocInfo } from '~/types'
 
 const parsePageCount = (stdout: string): number => {
@@ -110,3 +112,59 @@ export const showPdfOutline = async (
   password?: string
 ): Promise<{ stdout: string, stderr: string, exitCode: number }> =>
   await showPdfObject(filePath, 'outline', password)
+
+export const splitPdfPages = async (
+  inputPath: string,
+  outputPath: string,
+  pageRange: string,
+  password?: string | undefined
+): Promise<{ tool: 'qpdf' | 'mutool', exitCode: number, stderr: string, stdout: string }> => {
+  if (commandExists('qpdf')) {
+    const qpdfArgs = [
+      ...(password ? [`--password=${password}`] : []),
+      inputPath,
+      '--pages', '.', pageRange, '--',
+      outputPath
+    ]
+    const result = await exec('qpdf', qpdfArgs)
+    if (result.exitCode === 0 || result.exitCode === 3) {
+      return { tool: 'qpdf', ...result }
+    }
+    l.warn(`qpdf failed for ${pageRange} (exit ${result.exitCode}); falling back to mutool`)
+  }
+
+  await ensureMutoolSetup()
+  const baseArgs = ['convert', '-F', 'pdf', '-o', outputPath, inputPath, pageRange]
+  const args = password ? [...baseArgs, '-p', password] : baseArgs
+  const result = await exec('mutool', args)
+
+  if (result.exitCode === 0) {
+    return { tool: 'mutool', ...result }
+  }
+
+  try {
+    const outputStat = await stat(outputPath)
+    if (outputStat.size > 0) {
+      l.warn(
+        `mutool convert exited ${result.exitCode} for ${pageRange} but produced output (${outputStat.size} bytes); using partial result`
+      )
+      return { tool: 'mutool', ...result }
+    }
+  } catch {
+    // output file doesn't exist
+  }
+
+  return { tool: 'mutool', ...result }
+}
+
+export const isPdfEncryptedViaQpdf = async (
+  filePath: string
+): Promise<boolean | undefined> => {
+  if (!commandExists('qpdf')) {
+    return undefined
+  }
+  const result = await exec('qpdf', ['--is-encrypted', filePath])
+  if (result.exitCode === 0) return true
+  if (result.exitCode === 2) return false
+  return undefined
+}

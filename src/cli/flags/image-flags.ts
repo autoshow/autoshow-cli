@@ -10,8 +10,8 @@ import {
   SUPPORTED_BFL_IMAGE_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { priceFlag } from './shared-flags'
-import { renameFlags } from './flag-utils'
+import { generationOutputFlags, priceFlag } from './shared-flags'
+import { aliasFlags } from './flag-utils'
 
 export const IMAGE_COMMAND_SELECTOR_FLAGS = {
   'gemini-image': 'gemini',
@@ -93,11 +93,40 @@ export const imageGenFlags = {
     description: 'Image background: transparent|opaque|auto (OpenAI, default: auto)',
     type: String
   },
-  'imagen-count': {
-    description: 'Number of images to generate 1-4 (Imagen 4, default: 1)',
+  'image-count': {
+    description: 'Number of images to generate in one provider request where supported (OpenAI/Grok 1-10, Gemini Imagen 1-4; default: 1)',
+    type: String
+  },
+  'image-input': {
+    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native)',
+    type: [String] as [StringConstructor]
+  },
+  'image-mask': {
+    description: 'Mask image path for inpainting/edit workflows (OpenAI only)',
+    type: String
+  },
+  'image-response-mode': {
+    description: 'Gemini native response mode: image|text-image (default: image)',
+    type: String
+  },
+  'gemini-person-generation': {
+    description: 'Gemini Imagen person generation: dont_allow|allow_adult|allow_all',
+    type: String
+  },
+  'gemini-search-grounding': {
+    description: 'Enable Gemini native image generation with Google Search grounding metadata',
+    type: Boolean,
+    default: false,
+    negatable: false
+  },
+  'image-compression': {
+    description: 'OpenAI output compression for jpeg/webp images, 0-100',
     type: String
   },
   ...priceFlag
 } as const satisfies CliFlagsDefinition
 
-export const imageCommandFlags = renameFlags(imageGenFlags, IMAGE_COMMAND_SELECTOR_FLAGS)
+export const imageCommandFlags = {
+  ...aliasFlags(imageGenFlags, IMAGE_COMMAND_SELECTOR_FLAGS),
+  ...generationOutputFlags
+} as const satisfies CliFlagsDefinition

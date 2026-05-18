@@ -1,5 +1,5 @@
-import { mkdir, rm } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { cp, mkdir, rm, stat } from 'node:fs/promises'
+import { basename, dirname, join } from 'node:path'
 import { writeFile } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import {
@@ -10,6 +10,7 @@ import {
   type ExtractionResult,
   type OcrCompletionStatus,
   type OcrMetadataOptions,
+  type OcrProviderFailureSummary,
   type OcrProviderSuccess,
   type PreparedDocument,
   type ProcessDocumentOutput,
@@ -48,7 +49,7 @@ import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtract
 import { logExtractManifestConsoleSummary } from '../../write-manifest-log'
 import { logOcrProviderLifecycle } from './ocr-logging'
 import { cleanupOcrPreparationCache, createOcrPreparationCache } from './ocr-utils/preparation-cache'
-import { writeInvalidOcrStructuredResponse } from './ocr-structured-response-error'
+import { writeOcrProviderError } from './ocr-structured-response-error'
 
 const isEpubInspectMode = (metadata: ExtractionMetadata): boolean =>
   metadata.extractionMethod === 'epub-bun' || metadata.extractionMethod === 'epub-calibre'
@@ -129,6 +130,49 @@ const writeTextArtifactFiles = async (
     await mkdir(dirname(absolutePath), { recursive: true })
     await writeFile(absolutePath, file.text)
   }
+}
+
+const pathExists = async (path: string): Promise<boolean> =>
+  await stat(path).then(() => true, () => false)
+
+const maybeMigrateLegacyFallbackArtifacts = async (
+  legacyDir: string,
+  outputDir: string,
+  sourceFilePath: string
+): Promise<void> => {
+  if (legacyDir === outputDir) {
+    return
+  }
+
+  const legacyStatePath = join(legacyDir, 'fallback-state.json')
+  const outputStatePath = join(outputDir, 'fallback-state.json')
+  if (!await pathExists(legacyStatePath) || await pathExists(outputStatePath)) {
+    return
+  }
+
+  let state: Record<string, unknown>
+  try {
+    state = await Bun.file(legacyStatePath).json() as Record<string, unknown>
+  } catch {
+    return
+  }
+
+  if (state['sourceFile'] !== basename(sourceFilePath)) {
+    return
+  }
+
+  await cp(legacyStatePath, outputStatePath)
+  for (const entry of ['page-results', 'page-inputs']) {
+    const sourcePath = join(legacyDir, entry)
+    if (await pathExists(sourcePath)) {
+      await cp(sourcePath, join(outputDir, entry), { recursive: true })
+    }
+  }
+  const partialPath = join(legacyDir, 'partial-extraction.txt')
+  if (await pathExists(partialPath)) {
+    await cp(partialPath, join(outputDir, 'partial-extraction.txt'))
+  }
+  l.write('info', `Migrated OCR page fallback cache into ${outputDir}`)
 }
 
 const buildDocumentSource = (
@@ -344,8 +388,13 @@ export const processOcr = async (
 
   const { outputDir, step1Metadata, effectiveFilePath, tempCleanup, web } = prepared
   const extractFilePath = effectiveFilePath ?? filePath
+  await maybeMigrateLegacyFallbackArtifacts(optsWithPreparationCache.outputDir, outputDir, extractFilePath)
+  const effectiveOptsWithPreparationCache: ExtractionOptions = {
+    ...optsWithPreparationCache,
+    outputDir
+  }
 
-  const explicitTargets = optsWithPreparationCache.preparedMarkdown ? [] : collectExplicitOcrTargets(optsWithPreparationCache)
+  const explicitTargets = effectiveOptsWithPreparationCache.preparedMarkdown ? [] : collectExplicitOcrTargets(effectiveOptsWithPreparationCache)
   const documentSource = buildDocumentSource(filePath, sourceRef)
 
   try {
@@ -355,7 +404,7 @@ export const processOcr = async (
       const primaryTarget = resolvePrimaryOcrTarget(requestedTargets, opts.primaryOcr)
       const resolvedStep2 = resolveRecordedOcrStep2(
         step1Metadata.format,
-        optsWithPreparationCache,
+        effectiveOptsWithPreparationCache,
         documentSource,
         requestedTargets,
         prepared.preparedMarkdown
@@ -365,8 +414,8 @@ export const processOcr = async (
 
       const existingRun = await readExistingOcrRun(outputDir, requestedTargets)
       const successes: Array<OcrProviderSuccess | undefined> = [...existingRun.successes]
-      const failuresByIndex = new Map<number, { message: string, retryable?: boolean | undefined }>()
-      const failures: Array<{ service: string, model: string, message: string }> = []
+      const failuresByIndex = new Map<number, OcrProviderFailureSummary>()
+      const failures: Array<{ service: string, model: string, message: string, category: string, errorFile?: string }> = []
       let checkpointWrite = Promise.resolve()
       const queueCheckpointWrite = (): void => {
         const snapshotSuccesses = [...successes]
@@ -383,7 +432,9 @@ export const processOcr = async (
           const metadataErrors = buildMetadataErrorEntries(providerStates).map((value) => ({
             service: value['service'] as string,
             model: value['model'] as string,
-            message: value['message'] as string
+            message: value['message'] as string,
+            ...(typeof value['category'] === 'string' ? { category: value['category'] as string } : {}),
+            ...(typeof value['errorFile'] === 'string' ? { errorFile: value['errorFile'] as string } : {})
           }))
           const step2Metadata = snapshotSuccesses
             .filter((entry): entry is OcrProviderSuccess => entry !== undefined)
@@ -424,7 +475,7 @@ export const processOcr = async (
           })
           try {
             const providerOpts = buildExtractionOptionsForTarget({
-              ...optsWithPreparationCache,
+              ...effectiveOptsWithPreparationCache,
               outputDir: providerDir,
               ocrPreparationCache
             }, target)
@@ -455,13 +506,19 @@ export const processOcr = async (
               elapsedMs: Date.now() - providerStartedAt
             })
           } catch (error) {
-            await writeInvalidOcrStructuredResponse(providerDir, error)
             const failure = classifyOcrProviderFailure(error)
-            failuresByIndex.set(requestedIndex, failure)
+            const errorFile = await writeOcrProviderError(providerDir, error, failure)
+            const failureWithArtifact: OcrProviderFailureSummary = {
+              ...failure,
+              errorFile
+            }
+            failuresByIndex.set(requestedIndex, failureWithArtifact)
             failures.push({
               service: target.service,
               model: target.model,
-              message: failure.message
+              message: failure.message,
+              category: failure.category,
+              errorFile: `providers/${providerDirName}/${errorFile}`
             })
             queueCheckpointWrite()
             logOcrProviderLifecycle(l, {
@@ -469,6 +526,7 @@ export const processOcr = async (
               model: target.model,
               status: 'failed',
               elapsedMs: Date.now() - providerStartedAt,
+              reason: failure.category,
               detail: failure.message
             })
           }
@@ -487,7 +545,9 @@ export const processOcr = async (
       const metadataErrors = buildMetadataErrorEntries(providerStates).map((value) => ({
         service: value['service'] as string,
         model: value['model'] as string,
-        message: value['message'] as string
+        message: value['message'] as string,
+        ...(typeof value['category'] === 'string' ? { category: value['category'] as string } : {}),
+        ...(typeof value['errorFile'] === 'string' ? { errorFile: value['errorFile'] as string } : {})
       }))
       const step2Metadata = successes
         .filter((entry): entry is OcrProviderSuccess => entry !== undefined)
@@ -545,14 +605,14 @@ export const processOcr = async (
     }
 
     const singleTargetOpts = explicitTargets.length === 1
-      ? buildExtractionOptionsForTarget(optsWithPreparationCache, explicitTargets[0] as typeof explicitTargets[number])
-      : optsWithPreparationCache
+      ? buildExtractionOptionsForTarget(effectiveOptsWithPreparationCache, explicitTargets[0] as typeof explicitTargets[number])
+      : effectiveOptsWithPreparationCache
     const extracted = await runWithLogContext({ step: 'step-2-ocr' }, async () =>
       await runOcr(extractFilePath, step1Metadata, singleTargetOpts)
     )
     const resolvedStep2 = resolveRecordedOcrStep2(
       step1Metadata.format,
-      optsWithPreparationCache,
+      effectiveOptsWithPreparationCache,
       documentSource,
       explicitTargets.length === 1 ? explicitTargets : undefined,
       prepared.preparedMarkdown

@@ -7,7 +7,7 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { SUPPORTED_WHISPER_MODELS } from '~/cli/commands/setup-and-utilities/models/stt-models'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { priceFlag } from './shared-flags'
+import { generationOutputFlags, priceFlag } from './shared-flags'
 import { renameFlags } from './flag-utils'
 
 export const MUSIC_COMMAND_SELECTOR_FLAGS = {
@@ -102,5 +102,6 @@ const musicLyricVideoFlags = {
 
 export const musicCommandFlags = {
   ...renameFlags(musicGenFlags, MUSIC_COMMAND_SELECTOR_FLAGS),
+  ...generationOutputFlags,
   ...musicLyricVideoFlags
 } as const satisfies CliFlagsDefinition

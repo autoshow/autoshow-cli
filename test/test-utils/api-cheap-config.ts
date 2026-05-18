@@ -29,7 +29,7 @@ export const appendApiCheapImageArgs = (
   }
 
   if (selection.service === 'gemini' && selection.model.startsWith('imagen-')) {
-    args.push('--imagen-count', '1', '--image-aspect-ratio', '1:1')
+    args.push('--image-count', '1', '--image-aspect-ratio', '1:1')
     if (supportsGeminiImageSize(selection.model as GeminiImageModel)) {
       args.push('--image-size', '1K')
     }

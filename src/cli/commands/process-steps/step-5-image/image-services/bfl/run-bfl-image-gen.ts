@@ -242,6 +242,7 @@ export const runBflImageGen = async (
       imageFileSize: imageFile.size,
       imageWidth: dimensions?.width,
       imageHeight: dimensions?.height,
+      requestMode: 'generation',
       ...(providerCostCents !== undefined ? {
         providerCostCents,
         providerCostSource: providerCostCredits !== undefined ? 'provider_quote' : 'registry_fallback'

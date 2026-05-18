@@ -37,9 +37,6 @@ bun as setup
 
 # document foundations: mutool + Calibre ebook-convert
 bun as setup --step calibre
-
-# verify fixture-generation prerequisites
-bun as setup --step sample
 ```
 
 PaddleOCR can also be prepared lazily on first use:

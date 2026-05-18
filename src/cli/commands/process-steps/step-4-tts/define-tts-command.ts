@@ -4,14 +4,14 @@ import { TTS_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/tts-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
-import { normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
+import { normalizeCommandSelectorArgs, normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { runTts } from './run-tts'
 import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets, getTtsArtifactFileName } from './tts-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { runPreflight } from '~/utils/pricing/preflight'
-import { buildProviderStepSummaries, createGenerationOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
+import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExpectedOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -80,7 +80,8 @@ export const ttsCommand = defineCliCommand({
   const maxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
   const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
   const normalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, TTS_COMMAND_SELECTOR_FLAGS)
-  const ttsOptions = buildOptsFromFlags(true, normalized.flags, [], { defaultTtsEngine: 'kitten' }, normalized.explicitFlags, Bun.argv.slice(2))
+  const normalizedArgs = normalizeCommandSelectorArgs(Bun.argv.slice(2), TTS_COMMAND_SELECTOR_FLAGS)
+  const ttsOptions = buildOptsFromFlags(true, normalized.flags, [], { defaultTtsEngine: 'kitten' }, normalized.explicitFlags, normalizedArgs)
   const targets = collectTtsTargets(ttsOptions)
   const pvcSetupRequested = isElevenLabsTtsPvcSetupRequested(ttsOptions)
   const dialogueRequested = isDialogueTtsRequested(ttsOptions)
@@ -90,7 +91,7 @@ export const ttsCommand = defineCliCommand({
   const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, ttsCharacterCount)
   if (shouldExit) {
     l.report.expectedOutput(
-      './output/<timestamp>_<label>/',
+      getGenerationExpectedOutputDir(flags as Record<string, unknown>, './output/<timestamp>_<label>/'),
       dialogueRequested
         ? ['dialogue-normalized.txt', 'segments/', 'speech.wav', 'run.json']
         : pvcSetupRequested && ttsOptions.elevenlabsTtsPvcWait !== true
@@ -101,7 +102,7 @@ export const ttsCommand = defineCliCommand({
   }
 
   const baseName = inputPath.replace(/\.[^/.]+$/, '').split('/').pop() || 'tts'
-  const outputDir = await createGenerationOutputDir(baseName)
+  const outputDir = await createGenerationOutputDir(baseName, flags as Record<string, unknown>)
 
   let effectiveTtsOptions = ttsOptions
   let effectiveTargets = targets

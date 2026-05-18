@@ -107,7 +107,7 @@ export class SttBatchCoordinator {
       service: target.service,
       model: target.model,
       local: target.local,
-      message: `Deferred remaining live-batch work after repeated retryable failures: ${failure.message}`,
+      message: `Deferred remaining live-batch work after repeated failures: ${failure.message}`,
       retryable: true,
       ...(failure.stage ? { stage: failure.stage } : {}),
       ...(typeof failure.status === 'number' ? { status: failure.status } : {}),

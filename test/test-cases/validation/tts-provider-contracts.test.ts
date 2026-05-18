@@ -752,8 +752,10 @@ describe('TTS provider service contracts', () => {
 
   test('Mistral converts non-mp3-wav reference audio to WAV before sending ref_audio', async () => {
     const dir = await makeTempDir('autoshow-mistral-tts-ref-audio-')
-    const sourcePath = 'input/samples/valid/1-audio.m4a'
+    const sourcePath = join(dir, 'reference.m4a')
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
+
+    await Bun.$`ffmpeg -v error -y -i input/examples/audio/0-audio-short.mp3 -t 1 -c:a aac ${sourcePath}`.quiet()
 
     process.env['MISTRAL_API_KEY'] = 'mistral-key'
     process.env['MISTRAL_BASE_URL'] = 'https://mock.mistral.local/v1'
@@ -802,7 +804,7 @@ describe('TTS provider service contracts', () => {
     expect(result.metadata).toMatchObject({
       ttsService: 'mistral',
       ttsModel: 'voxtral-mini-tts-2603',
-      speaker: 'ref_audio:1-audio.m4a',
+      speaker: 'ref_audio:reference.m4a',
       chunkCount: 1
     })
   }, 10_000)

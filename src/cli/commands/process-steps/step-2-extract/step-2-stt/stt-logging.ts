@@ -344,18 +344,18 @@ export const buildSttRecoveryPassTable = (
   summary: {
     pass: number
     maxPasses: number
-    retryableFailures: number
+    failures: number
     providers: string
   }
 ): HumanLogTable =>
-  createHumanTable([summary], ['pass', 'maxPasses', 'retryableFailures', 'providers'])
+  createHumanTable([summary], ['pass', 'maxPasses', 'failures', 'providers'])
 
 export const logSttRecoveryPass = (
   logger: TableLogger,
   summary: {
     pass: number
     maxPasses: number
-    retryableFailures: number
+    failures: number
     providers: string
   }
 ): void => {
@@ -597,19 +597,41 @@ export const logSttProviderConcurrency = (
   })
 }
 
+const summarizeProviderFailureReason = (
+  failure: Pick<ProviderFailure, 'stage' | 'status'>
+): string => {
+  if (typeof failure.status === 'number') {
+    return `status ${failure.status}`
+  }
+  if (failure.stage) {
+    return failure.stage
+  }
+  return 'failed'
+}
+
 export const buildSttProviderFailureTable = (
   failures: readonly ProviderFailure[]
-): HumanLogTable =>
-  createHumanTable(
+): HumanLogTable => {
+  const table = createHumanTable(
     failures.map((failure) => ({
       provider: formatSttTargetLabel(failure),
       stage: failure.stage ?? '',
       status: failure.status ?? '',
-      retryable: failure.retryable,
-      detail: failure.message
+      reason: summarizeProviderFailureReason(failure)
     })),
-    ['provider', 'stage', 'status', 'retryable', 'detail']
+    ['provider', 'stage', 'status', 'reason']
   )
+  return {
+    ...table,
+    details: [
+      ...(table.details ?? []),
+      ...failures.map((failure) => ({
+        label: `${formatSttTargetLabel(failure)} detail`,
+        value: failure.message
+      }))
+    ]
+  }
+}
 
 export const logSttProviderFailures = (
   logger: TableLogger,
@@ -628,7 +650,6 @@ export const logSttProviderFailures = (
         provider: formatSttTargetLabel(failure),
         stage: failure.stage,
         status: failure.status,
-        retryable: failure.retryable,
         detail: failure.message
       }))
     }
@@ -637,17 +658,32 @@ export const logSttProviderFailures = (
 
 export const buildSttProviderSkipTable = (
   skippedProviders: ReadonlyArray<Pick<SttProviderState, 'service' | 'model' | 'lastError'>>
-): HumanLogTable =>
-  createHumanTable(
+): HumanLogTable => {
+  const table = createHumanTable(
     skippedProviders.map((state) => ({
       provider: formatSttTargetLabel(state),
       stage: state.lastError?.stage ?? '',
       status: state.lastError?.status ?? '',
-      retryable: state.lastError?.retryable ?? false,
-      detail: state.lastError?.message ?? 'skipped'
+      reason: state.lastError
+        ? summarizeProviderFailureReason({
+          stage: state.lastError.stage,
+          status: state.lastError.status
+        })
+        : 'skipped'
     })),
-    ['provider', 'stage', 'status', 'retryable', 'detail']
+    ['provider', 'stage', 'status', 'reason']
   )
+  return {
+    ...table,
+    details: [
+      ...(table.details ?? []),
+      ...skippedProviders.map((state) => ({
+        label: `${formatSttTargetLabel(state)} detail`,
+        value: state.lastError?.message ?? 'skipped'
+      }))
+    ]
+  }
+}
 
 export const logSttProviderSkips = (
   logger: TableLogger,
@@ -666,7 +702,6 @@ export const logSttProviderSkips = (
         provider: formatSttTargetLabel(state),
         stage: state.lastError?.stage,
         status: state.lastError?.status,
-        retryable: state.lastError?.retryable ?? false,
         detail: state.lastError?.message ?? 'skipped'
       }))
     }

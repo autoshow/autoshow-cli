@@ -594,59 +594,6 @@ const runPriceMode = async (
   return exitCode
 }
 
-const runPreflight = async (): Promise<void> => {
-  const envFile = process.env['ENV_FILE'] || '.env'
-  const cliEntry = 'src/cli/create-cli.ts'
-
-  // Step 1: run setup --step sample (tool verification)
-  const setupProc = Bun.spawn(
-    ['bun', `--env-file=${envFile}`, cliEntry, 'setup', '--step', 'sample'],
-    { stdout: 'inherit', stderr: 'inherit' }
-  )
-  const setupExit = await setupProc.exited
-  if (setupExit !== 0) {
-    // Tools missing — run full setup to install them, then retry
-    console.log('Preflight: setup --step sample failed; running full setup to install dependencies...')
-    const fullSetupProc = Bun.spawn(
-      ['bun', `--env-file=${envFile}`, cliEntry, 'setup'],
-      { stdout: 'inherit', stderr: 'inherit' }
-    )
-    const fullSetupExit = await fullSetupProc.exited
-    if (fullSetupExit !== 0) {
-      throw new Error(`Preflight: full setup failed with exit code ${fullSetupExit}`)
-    }
-    const retryProc = Bun.spawn(
-      ['bun', `--env-file=${envFile}`, cliEntry, 'setup', '--step', 'sample'],
-      { stdout: 'inherit', stderr: 'inherit' }
-    )
-    const retryExit = await retryProc.exited
-    if (retryExit !== 0) {
-      throw new Error(`Preflight: setup --step sample failed with exit code ${retryExit} after full setup`)
-    }
-  }
-
-  // Step 2: run setup --sample --out input/samples
-  const sampleVerifyProc = Bun.spawn(
-    ['bun', `--env-file=${envFile}`, cliEntry, 'setup', '--sample', '--out', 'input/samples', '--verify-only'],
-    { stdout: 'inherit', stderr: 'inherit' }
-  )
-  const sampleVerifyExit = await sampleVerifyProc.exited
-  if (sampleVerifyExit === 0) {
-    console.log('Preflight: existing sample fixtures verified, skipping regeneration')
-    return
-  }
-
-  // Step 3: generate sample fixtures when verify-only cannot reuse the existing manifest
-  const sampleProc = Bun.spawn(
-    ['bun', `--env-file=${envFile}`, cliEntry, 'setup', '--sample', '--out', 'input/samples'],
-    { stdout: 'inherit', stderr: 'inherit' }
-  )
-  const sampleExit = await sampleProc.exited
-  if (sampleExit !== 0) {
-    throw new Error(`Preflight: sample generation failed with exit code ${sampleExit}`)
-  }
-}
-
 export const runTestRunner = async (argv: string[]): Promise<number> => {
   const args = parseRunnerArgs(argv)
 
@@ -670,9 +617,6 @@ export const runTestRunner = async (argv: string[]): Promise<number> => {
 
   let exitCode = 0
   try {
-    // Preflight: generate sample fixtures before running tests
-    await runPreflight()
-
     exitCode = args.priceMode
       ? await runPriceMode(args, allFiles, artifacts, argv)
       : await runStandardTestMode(args, allFiles, artifacts, argv)

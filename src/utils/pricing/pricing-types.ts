@@ -183,7 +183,7 @@ export type ComputeEstimatedCostsInput = {
   deapiImageModel?: string | undefined
   imageSize?: string | undefined
   imageQuality?: string | undefined
-  imagenCount?: number | undefined
+  imageCount?: number | undefined
   geminiVideoModel?: string | undefined
   minimaxVideoModel?: string | undefined
   glmVideoModel?: string | undefined

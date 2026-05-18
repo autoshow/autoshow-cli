@@ -6,7 +6,7 @@ defineImageServiceTest({
   models: [
     { model: 'imagen-4.0-ultra-generate-001', prompt: 'a simple green square on white background' },
     { model: 'imagen-4.0-fast-generate-001', prompt: 'a simple yellow star on white background' },
-    { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--imagen-count', '1', '--image-aspect-ratio', '1:1'] },
+    { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--image-count', '1', '--image-aspect-ratio', '1:1'] },
   ],
   cliFlag: '--gemini-image',
   imageService: 'gemini',
