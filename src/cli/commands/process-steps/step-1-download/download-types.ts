@@ -239,6 +239,7 @@ export type RepeatableModelFlag =
   | 'deepinfra-ocr'
   | 'aws-textract'
   | 'gcloud-docai'
+  | 'unstructured-ocr'
   | 'llama'
   | 'openai'
   | 'groq'
@@ -346,6 +347,7 @@ export type WriteDocumentOutputMetadataOptions = {
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined
   deepinfraOcrModel: string | undefined
+  unstructuredOcrModel: string | undefined
   llmService: string
   llmModel: string
   llmInputTokenCount: number

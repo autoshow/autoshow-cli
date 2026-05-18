@@ -11,6 +11,8 @@ import { validateData } from '~/utils/validate/validation'
 import { getOcrTargetDirectoryName } from './ocr-targets'
 import { readOcrRunManifestEntry } from './manifest'
 import { readProviderResultEntry } from '../../manifest-utils'
+import { collectErrorChain, extractErrorMetadata } from '~/utils/error-handler'
+import { parseRetryAfterMs } from '~/utils/retries'
 import type {
   ExistingOcrRun,
   OcrCompletionStatus,
@@ -52,23 +54,6 @@ const OCR_PROVIDER_FAILURE_CATEGORIES = new Set<OcrProviderFailureCategory>([
   'provider_limit',
   'unknown'
 ])
-
-const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
-  value instanceof Error
-
-const collectErrorChain = (error: unknown): ProviderErrorLike[] => {
-  const chain: ProviderErrorLike[] = []
-  const seen = new Set<unknown>()
-  let current: unknown = error
-
-  while (isProviderErrorLike(current) && !seen.has(current)) {
-    chain.push(current)
-    seen.add(current)
-    current = current.cause
-  }
-
-  return chain
-}
 
 const resolveFailureMessage = (
   chain: ProviderErrorLike[],
@@ -132,12 +117,22 @@ export const stripAnsi = (value: string): string => value.replace(ANSI_PATTERN, 
 export const classifyOcrProviderFailure = (
   error: unknown
 ): OcrProviderFailureSummary => {
-  const chain = collectErrorChain(error)
+  const chain = collectErrorChain(error) as ProviderErrorLike[]
   const message = resolveFailureMessage(chain, error)
-  const status = chain.find((entry) => typeof entry.status === 'number')?.status as number | undefined
+  const metadata = extractErrorMetadata(error)
+  const status = typeof metadata['status'] === 'number' ? metadata['status'] : undefined
+  const headers = metadata['headers'] instanceof Headers ? metadata['headers'] : undefined
+  const stage = typeof metadata['stage'] === 'string' ? metadata['stage'] : undefined
+  const retryAfterMs = parseRetryAfterMs(headers)
   const category = resolveFailureCategory(chain, message, status)
 
-  return { message, category }
+  return {
+    message,
+    category,
+    ...(stage ? { stage } : {}),
+    ...(typeof status === 'number' ? { status } : {}),
+    ...(typeof retryAfterMs === 'number' ? { retryAfterMs } : {})
+  }
 }
 
 export const getOcrTargetKey = (target: Pick<OcrTarget, 'service' | 'model'>): string =>
@@ -170,6 +165,7 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
     && value['service'] !== 'deepinfra'
     && value['service'] !== 'aws-textract'
     && value['service'] !== 'gcloud-docai'
+    && value['service'] !== 'unstructured'
   ) {
     return undefined
   }
@@ -213,7 +209,11 @@ export const parseStoredProviderState = (value: unknown): OcrProviderState | und
     ? {
         message: value['lastError']['message'],
         ...(typeof value['lastError']['category'] === 'string' ? { category: value['lastError']['category'] as OcrProviderFailureCategory } : {}),
-        ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {})
+        ...(typeof value['lastError']['stage'] === 'string' ? { stage: value['lastError']['stage'] } : {}),
+        ...(typeof value['lastError']['status'] === 'number' ? { status: value['lastError']['status'] } : {}),
+        ...(typeof value['lastError']['retryAfterMs'] === 'number' ? { retryAfterMs: value['lastError']['retryAfterMs'] } : {}),
+        ...(typeof value['lastError']['errorFile'] === 'string' ? { errorFile: value['lastError']['errorFile'] } : {}),
+        ...(typeof value['lastError']['rawResponseFile'] === 'string' ? { rawResponseFile: value['lastError']['rawResponseFile'] } : {})
       } satisfies OcrRecordedProviderError
     : undefined
 
@@ -481,7 +481,11 @@ export const buildProviderStates = (
         lastError: {
           message: failure.message,
           category: failure.category,
-          ...(failure.errorFile ? { errorFile: failure.errorFile } : {})
+          ...(failure.stage ? { stage: failure.stage } : {}),
+          ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+          ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
+          ...(failure.errorFile ? { errorFile: failure.errorFile } : {}),
+          ...(failure.rawResponseFile ? { rawResponseFile: failure.rawResponseFile } : {})
         }
       }
     }
@@ -533,5 +537,9 @@ export const buildMetadataErrorEntries = (
       model: state.model,
       message: state.lastError?.message,
       category: state.lastError?.category,
-      ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {})
+      ...(state.lastError?.stage ? { stage: state.lastError.stage } : {}),
+      ...(typeof state.lastError?.status === 'number' ? { status: state.lastError.status } : {}),
+      ...(typeof state.lastError?.retryAfterMs === 'number' ? { retryAfterMs: state.lastError.retryAfterMs } : {}),
+      ...(state.lastError?.errorFile ? { errorFile: state.lastError.errorFile } : {}),
+      ...(state.lastError?.rawResponseFile ? { rawResponseFile: state.lastError.rawResponseFile } : {})
     }))

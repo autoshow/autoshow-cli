@@ -234,6 +234,7 @@ const ExtractOcrDefaultsSchema = v.strictObject({
   deepinfraOcr: ModelArraySchema,
   awsTextract: ModelArraySchema,
   gcloudDocai: ModelArraySchema,
+  unstructuredOcr: ModelArraySchema,
   gcloudDocaiLocation: v.optional(v.string(), undefined),
   gcloudDocaiOcrProcessorId: v.optional(v.string(), undefined),
   gcloudDocaiLayoutProcessorId: v.optional(v.string(), undefined),

@@ -696,6 +696,34 @@ describe('logging contracts', () => {
     expect(sanitized).toContain('OPENAI_API_KEY=REDACTED')
   })
 
+  test('logger error metadata preserves custom fields and redacts nested causes', () => {
+    const secret = 'secret-value-123'
+    const events: LogSinkEvent[] = []
+    const logger = createLogger({
+      runId: 'run-id',
+      sinks: [event => events.push(event)]
+    })
+    const cause = Object.assign(new Error('nested failure'), {
+      body: `OPENAI_API_KEY=${secret}`
+    })
+    const error = Object.assign(new Error('provider failed'), {
+      status: 503,
+      stage: 'poll',
+      headers: new Headers({ authorization: `Bearer ${secret}` }),
+      cause
+    })
+
+    logger.error('Command failed', error)
+
+    const metadataError = events[0]?.metadata?.['error'] as Record<string, unknown> | undefined
+    const serialized = JSON.stringify(metadataError)
+    expect(metadataError?.['status']).toBe(503)
+    expect(metadataError?.['stage']).toBe('poll')
+    expect(serialized).not.toContain(secret)
+    expect(serialized).toContain('REDACTED')
+    expect(metadataError?.['cause']).toBeDefined()
+  })
+
   test('table builders produce stable completion output', () => {
     expect(buildResumeSummaryTable({ full: 3, incomplete: 1, failed: 0 }).rows).toEqual([{
       full: 3,

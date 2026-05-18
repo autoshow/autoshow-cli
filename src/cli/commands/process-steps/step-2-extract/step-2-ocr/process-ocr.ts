@@ -361,6 +361,8 @@ export const processOcr = async (
     ...(rawOpts.configPath ? { configPath: rawOpts.configPath } : {}),
     ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),
     ...(rawOpts.gcloudDocaiModels ? { gcloudDocaiModels: rawOpts.gcloudDocaiModels } : {}),
+    ...(rawOpts.unstructuredOcrModel ? { unstructuredOcrModel: rawOpts.unstructuredOcrModel } : {}),
+    ...(rawOpts.unstructuredOcrModels ? { unstructuredOcrModels: rawOpts.unstructuredOcrModels } : {}),
     ...(rawOpts.primaryOcr ? { primaryOcr: rawOpts.primaryOcr } : {}),
     ...(rawOpts.epubChapterFiles ? { epubChapterFiles: true } : {}),
     ...(typeof rawOpts.epubChunkLimitChars === 'number' ? { epubChunkLimitChars: rawOpts.epubChunkLimitChars } : {}),
@@ -415,7 +417,7 @@ export const processOcr = async (
       const existingRun = await readExistingOcrRun(outputDir, requestedTargets)
       const successes: Array<OcrProviderSuccess | undefined> = [...existingRun.successes]
       const failuresByIndex = new Map<number, OcrProviderFailureSummary>()
-      const failures: Array<{ service: string, model: string, message: string, category: string, errorFile?: string }> = []
+      const failures: NonNullable<OcrMetadataOptions['failures']> = []
       let checkpointWrite = Promise.resolve()
       const queueCheckpointWrite = (): void => {
         const snapshotSuccesses = [...successes]
@@ -507,10 +509,10 @@ export const processOcr = async (
             })
           } catch (error) {
             const failure = classifyOcrProviderFailure(error)
-            const errorFile = await writeOcrProviderError(providerDir, error, failure)
+            const errorArtifacts = await writeOcrProviderError(providerDir, error, failure)
             const failureWithArtifact: OcrProviderFailureSummary = {
               ...failure,
-              errorFile
+              ...errorArtifacts
             }
             failuresByIndex.set(requestedIndex, failureWithArtifact)
             failures.push({
@@ -518,7 +520,11 @@ export const processOcr = async (
               model: target.model,
               message: failure.message,
               category: failure.category,
-              errorFile: `providers/${providerDirName}/${errorFile}`
+              ...(failure.stage ? { stage: failure.stage } : {}),
+              ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
+              ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
+              errorFile: `providers/${providerDirName}/${errorArtifacts.errorFile}`,
+              ...(errorArtifacts.rawResponseFile ? { rawResponseFile: `providers/${providerDirName}/${errorArtifacts.rawResponseFile}` } : {})
             })
             queueCheckpointWrite()
             logOcrProviderLifecycle(l, {
@@ -547,7 +553,11 @@ export const processOcr = async (
         model: value['model'] as string,
         message: value['message'] as string,
         ...(typeof value['category'] === 'string' ? { category: value['category'] as string } : {}),
-        ...(typeof value['errorFile'] === 'string' ? { errorFile: value['errorFile'] as string } : {})
+        ...(typeof value['stage'] === 'string' ? { stage: value['stage'] as string } : {}),
+        ...(typeof value['status'] === 'number' ? { status: value['status'] as number } : {}),
+        ...(typeof value['retryAfterMs'] === 'number' ? { retryAfterMs: value['retryAfterMs'] as number } : {}),
+        ...(typeof value['errorFile'] === 'string' ? { errorFile: value['errorFile'] as string } : {}),
+        ...(typeof value['rawResponseFile'] === 'string' ? { rawResponseFile: value['rawResponseFile'] as string } : {})
       }))
       const step2Metadata = successes
         .filter((entry): entry is OcrProviderSuccess => entry !== undefined)

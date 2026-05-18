@@ -36,6 +36,7 @@ import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step
 import { setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
 import { setupDeepinfraOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deepinfra-ocr/deepinfra-ocr'
+import { setupUnstructuredOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/unstructured-ocr/unstructured'
 import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
 import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
 import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
@@ -316,6 +317,7 @@ const runFullSetup = async (): Promise<void> => {
     await setupAnthropicOcr()
     await setupGeminiOcr()
     await setupDeepinfraOcr()
+    await setupUnstructuredOcr()
   })
 
   await withCompactSetup(setupAssemblyAiStt)

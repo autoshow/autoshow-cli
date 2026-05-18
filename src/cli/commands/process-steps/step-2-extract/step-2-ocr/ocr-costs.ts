@@ -32,6 +32,7 @@ type OcrModelFallbackOptions = {
   deepinfraOcrModel?: string | undefined
   gcloudDocaiModel?: string | undefined
   awsTextractModel?: string | undefined
+  unstructuredOcrModel?: string | undefined
 }
 
 const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra'])
@@ -44,7 +45,8 @@ const OCR_DIAGNOSTIC_PROVIDERS = new Set([
   'gemini',
   'deepinfra',
   'gcloud-docai',
-  'aws-textract'
+  'aws-textract',
+  'unstructured'
 ])
 
 const toArray = <T,>(value: T | T[]): T[] => Array.isArray(value) ? value : [value]
@@ -186,6 +188,16 @@ export const collectEstimatedExtractTargets = (
       targets.push({
         provider: 'aws-textract',
         model: model || opts.awsTextractModel || 'aws-textract',
+        pageCount,
+        estimateType: 'exact'
+      })
+      continue
+    }
+
+    if (provider === 'unstructured') {
+      targets.push({
+        provider: 'unstructured',
+        model: model || opts.unstructuredOcrModel || 'hi_res_and_enrichment',
         pageCount,
         estimateType: 'exact'
       })

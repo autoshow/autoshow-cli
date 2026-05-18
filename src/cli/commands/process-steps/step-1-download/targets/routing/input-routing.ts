@@ -80,6 +80,8 @@ export const resolveInputRoutingForCommand = async (
     | 'geminiOcrModels'
     | 'deepinfraOcrModel'
     | 'deepinfraOcrModels'
+    | 'unstructuredOcrModel'
+    | 'unstructuredOcrModels'
     | 'useEpubBun'
     | 'useEpubCalibre'
   >

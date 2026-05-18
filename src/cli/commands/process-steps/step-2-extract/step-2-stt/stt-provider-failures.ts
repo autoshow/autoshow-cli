@@ -5,6 +5,7 @@ import type {
   SttBatchBlockedProviderReason
 } from '~/types'
 import { classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
+import { collectErrorChain, extractErrorMetadata, serializeDiagnosticError } from '~/utils/error-handler'
 
 const BATCH_BLOCKING_AUTH_STATUS_CODES = new Set([401, 403])
 const BATCH_BLOCKING_MODEL_ERROR_CODES = new Set([400, 404, 422])
@@ -20,23 +21,6 @@ const BATCH_BLOCKING_SETUP_MESSAGE_PATTERNS = [
   /\bcredentials?\b.*\b(required|missing|invalid)\b/i
 ]
 const RETRYABLE_DEADLINE_MESSAGE_PATTERN = /\bdeadline exceeded\b|\btimed out waiting for transcription completion\b/i
-
-const isProviderErrorLike = (value: unknown): value is ProviderErrorLike =>
-  value instanceof Error
-
-const collectErrorChain = (error: unknown): ProviderErrorLike[] => {
-  const chain: ProviderErrorLike[] = []
-  const seen = new Set<unknown>()
-  let current: unknown = error
-
-  while (isProviderErrorLike(current) && !seen.has(current)) {
-    chain.push(current)
-    seen.add(current)
-    current = current.cause
-  }
-
-  return chain
-}
 
 const resolveFailureMessage = (
   chain: ProviderErrorLike[],
@@ -58,14 +42,17 @@ const resolveFailureMessage = (
 export const classifySttProviderFailure = (
   error: unknown
 ): Omit<ProviderFailure, 'index' | 'service' | 'model'> => {
-  const chain = collectErrorChain(error)
+  const chain = collectErrorChain(error) as ProviderErrorLike[]
   const message = resolveFailureMessage(chain, error)
   const deepest = chain[chain.length - 1]
-  const retryClass = chain.find((entry) => typeof entry.retryClass === 'string')?.retryClass
-  const status = chain.find((entry) => typeof entry.status === 'number')?.status
-  const headers = chain.find((entry) => entry.headers instanceof Headers)?.headers
-  const stage = chain.find((entry) => typeof entry.stage === 'string')?.stage
-  const explicitRetryable = chain.find((entry) => typeof entry.retryable === 'boolean')?.retryable
+  const metadata = extractErrorMetadata(error)
+  const retryClass = typeof metadata['retryClass'] === 'string'
+    ? metadata['retryClass'] as ProviderErrorLike['retryClass']
+    : undefined
+  const status = typeof metadata['status'] === 'number' ? metadata['status'] : undefined
+  const headers = metadata['headers'] instanceof Headers ? metadata['headers'] : undefined
+  const stage = typeof metadata['stage'] === 'string' ? metadata['stage'] : undefined
+  const explicitRetryable = typeof metadata['retryable'] === 'boolean' ? metadata['retryable'] : undefined
   const skipped = chain.some((entry) => entry.skipped === true)
   const retryAfterMs = parseRetryAfterMs(headers)
 
@@ -164,12 +151,14 @@ export const shouldBlockSttProviderForBatch = (
     && BATCH_BLOCKING_MODEL_MESSAGE_PATTERNS.some((pattern) => pattern.test(failure.message))
 }
 
-export const extractProviderRawResponse = (error: unknown): unknown =>
-  collectErrorChain(error).find((entry) => entry.rawResponse !== undefined)?.rawResponse
+export const extractProviderRawResponse = (error: unknown): unknown => {
+  const metadata = extractErrorMetadata(error)
+  return metadata['rawResponse'] ?? metadata['body']
+}
 
 const toDiagnosticJson = (value: unknown): string => {
   try {
-    const json = JSON.stringify(value, null, 2)
+    const json = JSON.stringify(serializeDiagnosticError(value), null, 2)
     if (typeof json === 'string') {
       return json
     }
@@ -182,7 +171,8 @@ const toDiagnosticJson = (value: unknown): string => {
 export const writeProviderFailureArtifacts = async (
   providerDir: string,
   failure: Omit<ProviderFailure, 'index'>,
-  rawResponse: unknown
+  rawResponse: unknown,
+  error?: unknown
 ): Promise<Pick<ProviderFailure, 'errorFile' | 'rawResponseFile'>> => {
   const errorFile = 'error.json'
   let rawResponseFile: string | undefined
@@ -199,7 +189,8 @@ export const writeProviderFailureArtifacts = async (
     ...(failure.stage ? { stage: failure.stage } : {}),
     ...(typeof failure.status === 'number' ? { status: failure.status } : {}),
     ...(typeof failure.retryAfterMs === 'number' ? { retryAfterMs: failure.retryAfterMs } : {}),
-    ...(rawResponseFile ? { rawResponseFile } : {})
+    ...(rawResponseFile ? { rawResponseFile } : {}),
+    ...(error !== undefined ? { error: serializeDiagnosticError(error) } : {})
   }, null, 2))
 
   return {

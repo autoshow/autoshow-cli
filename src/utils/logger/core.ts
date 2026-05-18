@@ -127,7 +127,9 @@ export const createLogger = (options: CreateLoggerOptions = {}): Logger => {
     },
     error: (message, errorObj) => {
       if (errorObj instanceof Error) {
-        write('error', `${message}: ${errorObj.message}`)
+        write('error', `${message}: ${errorObj.message}`, {
+          metadata: { error: errorObj }
+        })
         if (errorObj.stack) {
           write('error', errorObj.stack, { indent: false })
         }

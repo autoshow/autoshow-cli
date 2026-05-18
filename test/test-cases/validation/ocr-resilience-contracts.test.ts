@@ -30,6 +30,10 @@ import {
   OcrStructuredResponseError,
   writeOcrProviderError
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
+import {
+  buildUnstructuredProgressKey,
+  runUnstructuredOcr
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/unstructured-ocr/run-unstructured-ocr'
 
 const basePdfMetadata: DocumentMetadata = {
   slug: 'document',
@@ -73,6 +77,14 @@ const invalidPageResponsePath = (dir: string, pageNumber: number): string =>
 const pageInputPath = (dir: string, pageNumber: number): string =>
   join(dir, 'page-inputs', `page-${String(pageNumber).padStart(6, '0')}.pdf`)
 
+const jsonResponse = (body: unknown, status = 200): Response =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json'
+    }
+  })
+
 describe('OCR resilience contracts', () => {
   test('OCR retry policy and timeout defaults are aggressive and env parsing is strict', () => {
     expect(DEFAULT_OCR_REQUEST_TIMEOUT_MS).toBe(60 * 60_000)
@@ -110,6 +122,169 @@ describe('OCR resilience contracts', () => {
       } else {
         process.env[envKey] = original
       }
+    }
+  })
+
+  test('Unstructured progress key tracks node counters instead of log messages or node order', () => {
+    const base = buildUnstructuredProgressKey({
+      id: 'job-1',
+      processing_status: 'IN_PROGRESS',
+      message: 'first message',
+      node_stats: [
+        { node_name: 'enrich', ready: 0, in_progress: 1, success: 0, failure: 0 },
+        { node_name: 'partition', ready: 0, in_progress: 1, success: 0, failure: 0 }
+      ]
+    })
+
+    expect(buildUnstructuredProgressKey({
+      id: 'job-1',
+      processing_status: 'IN_PROGRESS',
+      message: 'different message',
+      node_stats: [
+        { node_name: 'partition', ready: 0, in_progress: 1, success: 0, failure: 0 },
+        { node_name: 'enrich', ready: 0, in_progress: 1, success: 0, failure: 0 }
+      ]
+    })).toBe(base)
+
+    expect(buildUnstructuredProgressKey({
+      id: 'job-1',
+      processing_status: 'IN_PROGRESS',
+      node_stats: [
+        { node_name: 'enrich', ready: 0, in_progress: 0, success: 1, failure: 0 },
+        { node_name: 'partition', ready: 0, in_progress: 1, success: 0, failure: 0 }
+      ]
+    })).not.toBe(base)
+  })
+
+  test('Unstructured stalled jobs are cancelled before the global OCR deadline', async () => {
+    const previousFetch = globalThis.fetch
+    const previousSleep = Bun.sleep
+    const previousDateNow = Date.now
+    const previousEnv = {
+      UNSTRUCTURED_API_KEY: process.env['UNSTRUCTURED_API_KEY'],
+      AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS'],
+      AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS'],
+      AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS'],
+      AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS'],
+      AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS']
+    }
+    let now = 0
+    const calls: Array<{ method: string, url: string }> = []
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-unstructured-stall-'))
+    const inputPath = join(tempDir, 'input.pdf')
+
+    try {
+      await Bun.write(inputPath, new Uint8Array([37, 80, 68, 70]))
+      process.env['UNSTRUCTURED_API_KEY'] = 'test-key'
+      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS'] = '100'
+      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS'] = '1000'
+      process.env['AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS'] = '900'
+      process.env['AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS'] = '250'
+      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS'] = '100'
+
+      Date.now = () => now
+      ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms?: number | string) => {
+        now += typeof ms === 'number' ? ms : Number(ms ?? 0)
+      }) as typeof Bun.sleep
+
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        calls.push({ method, url })
+
+        if (method === 'POST' && url.endsWith('/api/v1/jobs/')) {
+          return jsonResponse({ id: 'job-1', status: 'SCHEDULED', input_file_ids: ['input-1'] })
+        }
+
+        if (method === 'GET' && url.endsWith('/api/v1/jobs/job-1/details')) {
+          return jsonResponse({
+            id: 'job-1',
+            processing_status: 'IN_PROGRESS',
+            node_stats: [
+              { node_name: 'partition', ready: 0, in_progress: 0, success: 0, failure: 0 }
+            ]
+          })
+        }
+
+        if (method === 'POST' && url.endsWith('/api/v1/jobs/job-1/cancel')) {
+          return jsonResponse({ ok: true })
+        }
+
+        throw new Error(`Unexpected Unstructured mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      await expect(runUnstructuredOcr(inputPath, {
+        ...basePdfMetadata,
+        pageCount: 1,
+        fileSize: 4
+      }, 'hi_res_and_enrichment')).rejects.toThrow('did not move any files into workflow nodes')
+
+      expect(calls.some((call) => call.method === 'POST' && call.url.endsWith('/api/v1/jobs/job-1/cancel'))).toBe(true)
+      expect(now).toBeLessThan(1000)
+    } finally {
+      globalThis.fetch = previousFetch
+      ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = previousSleep
+      Date.now = previousDateNow
+      for (const [key, value] of Object.entries(previousEnv)) {
+        if (value === undefined) {
+          delete process.env[key]
+        } else {
+          process.env[key] = value
+        }
+      }
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('Unstructured create-job without input file IDs is cancelled immediately', async () => {
+    const previousFetch = globalThis.fetch
+    const previousEnv = {
+      UNSTRUCTURED_API_KEY: process.env['UNSTRUCTURED_API_KEY'],
+      AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS']
+    }
+    const calls: Array<{ method: string, url: string }> = []
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-unstructured-no-input-'))
+    const inputPath = join(tempDir, 'input.pdf')
+
+    try {
+      await Bun.write(inputPath, new Uint8Array([37, 80, 68, 70]))
+      process.env['UNSTRUCTURED_API_KEY'] = 'test-key'
+      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS'] = '100'
+
+      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+        const url = String(input)
+        const method = init?.method ?? 'GET'
+        calls.push({ method, url })
+
+        if (method === 'POST' && url.endsWith('/api/v1/jobs/')) {
+          return jsonResponse({ id: 'job-1', status: 'SCHEDULED', input_file_ids: [] })
+        }
+
+        if (method === 'POST' && url.endsWith('/api/v1/jobs/job-1/cancel')) {
+          return jsonResponse({ ok: true })
+        }
+
+        throw new Error(`Unexpected Unstructured mock fetch: ${method} ${url}`)
+      }) as typeof fetch
+
+      await expect(runUnstructuredOcr(inputPath, {
+        ...basePdfMetadata,
+        pageCount: 1,
+        fileSize: 4
+      }, 'hi_res_and_enrichment')).rejects.toThrow('did not return input_file_ids')
+
+      expect(calls.some((call) => call.method === 'POST' && call.url.endsWith('/api/v1/jobs/job-1/cancel'))).toBe(true)
+      expect(calls.some((call) => call.method === 'GET')).toBe(false)
+    } finally {
+      globalThis.fetch = previousFetch
+      for (const [key, value] of Object.entries(previousEnv)) {
+        if (value === undefined) {
+          delete process.env[key]
+        } else {
+          process.env[key] = value
+        }
+      }
+      await rm(tempDir, { recursive: true, force: true })
     }
   })
 
@@ -493,7 +668,7 @@ describe('OCR resilience contracts', () => {
         timeoutMs: 1000,
         classifier: () => ({ shouldRetry: true, delayMs: 1, reason: 'structured_response' })
       }
-    )).rejects.toThrow('deepinfra-ocr page 7 failed after 2 attempts')
+    )).rejects.toThrow('deepinfra-ocr page 7 failed after 2/2 attempts')
     expect(attempts).toBe(2)
 
     const timeoutCause = new Error('The operation was aborted due to timeout')

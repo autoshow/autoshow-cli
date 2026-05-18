@@ -1,4 +1,5 @@
 import { basename } from 'node:path'
+import { AppError } from '~/utils/error-handler'
 
 const GEMINI_API_BASE_URL = 'https://generativelanguage.googleapis.com'
 const GEMINI_API_VERSION = 'v1beta'
@@ -199,6 +200,16 @@ const geminiJsonRequest = async (
   const parsed = parseJsonOrText(text)
   if (!response.ok) {
     throw new GeminiRestError(formatGeminiErrorMessage(parsed, response.status), response.status, response.headers, parsed)
+  }
+  if (typeof parsed === 'string') {
+    throw new AppError(`Gemini API returned invalid JSON: ${parsed.slice(0, 500)}`, {
+      kind: 'validation',
+      status: response.status,
+      metadata: {
+        body: parsed,
+        rawResponse: parsed
+      }
+    })
   }
   return { json: parsed, headers: response.headers, status: response.status }
 }
@@ -548,9 +559,20 @@ export const geminiUploadFile = async (
     throw new Error('Gemini Files API upload did not upload any content.')
   }
   const uploadStatus = finalResponse.headers.get('x-goog-upload-status')
-  const parsed = parseJsonOrText(await finalResponse.text())
+  const finalText = await finalResponse.text()
+  const parsed = parseJsonOrText(finalText)
   if (uploadStatus !== 'final') {
     throw new Error('Failed to upload Gemini file: upload status is not finalized.')
+  }
+  if (typeof parsed === 'string') {
+    throw new AppError(`Gemini Files API upload returned invalid JSON: ${parsed.slice(0, 500)}`, {
+      kind: 'validation',
+      status: finalResponse.status,
+      metadata: {
+        body: finalText,
+        rawResponse: finalText
+      }
+    })
   }
   if (isRecord(parsed) && isRecord(parsed['file'])) {
     return parsed['file'] as GeminiFile

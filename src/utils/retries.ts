@@ -10,6 +10,7 @@ import type {
 } from '~/types'
 import * as l from '~/utils/logger'
 import { createKeyValueTable } from '~/utils/logger/human-table'
+import { AppError, extractErrorMetadata } from '~/utils/error-handler'
 
 const NON_RETRYABLE_STATUSES = new Set([400, 401, 403, 404, 422])
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504])
@@ -173,6 +174,13 @@ const computeDelay = (attempt: number, baseDelayMs: number, maxDelayMs: number, 
   return Math.min(delay, maxDelayMs)
 }
 
+const toErrorCause = (error: unknown): Error => {
+  if (error instanceof Error) {
+    return error
+  }
+  return new Error(error === undefined ? 'Unknown retry failure' : String(error))
+}
+
 export type RetryAttemptLog = {
   operation: string
   attempt: number
@@ -215,6 +223,8 @@ export const withRetry = async <T>(
   const startedAt = Date.now()
   let lastError: unknown
   let retried = false
+  let attemptsMade = 0
+  let stopReason = 'max attempts reached'
 
   for (let attempt = 0; attempt < policy.maxAttempts; attempt++) {
     try {
@@ -224,9 +234,13 @@ export const withRetry = async <T>(
       return await operation(signal)
     } catch (error) {
       lastError = error
+      attemptsMade = attempt + 1
 
       const isLastAttempt = attempt === policy.maxAttempts - 1
-      if (isLastAttempt) break
+      if (isLastAttempt) {
+        stopReason = 'max attempts reached'
+        break
+      }
 
       let classifiedReason: string | undefined
       if (classifier) {
@@ -235,6 +249,7 @@ export const withRetry = async <T>(
           if (!retried) {
             throw error
           }
+          stopReason = decision.reason
           break
         }
 
@@ -269,21 +284,29 @@ export const withRetry = async <T>(
   }
 
   const elapsed = Date.now() - startedAt
-  const enrichedMessage = `${ctx.operationName} failed after ${policy.maxAttempts} attempts (${elapsed}ms elapsed)`
-  const enrichedError = new Error(enrichedMessage, { cause: lastError })
-  ;(enrichedError as Error & { retryClass?: RetryClass }).retryClass = ctx.retryClass
+  const metadata = extractErrorMetadata(lastError)
+  const status = typeof metadata['status'] === 'number' ? metadata['status'] : undefined
+  const stage = typeof metadata['stage'] === 'string' ? metadata['stage'] : undefined
+  const retryable = typeof metadata['retryable'] === 'boolean' ? metadata['retryable'] : undefined
+  const retryClass = typeof metadata['retryClass'] === 'string' ? metadata['retryClass'] as RetryClass : ctx.retryClass
+  const enrichedMessage = `${ctx.operationName} failed after ${attemptsMade}/${policy.maxAttempts} attempts (${stopReason}, ${elapsed}ms elapsed)`
 
-  if (lastError && typeof lastError === 'object') {
-    const lastErrorWithMeta = lastError as Record<string, unknown>
-    for (const key of ['status', 'headers', 'stage', 'retryClass'] as const) {
-      const value = lastErrorWithMeta[key]
-      if (value !== undefined) {
-        ;(enrichedError as Error & Record<string, unknown>)[key] = value
-      }
+  throw new AppError(enrichedMessage, {
+    kind: 'retry_exhausted',
+    cause: toErrorCause(lastError),
+    retryClass,
+    ...(typeof status === 'number' ? { status } : {}),
+    ...(stage ? { stage } : {}),
+    ...(typeof retryable === 'boolean' ? { retryable } : {}),
+    metadata: {
+      ...metadata,
+      attemptsMade,
+      maxAttempts: policy.maxAttempts,
+      elapsedMs: elapsed,
+      stopReason,
+      retryClass
     }
-  }
-
-  throw enrichedError
+  })
 }
 
 export const pollUntil = async <T>(opts: PollOptions<T>): Promise<T> => {

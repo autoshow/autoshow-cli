@@ -16,6 +16,7 @@ import { parseStoredStep2TimingMetadata } from '../stt-timing-metadata'
 import { getSttTargetDirectoryName, getSttTargetKey } from '../stt-targets'
 import { readSttRunManifestEntry } from '../manifest'
 import { readProviderResultEntry } from '../../../manifest-utils'
+import { AppError } from '~/utils/error-handler'
 
 const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?(.*)$/
 
@@ -436,7 +437,21 @@ export const readExistingSttRun = async (
       return
     }
 
-    const transcriptText = await Bun.file(transcriptPath).text().catch(() => '')
+    let transcriptText: string
+    try {
+      transcriptText = await Bun.file(transcriptPath).text()
+    } catch (error) {
+      throw new AppError(`Failed to read stored STT transcript at ${transcriptPath}`, {
+        kind: 'infrastructure',
+        cause: error instanceof Error ? error : new Error(String(error)),
+        stage: 'transcript',
+        metadata: {
+          transcriptPath,
+          service: target.service,
+          model: target.model
+        }
+      })
+    }
     successes[index] = {
       target,
       metadata,

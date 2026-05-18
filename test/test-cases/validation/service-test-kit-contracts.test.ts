@@ -21,11 +21,11 @@ describe('classifySkippableLiveProviderFailure', () => {
         expected: 'GLM image generation is rate limited'
       },
       {
-        output: 'Retry Attempt\noperation glm-ocr reason retryable status 429\nCommand failed: glm-ocr failed after 4 attempts',
+        output: 'Retry Attempt\noperation glm-ocr reason retryable status 429\nCommand failed: glm-ocr failed after 4/4 attempts',
         expected: 'GLM provider remained rate limited after retries'
       },
       {
-        output: 'Retry Attempt\noperation glm-llm reason retryable status 429\nFailed to run GLM model: glm-llm failed after 2 attempts',
+        output: 'Retry Attempt\noperation glm-llm reason retryable status 429\nFailed to run GLM model: glm-llm failed after 2/2 attempts',
         expected: 'GLM provider remained rate limited after retries'
       },
       {

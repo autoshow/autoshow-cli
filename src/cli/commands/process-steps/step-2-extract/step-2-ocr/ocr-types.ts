@@ -145,13 +145,13 @@ export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 export type OcrFnProvider = OcrFn | { getOcrFn: () => Promise<OcrFn> }
 
-export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'aws-textract' | 'gcloud-docai'
+export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'aws-textract' | 'gcloud-docai' | 'unstructured-ocr'
 export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr'
 
 export type HostedOcrRun = {
   pages: PageResult[]
   extractionMethod: HostedExtractOcrEngine
-  ocrService: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai'
+  ocrService: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai' | 'unstructured'
   ocrModel: string
   canonicalText?: string
   totalPages?: number
@@ -163,7 +163,7 @@ export type HostedOcrRun = {
 }
 
 export type OcrTarget = {
-  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai'
+  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai' | 'unstructured'
   model: string
 }
 
@@ -286,7 +286,11 @@ export type OcrRequestedProvider = {
 export type OcrRecordedProviderError = {
   message: string
   category?: OcrProviderFailureCategory | undefined
+  stage?: string | undefined
+  status?: number | undefined
+  retryAfterMs?: number | undefined
   errorFile?: string | undefined
+  rawResponseFile?: string | undefined
 }
 
 export type OcrProviderState = ProviderRunStateBase<OcrTarget['service'], OcrRecordedProviderError>
@@ -306,7 +310,11 @@ export type ExistingOcrRun = {
 export type OcrProviderFailureSummary = {
   message: string
   category: OcrProviderFailureCategory
+  stage?: string | undefined
+  status?: number | undefined
+  retryAfterMs?: number | undefined
   errorFile?: string | undefined
+  rawResponseFile?: string | undefined
 }
 
 export type OcrProviderFailureCategory =
@@ -423,7 +431,17 @@ export type ResumeOcrEntry = {
 }
 
 export type OcrMetadataOptions = {
-  failures?: Array<{ service: string, model: string, message: string, category?: string, errorFile?: string }>
+  failures?: Array<{
+    service: string
+    model: string
+    message: string
+    category?: string
+    stage?: string
+    status?: number
+    retryAfterMs?: number
+    errorFile?: string
+    rawResponseFile?: string
+  }>
   web?: ProcessDocumentOutput['web']
   source?: Step1SourceRef
   completionStatus?: OcrCompletionStatus

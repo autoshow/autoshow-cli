@@ -27,6 +27,7 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.deepinfraOcrModels, modelOptions.deepinfraOcrModel)
     + countSelectedTargets(modelOptions.awsTextractModels, modelOptions.awsTextractModel)
     + countSelectedTargets(modelOptions.gcloudDocaiModels, modelOptions.gcloudDocaiModel)
+    + countSelectedTargets(modelOptions.unstructuredOcrModels, modelOptions.unstructuredOcrModel)
   const hostedLlmTargetCount =
     countSelectedTargets(modelOptions.openaiModels, modelOptions.openaiModel)
     + countSelectedTargets(modelOptions.groqModels, modelOptions.groqModel)

@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
+import { AppError } from '~/utils/error-handler'
 
 const formatValidationIssues = (issues: { nested?: unknown }): string => {
   const nested = issues.nested
@@ -23,7 +24,13 @@ export const validateData = <T extends v.BaseSchema<unknown, unknown, v.BaseIssu
 
   if (!result.success) {
     l.error(`Validation failed for ${context}`)
-    throw new Error(`Invalid data structure for ${context}: ${formatValidationIssues(v.flatten(result.issues))}`)
+    throw new AppError(`Invalid data structure for ${context}: ${formatValidationIssues(v.flatten(result.issues))}`, {
+      kind: 'validation',
+      metadata: {
+        context,
+        issues: v.flatten(result.issues)
+      }
+    })
   }
 
   return result.output
@@ -53,7 +60,14 @@ export const validateJson = <T extends v.BaseSchema<unknown, unknown, v.BaseIssu
     parsed = JSON.parse(jsonString)
   } catch (error) {
     l.error(`JSON parsing failed for ${context}`, error)
-    throw new Error(`Invalid JSON for ${context}`)
+    throw new AppError(`Invalid JSON for ${context}`, {
+      kind: 'validation',
+      cause: error instanceof Error ? error : new Error(String(error)),
+      metadata: {
+        context,
+        rawResponse: jsonString
+      }
+    })
   }
 
   return validateData(schema, parsed, context)

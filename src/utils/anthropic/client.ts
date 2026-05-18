@@ -1,3 +1,5 @@
+import { AppError } from '~/utils/error-handler'
+
 export const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com'
 export const ANTHROPIC_VERSION = '2023-06-01'
 export const ANTHROPIC_FILES_API_BETA = 'files-api-2025-04-14'
@@ -211,8 +213,16 @@ const readJsonResponse = async (response: Response, errorMessagePrefix: string):
 
   try {
     return JSON.parse(rawText) as unknown
-  } catch {
-    throw new Error(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`)
+  } catch (error) {
+    throw new AppError(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`, {
+      kind: 'validation',
+      cause: error instanceof Error ? error : new Error(String(error)),
+      status: response.status,
+      metadata: {
+        body: rawText,
+        rawResponse: rawText
+      }
+    })
   }
 }
 

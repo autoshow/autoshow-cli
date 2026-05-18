@@ -19,6 +19,7 @@ export type ProviderTargetFailure<TTarget> = {
   index: number
   target: TTarget
   message: string
+  error?: unknown
 }
 
 export type ProviderTargetSchedulerResult<TTarget, TResult> = {
@@ -96,7 +97,8 @@ const runPool = async <TTarget, TResult>(
         failures.push({
           index: entry.index,
           target: entry.target,
-          message
+          message,
+          error
         })
         options.onLifecycle?.({
           index: entry.index,

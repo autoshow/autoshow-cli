@@ -127,7 +127,8 @@ export const EXTRACT_PUBLIC_SELECTOR_FLAGS: Record<string, ExtractPublicSelector
   ocrmypdf: { ocr: 'ocrmypdf' },
   paddle: { ocr: 'paddle-ocr' },
   kimi: { ocr: 'kimi-ocr' },
-  anthropic: { ocr: 'anthropic-ocr' }
+  anthropic: { ocr: 'anthropic-ocr' },
+  unstructured: { ocr: 'unstructured-ocr' }
 } as const
 
 const extractPublicSelectorNames = new Set(Object.keys(EXTRACT_PUBLIC_SELECTOR_FLAGS))

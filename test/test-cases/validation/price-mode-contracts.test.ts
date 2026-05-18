@@ -332,6 +332,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('scrapecreators-stt')).toBe('youtube-transcript')
     expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
+    expect(resolveCheapestModelForFlag('unstructured-ocr')).toBe('hi_res_and_enrichment')
     expect(resolveCheapestModelForFlag('gemini-video')).toBe('veo-3.1-lite-generate-preview')
     expect(resolveCheapestModelForFlag('minimax-video')).toBe('T2V-01')
     expect(resolveCheapestModelForFlag('glm-video')).toBe('cogvideox-3')

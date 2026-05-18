@@ -258,6 +258,14 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
               estimateType: 'heuristic' as const
             }]
           : []),
+        ...(input.unstructuredOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'unstructured' as const,
+              model: input.unstructuredOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'exact' as const
+            }]
+          : []),
       ]
 
   for (const target of extractTargets) {
@@ -272,6 +280,7 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       || target.provider === 'zyte'
       || target.provider === 'gcloud-docai'
       || target.provider === 'aws-textract'
+      || target.provider === 'unstructured'
     ) {
       const extractPricing = getExtractPricing(target.provider, target.model)
       const cost = applyCostMultiplier(

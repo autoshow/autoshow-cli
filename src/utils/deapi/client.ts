@@ -95,6 +95,7 @@ export const attachDeapiErrorContext = (
   ;(source as DeapiHttpError).stage = stage
   ;(source as DeapiHttpError).retryClass = retryClass
   if (rawResponse !== undefined) {
+    ;(source as DeapiHttpError).body = rawResponse
     ;(source as DeapiHttpError).rawResponse = rawResponse
   }
   throw source
@@ -111,8 +112,9 @@ export const createDeapiHttpError = (
   headers: response.headers,
   stage,
   retryClass,
+  body: rawResponse,
   rawResponse
-} satisfies Pick<DeapiHttpError, 'status' | 'headers' | 'stage' | 'retryClass' | 'rawResponse'>)
+} satisfies Pick<DeapiHttpError, 'status' | 'headers' | 'stage' | 'retryClass' | 'body' | 'rawResponse'>)
 
 export const deapiFetch = async (
   path: string,

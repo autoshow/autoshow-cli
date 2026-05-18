@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
+import { AppError, CLIUsageError } from '~/utils/error-handler'
 import type {
   LeafPrompt,
   PromptEntry,
@@ -45,10 +46,18 @@ const collectPromptFilePaths = async (directory: string): Promise<string[]> => {
     dirEntries = await readdir(directory, { withFileTypes: true })
   } catch (error) {
     if (directory === PROMPTS_DIR && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error(`Prompts registry directory not found at ${PROMPTS_DIR}`)
+      throw new AppError(`Prompts registry directory not found at ${PROMPTS_DIR}`, {
+        kind: 'infrastructure',
+        cause: error instanceof Error ? error : new Error(String(error)),
+        metadata: { directory: PROMPTS_DIR }
+      })
     }
 
-    throw new Error(`Failed to read prompts registry directory at ${directory}`)
+    throw new AppError(`Failed to read prompts registry directory at ${directory}`, {
+      kind: 'infrastructure',
+      cause: error instanceof Error ? error : new Error(String(error)),
+      metadata: { directory }
+    })
   }
 
   const nestedPaths = await Promise.all(dirEntries.map(async (dirEntry) => {
@@ -79,9 +88,13 @@ const assertUniquePromptBasenames = (promptFiles: string[]): void => {
     const existingPath = promptNameToPath.get(promptName)
 
     if (existingPath !== undefined) {
-      throw new Error(
+      throw new AppError(
         `Duplicate prompt entry basename "${promptName}" found at ${existingPath} and ${filePath}. ` +
-        `Prompt names are derived from JSON file basenames, so each prompt filename must be unique across ${PROMPTS_DIR}.`
+        `Prompt names are derived from JSON file basenames, so each prompt filename must be unique across ${PROMPTS_DIR}.`,
+        {
+          kind: 'validation',
+          metadata: { promptName, existingPath, filePath, promptsDir: PROMPTS_DIR }
+        }
       )
     }
 
@@ -173,15 +186,14 @@ const collectLeafPromptsFromRegistry = (
 
   const collect = (name: string, stack: string[]): void => {
     if (stack.includes(name)) {
-      throw new Error(
-        `Circular prompt include detected: ${[...stack, name].join(' → ')}`
-      )
+      throw new AppError(`Circular prompt include detected: ${[...stack, name].join(' → ')}`, {
+        kind: 'validation',
+        metadata: { promptName: name, includeStack: [...stack, name] }
+      })
     }
 
     if (!registry[name]) {
-      throw new Error(
-        `Unknown prompt "${name}". Available: ${available.join(', ')}`
-      )
+      throw CLIUsageError(`Unknown prompt "${name}". Available: ${available.join(', ')}`)
     }
 
     const entry = registry[name] as PromptEntry
@@ -212,7 +224,10 @@ const loadPrompts = async (): Promise<PromptsRegistry> => {
   const promptFiles = await collectPromptFilePaths(PROMPTS_DIR)
 
   if (promptFiles.length === 0) {
-    throw new Error(`Prompts registry directory at ${PROMPTS_DIR} contains no .json files`)
+    throw new AppError(`Prompts registry directory at ${PROMPTS_DIR} contains no .json files`, {
+      kind: 'validation',
+      metadata: { promptsDir: PROMPTS_DIR }
+    })
   }
 
   assertUniquePromptBasenames(promptFiles)
@@ -221,15 +236,26 @@ const loadPrompts = async (): Promise<PromptsRegistry> => {
     let fileContents: string
     try {
       fileContents = await readFile(filePath, 'utf8')
-    } catch {
-      throw new Error(`Failed to read prompt entry at ${filePath}`)
+    } catch (error) {
+      throw new AppError(`Failed to read prompt entry at ${filePath}`, {
+        kind: 'infrastructure',
+        cause: error instanceof Error ? error : new Error(String(error)),
+        metadata: { filePath }
+      })
     }
 
     let rawEntry: unknown
     try {
       rawEntry = JSON.parse(fileContents) as unknown
-    } catch {
-      throw new Error(`Failed to parse prompt entry at ${filePath}: invalid JSON`)
+    } catch (error) {
+      throw new AppError(`Failed to parse prompt entry at ${filePath}: invalid JSON`, {
+        kind: 'validation',
+        cause: error instanceof Error ? error : new Error(String(error)),
+        metadata: {
+          filePath,
+          rawResponse: fileContents
+        }
+      })
     }
 
     const entry = validateData(PromptEntrySchema, rawEntry, `prompt entry at ${filePath}`)

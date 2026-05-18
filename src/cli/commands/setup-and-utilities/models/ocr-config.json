@@ -354,5 +354,25 @@
         }
       }
     }
+  },
+  "unstructured": {
+    "description": "Unstructured hosted document OCR and partitioning",
+    "type": "api",
+    "models": {
+      "hi_res_and_enrichment": {
+        "description": "Unstructured on-demand hi_res_and_enrichment workflow template",
+        "costPer1kPagesUSD": 0,
+        "costPer1kPagesCents": 0,
+        "limits": {
+          "effectiveBytes": 10485760,
+          "pageCount": 1000,
+          "notes": "Unstructured on-demand jobs support local files up to 10 MB. AutoShow records a zero-cost registry fallback because Unstructured account pricing is plan-specific."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
+        }
+      }
+    }
   }
 }

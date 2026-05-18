@@ -6,6 +6,7 @@ import { splitPdfPages } from '~/cli/commands/process-steps/step-1-download/docu
 import * as l from '~/utils/logger'
 import { classifyOcrProviderFailure, stripAnsi } from '../ocr-run-state'
 import { findOcrStructuredResponseError } from '../ocr-structured-response-error'
+import { collectErrorChain } from '~/utils/error-handler'
 
 export type OcrPdfChunkRange = {
   startPage: number
@@ -36,11 +37,6 @@ const HOSTED_OCR_PDF_PARTIAL_TEXT_FILE = 'partial-extraction.txt'
 const NON_FALLBACK_MESSAGE_PATTERN = /(?:api key|environment variable is required|auth(?:entication|orization)?|unauthori[sz]ed|forbidden|invalid api key|permission denied|access denied|credential|not configured|setup failed|bucket is required|project id|processor id|content (?:filter|filtering|policy)|blocked by content|safety|policy violation|encrypted|decrypt|unsupported .*format|only supports .*image|convert .*image)/i
 const FALLBACK_MESSAGE_PATTERN = /(?:timed out|timeout|deadline exceeded|temporar(?:y|ily)|network|connection|socket|ECONNRESET|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|rate limit|too many requests|overloaded|unavailable|malformed|invalid json|not valid json|schema|returned \d+ pages|non-contiguous|no pages|no text output|exceeds|too large|supports .* up to|file upload limit|page(?:s)? .*limit|maximum|payload too large|413|split .*smaller chunks?)/i
 
-type ErrorLike = Error & {
-  cause?: unknown
-  status?: unknown
-}
-
 type StoredHostedOcrFallbackPage = {
   version: number
   mode: typeof HOSTED_OCR_PDF_PAGE_FALLBACK_MODE
@@ -49,25 +45,8 @@ type StoredHostedOcrFallbackPage = {
   run: HostedOcrRun
 }
 
-const isErrorLike = (value: unknown): value is ErrorLike =>
-  value instanceof Error
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const collectErrorChain = (error: unknown): ErrorLike[] => {
-  const chain: ErrorLike[] = []
-  const seen = new Set<unknown>()
-  let current: unknown = error
-
-  while (isErrorLike(current) && !seen.has(current)) {
-    chain.push(current)
-    seen.add(current)
-    current = current.cause
-  }
-
-  return chain
-}
 
 const getErrorMessage = (error: unknown): string => {
   const chain = collectErrorChain(error)
@@ -79,8 +58,8 @@ const getErrorMessage = (error: unknown): string => {
 
 const getErrorStatus = (error: unknown): number | undefined => {
   for (const entry of collectErrorChain(error)) {
-    if (typeof entry.status === 'number') {
-      return entry.status
+    if (typeof entry['status'] === 'number') {
+      return entry['status']
     }
   }
   return undefined

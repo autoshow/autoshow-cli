@@ -544,6 +544,7 @@ describe('option resolution contracts', () => {
       'gcloud-tts-language': 'en-US',
       'deepinfra-ocr': 'Qwen/Qwen3-VL-30B-A3B-Instruct',
       'kimi-ocr': 'kimi-k2.6',
+      'unstructured-ocr': 'hi_res_and_enrichment',
       'tesseract-ocr': true,
       'youtube-captions': true,
       'best-quality': true,
@@ -617,6 +618,7 @@ describe('option resolution contracts', () => {
     expect(opts.gcloudTtsLanguage).toBe('en-US')
     expect(opts.deepinfraOcrModel).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(opts.kimiOcrModel).toBe('kimi-k2.6')
+    expect(opts.unstructuredOcrModel).toBe('hi_res_and_enrichment')
     expect(opts.useTesseract).toBe(true)
     expect(opts.youtubeCaptions).toBe(true)
     expect(opts.bestQuality).toBe(true)
@@ -997,6 +999,7 @@ describe('option resolution contracts', () => {
     const scrapeCreatorsDefault = resolveCheapestModelForFlag('scrapecreators-stt')
     const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
     const kimiOcrDefault = resolveCheapestModelForFlag('kimi-ocr')
+    const unstructuredOcrDefault = resolveCheapestModelForFlag('unstructured-ocr')
     const speechifyTtsDefault = resolveCheapestModelForFlag('speechify-tts')
     const humeTtsDefault = resolveCheapestModelForFlag('hume-tts')
     const cartesiaTtsDefault = resolveCheapestModelForFlag('cartesia-tts')
@@ -1009,6 +1012,7 @@ describe('option resolution contracts', () => {
       'scrapecreators-stt': true,
       'deepinfra-ocr': true,
       'kimi-ocr': true,
+      'unstructured-ocr': true,
       'speechify-tts': true,
       'hume-tts': true,
       'cartesia-tts': true,
@@ -1022,6 +1026,7 @@ describe('option resolution contracts', () => {
     expect(scrapeCreatorsDefault).toBe('youtube-transcript')
     expect(deepinfraOcrDefault).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
+    expect(unstructuredOcrDefault).toBe('hi_res_and_enrichment')
     expect(speechifyTtsDefault).toBe('simba-english')
     expect(humeTtsDefault).toBe('octave-2')
     expect(cartesiaTtsDefault).toBe('sonic-3')
@@ -1033,6 +1038,7 @@ describe('option resolution contracts', () => {
     expect(opts.scrapecreatorsSttModel).toBe(scrapeCreatorsDefault)
     expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
     expect(opts.kimiOcrModel).toBe(kimiOcrDefault)
+    expect(opts.unstructuredOcrModel).toBe(unstructuredOcrDefault)
     expect(opts.speechifyTtsModel).toBe(speechifyTtsDefault)
     expect(opts.humeTtsModel).toBe(humeTtsDefault)
     expect(opts.cartesiaTtsModel).toBe(cartesiaTtsDefault)
@@ -1082,12 +1088,14 @@ describe('option resolution contracts', () => {
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['kimi-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deepinfra-ocr']?.shortcut).toBe('all-ocr')
+    expect(expansions['unstructured-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deapi-ocr']).toBeUndefined()
     expect(ocrOpts.openaiOcrModels).toEqual(['gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'])
     expect(ocrOpts.anthropicOcrModels).toEqual(['claude-haiku-4-5'])
     expect(ocrOpts.deepinfraOcrModels).toEqual(['Qwen/Qwen3-VL-235B-A22B-Instruct', 'Qwen/Qwen3-VL-30B-A3B-Instruct'])
     expect(ocrOpts.awsTextractModels).toEqual(['detect-text'])
     expect(ocrOpts.gcloudDocaiModels).toEqual(['ocr'])
+    expect(ocrOpts.unstructuredOcrModels).toEqual(['hi_res_and_enrichment'])
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('openai-stt')
@@ -1099,6 +1107,7 @@ describe('option resolution contracts', () => {
     expect(ocrTargets.map((target) => target.service)).toContain('openai')
     expect(ocrTargets.map((target) => target.service)).toContain('kimi')
     expect(ocrTargets.map((target) => target.service)).toContain('deepinfra')
+    expect(ocrTargets.map((target) => target.service)).toContain('unstructured')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('openai:gpt-5.4-mini')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('anthropic:claude-opus-4-7')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('gcloud-docai:layout-parser')

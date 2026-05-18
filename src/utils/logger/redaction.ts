@@ -32,6 +32,7 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
 const SHORT_SENSITIVE_FLAGS = new Set<string>(['-p'])
 
 const TOKEN_LIKE_KEY_PATTERN = /(?:token|api[_-]?key|authorization|auth|secret|password)/i
+const SENSITIVE_OBJECT_KEY_PATTERN = /(?:token|api[_-]?key|authorization|secret|password|^auth$|[_-]auth$|auth[_-])/i
 
 const sanitizeHeaderAuthorization = (value: string): string => {
   return value
@@ -89,6 +90,11 @@ const isSensitiveFlag = (flagToken: string): boolean => {
   const normalized = normalizeFlagName(rawName)
 
   return SENSITIVE_FLAG_NAMES.has(normalized) || TOKEN_LIKE_KEY_PATTERN.test(normalized)
+}
+
+const isSensitiveObjectKey = (key: string): boolean => {
+  const normalized = normalizeFlagName(key)
+  return SENSITIVE_FLAG_NAMES.has(normalized) || SENSITIVE_OBJECT_KEY_PATTERN.test(normalized)
 }
 
 const sanitizeArgToken = (token: string): string => {
@@ -160,12 +166,39 @@ const sanitizeUnknown = (value: unknown, depth: number, seen: WeakSet<object>): 
     return sanitizeLogText(value.toString())
   }
 
+  if (value instanceof Headers) {
+    return Object.fromEntries(
+      [...value.entries()].map(([key, entryValue]) => [
+        key,
+        isSensitiveObjectKey(key) ? REDACTED : sanitizeUnknown(entryValue, depth + 1, seen)
+      ])
+    )
+  }
+
   if (value instanceof Error) {
-    return {
+    if (seen.has(value)) {
+      return { name: value.name, message: '[Circular]' }
+    }
+    seen.add(value)
+
+    const out: Record<string, unknown> = {
       name: value.name,
       message: sanitizeLogText(value.message),
       ...(value.stack ? { stack: sanitizeLogText(value.stack) } : {})
     }
+
+    for (const [key, entryValue] of Object.entries(value)) {
+      if (key === 'name' || key === 'message' || key === 'stack' || key === 'cause') {
+        continue
+      }
+      out[key] = isSensitiveObjectKey(key) ? REDACTED : sanitizeUnknown(entryValue, depth + 1, seen)
+    }
+
+    if ('cause' in value && value.cause !== undefined) {
+      out['cause'] = sanitizeUnknown(value.cause, depth + 1, seen)
+    }
+
+    return out
   }
 
   if (Array.isArray(value)) {
@@ -182,7 +215,7 @@ const sanitizeUnknown = (value: unknown, depth: number, seen: WeakSet<object>): 
     const entries = Object.entries(objectValue)
     const out: Record<string, unknown> = {}
     for (const [key, entryValue] of entries) {
-      out[key] = sanitizeUnknown(entryValue, depth + 1, seen)
+      out[key] = isSensitiveObjectKey(key) ? REDACTED : sanitizeUnknown(entryValue, depth + 1, seen)
     }
 
     return out

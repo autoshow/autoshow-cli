@@ -64,7 +64,8 @@ describe('provider selection contracts', () => {
       'gemini-ocr',
       'deepinfra-ocr',
       'aws-textract',
-      'gcloud-docai'
+      'gcloud-docai',
+      'unstructured-ocr'
     ])
   })
 
@@ -75,11 +76,13 @@ describe('provider selection contracts', () => {
     })
     const ocrSpecs = collectStep2ProviderSpecs('ocr', {
       useTesseract: true,
-      openaiOcrModels: ['gpt-5.4-nano', 'gpt-5.4-nano', 'gpt-5.4']
+      openaiOcrModels: ['gpt-5.4-nano', 'gpt-5.4-nano', 'gpt-5.4'],
+      unstructuredOcrModels: ['hi_res_and_enrichment']
     })
     const ocrOpts = buildOptsFromFlags(false, {
       'tesseract-ocr': true,
-      'openai-ocr': ['gpt-5.4-nano', 'gpt-5.4-nano', 'gpt-5.4']
+      'openai-ocr': ['gpt-5.4-nano', 'gpt-5.4-nano', 'gpt-5.4'],
+      'unstructured-ocr': ['hi_res_and_enrichment']
     })
 
     expect(collectSttTargets(sttOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
@@ -89,12 +92,14 @@ describe('provider selection contracts', () => {
     expect(ocrSpecs).toEqual([
       { provider: 'tesseract', model: 'tesseract' },
       { provider: 'openai-ocr', model: 'gpt-5.4-nano' },
-      { provider: 'openai-ocr', model: 'gpt-5.4' }
+      { provider: 'openai-ocr', model: 'gpt-5.4' },
+      { provider: 'unstructured-ocr', model: 'hi_res_and_enrichment' }
     ])
     expect(collectExplicitOcrTargets(ocrOpts)).toEqual([
       { service: 'tesseract', model: 'tesseract' },
       { service: 'openai', model: 'gpt-5.4-nano' },
-      { service: 'openai', model: 'gpt-5.4' }
+      { service: 'openai', model: 'gpt-5.4' },
+      { service: 'unstructured', model: 'hi_res_and_enrichment' }
     ])
   })
 
@@ -274,12 +279,16 @@ describe('provider selection contracts', () => {
     const documentNormalized = normalizeExtractPublicSelectorFlags({
       glm: ['glm-ocr']
     }, new Set(['glm']), { media: false, document: true })
+    const unstructuredDocumentNormalized = normalizeExtractPublicSelectorFlags({
+      unstructured: ['hi_res_and_enrichment']
+    }, new Set(['unstructured']), { media: false, document: true })
     const mixedDefaultNormalized = normalizeExtractPublicSelectorFlags({
       glm: [true]
     }, new Set(['glm']), { media: true, document: true })
 
     expect(buildOptsFromFlags(false, mediaNormalized.flags, [], {}, mediaNormalized.explicitFlags).glmSttModels).toEqual(['glm-asr-2512'])
     expect(buildOptsFromFlags(false, documentNormalized.flags, [], {}, documentNormalized.explicitFlags).glmOcrModels).toEqual(['glm-ocr'])
+    expect(buildOptsFromFlags(false, unstructuredDocumentNormalized.flags, [], {}, unstructuredDocumentNormalized.explicitFlags).unstructuredOcrModels).toEqual(['hi_res_and_enrichment'])
     const mixedDefaultOpts = buildOptsFromFlags(false, mixedDefaultNormalized.flags, [], {}, mixedDefaultNormalized.explicitFlags)
     expect(mixedDefaultOpts.glmSttModels).toEqual(['glm-asr-2512'])
     expect(mixedDefaultOpts.glmOcrModels).toEqual(['glm-ocr'])

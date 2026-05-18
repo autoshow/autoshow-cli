@@ -35,7 +35,7 @@ const isGlmImageRateLimitFailure = (output: string): boolean =>
 const isGlmRetryable429Exhaustion = (output: string): boolean =>
   /retryable status 429/i.test(output)
   && (/\bglm-(?:ocr|llm)\b/i.test(output) || /GLM (?:OCR|model)/i.test(output))
-  && (/\bfailed after \d+ attempts\b/i.test(output) || /\bCommand failed\b/i.test(output))
+  && (/\bfailed after \d+(?:\/\d+)? attempts\b/i.test(output) || /\bCommand failed\b/i.test(output))
 
 const isDeepInfraWhisperLargeV3CommandTimeout = (output: string): boolean =>
   /\bdeepinfra\b/i.test(output)

@@ -109,6 +109,9 @@ export const buildOcrOutput = (
   if (typeof input.opts.gcloudDocaiModel === 'string' && input.extractionMethod.includes('gcloud-docai')) {
     step2MetadataPayload['ocrModel'] = input.opts.gcloudDocaiModel
   }
+  if (typeof input.opts.unstructuredOcrModel === 'string' && input.extractionMethod.includes('unstructured-ocr')) {
+    step2MetadataPayload['ocrModel'] = input.opts.unstructuredOcrModel
+  }
   if (typeof input.providerCostCents === 'number') {
     step2MetadataPayload['providerCostCents'] = input.providerCostCents
   }

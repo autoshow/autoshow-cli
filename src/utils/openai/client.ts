@@ -1,3 +1,5 @@
+import { AppError } from '~/utils/error-handler'
+
 export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 
 export type OpenAIRestConfig = {
@@ -243,8 +245,16 @@ const readJsonResponse = async (response: Response, errorMessagePrefix: string):
 
   try {
     return JSON.parse(rawText) as unknown
-  } catch {
-    throw new Error(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`)
+  } catch (error) {
+    throw new AppError(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`, {
+      kind: 'validation',
+      cause: error instanceof Error ? error : new Error(String(error)),
+      status: response.status,
+      metadata: {
+        body: rawText,
+        rawResponse: rawText
+      }
+    })
   }
 }
 

@@ -139,6 +139,12 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
   if (opts.gcloudDocaiModels) {
     extractionOpts.gcloudDocaiModels = opts.gcloudDocaiModels
   }
+  if (opts.unstructuredOcrModel) {
+    extractionOpts.unstructuredOcrModel = opts.unstructuredOcrModel
+  }
+  if (opts.unstructuredOcrModels) {
+    extractionOpts.unstructuredOcrModels = opts.unstructuredOcrModels
+  }
   if (opts.epubChapterFiles) {
     extractionOpts.epubChapterFiles = true
   }
@@ -172,6 +178,7 @@ const writeDocumentOutputMetadata = async (
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
+    unstructuredOcrModel,
     artifactFiles,
     preflightEstimate,
     completionStatus,
@@ -188,7 +195,8 @@ const writeDocumentOutputMetadata = async (
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
-    deepinfraOcrModel
+    deepinfraOcrModel,
+    unstructuredOcrModel
   })
 
   const estimated = resolveDocumentWriteEstimatedCosts(preflightEstimate, step2, step3, {
@@ -198,7 +206,8 @@ const writeDocumentOutputMetadata = async (
     openaiOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
-    deepinfraOcrModel
+    deepinfraOcrModel,
+    unstructuredOcrModel
   })
   const actual = computeActualCosts({ step2, step3 })
   const ocrDiagnostics = buildOcrCostDiagnostics(step2, estimated, actual)
@@ -393,6 +402,7 @@ export const runDocumentWrite = async (
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
     deepinfraOcrModel: opts.deepinfraOcrModel,
+    unstructuredOcrModel: opts.unstructuredOcrModel,
     llmService,
     llmModel,
     llmInputTokenCount,

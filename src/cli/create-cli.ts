@@ -14,7 +14,7 @@ import { setupCommand } from '~/cli/commands/setup-and-utilities/setup/define-se
 import { sockCommand } from '~/cli/commands/setup-and-utilities/sock/define-sock-command'
 import { installProcessFailureHandlers } from '~/cli/failure-handlers'
 import { CONFIG_COMMAND_HELP_FLAG_GROUPS } from '~/cli/flags'
-import { isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
+import { extractErrorHints, isUsageError, normalizeExitCode, usageMessage } from '~/utils/error-handler'
 import { linksCommand } from '~/cli/commands/setup-and-utilities/links/define-links-command'
 import { benchmarkCommand } from '~/cli/commands/setup-and-utilities/benchmark/define-benchmark-command'
 import * as l from '~/utils/logger'
@@ -31,48 +31,17 @@ import type { CliFlagsDefinition, CliRootDefinition } from '~/cli/native'
 const cliErrorHandler = (error: unknown): void => {
   if (isUsageError(error)) {
     l.error(`Usage error: ${usageMessage(error)}`)
+    for (const hint of extractErrorHints(error)) {
+      l.write('info', hint)
+    }
     process.exit(2)
   }
 
   const exitCode = normalizeExitCode(error)
   l.error('Command failed', error)
 
-  const ERROR_HINTS: Record<string, string> = {
-    'yt-dlp': "Run 'bun as setup' to install yt-dlp and other dependencies",
-    'Google Cloud CLI is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
-    'Google Cloud CLI auth is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
-    'Google Cloud project is required for Google transcription': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
-    'Google Cloud billing must be linked': "Run 'bun as setup --gcloud --gcloud-project PROJECT_ID' to create or select a project, link billing, and enable Speech-to-Text",
-    'Google Cloud Speech-to-Text API must be enabled': "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access",
-    'AWS CLI is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
-    'AWS CLI credentials are required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
-    'AWS region is required for AWS transcription': "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access",
-    'AWS S3 bucket is required for AWS transcription': "Run 'bun as setup --aws --aws-create-bucket' to provision a staging bucket shared by Transcribe and Textract, then pass --aws-region/--aws-bucket or save them with 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'",
-    'OPENAI_API_KEY': 'Set OPENAI_API_KEY environment variable to use OpenAI models',
-    'GEMINI_API_KEY': 'Set GEMINI_API_KEY environment variable to use Gemini models',
-    'GROQ_API_KEY': 'Set GROQ_API_KEY environment variable to use Groq models',
-    'GLM_API_KEY': 'Set GLM_API_KEY environment variable to use GLM models',
-    'DEEPINFRA_API_KEY': 'Set DEEPINFRA_API_KEY environment variable to use DeepInfra transcription',
-    'DEAPI_API_KEY': 'Set DEAPI_API_KEY environment variable to use deAPI transcription and exact STT pricing',
-    'ANTHROPIC_API_KEY': 'Set ANTHROPIC_API_KEY environment variable to use Anthropic Claude models',
-    'MINIMAX_API_KEY': 'Set MINIMAX_API_KEY environment variable to use MiniMax models',
-    'ELEVENLABS_API_KEY': 'Set ELEVENLABS_API_KEY environment variable to use ElevenLabs transcription/TTS/music',
-    'SPEECHMATICS_API_KEY': 'Set SPEECHMATICS_API_KEY environment variable to use Speechmatics transcription',
-    'REVAI_ACCESS_TOKEN': 'Set REVAI_ACCESS_TOKEN environment variable to use Rev transcription',
-    'GLADIA_API_KEY': 'Set GLADIA_API_KEY environment variable to use Gladia transcription',
-    'HAPPYSCRIBE_API_KEY': 'Set HAPPYSCRIBE_API_KEY environment variable to use Happy Scribe transcription',
-    'SUPADATA_API_KEY': 'Set SUPADATA_API_KEY environment variable to use Supadata transcription',
-    'SCRAPECREATORS_API_KEY': 'Set SCRAPECREATORS_API_KEY environment variable to use ScrapeCreators YouTube transcript retrieval'
-  }
-
-  if (error instanceof Error) {
-    const emittedHints = new Set<string>()
-    for (const [needle, hint] of Object.entries(ERROR_HINTS)) {
-      if (error.message.includes(needle) && !emittedHints.has(hint)) {
-        emittedHints.add(hint)
-        l.write('info', hint)
-      }
-    }
+  for (const hint of extractErrorHints(error)) {
+    l.write('info', hint)
   }
 
   process.exit(exitCode)

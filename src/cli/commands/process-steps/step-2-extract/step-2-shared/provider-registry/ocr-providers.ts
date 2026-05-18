@@ -8,6 +8,7 @@ import {
   SUPPORTED_DEEPINFRA_OCR_MODELS,
   SUPPORTED_AWS_TEXTRACT_MODELS,
   SUPPORTED_GCLOUD_DOCAI_MODELS,
+  SUPPORTED_UNSTRUCTURED_OCR_MODELS,
   validateMistralOcrModel,
   validateGlmOcrModel,
   validateKimiOcrModel,
@@ -16,7 +17,8 @@ import {
   validateGeminiOcrModel,
   validateDeepinfraOcrModel,
   validateAwsTextractModel,
-  validateGcloudDocaiModel
+  validateGcloudDocaiModel,
+  validateUnstructuredOcrModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import type { Step2ProviderRegistryEntry } from '~/types'
@@ -196,5 +198,20 @@ export const STEP2_OCR_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_GCLOUD_DOCAI_MODELS,
     validateModel: validateGcloudDocaiModel,
     description: buildModelDescription('Google Cloud Document AI model', SUPPORTED_GCLOUD_DOCAI_MODELS)
+  }),
+  modelProvider({
+    step: 'ocr',
+    modality: 'document',
+    flagName: 'unstructured-ocr',
+    targetService: 'unstructured',
+    providerSpecProvider: 'unstructured-ocr',
+    bootstrapProviderId: 'unstructured-ocr',
+    configKey: 'unstructuredOcr',
+    allShortcut: 'all-ocr',
+    runtimeModelsKey: 'unstructuredOcrModels',
+    runtimeModelKey: 'unstructuredOcrModel',
+    supportedModels: SUPPORTED_UNSTRUCTURED_OCR_MODELS,
+    validateModel: validateUnstructuredOcrModel,
+    description: buildModelDescription('Unstructured OCR model', SUPPORTED_UNSTRUCTURED_OCR_MODELS)
   })
 ] as const satisfies readonly Step2ProviderRegistryEntry[]

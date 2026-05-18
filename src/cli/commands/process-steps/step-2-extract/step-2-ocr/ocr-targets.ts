@@ -3,29 +3,27 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { collectOcrProviderSpecs } from './cli'
 
+const providerToOcrService = (provider: string): OcrTarget['service'] => {
+  if (provider === 'mistral-ocr') return 'mistral'
+  if (provider === 'glm-ocr') return 'glm'
+  if (provider === 'kimi-ocr') return 'kimi'
+  if (provider === 'openai-ocr') return 'openai'
+  if (provider === 'anthropic-ocr') return 'anthropic'
+  if (provider === 'gemini-ocr') return 'gemini'
+  if (provider === 'deepinfra-ocr') return 'deepinfra'
+  if (provider === 'unstructured-ocr') return 'unstructured'
+  return provider as OcrTarget['service']
+}
+
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel'> & {
+  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel' | 'unstructuredOcrModel'> & {
     step2SelectionOrigins?: Partial<Record<string, Step2ProviderSelectionOrigin>> | undefined
     provider?: string[] | undefined
   },
   filter?: Step2ProviderSelectionFilter
 ): OcrTarget[] => {
   return collectOcrProviderSpecs(opts as Parameters<typeof collectOcrProviderSpecs>[0], filter).map((spec) => ({
-    service: (spec.provider === 'mistral-ocr'
-      ? 'mistral'
-        : spec.provider === 'glm-ocr'
-          ? 'glm'
-        : spec.provider === 'kimi-ocr'
-          ? 'kimi'
-        : spec.provider === 'openai-ocr'
-          ? 'openai'
-          : spec.provider === 'anthropic-ocr'
-            ? 'anthropic'
-          : spec.provider === 'gemini-ocr'
-          ? 'gemini'
-          : spec.provider === 'deepinfra-ocr'
-            ? 'deepinfra'
-        : spec.provider) as OcrTarget['service'],
+    service: providerToOcrService(spec.provider),
     model: spec.model ?? spec.provider
   }))
 }
@@ -77,5 +75,6 @@ export const buildExtractionOptionsForTarget = (
   geminiOcrModel: target.service === 'gemini' ? target.model : undefined,
   deepinfraOcrModel: target.service === 'deepinfra' ? target.model : undefined,
   awsTextractModel: target.service === 'aws-textract' ? target.model : undefined,
-  gcloudDocaiModel: target.service === 'gcloud-docai' ? target.model : undefined
+  gcloudDocaiModel: target.service === 'gcloud-docai' ? target.model : undefined,
+  unstructuredOcrModel: target.service === 'unstructured' ? target.model : undefined
 })

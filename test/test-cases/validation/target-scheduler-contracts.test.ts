@@ -62,11 +62,13 @@ describe('target scheduler contracts', () => {
     expect(max.local).toBe(1)
     expect(max.total).toBe(3)
     expect(scheduled.results).toEqual(['a', 'a', undefined, 'b', 'c'])
-    expect(scheduled.failures).toEqual([{
+    expect(scheduled.failures).toHaveLength(1)
+    expect(scheduled.failures[0]).toMatchObject({
       index: 2,
       target: targets[2] as SchedulerTestTarget,
       message: 'b failed'
-    }])
+    })
+    expect(scheduled.failures[0]?.error).toBeInstanceOf(Error)
   })
 
   test('scheduler priority changes execution order without changing output order', async () => {

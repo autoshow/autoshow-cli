@@ -23,6 +23,8 @@ export type OcrSelectionState = {
   awsTextractModel?: string | undefined
   gcloudDocaiModels?: string[] | undefined
   gcloudDocaiModel?: string | undefined
+  unstructuredOcrModels?: string[] | undefined
+  unstructuredOcrModel?: string | undefined
 }
 
 export type ResolvedStep2Provider = {
@@ -168,6 +170,8 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'awsTextractModels'
   | 'gcloudDocaiModel'
   | 'gcloudDocaiModels'
+  | 'unstructuredOcrModel'
+  | 'unstructuredOcrModels'
   | 'useEpubBun'
   | 'useEpubCalibre'
   | 'urlBackend'

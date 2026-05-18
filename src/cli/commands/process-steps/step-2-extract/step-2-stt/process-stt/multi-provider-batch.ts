@@ -304,7 +304,7 @@ export const runMultiProviderSttBatch = async ({
       }
 
       try {
-        Object.assign(failure, await writeProviderFailureArtifacts(providerDir, failure, rawResponse))
+        Object.assign(failure, await writeProviderFailureArtifacts(providerDir, failure, rawResponse, error))
       } catch (artifactError) {
         l.warn(`Failed to write STT provider diagnostics for ${target.service}/${target.model}: ${artifactError instanceof Error ? artifactError.message : String(artifactError)}`)
       }

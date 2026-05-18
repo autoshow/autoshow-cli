@@ -138,6 +138,8 @@ export type RuntimeOptions = {
   awsTextractModel: string | undefined
   gcloudDocaiModels: string[] | undefined
   gcloudDocaiModel: string | undefined
+  unstructuredOcrModels: string[] | undefined
+  unstructuredOcrModel: string | undefined
   primaryOcr: string | undefined
   epubChapterFiles: boolean
   epubChunkLimitChars: number | undefined

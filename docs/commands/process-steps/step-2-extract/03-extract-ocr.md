@@ -25,6 +25,7 @@ Documents and images route through local OCR, hosted OCR, or native text extract
   - [DeepInfra OCR](#deepinfra-ocr)
   - [AWS Textract](#aws-textract)
   - [Google Cloud Document AI](#google-cloud-document-ai)
+  - [Unstructured OCR](#unstructured-ocr)
 - [OCR Notes](#ocr-notes)
 
 See the [`extract` overview](./01-extract.md) for input routing across STT, OCR, article HTML, and X/Twitter inputs. Remote article URLs and local HTML are documented separately in [URL and X extraction](./04-extract-url.md).
@@ -64,6 +65,8 @@ KIMI_API_KEY=...
 KIMI_BASE_URL=https://api.moonshot.ai/v1
 DEEPINFRA_API_KEY=...
 DEEPINFRA_BASE_URL=https://api.deepinfra.com/v1/openai
+UNSTRUCTURED_API_KEY=...
+UNSTRUCTURED_API_URL=https://platform.unstructuredapp.io/api/v1
 # AWS Textract uses AWS CLI auth and region/bucket config
 bun as setup --aws
 # Google Cloud Document AI uses gcloud CLI auth plus Document AI/GCS settings
@@ -74,7 +77,7 @@ bun as setup --gcloud
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle`, `--mistral`, `--glm`, `--kimi`, `--openai`, `--anthropic`, `--gemini`, `--deepinfra`, `--aws`, `--gcloud` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle`, `--mistral`, `--glm`, `--kimi`, `--openai`, `--anthropic`, `--gemini`, `--deepinfra`, `--aws`, `--gcloud`, `--unstructured` |
 | EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
@@ -350,6 +353,20 @@ bun as extract input/examples/document/1-document.pdf --gcloud ocr
 ```
 
 Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use.
+
+### Unstructured OCR
+
+| Option | Value |
+|--------|-------|
+| Selector | `--unstructured <model>` |
+| Models | `hi_res_and_enrichment` |
+| Direct input support | PDF plus `PNG`, `JPG/JPEG`, `TIF/TIFF`, and `BMP` |
+
+```bash
+bun as extract input/examples/document/1-document.pdf --unstructured hi_res_and_enrichment
+```
+
+Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create-job to return `input_file_ids`, polls `/jobs/{id}/details` for processing status and node counters, downloads JSON elements, and groups element text by `metadata.page_number`. `GIF` and `WEBP` inputs are normalized to `PNG` locally before upload. AutoShow cancels the remote job if polling reaches `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, if the details status/node counters make no observable progress for `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS` (default 10 minutes), if an `IN_PROGRESS` job has no files in any workflow node for `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` (default 2 minutes), or if the local process receives `SIGINT`/`SIGTERM`. Unstructured documents each on-demand job as limited to 10 files / 10 MB per file, and says at most 5 on-demand jobs can run at once; interrupted jobs can keep occupying those remote slots until cancelled. The bundled price fallback is zero because Unstructured account pricing is plan-specific; price mode still records page counts and processing-time estimates.
 
 ## OCR Notes
 

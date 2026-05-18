@@ -69,7 +69,7 @@ Check prerequisites, API keys, and configuration without installing anything:
 bun as setup --doctor
 ```
 
-Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), config file validity, Bun version, AWS CLI Transcribe readiness, Google Cloud STT + Document AI OCR + TTS readiness, YouTube cookie state, and hosted-provider credentials. Current credential checks include `OPENAI_API_KEY`, `XAI_API_KEY`, `GEMINI_API_KEY`, `GLM_API_KEY`, `KIMI_API_KEY`, `RUNWAYML_API_SECRET`, `MISTRAL_API_KEY`, `BFL_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`, `MINIMAX_API_KEY`, `ELEVENLABS_API_KEY`, `HUME_API_KEY`, `CARTESIA_API_KEY`, `ASSEMBLYAI_API_KEY`, `GLADIA_API_KEY`, `DEEPGRAM_API_KEY`, `SPEECHIFY_API_KEY`, `SONIOX_API_KEY`, `SPEECHMATICS_API_KEY`, and `REVAI_ACCESS_TOKEN`.
+Reports the status of required tools (yt-dlp, ffmpeg, ffprobe, tesseract), config file validity, Bun version, AWS CLI Transcribe readiness, Google Cloud STT + Document AI OCR + TTS readiness, YouTube cookie state, and hosted-provider credentials. Current credential checks include `OPENAI_API_KEY`, `XAI_API_KEY`, `GEMINI_API_KEY`, `GLM_API_KEY`, `KIMI_API_KEY`, `RUNWAYML_API_SECRET`, `MISTRAL_API_KEY`, `UNSTRUCTURED_API_KEY`, `BFL_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`, `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`, `MINIMAX_API_KEY`, `ELEVENLABS_API_KEY`, `HUME_API_KEY`, `CARTESIA_API_KEY`, `ASSEMBLYAI_API_KEY`, `GLADIA_API_KEY`, `DEEPGRAM_API_KEY`, `SPEECHIFY_API_KEY`, `SONIOX_API_KEY`, `SPEECHMATICS_API_KEY`, and `REVAI_ACCESS_TOKEN`.
 
 Doctor also reports YouTube cookie state separately:
 

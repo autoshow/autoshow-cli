@@ -347,7 +347,7 @@ describe('OCR resume contracts', () => {
     expect(() => resolvePrimaryOcrTarget(targets, 'openai')).toThrow('matches multiple')
   })
 
-  test('stored OCR targets include AWS Textract and Google Document AI', () => {
+  test('stored OCR targets include current hosted provider set', () => {
     expect(parseStoredRequestedTarget({ service: 'aws-textract', model: 'detect-document-text' })).toEqual({
       service: 'aws-textract',
       model: 'detect-document-text'
@@ -355,6 +355,10 @@ describe('OCR resume contracts', () => {
     expect(parseStoredRequestedTarget({ service: 'gcloud-docai', model: 'processor/default' })).toEqual({
       service: 'gcloud-docai',
       model: 'processor/default'
+    })
+    expect(parseStoredRequestedTarget({ service: 'unstructured', model: 'workflow/default' })).toEqual({
+      service: 'unstructured',
+      model: 'workflow/default'
     })
   })
 

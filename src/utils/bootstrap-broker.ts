@@ -28,6 +28,7 @@ import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-extra
 import { ensureOpenAIOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { ensureAnthropicOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
 import { ensureDeepinfraOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deepinfra-ocr/deepinfra-ocr'
+import { ensureUnstructuredOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/unstructured-ocr/unstructured'
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/tesseract-utils'
@@ -164,6 +165,9 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'deepinfra-ocr': {
     ensure: async () => await ensureDeepinfraOcrSetup()
+  },
+  'unstructured-ocr': {
+    ensure: async () => await ensureUnstructuredOcrSetup()
   },
   'deepgram-tts': {
     ensure: async () => await ensureDeepgramTtsSetup()

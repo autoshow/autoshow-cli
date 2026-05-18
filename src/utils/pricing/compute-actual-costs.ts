@@ -348,6 +348,18 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
+    } else if (provider === 'unstructured') {
+      const extractPricing = getExtractPricing('unstructured', model)
+      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
+      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
+      steps.push({
+        step: 'extract',
+        provider: 'unstructured',
+        model,
+        cost,
+        inputMetric: 'pages',
+        inputValue: input.step2.totalPages,
+      })
     } else if (provider !== 'extract') {
       steps.push({
         step: 'extract',
@@ -389,6 +401,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('gcloud-docai', model).costPer1kPagesCents ?? 0)
         : provider === 'aws-textract'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('aws-textract', model).costPer1kPagesCents ?? 0)
+        : provider === 'unstructured'
+          ? (step2Entry.totalPages / 1000) * (getExtractPricing('unstructured', model).costPer1kPagesCents ?? 0)
         : provider === 'glm' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)

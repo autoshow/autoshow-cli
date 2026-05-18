@@ -532,6 +532,7 @@ export type DeapiHttpError = Error & {
   stage?: 'create' | 'poll' | 'result' | 'price'
   retryClass?: RetryClass
   retryable?: boolean
+  body?: unknown
   rawResponse?: unknown
 }
 
