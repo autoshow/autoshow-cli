@@ -339,11 +339,17 @@ export const inferStoredCompletionStatus = (
   entry: Record<string, unknown>,
   requestedTargets: OcrTarget[]
 ): OcrCompletionStatus => {
+  const successfulKeys = parseSuccessfulProviderKeys(entry)
+  const providerStates = parseStoredProviderStateMap(entry)
+  if (providerStates.size > 0) {
+    return resolveCompletionStatusFromState(requestedTargets, successfulKeys, providerStates)
+  }
+
   if (entry['completionStatus'] === 'full' || entry['completionStatus'] === 'incomplete' || entry['completionStatus'] === 'failed') {
     return entry['completionStatus']
   }
 
-  const successCount = parseSuccessfulProviderKeys(entry).size
+  const successCount = successfulKeys.size
   if (successCount === 0) {
     return 'failed'
   }
@@ -392,15 +398,46 @@ const isRerunnableProviderState = (
   return false
 }
 
+const resolveCompletionStatusFromState = (
+  requestedTargets: OcrTarget[],
+  successfulKeys: Set<string>,
+  providerStates: Map<string, OcrProviderState>
+): OcrCompletionStatus => {
+  let succeeded = 0
+  let incomplete = 0
+
+  for (const target of requestedTargets) {
+    const key = getOcrTargetKey(target)
+    const state = providerStates.get(key)
+    if (state?.status === 'skipped') {
+      continue
+    }
+
+    if (successfulKeys.has(key) || state?.status === 'succeeded') {
+      succeeded += 1
+      continue
+    }
+
+    incomplete += 1
+  }
+
+  if (succeeded === 0) {
+    return 'failed'
+  }
+
+  return incomplete === 0 ? 'full' : 'incomplete'
+}
+
 export const readExistingOcrRun = async (
   outputDir: string,
   requestedTargets: OcrTarget[]
 ): Promise<ExistingOcrRun> => {
   const providerStates = new Map<string, OcrProviderState>()
   const successes: Array<OcrProviderSuccess | undefined> = new Array(requestedTargets.length)
+  const successMetadata: Array<ExtractionMetadata | undefined> = new Array(requestedTargets.length)
   const raw = await readOcrRunManifestEntry(outputDir)
   if (!isRecord(raw)) {
-    return { successes, providerStates }
+    return { successes, successMetadata, providerStates }
   }
 
   const storedProviderStates = parseStoredProviderStateMap(raw)
@@ -413,11 +450,13 @@ export const readExistingOcrRun = async (
     const providerDir = join(outputDir, getOcrProviderArtifactDir(target))
     const providerResult = await readProviderResultEntry(providerDir)
     if (!providerResult) {
+      const metadata = parseRootExtractionMetadata(raw, target)
+      if (!metadata) {
+        return
+      }
+
+      successMetadata[index] = metadata
       if (storedProviderStates.get(key)?.artifactDir === '.') {
-        const metadata = parseRootExtractionMetadata(raw, target)
-        if (!metadata) {
-          return
-        }
         const result = await readRootExtractionResult(outputDir, metadata)
         if (!result) {
           return
@@ -434,6 +473,7 @@ export const readExistingOcrRun = async (
 
     const metadata = validateData(ExtractionMetadataSchema, providerResult.metadata, 'stored OCR provider metadata')
     const result = validateData(ExtractionResultSchema, providerResult.result, 'stored OCR result')
+    successMetadata[index] = metadata
 
     successes[index] = {
       target,
@@ -445,6 +485,7 @@ export const readExistingOcrRun = async (
 
   return {
     successes,
+    successMetadata,
     providerStates
   }
 }
@@ -453,7 +494,8 @@ export const buildProviderStates = (
   requestedTargets: OcrTarget[],
   successes: Array<OcrProviderSuccess | undefined>,
   failuresByIndex: Map<number, OcrProviderFailureSummary>,
-  existingStates: Map<string, OcrProviderState>
+  existingStates: Map<string, OcrProviderState>,
+  successMetadata: Array<ExtractionMetadata | undefined> = successes.map((entry) => entry?.metadata)
 ): OcrProviderState[] =>
   requestedTargets.map((target, index) => {
     const key = getOcrTargetKey(target)
@@ -461,11 +503,11 @@ export const buildProviderStates = (
     const success = successes[index]
     const failure = failuresByIndex.get(index)
 
-    if (success) {
+    if (success || successMetadata[index]) {
       return {
         service: target.service,
         model: target.model,
-        artifactDir: getOcrProviderArtifactDir(target),
+        artifactDir: success?.relativeDir ?? existing?.artifactDir ?? getOcrProviderArtifactDir(target),
         status: 'succeeded',
         attempts: existing?.attempts ?? 1
       }
@@ -501,15 +543,16 @@ export const buildProviderStates = (
   })
 
 export const resolveCompletionStatus = (
-  requestedTargets: OcrTarget[],
-  successes: Array<OcrProviderSuccess | undefined>
+  providerStates: OcrProviderState[]
 ): OcrCompletionStatus => {
-  const successCount = successes.filter((entry) => entry !== undefined).length
-  if (successCount === 0) {
+  const succeeded = providerStates.filter((state) => state.status === 'succeeded').length
+  if (succeeded === 0) {
     return 'failed'
   }
 
-  return successCount === requestedTargets.length ? 'full' : 'incomplete'
+  return providerStates.every((state) => state.status === 'succeeded' || state.status === 'skipped')
+    ? 'full'
+    : 'incomplete'
 }
 
 export const buildMissingProviders = (

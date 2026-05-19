@@ -2,7 +2,7 @@ import { defineImageServiceTest } from '../../../test-utils/define-image-service
 
 defineImageServiceTest({
   imageService: 'glm',
-  cliFlag: '--glm-image',
+  cliFlag: '--glm',
   envVarKey: 'GLM_API_KEY',
   imageExtension: 'png',
   models: [

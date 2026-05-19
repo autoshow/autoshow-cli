@@ -144,6 +144,14 @@ const stripOutputDir = (
   return rest
 }
 
+const markEntryFull = (
+  metadata: BatchManifestEntry
+): BatchManifestEntry => ({
+  ...metadata,
+  completionStatus: 'full',
+  missingProviders: []
+})
+
 const readResumeTargetManifest = async (
   target: ResumeTarget
 ): Promise<{ infoPath: string, entries: BatchManifestEntry[], source?: Record<string, unknown> } | undefined> => {
@@ -270,7 +278,7 @@ const runResumeOcrTarget = async (
         detail: 'already full'
       }, 'success')
       full += 1
-      updatedEntries.push(withOutputDir(entry.rawEntry, entry.outputDir))
+      updatedEntries.push(withOutputDir(markEntryFull(entry.rawEntry), entry.outputDir))
       continue
     }
 

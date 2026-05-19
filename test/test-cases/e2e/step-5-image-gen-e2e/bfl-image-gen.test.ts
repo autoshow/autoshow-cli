@@ -4,7 +4,7 @@ import { runCommand } from '../../../test-utils/test-helpers'
 
 defineImageServiceTest({
   imageService: 'bfl',
-  cliFlag: '--bfl-image',
+  cliFlag: '--bfl',
   envVarKey: 'BFL_API_KEY',
   imageExtension: 'jpg',
   models: [
@@ -21,7 +21,7 @@ test('rejects unsupported BFL shared image flags', async () => {
     'src/cli/create-cli.ts',
     'image',
     'a sunset',
-    '--bfl-image',
+    '--bfl',
     'flux-2-pro-preview',
     '--image-aspect-ratio',
     '1:1'
@@ -29,7 +29,7 @@ test('rejects unsupported BFL shared image flags', async () => {
   const output = `${result.stdout}\n${result.stderr}`
 
   expect(result.exitCode).not.toBe(0)
-  expect(output).toContain('not supported by BFL image generation')
+  expect(output).toContain('--image-aspect-ratio is not supported by BFL/flux-2-pro-preview')
 })
 
 test('rejects invalid BFL image size values', async () => {
@@ -37,7 +37,7 @@ test('rejects invalid BFL image size values', async () => {
     'src/cli/create-cli.ts',
     'image',
     'a sunset',
-    '--bfl-image',
+    '--bfl',
     'flux-2-pro-preview',
     '--image-size',
     '1024'

@@ -22,7 +22,7 @@
         "outputCostPer1MCents": 18000,
         "estimation": {
           "costMultiplier": 0.8039,
-          "msPer1KTokens": 127141
+          "msPer1KTokens": 195880
         }
       },
       "gpt-5.4-mini": {
@@ -33,7 +33,7 @@
         "outputCostPer1MCents": 450,
         "estimation": {
           "costMultiplier": 0.7927,
-          "msPer1KTokens": 3831
+          "msPer1KTokens": 4396
         }
       },
       "gpt-5.4-nano": {
@@ -89,7 +89,7 @@
         "outputCostPer1MCents": 1200,
         "estimation": {
           "costMultiplier": 0.8434,
-          "msPer1KTokens": 29842
+          "msPer1KTokens": 25519
         }
       },
       "gemini-3.1-flash-lite-preview": {
@@ -117,7 +117,7 @@
         "outputCostPer1MCents": 2500,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 8899
+          "msPer1KTokens": 12461
         }
       },
       "claude-opus-4-6": {
@@ -139,7 +139,7 @@
         "outputCostPer1MCents": 1500,
         "estimation": {
           "costMultiplier": 0.8487,
-          "msPer1KTokens": 9005
+          "msPer1KTokens": 7960
         }
       },
       "claude-haiku-4-5": {
@@ -167,7 +167,7 @@
         "outputCostPer1MCents": 120,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 5666
+          "msPer1KTokens": 10484
         }
       },
       "MiniMax-M2.5-highspeed": {
@@ -178,7 +178,7 @@
         "outputCostPer1MCents": 240,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 41727
+          "msPer1KTokens": 36138
         }
       }
     }
@@ -223,7 +223,7 @@
         "outputCostPer1MCents": 440,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 18000
+          "msPer1KTokens": 15747
         }
       }
     }
@@ -240,7 +240,7 @@
         "outputCostPer1MCents": 400,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 18000
+          "msPer1KTokens": 14801
         }
       }
     }
@@ -267,7 +267,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 1717
+          "msPer1KTokens": 1540
         }
       }
     }

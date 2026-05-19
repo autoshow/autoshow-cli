@@ -2,7 +2,7 @@ import { defineImageServiceTest } from '../../../test-utils/define-image-service
 
 defineImageServiceTest({
   imageService: 'grok',
-  cliFlag: '--grok-image',
+  cliFlag: '--grok',
   envVarKey: 'XAI_API_KEY',
   imageExtension: 'jpg',
   models: [

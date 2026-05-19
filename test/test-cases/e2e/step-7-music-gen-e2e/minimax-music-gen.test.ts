@@ -56,8 +56,8 @@ budgetedTest('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview', 'multi
       'src/cli/create-cli.ts',
       'music',
       'bright acoustic pop with handclaps and a catchy chorus',
-      '--minimax-music', 'music-2.5',
-      '--gemini-music', 'lyria-3-clip-preview',
+      '--minimax', 'music-2.5',
+      '--gemini', 'lyria-3-clip-preview',
       '--music-lyrics-file', 'input/examples/tts/1-tts.md',
     ],
   )

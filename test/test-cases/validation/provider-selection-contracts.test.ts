@@ -15,6 +15,7 @@ import {
 import {
   normalizeCommandSelectorArgs,
   normalizeCommandSelectorFlags,
+  normalizeExtractPublicSelectorArgs,
   normalizeExtractPublicSelectorFlags
 } from '~/cli/commands/process-steps/service-selector-normalization'
 import { IMAGE_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/image-flags'
@@ -292,6 +293,45 @@ describe('provider selection contracts', () => {
     const mixedDefaultOpts = buildOptsFromFlags(false, mixedDefaultNormalized.flags, [], {}, mixedDefaultNormalized.explicitFlags)
     expect(mixedDefaultOpts.glmSttModels).toEqual(['glm-asr-2512'])
     expect(mixedDefaultOpts.glmOcrModels).toEqual(['glm-ocr'])
+    const routeAwareDocumentArgs = normalizeExtractPublicSelectorArgs([
+      'extract',
+      'input/examples/document/1-document.pdf',
+      '--glm',
+      'glm-ocr',
+      '--price'
+    ], { media: false, document: true })
+    expect(routeAwareDocumentArgs).toEqual([
+      'extract',
+      'input/examples/document/1-document.pdf',
+      '--glm-ocr',
+      'glm-ocr',
+      '--price'
+    ])
+    expect(normalizeExtractPublicSelectorArgs([
+      'extract',
+      'input/examples/audio/0-audio-short.mp3',
+      '--glm=glm-asr-2512',
+      '--price'
+    ], { media: true, document: false })).toEqual([
+      'extract',
+      'input/examples/audio/0-audio-short.mp3',
+      '--glm-stt=glm-asr-2512',
+      '--price'
+    ])
+    expect(normalizeExtractPublicSelectorArgs([
+      'extract',
+      'input/examples/batch/2-urls.md',
+      '--glm'
+    ], { media: true, document: true })).toEqual([
+      'extract',
+      'input/examples/batch/2-urls.md',
+      '--glm-stt',
+      '--glm-ocr'
+    ])
+
+    const routeAwareDocumentOpts = buildOptsFromFlags(false, documentNormalized.flags, [], {}, documentNormalized.explicitFlags, routeAwareDocumentArgs)
+    expect(routeAwareDocumentOpts.glmOcrModels).toEqual(['glm-ocr'])
+    expect(routeAwareDocumentOpts.glmModels).toBeUndefined()
 
     expect(() => normalizeExtractPublicSelectorFlags({
       glm: ['glm-ocr']

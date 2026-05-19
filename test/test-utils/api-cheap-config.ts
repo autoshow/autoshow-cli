@@ -50,32 +50,32 @@ export const buildApiCheapSelections = () => {
   ]
 
   const sttSelections = [
-    { service: 'elevenlabs', flag: '--elevenlabs-stt', envVar: 'ELEVENLABS_API_KEY', model: selectCheapestSttModel('elevenlabs') },
-    { service: 'deepgram', flag: '--deepgram-stt', envVar: 'DEEPGRAM_API_KEY', model: selectCheapestSttModel('deepgram') },
-    { service: 'deepinfra', flag: '--deepinfra-stt', envVar: 'DEEPINFRA_API_KEY', model: selectCheapestSttModel('deepinfra') },
-    { service: 'soniox', flag: '--soniox-stt', envVar: 'SONIOX_API_KEY', model: selectCheapestSttModel('soniox') },
-    { service: 'speechmatics', flag: '--speechmatics-stt', envVar: 'SPEECHMATICS_API_KEY', model: selectCheapestSttModel('speechmatics') },
-    { service: 'gladia', flag: '--gladia-stt', envVar: 'GLADIA_API_KEY', model: selectCheapestSttModel('gladia') },
-    { service: 'happyscribe', flag: '--happyscribe-stt', envVar: 'HAPPYSCRIBE_API_KEY', model: selectCheapestSttModel('happyscribe') },
-    { service: 'groq', flag: '--groq-stt', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') },
-    { service: 'grok', flag: '--grok-stt', envVar: 'XAI_API_KEY', model: selectCheapestSttModel('grok') },
-    { service: 'together', flag: '--together-stt', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') }
+    { service: 'elevenlabs', flag: '--elevenlabs', envVar: 'ELEVENLABS_API_KEY', model: selectCheapestSttModel('elevenlabs') },
+    { service: 'deepgram', flag: '--deepgram', envVar: 'DEEPGRAM_API_KEY', model: selectCheapestSttModel('deepgram') },
+    { service: 'deepinfra', flag: '--deepinfra', envVar: 'DEEPINFRA_API_KEY', model: selectCheapestSttModel('deepinfra') },
+    { service: 'soniox', flag: '--soniox', envVar: 'SONIOX_API_KEY', model: selectCheapestSttModel('soniox') },
+    { service: 'speechmatics', flag: '--speechmatics', envVar: 'SPEECHMATICS_API_KEY', model: selectCheapestSttModel('speechmatics') },
+    { service: 'gladia', flag: '--gladia', envVar: 'GLADIA_API_KEY', model: selectCheapestSttModel('gladia') },
+    { service: 'happyscribe', flag: '--happyscribe', envVar: 'HAPPYSCRIBE_API_KEY', model: selectCheapestSttModel('happyscribe') },
+    { service: 'groq', flag: '--groq', envVar: 'GROQ_API_KEY', model: selectCheapestSttModel('groq') },
+    { service: 'grok', flag: '--grok', envVar: 'XAI_API_KEY', model: selectCheapestSttModel('grok') },
+    { service: 'together', flag: '--together', envVar: 'TOGETHER_API_KEY', model: selectCheapestSttModel('together') }
   ]
 
   const ttsSelections = [
-    { service: 'elevenlabs', flag: '--elevenlabs-tts', envVar: 'ELEVENLABS_API_KEY', model: selectCheapestTtsModel('elevenlabs') },
-    { service: 'minimax', flag: '--minimax-tts', envVar: 'MINIMAX_API_KEY', model: selectCheapestTtsModel('minimax') },
-    { service: 'groq', flag: '--groq-tts', envVar: 'GROQ_API_KEY', model: selectCheapestTtsModel('groq') },
-    { service: 'grok', flag: '--grok-tts', envVar: 'XAI_API_KEY', model: selectCheapestTtsModel('grok') },
-    { service: 'mistral', flag: '--mistral-tts', envVar: 'MISTRAL_API_KEY', model: selectCheapestTtsModel('mistral') },
-    { service: 'openai', flag: '--openai-tts', envVar: 'OPENAI_API_KEY', model: selectCheapestTtsModel('openai') },
-    { service: 'gemini', flag: '--gemini-tts', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') }
+    { service: 'elevenlabs', flag: '--elevenlabs', envVar: 'ELEVENLABS_API_KEY', model: selectCheapestTtsModel('elevenlabs') },
+    { service: 'minimax', flag: '--minimax', envVar: 'MINIMAX_API_KEY', model: selectCheapestTtsModel('minimax') },
+    { service: 'groq', flag: '--groq', envVar: 'GROQ_API_KEY', model: selectCheapestTtsModel('groq') },
+    { service: 'grok', flag: '--grok', envVar: 'XAI_API_KEY', model: selectCheapestTtsModel('grok') },
+    { service: 'mistral', flag: '--mistral', envVar: 'MISTRAL_API_KEY', model: selectCheapestTtsModel('mistral') },
+    { service: 'openai', flag: '--openai', envVar: 'OPENAI_API_KEY', model: selectCheapestTtsModel('openai') },
+    { service: 'gemini', flag: '--gemini', envVar: 'GEMINI_API_KEY', model: selectCheapestTtsModel('gemini') }
   ]
 
   const imageSelections = [
-    { service: 'gemini', flag: '--gemini-image', envVar: 'GEMINI_API_KEY', model: selectCheapestImageModel('gemini') },
-    { service: 'openai', flag: '--openai-image', envVar: 'OPENAI_API_KEY', model: selectCheapestImageModel('openai') },
-    { service: 'minimax', flag: '--minimax-image', envVar: 'MINIMAX_API_KEY', model: selectCheapestImageModel('minimax') }
+    { service: 'gemini', flag: '--gemini', envVar: 'GEMINI_API_KEY', model: selectCheapestImageModel('gemini') },
+    { service: 'openai', flag: '--openai', envVar: 'OPENAI_API_KEY', model: selectCheapestImageModel('openai') },
+    { service: 'minimax', flag: '--minimax', envVar: 'MINIMAX_API_KEY', model: selectCheapestImageModel('minimax') }
   ]
 
   const videoSelections = [
@@ -84,13 +84,13 @@ export const buildApiCheapSelections = () => {
   ] satisfies VideoSelection[]
 
   const extractSelections = [
-    { service: 'mistral', flag: '--mistral-ocr', envVar: 'MISTRAL_API_KEY', model: selectCheapestExtractModel('mistral') },
-    { service: 'glm', flag: '--glm-ocr', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') },
-    { service: 'kimi', flag: '--kimi-ocr', envVar: 'KIMI_API_KEY', model: selectCheapestExtractModel('kimi') },
-    { service: 'openai', flag: '--openai-ocr', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') },
-    { service: 'anthropic', flag: '--anthropic-ocr', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestExtractModel('anthropic') },
-    { service: 'gemini', flag: '--gemini-ocr', envVar: 'GEMINI_API_KEY', model: selectCheapestExtractModel('gemini') },
-    { service: 'deepinfra', flag: '--deepinfra-ocr', envVar: 'DEEPINFRA_API_KEY', model: selectCheapestExtractModel('deepinfra') }
+    { service: 'mistral', flag: '--mistral', envVar: 'MISTRAL_API_KEY', model: selectCheapestExtractModel('mistral') },
+    { service: 'glm', flag: '--glm', envVar: 'GLM_API_KEY', model: selectCheapestExtractModel('glm') },
+    { service: 'kimi', flag: '--kimi', envVar: 'KIMI_API_KEY', model: selectCheapestExtractModel('kimi') },
+    { service: 'openai', flag: '--openai', envVar: 'OPENAI_API_KEY', model: selectCheapestExtractModel('openai') },
+    { service: 'anthropic', flag: '--anthropic', envVar: 'ANTHROPIC_API_KEY', model: selectCheapestExtractModel('anthropic') },
+    { service: 'gemini', flag: '--gemini', envVar: 'GEMINI_API_KEY', model: selectCheapestExtractModel('gemini') },
+    { service: 'deepinfra', flag: '--deepinfra', envVar: 'DEEPINFRA_API_KEY', model: selectCheapestExtractModel('deepinfra') }
   ]
 
   return {
@@ -200,10 +200,10 @@ export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
     ]
 
     if (selection.provider === 'gemini') {
-      args.push('--gemini-video', selection.model)
+      args.push('--gemini', selection.model)
       if (selection.resolution) args.push('--video-resolution', selection.resolution)
     } else {
-      args.push('--minimax-video', selection.model)
+      args.push('--minimax', selection.model)
       if (selection.resolution) args.push('--video-resolution', selection.resolution)
     }
 

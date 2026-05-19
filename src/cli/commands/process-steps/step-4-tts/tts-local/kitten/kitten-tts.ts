@@ -81,7 +81,7 @@ export const setupKittenTts = async (): Promise<void> => {
     l.write('success', 'Kitten TTS Setup', {
       category: 'command',
       humanTable: createHumanTable([
-        { status: 'complete', command: 'bun as tts input/examples/tts/1-tts.md --kitten-tts kitten-tts-mini' },
+        { status: 'complete', command: 'bun as tts input/examples/tts/1-tts.md --kitten kitten-tts-mini' },
         { status: 'complete', command: 'bun as write "URL" --kitten-tts kitten-tts-mini' }
       ], ['status', 'command'])
     })

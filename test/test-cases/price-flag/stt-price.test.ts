@@ -10,7 +10,7 @@ for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as con
       'src/cli/create-cli.ts',
       'extract',
       STABLE_LOCAL_AUDIO_PATH,
-      '--whisper-stt',
+      '--whisper',
       model,
       '--price'
     ])
@@ -21,79 +21,79 @@ for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as con
 
 defineSTTServicePriceTests({
   models: ['universal-3-pro'],
-  cliFlag: '--assemblyai-stt',
+  cliFlag: '--assemblyai',
   sttService: 'assemblyai',
 })
 
 defineSTTServicePriceTests({
   models: ['nova-3'],
-  cliFlag: '--deepgram-stt',
+  cliFlag: '--deepgram',
   sttService: 'deepgram',
 })
 
 defineSTTServicePriceTests({
   models: ['openai/whisper-large-v3-turbo', 'openai/whisper-large-v3'],
-  cliFlag: '--deepinfra-stt',
+  cliFlag: '--deepinfra',
   sttService: 'deepinfra',
 })
 
 defineSTTServicePriceTests({
   models: ['openai/whisper-large-v3'],
-  cliFlag: '--together-stt',
+  cliFlag: '--together',
   sttService: 'together',
 })
 
 defineSTTServicePriceTests({
   models: ['WhisperLargeV3'],
-  cliFlag: '--deapi-stt',
+  cliFlag: '--deapi',
   sttService: 'deapi',
 })
 
 defineSTTServicePriceTests({
   models: ['scribe_v2'],
-  cliFlag: '--elevenlabs-stt',
+  cliFlag: '--elevenlabs',
   sttService: 'elevenlabs',
 })
 
 defineSTTServicePriceTests({
   models: ['default'],
-  cliFlag: '--gladia-stt',
+  cliFlag: '--gladia',
   sttService: 'gladia',
 })
 
 defineSTTServicePriceTests({
   models: ['whisper-large-v3', 'whisper-large-v3-turbo'],
-  cliFlag: '--groq-stt',
+  cliFlag: '--groq',
   sttService: 'groq',
 })
 
 defineSTTServicePriceTests({
   models: ['speech-to-text'],
-  cliFlag: '--grok-stt',
+  cliFlag: '--grok',
   sttService: 'grok',
 })
 
 defineSTTServicePriceTests({
   models: ['voxtral-mini-2602'],
-  cliFlag: '--mistral-stt',
+  cliFlag: '--mistral',
   sttService: 'mistral',
 })
 
 defineSTTServicePriceTests({
   models: ['machine', 'low_cost'],
-  cliFlag: '--rev-stt',
+  cliFlag: '--rev',
   sttService: 'rev',
 })
 
 defineSTTServicePriceTests({
   models: ['stt-async-v4'],
-  cliFlag: '--soniox-stt',
+  cliFlag: '--soniox',
   sttService: 'soniox',
 })
 
 defineSTTServicePriceTests({
   models: ['standard', 'enhanced'],
-  cliFlag: '--speechmatics-stt',
+  cliFlag: '--speechmatics',
   sttService: 'speechmatics',
 })
 
@@ -102,7 +102,7 @@ test('aws standard --price prints estimate', async () => {
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--aws-stt',
+    '--aws',
     'standard',
     '--price'
   ])
@@ -117,7 +117,7 @@ test('gcloud chirp_3 --price prints estimate', async () => {
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--gcloud-stt',
+    '--gcloud',
     'chirp_3',
     '--price'
   ])

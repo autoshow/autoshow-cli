@@ -304,6 +304,7 @@ export type OcrProviderSuccess = {
 
 export type ExistingOcrRun = {
   successes: Array<OcrProviderSuccess | undefined>
+  successMetadata: Array<ExtractionMetadata | undefined>
   providerStates: Map<string, OcrProviderState>
 }
 

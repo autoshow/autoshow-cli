@@ -20,7 +20,9 @@ import { getYtDlpBinary, hasYtDlpBinary } from '../audio/yt-dlp-binary'
 import {
   expandExtractPublicSelectorExplicitFlags,
   hasExtractPublicSelectorFlags,
+  normalizeExtractPublicSelectorArgs,
   normalizeExtractPublicSelectorFlags,
+  stripExtractPublicSelectorArgs,
   stripExtractPublicSelectorFlags,
   type ExtractSelectorInputRoutes
 } from '~/cli/commands/process-steps/service-selector-normalization'
@@ -148,10 +150,12 @@ export const handleProcessTarget = async (
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, configExplicitFlags)
   let optionFlags = mergedFlags
   let explicitFlags = configExplicitFlags
+  let optionArgv = rawArgv
   let selectorPlan: Awaited<ReturnType<typeof resolveProcessTargetPlan>> | undefined
 
   if (isExtractCommand(command) && hasExtractPublicSelectorFlags(mergedFlags)) {
     const preliminaryFlags = stripExtractPublicSelectorFlags(mergedFlags)
+    const preliminaryArgv = stripExtractPublicSelectorArgs(rawArgv)
     const preliminaryOpts: RuntimeOptions = {
       ...buildOptsFromFlags(
         true,
@@ -159,7 +163,7 @@ export const handleProcessTarget = async (
         doubleDash,
         {},
         configExplicitFlags,
-        rawArgv
+        preliminaryArgv
       ),
       configPath: resolvedConfigPath
     }
@@ -168,6 +172,7 @@ export const handleProcessTarget = async (
     const normalized = normalizeExtractPublicSelectorFlags(mergedFlags, configExplicitFlags, selectorRoutes)
     optionFlags = normalized.flags
     explicitFlags = normalized.explicitFlags
+    optionArgv = normalizeExtractPublicSelectorArgs(rawArgv, selectorRoutes)
   }
 
   const opts: RuntimeOptions = {
@@ -177,7 +182,7 @@ export const handleProcessTarget = async (
       doubleDash,
       {},
       explicitFlags,
-      rawArgv
+      optionArgv
     ),
     configPath: resolvedConfigPath
   }

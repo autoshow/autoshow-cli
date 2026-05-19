@@ -6,8 +6,12 @@ import {
   buildMissingProviders,
   buildMissingTargetsFromEntry,
   classifyOcrProviderFailure,
-  parseStoredRequestedTarget
+  inferStoredCompletionStatus,
+  parseStoredRequestedTarget,
+  readExistingOcrRun,
+  resolveCompletionStatus
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-run-state'
+import { writeOcrRunManifest } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/manifest'
 import {
   OcrStructuredResponseError,
   writeInvalidOcrStructuredResponse
@@ -104,6 +108,74 @@ const providerState = (
 })
 
 describe('OCR resume contracts', () => {
+  test('stored provider states can complete a stale incomplete OCR manifest', () => {
+    const providerStates = [
+      providerState(tesseractTarget, 'succeeded'),
+      providerState(paddleTarget, 'succeeded'),
+      providerState(anthropicTarget, 'succeeded')
+    ]
+    const entry = {
+      completionStatus: 'incomplete',
+      requestedProviders: requestedTargets,
+      missingProviders: [],
+      providerStates
+    }
+
+    expect(inferStoredCompletionStatus(entry, requestedTargets)).toBe('full')
+    expect(resolveCompletionStatus(providerStates)).toBe('full')
+  })
+
+  test('existing OCR run preserves root step2 metadata without provider artifacts', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-root-metadata-'))
+    try {
+      await writeOcrRunManifest(tempDir, {
+        source: { filePath: '/tmp/document.pdf' },
+        completionStatus: 'full',
+        requestedProviders: [tesseractTarget, anthropicTarget],
+        providerStates: [
+          providerState(tesseractTarget, 'succeeded'),
+          providerState(anthropicTarget, 'succeeded')
+        ],
+        step2: [
+          {
+            extractionMethod: 'mutool+tesseract',
+            totalPages: 1,
+            ocrPages: 1,
+            textPages: 0,
+            processingTime: 10,
+            dpi: 300,
+            languages: 'eng',
+            tokenEstimate: 12,
+            inputFamily: 'pdf'
+          },
+          {
+            extractionMethod: 'anthropic-ocr',
+            totalPages: 1,
+            ocrPages: 1,
+            textPages: 0,
+            processingTime: 20,
+            dpi: 300,
+            languages: 'eng',
+            tokenEstimate: 34,
+            ocrService: 'anthropic',
+            ocrModel: 'claude-haiku-4-5',
+            inputFamily: 'pdf'
+          }
+        ]
+      })
+
+      const existingRun = await readExistingOcrRun(tempDir, [tesseractTarget, anthropicTarget])
+
+      expect(existingRun.successes).toEqual([undefined, undefined])
+      expect(existingRun.successMetadata.map((metadata) => metadata?.extractionMethod)).toEqual([
+        'mutool+tesseract',
+        'anthropic-ocr'
+      ])
+    } finally {
+      await rm(tempDir, { recursive: true, force: true })
+    }
+  })
+
   test('all failed providers remain resumable when explicit missing providers are stored', () => {
     const entry = {
       requestedProviders: requestedTargets,

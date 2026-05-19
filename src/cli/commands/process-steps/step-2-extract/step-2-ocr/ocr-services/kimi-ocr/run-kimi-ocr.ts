@@ -1,9 +1,7 @@
 import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import * as v from 'valibot'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
-import { parseAndValidateStructured } from '~/cli/commands/process-steps/step-3-write/structured-output/validator'
 import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { getCachedRenderedPageImage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
@@ -21,13 +19,6 @@ import {
 
 const KIMI_OCR_MAX_COMPLETION_TOKENS = 8192
 
-const KimiOcrEnvelopeSchema = v.object({
-  pages: v.array(v.object({
-    pageNumber: v.pipe(v.number(), v.integer(), v.minValue(1)),
-    text: v.string()
-  }))
-})
-
 const getImageMimeType = (format: DocumentMetadata['format']): string => {
   switch (format) {
     case 'png':
@@ -44,57 +35,15 @@ const getImageMimeType = (format: DocumentMetadata['format']): string => {
 }
 
 const buildOcrPrompt = (): string => [
-  'Perform OCR on the provided page image.',
-  'Return only JSON.',
+  'Perform OCR on the provided single page image.',
+  'Return only the visible text from the page.',
   'Do not summarize, explain, or translate.',
+  'Do not wrap the text in JSON, Markdown, or code fences.',
   'Preserve the visible reading order.',
   'Preserve paragraph breaks and line breaks when they are meaningful.',
-  'If the page is blank or unreadable, return one page object with an empty string for text.',
-  'Return exactly this JSON object shape: {"pages":[{"pageNumber":1,"text":"..."}]}.',
-  'Return exactly one page object with pageNumber set to 1.'
+  'Collapse long runs of spaces or tabs used only for visual alignment.',
+  'If the page is blank or unreadable, return an empty response.'
 ].join(' ')
-
-const normalizePages = (
-  value: unknown,
-  pageNumber: number
-): PageResult[] => {
-  const parsed = v.safeParse(KimiOcrEnvelopeSchema, value)
-  if (!parsed.success) {
-    throw new Error('Kimi OCR response did not match the expected page schema.')
-  }
-
-  if (parsed.output.pages.length !== 1) {
-    throw new Error(`Kimi OCR returned ${parsed.output.pages.length} pages for a single page image.`)
-  }
-
-  const page = parsed.output.pages[0]
-  if (!page) {
-    throw new Error('Kimi OCR returned no pages.')
-  }
-
-  return [{
-    pageNumber,
-    method: 'ocr',
-    text: page.text
-  }]
-}
-
-const parseOcrResponse = (
-  rawText: string,
-  pageNumber: number
-): PageResult[] => {
-  const validation = parseAndValidateStructured(KimiOcrEnvelopeSchema, rawText)
-  if (!validation.success) {
-    throw new OcrStructuredResponseError(validation.issue ?? 'Kimi OCR response was not valid JSON.', rawText)
-  }
-
-  try {
-    return normalizePages(validation.value, pageNumber)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    throw new OcrStructuredResponseError(message, rawText)
-  }
-}
 
 const assertImageWithinLimits = async (filePath: string, pageLabel: string): Promise<void> => {
   const fileStats = await stat(filePath)
@@ -110,6 +59,23 @@ const readImageDataUrl = async (
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
   return `data:${getImageMimeType(format)};base64,${base64}`
+}
+
+const isLengthFinishReason = (
+  finishReason: string | null | undefined
+): boolean =>
+  finishReason === 'length' || finishReason === 'max_tokens'
+
+const buildTruncatedResponseError = (
+  rawText: string,
+  pageLabel: string
+): OcrStructuredResponseError => {
+  const error = new OcrStructuredResponseError(
+    `Kimi OCR response for ${pageLabel} stopped at the max completion token limit before finishing.`,
+    rawText
+  )
+  ;(error as OcrStructuredResponseError & { category: 'provider_limit' }).category = 'provider_limit'
+  return error
 }
 
 const runKimiOcrImage = async (
@@ -131,7 +97,6 @@ const runKimiOcrImage = async (
         model,
         stream: false,
         max_completion_tokens: KIMI_OCR_MAX_COMPLETION_TOKENS,
-        response_format: { type: 'json_object' },
         thinking: { type: 'disabled' },
         messages: [{
           role: 'user',
@@ -143,15 +108,22 @@ const runKimiOcrImage = async (
       }, { signal, errorMessagePrefix: 'Kimi OCR request failed' })
     )
     const rawText = extractOpenAIChatCompletionText(response) ?? ''
+    const finishReason = response.choices?.[0]?.finish_reason
 
     try {
+      if (isLengthFinishReason(finishReason)) {
+        throw buildTruncatedResponseError(rawText, pageLabel)
+      }
       if (!rawText.trim()) {
         throw new Error('Kimi OCR returned no text output.')
       }
 
-      const pages = parseOcrResponse(rawText, pageNumber)
       return {
-        page: pages[0]!,
+        page: {
+          pageNumber,
+          method: 'ocr',
+          text: rawText.trim()
+        },
         ...(typeof response.usage?.prompt_tokens === 'number' ? { promptTokens: response.usage.prompt_tokens } : {}),
         ...(typeof response.usage?.completion_tokens === 'number' ? { completionTokens: response.usage.completion_tokens } : {})
       }

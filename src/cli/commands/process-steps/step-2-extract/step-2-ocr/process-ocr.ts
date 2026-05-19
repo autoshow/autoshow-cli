@@ -418,19 +418,25 @@ export const processOcr = async (
       const successes: Array<OcrProviderSuccess | undefined> = [...existingRun.successes]
       const failuresByIndex = new Map<number, OcrProviderFailureSummary>()
       const failures: NonNullable<OcrMetadataOptions['failures']> = []
+      const collectSuccessMetadata = (
+        currentSuccesses: Array<OcrProviderSuccess | undefined>
+      ): Array<ExtractionMetadata | undefined> =>
+        currentSuccesses.map((entry, index) => entry?.metadata ?? existingRun.successMetadata[index])
       let checkpointWrite = Promise.resolve()
       const queueCheckpointWrite = (): void => {
         const snapshotSuccesses = [...successes]
+        const snapshotSuccessMetadata = collectSuccessMetadata(snapshotSuccesses)
         const snapshotFailuresByIndex = new Map(failuresByIndex)
         checkpointWrite = checkpointWrite.then(async () => {
           const providerStates = buildProviderStates(
             requestedTargets,
             snapshotSuccesses,
             snapshotFailuresByIndex,
-            existingRun.providerStates
+            existingRun.providerStates,
+            snapshotSuccessMetadata
           )
           const missingProviders = buildMissingProviders(providerStates, requestedTargets)
-          const completionStatus = resolveCompletionStatus(requestedTargets, snapshotSuccesses)
+          const completionStatus = resolveCompletionStatus(providerStates)
           const metadataErrors = buildMetadataErrorEntries(providerStates).map((value) => ({
             service: value['service'] as string,
             model: value['model'] as string,
@@ -438,9 +444,8 @@ export const processOcr = async (
             ...(typeof value['category'] === 'string' ? { category: value['category'] as string } : {}),
             ...(typeof value['errorFile'] === 'string' ? { errorFile: value['errorFile'] as string } : {})
           }))
-          const step2Metadata = snapshotSuccesses
-            .filter((entry): entry is OcrProviderSuccess => entry !== undefined)
-            .map((entry) => entry.metadata)
+          const step2Metadata = snapshotSuccessMetadata
+            .filter((entry): entry is ExtractionMetadata => entry !== undefined)
           const checkpointMetadata = buildDocumentMetadataPayload(step1Metadata, step2Metadata, {
             failures: metadataErrors,
             web,
@@ -544,10 +549,11 @@ export const processOcr = async (
         requestedTargets,
         successes,
         failuresByIndex,
-        existingRun.providerStates
+        existingRun.providerStates,
+        collectSuccessMetadata(successes)
       )
       const missingProviders = buildMissingProviders(providerStates, requestedTargets)
-      const completionStatus = resolveCompletionStatus(requestedTargets, successes)
+      const completionStatus = resolveCompletionStatus(providerStates)
       const metadataErrors = buildMetadataErrorEntries(providerStates).map((value) => ({
         service: value['service'] as string,
         model: value['model'] as string,
@@ -560,8 +566,8 @@ export const processOcr = async (
         ...(typeof value['rawResponseFile'] === 'string' ? { rawResponseFile: value['rawResponseFile'] as string } : {})
       }))
       const step2Metadata = successes
-        .filter((entry): entry is OcrProviderSuccess => entry !== undefined)
-        .map((entry) => entry.metadata)
+        .map((entry, index) => entry?.metadata ?? existingRun.successMetadata[index])
+        .filter((entry): entry is ExtractionMetadata => entry !== undefined)
       const primary = primaryTarget
         ? successes.find((entry) => entry?.target.service === primaryTarget.service && entry.target.model === primaryTarget.model)
         : undefined

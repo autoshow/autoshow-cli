@@ -35,7 +35,7 @@ const isTransientMistralTtsFailure = (output: string): boolean =>
 
 defineTTSServiceTest({
   models: ['gpt-4o-mini-tts'],
-  cliFlag: '--openai-tts',
+  cliFlag: '--openai',
   ttsService: 'openai',
   envVarKey: 'OPENAI_API_KEY',
   envVarDescription: 'OpenAI TTS',
@@ -68,7 +68,7 @@ budgetedTest('tts-openai-gpt-4o-mini-tts-clone', 'OpenAI custom voice clone gene
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--openai-tts',
+    '--openai',
     'gpt-4o-mini-tts',
     '--openai-tts-ref-audio',
     refAudio,
@@ -99,7 +99,7 @@ budgetedTest('tts-openai-gpt-4o-mini-tts-clone', 'OpenAI custom voice clone gene
 
 defineTTSServiceTest({
   models: ['gemini-3.1-flash-tts-preview'],
-  cliFlag: '--gemini-tts',
+  cliFlag: '--gemini',
   ttsService: 'gemini',
   envVarKey: 'GEMINI_API_KEY',
   envVarDescription: 'Gemini TTS',
@@ -132,7 +132,7 @@ budgetedTest('tts-gemini-gemini-3.1-flash-tts-preview', 'gemini multispeaker wit
       'src/cli/create-cli.ts',
       'tts',
       inputPath,
-      '--gemini-tts',
+      '--gemini',
       'gemini-3.1-flash-tts-preview',
       '--gemini-speaker-1-name',
       'Host',
@@ -167,7 +167,7 @@ budgetedTest('tts-gemini-gemini-3.1-flash-tts-preview', 'gemini multispeaker wit
 
 defineTTSServiceTest({
   models: ['speech-2.8-turbo', 'speech-2.8-hd'],
-  cliFlag: '--minimax-tts',
+  cliFlag: '--minimax',
   ttsService: 'minimax',
   envVarKey: 'MINIMAX_API_KEY',
   envVarDescription: 'MiniMax TTS',
@@ -177,7 +177,7 @@ defineTTSServiceTest({
 
 defineTTSServiceTest({
   models: ['eleven_v3'],
-  cliFlag: '--elevenlabs-tts',
+  cliFlag: '--elevenlabs',
   ttsService: 'elevenlabs',
   envVarKey: 'ELEVENLABS_API_KEY',
   envVarDescription: 'ElevenLabs TTS',
@@ -189,7 +189,7 @@ defineTTSServiceTest({
 
 defineTTSServiceTest({
   models: ['canopylabs/orpheus-v1-english'],
-  cliFlag: '--groq-tts',
+  cliFlag: '--groq',
   ttsService: 'groq',
   envVarKey: 'GROQ_API_KEY',
   envVarDescription: 'Groq TTS',
@@ -199,7 +199,7 @@ defineTTSServiceTest({
 
 defineTTSServiceTest({
   models: ['grok-tts'],
-  cliFlag: '--grok-tts',
+  cliFlag: '--grok',
   ttsService: 'grok',
   envVarKey: 'XAI_API_KEY',
   envVarDescription: 'xAI Grok TTS',
@@ -209,7 +209,7 @@ defineTTSServiceTest({
 
 defineTTSServiceTest({
   models: ['aura-2-thalia-en'],
-  cliFlag: '--deepgram-tts',
+  cliFlag: '--deepgram',
   ttsService: 'deepgram',
   envVarKey: 'DEEPGRAM_API_KEY',
   envVarDescription: 'Deepgram TTS',
@@ -221,7 +221,7 @@ defineTTSServiceTest({
 
 defineTTSServiceTest({
   models: ['simba-english', 'simba-multilingual'],
-  cliFlag: '--speechify-tts',
+  cliFlag: '--speechify',
   ttsService: 'speechify',
   envVarKey: 'SPEECHIFY_API_KEY',
   envVarDescription: 'Speechify TTS',
@@ -233,7 +233,7 @@ defineTTSServiceTest({
 
 defineTTSServiceTest({
   models: ['chirp3-hd'],
-  cliFlag: '--gcloud-tts',
+  cliFlag: '--gcloud',
   ttsService: 'gcloud',
   envVarKey: 'AUTOSHOW_GCLOUD_TTS_E2E',
   envVarDescription: 'Google Cloud TTS readiness with AUTOSHOW_GCLOUD_TTS_E2E=1',
@@ -245,7 +245,7 @@ test('rejects invalid mistral model', async () => {
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral-tts',
+    '--mistral',
     'invalid-model'
   ])
 
@@ -260,7 +260,7 @@ test('mistral execution requires a voice source before API key validation', asyn
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral-tts',
+    '--mistral',
     MISTRAL_TTS_MODEL
   ], {
     env: {
@@ -293,7 +293,7 @@ budgetedTest('tts-mistral-voxtral-mini-tts-2603-voice', 'mistral saved voice gen
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral-tts',
+    '--mistral',
     MISTRAL_TTS_MODEL,
     '--mistral-tts-voice',
     voice
@@ -328,7 +328,7 @@ budgetedTest('tts-mistral-voxtral-mini-tts-2603-ref-audio', 'mistral reference a
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral-tts',
+    '--mistral',
     MISTRAL_TTS_MODEL,
     '--mistral-tts-ref-audio',
     MISTRAL_REF_AUDIO_PATH
@@ -372,7 +372,7 @@ budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates 
       'src/cli/create-cli.ts',
       'tts',
       inputPath,
-      '--mistral-tts',
+      '--mistral',
       MISTRAL_TTS_MODEL,
       '--tts-dialogue-format',
       'labeled',
@@ -424,7 +424,7 @@ budgetedTest('tts-deapi-qwen3-voice-clone', 'deAPI Qwen3 voice clone generates s
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--deapi-tts',
+    '--deapi',
     DEAPI_TTS_CLONE_MODEL,
     '--deapi-tts-ref-audio',
     DEAPI_REF_AUDIO_PATH
@@ -459,7 +459,7 @@ budgetedTest('tts-deepgram-aura-2-thalia-en', 'deepgram with --deepgram-voice au
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--deepgram-tts',
+    '--deepgram',
     'aura-2-thalia-en',
     '--deepgram-voice',
     'aura-2-andromeda-en'
@@ -494,7 +494,7 @@ budgetedTest('tts-groq-canopylabs/orpheus-v1-english', 'orpheus english with --g
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--groq-tts',
+    '--groq',
     'canopylabs/orpheus-v1-english',
     '--groq-voice',
     'hannah'

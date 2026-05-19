@@ -108,7 +108,7 @@ const stopServer = async (server: ReturnType<typeof createServer>): Promise<void
 
 defineSTTServiceTest({
   models: ['universal-3-pro'],
-  cliFlag: '--assemblyai-stt',
+  cliFlag: '--assemblyai',
   sttService: 'assemblyai',
   envVarKey: 'ASSEMBLYAI_API_KEY',
   envVarDescription: 'AssemblyAI transcription',
@@ -116,7 +116,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['nova-3'],
-  cliFlag: '--deepgram-stt',
+  cliFlag: '--deepgram',
   sttService: 'deepgram',
   envVarKey: 'DEEPGRAM_API_KEY',
   envVarDescription: 'Deepgram transcription',
@@ -124,7 +124,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['openai/whisper-large-v3-turbo', 'openai/whisper-large-v3'],
-  cliFlag: '--deepinfra-stt',
+  cliFlag: '--deepinfra',
   sttService: 'deepinfra',
   envVarKey: 'DEEPINFRA_API_KEY',
   envVarDescription: 'DeepInfra transcription',
@@ -132,7 +132,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['openai/whisper-large-v3'],
-  cliFlag: '--together-stt',
+  cliFlag: '--together',
   sttService: 'together',
   envVarKey: 'TOGETHER_API_KEY',
   envVarDescription: 'Together transcription',
@@ -140,7 +140,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['WhisperLargeV3'],
-  cliFlag: '--deapi-stt',
+  cliFlag: '--deapi',
   sttService: 'deapi',
   envVarKey: 'DEAPI_API_KEY',
   envVarDescription: 'deAPI transcription',
@@ -148,7 +148,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['scribe_v2'],
-  cliFlag: '--elevenlabs-stt',
+  cliFlag: '--elevenlabs',
   sttService: 'elevenlabs',
   envVarKey: 'ELEVENLABS_API_KEY',
   envVarDescription: 'ElevenLabs transcription',
@@ -156,7 +156,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['default'],
-  cliFlag: '--gladia-stt',
+  cliFlag: '--gladia',
   sttService: 'gladia',
   envVarKey: 'GLADIA_API_KEY',
   envVarDescription: 'Gladia transcription',
@@ -164,7 +164,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['whisper-large-v3', 'whisper-large-v3-turbo'],
-  cliFlag: '--groq-stt',
+  cliFlag: '--groq',
   sttService: 'groq',
   envVarKey: 'GROQ_API_KEY',
   envVarDescription: 'Groq whisper transcription',
@@ -172,7 +172,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['speech-to-text'],
-  cliFlag: '--grok-stt',
+  cliFlag: '--grok',
   sttService: 'grok',
   envVarKey: 'XAI_API_KEY',
   envVarDescription: 'xAI Grok transcription',
@@ -180,7 +180,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['voxtral-mini-2602'],
-  cliFlag: '--mistral-stt',
+  cliFlag: '--mistral',
   sttService: 'mistral',
   envVarKey: 'MISTRAL_API_KEY',
   envVarDescription: 'Mistral transcription',
@@ -188,7 +188,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['machine', 'low_cost'],
-  cliFlag: '--rev-stt',
+  cliFlag: '--rev',
   sttService: 'rev',
   envVarKey: 'REVAI_ACCESS_TOKEN',
   envVarDescription: 'Rev transcription',
@@ -196,7 +196,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['stt-async-v4'],
-  cliFlag: '--soniox-stt',
+  cliFlag: '--soniox',
   sttService: 'soniox',
   envVarKey: 'SONIOX_API_KEY',
   envVarDescription: 'Soniox transcription',
@@ -204,7 +204,7 @@ defineSTTServiceTest({
 
 defineSTTServiceTest({
   models: ['standard', 'enhanced'],
-  cliFlag: '--speechmatics-stt',
+  cliFlag: '--speechmatics',
   sttService: 'speechmatics',
   envVarKey: 'SPEECHMATICS_API_KEY',
   envVarDescription: 'Speechmatics transcription',
@@ -224,7 +224,7 @@ test('deapi run manifest records exact estimated and actual STT cost fields', as
       'src/cli/create-cli.ts',
       'extract',
       STABLE_LOCAL_AUDIO_PATH,
-      '--deapi-stt',
+      '--deapi',
       'WhisperLargeV3',
       '--config-path',
       configPath
@@ -296,7 +296,7 @@ budgetedTest('transcribe-elevenlabs-scribe_v2', 'elevenlabs scribe_v2 transcribe
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--elevenlabs-stt',
+    '--elevenlabs',
     'scribe_v2',
     '--speaker-count',
     '3'

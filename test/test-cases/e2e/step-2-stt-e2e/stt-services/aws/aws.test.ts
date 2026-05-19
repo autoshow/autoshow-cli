@@ -29,7 +29,7 @@ test('rejects invalid aws model', async () => {
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--aws-stt',
+    '--aws',
     'invalid-model'
   ])
 
@@ -49,7 +49,7 @@ budgetedTest('transcribe-aws-standard', 'aws standard transcribes local audio wh
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--aws-stt',
+    '--aws',
     'standard',
     '--speaker-count',
     '2'

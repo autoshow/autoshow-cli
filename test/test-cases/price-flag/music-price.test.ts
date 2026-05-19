@@ -6,7 +6,7 @@ defineMusicServicePriceTests({
   models: [
     { model: 'music_v1', prompt: 'upbeat electronic instrumental with warm synth pads', extraArgs: ['--music-duration', '12', '--music-instrumental'] },
   ],
-  cliFlag: '--elevenlabs-music',
+  cliFlag: '--elevenlabs',
   musicService: 'elevenlabs',
 })
 
@@ -14,7 +14,7 @@ defineMusicServicePriceTests({
   models: [
     { model: 'music-2.5', prompt: 'uplifting indie rock with bright guitars', extraArgs: ['--music-lyrics-file', 'input/examples/tts/0-tts-short.txt'] },
   ],
-  cliFlag: '--minimax-music',
+  cliFlag: '--minimax',
   musicService: 'minimax',
 })
 
@@ -23,13 +23,13 @@ defineMusicServicePriceTests({
     { model: 'lyria-3-clip-preview', prompt: 'bright synthwave instrumental with pulsing bass' },
     { model: 'lyria-3-pro-preview', prompt: 'ambient orchestral cue with soft piano' },
   ],
-  cliFlag: '--gemini-music',
+  cliFlag: '--gemini',
   musicService: 'gemini',
 })
 
 test('--price with both providers shows two cost rows and per-provider filenames', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--elevenlabs-music', 'music_v1', '--minimax-music', 'music-2.5', '--price'],
+    ['src/cli/create-cli.ts', 'music', 'an ambient piano song', '--elevenlabs', 'music_v1', '--minimax', 'music-2.5', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)

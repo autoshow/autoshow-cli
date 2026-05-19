@@ -9,7 +9,7 @@ defineImageServicePriceTests({
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
     { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1024', '--image-quality', 'low'] },
   ],
-  cliFlag: '--openai-image',
+  cliFlag: '--openai',
   imageService: 'openai',
 })
 
@@ -19,7 +19,7 @@ defineImageServicePriceTests({
     { model: 'imagen-4.0-fast-generate-001', prompt: 'a simple yellow star on white background' },
     { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--image-count', '1', '--image-aspect-ratio', '1:1'] },
   ],
-  cliFlag: '--gemini-image',
+  cliFlag: '--gemini',
   imageService: 'gemini',
 })
 
@@ -27,13 +27,13 @@ defineImageServicePriceTests({
   models: [
     { model: 'image-01', prompt: 'a simple red circle on white background' },
   ],
-  cliFlag: '--minimax-image',
+  cliFlag: '--minimax',
   imageService: 'minimax',
 })
 
 defineImageServicePriceTests({
   imageService: 'glm',
-  cliFlag: '--glm-image',
+  cliFlag: '--glm',
   models: [
     {
       model: 'glm-image',
@@ -50,7 +50,7 @@ defineImageServicePriceTests({
 
 defineImageServicePriceTests({
   imageService: 'grok',
-  cliFlag: '--grok-image',
+  cliFlag: '--grok',
   models: [
     {
       model: 'grok-imagine-image',
@@ -62,7 +62,7 @@ defineImageServicePriceTests({
 
 defineImageServicePriceTests({
   imageService: 'runway',
-  cliFlag: '--runway-image',
+  cliFlag: '--runway',
   models: [
     {
       model: 'gen4_image',
@@ -74,7 +74,7 @@ defineImageServicePriceTests({
 
 defineImageServicePriceTests({
   imageService: 'bfl',
-  cliFlag: '--bfl-image',
+  cliFlag: '--bfl',
   models: [
     {
       model: 'flux-2-pro-preview',
@@ -86,7 +86,7 @@ defineImageServicePriceTests({
 
 defineImageServicePriceTests({
   imageService: 'deapi',
-  cliFlag: '--deapi-image',
+  cliFlag: '--deapi',
   models: [
     {
       model: 'Flux1schnell',
@@ -108,7 +108,7 @@ defineImageServicePriceTests({
 
 test('--price allows multiple image providers and reports each image step', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai-image', 'gpt-image-1.5', '--minimax-image', 'image-01', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai', 'gpt-image-1.5', '--minimax', 'image-01', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
@@ -121,7 +121,7 @@ test('--price allows multiple image providers and reports each image step', asyn
 
 test('--price allows Gemini with another image provider', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-generate-001', '--openai-image', 'gpt-image-1.5', '--image-count', '2', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini', 'imagen-4.0-generate-001', '--openai', 'gpt-image-1.5', '--image-count', '2', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)

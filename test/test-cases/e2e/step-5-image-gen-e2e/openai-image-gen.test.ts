@@ -17,7 +17,7 @@ defineImageServiceTest({
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
     { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1536', '--image-quality', 'low'] },
   ],
-  cliFlag: '--openai-image',
+  cliFlag: '--openai',
   imageService: 'openai',
   envVarKey: 'OPENAI_API_KEY',
 })
@@ -44,7 +44,7 @@ describe('write with image gen', () => {
         'write',
         STABLE_LOCAL_AUDIO_PATH,
         '--llama', 'ggml-org/gemma-3-270m-it-GGUF',
-        '--openai-image', 'gpt-image-2',
+        '--openai', 'gpt-image-2',
         '--image-size', '1024x1536',
         '--image-quality', 'low',
       ],

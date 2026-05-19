@@ -20,7 +20,7 @@ afterAll(async () => {
   await cleanupTestOutput('1-document')
 })
 
-budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle-ocr', async () => {
+budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle', async () => {
   if (!await fileExists(paddleOcrPython)) {
     return
   }
@@ -28,7 +28,7 @@ budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle-ocr', asyn
   await ensurePageImageFixture(imageInput)
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', imageInput, '--paddle-ocr'])
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', imageInput, '--paddle'])
   expect(result.exitCode).toBe(0)
 
   const outputDir = await findLatestDirectory('1-document')

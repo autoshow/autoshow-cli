@@ -80,7 +80,7 @@ for (const modelCase of [
 
     const testName = `whisper ${modelCase.model} model transcribes local audio`
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper-stt', modelCase.model],
+      ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', modelCase.model],
       { testName }
     )
 
@@ -120,7 +120,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
 
   const testName = 'split mode processes audio in segments'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper-stt', 'tiny'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper', 'tiny'],
     { testName }
   )
 

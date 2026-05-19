@@ -146,11 +146,11 @@
         ]
       },
       "thirdParty": {
-        "count": 12,
+        "count": 13,
         "counts": {
           "tier1": 4,
           "tier2": 4,
-          "tier3": 4
+          "tier3": 5
         },
         "tiers": [
           {
@@ -383,9 +383,9 @@
             "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
             "rankRange": {
               "start": 9,
-              "end": 12
+              "end": 13
             },
-            "count": 4,
+            "count": 5,
             "providers": [
               {
                 "provider": "gemini",
@@ -463,12 +463,37 @@
                 }
               },
               {
-                "provider": "deepinfra",
-                "providerKey": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
+                "provider": "unstructured",
+                "providerKey": "unstructured/hi_res_and_enrichment",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 12,
                 "groupTier": 3,
                 "overallRank": 15,
+                "overallScore": 44.91401899988351,
+                "overallComponents": {
+                  "accuracy": {
+                    "score": 6.442769019876627,
+                    "source": "wer"
+                  },
+                  "processingSpeed": {
+                    "score": 66.77053795978077,
+                    "source": "processing-time",
+                    "processingTimeMs": 71904
+                  },
+                  "costEfficiency": {
+                    "score": 100,
+                    "source": "reported-cost",
+                    "costCents": 0
+                  }
+                }
+              },
+              {
+                "provider": "deepinfra",
+                "providerKey": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 13,
+                "groupTier": 3,
+                "overallRank": 16,
                 "overallScore": 28.825884316651816,
                 "overallComponents": {
                   "accuracy": {
@@ -494,7 +519,7 @@
     }
   },
   "overall": {
-    "count": 15,
+    "count": 16,
     "providers": [
       {
         "providerKey": "gemini/gemini-3.1-flash-lite-preview",
@@ -1141,6 +1166,52 @@
         "groupTier": 3
       },
       {
+        "providerKey": "unstructured/hi_res_and_enrichment",
+        "provider": "unstructured",
+        "model": "hi_res_and_enrichment",
+        "group": "cloud",
+        "score": 6.442769019876627,
+        "wer": 0.9355723098012337,
+        "cer": 0.7179075369966732,
+        "werBreakdown": {
+          "substitutions": 728,
+          "deletions": 637,
+          "insertions": 0,
+          "referenceCount": 1459
+        },
+        "cerBreakdown": {
+          "substitutions": 1566,
+          "deletions": 4688,
+          "insertions": 4,
+          "referenceCount": 8717
+        },
+        "tokenEstimate": 911,
+        "processingTimeMs": 71904,
+        "costCents": 0,
+        "overallScore": 44.91401899988351,
+        "overallComponents": {
+          "accuracy": {
+            "score": 6.442769019876627,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 66.77053795978077,
+            "source": "processing-time",
+            "processingTimeMs": 71904
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "reported-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 15,
+        "rank": 13,
+        "tierGroup": "thirdParty",
+        "groupOverallRank": 12,
+        "groupTier": 3
+      },
+      {
         "providerKey": "deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct",
         "provider": "deepinfra",
         "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
@@ -1180,10 +1251,10 @@
             "costCents": 0.49047
           }
         },
-        "overallRank": 15,
+        "overallRank": 16,
         "rank": 12,
         "tierGroup": "thirdParty",
-        "groupOverallRank": 12,
+        "groupOverallRank": 13,
         "groupTier": 3
       }
     ]
@@ -1781,10 +1852,10 @@
           "costCents": 0.49047
         }
       },
-      "overallRank": 15,
+      "overallRank": 16,
       "rank": 13,
       "tierGroup": "thirdParty",
-      "groupOverallRank": 12,
+      "groupOverallRank": 13,
       "groupTier": 3
     },
     {
@@ -1834,6 +1905,52 @@
       "groupTier": 2
     },
     {
+      "providerKey": "unstructured/hi_res_and_enrichment",
+      "provider": "unstructured",
+      "model": "hi_res_and_enrichment",
+      "group": "cloud",
+      "score": 6.442769019876627,
+      "wer": 0.9355723098012337,
+      "cer": 0.7179075369966732,
+      "werBreakdown": {
+        "substitutions": 728,
+        "deletions": 637,
+        "insertions": 0,
+        "referenceCount": 1459
+      },
+      "cerBreakdown": {
+        "substitutions": 1566,
+        "deletions": 4688,
+        "insertions": 4,
+        "referenceCount": 8717
+      },
+      "tokenEstimate": 911,
+      "processingTimeMs": 71904,
+      "costCents": 0,
+      "overallScore": 44.91401899988351,
+      "overallComponents": {
+        "accuracy": {
+          "score": 6.442769019876627,
+          "source": "wer"
+        },
+        "processingSpeed": {
+          "score": 66.77053795978077,
+          "source": "processing-time",
+          "processingTimeMs": 71904
+        },
+        "costEfficiency": {
+          "score": 100,
+          "source": "reported-cost",
+          "costCents": 0
+        }
+      },
+      "overallRank": 15,
+      "rank": 15,
+      "tierGroup": "thirdParty",
+      "groupOverallRank": 12,
+      "groupTier": 3
+    },
+    {
       "providerKey": "paddle-ocr/paddle-ocr",
       "provider": "paddle-ocr",
       "model": "paddle-ocr",
@@ -1874,7 +1991,7 @@
         }
       },
       "overallRank": 14,
-      "rank": 15,
+      "rank": 16,
       "tierGroup": "local",
       "groupOverallRank": 3,
       "groupTier": 3
@@ -2024,7 +2141,7 @@
     ]
   },
   "cloud": {
-    "count": 12,
+    "count": 13,
     "providers": [
       {
         "providerKey": "gemini/gemini-3.1-pro-preview",
@@ -2572,8 +2689,54 @@
             "costCents": 0.49047
           }
         },
-        "overallRank": 15,
+        "overallRank": 16,
         "rank": 12,
+        "tierGroup": "thirdParty",
+        "groupOverallRank": 13,
+        "groupTier": 3
+      },
+      {
+        "providerKey": "unstructured/hi_res_and_enrichment",
+        "provider": "unstructured",
+        "model": "hi_res_and_enrichment",
+        "group": "cloud",
+        "score": 6.442769019876627,
+        "wer": 0.9355723098012337,
+        "cer": 0.7179075369966732,
+        "werBreakdown": {
+          "substitutions": 728,
+          "deletions": 637,
+          "insertions": 0,
+          "referenceCount": 1459
+        },
+        "cerBreakdown": {
+          "substitutions": 1566,
+          "deletions": 4688,
+          "insertions": 4,
+          "referenceCount": 8717
+        },
+        "tokenEstimate": 911,
+        "processingTimeMs": 71904,
+        "costCents": 0,
+        "overallScore": 44.91401899988351,
+        "overallComponents": {
+          "accuracy": {
+            "score": 6.442769019876627,
+            "source": "wer"
+          },
+          "processingSpeed": {
+            "score": 66.77053795978077,
+            "source": "processing-time",
+            "processingTimeMs": 71904
+          },
+          "costEfficiency": {
+            "score": 100,
+            "source": "reported-cost",
+            "costCents": 0
+          }
+        },
+        "overallRank": 15,
+        "rank": 13,
         "tierGroup": "thirdParty",
         "groupOverallRank": 12,
         "groupTier": 3
@@ -2585,7 +2748,7 @@
     "Worst overall provider: `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` scored 28.83/100 using balanced overall weighting.",
     "Best local model: `tesseract/tesseract` scored 14.60/100.",
     "Best cloud service: `gemini/gemini-3.1-pro-preview` scored 99.11/100.",
-    "The cheapest cloud provider was `glm/glm-ocr` at 0.0286¢ ($0.0003).",
+    "The cheapest cloud provider was `unstructured/hi_res_and_enrichment` at 0.0000¢ ($0.0000).",
     "Fastest local model: `tesseract/tesseract` at 7.92s.",
     "Fastest cloud service: `aws-textract/detect-text` at 5.58s."
   ],
@@ -2593,8 +2756,8 @@
   "kind": "ocr-provider-comparison",
   "category": "ocr",
   "runName": "2026-05-18_07-37-14-374_document",
-  "generatedAt": "2026-05-18T14:06:14.171Z",
-  "providerCount": 15,
+  "generatedAt": "2026-05-19T04:53:58.149Z",
+  "providerCount": 16,
   "providerGroups": {
     "local": {
       "count": 3,
@@ -2686,7 +2849,7 @@
       ]
     },
     "service": {
-      "count": 12,
+      "count": 13,
       "providers": [
         {
           "providerKey": "aws-textract/detect-text",
@@ -2766,7 +2929,7 @@
           "supportsDiarization": null,
           "diarizationSupport": null,
           "tierGroup": "thirdParty",
-          "groupOverallRank": 12,
+          "groupOverallRank": 13,
           "groupTier": 3,
           "qualityWarnings": [],
           "segmentStats": null,
@@ -3023,6 +3186,34 @@
           "qualityWarnings": [],
           "segmentStats": null,
           "duplicateGroupId": null
+        },
+        {
+          "providerKey": "unstructured/hi_res_and_enrichment",
+          "provider": "unstructured",
+          "model": "hi_res_and_enrichment",
+          "group": "service",
+          "processingTimeMs": 71904,
+          "costCents": 0,
+          "qualityMetric": "WER",
+          "qualityValue": 0.9355723098012337,
+          "qualityLabel": "93.56% WER",
+          "metrics": {
+            "wer": 0.9355723098012337,
+            "cer": 0.7179075369966732,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 12,
+          "groupTier": 3,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
         }
       ]
     }
@@ -3165,6 +3356,16 @@
       "cheapest": [
         {
           "rank": 1,
+          "providerKey": "unstructured/hi_res_and_enrichment",
+          "provider": "unstructured",
+          "model": "hi_res_and_enrichment",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0,
+          "label": "$0.00"
+        },
+        {
+          "rank": 2,
           "providerKey": "glm/glm-ocr",
           "provider": "glm",
           "model": "glm-ocr",
@@ -3174,20 +3375,10 @@
           "label": "$0.0003"
         },
         {
-          "rank": 2,
+          "rank": 3,
           "providerKey": "aws-textract/detect-text",
           "provider": "aws-textract",
           "model": "detect-text",
-          "group": "service",
-          "metric": "costCents",
-          "value": 0.15,
-          "label": "$0.0015"
-        },
-        {
-          "rank": 3,
-          "providerKey": "gcloud-docai/ocr",
-          "provider": "gcloud-docai",
-          "model": "ocr",
           "group": "service",
           "metric": "costCents",
           "value": 0.15,

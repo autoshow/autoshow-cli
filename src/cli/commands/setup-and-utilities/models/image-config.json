@@ -40,7 +40,7 @@
         "nativeGeminiImage": false,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 3698
+          "msPerImage": 4347
         }
       }
     }
@@ -127,7 +127,7 @@
         "costPerImageCents": 2,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 7896
+          "msPerImage": 5215
         }
       }
     }
@@ -186,7 +186,7 @@
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 19548
+          "msPerImage": 16744
         }
       },
       "flux-2-pro": {
@@ -228,7 +228,7 @@
         "costPerImageCents": 0.136,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10443
+          "msPerImage": 13127
         }
       },
       "ZImageTurbo_INT8": {
@@ -237,7 +237,7 @@
         "costPerImageCents": 0.405,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 19717
+          "msPerImage": 25646
         }
       },
       "Flux_2_Klein_4B_BF16": {
@@ -246,7 +246,7 @@
         "costPerImageCents": 0.186,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 12482
+          "msPerImage": 10432
         }
       }
     }

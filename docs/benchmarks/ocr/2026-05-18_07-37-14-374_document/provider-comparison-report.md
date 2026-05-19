@@ -18,8 +18,9 @@
   - `tesseract/tesseract`
   - `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct`
   - `ocrmypdf/ocrmypdf`
+  - `unstructured/hi_res_and_enrichment`
   - `paddle-ocr/paddle-ocr`
-- Total providers: 15 (3 local, 12 cloud)
+- Total providers: 16 (3 local, 13 cloud)
 - Ranking metric: word error rate (WER) against consensus extraction
 - Score formula: `max(0, 100 * (1 - WER))`
 - Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
@@ -53,7 +54,8 @@
 | 12 | `tesseract/tesseract` | local | 1 | 1 | 57.01 | 14.60 | 98.83 | 100.00 |
 | 13 | `ocrmypdf/ocrmypdf` | local | 2 | 2 | 55.79 | 13.23 | 96.69 | 100.00 |
 | 14 | `paddle-ocr/paddle-ocr` | local | 3 | 3 | 47.39 | 1.58 | 86.41 | 100.00 |
-| 15 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | thirdParty | 12 | 3 | 28.83 | 14.46 | 0.00 | 86.38 |
+| 15 | `unstructured/hi_res_and_enrichment` | thirdParty | 12 | 3 | 44.91 | 6.44 | 66.77 | 100.00 |
+| 16 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | thirdParty | 13 | 3 | 28.83 | 14.46 | 0.00 | 86.38 |
 
 ## Tier Breakdown
 
@@ -86,7 +88,7 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | 3 | 14 | `paddle-ocr/paddle-ocr` | 47.39 | 1.58 | 86.41 | 100.00 |
 
 
-### Third-Party Group (12)
+### Third-Party Group (13)
 
 #### Tier 1 (group ranks 1-4)
 
@@ -110,7 +112,7 @@ Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost
 | 7 | 7 | `kimi/kimi-k2.6` | 83.26 | 98.49 | 70.17 | 65.86 |
 | 8 | 8 | `aws-textract/detect-text` | 79.73 | 61.55 | 100.00 | 95.83 |
 
-#### Tier 3 (group ranks 9-12)
+#### Tier 3 (group ranks 9-13)
 
 Lowest balanced options, generally weaker across the combined benchmark categories.
 
@@ -119,7 +121,8 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | 9 | 9 | `gemini/gemini-3.1-pro-preview` | 79.48 | 99.11 | 94.87 | 24.83 |
 | 10 | 10 | `deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct` | 78.43 | 91.84 | 43.40 | 86.63 |
 | 11 | 11 | `openai/gpt-5.4` | 71.10 | 97.88 | 88.64 | 0.00 |
-| 12 | 15 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | 28.83 | 14.46 | 0.00 | 86.38 |
+| 12 | 15 | `unstructured/hi_res_and_enrichment` | 44.91 | 6.44 | 66.77 | 100.00 |
+| 13 | 16 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | 28.83 | 14.46 | 0.00 | 86.38 |
 
 
 
@@ -141,7 +144,8 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | 12 | `tesseract/tesseract` | 14.60 | 85.40% | 45.84% | 1314 | 7.92s | 0.0000¢ ($0.0000) |
 | 13 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | 14.46 | 85.54% | 106.93% | 2594 | 205.18s | 0.4905¢ ($0.0049) |
 | 14 | `ocrmypdf/ocrmypdf` | 13.23 | 86.77% | 49.63% | 1206 | 12.19s | 0.0000¢ ($0.0000) |
-| 15 | `paddle-ocr/paddle-ocr` | 1.58 | 98.42% | 89.94% | 159 | 32.70s | 0.0000¢ ($0.0000) |
+| 15 | `unstructured/hi_res_and_enrichment` | 6.44 | 93.56% | 71.79% | 911 | 71.90s | 0.0000¢ ($0.0000) |
+| 16 | `paddle-ocr/paddle-ocr` | 1.58 | 98.42% | 89.94% | 159 | 32.70s | 0.0000¢ ($0.0000) |
 
 ## Error Breakdown (WER)
 
@@ -161,6 +165,7 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 | `tesseract/tesseract` | 1035 | 191 | 20 | 1459 |
 | `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` | 101 | 11 | 1136 | 1459 |
 | `ocrmypdf/ocrmypdf` | 959 | 293 | 14 | 1459 |
+| `unstructured/hi_res_and_enrichment` | 728 | 637 | 0 | 1459 |
 | `paddle-ocr/paddle-ocr` | 138 | 1298 | 0 | 1459 |
 
 ## Notes
@@ -169,6 +174,6 @@ Lowest balanced options, generally weaker across the combined benchmark categori
 - Worst overall provider: `deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct` scored 28.83/100 using balanced overall weighting.
 - Best local model: `tesseract/tesseract` scored 14.60/100.
 - Best cloud service: `gemini/gemini-3.1-pro-preview` scored 99.11/100.
-- The cheapest cloud provider was `glm/glm-ocr` at 0.0286¢ ($0.0003).
+- The cheapest cloud provider was `unstructured/hi_res_and_enrichment` at 0.0000¢ ($0.0000).
 - Fastest local model: `tesseract/tesseract` at 7.92s.
 - Fastest cloud service: `aws-textract/detect-text` at 5.58s.

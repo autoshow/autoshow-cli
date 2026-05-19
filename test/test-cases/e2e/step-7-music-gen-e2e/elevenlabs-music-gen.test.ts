@@ -14,7 +14,7 @@ defineMusicServiceTest({
   models: [
     { model: 'music_v1', prompt: 'upbeat electronic instrumental with warm synth pads', extraArgs: ['--music-duration', '3', '--music-instrumental'] },
   ],
-  cliFlag: '--elevenlabs-music',
+  cliFlag: '--elevenlabs',
   musicService: 'elevenlabs',
   envVarKey: 'ELEVENLABS_API_KEY',
 })

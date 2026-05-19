@@ -153,6 +153,26 @@ test('extract accepts OpenAI Mini OCR in price mode', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('gpt-5.4-mini')
 })
 
+test('extract accepts route-aware GLM OCR model in price mode', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--glm', 'glm-ocr', '--price'],
+    { env: { NO_COLOR: '1' } }
+  )
+
+  expect(result.exitCode).toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('glm-ocr')
+})
+
+test('extract accepts route-aware GLM STT model in price mode', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--glm', 'glm-asr-2512', '--price'],
+    { env: { NO_COLOR: '1' } }
+  )
+
+  expect(result.exitCode).toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('glm-asr-2512')
+})
+
 test('extract rejects removed Anthropic Opus OCR model', async () => {
   await expectUsageExit(
     ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-opus-4-7', '--price'],

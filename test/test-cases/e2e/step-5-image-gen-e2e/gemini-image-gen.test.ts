@@ -8,14 +8,14 @@ defineImageServiceTest({
     { model: 'imagen-4.0-fast-generate-001', prompt: 'a simple yellow star on white background' },
     { model: 'imagen-4.0-generate-001', prompt: 'a simple blue triangle on white background', extraArgs: ['--image-count', '1', '--image-aspect-ratio', '1:1'] },
   ],
-  cliFlag: '--gemini-image',
+  cliFlag: '--gemini',
   imageService: 'gemini',
   envVarKey: 'GEMINI_API_KEY',
 })
 
 test('rejects --image-size for imagen-4.0-fast-generate-001', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini-image', 'imagen-4.0-fast-generate-001', '--image-size', '2K'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini', 'imagen-4.0-fast-generate-001', '--image-size', '2K'],
   )
   expect(result.exitCode).not.toBe(0)
 })

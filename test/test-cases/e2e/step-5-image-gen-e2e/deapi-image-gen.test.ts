@@ -2,7 +2,7 @@ import { defineImageServiceTest } from '../../../test-utils/define-image-service
 
 defineImageServiceTest({
   imageService: 'deapi',
-  cliFlag: '--deapi-image',
+  cliFlag: '--deapi',
   envVarKey: 'DEAPI_API_KEY',
   imageExtension: 'png',
   models: [

@@ -132,6 +132,26 @@ export const EXTRACT_PUBLIC_SELECTOR_FLAGS: Record<string, ExtractPublicSelector
 } as const
 
 const extractPublicSelectorNames = new Set(Object.keys(EXTRACT_PUBLIC_SELECTOR_FLAGS))
+const extractBooleanSelectorTargetFlags = new Set(['reverb-stt', 'tesseract-ocr', 'ocrmypdf', 'paddle-ocr'])
+
+const parseLongFlagArg = (arg: string): { name: string, inlineValue?: string } | undefined => {
+  if (!arg.startsWith('--') || arg === '--') {
+    return undefined
+  }
+
+  const raw = arg.slice(2)
+  const eqIndex = raw.indexOf('=')
+  return eqIndex === -1
+    ? { name: raw }
+    : { name: raw.slice(0, eqIndex), inlineValue: raw.slice(eqIndex + 1) }
+}
+
+const extractPublicSelectorAcceptsValue = (publicName: string): boolean => {
+  const target = EXTRACT_PUBLIC_SELECTOR_FLAGS[publicName as keyof typeof EXTRACT_PUBLIC_SELECTOR_FLAGS]
+  return [target?.stt, target?.ocr].some((flag) =>
+    typeof flag === 'string' && !extractBooleanSelectorTargetFlags.has(flag)
+  )
+}
 
 export const hasExtractPublicSelectorFlags = (
   flags: Record<string, unknown>
@@ -145,6 +165,36 @@ export const stripExtractPublicSelectorFlags = (
   for (const name of extractPublicSelectorNames) {
     delete stripped[name]
   }
+  return stripped
+}
+
+export const stripExtractPublicSelectorArgs = (argv: string[]): string[] => {
+  const stripped: string[] = []
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string
+    if (arg === '--') {
+      stripped.push(...argv.slice(i))
+      break
+    }
+
+    const parsed = parseLongFlagArg(arg)
+    if (!parsed || !extractPublicSelectorNames.has(parsed.name)) {
+      stripped.push(arg)
+      continue
+    }
+
+    if (
+      parsed.inlineValue === undefined
+      && extractPublicSelectorAcceptsValue(parsed.name)
+      && typeof argv[i + 1] === 'string'
+      && argv[i + 1] !== '--'
+      && !argv[i + 1]!.startsWith('--')
+    ) {
+      i++
+    }
+  }
+
   return stripped
 }
 
@@ -222,4 +272,57 @@ export const normalizeExtractPublicSelectorFlags = (
     flags: normalizedFlags,
     explicitFlags: normalizedExplicitFlags
   }
+}
+
+export const normalizeExtractPublicSelectorArgs = (
+  argv: string[],
+  routes: ExtractSelectorInputRoutes
+): string[] => {
+  const normalized: string[] = []
+
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string
+    if (arg === '--') {
+      normalized.push(...argv.slice(i))
+      break
+    }
+
+    const parsed = parseLongFlagArg(arg)
+    if (!parsed || !extractPublicSelectorNames.has(parsed.name)) {
+      normalized.push(arg)
+      continue
+    }
+
+    const acceptsValue = extractPublicSelectorAcceptsValue(parsed.name)
+    const hasSeparateValue = parsed.inlineValue === undefined
+      && acceptsValue
+      && typeof argv[i + 1] === 'string'
+      && argv[i + 1] !== '--'
+      && !argv[i + 1]!.startsWith('--')
+    const rawValue = parsed.inlineValue !== undefined
+      ? parsed.inlineValue
+      : hasSeparateValue
+        ? argv[i + 1]
+        : undefined
+    const value: string | boolean = typeof rawValue === 'string' && rawValue.length > 0 ? rawValue : true
+
+    if (hasSeparateValue) {
+      i++
+    }
+
+    for (const target of selectExtractTargets(parsed.name, value, routes)) {
+      if (typeof value === 'string' && !extractBooleanSelectorTargetFlags.has(target)) {
+        if (parsed.inlineValue !== undefined) {
+          normalized.push(`--${target}=${value}`)
+        } else {
+          normalized.push(`--${target}`, value)
+        }
+        continue
+      }
+
+      normalized.push(`--${target}`)
+    }
+  }
+
+  return normalized
 }

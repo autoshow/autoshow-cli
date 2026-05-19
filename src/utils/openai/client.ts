@@ -30,6 +30,7 @@ export type OpenAIResponsesResponse = {
 
 export type OpenAIChatCompletionResponse = {
   choices?: Array<{
+    finish_reason?: string | null | undefined
     message?: {
       content?: unknown
       [key: string]: unknown

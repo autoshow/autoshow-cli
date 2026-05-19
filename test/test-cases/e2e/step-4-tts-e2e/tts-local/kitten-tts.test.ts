@@ -53,7 +53,7 @@ describe('kitten-tts', () => {
             'src/cli/create-cli.ts',
             'tts',
             STABLE_TTS_MD_PATH,
-            '--kitten-tts',
+            '--kitten',
             kittenModelCase.model,
             '--kitten-voice',
             kittenModelCase.speaker
@@ -97,11 +97,11 @@ describe('kitten-tts', () => {
         'src/cli/create-cli.ts',
         'tts',
         STABLE_TTS_MD_PATH,
-        '--kitten-tts',
+        '--kitten',
         'kitten-tts-mini',
         '--kitten-voice',
         'Luna',
-        '--openai-tts',
+        '--openai',
         'gpt-4o-mini-tts'
       ])
 
@@ -143,9 +143,9 @@ describe('kitten-tts', () => {
           'src/cli/create-cli.ts',
           'tts',
           STABLE_TTS_MD_PATH,
-          '--kitten-tts',
+          '--kitten',
           'kitten-tts-mini',
-          '--openai-tts',
+          '--openai',
           'gpt-4o-mini-tts'
         ],
         {
@@ -178,9 +178,9 @@ describe('kitten-tts', () => {
           'src/cli/create-cli.ts',
           'tts',
           STABLE_TTS_MD_PATH,
-          '--openai-tts',
+          '--openai',
           'gpt-4o-mini-tts',
-          '--gemini-tts',
+          '--gemini',
           'gemini-3.1-flash-tts-preview'
         ],
         {
@@ -199,7 +199,7 @@ describe('kitten-tts', () => {
   describe('validation', () => {
     test('rejects invalid kitten model', async () => {
       const result = await runCommand(
-        ['src/cli/create-cli.ts', 'tts', STABLE_TTS_MD_PATH, '--kitten-tts', 'invalid-model'],
+        ['src/cli/create-cli.ts', 'tts', STABLE_TTS_MD_PATH, '--kitten', 'invalid-model'],
       )
 
       expect(result.exitCode).not.toBe(0)
@@ -207,7 +207,7 @@ describe('kitten-tts', () => {
 
     test('rejects invalid kitten speaker', async () => {
       const result = await runCommand(
-        ['src/cli/create-cli.ts', 'tts', STABLE_TTS_MD_PATH, '--kitten-tts', 'kitten-tts-mini', '--kitten-voice', 'InvalidVoice'],
+        ['src/cli/create-cli.ts', 'tts', STABLE_TTS_MD_PATH, '--kitten', 'kitten-tts-mini', '--kitten-voice', 'InvalidVoice'],
       )
 
       expect(result.exitCode).not.toBe(0)

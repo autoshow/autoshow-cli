@@ -9,7 +9,7 @@
         "costPer1kCharsCents": 10,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 94592
+          "msPer1KChars": 139135
         }
       },
       "speech-2.8-turbo": {
@@ -18,7 +18,7 @@
         "costPer1kCharsCents": 6,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 118008
+          "msPer1KChars": 177012
         }
       }
     }

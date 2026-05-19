@@ -141,7 +141,7 @@ test('multi-provider OCR without --primary-ocr writes provider artifacts only', 
 
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--tesseract-ocr', '--ocrmypdf'], {
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--tesseract', '--ocrmypdf'], {
     testName: 'multi-provider OCR without primary'
   })
   expect(result.exitCode).toBe(0)
@@ -170,7 +170,7 @@ test('multi-provider OCR with --primary-ocr writes selected root artifact', asyn
 
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--tesseract-ocr', '--ocrmypdf', '--primary-ocr', 'tesseract'], {
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--tesseract', '--ocrmypdf', '--primary-ocr', 'tesseract'], {
     testName: 'multi-provider OCR with primary'
   })
   expect(result.exitCode).toBe(0)
@@ -188,14 +188,14 @@ test('multi-provider OCR with --primary-ocr writes selected root artifact', asyn
   expect(metadata.primaryProvider).toEqual({ service: 'tesseract', model: 'tesseract' })
 })
 
-test('extract PDF with --paddle-ocr', async () => {
+test('extract PDF with --paddle', async () => {
   if (!await fileExists(paddleOcrPython)) {
     return
   }
 
   await cleanupTestOutput('1-document')
 
-  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--paddle-ocr'], { testName: 'extract PDF with --paddle-ocr' })
+  const result = await runCommand(['src/cli/create-cli.ts', 'extract', pdfInput, '--paddle'], { testName: 'extract PDF with --paddle' })
   expect(result.exitCode).toBe(0)
 
   const outputDir = result.outputDir ?? await findLatestDirectory('1-document')
@@ -271,7 +271,7 @@ test('extract image with --ocrmypdf', async () => {
   expect(metadata.step2?.totalPages).toBe(1)
 })
 
-test('extract image with explicit --tesseract-ocr matches the default local OCR path', async () => {
+test('extract image with explicit --tesseract matches the default local OCR path', async () => {
   await ensurePageImageFixture(imageInput)
   await cleanupTestOutput('1-document')
 
@@ -288,8 +288,8 @@ test('extract image with explicit --tesseract-ocr matches the default local OCR 
 
   await cleanupTestOutput('1-document')
 
-  const explicitResult = await runCommand(['src/cli/create-cli.ts', 'extract', imageInput, '--tesseract-ocr'], {
-    testName: 'extract image with explicit --tesseract-ocr'
+  const explicitResult = await runCommand(['src/cli/create-cli.ts', 'extract', imageInput, '--tesseract'], {
+    testName: 'extract image with explicit --tesseract'
   })
   expect(explicitResult.exitCode).toBe(0)
 

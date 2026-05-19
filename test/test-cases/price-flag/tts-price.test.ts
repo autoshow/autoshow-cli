@@ -138,73 +138,73 @@ const defineTTSVoicePriceTests = ({
 
 defineTTSServicePriceTests({
   models: ['gpt-4o-mini-tts'],
-  cliFlag: '--openai-tts',
+  cliFlag: '--openai',
   ttsService: 'openai',
 })
 
 defineTTSServicePriceTests({
   models: ['gemini-3.1-flash-tts-preview'],
-  cliFlag: '--gemini-tts',
+  cliFlag: '--gemini',
   ttsService: 'gemini',
 })
 
 defineTTSServicePriceTests({
   models: ['speech-2.8-turbo', 'speech-2.8-hd'],
-  cliFlag: '--minimax-tts',
+  cliFlag: '--minimax',
   ttsService: 'minimax',
 })
 
 defineTTSServicePriceTests({
   models: ['eleven_v3'],
-  cliFlag: '--elevenlabs-tts',
+  cliFlag: '--elevenlabs',
   ttsService: 'elevenlabs',
 })
 
 defineTTSServicePriceTests({
   models: ['canopylabs/orpheus-v1-english', 'canopylabs/orpheus-arabic-saudi'],
-  cliFlag: '--groq-tts',
+  cliFlag: '--groq',
   ttsService: 'groq',
 })
 
 defineTTSServicePriceTests({
   models: ['grok-tts'],
-  cliFlag: '--grok-tts',
+  cliFlag: '--grok',
   ttsService: 'grok',
 })
 
 defineTTSServicePriceTests({
   models: SUPPORTED_DEEPGRAM_TTS_MODELS,
-  cliFlag: '--deepgram-tts',
+  cliFlag: '--deepgram',
   ttsService: 'deepgram',
 })
 
 defineTTSServicePriceTests({
   models: ['simba-english', 'simba-multilingual'],
-  cliFlag: '--speechify-tts',
+  cliFlag: '--speechify',
   ttsService: 'speechify',
 })
 
 defineTTSServicePriceTests({
   models: SUPPORTED_HUME_TTS_MODELS,
-  cliFlag: '--hume-tts',
+  cliFlag: '--hume',
   ttsService: 'hume',
 })
 
 defineTTSServicePriceTests({
   models: SUPPORTED_CARTESIA_TTS_MODELS,
-  cliFlag: '--cartesia-tts',
+  cliFlag: '--cartesia',
   ttsService: 'cartesia',
 })
 
 defineTTSServicePriceTests({
   models: ['studio', 'chirp3-hd'],
-  cliFlag: '--gcloud-tts',
+  cliFlag: '--gcloud',
   ttsService: 'gcloud',
 })
 
 defineTTSVoicePriceTests({
   provider: 'kitten',
-  modelFlag: '--kitten-tts',
+  modelFlag: '--kitten',
   model: 'kitten-tts-mini',
   voiceFlag: '--kitten-voice',
   voices: SUPPORTED_KITTEN_TTS_VOICES,
@@ -212,7 +212,7 @@ defineTTSVoicePriceTests({
 
 defineTTSVoicePriceTests({
   provider: 'groq',
-  modelFlag: '--groq-tts',
+  modelFlag: '--groq',
   model: 'canopylabs/orpheus-v1-english',
   voiceFlag: '--groq-voice',
   voices: SUPPORTED_GROQ_ENGLISH_TTS_VOICES,
@@ -220,7 +220,7 @@ defineTTSVoicePriceTests({
 
 defineTTSVoicePriceTests({
   provider: 'groq',
-  modelFlag: '--groq-tts',
+  modelFlag: '--groq',
   model: 'canopylabs/orpheus-arabic-saudi',
   voiceFlag: '--groq-voice',
   voices: SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES,
@@ -228,7 +228,7 @@ defineTTSVoicePriceTests({
 
 defineTTSVoicePriceTests({
   provider: 'grok',
-  modelFlag: '--grok-tts',
+  modelFlag: '--grok',
   model: 'grok-tts',
   voiceFlag: '--grok-tts-voice',
   voices: SUPPORTED_GROK_TTS_VOICES,
@@ -237,7 +237,7 @@ defineTTSVoicePriceTests({
 for (const model of SUPPORTED_DEEPGRAM_TTS_MODELS) {
   defineTTSVoicePriceTests({
     provider: 'deepgram',
-    modelFlag: '--deepgram-tts',
+    modelFlag: '--deepgram',
     model,
     voiceFlag: '--deepgram-voice',
     voices: [model],
@@ -247,7 +247,7 @@ for (const model of SUPPORTED_DEEPGRAM_TTS_MODELS) {
 for (const model of SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS) {
   defineTTSVoicePriceTests({
     provider: 'gcloud',
-    modelFlag: '--gcloud-tts',
+    modelFlag: '--gcloud',
     model,
     voiceFlag: '--gcloud-tts-voice',
     voices: [GCLOUD_DEFAULT_TTS_VOICES[model]],
@@ -259,7 +259,7 @@ test('gcloud instant custom voice --price works with an existing voice cloning k
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--gcloud-tts',
+    '--gcloud',
     'instant-custom-voice',
     '--gcloud-tts-voice-cloning-key',
     'test-key',
@@ -274,7 +274,7 @@ test('mistral --price works without a voice source', async () => {
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral-tts',
+    '--mistral',
     MISTRAL_TTS_MODEL,
     '--price'
   ])
@@ -288,7 +288,7 @@ test('mistral rejects voice and reference audio together before API request in p
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral-tts',
+    '--mistral',
     MISTRAL_TTS_MODEL,
     '--mistral-tts-voice',
     'voice_abc123',
@@ -306,7 +306,7 @@ test('openai custom voice --price includes setup estimate without an API key', a
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--openai-tts',
+    '--openai',
     'gpt-4o-mini-tts',
     '--openai-tts-ref-audio',
     OPENAI_REF_AUDIO_PATH,
@@ -329,7 +329,7 @@ test('openai custom voice rejects missing consent source before API request in p
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--openai-tts',
+    '--openai',
     'gpt-4o-mini-tts',
     '--openai-tts-ref-audio',
     OPENAI_REF_AUDIO_PATH,
@@ -345,7 +345,7 @@ test('rejects invalid deepgram voice override before API request in price mode',
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--deepgram-tts',
+    '--deepgram',
     'aura-2-thalia-en',
     '--deepgram-voice',
     'invalid-model',
@@ -361,7 +361,7 @@ test('rejects Arabic Saudi Groq voice with English model before API request in p
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--groq-tts',
+    '--groq',
     'canopylabs/orpheus-v1-english',
     '--groq-voice',
     'noura',
@@ -378,7 +378,7 @@ test('rejects English Groq voice with Arabic Saudi model before API request in p
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--groq-tts',
+    '--groq',
     'canopylabs/orpheus-arabic-saudi',
     '--groq-voice',
     'troy',
@@ -395,7 +395,7 @@ test('rejects invalid grok voice override before API request in price mode', asy
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--grok-tts',
+    '--grok',
     'grok-tts',
     '--grok-tts-voice',
     'invalid-voice',
@@ -411,9 +411,9 @@ test('multi-provider --price prints both TTS targets and renamed output files', 
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--kitten-tts',
+    '--kitten',
     'kitten-tts-mini',
-    '--openai-tts',
+    '--openai',
     'gpt-4o-mini-tts',
     '--price'
   ])

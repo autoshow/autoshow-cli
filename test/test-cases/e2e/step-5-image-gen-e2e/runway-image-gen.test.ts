@@ -2,7 +2,7 @@ import { defineImageServiceTest } from '../../../test-utils/define-image-service
 
 defineImageServiceTest({
   imageService: 'runway',
-  cliFlag: '--runway-image',
+  cliFlag: '--runway',
   envVarKey: 'RUNWAYML_API_SECRET',
   imageExtension: 'png',
   models: [

@@ -11,300 +11,41 @@
     },
     "step2": [
       {
-        "extractionMethod": "mutool+tesseract",
-        "totalPages": 10,
-        "ocrPages": 0,
-        "textPages": 10,
-        "processingTime": 72,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1641,
-        "inputFamily": "pdf"
-      },
-      {
-        "extractionMethod": "ocrmypdf",
+        "extractionMethod": "kimi-ocr",
         "totalPages": 10,
         "ocrPages": 10,
         "textPages": 0,
-        "processingTime": 10780,
+        "processingTime": 95270,
         "dpi": 300,
         "languages": "eng",
-        "tokenEstimate": 1682,
-        "inputFamily": "pdf"
-      },
-      {
-        "extractionMethod": "mutool+paddle-ocr",
-        "totalPages": 10,
-        "ocrPages": 0,
-        "textPages": 10,
-        "processingTime": 1,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1641,
-        "inputFamily": "pdf"
-      },
-      {
-        "extractionMethod": "mistral-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 2567,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1698,
-        "ocrModel": "mistral-ocr-2512",
-        "ocrService": "mistral",
-        "inputFamily": "pdf"
-      },
-      {
-        "extractionMethod": "glm-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 15540,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1586,
-        "ocrModel": "glm-ocr",
-        "ocrService": "glm",
-        "promptTokens": 34961,
-        "completionTokens": 3880,
+        "tokenEstimate": 1642,
+        "ocrModel": "kimi-k2.6",
+        "ocrService": "kimi",
+        "promptTokens": 42580,
+        "completionTokens": 3277,
         "inputFamily": "pdf",
         "ocrProviderUsage": [
           {
             "unit": "document",
             "pages": 10,
-            "provider": "glm",
-            "model": "glm-ocr",
-            "promptTokens": 34961,
-            "completionTokens": 3880
+            "provider": "kimi",
+            "model": "kimi-k2.6",
+            "promptTokens": 42580,
+            "completionTokens": 3277
           }
         ]
       },
       {
-        "extractionMethod": "openai-ocr",
+        "extractionMethod": "unstructured-ocr",
         "totalPages": 10,
         "ocrPages": 10,
         "textPages": 0,
-        "processingTime": 51927,
+        "processingTime": 41447,
         "dpi": 300,
         "languages": "eng",
-        "tokenEstimate": 1641,
-        "ocrModel": "gpt-5.4",
-        "ocrService": "openai",
-        "promptTokens": 3688,
-        "completionTokens": 3667,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "openai",
-            "model": "gpt-5.4",
-            "promptTokens": 3688,
-            "completionTokens": 3667
-          }
-        ]
-      },
-      {
-        "extractionMethod": "openai-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 30230,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1637,
-        "ocrModel": "gpt-5.4-mini",
-        "ocrService": "openai",
-        "promptTokens": 3688,
-        "completionTokens": 3815,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "openai",
-            "model": "gpt-5.4-mini",
-            "promptTokens": 3688,
-            "completionTokens": 3815
-          }
-        ]
-      },
-      {
-        "extractionMethod": "openai-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 38358,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1641,
-        "ocrModel": "gpt-5.4-nano",
-        "ocrService": "openai",
-        "promptTokens": 3688,
-        "completionTokens": 3825,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "openai",
-            "model": "gpt-5.4-nano",
-            "promptTokens": 3688,
-            "completionTokens": 3825
-          }
-        ]
-      },
-      {
-        "extractionMethod": "anthropic-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 40753,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1639,
-        "ocrModel": "claude-haiku-4-5",
-        "ocrService": "anthropic",
-        "promptTokens": 20108,
-        "completionTokens": 4551,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "anthropic",
-            "model": "claude-haiku-4-5",
-            "promptTokens": 20108,
-            "completionTokens": 4551
-          }
-        ]
-      },
-      {
-        "extractionMethod": "gemini-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 97037,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1641,
-        "ocrModel": "gemini-3.1-pro-preview",
-        "ocrService": "gemini",
-        "promptTokens": 5279,
-        "completionTokens": 4503,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "gemini",
-            "model": "gemini-3.1-pro-preview",
-            "promptTokens": 5279,
-            "completionTokens": 4503
-          }
-        ]
-      },
-      {
-        "extractionMethod": "gemini-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 13286,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1641,
-        "ocrModel": "gemini-3.1-flash-lite-preview",
-        "ocrService": "gemini",
-        "promptTokens": 5279,
-        "completionTokens": 4504,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "gemini",
-            "model": "gemini-3.1-flash-lite-preview",
-            "promptTokens": 5279,
-            "completionTokens": 4504
-          }
-        ]
-      },
-      {
-        "extractionMethod": "deepinfra-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 74890,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1606,
-        "ocrModel": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-        "ocrService": "deepinfra",
-        "promptTokens": 83070,
-        "completionTokens": 3614,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "promptTokens": 83070,
-            "completionTokens": 3614
-          }
-        ]
-      },
-      {
-        "extractionMethod": "deepinfra-ocr",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 225082,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1600,
-        "ocrModel": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-        "ocrService": "deepinfra",
-        "promptTokens": 83070,
-        "completionTokens": 3557,
-        "inputFamily": "pdf",
-        "ocrProviderUsage": [
-          {
-            "unit": "document",
-            "pages": 10,
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-            "promptTokens": 83070,
-            "completionTokens": 3557
-          }
-        ]
-      },
-      {
-        "extractionMethod": "aws-textract",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 12380,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1658,
-        "ocrModel": "detect-text",
-        "ocrService": "aws-textract",
-        "inputFamily": "pdf"
-      },
-      {
-        "extractionMethod": "gcloud-docai",
-        "totalPages": 10,
-        "ocrPages": 10,
-        "textPages": 0,
-        "processingTime": 74084,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1641,
-        "ocrModel": "ocr",
-        "ocrService": "gcloud-docai",
+        "tokenEstimate": 1640,
+        "ocrModel": "hi_res_and_enrichment",
+        "ocrService": "unstructured",
         "inputFamily": "pdf"
       }
     ],
@@ -318,376 +59,121 @@
         {
           "service": "tesseract",
           "model": "tesseract",
-          "origin": "all-shortcut"
+          "origin": "default"
         },
         {
           "service": "ocrmypdf",
-          "model": "ocrmypdf",
-          "origin": "all-shortcut"
+          "model": "ocrmypdf"
         },
         {
           "service": "paddle-ocr",
-          "model": "paddle-ocr",
-          "origin": "all-shortcut"
+          "model": "paddle-ocr"
         },
         {
           "service": "mistral",
-          "model": "mistral-ocr-2512",
-          "origin": "all-shortcut"
+          "model": "mistral-ocr-2512"
         },
         {
           "service": "glm",
-          "model": "glm-ocr",
-          "origin": "all-shortcut"
+          "model": "glm-ocr"
         },
         {
           "service": "kimi",
-          "model": "kimi-k2.6",
-          "origin": "all-shortcut"
+          "model": "kimi-k2.6"
         },
         {
           "service": "openai",
-          "model": "gpt-5.4",
-          "origin": "all-shortcut"
+          "model": "gpt-5.4"
         },
         {
           "service": "openai",
-          "model": "gpt-5.4-mini",
-          "origin": "all-shortcut"
+          "model": "gpt-5.4-mini"
         },
         {
           "service": "openai",
-          "model": "gpt-5.4-nano",
-          "origin": "all-shortcut"
+          "model": "gpt-5.4-nano"
         },
         {
           "service": "anthropic",
-          "model": "claude-haiku-4-5",
-          "origin": "all-shortcut"
+          "model": "claude-haiku-4-5"
         },
         {
           "service": "gemini",
-          "model": "gemini-3.1-pro-preview",
-          "origin": "all-shortcut"
+          "model": "gemini-3.1-pro-preview"
         },
         {
           "service": "gemini",
-          "model": "gemini-3.1-flash-lite-preview",
-          "origin": "all-shortcut"
+          "model": "gemini-3.1-flash-lite-preview"
         },
         {
           "service": "deepinfra",
-          "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-          "origin": "all-shortcut"
+          "model": "Qwen/Qwen3-VL-235B-A22B-Instruct"
         },
         {
           "service": "deepinfra",
-          "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-          "origin": "all-shortcut"
+          "model": "Qwen/Qwen3-VL-30B-A3B-Instruct"
         },
         {
           "service": "aws-textract",
-          "model": "detect-text",
-          "origin": "all-shortcut"
+          "model": "detect-text"
         },
         {
           "service": "gcloud-docai",
-          "model": "ocr",
-          "origin": "all-shortcut"
+          "model": "ocr"
+        },
+        {
+          "service": "unstructured",
+          "model": "hi_res_and_enrichment"
         }
       ]
     },
     "cost": {
       "estimated": {
-        "totalCost": 94.764125,
+        "totalCost": 12.2924,
         "steps": [
           {
             "step": "extract",
-            "provider": "mistral",
-            "model": "mistral-ocr-2512",
-            "cost": 2,
+            "provider": "kimi",
+            "model": "kimi-k2.6",
+            "cost": 12.2924,
             "costMultiplier": 1,
-            "costPer1kPagesCents": 200,
+            "inputCostPer1MCents": 95,
+            "outputCostPer1MCents": 400,
             "pageCount": 10,
-            "estimateType": "exact"
-          },
-          {
-            "step": "extract",
-            "provider": "glm",
-            "model": "glm-ocr",
-            "cost": 0.085125,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 3,
-            "outputCostPer1MCents": 3,
-            "pageCount": 10,
-            "promptTokens": 24030,
-            "completionTokens": 4345,
+            "promptTokens": 42320,
+            "completionTokens": 20680,
             "estimateType": "heuristic"
           },
           {
             "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4",
-            "cost": 36.01,
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
+            "cost": 0,
             "costMultiplier": 1,
-            "inputCostPer1MCents": 250,
-            "outputCostPer1MCents": 1500,
-            "pageCount": 10,
-            "promptTokens": 29860,
-            "completionTokens": 19030,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-mini",
-            "cost": 10.645499999999998,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 75,
-            "outputCostPer1MCents": 450,
-            "pageCount": 10,
-            "promptTokens": 29860,
-            "completionTokens": 18680,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-nano",
-            "cost": 2.9022,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 20,
-            "outputCostPer1MCents": 125,
-            "pageCount": 10,
-            "promptTokens": 29860,
-            "completionTokens": 18440,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "anthropic",
-            "model": "claude-haiku-4-5",
-            "cost": 4.03,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 100,
-            "outputCostPer1MCents": 500,
-            "pageCount": 10,
-            "promptTokens": 16575,
-            "completionTokens": 4745,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-pro-preview",
-            "cost": 27.07,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 200,
-            "outputCostPer1MCents": 1200,
-            "pageCount": 10,
-            "promptTokens": 11570,
-            "completionTokens": 20630,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-flash-lite-preview",
-            "cost": 2.72825,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 25,
-            "outputCostPer1MCents": 150,
-            "pageCount": 10,
-            "promptTokens": 11570,
-            "completionTokens": 16260,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "cost": 4.813,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 20,
-            "outputCostPer1MCents": 88,
-            "pageCount": 10,
-            "promptTokens": 163430,
-            "completionTokens": 17550,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-            "cost": 1.48005,
-            "costMultiplier": 1,
-            "inputCostPer1MCents": 15,
-            "outputCostPer1MCents": 60,
-            "pageCount": 10,
-            "promptTokens": 79810,
-            "completionTokens": 4715,
-            "estimateType": "heuristic"
-          },
-          {
-            "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "cost": 1.5,
-            "costMultiplier": 1,
-            "costPer1kPagesCents": 150,
-            "pageCount": 10,
-            "estimateType": "exact"
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "cost": 1.5,
-            "costMultiplier": 1,
-            "costPer1kPagesCents": 150,
+            "costPer1kPagesCents": 0,
             "pageCount": 10,
             "estimateType": "exact"
           }
         ]
       },
       "actual": {
-        "totalCost": 29.076435,
+        "totalCost": 5.3559,
         "steps": [
           {
             "step": "extract",
-            "provider": "tesseract",
-            "model": "tesseract",
+            "provider": "kimi",
+            "model": "kimi-k2.6",
+            "cost": 5.3559,
+            "inputMetric": "tokens",
+            "inputValue": 45857,
+            "promptTokens": 42580,
+            "completionTokens": 3277
+          },
+          {
+            "step": "extract",
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
             "cost": 0,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "ocrmypdf",
-            "model": "ocrmypdf",
-            "cost": 0,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "paddle-ocr",
-            "model": "paddle-ocr",
-            "cost": 0,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "mistral",
-            "model": "mistral-ocr-2512",
-            "cost": 2,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "glm",
-            "model": "glm-ocr",
-            "cost": 0.116523,
-            "inputMetric": "tokens",
-            "inputValue": 38841,
-            "promptTokens": 34961,
-            "completionTokens": 3880
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4",
-            "cost": 6.4225,
-            "inputMetric": "tokens",
-            "inputValue": 7355,
-            "promptTokens": 3688,
-            "completionTokens": 3667
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-mini",
-            "cost": 1.99335,
-            "inputMetric": "tokens",
-            "inputValue": 7503,
-            "promptTokens": 3688,
-            "completionTokens": 3815
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-nano",
-            "cost": 0.551885,
-            "inputMetric": "tokens",
-            "inputValue": 7513,
-            "promptTokens": 3688,
-            "completionTokens": 3825
-          },
-          {
-            "step": "extract",
-            "provider": "anthropic",
-            "model": "claude-haiku-4-5",
-            "cost": 4.286300000000001,
-            "inputMetric": "tokens",
-            "inputValue": 24659,
-            "promptTokens": 20108,
-            "completionTokens": 4551
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-pro-preview",
-            "cost": 6.4594000000000005,
-            "inputMetric": "tokens",
-            "inputValue": 9782,
-            "promptTokens": 5279,
-            "completionTokens": 4503
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-flash-lite-preview",
-            "cost": 0.8075749999999999,
-            "inputMetric": "tokens",
-            "inputValue": 9783,
-            "promptTokens": 5279,
-            "completionTokens": 4504
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "cost": 1.979432,
-            "inputMetric": "tokens",
-            "inputValue": 86684,
-            "promptTokens": 83070,
-            "completionTokens": 3614
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-            "cost": 1.45947,
-            "inputMetric": "tokens",
-            "inputValue": 86627,
-            "promptTokens": 83070,
-            "completionTokens": 3557
-          },
-          {
-            "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "cost": 1.5,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "cost": 1.5,
             "inputMetric": "pages",
             "inputValue": 10
           }
@@ -695,449 +181,68 @@
       },
       "ocrDiagnostics": [
         {
-          "provider": "mistral",
-          "model": "mistral-ocr-2512",
+          "provider": "kimi",
+          "model": "kimi-k2.6",
           "pages": 10,
           "predictedCostInputs": {
-            "costCents": 2,
+            "costCents": 12.2924,
+            "pageCount": 10,
+            "inputMetric": "tokens",
+            "inputValue": 63000,
+            "promptTokens": 42320,
+            "completionTokens": 20680,
+            "estimateType": "heuristic"
+          },
+          "actualCostInputs": {
+            "costCents": 5.3559,
+            "pageCount": 10,
+            "inputMetric": "tokens",
+            "inputValue": 45857,
+            "promptTokens": 42580,
+            "completionTokens": 3277,
+            "usageDetails": [
+              {
+                "unit": "document",
+                "pages": 10,
+                "provider": "kimi",
+                "model": "kimi-k2.6",
+                "promptTokens": 42580,
+                "completionTokens": 3277
+              }
+            ]
+          },
+          "ratesUsed": {
+            "inputCostPer1MCents": 95,
+            "outputCostPer1MCents": 400
+          },
+          "delta": {
+            "costCents": -6.9365000000000006,
+            "percent": -56.429175750870456
+          },
+          "source": "token_usage"
+        },
+        {
+          "provider": "unstructured",
+          "model": "hi_res_and_enrichment",
+          "pages": 10,
+          "predictedCostInputs": {
+            "costCents": 0,
             "pageCount": 10,
             "inputMetric": "pages",
             "inputValue": 10,
             "estimateType": "exact"
           },
           "actualCostInputs": {
-            "costCents": 2,
+            "costCents": 0,
             "pageCount": 10,
             "inputMetric": "pages",
             "inputValue": 10
           },
           "ratesUsed": {
-            "costPer1kPagesCents": 200
+            "costPer1kPagesCents": 0
           },
           "delta": {
-            "costCents": 0,
-            "percent": 0
-          },
-          "source": "page_pricing"
-        },
-        {
-          "provider": "glm",
-          "model": "glm-ocr",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 0.085125,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 28375,
-            "promptTokens": 24030,
-            "completionTokens": 4345,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 0.116523,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 38841,
-            "promptTokens": 34961,
-            "completionTokens": 3880,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "glm",
-                "model": "glm-ocr",
-                "promptTokens": 34961,
-                "completionTokens": 3880
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 3,
-            "outputCostPer1MCents": 3
-          },
-          "delta": {
-            "costCents": 0.031397999999999995,
-            "percent": 36.88458149779735
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "openai",
-          "model": "gpt-5.4",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 36.01,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 48890,
-            "promptTokens": 29860,
-            "completionTokens": 19030,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 6.4225,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 7355,
-            "promptTokens": 3688,
-            "completionTokens": 3667,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "openai",
-                "model": "gpt-5.4",
-                "promptTokens": 3688,
-                "completionTokens": 3667
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 250,
-            "outputCostPer1MCents": 1500
-          },
-          "delta": {
-            "costCents": -29.5875,
-            "percent": -82.16467647875591
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "openai",
-          "model": "gpt-5.4-mini",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 10.645499999999998,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 48540,
-            "promptTokens": 29860,
-            "completionTokens": 18680,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 1.99335,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 7503,
-            "promptTokens": 3688,
-            "completionTokens": 3815,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "openai",
-                "model": "gpt-5.4-mini",
-                "promptTokens": 3688,
-                "completionTokens": 3815
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 75,
-            "outputCostPer1MCents": 450
-          },
-          "delta": {
-            "costCents": -8.652149999999999,
-            "percent": -81.27518669860505
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "openai",
-          "model": "gpt-5.4-nano",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 2.9022,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 48300,
-            "promptTokens": 29860,
-            "completionTokens": 18440,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 0.551885,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 7513,
-            "promptTokens": 3688,
-            "completionTokens": 3825,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "openai",
-                "model": "gpt-5.4-nano",
-                "promptTokens": 3688,
-                "completionTokens": 3825
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 20,
-            "outputCostPer1MCents": 125
-          },
-          "delta": {
-            "costCents": -2.350315,
-            "percent": -80.98390875887259
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "anthropic",
-          "model": "claude-haiku-4-5",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 4.03,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 21320,
-            "promptTokens": 16575,
-            "completionTokens": 4745,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 4.286300000000001,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 24659,
-            "promptTokens": 20108,
-            "completionTokens": 4551,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "anthropic",
-                "model": "claude-haiku-4-5",
-                "promptTokens": 20108,
-                "completionTokens": 4551
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 100,
-            "outputCostPer1MCents": 500
-          },
-          "delta": {
-            "costCents": 0.2563000000000004,
-            "percent": 6.359801488833757
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "gemini",
-          "model": "gemini-3.1-pro-preview",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 27.07,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 32200,
-            "promptTokens": 11570,
-            "completionTokens": 20630,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 6.4594000000000005,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 9782,
-            "promptTokens": 5279,
-            "completionTokens": 4503,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "gemini",
-                "model": "gemini-3.1-pro-preview",
-                "promptTokens": 5279,
-                "completionTokens": 4503
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 200,
-            "outputCostPer1MCents": 1200
-          },
-          "delta": {
-            "costCents": -20.610599999999998,
-            "percent": -76.13816032508312
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "gemini",
-          "model": "gemini-3.1-flash-lite-preview",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 2.72825,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 27830,
-            "promptTokens": 11570,
-            "completionTokens": 16260,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 0.8075749999999999,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 9783,
-            "promptTokens": 5279,
-            "completionTokens": 4504,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "gemini",
-                "model": "gemini-3.1-flash-lite-preview",
-                "promptTokens": 5279,
-                "completionTokens": 4504
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 25,
-            "outputCostPer1MCents": 150
-          },
-          "delta": {
-            "costCents": -1.9206750000000001,
-            "percent": -70.3995235040777
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "deepinfra",
-          "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 4.813,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 180980,
-            "promptTokens": 163430,
-            "completionTokens": 17550,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 1.979432,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 86684,
-            "promptTokens": 83070,
-            "completionTokens": 3614,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "deepinfra",
-                "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-                "promptTokens": 83070,
-                "completionTokens": 3614
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 20,
-            "outputCostPer1MCents": 88
-          },
-          "delta": {
-            "costCents": -2.8335679999999996,
-            "percent": -58.873218366922906
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "deepinfra",
-          "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 1.48005,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 84525,
-            "promptTokens": 79810,
-            "completionTokens": 4715,
-            "estimateType": "heuristic"
-          },
-          "actualCostInputs": {
-            "costCents": 1.45947,
-            "pageCount": 10,
-            "inputMetric": "tokens",
-            "inputValue": 86627,
-            "promptTokens": 83070,
-            "completionTokens": 3557,
-            "usageDetails": [
-              {
-                "unit": "document",
-                "pages": 10,
-                "provider": "deepinfra",
-                "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-                "promptTokens": 83070,
-                "completionTokens": 3557
-              }
-            ]
-          },
-          "ratesUsed": {
-            "inputCostPer1MCents": 15,
-            "outputCostPer1MCents": 60
-          },
-          "delta": {
-            "costCents": -0.020580000000000043,
-            "percent": -1.3904935644066105
-          },
-          "source": "token_usage"
-        },
-        {
-          "provider": "aws-textract",
-          "model": "detect-text",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 1.5,
-            "pageCount": 10,
-            "inputMetric": "pages",
-            "inputValue": 10,
-            "estimateType": "exact"
-          },
-          "actualCostInputs": {
-            "costCents": 1.5,
-            "pageCount": 10,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          "ratesUsed": {
-            "costPer1kPagesCents": 150
-          },
-          "delta": {
-            "costCents": 0,
-            "percent": 0
-          },
-          "source": "page_pricing"
-        },
-        {
-          "provider": "gcloud-docai",
-          "model": "ocr",
-          "pages": 10,
-          "predictedCostInputs": {
-            "costCents": 1.5,
-            "pageCount": 10,
-            "inputMetric": "pages",
-            "inputValue": 10,
-            "estimateType": "exact"
-          },
-          "actualCostInputs": {
-            "costCents": 1.5,
-            "pageCount": 10,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          "ratesUsed": {
-            "costPer1kPagesCents": 150
-          },
-          "delta": {
-            "costCents": 0,
-            "percent": 0
+            "costCents": 0
           },
           "source": "page_pricing"
         }
@@ -1145,233 +250,49 @@
     },
     "timing": {
       "estimated": {
-        "totalProcessingTimeMs": 676370,
+        "totalProcessingTimeMs": 150100,
         "steps": [
           {
             "step": "extract",
-            "provider": "mistral",
-            "model": "mistral-ocr-2512",
-            "processingTimeMs": 19820,
+            "provider": "kimi",
+            "model": "kimi-k2.6",
+            "processingTimeMs": 115100,
             "inputMetric": "pages",
             "inputValue": 10
           },
           {
             "step": "extract",
-            "provider": "glm",
-            "model": "glm-ocr",
-            "processingTimeMs": 34620,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4",
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
             "processingTimeMs": 35000,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-mini",
-            "processingTimeMs": 35000,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-nano",
-            "processingTimeMs": 57930,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "anthropic",
-            "model": "claude-haiku-4-5",
-            "processingTimeMs": 70000,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-pro-preview",
-            "processingTimeMs": 35000,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-flash-lite-preview",
-            "processingTimeMs": 32800,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "processingTimeMs": 200000,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-            "processingTimeMs": 129200,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "processingTimeMs": 12000,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "processingTimeMs": 15000,
             "inputMetric": "pages",
             "inputValue": 10
           }
         ]
       },
       "actual": {
-        "totalProcessingTimeMs": 686987,
+        "totalProcessingTimeMs": 136717,
         "steps": [
           {
             "step": "extract",
-            "provider": "tesseract",
-            "model": "tesseract",
-            "processingTimeMs": 72,
+            "provider": "kimi",
+            "model": "kimi-k2.6",
+            "processingTimeMs": 95270,
             "inputMetric": "pages",
             "inputValue": 10
           },
           {
             "step": "extract",
-            "provider": "ocrmypdf",
-            "model": "ocrmypdf",
-            "processingTimeMs": 10780,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "paddle-ocr",
-            "model": "paddle-ocr",
-            "processingTimeMs": 1,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "mistral",
-            "model": "mistral-ocr-2512",
-            "processingTimeMs": 2567,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "glm",
-            "model": "glm-ocr",
-            "processingTimeMs": 15540,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4",
-            "processingTimeMs": 51927,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-mini",
-            "processingTimeMs": 30230,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "openai",
-            "model": "gpt-5.4-nano",
-            "processingTimeMs": 38358,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "anthropic",
-            "model": "claude-haiku-4-5",
-            "processingTimeMs": 40753,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-pro-preview",
-            "processingTimeMs": 97037,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gemini",
-            "model": "gemini-3.1-flash-lite-preview",
-            "processingTimeMs": 13286,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
-            "processingTimeMs": 74890,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "deepinfra",
-            "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-            "processingTimeMs": 225082,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "processingTimeMs": 12380,
-            "inputMetric": "pages",
-            "inputValue": 10
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "processingTimeMs": 74084,
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
+            "processingTimeMs": 41447,
             "inputMetric": "pages",
             "inputValue": 10
           }
         ]
       }
     },
-    "completionStatus": "incomplete",
+    "completionStatus": "full",
     "requestedProviders": [
       {
         "service": "tesseract",
@@ -1436,6 +357,10 @@
       {
         "service": "gcloud-docai",
         "model": "ocr"
+      },
+      {
+        "service": "unstructured",
+        "model": "hi_res_and_enrichment"
       }
     ],
     "providerStates": [
@@ -1478,13 +403,8 @@
         "service": "kimi",
         "model": "kimi-k2.6",
         "artifactDir": "providers/kimi-kimi-k2.6",
-        "status": "failed",
-        "attempts": 1,
-        "lastError": {
-          "message": "Response was not valid JSON",
-          "category": "structured_response",
-          "errorFile": "error.json"
-        }
+        "status": "succeeded",
+        "attempts": 2
       },
       {
         "service": "openai",
@@ -1555,23 +475,16 @@
         "artifactDir": "providers/gcloud-docai-ocr",
         "status": "succeeded",
         "attempts": 1
-      }
-    ],
-    "missingProviders": [
+      },
       {
-        "service": "kimi",
-        "model": "kimi-k2.6"
+        "service": "unstructured",
+        "model": "hi_res_and_enrichment",
+        "artifactDir": "providers/unstructured-hi_res_and_enrichment",
+        "status": "succeeded",
+        "attempts": 1
       }
     ],
-    "errors": [
-      {
-        "service": "kimi",
-        "model": "kimi-k2.6",
-        "message": "Response was not valid JSON",
-        "category": "structured_response",
-        "errorFile": "error.json"
-      }
-    ],
+    "missingProviders": [],
     "extractRoute": "document"
   }
 }

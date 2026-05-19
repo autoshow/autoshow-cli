@@ -16,7 +16,7 @@ test('rejects invalid gcloud model', async () => {
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--gcloud-stt',
+    '--gcloud',
     'invalid-model'
   ])
 
@@ -36,7 +36,7 @@ budgetedTest('transcribe-gcloud-chirp_3', 'gcloud chirp_3 transcribes local audi
     'src/cli/create-cli.ts',
     'extract',
     STABLE_LOCAL_AUDIO_PATH,
-    '--gcloud-stt',
+    '--gcloud',
     'chirp_3',
     '--speaker-count',
     '2'
