@@ -1,0 +1,64 @@
+.table-shell {
+  padding: 18px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.control {
+  display: grid;
+  gap: 7px;
+  min-width: 190px;
+}
+
+.control-search {
+  flex: 1 1 260px;
+}
+
+.control label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.control select,
+.control input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+.control select:focus,
+.control input:focus {
+  outline: 2px solid rgba(111, 212, 169, 0.55);
+  outline-offset: 2px;
+}
+
+.results-note {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.badge-offset {
+  margin-left: 8px;
+}
+
+@media (max-width: 720px) {
+  .filters {
+    display: grid;
+  }
+
+  .control {
+    min-width: 0;
+  }
+}

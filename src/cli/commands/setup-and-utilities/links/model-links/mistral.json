@@ -1,0 +1,33 @@
+{
+  "Mistral": {
+    "General": [
+      "https://docs.mistral.ai/resources/sdks",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/README.md",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/lib/utils/retryconfig.md",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/files/README.md"
+    ],
+    "STT": [
+      "https://docs.mistral.ai/studio-api/audio/speech_to_text",
+      "https://docs.mistral.ai/studio-api/audio/speech_to_text/offline_transcription",
+      "https://docs.mistral.ai/api/endpoint/audio/transcriptions",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/transcriptions/README.md"
+    ],
+    "OCR": [
+      "https://docs.mistral.ai/studio-api/document-processing/basic_ocr",
+      "https://docs.mistral.ai/api/endpoint/ocr",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/ocr/README.md",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/documents/README.md"
+    ],
+    "TTS": [
+      "https://docs.mistral.ai/models/model-cards/voxtral-tts-26-03",
+      "https://mistral.ai/news/voxtral-tts",
+      "https://docs.mistral.ai/studio-api/audio/text_to_speech",
+      "https://docs.mistral.ai/api/endpoint/audio/speech",
+      "https://docs.mistral.ai/api/endpoint/audio/voices",
+      "https://docs.mistral.ai/studio-api/audio/text_to_speech/voices",
+      "https://docs.mistral.ai/studio-api/audio/text_to_speech/speech",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/speech/README.md",
+      "https://raw.githubusercontent.com/mistralai/client-ts/refs/heads/main/docs/sdks/voices/README.md"
+    ]
+  }
+}

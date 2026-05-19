@@ -1,0 +1,36 @@
+{
+  "speechmatics": {
+    "description": "Speechmatics cloud batch speech-to-text",
+    "type": "api",
+    "models": {
+      "standard": {
+        "description": "Batch standard accuracy — faster turnaround with lower cost",
+        "costPerHourUSD": 0.45,
+        "costPerHourCents": 45,
+        "limits": {
+          "effectiveBytes": 1073741824,
+          "directUploadBytes": 1073741824,
+          "notes": "Current Speechmatics docs publish a 1 GB limit for multipart uploads and explicitly suggest fetch-by-URL for larger files. They do not publish a current remote URL size cap or a batch-audio duration cap."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 146
+        }
+      },
+      "enhanced": {
+        "description": "Batch enhanced accuracy — highest accuracy for file transcription",
+        "costPerHourUSD": 0.75,
+        "costPerHourCents": 75,
+        "limits": {
+          "effectiveBytes": 1073741824,
+          "directUploadBytes": 1073741824,
+          "notes": "Current Speechmatics docs publish a 1 GB limit for multipart uploads and explicitly suggest fetch-by-URL for larger files. They do not publish a current remote URL size cap or a batch-audio duration cap."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 244
+        }
+      }
+    }
+  }
+}

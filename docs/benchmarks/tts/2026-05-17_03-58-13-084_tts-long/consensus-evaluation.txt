@@ -1,0 +1,3 @@
+This evaluation is metadata/packet-based. No subjective listening review was performed.
+
+No roundtrip WER data or explicit voice-quality metric is available for this run, so highest-quality rankings are unavailable.

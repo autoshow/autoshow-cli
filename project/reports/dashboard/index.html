@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoShow E2E Benchmark Dashboard</title>
+    <link rel="stylesheet" href="./dashboard.css" />
+    <link rel="stylesheet" href="./snapshot.css" />
+    <link rel="stylesheet" href="./winners.css" />
+    <link rel="stylesheet" href="./leaderboards.css" />
+    <link rel="stylesheet" href="./table.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="eyebrow">AutoShow Benchmarks</div>
+        <h1>E2E Provider Performance</h1>
+        <p>Runtime, cost, and per-step leaderboards from dashboard-ready test reports.</p>
+        <div class="hero-meta" id="hero-meta"></div>
+      </section>
+
+      <div class="load-status" id="load-status" aria-live="polite">
+        Loading benchmark results from project/reports/results...
+      </div>
+
+      <div id="dashboard-content" class="is-hidden">
+        <section class="section">
+          <div class="section-head">
+            <h2>Runtime Metric</h2>
+          </div>
+          <div class="tab-row" id="metric-tabs"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Snapshot</h2>
+          </div>
+          <div class="summary-grid" id="summary-grid"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Category Winners</h2>
+          </div>
+          <div class="winner-grid" id="winner-grid"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>Step Leaderboards</h2>
+          </div>
+          <div class="tab-row" id="category-tabs"></div>
+          <div class="leaderboard-shell surface" id="leaderboard-shell"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>All Benchmarks</h2>
+          </div>
+          <div class="table-shell surface">
+            <div class="filters">
+              <div class="control">
+                <label for="table-category">Category</label>
+                <select id="table-category"></select>
+              </div>
+              <div class="control">
+                <label for="table-sort">Sort</label>
+                <select id="table-sort">
+                  <option value="category">Category, then fastest</option>
+                  <option value="duration-asc">Fastest first</option>
+                  <option value="duration-desc">Slowest first</option>
+                  <option value="cost-asc">Cheapest first</option>
+                  <option value="cost-desc">Most expensive first</option>
+                  <option value="runAt-desc">Newest first</option>
+                  <option value="runAt-asc">Oldest first</option>
+                  <option value="service">Service, then model</option>
+                </select>
+              </div>
+              <div class="control control-search">
+                <label for="table-search">Search</label>
+                <input id="table-search" type="search" placeholder="Filter service, model, or test" />
+              </div>
+            </div>
+            <p class="results-note" id="results-note"></p>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Service</th>
+                    <th>Model</th>
+                    <th>Run At</th>
+                    <th id="table-actual-heading">Actual Time</th>
+                    <th id="table-estimated-heading">Est. Time</th>
+                    <th id="table-delta-heading">Delta</th>
+                    <th>Actual Cost</th>
+                    <th>Est. Cost</th>
+                    <th>Rank Cost</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="benchmark-rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

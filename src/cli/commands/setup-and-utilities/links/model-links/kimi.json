@@ -1,0 +1,26 @@
+{
+  "Kimi": {
+    "General": [
+      "https://platform.kimi.ai/docs/overview.md",
+      "https://platform.kimi.ai/docs/api/models-overview.md",
+      "https://platform.kimi.ai/docs/models.md",
+      "https://platform.kimi.ai/docs/api/overview.md",
+      "https://platform.kimi.ai/docs/api/errors.md",
+      "https://platform.kimi.ai/docs/guide/faq.md",
+      "https://platform.kimi.ai/docs/api/estimate.md",
+      "https://platform.kimi.ai/docs/introduction.md",
+      "https://platform.kimi.ai/docs/guide/start-using-kimi-api.md"
+    ],
+    "Text": [
+      "https://platform.kimi.ai/docs/guide/kimi-k2-6-quickstart.md",
+      "https://platform.kimi.ai/docs/pricing/chat-k26.md",
+      "https://platform.kimi.ai/docs/api/chat.md",
+      "https://platform.kimi.ai/docs/guide/use-json-mode-feature-of-kimi-api.md",
+      "https://platform.kimi.ai/docs/guide/prompt-best-practice.md"
+    ],
+    "OCR": [
+      "https://platform.kimi.ai/docs/api/files-upload.md",
+      "https://platform.kimi.ai/docs/guide/use-kimi-vision-model.md"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "description": "Concise X post under 280 characters",
+  "expectedInputTokens": 300,
+  "expectedOutputTokens": 220,
+  "instruction": "- Write a concise, engaging social media post optimized for the platform X (formerly Twitter).\n  - Keep the post under 280 characters.\n  - Include hashtags if appropriate.",
+  "structuredPreset": "x",
+  "examples": {
+    "json": "{\n  \"content\": \"Web development is not just coding; it is about choosing tools, tradeoffs, and architecture that can survive change.\",\n  \"hashtags\": [\n    \"#WebDev\",\n    \"#JavaScript\"\n  ]\n}",
+    "markdown": "Format the output like so:\n\n    ## X Social Post\n    \n    Web development isn't just coding; it's shaping the future. Dive into the latest trends and stay ahead of the curve. #WebDev #JavaScript"
+  }
+}

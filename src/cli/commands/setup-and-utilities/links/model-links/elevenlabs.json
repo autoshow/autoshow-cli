@@ -1,0 +1,41 @@
+{
+  "Elevenlabs": {
+    "General": [
+      "https://elevenlabs.io/docs/overview/models.md"
+    ],
+    "STT": [
+      "https://elevenlabs.io/docs/overview/capabilities/speech-to-text.md",
+      "https://elevenlabs.io/docs/api-reference/speech-to-text/convert.md",
+      "https://elevenlabs.io/docs/api-reference/speech-to-text/get.md"
+    ],
+    "TTS": [
+      "https://elevenlabs.io/docs/eleven-api/guides/how-to/voices/instant-voice-cloning.md",
+      "https://elevenlabs.io/docs/eleven-api/concepts/voice-cloning.md",
+      "https://elevenlabs.io/docs/eleven-api/guides/how-to/voices/professional-voice-cloning.md",
+      "https://elevenlabs.io/docs/eleven-api/guides/how-to/voices/voice-design.md",
+      "https://elevenlabs.io/docs/api-reference/introduction.md",
+      "https://elevenlabs.io/docs/api-reference/voices/pvc/create.md",
+      "https://elevenlabs.io/docs/api-reference/voices/pvc/train.md",
+      "https://elevenlabs.io/docs/api-reference/voices/ivc/create.md",
+      "https://elevenlabs.io/docs/overview/capabilities/text-to-dialogue.md",
+      "https://elevenlabs.io/docs/overview/capabilities/text-to-speech.md",
+      "https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices.md",
+      "https://elevenlabs.io/docs/overview/capabilities/voices.md",
+      "https://elevenlabs.io/docs/api-reference/text-to-speech/convert.md",
+      "https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps.md",
+      "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert.md",
+      "https://elevenlabs.io/docs/api-reference/text-to-dialogue/convert-with-timestamps.md",
+      "https://elevenlabs.io/docs/api-reference/speech-to-speech/convert.md",
+      "https://elevenlabs.io/docs/api-reference/text-to-voice/design.md",
+      "https://elevenlabs.io/docs/api-reference/text-to-voice/create.md"
+    ],
+    "Music": [
+      "https://elevenlabs.io/docs/overview/capabilities/music.md",
+      "https://elevenlabs.io/docs/overview/capabilities/music/best-practices.md",
+      "https://elevenlabs.io/docs/api-reference/music/compose.md",
+      "https://elevenlabs.io/docs/api-reference/music/compose-detailed.md",
+      "https://elevenlabs.io/docs/api-reference/music/create-composition-plan.md",
+      "https://elevenlabs.io/docs/api-reference/music/separate-stems.md"
+    ]
+  }
+}

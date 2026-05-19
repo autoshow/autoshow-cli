@@ -1,0 +1,22 @@
+{
+  "Zyte": {
+    "General": [
+      "https://docs.zyte.com/zyte-api/get-started.md",
+      "https://docs.zyte.com/zyte-api/usage/http.md",
+      "https://docs.zyte.com/zyte-api/usage/features.md",
+      "https://docs.zyte.com/zyte-api/usage/rate-limit.md",
+      "https://docs.zyte.com/zyte-api/usage/optimize.md",
+      "https://docs.zyte.com/zyte-api/usage/errors.md",
+      "https://docs.zyte.com/zyte-api/usage/reference.md",
+      "https://docs.zyte.com/zyte-api/usage/stats.md",
+      "https://docs.zyte.com/zyte-api/usage/examples.md"
+    ],
+    "URL": [
+      "https://docs.zyte.com/zyte-api/usage/extract/index.md",
+      "https://docs.zyte.com/zyte-api/usage/extract/custom-attributes.md",
+      "https://docs.zyte.com/web-scraping/get-started.md",
+      "https://docs.zyte.com/web-scraping/tutorials/main/index.md",
+      "https://docs.zyte.com/web-scraping/guides/export/index.md"
+    ]
+  }
+}

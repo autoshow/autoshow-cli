@@ -1,0 +1,9 @@
+{
+  "Supadata": {
+    "STT": [
+      "https://docs.supadata.ai/get-transcript.md",
+      "https://docs.supadata.ai/api-reference/endpoint/transcript/transcript.md",
+      "https://docs.supadata.ai/api-reference/endpoint/transcript/transcript-get.md"
+    ]
+  }
+}

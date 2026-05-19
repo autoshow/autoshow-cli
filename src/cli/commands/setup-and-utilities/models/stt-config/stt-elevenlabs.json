@@ -1,0 +1,24 @@
+{
+  "elevenlabs": {
+    "description": "ElevenLabs Scribe cloud STT",
+    "type": "api",
+    "models": {
+      "scribe_v2": {
+        "description": "Scribe v2 — 90+ languages, diarization, word-level timestamps",
+        "costPerHourUSD": 0.22,
+        "costPerHourCents": 22,
+        "limits": {
+          "effectiveBytes": 3221225472,
+          "directUploadBytes": 3221225472,
+          "remoteUrlBytes": 2147483648,
+          "durationSeconds": 36000,
+          "notes": "Standard mode is capped at 10 hours. ElevenLabs also documents a 1-hour cap for multichannel mode, which the current CLI does not use."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 95
+        }
+      }
+    }
+  }
+}

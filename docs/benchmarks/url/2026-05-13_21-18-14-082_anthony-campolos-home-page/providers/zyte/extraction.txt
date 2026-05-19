@@ -1,0 +1,27 @@
+# Anthony Campolo, Developer Advocate
+
+Hello 👋, my name is Anthony Campolo. I'm an open source Developer Advocate, former member of the RedwoodJS core team, and co-host of the FSJam Podcast. I'm currently working as a Collaborative Engineer at Atmosera where I teach enterprise devs how to use AI coding tools.
+
+This website is built with a Bun-powered static generator. My content mostly focuses on web development frameworks and deployment platforms. Other topics I cover include AI and large language models. This is my blog, continue reading to achieve peak blogness.
+
+What do I do?
+
+Testimonials
+
+"Anthony is always right at the front of the line when it comes to new technology."
+
+- Ryan Carniato, Creator of SolidJS
+
+- Michelle Bakels, Co-organizer of React Miami
+
+"It's a pleasure having a highly knowledgeable guest on the show, sharing useful and interesting information. Thank you for coming!"
+
+- Dan Shappir, Co-host of JavaScript Jabber
+
+Botimonials
+
+"Anthony Campolo is a remarkably talented and deeply passionate web developer whose contributions to the community have consistently demonstrated an unwavering commitment to advancing web development practices and fostering a supportive, inclusive community with a focus on sharing knowledge and engaging with diverse perspectives within the tech world."
+
+- ChatGPT
+
+"Anthony Campolo is an extraordinary individual who has made significant contributions to the web development community. His dedication to sharing knowledge and helping others learn is truly admirable. His ability to break down complex concepts into easily understandable explanations is a testament to his exceptional teaching skills. He has a gift for making web development accessible to learners of all levels, from complete beginners to experienced developers looking to expand their skill set."

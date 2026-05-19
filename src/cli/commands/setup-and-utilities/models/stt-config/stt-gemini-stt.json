@@ -1,0 +1,21 @@
+{
+  "gemini-stt": {
+    "description": "Gemini multimodal transcription via generateContent",
+    "type": "api",
+    "models": {
+      "gemini-3-flash-preview": {
+        "description": "Gemini 3 Flash Preview prompted audio transcription",
+        "costPerHourUSD": 0.1152,
+        "costPerHourCents": 11.52,
+        "limits": {
+          "directUploadBytes": 20971520,
+          "notes": "Gemini inline audio requests are kept safely under the 20 MB inline request limit; larger inputs use the Files API. Audio input is tokenized at 32 tokens/second, and final billed cost also includes prompt and output tokens."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 300
+        }
+      }
+    }
+  }
+}

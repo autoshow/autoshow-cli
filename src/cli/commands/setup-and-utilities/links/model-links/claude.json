@@ -1,0 +1,25 @@
+{
+  "Claude": {
+    "General": [
+      "https://platform.claude.com/docs/en/api/sdks/typescript.md",
+      "https://platform.claude.com/docs/en/about-claude/models/overview.md",
+      "https://platform.claude.com/docs/en/about-claude/pricing.md",
+      "https://platform.claude.com/docs/en/build-with-claude/overview.md",
+      "https://platform.claude.com/docs/en/api/overview.md",
+      "https://platform.claude.com/docs/en/api/errors.md",
+      "https://platform.claude.com/docs/en/api/typescript/models/list.md",
+      "https://platform.claude.com/docs/en/api/typescript/models/retrieve.md"
+    ],
+    "Text": [
+      "https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-7.md",
+      "https://platform.claude.com/docs/en/about-claude/models/migration-guide.md",
+      "https://platform.claude.com/docs/en/build-with-claude/working-with-messages.md",
+      "https://platform.claude.com/docs/en/build-with-claude/structured-outputs.md"
+    ],
+    "OCR": [
+      "https://platform.claude.com/docs/en/build-with-claude/pdf-support.md",
+      "https://platform.claude.com/docs/en/build-with-claude/files.md",
+      "https://platform.claude.com/docs/en/build-with-claude/vision.md"
+    ]
+  }
+}

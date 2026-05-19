@@ -1,0 +1,45 @@
+{
+  "MiniMax": {
+    "General": [
+      "https://platform.minimax.io/docs/guides/pricing-paygo.md",
+      "https://platform.minimax.io/docs/faq/about-apis.md",
+      "https://platform.minimax.io/docs/api-reference/errorcode.md"
+    ],
+    "Text": [
+      "https://platform.minimax.io/docs/guides/text-generation.md",
+      "https://platform.minimax.io/docs/api-reference/text-anthropic-api.md",
+      "https://platform.minimax.io/docs/api-reference/text-openai-api.md",
+      "https://platform.minimax.io/docs/api-reference/text-chat.md"
+    ],
+    "TTS": [
+      "https://platform.minimax.io/docs/guides/speech-t2a-async.md",
+      "https://platform.minimax.io/docs/faq/system-voice-id.md",
+      "https://platform.minimax.io/docs/api-reference/speech-t2a-http.md",
+      "https://platform.minimax.io/docs/api-reference/speech-t2a-async-create.md",
+      "https://platform.minimax.io/docs/api-reference/speech-t2a-async-query.md",
+      "https://platform.minimax.io/docs/api-reference/voice-design-design.md",
+      "https://platform.minimax.io/docs/api-reference/voice-management-get.md",
+      "https://platform.minimax.io/docs/api-reference/voice-management-delete.md"
+    ],
+    "Music": [
+      "https://platform.minimax.io/docs/guides/music-generation.md",
+      "https://platform.minimax.io/docs/api-reference/music-generation.md",
+      "https://platform.minimax.io/docs/api-reference/lyrics-generation.md"
+    ],
+    "Image": [
+      "https://platform.minimax.io/docs/guides/image-generation.md",
+      "https://platform.minimax.io/docs/api-reference/image-generation-t2i.md",
+      "https://platform.minimax.io/docs/api-reference/image-generation-i2i.md"
+    ],
+    "Video": [
+      "https://platform.minimax.io/docs/guides/video-generation.md",
+      "https://platform.minimax.io/docs/guides/video-agent.md",
+      "https://platform.minimax.io/docs/api-reference/video-generation-t2v.md",
+      "https://platform.minimax.io/docs/api-reference/video-generation-i2v.md",
+      "https://platform.minimax.io/docs/api-reference/video-generation-fl2v.md",
+      "https://platform.minimax.io/docs/api-reference/video-generation-s2v.md",
+      "https://platform.minimax.io/docs/api-reference/video-generation-query.md",
+      "https://platform.minimax.io/docs/api-reference/video-generation-download.md"
+    ]
+  }
+}

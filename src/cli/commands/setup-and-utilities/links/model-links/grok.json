@@ -1,0 +1,29 @@
+{
+  "Grok": {
+    "General": [
+      "https://docs.x.ai/developers/rate-limits.md",
+      "https://docs.x.ai/developers/models.md"
+    ],
+    "Text": [
+      "https://docs.x.ai/developers/rest-api-reference/inference/chat.md",
+      "https://docs.x.ai/developers/model-capabilities/text/generate-text.md",
+      "https://docs.x.ai/developers/model-capabilities/text/structured-outputs.md"
+    ],
+    "Image": [
+      "https://docs.x.ai/developers/model-capabilities/images/generation.md",
+      "https://docs.x.ai/developers/rest-api-reference/inference/images.md"
+    ],
+    "Video": [
+      "https://docs.x.ai/developers/model-capabilities/video/generation.md",
+      "https://docs.x.ai/developers/rest-api-reference/inference/videos.md"
+    ],
+    "TTS": [
+      "https://docs.x.ai/developers/model-capabilities/audio/text-to-speech.md",
+      "https://docs.x.ai/developers/rest-api-reference/inference/voice.md"
+    ],
+    "STT": [
+      "https://docs.x.ai/developers/model-capabilities/audio/speech-to-text.md",
+      "https://docs.x.ai/developers/rest-api-reference/inference/voice.md"
+    ]
+  }
+}

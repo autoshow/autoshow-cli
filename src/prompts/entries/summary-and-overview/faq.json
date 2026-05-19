@@ -1,0 +1,11 @@
+{
+  "description": "Frequently asked questions and answers from the transcript",
+  "expectedInputTokens": 350,
+  "expectedOutputTokens": 700,
+  "instruction": "- Include a list of 5-10 frequently asked questions and answers based on the transcript.\n  - Ensure questions and answers cover all major sections of the content.",
+  "structuredPreset": "faq",
+  "examples": {
+    "json": "{\n  \"faq\": [\n    {\n      \"question\": \"What are the three main components of the Jamstack?\",\n      \"answer\": \"JavaScript, APIs, and markup.\"\n    },\n    {\n      \"question\": \"Why is server-side rendering useful for web applications?\",\n      \"answer\": \"It can improve performance, SEO, and the initial user experience.\"\n    }\n  ]\n}",
+    "markdown": "Format the output like so:\n\n    ## FAQ\n\n    Q: What are the three main components of the Jamstack?\n    A: JavaScript, APIs, and markup."
+  }
+}

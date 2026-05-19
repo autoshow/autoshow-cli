@@ -1,0 +1,8 @@
+{
+  "description": "Full summary: description + summary + chapters (current behavior)",
+  "includes": [
+    "shortSummary",
+    "longSummary",
+    "longChapters"
+  ]
+}

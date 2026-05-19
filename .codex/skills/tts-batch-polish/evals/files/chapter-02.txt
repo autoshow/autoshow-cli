@@ -1,0 +1,27 @@
+Chapter 2: The Architecture of Distributed Systems
+
+In 1978, Leslie Lamport published a paper that would fundamentally change
+how we think about distributed computing.1 The paper, titled "Time, Clocks,
+and the Ordering of Events in a Distributed System," introduced the concept
+of logical clocks and the happens-before relation.
+
+Lamport's key insight was that in a distributed system, the notion of
+"simultaneous" events is meaningless unless the events are causally related.2
+Two events at different nodes can only be ordered if one could have influenced
+the other through message passing.
+
+This was a radical departure from the centralized computing model that
+dominated the field at the time. In a centralized system, a single global
+clock provides a total ordering of all events. But in a distributed system,
+no such global clock exists.
+
+The implications were profound. If you cannot establish a total ordering
+of events, then you cannot guarantee that all nodes in the system see the
+same sequence of operations. This leads directly to the consistency
+problems that plague distributed databases to this day.
+
+1 Lamport, L. "Time, Clocks, and the Ordering of Events in a Distributed
+System." Communications of the ACM, 21(7), 558-565, 1978.
+
+2 The concept of causality in distributed systems was further developed by
+Schwarz and Mattern in their work on vector clocks.

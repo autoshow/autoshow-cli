@@ -1,0 +1,22 @@
+{
+  "Spider": {
+    "General": [
+      "https://spider.cloud/docs/overview",
+      "https://spider.cloud/api-keys",
+      "https://spider.cloud/docs/api",
+      "https://spider.cloud/docs/quickstart",
+      "https://spider.cloud/docs/concepts",
+      "https://spider.cloud/docs/core/authentication",
+      "https://spider.cloud/docs/core/rate-limits",
+      "https://spider.cloud/docs/core/error-codes",
+      "https://spider.cloud/docs/core/reliability"
+    ],
+    "URL": [
+      "https://spider.cloud/docs/core/scraping-crawling",
+      "https://spider.cloud/docs/core/efficient-scraping",
+      "https://spider.cloud/docs/core/spider-browser",
+      "https://spider.cloud/docs/advanced/json-scraping",
+      "https://spider.cloud/docs/guides/recipes"
+    ]
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "kind": "provider-result",
+  "provider": "defuddle",
+  "model": "defuddle",
+  "metadata": {
+    "extractionMethod": "html+defuddle",
+    "processingTime": 500,
+    "tokenEstimate": 20
+  },
+  "result": {
+    "text": "# Fixture Article\n\nThis fixture article is used to validate URL consensus reports.",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "method": "text",
+        "text": "# Fixture Article\n\nThis fixture article is used to validate URL consensus reports."
+      }
+    ],
+    "totalPages": 1,
+    "ocrPages": 0,
+    "textPages": 1
+  }
+}

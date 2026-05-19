@@ -1,0 +1,629 @@
+{
+  "deepgram": {
+    "description": "Deepgram Aura cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "aura-2-thalia-en": {
+        "description": "Aura-2 Thalia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 36000
+        }
+      },
+      "aura-2-amalthea-en": {
+        "description": "Aura-2 Amalthea English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-andromeda-en": {
+        "description": "Aura-2 Andromeda English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-apollo-en": {
+        "description": "Aura-2 Apollo English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-arcas-en": {
+        "description": "Aura-2 Arcas English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-ariadne-en": {
+        "description": "Aura-2 Ariadne English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-aries-en": {
+        "description": "Aura-2 Aries English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-asteria-en": {
+        "description": "Aura-2 Asteria English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-athena-en": {
+        "description": "Aura-2 Athena English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-atlas-en": {
+        "description": "Aura-2 Atlas English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-aurora-en": {
+        "description": "Aura-2 Aurora English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-callista-en": {
+        "description": "Aura-2 Callista English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-canto-en": {
+        "description": "Aura-2 Canto English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-cassiopeia-en": {
+        "description": "Aura-2 Cassiopeia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-castor-en": {
+        "description": "Aura-2 Castor English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-celeste-en": {
+        "description": "Aura-2 Celeste English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-cepheus-en": {
+        "description": "Aura-2 Cepheus English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-charisma-en": {
+        "description": "Aura-2 Charisma English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-clara-en": {
+        "description": "Aura-2 Clara English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-cordelia-en": {
+        "description": "Aura-2 Cordelia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-delia-en": {
+        "description": "Aura-2 Delia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-draco-en": {
+        "description": "Aura-2 Draco English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-electra-en": {
+        "description": "Aura-2 Electra English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-harmonia-en": {
+        "description": "Aura-2 Harmonia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-helena-en": {
+        "description": "Aura-2 Helena English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-hera-en": {
+        "description": "Aura-2 Hera English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-hermes-en": {
+        "description": "Aura-2 Hermes English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-hyperion-en": {
+        "description": "Aura-2 Hyperion English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-iris-en": {
+        "description": "Aura-2 Iris English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-janus-en": {
+        "description": "Aura-2 Janus English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-juno-en": {
+        "description": "Aura-2 Juno English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-jupiter-en": {
+        "description": "Aura-2 Jupiter English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-luna-en": {
+        "description": "Aura-2 Luna English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-mars-en": {
+        "description": "Aura-2 Mars English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-messenger-en": {
+        "description": "Aura-2 Messenger English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-moneta-en": {
+        "description": "Aura-2 Moneta English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-neptune-en": {
+        "description": "Aura-2 Neptune English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-odysseus-en": {
+        "description": "Aura-2 Odysseus English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-ophelia-en": {
+        "description": "Aura-2 Ophelia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-orion-en": {
+        "description": "Aura-2 Orion English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-orpheus-en": {
+        "description": "Aura-2 Orpheus English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-pandora-en": {
+        "description": "Aura-2 Pandora English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-phoebe-en": {
+        "description": "Aura-2 Phoebe English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-pluto-en": {
+        "description": "Aura-2 Pluto English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-saturn-en": {
+        "description": "Aura-2 Saturn English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-selene-en": {
+        "description": "Aura-2 Selene English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-theia-en": {
+        "description": "Aura-2 Theia English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-vesta-en": {
+        "description": "Aura-2 Vesta English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-zeus-en": {
+        "description": "Aura-2 Zeus English voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-sirio-es": {
+        "description": "Aura-2 Sirio Spanish voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-nestor-es": {
+        "description": "Aura-2 Nestor Spanish voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-carina-es": {
+        "description": "Aura-2 Carina Spanish voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-celeste-es": {
+        "description": "Aura-2 Celeste Spanish voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-alvaro-es": {
+        "description": "Aura-2 Alvaro Spanish voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-gisela-de": {
+        "description": "Aura-2 Gisela German voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-eva-de": {
+        "description": "Aura-2 Eva German voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-katrin-de": {
+        "description": "Aura-2 Katrin German voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-stefan-de": {
+        "description": "Aura-2 Stefan German voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-florian-de": {
+        "description": "Aura-2 Florian German voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-luna-it": {
+        "description": "Aura-2 Luna Italian voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-bianca-it": {
+        "description": "Aura-2 Bianca Italian voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-stella-it": {
+        "description": "Aura-2 Stella Italian voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-luca-it": {
+        "description": "Aura-2 Luca Italian voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-marco-it": {
+        "description": "Aura-2 Marco Italian voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-asteria-ja": {
+        "description": "Aura-2 Asteria Japanese voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-luna-ja": {
+        "description": "Aura-2 Luna Japanese voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-stella-ja": {
+        "description": "Aura-2 Stella Japanese voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-athena-ja": {
+        "description": "Aura-2 Athena Japanese voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      },
+      "aura-2-orion-ja": {
+        "description": "Aura-2 Orion Japanese voice",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      }
+    }
+  }
+}

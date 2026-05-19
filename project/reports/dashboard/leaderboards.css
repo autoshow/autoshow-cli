@@ -1,0 +1,63 @@
+.leaderboard-shell {
+  padding: 18px;
+}
+
+.panel-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.panel-head h3 {
+  margin: 0;
+  font-size: 1.22rem;
+}
+
+.panel-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rank-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-soft);
+}
+
+.rank-panel h4 {
+  margin: 0;
+  padding: 14px 14px 4px;
+}
+
+.rank-cell {
+  font-weight: 850;
+}
+
+.rank-panel tr.is-top td {
+  background: rgba(111, 212, 169, 0.1);
+}
+
+@media (max-width: 1040px) {
+  .board-grid,
+  .panel-head {
+    display: block;
+  }
+
+  .rank-panel + .rank-panel {
+    margin-top: 12px;
+  }
+
+  .panel-legend {
+    margin-top: 12px;
+  }
+}

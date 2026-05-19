@@ -1,0 +1,239 @@
+# Commands
+
+## Outline
+
+- [Quick Start](#quick-start)
+- [Command Map](#command-map)
+- [Selection Guide](#selection-guide)
+- [Pricing Preflight](#pricing-preflight)
+
+## Quick Start
+
+AutoShow currently exposes 16 named commands, plus built-in `help` and `version`.
+
+```bash
+# install/setup local runtimes and tools
+bun as setup
+
+# read-only dependency insight report through a system Socket CLI
+bun as sock
+
+# extract only (no LLM summary)
+bun as extract input/examples/audio/1-audio.mp3
+
+# extract with Groq STT
+bun as extract input/examples/audio/1-audio.mp3 --groq whisper-large-v3
+
+# extract with xAI Grok STT
+bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
+
+# extract with DeepInfra Whisper STT
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra openai/whisper-large-v3-turbo
+
+# extract with deAPI STT
+bun as extract input/examples/audio/1-audio.mp3 --deapi WhisperLargeV3
+
+# extract with Happy Scribe STT
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe auto
+
+# extract with Deepgram STT
+bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3
+
+# extract with AssemblyAI STT
+bun as extract input/examples/audio/1-audio.mp3 --assemblyai universal-3-pro
+
+# full pipeline (download/transcribe + LLM write)
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
+
+# full pipeline with Z.AI GLM 5.1
+bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+
+# full pipeline with Kimi K2.6
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+
+# metadata with save
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
+
+# metadata as Markdown frontmatter YAML
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
+
+# document OCR/extraction only
+bun as extract input/examples/document/1-document.pdf
+
+# document OCR with DeepInfra
+bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct
+
+# document OCR with Kimi
+bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+
+# URL article extraction with every backend
+bun as extract https://example.com/article --all-url
+
+# X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
+bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
+
+# X post referencing a Space (looks up the post, extracts Space metadata)
+bun as extract "https://x.com/user/status/1234567890"
+
+# text-to-speech from local markdown/txt
+bun as tts input/examples/tts/1-tts.md --kitten kitten-tts-mini
+
+# text-to-speech with Gemini
+bun as tts input/examples/tts/1-tts.md --gemini gemini-3.1-flash-tts-preview
+
+# text-to-speech with OpenAI custom voice creation
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+
+# text-to-speech with ElevenLabs Instant Voice Cloning
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
+# text-to-speech with a trained ElevenLabs Professional Voice Clone
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+
+# text-to-speech with xAI Grok
+bun as tts input/examples/tts/1-tts.md --grok grok-tts --grok-tts-voice eve
+
+# text-to-speech with Groq Arabic Orpheus
+bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-arabic-saudi --groq-voice fahad
+
+# text-to-speech with Mistral Voxtral reference audio
+bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
+# text-to-speech with MiniMax hosted voices
+bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+
+# text-to-speech with Hume Octave 2
+bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male English Actor"
+
+# text-to-speech with Cartesia Sonic
+bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+
+# text-to-speech with deAPI Qwen3 voice cloning
+bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+
+# image generation, then edit/reference the generated image; run this block in order
+bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
+bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
+
+# image reference with native Gemini
+bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
+
+# image references with MiniMax and BFL
+bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
+bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+
+# video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
+bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
+bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
+bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
+
+# image generation with deAPI
+bun as image "a sunset over mountains" --deapi Flux1schnell --image-size 768x768
+
+# image generation with BFL
+bun as image "a sunset over mountains" --bfl flux-2-pro-preview --image-size 1024x1024
+
+# local lyric-video render from repo audio
+# bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
+# input/examples/lyrics/01-cover.jpeg, and input/examples/lyrics/01-example-song.txt
+bun as music --audio input/examples/lyrics/01-example-song.mp3
+
+# lyric draft generation from project text
+bun as write ./output/demo/text --prompt rockSong
+
+# music generation
+bun as music "an ambient piano instrumental with soft strings" --minimax music-2.6 --music-instrumental
+bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
+
+# video generation
+bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview
+
+# video generation with multiple providers
+bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview --minimax MiniMax-Hailuo-2.3 --runway gen4.5 --deapi Ltxv_13B_0_9_8_Distilled_FP8
+```
+
+## Command Map
+
+- `metadata`: [metadata](./commands/setup-and-utilities/metadata/metadata.md)
+- `setup` / model pre-downloads: [setup](./commands/process-steps/step-0-setup/setup.md)
+- `cache`: [cache](./commands/setup-and-utilities/cache/cache.md)
+- `sock`: [sock](./commands/setup-and-utilities/sock/sock.md)
+- `download`: [download](./commands/process-steps/step-1-download/download-file.md)
+- `extract`: [extract](./commands/process-steps/step-2-extract/01-extract.md) — routes media to STT, documents/images to OCR, article HTML to URL extraction, and X/Twitter Space or post links to the X API.
+- `resume`: [resume](./commands/setup-and-utilities/resume/resume.md)
+- `write`: [command](./commands/process-steps/step-3-write/write-text.md) | [setup](./commands/process-steps/step-3-write/write-text.md#setup)
+- `tts`: [command](./commands/process-steps/step-4-tts/text-to-speech.md) | [setup](./commands/process-steps/step-4-tts/text-to-speech.md#setup)
+- `image`: [command](./commands/process-steps/step-5-image/text-to-image.md) | [setup](./commands/process-steps/step-5-image/text-to-image.md#setup)
+- `video`: [video](./commands/process-steps/step-6-video/text-to-video-services.md)
+- `music`: [music](./commands/process-steps/step-7-music/text-to-music-services.md)
+- `comic`: [comic](./commands/process-steps/step-8-comic/comic.md)
+- `config`: [config](./commands/setup-and-utilities/config/config.md)
+- `links`: [links](./commands/setup-and-utilities/links/links.md)
+- `benchmark`: [benchmark](./commands/setup-and-utilities/benchmark/benchmark.md)
+
+## Selection Guide
+
+- Use `metadata` for quick metadata inspection without downloading.
+- Use `sock` for a read-only dependency inventory plus Socket package score, scan, and upgrade/security guidance reports.
+- Use `download` for downloading media/documents and collecting metadata.
+- Use `extract` when you only need step-2 extraction or transcription without LLM writing, or to collect X Space metadata.
+- Use `resume` to backfill missing media transcription or document OCR providers in an existing output directory, including `extract` parent batches.
+- Use `write` for full summary pipeline with optional TTS/image/video generation, and for lyric draft generation from `./output/<name>/text`.
+- Use `music --audio` or `music --batch` for lyric-video rendering from repo audio under `input/`.
+- Use standalone `tts`, `image`, `music`, and `video` commands for direct generation workflows.
+- Use `comic` for staged or complete episode-script to comic workflows: scene drafting, character sketch references, panel prompt bundles, review sketches, final panel images, and grouped page images.
+
+## Pricing Preflight
+
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `music --audio` and `music --batch` are local lyric-video modes and reject `--price`:
+
+```bash
+bun as extract input/examples/audio/1-audio.mp3 --elevenlabs scribe_v2 --price
+bun as extract input/examples/audio/1-audio.mp3 --deepinfra openai/whisper-large-v3-turbo --price
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi WhisperLargeV3 --price
+bun as extract input/examples/audio/1-audio.mp3 --happyscribe auto --price
+bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3 --price
+bun as extract input/examples/audio/1-audio.mp3 --groq whisper-large-v3 --price
+bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text --price
+bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct --price
+bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6 --price
+bun as extract https://example.com/article --all-url --price
+bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
+bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6 --price
+bun as write ./output/demo/text --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-sample input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-v1-english --price
+bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-arabic-saudi --price
+bun as tts input/examples/tts/1-tts.md --grok grok-tts --price
+bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --price
+bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --price
+bun as tts input/examples/tts/1-tts.md --hume octave-2 --price
+bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --price
+bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --price
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --price
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
+bun as image "a sunset" --openai gpt-image-2 --image-size 1024x1024 --image-quality low --price
+bun as image "a sunset" --minimax image-01 --image-count 3 --price
+bun as image "a sunset" --bfl flux-2-klein-4b --price
+bun as image "a sunset" --deapi Flux1schnell --price
+bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental --price
+bun as music "an ambient piano instrumental" --minimax music-2.6-free --music-instrumental --price
+bun as music "an ambient piano instrumental" --gemini lyria-3-pro-preview --music-duration 120 --price
+bun as video "a sunset timelapse" --gemini veo-3.1-lite-generate-preview --price
+bun as video "a sunset timelapse" --minimax MiniMax-Hailuo-2.3 --price
+bun as video "a sunset timelapse" --glm cogvideox-3 --price
+bun as video "a sunset timelapse" --grok grok-imagine-video --price
+bun as video "a sunset timelapse" --runway gen4.5 --video-duration 5 --price
+bun as video "a sunset timelapse" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
+bun as video "a sunset timelapse" --all-video --price
+bun as comic generate-images 02-01 --target images --panels 1-16 --price
+bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --price
+bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --price
+bun as comic character-sketch --image input/characters/01-peaches.webp --price
+```
+
+For token-priced hosted OCR providers, price preflight uses registry token rates with model-specific input/output token heuristics from recent OCR benchmark usage and adds page processing-time estimates. URL article estimates include the selected `--url-backend`, or every URL backend when `--all-url` is set. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0059/page`. For `extract --deapi`, `tts --deapi`, and `music --deapi`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. MiniMax music estimates use current model rates, including the `music-2.6-free` zero-cost track estimate and any generated-lyrics add-on. For `extract --happyscribe`, price preflight is side-effect free and uses the published `$0.01/min` AI rate; exact billing is captured only during real runs with a resolvable USD organization. Supadata STT estimates use the Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, with plan-pricing variance possible.

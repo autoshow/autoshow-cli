@@ -1,0 +1,11 @@
+{
+  "description": "A one-sentence description under 180 characters",
+  "expectedInputTokens": 300,
+  "expectedOutputTokens": 300,
+  "instruction": "- Write a one-sentence description of the transcript.\n  - The one-sentence description shouldn't exceed 180 characters (roughly 30 words).",
+  "structuredPreset": "shortSummary",
+  "examples": {
+    "json": "{\n  \"episodeDescription\": \"A concise one-sentence description of the transcript in 180 characters or fewer.\"\n}",
+    "markdown": "Format the output like so:\n\n    ## Episode Description\n\n    One sentence description encapsulating the content within roughly 180 characters."
+  }
+}

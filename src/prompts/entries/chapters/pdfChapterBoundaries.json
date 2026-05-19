@@ -1,0 +1,11 @@
+{
+  "description": "Resolve PDF chapter start pages from OCR/outline/TOC evidence",
+  "expectedInputTokens": 1800,
+  "expectedOutputTokens": 700,
+  "instruction": "- Resolve the major chapter boundaries for the PDF using the supplied outline, TOC evidence, printed-page mapping, and page snippets.\n- Return only chapter starts that are defensible from the evidence.\n- Prefer major sections over minor subheadings when multiple entries land on the same page.\n- Use the exact PDF page number for each chapter start.\n- Include `printedStartPage` only when the evidence clearly supports it.\n- Set `confidence` to high, medium, or low.\n- Keep `reason` brief and evidence-based.",
+  "structuredPreset": "pdfChapterBoundaries",
+  "examples": {
+    "json": "{\n  \"chapters\": [\n    {\n      \"title\": \"Introduction\",\n      \"pdfStartPage\": 5,\n      \"printedStartPage\": \"1\",\n      \"confidence\": \"high\",\n      \"reason\": \"TOC entry maps printed page 1 to PDF page 5 and the heading appears on that page.\"\n    },\n    {\n      \"title\": \"Chapter 2 The Trial\",\n      \"pdfStartPage\": 19,\n      \"printedStartPage\": \"15\",\n      \"confidence\": \"medium\",\n      \"reason\": \"TOC mapping and nearby page heading agree within one page.\"\n    }\n  ]\n}",
+    "markdown": "Format the output like so:\n\n    ## PDF Chapters\n\n- Introduction — PDF page 5\n- Chapter 2 The Trial — PDF page 19"
+  }
+}

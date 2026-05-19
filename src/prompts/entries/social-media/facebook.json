@@ -1,0 +1,11 @@
+{
+  "description": "Conversational Facebook post",
+  "expectedInputTokens": 350,
+  "expectedOutputTokens": 500,
+  "instruction": "- Write an engaging Facebook post summarizing the key themes of the transcript.\n  - Keep it conversational and suitable for broad audiences.\n  - Posts should ideally be around 100-200 words.",
+  "structuredPreset": "facebook",
+  "examples": {
+    "json": "{\n  \"content\": \"Have you ever wondered how web applications have transformed over the last decade? This post highlights the rise of modern frameworks, backend changes, and the trends shaping what developers need to know next.\"\n}",
+    "markdown": "Format the output like so:\n\n    ## Facebook Social Post\n    \n    Have you ever wondered how web applications have transformed over the last decade? In our latest episode, we explore this evolution, highlighting the rise of JavaScript frameworks, backend innovations, and future trends that every developer should watch. Tune in to learn more and stay updated!"
+  }
+}

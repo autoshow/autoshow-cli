@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 2,
+  "kind": "extract",
+  "metadata": {
+    "step1": {
+      "title": "URL Consensus Fixture",
+      "slug": "url-consensus-fixture",
+      "pageCount": 1,
+      "format": "html",
+      "fileSize": 1234
+    },
+    "source": {
+      "url": "https://example.com/article.html"
+    },
+    "completionStatus": "full",
+    "requestedProviders": [
+      { "service": "defuddle", "model": "defuddle" },
+      { "service": "firecrawl", "model": "firecrawl" }
+    ],
+    "providerStates": [
+      {
+        "service": "defuddle",
+        "model": "defuddle",
+        "artifactDir": "providers/defuddle",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "firecrawl",
+        "model": "firecrawl",
+        "artifactDir": "providers/firecrawl",
+        "status": "succeeded",
+        "attempts": 1
+      }
+    ]
+  }
+}

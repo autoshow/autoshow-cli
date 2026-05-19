@@ -1,0 +1,40 @@
+{
+  "gcloud": {
+    "description": "Google Cloud Text-to-Speech",
+    "type": "api",
+    "voices": [
+      "en-US-Chirp3-HD-Charon",
+      "en-US-Studio-O",
+      "instant-custom-voice"
+    ],
+    "models": {
+      "studio": {
+        "description": "Google Cloud Studio voices — media narration and dialogue voices",
+        "costPer1kCharsUSD": 0.16,
+        "costPer1kCharsCents": 16,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 10000
+        }
+      },
+      "chirp3-hd": {
+        "description": "Google Cloud Chirp 3 HD voices — latest high-definition voice family",
+        "costPer1kCharsUSD": 0.03,
+        "costPer1kCharsCents": 3,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 9000
+        }
+      },
+      "instant-custom-voice": {
+        "description": "Google Cloud Chirp 3 Instant Custom Voice — synthesize with a voice cloning key",
+        "costPer1kCharsUSD": 0.06,
+        "costPer1kCharsCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 12000
+        }
+      }
+    }
+  }
+}

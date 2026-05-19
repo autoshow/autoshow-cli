@@ -1,0 +1,320 @@
+import { appendFile, mkdir, readdir, readFile, rm } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
+import type { TestRunArtifacts } from '~/types'
+import { formatTimestampForDir } from './utils'
+
+const LATEST_LOG_FILE = 'latest.log'
+const ACTIVE_RUN_FILE = '.active-run.json'
+
+export const TEST_OUTPUT_ROOT = resolve(process.cwd(), 'project/test-output')
+export const LATEST_TEST_LOG_PATH = resolve(TEST_OUTPUT_ROOT, LATEST_LOG_FILE)
+export const DASHBOARD_RESULTS_ROOT = resolve(process.cwd(), 'project/reports/results')
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+const readTextIfExists = async (path: string): Promise<string> => {
+  try {
+    return await readFile(path, 'utf8')
+  } catch {
+    return ''
+  }
+}
+
+const readJsonIfExists = async (path: string): Promise<Record<string, unknown> | null> => {
+  const text = await readTextIfExists(path)
+  if (!text.trim()) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(text) as unknown
+    return isRecord(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+const ensureParentDirectory = async (path: string): Promise<void> => {
+  await mkdir(dirname(path), { recursive: true })
+}
+
+const isPidAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const isActiveRunDir = async (dir: string): Promise<boolean> => {
+  const marker = await readJsonIfExists(resolve(dir, ACTIVE_RUN_FILE))
+  const pid = marker?.['pid']
+  return typeof pid === 'number' && Number.isInteger(pid) && pid > 0 && isPidAlive(pid)
+}
+
+const formatUnknown = (value: unknown): string | null => {
+  if (typeof value === 'string' && value.length > 0) return value
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return null
+}
+
+const appendRunSummary = (
+  lines: string[],
+  report: Record<string, unknown> | null,
+  artifacts: TestRunArtifacts,
+  exitCode: number
+): void => {
+  const runRaw = report?.['run']
+  const summaryRaw = report?.['summary']
+  const run = isRecord(runRaw) ? runRaw : {}
+  const summary = isRecord(summaryRaw) ? summaryRaw : {}
+
+  lines.push('AutoShow test runner latest log')
+  lines.push(`Run ID: ${formatUnknown(run['id']) ?? artifacts.runId}`)
+  lines.push(`Mode: ${formatUnknown(run['mode']) ?? 'unknown'}`)
+  lines.push(`Exit code: ${exitCode}`)
+  lines.push(`Started: ${formatUnknown(run['startedAt']) ?? artifacts.startedAtIso}`)
+  lines.push(`Ended: ${formatUnknown(run['endedAt']) ?? 'unknown'}`)
+  lines.push(`Duration ms: ${formatUnknown(run['durationMs']) ?? 'unknown'}`)
+
+  const argv = Array.isArray(run['argv'])
+    ? run['argv'].filter((value): value is string => typeof value === 'string')
+    : []
+  lines.push(`Args: ${argv.join(' ')}`)
+  lines.push('')
+  lines.push('Summary')
+  lines.push(`Total: ${formatUnknown(summary['total']) ?? 'unknown'}`)
+  lines.push(`Passed: ${formatUnknown(summary['passed']) ?? 'unknown'}`)
+  lines.push(`Failed: ${formatUnknown(summary['failed']) ?? 'unknown'}`)
+  lines.push(`Skipped: ${formatUnknown(summary['skipped']) ?? 'unknown'}`)
+}
+
+const appendFailures = (lines: string[], report: Record<string, unknown> | null): void => {
+  lines.push('')
+  lines.push('Failures')
+
+  const testsRaw = report?.['tests']
+  const commandsRaw = report?.['commands']
+  const failedTests = Array.isArray(testsRaw)
+    ? testsRaw.filter((entry): entry is Record<string, unknown> =>
+        isRecord(entry) && entry['status'] === 'failed')
+    : []
+  const failedCommands = Array.isArray(commandsRaw)
+    ? commandsRaw.filter((entry): entry is Record<string, unknown> =>
+        isRecord(entry) && entry['status'] === 'failed')
+    : []
+
+  if (failedTests.length === 0 && failedCommands.length === 0 && !report?.['error']) {
+    lines.push('None recorded')
+    return
+  }
+
+  for (const entry of failedTests) {
+    const file = formatUnknown(entry['file']) ?? 'unknown file'
+    const name = formatUnknown(entry['name']) ?? 'unknown test'
+    const message = formatUnknown(entry['failureMessage'])
+    lines.push(`- ${file} :: ${name}${message ? `: ${message}` : ''}`)
+  }
+
+  for (const entry of failedCommands) {
+    const name = formatUnknown(entry['name']) ?? 'unknown command'
+    const message = formatUnknown(entry['failureMessage'])
+    lines.push(`- ${name}${message ? `: ${message}` : ''}`)
+  }
+
+  const error = formatUnknown(report?.['error'])
+  if (error) {
+    lines.push(`- runner error: ${error}`)
+  }
+}
+
+export const cleanupTestOutputRoot = async (
+  rootDir = TEST_OUTPUT_ROOT,
+  options: { keepRunDir?: string, preserveActiveRuns?: boolean } = {}
+): Promise<void> => {
+  await mkdir(rootDir, { recursive: true })
+
+  const entries = await readdir(rootDir, { withFileTypes: true })
+  const keepRunDir = options.keepRunDir ? resolve(options.keepRunDir) : null
+  const pathsToRemove: string[] = []
+
+  for (const entry of entries) {
+    if (entry.name === LATEST_LOG_FILE) {
+      continue
+    }
+
+    const entryPath = resolve(rootDir, entry.name)
+    if (keepRunDir && entryPath === keepRunDir) {
+      continue
+    }
+
+    if (options.preserveActiveRuns) {
+      if (entry.name === '.test-cache') {
+        continue
+      }
+      if (entry.isDirectory() && await isActiveRunDir(entryPath)) {
+        continue
+      }
+    }
+
+    pathsToRemove.push(entryPath)
+  }
+
+  await Promise.all(pathsToRemove.map(path => rm(path, { recursive: true, force: true })))
+}
+
+export const cleanupRunArtifacts = async (artifacts: TestRunArtifacts): Promise<void> => {
+  await rm(artifacts.runDir, { recursive: true, force: true })
+}
+
+export const createRunArtifacts = async (rootDir = TEST_OUTPUT_ROOT): Promise<TestRunArtifacts> => {
+  const started = new Date()
+  const startedAtMs = started.getTime()
+  const startedAtIso = started.toISOString()
+  await mkdir(rootDir, { recursive: true })
+
+  const base = `${formatTimestampForDir(started)}_test-run`
+  let runId = base
+  let runDir = resolve(rootDir, runId)
+
+  for (let i = 1; i < 1000; i++) {
+    try {
+      await mkdir(runDir, { recursive: false })
+      break
+    } catch {
+      runId = `${base}_${i}`
+      runDir = resolve(rootDir, runId)
+    }
+  }
+
+  const runnerLogPath = resolve(runDir, 'runner.log')
+  const commandLogPath = resolve(runDir, 'commands.log')
+  const metricsLogPath = resolve(runDir, 'metrics.ndjson')
+  const activeRunPath = resolve(runDir, ACTIVE_RUN_FILE)
+  const metadataDirPath = resolve(runDir, 'metadata')
+  await Bun.write(activeRunPath, `${JSON.stringify({
+    pid: process.pid,
+    startedAt: startedAtIso,
+  }, null, 2)}\n`)
+  await Bun.write(runnerLogPath, '')
+  await Bun.write(commandLogPath, '')
+  await Bun.write(metricsLogPath, '')
+  await mkdir(metadataDirPath, { recursive: true })
+
+  return {
+    rootDir,
+    runId,
+    runDir,
+    runnerLogPath,
+    commandLogPath,
+    metricsLogPath,
+    activeRunPath,
+    junitPath: resolve(runDir, 'junit.xml'),
+    reportJsonPath: resolve(runDir, 'report.json'),
+    e2eReportJsonPath: resolve(runDir, 'e2e-report.json'),
+    dashboardReportJsonPath: resolve(runDir, 'dashboard-report.json'),
+    calibrationReportJsonPath: resolve(runDir, 'model-calibration.json'),
+    metadataDirPath,
+    startedAtMs,
+    startedAtIso,
+  }
+}
+
+export const appendRunnerLog = async (artifacts: TestRunArtifacts, text: string): Promise<void> => {
+  await ensureParentDirectory(artifacts.runnerLogPath)
+  await appendFile(artifacts.runnerLogPath, text)
+}
+
+export const appendCommandLog = async (artifacts: TestRunArtifacts, text: string): Promise<void> => {
+  await ensureParentDirectory(artifacts.commandLogPath)
+  await appendFile(artifacts.commandLogPath, text)
+}
+
+export const writeReportJson = async (
+  artifacts: TestRunArtifacts,
+  json: Record<string, unknown>
+): Promise<void> => {
+  await ensureParentDirectory(artifacts.reportJsonPath)
+  await Bun.write(artifacts.reportJsonPath, JSON.stringify(json, null, 2))
+}
+
+export const writeJsonFile = async (
+  path: string,
+  json: Record<string, unknown>
+): Promise<void> => {
+  await ensureParentDirectory(path)
+  await Bun.write(path, JSON.stringify(json, null, 2))
+}
+
+export const writeDashboardReportFiles = async (
+  artifacts: TestRunArtifacts,
+  json: Record<string, unknown>,
+  options: { resultsRoot?: string } = {}
+): Promise<{ runReportPath: string; resultsReportPath: string; indexPath: string }> => {
+  const resultsRoot = options.resultsRoot ?? DASHBOARD_RESULTS_ROOT
+  const resultFileName = `${artifacts.runId}-dashboard-report.json`
+  const resultsReportPath = resolve(resultsRoot, resultFileName)
+  const indexPath = resolve(resultsRoot, 'index.json')
+
+  await writeJsonFile(artifacts.dashboardReportJsonPath, json)
+  await writeJsonFile(resultsReportPath, json)
+
+  let resultFiles: string[] = []
+  try {
+    const entries = await readdir(resultsRoot, { withFileTypes: true })
+    resultFiles = entries
+      .filter(entry => entry.isFile() && entry.name.endsWith('.json') && entry.name !== 'index.json')
+      .map(entry => entry.name)
+      .sort((left, right) => left.localeCompare(right))
+  } catch {
+    resultFiles = [resultFileName]
+  }
+
+  if (!resultFiles.includes(resultFileName)) {
+    resultFiles.push(resultFileName)
+    resultFiles.sort((left, right) => left.localeCompare(right))
+  }
+
+  await writeJsonFile(indexPath, {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    files: resultFiles,
+  })
+
+  return {
+    runReportPath: artifacts.dashboardReportJsonPath,
+    resultsReportPath,
+    indexPath,
+  }
+}
+
+export const writeLatestRunLog = async (
+  artifacts: TestRunArtifacts,
+  exitCode: number
+): Promise<string> => {
+  const latestLogPath = resolve(artifacts.rootDir, LATEST_LOG_FILE)
+  const report = await readJsonIfExists(artifacts.reportJsonPath)
+  const reportText = await readTextIfExists(artifacts.reportJsonPath)
+  const runnerLog = await readTextIfExists(artifacts.runnerLogPath)
+  const commandLog = await readTextIfExists(artifacts.commandLogPath)
+  const lines: string[] = []
+
+  appendRunSummary(lines, report, artifacts, exitCode)
+  appendFailures(lines, report)
+
+  lines.push('')
+  lines.push('=== report.json ===')
+  lines.push(reportText.trim() || '<missing>')
+  lines.push('')
+  lines.push('=== runner.log ===')
+  lines.push(runnerLog.trim() || '<missing>')
+  lines.push('')
+  lines.push('=== commands.log ===')
+  lines.push(commandLog.trim() || '<missing>')
+
+  await mkdir(artifacts.rootDir, { recursive: true })
+  await Bun.write(latestLogPath, `${lines.join('\n')}\n`)
+  return latestLogPath
+}

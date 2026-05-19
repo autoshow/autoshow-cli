@@ -1,0 +1,50 @@
+Chapt er 3: Consensus Protocols
+
+Bui1ding on Lamport's foundational work, the next major breakthrough
+came with the development of consensus protoco1s. The fundamental
+question these protocols address is: how can a group of nodes agree
+on a single va1ue, even when some nodes may fail?
+
+The Byzantine Generals Prob1em
+
+Lamport, Shostak, and Pease formalized this question in 1982 as
+the "Byzantine Generals Problem."3 The prob1em imagines several
+divisions of an army camped around an enemy city. The genera1s
+must agree on a common p1an of action — attack or retreat — but
+some of the generals may be traitors who wi11 try to prevent
+the loyal generals from reaching agreement.
+
+The key result was that with n genera1s, the problem is solvable
+if and only if fewer than n/3 of the genera1s are traitors.4 This
+bound is tight — no protocol can do better.
+
+Practica1 Implications
+
+In practice, most distributed systems do not need to to1erate
+Byzantine faults. Instead, they assume a "crash-fault" model where
+nodes either operate correctly or stop comp1etely. This simplification
+leads to much more efficient protoco1s.
+
+The Paxos protocol, also invented by Lamport (under the pseudonym
+of a fictional Greek par1iamentary system), solves consensus in the
+crash-fault model.5 It requires on1y a majority of nodes to be
+operational, making it suitable for systems with 2f + 1 nodes that
+can tolerate up to f failures.
+
+...............Table of Contents...............
+Chapter 1 ............ 1
+Chapter 2 ............ 15
+Chapter 3 ............ 29
+Chapter 4 ............ 45
+
+3 Lamport, L., Shostak, R., and Pease, M. "The Byzantine Generals
+Problem." ACM Transactions on Programming Languages and Systems, 1982.
+
+4 This result assumes that communication channels are reliable. If channels
+can also be faulty, the bounds change.
+
+5 Lamport originally wrote the Paxos paper in 1990, but it was not
+published until 1998 due to reviewers finding the Greek parliament
+allegory confusing.
+
+— 29 —

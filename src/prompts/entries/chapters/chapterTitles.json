@@ -1,0 +1,11 @@
+{
+  "description": "Timestamped chapter titles without descriptions",
+  "expectedInputTokens": 350,
+  "expectedOutputTokens": 450,
+  "instruction": "- Create chapter titles based on the topics discussed throughout the transcript.\n  - Include only starting timestamps in exact HH:MM:SS format, always using two digits each for hours, minutes, and seconds.\n  - Chapters should be roughly 3-6 minutes long.",
+  "structuredPreset": "chapterTitles",
+  "examples": {
+    "json": "{\n  \"chapters\": [\n    {\n      \"timestamp\": \"00:00:00\",\n      \"title\": \"Introduction and Overview\"\n    },\n    {\n      \"timestamp\": \"00:03:12\",\n      \"title\": \"The History of Web Development\"\n    },\n    {\n      \"timestamp\": \"00:07:45\",\n      \"title\": \"The Rise of JavaScript Frameworks\"\n    },\n    {\n      \"timestamp\": \"00:12:30\",\n      \"title\": \"Server-Side Technologies\"\n    },\n    {\n      \"timestamp\": \"00:18:00\",\n      \"title\": \"The Future of Web Development\"\n    }\n  ]\n}",
+    "markdown": "Format the output like so:\n\n    ## Chapters\n\n    ### 00:00:00 - Introduction and Overview\n    ### 00:03:12 - The History of Web Development\n    ### 00:07:45 - The Rise of JavaScript Frameworks\n    ### 00:12:30 - Server-Side Technologies\n    ### 00:18:00 - The Future of Web Development"
+  }
+}

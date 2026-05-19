@@ -1,0 +1,16 @@
+{
+  "Together": {
+    "General": [
+      "https://docs.together.ai/docs/introduction"
+    ],
+    "STT": [
+      "https://docs.together.ai/reference/audio-transcriptions",
+      "https://www.together.ai/models/openai-whisper-large-v3",
+      "https://docs.together.ai/docs/speech-to-text.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/SKILL.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/references/stt-models.md",
+      "https://raw.githubusercontent.com/togethercomputer/skills/refs/heads/main/skills/together-audio/scripts/stt_transcribe.ts",
+      "https://docs.together.ai/reference/audio-transcriptions.md"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+Chapter 5: Eventual Consistency
+
+The CAP theorem, formulated by Eric Brewer in 2000 and proved by
+Gilbert and Lynch in 2002, states that a distributed system can
+provide at most two of the following three guarantees: consistency,
+availability, and partition tolerance.
+
+Since network partitions are inevitable in any real distributed system,
+the practical choice is between consistency and availability. Systems
+that choose availability over consistency are said to provide "eventual
+consistency" — a guarantee that, given enough time without new updates,
+all replicas will converge to the same value.
+
+This model has proven remarkably useful in practice. Amazon's Dynamo
+paper, published in 2007, demonstrated that eventual consistency could
+support one of the world's largest e-commerce platforms. The key insight
+was that many operations do not require strong consistency — a shopping
+cart, for example, can tolerate briefly showing stale data as long as
+no items are permanently lost.
+
+The techniques pioneered by Dynamo — consistent hashing, vector clocks,
+sloppy quorums, and anti-entropy protocols — became the foundation for
+an entire generation of NoSQL databases, including Cassandra, Riak, and
+Voldemort. These systems prioritize availability and partition tolerance,
+accepting that clients may occasionally read stale data in exchange for
+the ability to continue operating during network failures, which is
+especially important in globally distributed systems where the cost of

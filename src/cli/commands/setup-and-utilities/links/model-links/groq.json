@@ -1,0 +1,22 @@
+{
+  "Groq": {
+    "General": [
+      "https://console.groq.com/docs/libraries.md",
+      "https://console.groq.com/docs/api-reference.md",
+      "https://console.groq.com/docs/quickstart.md",
+      "https://console.groq.com/docs/rate-limits.md",
+      "https://console.groq.com/docs/models.md"
+    ],
+    "Text": [
+      "https://console.groq.com/docs/text-chat.md",
+      "https://console.groq.com/docs/vision.md",
+      "https://console.groq.com/docs/structured-outputs.md"
+    ],
+    "STT": [
+      "https://console.groq.com/docs/speech-to-text.md"
+    ],
+    "TTS": [
+      "https://console.groq.com/docs/text-to-speech.md"
+    ]
+  }
+}

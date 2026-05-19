@@ -1,0 +1,32 @@
+{
+  "speechify": {
+    "description": "Speechify Simba cloud text-to-speech",
+    "type": "api",
+    "voices": [
+      "george",
+      "henry",
+      "carly",
+      "sophia"
+    ],
+    "models": {
+      "simba-english": {
+        "description": "Speechify Simba English — highest-quality English TTS",
+        "costPer1kCharsUSD": 0.01,
+        "costPer1kCharsCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      },
+      "simba-multilingual": {
+        "description": "Speechify Simba Multilingual — multilingual and mixed-language TTS",
+        "costPer1kCharsUSD": 0.01,
+        "costPer1kCharsCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 3000
+        }
+      }
+    }
+  }
+}

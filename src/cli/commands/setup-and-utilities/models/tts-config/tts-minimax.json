@@ -1,0 +1,26 @@
+{
+  "minimax": {
+    "description": "MiniMax cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "speech-2.8-hd": {
+        "description": "speech-2.8-hd — high quality synthesis",
+        "costPer1kCharsUSD": 0.1,
+        "costPer1kCharsCents": 10,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 105590
+        }
+      },
+      "speech-2.8-turbo": {
+        "description": "speech-2.8-turbo — low latency synthesis",
+        "costPer1kCharsUSD": 0.06,
+        "costPer1kCharsCents": 6,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 138178
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "Rev": {
+    "General": [
+      "https://docs.rev.ai/get-started.md"
+    ],
+    "STT": [
+      "https://docs.rev.ai/api/features.md",
+      "https://docs.rev.ai/api/asynchronous.md",
+      "https://docs.rev.ai/api/asynchronous/get-started.md",
+      "https://docs.rev.ai/api/asynchronous/files.md",
+      "https://docs.rev.ai/api/asynchronous/webhooks.md",
+      "https://docs.rev.ai/api/asynchronous/transcribers.md",
+      "https://docs.rev.ai/api/asynchronous/reference.md",
+      "https://docs.rev.ai/api/asynchronous/best-practices.md",
+      "https://docs.rev.ai/sdk/node/get-started.md",
+      "https://docs.rev.ai/sdk/node/code-samples.md",
+      "https://docs.rev.ai/resources/code-samples/node.md",
+      "https://docs.rev.ai/faq.md"
+    ]
+  }
+}

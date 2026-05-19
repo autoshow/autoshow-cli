@@ -1,0 +1,26 @@
+Chapter 4: Modern Consensus — Raft and Beyond
+
+While Paxos solved the theoretical problem of consensus, its complexity
+made it notoriously difficult to implement correctly. In 2014, Diego
+Ongaro and John Ousterhout published the Raft protocol specifically
+designed for understandability.
+
+Raft decomposes consensus into three sub-problems:
+
+1. Leader election: choosing a single node to coordinate
+2. Log replication: the leader accepts commands and replicates them
+3. Safety: ensuring that all nodes agree on the same log entries
+
+The protocol uses a strong leader model. All client requests go through
+the leader, which appends them to its log and replicates the entries
+to followers. Once a majority of nodes have acknowledged an entry,
+it is considered committed.
+
+This approach trades some theoretical elegance for practical clarity.
+Engineers can reason about Raft's behavior in terms of concrete state
+machines rather than abstract mathematical properties.
+
+Since Raft's publication, it has been adopted by numerous production
+systems including etcd (used by Kubernetes), CockroachDB, and TiKV.
+Its influence on the field has been substantial, demonstrating that
+accessibility of algorithm design matters as much as correctness.

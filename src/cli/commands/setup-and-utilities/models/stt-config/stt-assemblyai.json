@@ -1,0 +1,24 @@
+{
+  "assemblyai": {
+    "description": "AssemblyAI cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "universal-3-pro": {
+        "description": "Universal-3 Pro — 6 languages, advanced prompting, diarization",
+        "costPerHourUSD": 0.21,
+        "costPerHourCents": 21,
+        "limits": {
+          "effectiveBytes": 2362232013,
+          "directUploadBytes": 2362232013,
+          "remoteUrlBytes": 5368709120,
+          "durationSeconds": 36000,
+          "notes": "AssemblyAI allows larger remote URLs than upload API submissions. The current CLI uploads first, so effectiveBytes tracks the smaller upload cap."
+        },
+        "estimation": {
+          "costMultiplier": 0.9902,
+          "msPerSecond": 178
+        }
+      }
+    }
+  }
+}

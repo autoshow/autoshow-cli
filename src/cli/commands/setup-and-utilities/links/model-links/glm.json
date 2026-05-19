@@ -1,0 +1,32 @@
+{
+  "GLM": {
+    "General": [
+      "https://docs.z.ai/guides/overview/overview.md",
+      "https://docs.z.ai/guides/overview/pricing.md",
+      "https://docs.z.ai/guides/overview/concept-param.md",
+      "https://docs.z.ai/api-reference/introduction.md",
+      "https://docs.z.ai/api-reference/api-code.md"
+    ],
+    "Text": [
+      "https://docs.z.ai/guides/overview/migrate-to-glm-new.md",
+      "https://docs.z.ai/guides/llm/glm-5.1.md",
+      "https://docs.z.ai/guides/capabilities/struct-output.md",
+      "https://docs.z.ai/api-reference/llm/chat-completion.md"
+    ],
+    "OCR": [
+      "https://docs.z.ai/guides/vlm/glm-ocr.md",
+      "https://docs.z.ai/api-reference/tools/layout-parsing.md"
+    ],
+    "URL": [
+      "https://docs.z.ai/api-reference/tools/web-reader.md"
+    ],
+    "Video": [
+      "https://docs.z.ai/guides/video/cogvideox-3.md",
+      "https://docs.z.ai/guides/video/vidu-q1.md",
+      "https://docs.z.ai/guides/video/vidu2.md"
+    ],
+    "STT": [
+      "https://docs.z.ai/guides/audio/glm-asr-2512.md"
+    ]
+  }
+}

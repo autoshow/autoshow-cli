@@ -1,0 +1,20 @@
+{
+  "Drive": {
+    "General": [
+      "https://developers.google.com/workspace/drive/api/guides/about-sdk.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/api-specific-auth.md.txt",
+      "https://developers.google.com/workspace/drive/api/quickstart/js.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/about-files.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/create-file.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/manage-uploads.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/manage-downloads.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/manage-revisions.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/long-running-operations.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/folder.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/delete.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/search-files.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/file-metadata.md.txt",
+      "https://developers.google.com/workspace/drive/api/guides/performance.md.txt"
+    ]
+  }
+}

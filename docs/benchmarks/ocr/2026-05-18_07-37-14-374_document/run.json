@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 2,
+  "kind": "extract",
+  "metadata": {
+    "step1": {
+      "title": "document",
+      "slug": "1-page-declaration",
+      "pageCount": 1,
+      "format": "jpg",
+      "fileSize": 1976293
+    },
+    "step2": {
+      "extractionMethod": "image+unstructured-ocr",
+      "totalPages": 1,
+      "ocrPages": 1,
+      "textPages": 0,
+      "processingTime": 71904,
+      "dpi": 300,
+      "languages": "eng",
+      "tokenEstimate": 911,
+      "ocrModel": "hi_res_and_enrichment",
+      "ocrService": "unstructured",
+      "inputFamily": "image"
+    },
+    "source": {
+      "url": "https://ajc.pics/autoshow/benchmarks/ocr/1-page-declaration.jpg"
+    },
+    "resolvedStep2": {
+      "route": "ocr",
+      "sourceKind": "image",
+      "providers": [
+        {
+          "service": "tesseract",
+          "model": "tesseract",
+          "origin": "default"
+        },
+        {
+          "service": "ocrmypdf",
+          "model": "ocrmypdf"
+        },
+        {
+          "service": "paddle-ocr",
+          "model": "paddle-ocr"
+        },
+        {
+          "service": "mistral",
+          "model": "mistral-ocr-2512"
+        },
+        {
+          "service": "glm",
+          "model": "glm-ocr"
+        },
+        {
+          "service": "kimi",
+          "model": "kimi-k2.6"
+        },
+        {
+          "service": "openai",
+          "model": "gpt-5.4"
+        },
+        {
+          "service": "openai",
+          "model": "gpt-5.4-mini"
+        },
+        {
+          "service": "openai",
+          "model": "gpt-5.4-nano"
+        },
+        {
+          "service": "anthropic",
+          "model": "claude-haiku-4-5"
+        },
+        {
+          "service": "gemini",
+          "model": "gemini-3.1-pro-preview"
+        },
+        {
+          "service": "gemini",
+          "model": "gemini-3.1-flash-lite-preview"
+        },
+        {
+          "service": "deepinfra",
+          "model": "Qwen/Qwen3-VL-235B-A22B-Instruct"
+        },
+        {
+          "service": "deepinfra",
+          "model": "Qwen/Qwen3-VL-30B-A3B-Instruct"
+        },
+        {
+          "service": "aws-textract",
+          "model": "detect-text"
+        },
+        {
+          "service": "gcloud-docai",
+          "model": "ocr"
+        },
+        {
+          "service": "unstructured",
+          "model": "hi_res_and_enrichment"
+        }
+      ]
+    },
+    "cost": {
+      "estimated": {
+        "totalCost": 0,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
+            "cost": 0,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 0,
+            "pageCount": 1,
+            "estimateType": "exact"
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 0,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
+            "cost": 0,
+            "inputMetric": "pages",
+            "inputValue": 1
+          }
+        ]
+      },
+      "ocrDiagnostics": [
+        {
+          "provider": "unstructured",
+          "model": "hi_res_and_enrichment",
+          "pages": 1,
+          "predictedCostInputs": {
+            "costCents": 0,
+            "pageCount": 1,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "estimateType": "exact"
+          },
+          "actualCostInputs": {
+            "costCents": 0,
+            "pageCount": 1,
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          "ratesUsed": {
+            "costPer1kPagesCents": 0
+          },
+          "delta": {
+            "costCents": 0
+          },
+          "source": "page_pricing"
+        }
+      ]
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 3500,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
+            "processingTimeMs": 3500,
+            "inputMetric": "pages",
+            "inputValue": 1
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 71904,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "unstructured",
+            "model": "hi_res_and_enrichment",
+            "processingTimeMs": 71904,
+            "inputMetric": "pages",
+            "inputValue": 1
+          }
+        ]
+      }
+    },
+    "completionStatus": "incomplete",
+    "requestedProviders": [
+      {
+        "service": "tesseract",
+        "model": "tesseract"
+      },
+      {
+        "service": "ocrmypdf",
+        "model": "ocrmypdf"
+      },
+      {
+        "service": "paddle-ocr",
+        "model": "paddle-ocr"
+      },
+      {
+        "service": "mistral",
+        "model": "mistral-ocr-2512"
+      },
+      {
+        "service": "glm",
+        "model": "glm-ocr"
+      },
+      {
+        "service": "kimi",
+        "model": "kimi-k2.6"
+      },
+      {
+        "service": "openai",
+        "model": "gpt-5.4"
+      },
+      {
+        "service": "openai",
+        "model": "gpt-5.4-mini"
+      },
+      {
+        "service": "openai",
+        "model": "gpt-5.4-nano"
+      },
+      {
+        "service": "anthropic",
+        "model": "claude-haiku-4-5"
+      },
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-pro-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-flash-lite-preview"
+      },
+      {
+        "service": "deepinfra",
+        "model": "Qwen/Qwen3-VL-235B-A22B-Instruct"
+      },
+      {
+        "service": "deepinfra",
+        "model": "Qwen/Qwen3-VL-30B-A3B-Instruct"
+      },
+      {
+        "service": "aws-textract",
+        "model": "detect-text"
+      },
+      {
+        "service": "gcloud-docai",
+        "model": "ocr"
+      },
+      {
+        "service": "unstructured",
+        "model": "hi_res_and_enrichment"
+      }
+    ],
+    "providerStates": [
+      {
+        "service": "tesseract",
+        "model": "tesseract",
+        "artifactDir": "providers/tesseract-tesseract",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "ocrmypdf",
+        "model": "ocrmypdf",
+        "artifactDir": "providers/ocrmypdf-ocrmypdf",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "paddle-ocr",
+        "model": "paddle-ocr",
+        "artifactDir": "providers/paddle-ocr-paddle-ocr",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "mistral",
+        "model": "mistral-ocr-2512",
+        "artifactDir": "providers/mistral-mistral-ocr-2512",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "glm",
+        "model": "glm-ocr",
+        "artifactDir": "providers/glm-glm-ocr",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "kimi",
+        "model": "kimi-k2.6",
+        "artifactDir": "providers/kimi-kimi-k2.6",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "openai",
+        "model": "gpt-5.4",
+        "artifactDir": "providers/openai-gpt-5.4",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "openai",
+        "model": "gpt-5.4-mini",
+        "artifactDir": "providers/openai-gpt-5.4-mini",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "openai",
+        "model": "gpt-5.4-nano",
+        "artifactDir": "providers/openai-gpt-5.4-nano",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "anthropic",
+        "model": "claude-haiku-4-5",
+        "artifactDir": "providers/anthropic-claude-haiku-4-5",
+        "status": "failed",
+        "attempts": 6,
+        "lastError": {
+          "message": "Anthropic Messages request failed (400): Output blocked by content filtering policy",
+          "category": "content_policy",
+          "status": 400,
+          "errorFile": "error.json",
+          "rawResponseFile": "raw-response.json"
+        }
+      },
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-pro-preview",
+        "artifactDir": "providers/gemini-gemini-3.1-pro-preview",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-flash-lite-preview",
+        "artifactDir": "providers/gemini-gemini-3.1-flash-lite-preview",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "deepinfra",
+        "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "artifactDir": "providers/deepinfra-Qwen-Qwen3-VL-235B-A22B-Instruct",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "deepinfra",
+        "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "artifactDir": "providers/deepinfra-Qwen-Qwen3-VL-30B-A3B-Instruct",
+        "status": "succeeded",
+        "attempts": 2
+      },
+      {
+        "service": "aws-textract",
+        "model": "detect-text",
+        "artifactDir": "providers/aws-textract-detect-text",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "gcloud-docai",
+        "model": "ocr",
+        "artifactDir": "providers/gcloud-docai-ocr",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "unstructured",
+        "model": "hi_res_and_enrichment",
+        "artifactDir": "providers/unstructured-hi_res_and_enrichment",
+        "status": "succeeded",
+        "attempts": 1
+      }
+    ],
+    "missingProviders": [
+      {
+        "service": "anthropic",
+        "model": "claude-haiku-4-5"
+      }
+    ],
+    "errors": [
+      {
+        "service": "anthropic",
+        "model": "claude-haiku-4-5",
+        "message": "Anthropic Messages request failed (400): Output blocked by content filtering policy",
+        "category": "content_policy",
+        "status": 400,
+        "errorFile": "error.json",
+        "rawResponseFile": "raw-response.json"
+      }
+    ],
+    "extractRoute": "document"
+  }
+}

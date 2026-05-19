@@ -1,0 +1,24 @@
+{
+  "Better-Auth": {
+    "General": [
+      "https://www.better-auth.com/llms.txt",
+      "https://www.better-auth.com/llms.txt/docs/introduction.md",
+      "https://www.better-auth.com/llms.txt/docs/installation.md",
+      "https://www.better-auth.com/llms.txt/docs/basic-usage.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/api.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/client.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/database.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/session-management.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/users-accounts.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/email.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/cookies.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/rate-limit.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/typescript.md",
+      "https://www.better-auth.com/llms.txt/docs/concepts/cli.md",
+      "https://www.better-auth.com/llms.txt/docs/reference/options.md",
+      "https://www.better-auth.com/llms.txt/docs/reference/security.md",
+      "https://www.better-auth.com/llms.txt/docs/reference/errors.md",
+      "https://www.better-auth.com/llms.txt/docs/reference/faq.md"
+    ]
+  }
+}

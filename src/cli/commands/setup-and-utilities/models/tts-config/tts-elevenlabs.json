@@ -1,0 +1,17 @@
+{
+  "elevenlabs": {
+    "description": "ElevenLabs cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "eleven_v3": {
+        "description": "ElevenLabs v3 — latest generation",
+        "costPer1kCharsUSD": 0.1,
+        "costPer1kCharsCents": 10,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 35885
+        }
+      }
+    }
+  }
+}

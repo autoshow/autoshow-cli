@@ -1,0 +1,20 @@
+{
+  "Speechify": {
+    "TTS": [
+      "https://docs.sws.speechify.com/tts/text-to-speech/get-started/overview.md",
+      "https://docs.sws.speechify.com/tts/text-to-speech/get-started/quickstart.md",
+      "https://docs.sws.speechify.com/tts/text-to-speech/get-started/authentication.md",
+      "https://docs.sws.speechify.com/tts/text-to-speech/get-started/models.md",
+      "https://docs.sws.speechify.com/tts/text-to-speech/get-started/api-limits.md",
+      "https://docs.sws.speechify.com/tts/text-to-speech/get-started/official-sdks.md",
+      "https://docs.sws.speechify.com/tts/text-to-speech/features/voice-cloning.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/introduction.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/authentication.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/audio/speech.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/list.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/create.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/delete.md",
+      "https://docs.sws.speechify.com/tts/api-reference/api-reference/text-to-speech/voices/download-sample.md"
+    ]
+  }
+}

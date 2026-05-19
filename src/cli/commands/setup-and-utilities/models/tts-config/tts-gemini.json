@@ -1,0 +1,19 @@
+{
+  "gemini": {
+    "description": "Google Gemini cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "gemini-3.1-flash-tts-preview": {
+        "description": "Gemini 3.1 Flash TTS Preview — expressive low-latency speech synthesis",
+        "inputCostPer1MCharsUSD": 1,
+        "inputCostPer1MCharsCents": 100,
+        "outputCostPer1MCharsUSD": 20,
+        "outputCostPer1MCharsCents": 2000,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 42246
+        }
+      }
+    }
+  }
+}

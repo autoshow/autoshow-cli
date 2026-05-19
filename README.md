@@ -1,150 +1,264 @@
-<div align="center">
-  <h1>AutoShow CLI</h1>
-  <img alt="autoshow logo" src="https://ajc.pics/autoshow/autoshow-cover-01.webp" width="300" />
-</div>
+# autoshow-cli
 
-## Outline
+Bun-native CLI for turning media, documents, and text prompts into metadata, downloads, transcripts, OCR extracts, summaries, and generated speech, images, video, or music.
 
-- [Project Overview](#project-overview)
-  - [Prompts and Content Formats](#prompts-and-content-formats)
-  - [Key Features](#key-features)
-  - [AutoShow Pipeline](#autoshow-pipeline)
-- [Setup](#setup)
-- [Core AutoShow Commands](#core-autoshow-commands)
-  - [Process Options](#process-options)
-  - [Transcription and LLM Options](#transcription-and-llm-options)
-- [Contributors](#contributors)
+It supports both local and API-backed engines across STT, OCR, LLM, TTS, image, video, and music workflows. Defaults can be persisted in `config/autoshow.json`, and runnable commands perform cost preflight before execution.
 
-## Project Overview
+For command-specific details, use `bun as help <command>` or browse the docs in [`docs/`](./docs/).
 
-AutoShow automates the processing of audio and video content from various sources, including YouTube videos, playlists, podcast RSS feeds, and local media files. It leverages advanced transcription services and language models (LLMs) to perform transcription, summarization, and chapter generation.
-
-### Prompts and Content Formats
-
-AutoShow can generate diverse content formats including:
-
-- **Summaries and Chapters:**
-  - Concise summaries
-  - Detailed chapter descriptions
-  - Bullet-point summaries
-  - Chapter titles with timestamps
-- **Social Media Posts:**
-  - X (Twitter)
-  - Facebook
-  - LinkedIn
-- **Creative Content:**
-  - Rap songs
-  - Rock songs
-  - Country songs
-- **Educational and Informative Content:**
-  - Key takeaways
-  - Comprehension questions
-  - Frequently asked questions (FAQs)
-  - Curated quotes
-  - Blog outlines and drafts
-
-### Key Features
-
-- Support for multiple input types (YouTube links, RSS feeds, local video and audio files)
-- Integration with various:
-  - LLMs (ChatGPT, Claude, Gemini)
-  - Transcription services (Whisper.cpp, Deepgram, Assembly)
-- Customizable prompts for generating titles, summaries, chapter titles/descriptions, key takeaways, and questions to test comprehension
-- Markdown output with metadata and formatted content
-- Workflow management for processing content from `./workflows` subdirectory.
-
-### AutoShow Pipeline
-
-1. The user provides a content input (video URL, playlist, RSS feed, or local file) or triggers a workflow. Front matter is created based on the content's metadata.
-2. The audio is downloaded (if necessary).
-3. Transcription is performed using the selected transcription service.
-4. A customizable prompt is inserted containing instructions for the show notes or other content forms.
-5. The transcript is processed by the selected LLM service to generate the desired output based on the selected prompts.
-
-## Setup
-
-The `setup.sh` script checks for a `.env` file, installs Node dependencies, and builds `whisper.cpp`:
+## Quick Start
 
 ```bash
-bun setup
+bun install
+bun as setup --doctor
+bun as setup
 ```
 
-## Core AutoShow Commands
+- `setup --doctor` verifies prerequisites, API keys, and config without installing anything.
+- Local workflows can run without service API keys; service-backed commands require the relevant provider credentials.
 
-Example commands for all available CLI options can be found in [`docs`](/docs/README.md).
+### YouTube Auth After Setup
 
-### Process Options
+If YouTube starts challenging `yt-dlp` requests with a bot-check or sign-in prompt, follow the exact browser-profile or `cookies.txt` setup commands in [docs/cookies.md](./docs/cookies.md).
 
-Run on a single YouTube video.
+Short version:
+
+- `YTDLP_COOKIES_FROM_BROWSER=chrome` is the easiest path when yt-dlp can read your logged-in browser profile.
+- `YTDLP_COOKIES=/absolute/path/to/cookies.txt` is the fallback when you want a dedicated Netscape cookie jar.
+- `YTDLP_COOKIES` wins when it is set and readable; otherwise AutoShow uses `YTDLP_COOKIES_FROM_BROWSER`.
+
+## Common Workflows
 
 ```bash
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk"
+# Metadata only (no download)
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU"
+
+# Metadata as Markdown frontmatter YAML
+bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
+
+# Download only
+bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
+
+# Extraction only (media routes to STT, documents to OCR, articles to URL extraction)
+bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
+
+# Hosted Grok speech-to-text
+bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
+
+# Render a synced speaker transcript video from a previous media extract run
+bun as extract output/<extract-run-dir> --transcript-video
+
+# Render a transcript video from explicit local artifacts
+bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
+
+# Compare every URL article backend for one remote article
+bun as extract https://example.com/article --all-url
+
+# X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
+bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
+
+# Full write pipeline: download/extract/transcribe + summary output
+bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.4
+
+# Full write pipeline with Z.AI GLM 5.1
+bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+
+# Full write pipeline with Kimi K2.6
+bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+
+# Document OCR / extraction
+bun as extract input/examples/document/1-document.pdf --out json
+
+# Hosted Kimi OCR for a document
+bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+
+# Standalone text-to-speech from local text
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts
+
+# OpenAI custom voice from reference audio and an existing consent recording
+bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+
+# ElevenLabs Instant Voice Cloning
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
+# ElevenLabs Professional Voice Clone synthesis
+bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+
+# Hosted Grok text-to-speech
+bun as tts input/examples/tts/1-tts.md --grok grok-tts --grok-tts-voice eve
+
+# Hosted Mistral Voxtral text-to-speech
+bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+
+# MiniMax hosted text-to-speech
+bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+
+# Hume Octave 2 text-to-speech
+bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male English Actor"
+
+# Cartesia Sonic text-to-speech
+bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+
+# deAPI Qwen3 voice cloning
+bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+
+# Prompt-driven generation, then edit/reference the generated image; run this block in order
+bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
+bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
+bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+
+# Video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
+bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
+bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
+bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
+
+bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
+bun as music "an ambient piano instrumental" --minimax music-2.5
+bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
+bun as music --audio input/examples/lyrics/01-example-song.mp3
+bun as extract output/<extract-run-dir> --transcript-video
+
+# Fetch curated OpenAI docs into project/links/openai-all-links.md
+bun as links --openai
+
+# Fetch Better Auth docs into project/links/better-auth-all-links.md
+bun as links --better-auth
+
+# Fetch curated Kimi docs into project/links/kimi-all-links.md
+bun as links --kimi
+
+# Fetch STT docs across providers into project/links/all-stt-links.md
+bun as links stt
+
+# Fetch docs listed in a local URL file into project/links/urls-links.md
+bun as links urls.md
 ```
 
-Run on a YouTube playlist.
+## Command Map
+
+| Area | Commands |
+|------|----------|
+| Inspect and process | `metadata`, `download`, `extract`, `write` |
+| Generate | `tts`, `image`, `video`, `music` |
+| Setup & Utilities | `config`, `cache`, `setup`, `links`, `resume`, `benchmark` |
+
+High-value notes:
+
+- `write` is the central orchestration command. It can summarize transcripts or extracted documents, write JSON outputs, fan out across multiple LLM providers, and optionally continue into TTS, image, video, or music generation.
+- `setup --models` lets you pre-download local runtimes without running inference, for example `bun as setup --models tiny` or `bun as setup --models ggml-org/gemma-3-270m-it-GGUF`.
+- If YouTube starts blocking `yt-dlp`, follow [docs/cookies.md](./docs/cookies.md) to configure `YTDLP_COOKIES_FROM_BROWSER` or `YTDLP_COOKIES`.
+
+## Usage Basics
+
+Use command-first order for all examples and scripts:
 
 ```bash
-bun as -- text --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXPz0SoAVu8Rc1emAdGPbSbr"
+bun as <command> [input] [flags]
+bun as help <command>       # preferred targeted help
+bun as <command> --help
+bun as --version
 ```
 
-Run on a list of arbitrary URLs from a file.
+- Use `bun as extract <input> --whisper tiny`, not `bun as --whisper tiny extract <input>`.
+- Inputs can be URLs, local files, directories, `.md`/`.txt` URL lists, or prompt strings for `image`, `video`, and `music`.
+- If an input begins with `-`, end flag parsing first: `bun as write -- -myfile`.
+- If the literal input collides with a command name, use the explicit command form: `bun as metadata setup`.
+
+### Batch Inputs
+
+Batch mode is selected from the input type rather than a separate subcommand:
 
 ```bash
-bun as -- text --urls "./input/example-urls.md"
+# Newline-delimited URLs
+bun as write input/examples/batch/2-urls.md
+
+# Process files plus 2-urls.md inside the directory
+bun as extract input
+
+# Process local files in an input subdirectory
+bun as extract input/examples/document
 ```
 
-Run on a local audio or video file.
+Common batch controls:
+
+- `--batch-limit`
+- `--batch-all`
+- `--batch-order newest|oldest`
+- `--batch-concurrency`
+
+## Config, Pricing, and Logging
+
+Persistent defaults live in `config/autoshow.json`. You can save provider choices, model defaults, prompts, extract options, voices, batch settings, and pricing thresholds.
 
 ```bash
-bun as -- text --file "./input/audio.mp3"
+bun as config --show
+bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
+bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
+bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+bun as config --reset
 ```
 
-Run on a podcast RSS feed.
+Pricing and budget behavior:
+
+- Runnable commands estimate cost before execution.
+- `--price` is the estimate-only mode.
+- `--allow-over-budget` overrides a configured hard budget for a single run.
+- `--config-path` lets you use an alternate config file on any command.
+
+Logging controls:
 
 ```bash
-bun as -- text --rss "https://ajcwebdev.substack.com/feed"
+# CLI flags
+bun as write input/examples/audio/1-audio.mp3 --verbose
+bun as write input/examples/audio/1-audio.mp3 --quiet
+bun as write input/examples/audio/1-audio.mp3 --json
+
+# Environment variables
+AUTOSHOW_LOG_FORMAT=auto   # auto | human | json | both
+AUTOSHOW_LOG_LEVEL=info    # debug | info | success | warn | error
+NO_COLOR=1                 # disable ANSI color in human logs and help
+FORCE_COLOR=1              # force ANSI color in redirected output
 ```
 
-For more granular control (e.g., specific RSS items, date filtering, order, skip, last), use options like `--item <url>`, `--date <YYYY-MM-DD>`, `--order newest|oldest`, `--last <num>`, `--days <num>`.
+- `AUTOSHOW_LOG_FORMAT=auto` uses JSON logs when `NODE_ENV=production`, otherwise human-readable logs.
+- Human-readable logs color table columns and log prefixes when output is a TTY; `NO_COLOR` disables this and `FORCE_COLOR` enables it for captured output.
+- JSON logs and `--json` output stay machine-readable and uncolored.
+- Secrets and credentials are redacted from logger output.
 
-Use `--info` to fetch metadata without full processing for URLs, playlists, channels, or RSS feeds.
+## Output Layout
+
+Most artifact-producing runs write a timestamped directory under `output/` with `run.json` plus the files for the steps that actually ran. Standalone `tts`, `image`, `video`, and hosted `music` also accept `--out <dir>` or `--output-dir <dir>` to choose the run directory exactly.
+
+Typical artifacts include:
+
+- downloaded media or normalized documents
+- `prompt.md`
+- `transcription.txt`
+- extracted text or OCR output
+- `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for `extract <url> --all-url`
+- `text.json`
+- generated speech, image, video, or music files
+- `run.json`
+- `metadata.md` for `metadata --markdown --save`
+
+`extract` batches write a parent `extract-batch.json` plus nested `media/`, `document/`, and `x-space/` child batches when those routed items are present. Other batch runs write `batch.json`, and some structured remote sources add `source.json`.
+
+Notable exceptions:
+
+- `metadata --save` reports `run.json`, and `metadata --markdown --save` also reports `metadata.md`
+- `links` writes to a selection-based file under `project/links/`, for example `project/links/all-all-links.md`
+- utility commands such as `config`, `setup`, and `links` do not use the `output/` run-directory pattern
+
+## Development
 
 ```bash
-bun as -- text --urls "./input/example-urls.md" --info
+bun run check
+bun t
 ```
 
-### Transcription and LLM Options
-
-Specify transcription service (default is Whisper `base`):
-
-```bash
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --whisper large-v3-turbo
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --deepgram nova-2
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --groq-whisper whisper-large-v3-turbo
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --assembly universal --speakerLabels
-```
-
-Specify LLM service:
-
-```bash
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --chatgpt gpt-5-nano
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --claude claude-sonnet-4-20250514
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --gemini gemini-2.5-flash
-```
-
-Customize prompts:
-
-```bash
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --prompt summary shortChapters --chatgpt
-bun as -- text --video "https://www.youtube.com/watch?v=MORMZXEaONk" --customPrompt ./my-custom-prompt.md --chatgpt
-```
-
-For a full list of options, run:
-
-```bash
-bun as -- --help
-```
-
-## Contributors
-
-- ✨Hello beautiful human! ✨[Jenn Junod](https://jennjunod.dev/) host of [Teach Jenn Tech](https://teachjenntech.com/) & [Shit2TalkAbout](https://shit2talkabout.com)
+- `bun t` uses the repo's custom test runner, so run `bun as setup` first if local dependencies are missing.

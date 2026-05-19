@@ -1,0 +1,165 @@
+import { expect, test } from 'bun:test'
+import { defineVideoServicePriceTests } from '../../test-utils/define-video-service-test'
+import { runCommand } from '../../test-utils/test-helpers'
+
+defineVideoServicePriceTests({
+  models: [
+    { model: 'veo-3.1-fast-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
+    { model: 'veo-3.1-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
+    { model: 'veo-3.1-lite-generate-preview', extraArgs: ['--video-duration', '4'], expectedDuration: 4 },
+  ],
+  cliFlag: '--gemini',
+  videoService: 'gemini',
+})
+
+defineVideoServicePriceTests({
+  models: [
+    { model: 'MiniMax-Hailuo-2.3', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+    { model: 'T2V-01', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+    { model: 'MiniMax-Hailuo-02', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+    { model: 'T2V-01-Director', extraArgs: ['--video-duration', '6'], expectedDuration: 6 },
+  ],
+  cliFlag: '--minimax',
+  videoService: 'minimax',
+})
+
+defineVideoServicePriceTests({
+  models: [
+    { model: 'Ltxv_13B_0_9_8_Distilled_FP8', extraArgs: ['--video-duration', '2', '--video-size', '256x256'], expectedDuration: 2 },
+  ],
+  cliFlag: '--deapi',
+  videoService: 'deapi',
+})
+
+test('Gemini video rejects 4k resolution for Lite with --price', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini', 'veo-3.1-lite-generate-preview', '--video-resolution', '4k', '--price'],
+  )
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Veo 3.1 Lite does not support --video-resolution 4k')
+})
+
+test('Gemini video allows 4k resolution for standard and Fast with approximate pricing', async () => {
+  for (const model of ['veo-3.1-generate-preview', 'veo-3.1-fast-generate-preview'] as const) {
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini', model, '--video-resolution', '4k', '--video-duration', '4', '--price'],
+    )
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain(model)
+    expect(output).toContain('generated-video.mp4')
+  }
+})
+
+test('allows multiple providers with --price', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--gemini', 'veo-3.1-generate-preview', '--minimax', 'MiniMax-Hailuo-2.3', '--glm', 'cogvideox-3', '--grok', 'grok-imagine-video', '--runway', 'gen4.5', '--deapi', 'Ltxv_13B_0_9_8_Distilled_FP8', '--price'],
+  )
+  const output = `${result.stdout}\n${result.stderr}`
+  expect(result.exitCode).toBe(0)
+  expect(output).toContain('gemini')
+  expect(output).toContain('minimax')
+  expect(output).toContain('glm')
+  expect(output).toContain('grok')
+  expect(output).toContain('runway')
+  expect(output).toContain('deapi')
+  expect(output).toContain('generated-video-gemini-veo-3.1-generate-preview.mp4')
+  expect(output).toContain('generated-video-minimax-MiniMax-Hailuo-2.3.mp4')
+  expect(output).toContain('generated-video-glm-cogvideox-3.mp4')
+  expect(output).toContain('generated-video-grok-grok-imagine-video.mp4')
+  expect(output).toContain('generated-video-runway-gen4.5.mp4')
+  expect(output).toContain('generated-video-deapi-Ltxv_13B_0_9_8_Distilled_FP8.mp4')
+})
+
+test('new video providers print price estimates', async () => {
+  const providers = [
+    ['--glm', 'cogvideox-3', '20.00¢'],
+    ['--glm', 'viduq1-text', '40.00¢'],
+    ['--grok', 'grok-imagine-video', '25.00¢'],
+    ['--runway', 'gen4.5', '60.00¢'],
+    ['--deapi', 'Ltxv_13B_0_9_8_Distilled_FP8', '0.35¢']
+  ] as const
+
+  for (const [flag, model, expectedCost] of providers) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      flag,
+      model,
+      '--video-duration',
+      '5',
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain(model)
+    expect(output).toContain(expectedCost)
+  }
+})
+
+test('GLM and MiniMax media video models accept --price in supported modes', async () => {
+  const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
+  const lastFrameDataUrl = `data:image/webp;base64,${Buffer.from([4, 5, 6]).toString('base64')}`
+  const cases = [
+    ['--glm', 'viduq1-image', 'image-to-video', ['--video-input-image', imageDataUrl]],
+    ['--glm', 'viduq1-start-end', 'interpolate', ['--video-input-image', imageDataUrl, '--video-last-frame', lastFrameDataUrl]],
+    ['--glm', 'vidu2-image', 'image-to-video', ['--video-input-image', imageDataUrl]],
+    ['--glm', 'vidu2-start-end', 'interpolate', ['--video-input-image', imageDataUrl, '--video-last-frame', lastFrameDataUrl]],
+    ['--glm', 'vidu2-reference', 'reference-to-video', ['--video-reference-image', imageDataUrl]],
+    ['--minimax', 'MiniMax-Hailuo-2.3-Fast', 'image-to-video', ['--video-input-image', imageDataUrl]],
+    ['--minimax', 'I2V-01-Director', 'image-to-video', ['--video-input-image', imageDataUrl]],
+    ['--minimax', 'I2V-01-live', 'image-to-video', ['--video-input-image', imageDataUrl]],
+    ['--minimax', 'I2V-01', 'image-to-video', ['--video-input-image', imageDataUrl]],
+    ['--minimax', 'S2V-01', 'reference-to-video', ['--video-reference-image', imageDataUrl]]
+  ] as const
+
+  for (const [flag, model, mode, mediaArgs] of cases) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      flag,
+      model,
+      '--video-mode',
+      mode,
+      ...mediaArgs,
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain(model)
+  }
+})
+
+test('Gemini video price estimates use current per-second pricing', async () => {
+  const cases = [
+    ['veo-3.1-lite-generate-preview', '720p', '4', '20.00¢'],
+    ['veo-3.1-lite-generate-preview', '1080p', '4', '64.00¢'],
+    ['veo-3.1-fast-generate-preview', '720p', '4', '40.00¢'],
+    ['veo-3.1-fast-generate-preview', '1080p', '4', '96.00¢'],
+    ['veo-3.1-fast-generate-preview', '4k', '4', '96.00¢'],
+    ['veo-3.1-generate-preview', '720p', '4', '$1.60'],
+    ['veo-3.1-generate-preview', '1080p', '4', '$3.20'],
+    ['veo-3.1-generate-preview', '4k', '4', '$3.20']
+  ] as const
+
+  for (const [model, resolution, duration, expectedCost] of cases) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      '--gemini',
+      model,
+      '--video-resolution',
+      resolution,
+      '--video-duration',
+      duration,
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain(model)
+    expect(output).toContain(expectedCost)
+  }
+})

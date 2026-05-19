@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 2,
+  "kind": "music-provider-comparison",
+  "category": "music",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/output/2026-05-19_06-34-51-478_music-gen",
+  "runName": "2026-05-19_06-34-51-478_music-gen",
+  "generatedAt": "2026-05-19T12:04:19.880Z",
+  "metric": "price-speed",
+  "scoreFormula": "50% cost-efficiency + 50% processing-speed",
+  "tiering": null,
+  "duplicateGroups": [],
+  "normalization": null,
+  "providerCount": 5,
+  "providerGroups": {
+    "local": {
+      "count": 0,
+      "providers": []
+    },
+    "service": {
+      "count": 5,
+      "providers": [
+        {
+          "providerKey": "deapi/AceStep_1_5_Turbo",
+          "provider": "deapi/AceStep_1_5_Turbo",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 11369,
+          "costCents": 0.086817,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 13270,
+          "costCents": 28,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 17028,
+          "costCents": 8,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "minimax/music-2.5",
+          "provider": "minimax/music-2.5",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 164263,
+          "costCents": 16,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        },
+        {
+          "providerKey": "minimax/music-2.6",
+          "provider": "minimax/music-2.6",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 97490,
+          "costCents": 16,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null
+        }
+      ]
+    }
+  },
+  "rankingSurfaces": {
+    "local": {
+      "fastest": [],
+      "cheapest": [],
+      "highestQuality": [],
+      "fastestUnavailableReason": "No local providers were found.",
+      "cheapestUnavailableReason": "No local providers were found.",
+      "highestQualityUnavailableReason": "No local providers were found."
+    },
+    "service": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "deapi/AceStep_1_5_Turbo",
+          "provider": "deapi/AceStep_1_5_Turbo",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 11369,
+          "label": "11.37s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 13270,
+          "label": "13.27s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 17028,
+          "label": "17.03s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "deapi/AceStep_1_5_Turbo",
+          "provider": "deapi/AceStep_1_5_Turbo",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.086817,
+          "label": "$0.0009"
+        },
+        {
+          "rank": 2,
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 8,
+          "label": "$0.0800"
+        },
+        {
+          "rank": 3,
+          "providerKey": "minimax/music-2.5",
+          "provider": "minimax/music-2.5",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 16,
+          "label": "$0.1600"
+        }
+      ],
+      "highestQuality": [],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": "No explicit music quality metric was available for service providers. File size, dimensions, duration, bitrate, and subjective judgment are not used as quality proxies."
+    }
+  },
+  "combinedLeaderboardPolicy": "omitted: local and service providers are not ranked against each other",
+  "notes": [
+    "Best overall: `deapi/AceStep_1_5_Turbo` scored 100.00/100.",
+    "The cheapest provider was `deapi/AceStep_1_5_Turbo` at 0.0868¢ ($0.0009).",
+    "Fastest provider: `deapi/AceStep_1_5_Turbo` at 11.37s.",
+    "Ranking used price-speed scoring: cost efficiency (50%) and processing speed (50%).",
+    "Music artifact existence, file size, duration, lyrics, and audio metadata are reported as evidence only; audio/music quality is not assessed or scored."
+  ]
+}

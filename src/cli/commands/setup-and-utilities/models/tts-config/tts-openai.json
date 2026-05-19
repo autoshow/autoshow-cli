@@ -1,0 +1,19 @@
+{
+  "openai": {
+    "description": "OpenAI cloud text-to-speech",
+    "type": "api",
+    "models": {
+      "gpt-4o-mini-tts": {
+        "description": "GPT-4o Mini TTS — compact speech synthesis model",
+        "inputCostPer1MCharsUSD": 0.6,
+        "inputCostPer1MCharsCents": 60,
+        "outputCostPer1MCharsUSD": 12,
+        "outputCostPer1MCharsCents": 1200,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPer1KChars": 23893
+        }
+      }
+    }
+  }
+}

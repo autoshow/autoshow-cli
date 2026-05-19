@@ -1,0 +1,378 @@
+{
+  "mistral": {
+    "description": "Mistral cloud OCR",
+    "type": "api",
+    "models": {
+      "mistral-ocr-2512": {
+        "description": "Mistral OCR (December 2025)",
+        "costPer1kPagesUSD": 2,
+        "costPer1kPagesCents": 200,
+        "limits": {
+          "notes": "No Mistral OCR file-size or page-count limits were found in project/links/all-all-links.md."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2238
+        }
+      }
+    }
+  },
+  "glm": {
+    "description": "ZhipuAI GLM cloud OCR",
+    "type": "api",
+    "models": {
+      "glm-ocr": {
+        "description": "GLM OCR",
+        "costPerMInputTokensUSD": 0.03,
+        "costPerMOutputTokensUSD": 0.03,
+        "costPerMInputTokensCents": 3,
+        "costPerMOutputTokensCents": 3,
+        "limits": {
+          "imageBytes": 10485760,
+          "pdfBytes": 52428800,
+          "pageCount": 100,
+          "notes": "project/links/glm-all-links.md documents GLM OCR input caps of 10 MB per image, 50 MB per PDF, and a maximum of 100 pages."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 5193,
+          "promptTokensPerPage": 2403,
+          "completionTokensPerPage": 434.5
+        }
+      }
+    }
+  },
+  "kimi": {
+    "description": "Moonshot AI Kimi OCR via vision chat",
+    "type": "api",
+    "models": {
+      "kimi-k2.6": {
+        "description": "Kimi K2.6 OCR via multimodal Chat Completions",
+        "costPerMInputTokensUSD": 0.95,
+        "costPerMOutputTokensUSD": 4,
+        "costPerMInputTokensCents": 95,
+        "costPerMOutputTokensCents": 400,
+        "limits": {
+          "imageBytes": 104857600,
+          "notes": "project/links/kimi-general-ocr-text-links.md documents Kimi image support for PNG/JPEG/WebP/GIF, a 100 MB request-body/file limit, and recommended image resolution no higher than 4K. AutoShow renders PDFs to page images before calling Kimi OCR."
+        },
+        "estimation": {
+          "costMultiplier": 0.6066,
+          "msPerPage": 9493,
+          "promptTokensPerPage": 4232,
+          "completionTokensPerPage": 2068
+        }
+      }
+    }
+  },
+  "openai": {
+    "description": "OpenAI GPT-5.4 OCR via Responses API",
+    "type": "api",
+    "models": {
+      "gpt-5.4": {
+        "description": "GPT-5.4 OCR",
+        "costPerMInputTokensUSD": 2.5,
+        "costPerMOutputTokensUSD": 15,
+        "costPerMInputTokensCents": 250,
+        "costPerMOutputTokensCents": 1500,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 2986,
+          "completionTokensPerPage": 1903
+        }
+      },
+      "gpt-5.4-mini": {
+        "description": "GPT-5.4 Mini OCR",
+        "costPerMInputTokensUSD": 0.75,
+        "costPerMOutputTokensUSD": 4.5,
+        "costPerMInputTokensCents": 75,
+        "costPerMOutputTokensCents": 450,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 2986,
+          "completionTokensPerPage": 1868
+        }
+      },
+      "gpt-5.4-nano": {
+        "description": "GPT-5.4 nano OCR",
+        "costPerMInputTokensUSD": 0.2,
+        "costPerMOutputTokensUSD": 1.25,
+        "costPerMInputTokensCents": 20,
+        "costPerMOutputTokensCents": 125,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "costMultiplier": 0.5433,
+          "msPerPage": 11349,
+          "promptTokensPerPage": 2986,
+          "completionTokensPerPage": 1844
+        }
+      }
+    }
+  },
+  "anthropic": {
+    "description": "Anthropic Claude OCR via Messages API",
+    "type": "api",
+    "models": {
+      "claude-haiku-4-5": {
+        "description": "Claude Haiku 4.5 OCR",
+        "costPerMInputTokensUSD": 1,
+        "costPerMOutputTokensUSD": 5,
+        "costPerMInputTokensCents": 100,
+        "costPerMOutputTokensCents": 500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 7000,
+          "promptTokensPerPage": 1657.5,
+          "completionTokensPerPage": 474.5
+        }
+      }
+    }
+  },
+  "gemini": {
+    "description": "Google Gemini OCR via GenerateContent",
+    "type": "api",
+    "models": {
+      "gemini-3.1-pro-preview": {
+        "description": "Gemini 3.1 Pro OCR",
+        "costPerMInputTokensUSD": 2,
+        "costPerMOutputTokensUSD": 12,
+        "costPerMInputTokensCents": 200,
+        "costPerMOutputTokensCents": 1200,
+        "limits": {
+          "pdfBytes": 2147483648,
+          "imageBytes": 2147483648,
+          "pageCount": 1000,
+          "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        },
+        "estimation": {
+          "promptTokensPerPage": 1157,
+          "completionTokensPerPage": 2063
+        }
+      },
+      "gemini-3.1-flash-lite-preview": {
+        "description": "Gemini 3.1 Flash-Lite OCR",
+        "costPerMInputTokensUSD": 0.25,
+        "costPerMOutputTokensUSD": 1.5,
+        "costPerMInputTokensCents": 25,
+        "costPerMOutputTokensCents": 150,
+        "limits": {
+          "pdfBytes": 2147483648,
+          "imageBytes": 2147483648,
+          "pageCount": 1000,
+          "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        },
+        "estimation": {
+          "costMultiplier": 0.6139,
+          "msPerPage": 3280,
+          "promptTokensPerPage": 1157,
+          "completionTokensPerPage": 1626
+        }
+      }
+    }
+  },
+  "deepinfra": {
+    "description": "DeepInfra OpenAI-compatible vision/OCR models",
+    "type": "api",
+    "models": {
+      "Qwen/Qwen3-VL-235B-A22B-Instruct": {
+        "description": "Qwen3 VL 235B A22B Instruct via DeepInfra",
+        "costPerMInputTokensUSD": 0.2,
+        "costPerMOutputTokensUSD": 0.88,
+        "costPerMInputTokensCents": 20,
+        "costPerMOutputTokensCents": 88,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 20000,
+          "promptTokensPerPage": 16343,
+          "completionTokensPerPage": 1755
+        }
+      },
+      "Qwen/Qwen3-VL-30B-A3B-Instruct": {
+        "description": "Qwen3 VL 30B A3B Instruct via DeepInfra",
+        "costPerMInputTokensUSD": 0.15,
+        "costPerMOutputTokensUSD": 0.6,
+        "costPerMInputTokensCents": 15,
+        "costPerMOutputTokensCents": 60,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "DeepInfra Vision & OCR docs document OpenAI vision API format, supported image uploads as JPG/PNG/WebP, 20 MB maximum image size, and no detail parameter support. AutoShow renders PDF and EPUB-derived PDF pages to PNG images before calling DeepInfra OCR."
+        },
+        "estimation": {
+          "costMultiplier": 0.7802,
+          "msPerPage": 12920,
+          "promptTokensPerPage": 7981,
+          "completionTokensPerPage": 471.5
+        }
+      }
+    }
+  },
+  "defuddle": {
+    "description": "Local Defuddle article extraction",
+    "type": "local",
+    "models": {
+      "defuddle": {
+        "description": "Local Defuddle HTML-to-markdown extraction",
+        "costPer1kPagesUSD": 0,
+        "costPer1kPagesCents": 0,
+        "limits": {
+          "notes": "Defuddle runs locally and has no third-party API billing."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 626
+        }
+      }
+    }
+  },
+  "firecrawl": {
+    "description": "Firecrawl hosted article extraction",
+    "type": "api",
+    "models": {
+      "firecrawl": {
+        "description": "Firecrawl /scrape markdown extraction estimated at the Standard plan effective credit rate",
+        "costPer1kPagesUSD": 0.83,
+        "costPer1kPagesCents": 83,
+        "limits": {
+          "notes": "No Firecrawl article-extraction file-size or page-count limits were found in project/links/all-all-links.md."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 41
+        }
+      }
+    }
+  },
+  "glm-reader": {
+    "description": "Z.AI GLM Reader hosted article extraction",
+    "type": "api",
+    "models": {
+      "glm-reader": {
+        "description": "GLM Reader URL-to-markdown extraction estimated from Z.AI built-in web tool per-use pricing",
+        "costPer1kPagesUSD": 10,
+        "costPer1kPagesCents": 1000,
+        "limits": {
+          "notes": "Z.AI publishes built-in Web Search at $0.01/use; GLM Reader-specific request pricing was not listed in the local docs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2253
+        }
+      }
+    }
+  },
+  "spider": {
+    "description": "Spider hosted article extraction",
+    "type": "api",
+    "models": {
+      "spider": {
+        "description": "Spider /scrape markdown extraction heuristic estimate",
+        "costPer1kPagesUSD": 1.2,
+        "costPer1kPagesCents": 120,
+        "limits": {
+          "notes": "Spider publishes usage billing based on bandwidth and compute rather than a fixed per-page scrape price. AutoShow uses a conservative heuristic per-page estimate for dry-run totals."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
+        }
+      }
+    }
+  },
+  "zyte": {
+    "description": "Zyte API hosted article extraction",
+    "type": "api",
+    "models": {
+      "zyte": {
+        "description": "Zyte article automatic extraction add-on estimate; base request tier costs may also apply",
+        "costPer1kPagesUSD": 1.6,
+        "costPer1kPagesCents": 160,
+        "limits": {
+          "notes": "Zyte lists automatic extraction at $0.0004-$0.0016 per data type before volume discounts; article extraction uses the upper bound here and excludes variable base request tier costs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
+        }
+      }
+    }
+  },
+  "gcloud-docai": {
+    "description": "Google Cloud Document AI OCR",
+    "type": "api",
+    "models": {
+      "ocr": {
+        "description": "Google Cloud Document AI OCR processor",
+        "costPer1kPagesUSD": 1.5,
+        "costPer1kPagesCents": 150,
+        "limits": {
+          "pdfBytes": 20971520,
+          "imageBytes": 20971520,
+          "pageCount": 2000,
+          "notes": "Sync API: 20 MB per request. Batch API: 1 GB per file, 50 GB per batch, 2000 pages per batch."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1500
+        }
+      }
+    }
+  },
+  "aws-textract": {
+    "description": "AWS Textract OCR",
+    "type": "api",
+    "models": {
+      "detect-text": {
+        "description": "AWS Textract DetectDocumentText API",
+        "costPer1kPagesUSD": 1.5,
+        "costPer1kPagesCents": 150,
+        "limits": {
+          "pdfBytes": 524288000,
+          "imageBytes": 10485760,
+          "pageCount": 3000,
+          "notes": "Sync: single-page, 10 MB image. Async: up to 3000 pages per PDF, 500 MB max file size."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 1200
+        }
+      }
+    }
+  },
+  "unstructured": {
+    "description": "Unstructured hosted document OCR and partitioning",
+    "type": "api",
+    "models": {
+      "hi_res_and_enrichment": {
+        "description": "Unstructured on-demand hi_res_and_enrichment workflow template",
+        "costPer1kPagesUSD": 0,
+        "costPer1kPagesCents": 0,
+        "limits": {
+          "effectiveBytes": 10485760,
+          "pageCount": 1000,
+          "notes": "Unstructured on-demand jobs support local files up to 10 MB. AutoShow records a zero-cost registry fallback because Unstructured account pricing is plan-specific."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 3500
+        }
+      }
+    }
+  }
+}

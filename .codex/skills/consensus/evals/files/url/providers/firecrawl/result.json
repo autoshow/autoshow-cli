@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 2,
+  "kind": "provider-result",
+  "provider": "firecrawl",
+  "model": "firecrawl",
+  "metadata": {
+    "extractionMethod": "html+firecrawl",
+    "processingTime": 1200,
+    "tokenEstimate": 20
+  },
+  "result": {
+    "text": "# Fixture Article\n\nThis fixture article validates URL consensus comparison reports.",
+    "pages": [
+      {
+        "pageNumber": 1,
+        "method": "text",
+        "text": "# Fixture Article\n\nThis fixture article validates URL consensus comparison reports."
+      }
+    ],
+    "totalPages": 1,
+    "ocrPages": 0,
+    "textPages": 1
+  }
+}

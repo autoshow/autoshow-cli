@@ -1,0 +1,11 @@
+{
+  "description": "Blog outline and first draft (750+ words)",
+  "expectedInputTokens": 600,
+  "expectedOutputTokens": 1800,
+  "instruction": "- Generate a blog outline and first draft for a blog post based on this piece of content.\n    \n    - Make sure the blog post is at least 750 words.",
+  "structuredPreset": "blog",
+  "examples": {
+    "json": "{\n  \"title\": \"The Complete Guide to [Main Topic]\",\n  \"outline\": [\n    \"Introduction and context\",\n    \"Core ideas and supporting evidence\",\n    \"Implications, takeaways, and next steps\"\n  ],\n  \"draft\": \"First draft of a blog post that expands on the outline above and runs at least 750 words.\"\n}",
+    "markdown": "Format the output like so:\n\n    ## Blog Outline\n\n    1. Part 1\n    2. Part 2\n    3. Part 3\n    \n    ### Blog First Draft\n    \n    First draft of a blog."
+  }
+}

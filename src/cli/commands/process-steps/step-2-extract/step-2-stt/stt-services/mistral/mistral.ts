@@ -1,0 +1,19 @@
+import * as l from '~/utils/logger'
+import { readEnv } from '~/utils/validate/env-utils'
+
+export const setupMistralStt = async (): Promise<void> => {
+  const apiKey = readEnv('MISTRAL_API_KEY')
+  if (apiKey) {
+    l.write('success', 'MISTRAL_API_KEY found — Mistral transcription ready')
+  } else {
+    l.warn('MISTRAL_API_KEY not set — Mistral transcription will not work until set')
+    l.write('info', 'Set MISTRAL_API_KEY environment variable to use Mistral transcription')
+  }
+}
+
+export const ensureMistralSttSetup = async (): Promise<void> => {
+  const apiKey = readEnv('MISTRAL_API_KEY')
+  if (!apiKey) {
+    throw new Error('MISTRAL_API_KEY environment variable is required for Mistral transcription')
+  }
+}

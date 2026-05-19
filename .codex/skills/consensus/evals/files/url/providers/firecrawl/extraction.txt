@@ -1,0 +1,3 @@
+# Fixture Article
+
+This fixture article validates URL consensus comparison reports.

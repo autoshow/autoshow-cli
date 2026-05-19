@@ -1,0 +1,11 @@
+{
+  "description": "Timestamped chapter titles with representative quotes",
+  "expectedInputTokens": 400,
+  "expectedOutputTokens": 900,
+  "instruction": "- Create chapter titles based on the topics discussed throughout the transcript.\n  - Include timestamps for when these chapters begin.\n  - Chapters should be roughly 3-6 minutes long.\n  - Under each chapter title, include the most representative quote from that chapter.",
+  "structuredPreset": "chapterTitlesAndQuotes",
+  "examples": {
+    "json": "{\n  \"chapters\": [\n    {\n      \"timestamp\": \"00:00:00\",\n      \"title\": \"Introduction to Web Development\",\n      \"quote\": \"Web development is constantly evolving, driven by new technologies and user expectations.\"\n    },\n    {\n      \"timestamp\": \"00:04:12\",\n      \"title\": \"The Rise of JavaScript Frameworks\",\n      \"quote\": \"The tools changed quickly, but the need to solve real problems stayed the same.\"\n    }\n  ]\n}",
+    "markdown": "Format the output like so:\n\n    ## Chapters with Quotes\n    \n    ### 00:00:00 - Introduction to Web Development\n    \n    > \"Web development is constantly evolving, driven by new technologies and user expectations.\""
+  }
+}

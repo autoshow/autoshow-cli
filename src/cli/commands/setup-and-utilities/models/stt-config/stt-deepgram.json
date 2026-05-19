@@ -1,0 +1,23 @@
+{
+  "deepgram": {
+    "description": "Deepgram cloud speech-to-text",
+    "type": "api",
+    "models": {
+      "nova-3": {
+        "description": "Nova-3 — diarization-inclusive pre-recorded transcription",
+        "costPerHourUSD": 0.582,
+        "costPerHourCents": 58.2,
+        "limits": {
+          "effectiveBytes": 2147483648,
+          "directUploadBytes": 2147483648,
+          "remoteUrlBytes": 2147483648,
+          "notes": "Deepgram's current docs publish a 2 GB file cap and separately state no limits to audio length for batch transcription, with a 10-minute processing-time cap for Nova/Base/Enhanced requests."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 32
+        }
+      }
+    }
+  }
+}
