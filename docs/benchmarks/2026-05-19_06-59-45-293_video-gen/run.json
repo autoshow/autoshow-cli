@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 2,
+  "kind": "video",
+  "metadata": {
+    "video": [
+      {
+        "videoGenService": "gemini",
+        "videoGenModel": "veo-3.1-generate-preview",
+        "processingTime": 72163,
+        "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+        "videoFileSize": 10312554,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "720p",
+        "providerVideoUri": "https://generativelanguage.googleapis.com/v1beta/files/rn9femy3m4sl:download?alt=media"
+      },
+      {
+        "videoGenService": "gemini",
+        "videoGenModel": "veo-3.1-fast-generate-preview",
+        "processingTime": 62030,
+        "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+        "videoFileSize": 13778343,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "720p",
+        "providerVideoUri": "https://generativelanguage.googleapis.com/v1beta/files/eg4807sso087:download?alt=media"
+      },
+      {
+        "videoGenService": "gemini",
+        "videoGenModel": "veo-3.1-lite-generate-preview",
+        "processingTime": 41419,
+        "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+        "videoFileSize": 11296233,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "720p",
+        "providerVideoUri": "https://generativelanguage.googleapis.com/v1beta/files/ug29r04nov1x:download?alt=media"
+      },
+      {
+        "videoGenService": "grok",
+        "videoGenModel": "grok-imagine-video",
+        "processingTime": 41764,
+        "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+        "videoFileSize": 5588195,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "480p",
+        "videoAspectRatio": "16:9",
+        "providerRequestId": "f2ac8370-336f-96b0-81e2-b821e87e67ae",
+        "providerReturnedModel": "grok-imagine-video",
+        "providerVideoUrl": "https://vidgen.x.ai/xai-vidgen-bucket/xai-video-f99742d2-181c-46ea-aafd-ea10c7a5bda6.mp4",
+        "providerProgress": 100,
+        "providerModeration": true,
+        "providerCostCents": 40,
+        "providerCostSource": "provider_usage"
+      },
+      {
+        "videoGenService": "runway",
+        "videoGenModel": "gen4.5",
+        "processingTime": 172085,
+        "videoFileName": "generated-video-runway-gen4.5.mp4",
+        "videoFileSize": 5964363,
+        "videoDuration": 8
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 576,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "cost": 320,
+            "costMultiplier": 1
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "cost": 80,
+            "costMultiplier": 1
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "cost": 40,
+            "costMultiplier": 1
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "cost": 40,
+            "costMultiplier": 1
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "cost": 96,
+            "costMultiplier": 1
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 576,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "cost": 320,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "cost": 80,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "cost": 40,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "cost": 40,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "cost": 96,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 420344,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "processingTimeMs": 84344,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "processingTimeMs": 80000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "processingTimeMs": 64000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "processingTimeMs": 96000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "processingTimeMs": 96000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 389461,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "processingTimeMs": 72163,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "processingTimeMs": 62030,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "processingTimeMs": 41419,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "processingTimeMs": 41764,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "processingTimeMs": 172085,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          }
+        ]
+      }
+    },
+    "input": "a rainy neon city street, slow camera pan",
+    "requestedProviders": [
+      {
+        "service": "gemini",
+        "model": "veo-3.1-generate-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "veo-3.1-fast-generate-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "veo-3.1-lite-generate-preview"
+      },
+      {
+        "service": "grok",
+        "model": "grok-imagine-video"
+      },
+      {
+        "service": "runway",
+        "model": "gen4.5"
+      }
+    ]
+  }
+}

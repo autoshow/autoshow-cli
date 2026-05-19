@@ -12,7 +12,7 @@ bun test test/test-cases/validation/cli-usage-errors.test.ts
 bun test test/test-cases/validation/option-resolution-contracts.test.ts
 ```
 
-Additional no-cost URL article contract coverage lives in `test/test-cases/validation/html-url-backends-contracts.test.ts` and `test/test-cases/validation/price-mode-contracts.test.ts`; those suites mock provider calls and cover `--all-url` artifact and price-preflight behavior.
+Additional no-cost URL article contract coverage lives in `test/test-cases/validation/html-url-backends-contracts.test.ts` and `test/test-cases/validation/price-mode-contracts.test.ts`; those suites mock provider calls and cover `--all-url` artifact and price-preflight behavior. `test/test-cases/validation/provider-selection-contracts.test.ts` is another no-cost suite covering provider-flag acceptance/rejection and shared-flag logic across all provider types.
 
 The `bun t` commands below document the full project runner for humans. Do not use `bun t`, `bun run t`, or `AGENT=1 bun test/test-runner.ts` as a default verification pass, and do not run e2e/provider-cost tests without explicit approval.
 
@@ -28,7 +28,7 @@ The `bun t` commands below document the full project runner for humans. Do not u
 
 ```bash
 # run all local tests
-bun t test/test-cases/local/ test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/step-2-stt-e2e/stt-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/ test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
+bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/step-2-stt-e2e/stt-local/ test/test-cases/e2e/step-3-write-e2e/write-local/ test/test-cases/e2e/step-4-tts-e2e/tts-local/ test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
 ```
 
 ```bash

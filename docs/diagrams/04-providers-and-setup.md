@@ -15,18 +15,18 @@ src/cli/commands/process-steps/step-3-write/run-llm.ts
 
 collectTargets() checks all flags - multiple providers can run sequentially. Hosted Kimi (`--kimi`) participates in the same provider fan-out as GLM, Grok, MiniMax, Groq, OpenAI, Anthropic, and Gemini.
 
-  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────┐
-  │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --grok  │  │ --glm  │  │  --llama │
-  │ flag set?│  │ flag set? │  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│  │flag set?│  │ flag set?│
-  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘  └────┬─────┘
-      yes             yes           yes            yes            yes            yes          yes          yes
-       |               |             |              |              |              |            |            |
-       v               v             v              v              v              v            v            v
-  ┌────────┐    ┌──────────┐   ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐   ┌──────┐   ┌─────────────┐
-  │ Gemini │    │Anthropic │   │ OpenAI │    │  Groq  │    │MiniMax │    │  Grok  │   │ GLM  │   │  llama.cpp  │
-  │  (API) │    │  (API)   │   │  (API) │    │  (API) │    │  (API) │    │  (API) │   │(API) │   │  (local)    │
-  └───┬────┘    └────┬─────┘   └───┬────┘    └───┬────┘    └───┬────┘    └───┬────┘   └──┬───┘   └──────┬──────┘
-      └───────────────┴────────────┴─────────────┴─────────────┴─────────────┴───────────┴────────────────┘
+  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌────────┐  ┌──────────┐
+  │ --gemini │  │--anthropic│  │ --openai │  │  --groq  │  │--minimax │  │  --grok  │  │ --glm  │  │ --kimi │  │  --llama │
+  │ flag set?│  │ flag set? │  │ flag set?│  │ flag set?│  │ flag set?│  │ flag set?│  │flag set?│  │flag set?│  │ flag set?│
+  └────┬─────┘  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬────┘  └───┬────┘  └────┬─────┘
+      yes             yes           yes            yes            yes            yes          yes         yes          yes
+       |               |             |              |              |              |            |           |            |
+       v               v             v              v              v              v            v           v            v
+  ┌────────┐    ┌──────────┐   ┌────────┐    ┌────────┐    ┌────────┐    ┌────────┐   ┌──────┐   ┌──────┐   ┌─────────────┐
+  │ Gemini │    │Anthropic │   │ OpenAI │    │  Groq  │    │MiniMax │    │  Grok  │   │ GLM  │   │ Kimi │   │  llama.cpp  │
+  │  (API) │    │  (API)   │   │  (API) │    │  (API) │    │  (API) │    │  (API) │   │(API) │   │(API) │   │  (local)    │
+  └───┬────┘    └────┬─────┘   └───┬────┘    └───┬────┘    └───┬────┘    └───┬────┘   └──┬───┘   └──┬───┘   └──────┬──────┘
+      └───────────────┴────────────┴─────────────┴─────────────┴─────────────┴───────────┴──────────┴────────────────┘
                                    |
                                    v
   ┌──────────────────────────────────────────────────────────────┐
@@ -117,26 +117,33 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     setupTesseractOcr()
     setupKittenTts() + default Kitten model
 
-  Hosted STT readiness
+  Step 2 — Hosted STT readiness
     ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Grok, Mistral,
     OpenAI, Gemini, GLM, Together, AssemblyAI, Gladia,
-    Supadata, AWS
+    Supadata, ScrapeCreators, AWS
 
-  Hosted OCR/article readiness
-    OCR: Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra
-    URL article: Firecrawl, GLM Reader, Spider, Zyte
+  Step 2 — Hosted OCR readiness
+    Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra, Unstructured
 
-  Hosted TTS readiness
-    ElevenLabs, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway,
+  Step 2 — URL article backend readiness
+    Firecrawl, GLM Reader, Spider, Zyte
+
+  Step 4 — Hosted TTS readiness
+    ElevenLabs, Groq, Grok, OpenAI, Gemini, Deepgram,
     Speechify, Hume, Cartesia, Google Cloud, deAPI
     MiniMax TTS uses MINIMAX_API_KEY but has no dedicated TTS setup hook
+    Mistral TTS is only in `setup --step tts`, not full setup
 
-  Hosted image/video/music readiness
-    Image: Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI
+  Step 5 — Hosted image generation readiness
+    Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI
     MiniMax image uses MINIMAX_API_KEY but has no dedicated setup hook
-    Video in full setup: deAPI, MiniMax
-    Video in `setup --step video`: Gemini, MiniMax, GLM, Grok, Runway, deAPI
-    Music: Gemini, ElevenLabs, MiniMax, deAPI
+
+  Step 6 — Hosted video generation readiness
+    Full setup: deAPI, MiniMax
+    `setup --step video`: Gemini, MiniMax, GLM, Grok, Runway, deAPI
+
+  Step 7 — Hosted music generation readiness
+    Gemini, ElevenLabs, MiniMax, deAPI
 
   Validate
     whisper-cli --help
@@ -145,27 +152,61 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
 ## Setup Dependencies by Command
 
+### Step 2 — STT (extract/write media route)
+
 | Command | Required Dependencies |
 |---------|----------------------|
-| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected STT provider readiness: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, or Together) |
-| `extract --reverb` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle`/hosted OCR provider readiness) |
-| `extract --anthropic` | `ANTHROPIC_API_KEY` |
-| `extract --gemini` | `GEMINI_API_KEY` |
-| `extract --kimi` | `KIMI_API_KEY` |
-| `extract --deepinfra` | `DEEPINFRA_API_KEY` |
-| `extract --aws` | AWS CLI auth, region, and S3 staging bucket for async jobs |
-| `extract --gcloud` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
-| `extract --url-backend firecrawl` | `FIRECRAWL_API_KEY`, unless `FIRECRAWL_API_URL` points at a compatible self-hosted or mock endpoint |
+| `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected hosted STT provider) |
+| `extract --reverb-stt` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
+| Hosted STT providers | API key for the selected provider (e.g. `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `DEEPGRAM_API_KEY`, `ASSEMBLYAI_API_KEY`, `GLADIA_API_KEY`, `SONIOX_API_KEY`, `SPEECHMATICS_API_KEY`, `ELEVENLABS_API_KEY`, `MISTRAL_API_KEY`, `XAI_API_KEY`, `GLM_API_KEY`, `TOGETHER_API_KEY`, `DEEPINFRA_API_KEY`, `DEAPI_API_KEY`) |
+| `extract --aws-stt` | AWS CLI auth, region, and S3 staging bucket |
+| `extract --gcloud-stt` | Google Cloud CLI auth and STT API readiness |
+
+### Step 2 — OCR (extract/write document route)
+
+| Command | Required Dependencies |
+|---------|----------------------|
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/hosted OCR provider) |
+| `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
+| `extract --gemini-ocr` | `GEMINI_API_KEY` |
+| `extract --openai-ocr` | `OPENAI_API_KEY` |
+| `extract --mistral-ocr` | `MISTRAL_API_KEY` |
+| `extract --kimi-ocr` | `KIMI_API_KEY` |
+| `extract --glm-ocr` | `GLM_API_KEY` |
+| `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
+| `extract --unstructured-ocr` | `UNSTRUCTURED_API_KEY` |
+| `extract --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
+| `extract --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
+
+### Step 2 — URL article backends
+
+| Command | Required Dependencies |
+|---------|----------------------|
+| `extract --url-backend firecrawl` | `FIRECRAWL_API_KEY`, unless `FIRECRAWL_API_URL` points at a self-hosted endpoint |
 | `extract --url-backend glm-reader` | `GLM_API_KEY` |
-| `extract --url-backend spider` | `SPIDER_API_KEY`, unless `SPIDER_API_URL` points at a compatible mock endpoint |
-| `extract --url-backend zyte` | `ZYTE_API_KEY`, unless `ZYTE_API_URL` points at a compatible mock endpoint |
-| `extract --all-url` | Local Defuddle plus hosted URL backend readiness for Firecrawl, GLM Reader, Spider, and Zyte |
+| `extract --url-backend spider` | `SPIDER_API_KEY`, unless `SPIDER_API_URL` points at a mock endpoint |
+| `extract --url-backend zyte` | `ZYTE_API_KEY`, unless `ZYTE_API_URL` points at a mock endpoint |
+| `extract --all-url` | Local Defuddle plus all hosted URL backend keys |
+
+### Step 3 — LLM (write command)
+
+| Command | Required Dependencies |
+|---------|----------------------|
 | `write` (media) | All of the `extract` media route + llama.cpp (or LLM API key) |
+| `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
+| `write --openai` | `OPENAI_API_KEY` |
+| `write --anthropic` | `ANTHROPIC_API_KEY` |
+| `write --gemini` | `GEMINI_API_KEY` |
+| `write --groq` | `GROQ_API_KEY` |
+| `write --minimax` | `MINIMAX_API_KEY` |
 | `write --grok` | `XAI_API_KEY` |
 | `write --glm` | `GLM_API_KEY` |
 | `write --kimi` | `KIMI_API_KEY` |
-| `write` (document) | All of the `extract` document/OCR route + llama.cpp (or LLM API key) |
+
+### Step 4 — TTS
+
+| Command | Required Dependencies |
+|---------|----------------------|
 | `tts --kitten` | Kitten TTS Python venv + models |
 | `tts --elevenlabs` | `ELEVENLABS_API_KEY`; IVC/PVC setup flags also need local sample or verification audio |
 | `tts --minimax` | `MINIMAX_API_KEY` |
@@ -180,6 +221,11 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `tts --cartesia` | `CARTESIA_API_KEY` |
 | `tts --gcloud` | Google Cloud CLI auth or credentials plus Text-to-Speech API readiness |
 | `tts --deapi` | `DEAPI_API_KEY` |
+
+### Step 5 — Image generation
+
+| Command | Required Dependencies |
+|---------|----------------------|
 | `image --gemini` | `GEMINI_API_KEY` |
 | `image --openai` | `OPENAI_API_KEY` |
 | `image --minimax` | `MINIMAX_API_KEY` |
@@ -187,12 +233,22 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `image --runway` | `RUNWAYML_API_SECRET` |
 | `image --bfl` | `BFL_API_KEY` |
 | `image --deapi` | `DEAPI_API_KEY` |
+
+### Step 6 — Video generation
+
+| Command | Required Dependencies |
+|---------|----------------------|
 | `video --gemini` | `GEMINI_API_KEY` |
 | `video --minimax` | `MINIMAX_API_KEY` |
 | `video --glm` | `GLM_API_KEY` |
 | `video --grok` | `XAI_API_KEY` |
 | `video --runway` | `RUNWAYML_API_SECRET` |
 | `video --deapi` | `DEAPI_API_KEY` |
+
+### Step 7 — Music generation
+
+| Command | Required Dependencies |
+|---------|----------------------|
 | `music --elevenlabs` | `ELEVENLABS_API_KEY` |
 | `music --minimax` | `MINIMAX_API_KEY` |
 | `music --deapi` | `DEAPI_API_KEY` |

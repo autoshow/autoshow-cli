@@ -53,3 +53,8 @@ config
 .env.local
 
 todo
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.mp3
+**/*.mp4

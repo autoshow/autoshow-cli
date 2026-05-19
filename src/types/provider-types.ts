@@ -10,5 +10,5 @@ export type VideoProvider = typeof VIDEO_PROVIDERS[number]
 export const MUSIC_PROVIDERS = ['elevenlabs', 'minimax', 'deapi', 'gemini'] as const
 export type MusicProvider = typeof MUSIC_PROVIDERS[number]
 
-export const OCR_PROVIDERS = ['tesseract', 'ocrmypdf', 'paddle-ocr', 'mistral', 'glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra', 'aws-textract', 'gcloud-docai'] as const
+export const OCR_PROVIDERS = ['tesseract', 'ocrmypdf', 'paddle-ocr', 'mistral', 'glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra', 'aws-textract', 'gcloud-docai', 'unstructured'] as const
 export type OcrProvider = typeof OCR_PROVIDERS[number]

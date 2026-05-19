@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 2,
+  "kind": "music",
+  "metadata": {
+    "music": [
+      {
+        "musicService": "elevenlabs",
+        "musicModel": "music_v1",
+        "processingTime": 13270,
+        "musicFileName": "generated-music-elevenlabs-music_v1.mp3",
+        "musicFileSize": 960515,
+        "musicDurationMs": 60000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioBitrate": 128000,
+        "providerAudioByteSize": 960515,
+        "outputFormat": "mp3_44100_128"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.5",
+        "processingTime": 164263,
+        "musicFileName": "generated-music-minimax-music-2.5.mp3",
+        "musicFileSize": 5758892,
+        "musicDurationMs": 179722,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 5758892,
+        "outputFormat": "mp3",
+        "providerTraceId": "065b7de518ee63cd7a5c456be8821d1b",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nDust motes dance in sunbeams bright\nThrough the window, a fuzzy sight\nMy tabby cat, with eyes so green\nLiving out a summer dream\nHe stretches slow, a lazy yawn\nAnother perfect summer dawn\n\n[Pre-Chorus]\nWe packed the car, the map unfurled\nReady for a brand new world\nHe hopped right in, no hesitation\nPart of this grand exploration\n\n[Chorus]\nOh, sun-drenched paws on the dashboard warm\nChasing shadows through the storm\nOf open windows, wind so sweet\nKitty purrs, a rhythmic beat\nMiles fly by, a blurry stream\nLiving out this feline dream\n\n[Post-Chorus]\nFeline dream, yeah, that's the theme\nSun-drenched paws, a summer gleam\n\n[Verse]\nGas station stops and a roadside stand\nHe watches squirrels across the land\nWith twitching ears and a curious gaze\nLost in these hazy, sunlit days\nHe naps beside me, soft and deep\nSecrets that the highway keeps\n\n[Pre-Chorus]\nWe sing along to the radio low\nNowhere specific we need to go\nJust follow the sun, let the good times roll\nHe's the co-pilot of my soul\n\n[Chorus]\nOh, sun-drenched paws on the dashboard warm\nChasing shadows through the storm\nOf open windows, wind so sweet\nKitty purrs, a rhythmic beat\nMiles fly by, a blurry stream\nLiving out this feline dream\n\n[Bridge]\nFields of gold and skies so blue\nEvery moment feels brand new\nHe bats at leaves that flutter past\nMemories we're building fast\nThis simple joy, it sets us free\nJust him and me, wild and glee\n\n[Verse]\nWe found a spot by a lake so clear\nHe dips a paw, conquering his fear\nThen shakes it off, a tiny spray\nReady for more adventures today\nHe chases dragonflies with glee\nAs wild and happy as can be\n\n[Chorus]\nOh, sun-drenched paws on the dashboard warm\nChasing shadows through the storm\nOf open windows, wind so sweet\nKitty purrs, a rhythmic beat\nMiles fly by, a blurry stream\nLiving out this feline dream\n\n[Post-Chorus]\nFeline dream, yeah, that's the theme\nSun-drenched paws, a summer gleam\n\n[Outro]",
+        "generatedSongTitle": "Sun-Drenched Paws",
+        "generatedStyleTags": "indie pop, nostalgic, summer, road trip, cats"
+      },
+      {
+        "musicService": "deapi",
+        "musicModel": "AceStep_1_5_Turbo",
+        "processingTime": 11369,
+        "musicFileName": "generated-music-deapi-AceStep_1_5_Turbo.mp3",
+        "musicFileSize": 1048272,
+        "musicDurationMs": 60000,
+        "lyricsSource": "none",
+        "providerCostCents": 0.086817,
+        "providerCostSource": "provider_quote",
+        "providerRequestId": "6c803e99-6536-4350-98de-7af21d1fda7f",
+        "audioMimeType": "audio/mpeg",
+        "providerAudioByteSize": 1048272,
+        "inferenceSteps": 8,
+        "guidanceScale": 1,
+        "seed": -1,
+        "outputFormat": "mp3"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-pro-preview",
+        "processingTime": 17028,
+        "musicFileName": "generated-music-gemini-lyria-3-pro-preview.mp3",
+        "musicFileSize": 1402894,
+        "musicDurationMs": 60000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[[A0]]\n[[B1]]\n[12.0:] Windows down and your ears pinned back,\n[:] Tail is twitching on the leather rack,\n[:] From the city to the coast, you're the co-pilot I love most,\n[:] Watching birds fly by like a midday snack,\n[:] (Midday snack)\n[[C2]]\n[32.0:] Oh, we’re chasing the sun in a sedan,\n[:] The fluffiest passenger in the van,\n[:] A hundred miles with a purr so deep,\n[:] Now you’re curling up for a summer sleep,\n[:] Now you're curling up for a summer sleep!\n[[D3]]\n[48.0:] Stay gold, kitty.\n[:] (Purring sounds)\n[:] Mmm, so good."
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6",
+        "processingTime": 97490,
+        "musicFileName": "generated-music.mp3",
+        "musicFileSize": 5363944,
+        "musicDurationMs": 167392,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 5363944,
+        "outputFormat": "mp3",
+        "providerTraceId": "065b7f6d5256d1df4fb3171ad262b679",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nWindows down, the sun is bright\nPurring low, a cozy sight\nGot my feline by my side\nOn this endless summer ride\n\n[Pre-Chorus]\nLittle paws on the dash\nMemories we're making fast\nChasing dreams in the golden light\nEverything feels so right\n\n[Chorus]\nFuzzy navigators, through the haze\nLost in these sun-drenched days\nWith a flick of a tail, we steer\nNo map, no fear, just you, my dear\n\n[Verse]\nFields of green, a blur outside\nKittens napping, nowhere to hide\nFrom the joy that fills the air\nWithout a single worldly care\n\n[Pre-Chorus]\nLittle paws on the dash\nMemories we're making fast\nChasing dreams in the golden light\nEverything feels so right\n\n[Chorus]\nFuzzy navigators, through the haze\nLost in these sun-drenched days\nWith a flick of a tail, we steer\nNo map, no fear, just you, my dear\n\n[Bridge]\nRadio plays a forgotten tune\nBeneath the afternoon moon\nWe'll find a place to rest our heads\nOn soft and grassy beds\n\n[Instrumental]\n\n[Chorus]\nFuzzy navigators, through the haze\nLost in these sun-drenched days\nWith a flick of a tail, we steer\nNo map, no fear, just you, my dear\n\n[Outro]",
+        "generatedSongTitle": "Fuzzy Navigators",
+        "generatedStyleTags": "indie pop, nostalgic, summer, road trip, cats"
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 52,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 28,
+            "costMultiplier": 1
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.5",
+            "cost": 16,
+            "costMultiplier": 1
+          },
+          {
+            "step": "music",
+            "provider": "deapi",
+            "model": "AceStep_1_5_Turbo",
+            "cost": 0,
+            "costMultiplier": 1
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 68.086817,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 28,
+            "inputMetric": "durationMs",
+            "inputValue": 60000
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.5",
+            "cost": 16,
+            "inputMetric": "durationMs",
+            "inputValue": 179722
+          },
+          {
+            "step": "music",
+            "provider": "deapi",
+            "model": "AceStep_1_5_Turbo",
+            "cost": 0.086817,
+            "inputMetric": "durationMs",
+            "inputValue": 60000
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "inputMetric": "durationMs",
+            "inputValue": 60000
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "inputMetric": "durationMs",
+            "inputValue": 167392
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 630360,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 109200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.5",
+            "processingTimeMs": 406800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120
+          },
+          {
+            "step": "music",
+            "provider": "deapi",
+            "model": "AceStep_1_5_Turbo",
+            "processingTimeMs": 60000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 54360,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 303420,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 13270,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.5",
+            "processingTimeMs": 164263,
+            "inputMetric": "durationSeconds",
+            "inputValue": 179.722
+          },
+          {
+            "step": "music",
+            "provider": "deapi",
+            "model": "AceStep_1_5_Turbo",
+            "processingTimeMs": 11369,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 17028,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 97490,
+            "inputMetric": "durationSeconds",
+            "inputValue": 167.392
+          }
+        ]
+      }
+    },
+    "input": "indie pop, nostalgic summer road trip vibe song about cats",
+    "requestedProviders": [
+      {
+        "service": "elevenlabs",
+        "model": "music_v1"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.5"
+      },
+      {
+        "service": "deapi",
+        "model": "AceStep_1_5_Turbo"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-pro-preview"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6"
+      }
+    ]
+  }
+}

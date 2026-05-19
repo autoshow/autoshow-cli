@@ -22,7 +22,7 @@ bun as <command> <input> [flags]
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
    - Parses `Bun.argv` via the Clerc framework
-   - Defines named commands: `metadata`, `download`, `extract`, `resume`, `write`, `tts`, `image`, `video`, `music`, `config`, `cache`, `setup`, `links`, `benchmark`
+   - Defines named commands: `metadata`, `download`, `extract`, `resume`, `write`, `tts`, `image`, `video`, `music`, `comic`, `config`, `cache`, `setup`, `sock`, `links`, `benchmark`
    - Validates flag combinations and argument ordering
 
 2. **Target Layer** (`src/cli/commands/process-steps/step-1-download/targets/`)
@@ -32,10 +32,10 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
-   - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/hosted article backends)
+   - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM, Together) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/Unstructured/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
-   - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Runway, Speechify, Hume, Cartesia, Google Cloud, deAPI)
-   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, GLM, Grok, Runway, BFL, deAPI)
+   - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Speechify, Hume, Cartesia, Google Cloud, deAPI)
+   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI)
    - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway, deAPI)
    - Step 7: Music generation - optional (ElevenLabs, MiniMax, deAPI, Gemini)
 
@@ -101,11 +101,25 @@ src/cli/create-cli.ts
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
 │                                                                              │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
+│  │     resume       │  │     comic        │  │    benchmark     │            │
+│  │                  │  │                  │  │                  │            │
+│  │ Resume partial   │  │ Generate comic   │  │ Run provider     │            │
+│  │ pipeline runs    │  │ from prompt text │  │ benchmarks       │            │
+│  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
+│                                                                              │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐            │
 │  │     config       │  │      cache       │  │      links       │            │
 │  │                  │  │                  │  │                  │            │
 │  │ Read/write       │  │ Prune or clear   │  │ Fetch provider   │            │
 │  │ autoshow.json    │  │ STT media cache  │  │ reference docs   │            │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘            │
+│                                                                              │
+│  ┌──────────────────┐                                                        │
+│  │      sock        │                                                        │
+│  │                  │                                                        │
+│  │ Socket server    │                                                        │
+│  │ interface        │                                                        │
+│  └──────────────────┘                                                        │
 │                                                                              │
 │  Most process commands → handleProcessTarget(command, target, flags)         │
 │  `music --audio` / `music --batch` route to the local lyric-video runner     │
@@ -119,15 +133,25 @@ src/cli/flags/
 
 ┌─────────────────────────────────────────────────────────────┐
 │  transcriptionFlags (part of mediaFlags)                   │
-│  ├── --whisper MODEL     tiny|base|small|medium|large-v3-turbo│
-│  ├── --reverb            Use Reverb ASR                │
-│  ├── --gcloud / --aws / --deepinfra / --deapi│
-│  ├── --elevenlabs / --deepgram / --soniox      │
-│  ├── --speechmatics / --rev / --happyscribe    │
-│  ├── --groq / --grok / --mistral               │
-│  ├── --assemblyai / --gladia / --supadata      │
-│  ├── --openai / --gemini / --glm               │
-│  ├── --together                                        │
+│                                                            │
+│  Local:                                                    │
+│  ├── --whisper-stt MODEL tiny|base|small|medium|large-v3-turbo│
+│  ├── --reverb-stt        Use Reverb ASR                    │
+│                                                            │
+│  Cloud (LLM provider STT):                                 │
+│  ├── --openai-stt / --gemini-stt / --groq-stt             │
+│  ├── --grok-stt / --mistral-stt / --glm-stt               │
+│  ├── --together-stt / --deepinfra-stt                      │
+│                                                            │
+│  Cloud (dedicated STT services):                           │
+│  ├── --deepgram-stt / --assemblyai-stt / --gladia-stt     │
+│  ├── --elevenlabs-stt / --soniox-stt / --speechmatics-stt │
+│  ├── --rev-stt / --happyscribe-stt / --supadata-stt       │
+│  ├── --scrapecreators-stt / --deapi-stt                    │
+│  ├── --gcloud-stt / --aws-stt                              │
+│                                                            │
+│  Controls:                                                 │
+│  ├── --all-stt           Enable every STT provider/model   │
 │  ├── --speaker-count N   Diarization speaker hint          │
 │  └── --split             Split audio into 30-min segments  │
 └─────────────────────────────────────────────────────────────┘
@@ -143,29 +167,37 @@ src/cli/flags/
 │  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
 │  ├── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
 │  ├── --glm MODEL         glm-5.1                          │
-│  └── --kimi MODEL        kimi-k2.6                         │
+│  ├── --kimi MODEL        kimi-k2.6                         │
+│  └── --all-llm           Enable every LLM provider/model   │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │  extractFlags                                              │
-│  ├── --lang LANGS        Tesseract language(s) (default: eng)│
+│                                                            │
+│  Output:                                                   │
 │  ├── --out FORMAT        text|json|tsv|hocr                │
 │  ├── --password VALUE    Encrypted PDF password            │
-│  ├── --ocrmypdf          Use OCRmyPDF engine (PDF only)    │
-│  ├── --paddle        Use PaddleOCR engine              │
-│  ├── --mistral MODEL Mistral OCR (API)                 │
-│  ├── --glm MODEL     GLM OCR (API)                     │
-│  ├── --kimi MODEL    Kimi OCR (API)                    │
-│  ├── --openai MODEL  OpenAI OCR (API)                  │
-│  ├── --anthropic MODEL Anthropic OCR (API)             │
-│  ├── --gemini MODEL  Gemini OCR (API)                  │
-│  ├── --deepinfra MODEL DeepInfra OCR (API)             │
-│  ├── --aws MODEL AWS Textract                     │
-│  ├── --gcloud MODEL Google Cloud Document AI         │
-│  ├── --primary-ocr NAME  top-level artifact provider       │
+│                                                            │
+│  Local OCR engines:                                        │
+│  ├── --tesseract-ocr     Tesseract OCR (default engine)    │
+│  ├── --ocrmypdf          OCRmyPDF engine (PDF only)        │
+│  ├── --paddle-ocr        PaddleOCR engine                  │
+│  ├── --lang LANGS        Tesseract language(s) (default: eng)│
+│                                                            │
+│  Hosted OCR providers (API):                               │
+│  ├── --openai-ocr / --anthropic-ocr / --gemini-ocr        │
+│  ├── --mistral-ocr / --glm-ocr / --kimi-ocr               │
+│  ├── --deepinfra-ocr / --unstructured-ocr                  │
+│  ├── --aws-textract / --gcloud-docai                       │
+│                                                            │
+│  URL article backends:                                     │
 │  ├── --url-backend NAME  defuddle|firecrawl|glm-reader|spider|zyte │
 │  ├── --all-url          run all URL article backends       │
-│  └── --url-provider-concurrency N  hosted URL concurrency  │
+│  ├── --url-provider-concurrency N  hosted URL concurrency  │
+│                                                            │
+│  Controls:                                                 │
+│  ├── --all-ocr           Enable every OCR engine/provider  │
+│  └── --primary-ocr NAME  top-level artifact provider       │
 │                                                            │
 │  advancedExtractFlags                                      │
 │  ├── --dpi NUMBER        Render DPI (default: 300)         │
@@ -185,11 +217,16 @@ Command-to-flag mapping:
   metadata    → --save + --password + --url-backend + batchFlags
   download    → downloadFlags + --url-backend
   extract     → mediaFlags + extractFlags + advancedExtractFlags + batchFlags + priceFlag
+  resume      → resumeFlags (STT/OCR/TTS/image/video/music provider selection for partial reruns)
   write       → mediaFlags + extractFlags + advancedExtractFlags + batchFlags
                   + ttsFlags + imageGenFlags + musicGenFlags + videoGenFlags + promptFlag
   tts         → ttsFlags
   image       → imageGenFlags
   music       → musicGenFlags
   video       → videoGenFlags
+  comic       → comicFlags
   config      → configCommandFlags (persist mapped defaults; ignore runtime-only flags)
+
+Shortcut flags (available on commands that include the relevant provider flags):
+  --all-stt, --all-ocr, --all-llm, --all-tts, --all-image, --all-video, --all-music
 ```

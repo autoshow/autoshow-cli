@@ -28,6 +28,7 @@ bun t \
 - Hosted article and local HTML input validation also lives in `test/test-cases/validation/input-contracts.test.ts`. Mocked URL backend contracts for Firecrawl v2, Spider, Zyte, GLM Reader, Defuddle, and `--all-url` provider artifacts live in `test/test-cases/validation/html-url-backends-contracts.test.ts`.
 - `test/test-cases/validation/option-resolution-contracts.test.ts` covers `--all-url` backend expansion, URL concurrency defaults, conflict handling with `--url-backend`, and expected provider artifact paths without live API calls.
 - Native EPUB cleanup and export validation lives in `test/test-cases/validation/epub-export-contracts.test.ts`.
+- `unstructured` is a supported OCR provider with mocked validation coverage in `provider-selection-contracts.test.ts`, `option-resolution-contracts.test.ts`, `ocr-resume-contracts.test.ts`, `ocr-resilience-contracts.test.ts`, `price-mode-contracts.test.ts`, and `metadata-links-lyrics-contracts.test.ts`. It has no dedicated e2e service test.
 
 ## Price Preflight
 

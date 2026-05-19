@@ -21,6 +21,7 @@ bun t test/test-cases/e2e/step-6-video-gen-e2e/
 - `test/test-cases/price-flag/video-price.test.ts` covers mapped price estimates for Gemini, MiniMax, deAPI, GLM, Grok, and Runway, media-mode `--price` coverage for GLM/MiniMax models, plus multi-provider `--price` output.
 - Live generation coverage is defined for Gemini, MiniMax, and deAPI and is skipped unless the relevant API key is configured. Optional live Lite generation coverage requires `GEMINI_API_KEY`.
 - GLM, Grok, and Runway currently have command flag/model validation and price coverage, but no dedicated live-service cases in the step-6 e2e file.
+- `test/test-cases/validation/video-provider-contracts.test.ts` covers mocked REST contracts for Gemini Veo media inputs, GLM text/image/interpolation/reference requests, MiniMax text/image/subject-reference requests, and Grok generation/reference/edit/extension endpoint shapes including moderation failure handling.
 
 ## Price Preflight
 

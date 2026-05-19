@@ -55,10 +55,10 @@ src/cli/commands/process-steps/process-video.ts
 │  Local: Whisper.cpp, Reverb ASR                                             │
 │  Cloud: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox,  │
 │         Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia,         │
-│         Happy Scribe, Supadata, OpenAI, Gemini, GLM, Together               │
+│         Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM, Together│
 │                                    │                                         │
 │           (no engine flag) → Whisper.cpp (local binary)                      │
-│           --whisper MODEL: tiny|base|small|medium|large-v3-turbo        │
+│           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo    │
 │                                                                              │
 │           --split: split audio into 30-min chunks, transcribe each           │
 │                                    │                                         │
@@ -195,12 +195,14 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │                      │  │ OCR via  │  │  (no external deps)     │        │
 │  │  --ocrmypdf →        │  │ Tesseract│  │                         │        │
 │  │    OCRmyPDF (PDF)    │  │          │  │  docx → word/document   │        │
-│  │  --paddle →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
+│  │  --paddle-ocr →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
 │  │    PaddleOCR         │  │ --lang   │  │  xlsx → sharedStrings   │        │
-│  │  hosted OCR flags →  │  │ --psm   │  │                         │        │
-│  │    API providers     │  │ --oem    │  └────────────┬────────────┘        │
-│  │  default → MuPDF+Tess│  │ --rotate │               |                     │
-│  │  Stage A: MuPDF      │  └────┬─────┘               |                     │
+│  │  --unstructured-ocr →│  │ --psm   │  │                         │        │
+│  │    Unstructured (API)│  │ --oem    │  └────────────┬────────────┘        │
+│  │  hosted OCR flags →  │  │ --rotate │               |                     │
+│  │    API providers     │  │          │               |                     │
+│  │  default → MuPDF+Tess│  └────┬─────┘               |                     │
+│  │  Stage A: MuPDF      │       |                     |                     │
 │  │  mutool draw -F text │       |                     |                     │
 │  │  per-page text       │       |                     |                     │
 │  └──────────┬───────────┘       |                     |                     │

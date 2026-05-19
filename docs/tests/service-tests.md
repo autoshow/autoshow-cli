@@ -48,6 +48,7 @@ bun t test/test-cases/e2e/step-7-music-gen-e2e/
 ## Cross-Cutting Coverage
 
 - `test/test-cases/validation/option-resolution-contracts.test.ts`, `provider-selection-contracts.test.ts`, and `price-mode-contracts.test.ts` cover model-option, provider-selection, and price-mode behavior without live service calls.
+- `test/test-cases/validation/video-provider-contracts.test.ts`, `image-provider-rest-contracts.test.ts`, `tts-provider-contracts.test.ts`, `music-provider-contracts.test.ts`, and `resume-additive-provider-contracts.test.ts` cover mocked REST and provider-contract behavior across their respective generation command families. Provider-specific REST contract suites such as `anthropic-rest-contracts.test.ts`, `gemini-rest-contracts.test.ts`, `openai-rest-contracts.test.ts`, and `mistral-rest-contracts.test.ts` cover write/OCR service request payloads.
 - `test/test-cases/price-flag/` contains focused `--price` coverage for STT, OCR, write, TTS, image, video, and music command families.
 - `test/test-cases/e2e/cli-integration.test.ts` covers cross-provider CLI flows, but it does not currently have mapped price commands.
 - `--test-price` with no path filters still resolves all mapped price suites across both local and service coverage.

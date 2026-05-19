@@ -69,34 +69,67 @@ Complete trace of a real CLI command from input to output, plus environment vari
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  API Keys                                                                    │
-│  ├── OPENAI_API_KEY                  Required for OpenAI flags           │
-│  ├── GROQ_API_KEY                    Required for Groq flags             │
-│  ├── ANTHROPIC_API_KEY               Required for Anthropic flags        │
-│  ├── GEMINI_API_KEY                  Required for Gemini flags           │
-│  ├── DEEPINFRA_API_KEY               Required for DeepInfra flags        │
-│  ├── DEAPI_API_KEY                   Required for deAPI flags            │
-│  ├── MINIMAX_API_KEY                 Required for MiniMax flags          │
-│  ├── ELEVENLABS_API_KEY              Required for ElevenLabs flags       │
-│  ├── GLM_API_KEY                     Required for GLM flags              │
-│  ├── KIMI_API_KEY                    Required for Kimi flags             │
-│  ├── XAI_API_KEY                     Required for Grok/xAI flags         │
-│  ├── RUNWAYML_API_SECRET             Required for Runway flags           │
-│  ├── SPEECHIFY_API_KEY               Required for Speechify flags        │
-│  ├── HUME_API_KEY                    Required for Hume flags             │
-│  ├── CARTESIA_API_KEY                Required for Cartesia flags         │
-│  ├── TOGETHER_API_KEY                Required for Together flags         │
-│  ├── BFL_API_KEY                     Required for BFL flags              │
-│  └── HF_TOKEN                        HuggingFace private model access         │
+│  Step 2 — STT API Keys                                                       │
+│  ├── DEEPGRAM_API_KEY                Deepgram STT (also TTS)                 │
+│  ├── SONIOX_API_KEY                  Soniox STT                              │
+│  ├── SPEECHMATICS_API_KEY            Speechmatics STT                        │
+│  ├── ASSEMBLYAI_API_KEY              AssemblyAI STT                          │
+│  ├── GLADIA_API_KEY                  Gladia STT                              │
+│  ├── TOGETHER_API_KEY                Together STT                            │
+│  └── DEEPINFRA_API_KEY               DeepInfra STT (also OCR)               │
 │                                                                              │
-│  Common Provider Base URL Overrides                                          │
+│  Step 2 — OCR & URL Backend API Keys                                         │
+│  ├── UNSTRUCTURED_API_KEY            Unstructured OCR                        │
+│  ├── FIRECRAWL_API_KEY               Firecrawl URL backend                   │
+│  └── KIMI_API_KEY                    Kimi OCR (also LLM)                     │
+│                                                                              │
+│  Step 3 — LLM API Keys                                                       │
+│  ├── OPENAI_API_KEY                  OpenAI LLM/STT/OCR/TTS/Image            │
+│  ├── ANTHROPIC_API_KEY               Anthropic LLM/OCR                       │
+│  ├── GEMINI_API_KEY                  Gemini LLM/STT/OCR/TTS/Image/Video/Music│
+│  ├── GROQ_API_KEY                    Groq LLM/STT/TTS                        │
+│  └── MINIMAX_API_KEY                 MiniMax LLM/TTS/Image/Video/Music       │
+│                                                                              │
+│  Multi-step Provider API Keys                                                │
+│  ├── MISTRAL_API_KEY                 Mistral STT/OCR/TTS                     │
+│  ├── GLM_API_KEY                     GLM STT/OCR/LLM/Video                   │
+│  ├── XAI_API_KEY                     Grok STT/LLM/TTS/Image/Video            │
+│  ├── ELEVENLABS_API_KEY              ElevenLabs STT/TTS/Music                │
+│  └── DEAPI_API_KEY                   deAPI STT/TTS/Image/Video/Music         │
+│                                                                              │
+│  Step 4-7 — Generation-Only API Keys                                         │
+│  ├── SPEECHIFY_API_KEY               Speechify TTS                           │
+│  ├── HUME_API_KEY                    Hume TTS                                │
+│  ├── CARTESIA_API_KEY                Cartesia TTS                            │
+│  ├── RUNWAYML_API_SECRET             Runway Image/Video                      │
+│  └── BFL_API_KEY                     BFL Image                               │
+│                                                                              │
+│  Other                                                                       │
+│  └── HF_TOKEN                        HuggingFace private model access        │
+│                                                                              │
+│  Base URL Overrides — Step 2 (STT/OCR)                                       │
+│  ├── DEEPGRAM_BASE_URL, SONIOX_BASE_URL, SPEECHMATICS_BASE_URL               │
+│  ├── ASSEMBLYAI_BASE_URL, GLADIA_BASE_URL, TOGETHER_BASE_URL                 │
+│  ├── DEEPINFRA_BASE_URL, UNSTRUCTURED_API_URL, FIRECRAWL_API_URL             │
+│                                                                              │
+│  Base URL Overrides — Step 3 (LLM)                                           │
 │  ├── OPENAI_BASE_URL, GROQ_BASE_URL, MISTRAL_BASE_URL                        │
-│  ├── XAI_BASE_URL, DEAPI_BASE_URL                                            │
-│  ├── ELEVENLABS_BASE_URL, MINIMAX_BASE_URL, DEEPGRAM_BASE_URL                │
+│  ├── XAI_BASE_URL, ZAI_BASE_URL (GLM), MINIMAX_BASE_URL                     │
+│                                                                              │
+│  Base URL Overrides — Steps 4-7 (TTS/Image/Video/Music)                      │
+│  ├── ELEVENLABS_BASE_URL, DEAPI_BASE_URL                                     │
 │  ├── SPEECHIFY_BASE_URL, HUME_BASE_URL, CARTESIA_BASE_URL                    │
-│  ├── RUNWAY_BASE_URL, BFL_BASE_URL                                           │
-│  └── TOGETHER_BASE_URL, DEEPINFRA_BASE_URL, SONIOX_BASE_URL,                 │
-│      SPEECHMATICS_BASE_URL, ASSEMBLYAI_BASE_URL, GLADIA_BASE_URL             │
+│  └── RUNWAY_BASE_URL, BFL_BASE_URL                                           │
+│                                                                              │
+│  Logging                                                                     │
+│  ├── AUTOSHOW_LOG_FORMAT             human|json|both|auto (default: auto)    │
+│  └── AUTOSHOW_LOG_LEVEL              debug|info|success|warn|error           │
+│                                                                              │
+│  Timeout Overrides (milliseconds)                                            │
+│  ├── AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS  Media generation timeout          │
+│  ├── AUTOSHOW_LLM_REQUEST_TIMEOUT_MS       LLM request timeout              │
+│  ├── AUTOSHOW_OCR_REQUEST_TIMEOUT_MS       OCR request timeout               │
+│  └── AUTOSHOW_UNSTRUCTURED_OCR_*           Poll/stall/deadline timeouts      │
 │                                                                              │
 │  llama.cpp Overrides                                                         │
 │  ├── LLAMA_MODEL_PATH                Skip auto-download, use local path      │
@@ -104,11 +137,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  └── LLAMA_SERVER_START_TIMEOUT_MS   Server startup timeout (default: 30m)   │
 │                                                                              │
 │  yt-dlp Configuration                                                        │
-│  ├── YTDLP_ACCEPT_LANGUAGE           Custom Accept-Language header           │
-│  ├── YTDLP_USER_AGENT                Custom user agent string                │
 │  ├── YTDLP_COOKIES_FROM_BROWSER      Import browser cookies for yt-dlp       │
 │  ├── YTDLP_COOKIES                   Path to exported yt-dlp cookies.txt     │
-│  ├── YTDLP_EXTRACTOR_ARGS            Raw yt-dlp extractor args override      │
-│  └── YTDLP_NO_CHECK_CERTS            Disable TLS certificate verification    │
+│  └── YTDLP_EXTRACTOR_ARGS            Raw yt-dlp extractor args override      │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```

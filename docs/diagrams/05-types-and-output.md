@@ -127,11 +127,15 @@ src/types/
 │  provider-types.ts                                                           │
 │                                                                              │
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|'grok'|             │
-│                  'mistral'|'openai'|'gemini'|'deepgram'|'runway'|           │
-│                  'speechify'|'hume'|'cartesia'|'gcloud'|'deapi'             │
+│                  'mistral'|'openai'|'gemini'|'deepgram'|'speechify'|        │
+│                  'gcloud'|'deapi'|'hume'|'cartesia'                         │
 │  ImageProvider = 'gemini'|'openai'|'minimax'|'grok'|'runway'|'bfl'|'deapi'   │
 │  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'|'deapi'            │
 │  MusicProvider = 'elevenlabs'|'minimax'|'deapi'|'gemini'                     │
+│                                                                              │
+│  OcrProvider   = 'tesseract'|'ocrmypdf'|'paddle-ocr'|'mistral'|'glm'|       │
+│                  'kimi'|'openai'|'anthropic'|'gemini'|'deepinfra'|           │
+│                  'aws-textract'|'gcloud-docai'|'unstructured'               │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -159,7 +163,10 @@ src/types/
 │  └── ElevenLabsSttResponse  ElevenLabs word/segment schema                   │
 │                                                                              │
 │  Step 3 (LLM):                                                               │
-│  ├── Step3Metadata        llmService, llmModel, time, in/out tokens          │
+│  ├── Step3Metadata        llmService, llmModel, time, in/out tokens,         │
+│  │                        outputFileName, outputFormat: 'json',              │
+│  │                        structuredMode: 'native'|'schema-guided',          │
+│  │                        structuredPresetNames: string[]                     │
 │  │    llmService: 'llama.cpp'|'openai'|'groq'|'gemini'|'anthropic'|'minimax'|'grok'|'glm'|'kimi'│
 │  └── LlamaResponseSchema  llama.cpp HTTP response format                     │
 │                                                                              │
@@ -170,12 +177,22 @@ src/types/
 │                                                                              │
 │  Step 5 (Image Gen):                                                         │
 │  └── Step5Metadata        imageService (ImageProvider), imageModel,          │
-│       processingTime, imageCount, imageFileNames[],                           │
-│       imageFileSize, imageWidth, imageHeight                                 │
+│       processingTime, imageCount, imageFileNames[], imageFileSize,           │
+│       imageWidth, imageHeight, imageSize?, imageQuality?, imageFormat?,      │
+│       revisedPrompt?, providerReturnedModel?,                                │
+│       requestMode: 'generation'|'edit', usageCostRaw?,                       │
+│       groundingMetadata?, providerModeration?,                               │
+│       providerCostCents?, providerCostSource?                                │
 │                                                                              │
 │  Step 6 (Video Gen):                                                         │
 │  └── Step6VideoMetadata   videoGenService (VideoProvider), videoGenModel,    │
-│       processingTime, videoFileName, videoFileSize, videoDuration            │
+│       processingTime, videoFileName, videoFileSize, videoDuration,           │
+│       requestMode?, videoResolution?, videoAspectRatio?,                     │
+│       inputImage?, lastFrameImage?, referenceImages?, inputVideo?,           │
+│       providerRequestId?, providerReturnedModel?,                            │
+│       providerVideoUrl?, providerVideoUri?, providerProgress?,              │
+│       providerModeration?, providerFileOutput?, providerStorageError?,       │
+│       providerCostCents?, providerCostSource?                                │
 │                                                                              │
 │  Step 7 (Music Gen):                                                         │
 │  └── Step7MusicMetadata   musicService (MusicProvider), musicModel,          │

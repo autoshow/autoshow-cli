@@ -26,6 +26,8 @@ bun t test/test-cases/e2e/step-5-image-gen-e2e/
 - `provider-selection-contracts.test.ts` covers provider-specific shared image flag acceptance and rejection, including MiniMax count/size/input and BFL input.
 - `image-provider-rest-contracts.test.ts` covers mocked BFL and MiniMax request payloads without calling hosted providers.
 - `deapi-image-gen.test.ts` covers all supported deAPI image models and `--image-size`.
+- `grok-image-gen.test.ts` covers Grok `grok-imagine-image` generation with `--image-aspect-ratio` and `--image-size`.
+- `runway-image-gen.test.ts` covers Runway `gen4_image` generation with `--image-aspect-ratio` and `--image-size`.
 
 ## Price Preflight
 

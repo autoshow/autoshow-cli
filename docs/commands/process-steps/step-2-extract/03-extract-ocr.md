@@ -260,7 +260,7 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 | Option | Value |
 |--------|-------|
 | Selector | `--openai <model>` |
-| Models | `gpt-5.4`, `gpt-5.4-nano` |
+| Models | `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
@@ -288,7 +288,7 @@ Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when
 | Option | Value |
 |--------|-------|
 | Selector | `--gemini <model>` |
-| Models | cheapest supported model, or `gemini-3.1-flash-lite-preview` |
+| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` |
 
 ```bash

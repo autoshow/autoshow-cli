@@ -1,0 +1,83 @@
+Music Generation Consensus Evaluation
+======================================
+
+Run: 2026-05-19_06-34-51-478_music-gen
+Prompt: indie pop, nostalgic summer road trip vibe song about cats
+Providers: 5
+
+Provider Summary (measurable metadata only)
+--------------------------------------------
+
+1. elevenlabs / music_v1
+   - Duration: 60.0s
+   - File size: 960,515 bytes (939 KB)
+   - Sample rate: 44,100 Hz, mono, 128 kbps
+   - Processing time: 13.27s
+   - Cost: 28.00 cents
+   - Lyrics: generated (not returned in metadata)
+
+2. minimax / music-2.5
+   - Duration: 179.7s
+   - File size: 5,758,892 bytes (5,624 KB)
+   - Sample rate: 44,100 Hz, stereo, 256 kbps
+   - Processing time: 164.26s
+   - Cost: 16.00 cents
+   - Lyrics: generated ("Sun-Drenched Paws")
+
+3. deapi / AceStep_1_5_Turbo
+   - Duration: 60.0s
+   - File size: 1,048,272 bytes (1,024 KB)
+   - Sample rate: not reported
+   - Processing time: 11.37s
+   - Cost: 0.09 cents
+   - Lyrics: none (instrumental only)
+
+4. gemini / lyria-3-pro-preview
+   - Duration: 60.0s
+   - File size: 1,402,894 bytes (1,370 KB)
+   - Sample rate: not reported
+   - Processing time: 17.03s
+   - Cost: 8.00 cents
+   - Lyrics: generated (structured sections returned)
+
+5. minimax / music-2.6
+   - Duration: 167.4s
+   - File size: 5,363,944 bytes (5,238 KB)
+   - Sample rate: 44,100 Hz, stereo, 256 kbps
+   - Processing time: 97.49s
+   - Cost: 16.00 cents
+   - Lyrics: generated ("Fuzzy Navigators")
+
+Speed Ranking (by processing time)
+-----------------------------------
+1. deapi / AceStep_1_5_Turbo      11.37s
+2. elevenlabs / music_v1          13.27s
+3. gemini / lyria-3-pro-preview   17.03s
+4. minimax / music-2.6            97.49s
+5. minimax / music-2.5           164.26s
+
+Cost Ranking (by actual cost in cents)
+---------------------------------------
+1. deapi / AceStep_1_5_Turbo       0.09 cents
+2. gemini / lyria-3-pro-preview    8.00 cents
+3. minimax / music-2.5            16.00 cents
+3. minimax / music-2.6            16.00 cents
+5. elevenlabs / music_v1          28.00 cents
+
+Quality Ranking
+----------------
+Not available. No explicit quality metric is present in the run metadata.
+Audio quality cannot be assessed from file size, bitrate, duration, or other
+measurable proxies without subjective listening evaluation.
+
+Notes
+------
+- All five providers successfully generated music files that exist on disk.
+- File sizes match between artifact and metadata for all providers.
+- The two MiniMax models produced the longest tracks (179.7s and 167.4s)
+  compared to 60s from the other three providers.
+- deapi/AceStep_1_5_Turbo was the only provider that did not generate lyrics
+  (instrumental output).
+- deapi was dramatically cheaper than all other providers at under 0.1 cents.
+- Three providers (elevenlabs, minimax/2.5, minimax/2.6) reported full audio
+  metadata including sample rate and bitrate. Two (deapi, gemini) did not.

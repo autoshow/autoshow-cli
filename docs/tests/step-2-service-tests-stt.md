@@ -23,6 +23,7 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
 - AWS has a dedicated suite because readiness depends on AWS CLI auth plus explicit or saved `awsRegion` / `awsBucket` values instead of a single API-key env var.
 - Google Cloud STT has a dedicated suite because readiness depends on gcloud CLI auth, an active project with linked billing, and `speech.googleapis.com` enablement instead of a single API-key env var.
 - YouTube caption-first mode and other zero-cost routing coverage live in validation suites such as `input-contracts.test.ts`, `option-resolution-contracts.test.ts`, `provider-selection-contracts.test.ts`, `price-mode-contracts.test.ts`, `resume-cache-setup-contracts.test.ts`, and `stt-media-cache-contracts.test.ts`.
+- `happyscribe` has dedicated mocked validation coverage in `test/test-cases/validation/happyscribe-transcript-parser-contracts.test.ts`. `scrapecreators` has dedicated mocked validation coverage in `test/test-cases/validation/scrapecreators-stt-contracts.test.ts`. `openai-stt`, `gemini-stt`, and `glm-stt` are defined STT providers with no entries in the shared `service-models.test.ts` suite or dedicated e2e service tests.
 
 ## Price Preflight
 
