@@ -173,6 +173,7 @@ export type ParsedEpisode = {
   title: string | undefined
   pubDate: string | undefined
   duration: string | undefined
+  description: string | undefined
 }
 
 export type ParsedFeed = {

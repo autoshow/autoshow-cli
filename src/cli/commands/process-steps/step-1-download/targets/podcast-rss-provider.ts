@@ -77,6 +77,7 @@ export const tryEnumeratePodcastFeed = async (url: string): Promise<BatchSource 
       if (feedAuthor) item.author = feedAuthor
       if (ep.pubDate) item.publishedAt = ep.pubDate
       if (ep.duration) item.duration = ep.duration
+      if (ep.description) item.description = ep.description
       return item
     })
 

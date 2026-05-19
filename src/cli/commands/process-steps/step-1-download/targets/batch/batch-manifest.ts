@@ -24,7 +24,8 @@ export const buildBatchManifestEntryForItem = (
       title: batchItem.title ?? 'Untitled',
       channel: batchItem.author ?? 'Unknown',
       duration: batchItem.duration ?? 'Unknown',
-      ...(batchItem.publishedAt ? { publishedAt: batchItem.publishedAt } : {})
+      ...(batchItem.publishedAt ? { publishedAt: batchItem.publishedAt } : {}),
+      ...(batchItem.description ? { description: batchItem.description } : {})
     }
   }
 

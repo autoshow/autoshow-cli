@@ -8,6 +8,7 @@ export type BatchItem = {
   author?: string
   publishedAt?: string
   duration?: string
+  description?: string
   directDownload?: boolean
   meta?: Record<string, unknown>
 }
