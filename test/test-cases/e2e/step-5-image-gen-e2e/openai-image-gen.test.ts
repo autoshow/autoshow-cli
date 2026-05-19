@@ -44,7 +44,7 @@ describe('write with image gen', () => {
         'write',
         STABLE_LOCAL_AUDIO_PATH,
         '--llama', 'ggml-org/gemma-3-270m-it-GGUF',
-        '--openai', 'gpt-image-2',
+        '--openai-image', 'gpt-image-2',
         '--image-size', '1024x1536',
         '--image-quality', 'low',
       ],

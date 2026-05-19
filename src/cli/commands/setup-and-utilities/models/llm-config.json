@@ -33,7 +33,7 @@
         "outputCostPer1MCents": 450,
         "estimation": {
           "costMultiplier": 0.7927,
-          "msPer1KTokens": 4396
+          "msPer1KTokens": 3768
         }
       },
       "gpt-5.4-nano": {
@@ -117,7 +117,7 @@
         "outputCostPer1MCents": 2500,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 12461
+          "msPer1KTokens": 14298
         }
       },
       "claude-opus-4-6": {
@@ -128,7 +128,7 @@
         "outputCostPer1MCents": 2500,
         "estimation": {
           "costMultiplier": 0.7957,
-          "msPer1KTokens": 9432
+          "msPer1KTokens": 8259
         }
       },
       "claude-sonnet-4-6": {
@@ -139,7 +139,7 @@
         "outputCostPer1MCents": 1500,
         "estimation": {
           "costMultiplier": 0.8487,
-          "msPer1KTokens": 7960
+          "msPer1KTokens": 10759
         }
       },
       "claude-haiku-4-5": {
@@ -167,7 +167,7 @@
         "outputCostPer1MCents": 120,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 10484
+          "msPer1KTokens": 8329
         }
       },
       "MiniMax-M2.5-highspeed": {
@@ -240,7 +240,7 @@
         "outputCostPer1MCents": 400,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 14801
+          "msPer1KTokens": 11215
         }
       }
     }
@@ -257,7 +257,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 1900
+          "msPer1KTokens": 1709
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {

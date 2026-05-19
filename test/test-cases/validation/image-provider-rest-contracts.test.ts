@@ -3,7 +3,6 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runBflImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/run-bfl-image-gen'
-import { runGlmImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/glm/run-glm-image-gen'
 import { runMinimaxImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/minimax/run-minimax-image-gen'
 
 type FetchCall = {
@@ -20,9 +19,7 @@ const envKeys = [
   'BFL_API_KEY',
   'BFL_BASE_URL',
   'MINIMAX_API_KEY',
-  'MINIMAX_BASE_URL',
-  'GLM_API_KEY',
-  'ZAI_BASE_URL'
+  'MINIMAX_BASE_URL'
 ]
 const tempDirs: string[] = []
 
@@ -185,43 +182,6 @@ describe('image provider REST contracts', () => {
     expect(references[1]).toEqual({
       type: 'character',
       image_file: 'https://cdn.example.com/subject.jpg'
-    })
-  })
-
-  test('GLM image generation sends provider quality', async () => {
-    process.env['GLM_API_KEY'] = 'glm-key'
-    process.env['ZAI_BASE_URL'] = 'https://mock.zai.local/api/paas/v4'
-    const calls = installFetch((call) => {
-      if (call.method === 'POST') {
-        return jsonResponse({ data: [{ url: 'https://mock.zai.local/generated.png' }] })
-      }
-      return imageResponse(new Uint8Array([3, 2, 1]), 'image/png')
-    })
-
-    await withTempDir(async (dir) => {
-      const result = await runGlmImageGen('A detailed poster', dir, {
-        model: 'glm-image',
-        size: '1280x1280',
-        quality: 'standard'
-      })
-
-      expect(result.metadata).toMatchObject({
-        imageService: 'glm',
-        imageModel: 'glm-image',
-        imageFileNames: ['generated-image.png'],
-        imageQuality: 'standard'
-      })
-    })
-
-    expect(calls[0]).toMatchObject({
-      url: 'https://mock.zai.local/api/paas/v4/images/generations',
-      method: 'POST'
-    })
-    expect(calls[0]?.bodyJson).toMatchObject({
-      model: 'glm-image',
-      prompt: 'A detailed poster',
-      size: '1280x1280',
-      quality: 'standard'
     })
   })
 })

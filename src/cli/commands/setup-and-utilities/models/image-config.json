@@ -64,7 +64,7 @@
         "costPerImageCents": 5.3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 26517
+          "msPerImage": 21594
         }
       }
     }
@@ -80,30 +80,6 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 19482
-        }
-      }
-    }
-  },
-  "glm": {
-    "description": "Z.AI GLM image generation",
-    "type": "api",
-    "models": {
-      "glm-image": {
-        "description": "GLM Image text-to-image generation",
-        "costPerImageUSD": 0.015,
-        "costPerImageCents": 1.5,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 33000
-        }
-      },
-      "cogView-4-250304": {
-        "description": "CogView 4 text-to-image generation",
-        "costPerImageUSD": 0.01,
-        "costPerImageCents": 1,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 13260
         }
       }
     }
@@ -127,7 +103,7 @@
         "costPerImageCents": 2,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 5215
+          "msPerImage": 4299
         }
       }
     }
@@ -186,7 +162,7 @@
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 16744
+          "msPerImage": 14987
         }
       },
       "flux-2-pro": {
@@ -228,7 +204,7 @@
         "costPerImageCents": 0.136,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 13127
+          "msPerImage": 15038
         }
       },
       "ZImageTurbo_INT8": {
@@ -237,7 +213,7 @@
         "costPerImageCents": 0.405,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 25646
+          "msPerImage": 20797
         }
       },
       "Flux_2_Klein_4B_BF16": {
@@ -246,7 +222,7 @@
         "costPerImageCents": 0.186,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 10432
+          "msPerImage": 9239
         }
       }
     }

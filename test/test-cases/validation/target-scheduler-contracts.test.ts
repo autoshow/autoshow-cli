@@ -128,8 +128,6 @@ describe('target scheduler contracts', () => {
           geminiImageModel: undefined,
           minimaxImageModels: undefined,
           minimaxImageModel: undefined,
-          glmImageModels: undefined,
-          glmImageModel: undefined,
           grokImageModels: undefined,
           grokImageModel: undefined,
           runwayImageModels: undefined,

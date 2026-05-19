@@ -120,7 +120,7 @@ src/cli/commands/process-steps/process-video.ts
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image,     │
                                         │   --minimax-image,           │
-                                        │   --glm-image, --grok-image, │
+                                        │   --grok-image,              │
                                         │   --runway-image,            │
                                         │   --bfl-image, --deapi-image)│
                                         │  Step 6: Video (--gemini-    │

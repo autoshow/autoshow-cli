@@ -14,10 +14,6 @@ export const imageRegistry: PriceSelectionEntry[] = [
   ...exact('test/test-cases/e2e/step-5-image-gen-e2e/minimax-image-gen.test.ts', [
     command('image-minimax-image-01', 'image-minimax-image-01', ['src/cli/create-cli.ts', 'image', 'a dramatic fox portrait in snow', '--minimax', 'image-01', '--image-aspect-ratio', '16:9', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/step-5-image-gen-e2e/glm-image-gen.test.ts', [
-    command('image-glm-glm-image', 'image-glm-glm-image', ['src/cli/create-cli.ts', 'image', 'a sunset', '--glm', 'glm-image', '--price']),
-    command('image-glm-cogView-4-250304', 'image-glm-cogView-4-250304', ['src/cli/create-cli.ts', 'image', 'a sunset', '--glm', 'cogView-4-250304', '--price']),
-  ]),
   ...exact('test/test-cases/e2e/step-5-image-gen-e2e/grok-image-gen.test.ts', [
     command('image-grok-grok-imagine-image', 'image-grok-grok-imagine-image', ['src/cli/create-cli.ts', 'image', 'a sunset', '--grok', 'grok-imagine-image', '--price']),
   ]),

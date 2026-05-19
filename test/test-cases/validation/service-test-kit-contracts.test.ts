@@ -17,8 +17,8 @@ describe('classifySkippableLiveProviderFailure', () => {
         expected: 'GLM Reader is rate limited'
       },
       {
-        output: 'GLM image generation failed (429): Too Many Requests',
-        expected: 'GLM image generation is rate limited'
+        output: 'glm/glm-ocr: certificate has expired',
+        expected: 'GLM provider TLS certificate has expired'
       },
       {
         output: 'Retry Attempt\noperation glm-ocr reason retryable status 429\nCommand failed: glm-ocr failed after 4/4 attempts',

@@ -233,8 +233,6 @@ export const processMediaSingle = async (
     openaiImageModel: llmDefaults.openaiImageModel,
     minimaxImageModels: llmDefaults.minimaxImageModels,
     minimaxImageModel: llmDefaults.minimaxImageModel,
-    glmImageModels: llmDefaults.glmImageModels,
-    glmImageModel: llmDefaults.glmImageModel,
     grokImageModels: llmDefaults.grokImageModels,
     grokImageModel: llmDefaults.grokImageModel,
     runwayImageModels: llmDefaults.runwayImageModels,

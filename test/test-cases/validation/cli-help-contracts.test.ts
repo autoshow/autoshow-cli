@@ -238,6 +238,7 @@ test('image and video help expose BFL/deAPI provider flags', async () => {
   expect(imageResult.stdout).toContain('--image-local-concurrency')
   expect(imageResult.stdout).toContain('--bfl')
   expect(imageResult.stdout).toContain('--deapi')
+  expect(imageResult.stdout).not.toContain('--glm')
   expect(imageResult.stdout).not.toContain('--bfl-image')
   expect(imageResult.stdout).not.toContain('--deapi-image')
   expect(videoResult.stdout).toContain('--video-provider-concurrency')

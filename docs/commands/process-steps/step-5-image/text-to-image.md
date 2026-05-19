@@ -13,7 +13,6 @@ Generate images from a text prompt with the hosted image providers.
   - [Gemini](#gemini)
   - [OpenAI](#openai)
   - [MiniMax](#minimax)
-  - [Z.AI GLM](#zai-glm)
   - [Grok](#grok)
   - [Runway](#runway)
   - [BFL](#bfl)
@@ -30,7 +29,7 @@ There are no local image-generation models in this project.
 bun as setup --step image
 ```
 
-`setup --step image` checks API-key readiness for Gemini, OpenAI, GLM, Grok, Runway, BFL, and deAPI image providers. MiniMax image generation uses `MINIMAX_API_KEY` at runtime, but the image setup step does not have a dedicated MiniMax image hook today.
+`setup --step image` checks API-key readiness for Gemini, OpenAI, Grok, Runway, BFL, and deAPI image providers. MiniMax image generation uses `MINIMAX_API_KEY` at runtime, but the image setup step does not have a dedicated MiniMax image hook today.
 
 ### Environment
 
@@ -38,7 +37,6 @@ bun as setup --step image
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
 MINIMAX_API_KEY=...
-GLM_API_KEY=...
 XAI_API_KEY=...
 RUNWAYML_API_SECRET=...
 BFL_API_KEY=...
@@ -64,7 +62,7 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | `--image-local-concurrency <n>` | Local image providers to run concurrently per item; default `1` |
 | `--image-aspect-ratio <ratio>` | Provider-dependent aspect ratio control |
 | `--image-size <size>` | Provider-dependent size or resolution control |
-| `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto`; GLM quality: `hd` or `standard` |
+| `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |
 | `--image-format <fmt>` | OpenAI/BFL output format: `png`, `jpeg`, or `webp` |
 | `--image-background <bg>` | OpenAI background mode: `transparent`, `opaque`, or `auto` |
 | `--image-count <n>` | Number of images in one request for OpenAI/Grok `1-10`, MiniMax `1-9`, or Gemini Imagen `1-4` |
@@ -160,19 +158,6 @@ bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-size 1
 bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
 ```
 
-### Z.AI GLM
-
-| Option | Value |
-|--------|-------|
-| Selector | `--glm <model>` |
-| Models | `glm-image`, `cogView-4-250304` |
-| Size | `--image-size WIDTHxHEIGHT`, 512x512 through 2048x2048, multiples of 32 |
-| Quality | `--image-quality hd\|standard` |
-
-```bash
-bun as image "a clean product photo of a red enamel camping mug" --glm glm-image --image-size 1280x1280 --image-quality hd
-```
-
 ### Grok
 
 | Option | Value |
@@ -243,7 +228,6 @@ deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--im
 - Gemini writes `generated-image.png`, plus numbered variants when multiple Imagen images are returned.
 - OpenAI writes `generated-image.<format>`, plus numbered variants for `--image-count`.
 - MiniMax writes `generated-image.jpeg`, plus numbered variants for `--image-count`.
-- GLM writes `generated-image.png`.
 - Grok writes `generated-image.<format>`, plus numbered variants for `--image-count`.
 - Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.
 - BFL writes `generated-image.jpg`, `generated-image.png`, or `generated-image.webp`.

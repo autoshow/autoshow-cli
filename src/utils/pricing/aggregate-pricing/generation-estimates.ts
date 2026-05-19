@@ -17,8 +17,6 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
     || !!opts.openaiImageModel
     || (opts.minimaxImageModels?.length ?? 0) > 0
     || !!opts.minimaxImageModel
-    || (opts.glmImageModels?.length ?? 0) > 0
-    || !!opts.glmImageModel
     || (opts.grokImageModels?.length ?? 0) > 0
     || !!opts.grokImageModel
     || (opts.runwayImageModels?.length ?? 0) > 0
@@ -36,8 +34,6 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
     openaiImageModel: opts.openaiImageModel,
     minimaxImageModels: opts.minimaxImageModels,
     minimaxImageModel: opts.minimaxImageModel,
-    glmImageModels: opts.glmImageModels,
-    glmImageModel: opts.glmImageModel,
     grokImageModels: opts.grokImageModels,
     grokImageModel: opts.grokImageModel,
     runwayImageModels: opts.runwayImageModels,

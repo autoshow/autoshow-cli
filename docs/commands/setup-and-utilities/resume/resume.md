@@ -248,14 +248,13 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--gemini-image <model>` | Select one or more Gemini image models |
 | `--openai-image <model>` | Select one or more OpenAI image models |
 | `--minimax-image <model>` | Select one or more MiniMax image models |
-| `--glm-image <model>` | Select one or more GLM image models |
 | `--grok-image <model>` | Select one or more Grok image models |
 | `--runway-image <model>` | Select one or more Runway image models |
 | `--bfl-image <model>` | Select one or more BFL image models |
 | `--deapi-image <model>` | Select one or more deAPI image models |
 | `--image-aspect-ratio <ratio>` | Image aspect ratio |
 | `--image-size <size>` | Image size/resolution |
-| `--image-quality <quality>` | Image quality (OpenAI or GLM) |
+| `--image-quality <quality>` | Image quality (OpenAI) |
 | `--image-format <format>` | Image output format (OpenAI/BFL) |
 | `--image-background <bg>` | Image background (OpenAI) |
 | `--image-count <n>` | Number of images to generate in one supported provider request |

@@ -14,7 +14,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 176
+          "msPerSecond": 146
         }
       },
       "enhanced": {
@@ -28,7 +28,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 291
+          "msPerSecond": 244
         }
       }
     }

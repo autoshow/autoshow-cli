@@ -158,7 +158,6 @@ const ImageDefaultsSchema = v.strictObject({
   geminiImage: ModelArraySchema,
   openaiImage: ModelArraySchema,
   minimaxImage: ModelArraySchema,
-  glmImage: ModelArraySchema,
   grokImage: ModelArraySchema,
   runwayImage: ModelArraySchema,
   bflImage: ModelArraySchema,

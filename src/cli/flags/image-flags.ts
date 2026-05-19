@@ -2,7 +2,6 @@ import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_DEAPI_IMAGE_MODELS,
-  SUPPORTED_GLM_IMAGE_MODELS,
   SUPPORTED_GROK_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
@@ -17,7 +16,6 @@ export const IMAGE_COMMAND_SELECTOR_FLAGS = {
   'gemini-image': 'gemini',
   'openai-image': 'openai',
   'minimax-image': 'minimax',
-  'glm-image': 'glm',
   'grok-image': 'grok',
   'runway-image': 'runway',
   'bfl-image': 'bfl',
@@ -53,10 +51,6 @@ export const imageGenFlags = {
     description: buildModelDescription('MiniMax image model', SUPPORTED_MINIMAX_IMAGE_MODELS),
     type: [String] as [StringConstructor]
   },
-  'glm-image': {
-    description: buildModelDescription('Z.AI GLM image model', SUPPORTED_GLM_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'grok-image': {
     description: buildModelDescription('xAI Grok image model', SUPPORTED_GROK_IMAGE_MODELS),
     type: [String] as [StringConstructor]
@@ -78,11 +72,11 @@ export const imageGenFlags = {
     type: String
   },
   'image-size': {
-    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, WIDTHxHEIGHT 512-2048 multiples of 32 (GLM) or 8 (MiniMax when no aspect ratio), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
+    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, WIDTHxHEIGHT multiples of 8 (MiniMax when no aspect ratio), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
     type: String
   },
   'image-quality': {
-    description: 'Image quality: low|medium|high|auto (OpenAI, default: auto) or hd|standard (GLM)',
+    description: 'Image quality: low|medium|high|auto (OpenAI, default: auto)',
     type: String
   },
   'image-format': {

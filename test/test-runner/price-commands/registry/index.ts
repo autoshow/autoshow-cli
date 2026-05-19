@@ -45,7 +45,6 @@ export const BUDGET_TO_PRICE_SUITE_SELECTORS: Record<string, string> = {
 
   'test/test-cases/e2e/step-5-image-gen-e2e/gemini-image-gen.test.ts': 'test/test-price/step-5-image/gemini',
   'test/test-cases/e2e/step-5-image-gen-e2e/minimax-image-gen.test.ts': 'test/test-price/step-5-image/minimax',
-  'test/test-cases/e2e/step-5-image-gen-e2e/glm-image-gen.test.ts': 'test/test-price/step-5-image/glm',
   'test/test-cases/e2e/step-5-image-gen-e2e/grok-image-gen.test.ts': 'test/test-price/step-5-image/grok',
   'test/test-cases/e2e/step-5-image-gen-e2e/runway-image-gen.test.ts': 'test/test-price/step-5-image/runway',
   'test/test-cases/e2e/step-5-image-gen-e2e/bfl-image-gen.test.ts': 'test/test-price/step-5-image/bfl',

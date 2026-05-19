@@ -12,7 +12,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9951,
-          "msPerSecond": 44
+          "msPerSecond": 39
         }
       },
       "openai/whisper-large-v3": {
@@ -24,7 +24,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 65
+          "msPerSecond": 57
         }
       }
     }

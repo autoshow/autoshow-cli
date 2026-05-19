@@ -32,23 +32,6 @@ defineImageServicePriceTests({
 })
 
 defineImageServicePriceTests({
-  imageService: 'glm',
-  cliFlag: '--glm',
-  models: [
-    {
-      model: 'glm-image',
-      prompt: 'A clean product photo of a red enamel camping mug',
-      extraArgs: ['--image-size', '1024x1024']
-    },
-    {
-      model: 'cogView-4-250304',
-      prompt: 'A simple watercolor lighthouse at sunrise',
-      extraArgs: ['--image-size', '1024x1024']
-    }
-  ]
-})
-
-defineImageServicePriceTests({
   imageService: 'grok',
   cliFlag: '--grok',
   models: [

@@ -47,8 +47,6 @@ const estimateImageTargetCost = (
         return estimateImageCosts({ ...sharedOptions, openaiImageModel: target.model })[0]
       case 'minimax':
         return estimateImageCosts({ ...sharedOptions, minimaxImageModel: target.model })[0]
-      case 'glm':
-        return estimateImageCosts({ ...sharedOptions, glmImageModel: target.model })[0]
       case 'grok':
         return estimateImageCosts({ ...sharedOptions, grokImageModel: target.model })[0]
       case 'runway':
@@ -411,7 +409,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
         geminiImageModel: input.geminiImageModel,
         openaiImageModel: input.openaiImageModel,
         minimaxImageModel: input.minimaxImageModel,
-        glmImageModel: input.glmImageModel,
         grokImageModel: input.grokImageModel,
         runwayImageModel: input.runwayImageModel,
         bflImageModel: input.bflImageModel,

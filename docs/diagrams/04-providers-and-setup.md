@@ -132,7 +132,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     MiniMax TTS uses MINIMAX_API_KEY but has no dedicated TTS setup hook
 
   Hosted image/video/music readiness
-    Image: Gemini, OpenAI, GLM, Grok, Runway, BFL, deAPI
+    Image: Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI
     MiniMax image uses MINIMAX_API_KEY but has no dedicated setup hook
     Video in full setup: deAPI, MiniMax
     Video in `setup --step video`: Gemini, MiniMax, GLM, Grok, Runway, deAPI
@@ -183,7 +183,6 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `image --gemini` | `GEMINI_API_KEY` |
 | `image --openai` | `OPENAI_API_KEY` |
 | `image --minimax` | `MINIMAX_API_KEY` |
-| `image --glm` | `GLM_API_KEY` |
 | `image --grok` | `XAI_API_KEY` |
 | `image --runway` | `RUNWAYML_API_SECRET` |
 | `image --bfl` | `BFL_API_KEY` |

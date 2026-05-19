@@ -12,7 +12,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 1982
+          "msPerPage": 2238
         }
       }
     }
@@ -35,7 +35,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3462,
+          "msPerPage": 5193,
           "promptTokensPerPage": 2403,
           "completionTokensPerPage": 434.5
         }
@@ -57,7 +57,7 @@
           "notes": "project/links/kimi-general-ocr-text-links.md documents Kimi image support for PNG/JPEG/WebP/GIF, a 100 MB request-body/file limit, and recommended image resolution no higher than 4K. AutoShow renders PDFs to page images before calling Kimi OCR."
         },
         "estimation": {
-          "costMultiplier": 0.7616,
+          "costMultiplier": 0.6066,
           "msPerPage": 9493,
           "promptTokensPerPage": 4232,
           "completionTokensPerPage": 2068
@@ -110,8 +110,8 @@
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         },
         "estimation": {
-          "costMultiplier": 0.7224,
-          "msPerPage": 8690,
+          "costMultiplier": 0.5433,
+          "msPerPage": 11349,
           "promptTokensPerPage": 2986,
           "completionTokensPerPage": 1844
         }
@@ -175,7 +175,7 @@
           "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
         },
         "estimation": {
-          "costMultiplier": 0.7693,
+          "costMultiplier": 0.6139,
           "msPerPage": 3280,
           "promptTokensPerPage": 1157,
           "completionTokensPerPage": 1626
@@ -254,7 +254,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 27
+          "msPerPage": 41
         }
       }
     }
@@ -272,7 +272,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2826
+          "msPerPage": 2253
         }
       }
     }

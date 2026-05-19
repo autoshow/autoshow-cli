@@ -55,7 +55,6 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     countSelectedTargets(modelOptions.geminiImageModels, modelOptions.geminiImageModel)
     + countSelectedTargets(modelOptions.openaiImageModels, modelOptions.openaiImageModel)
     + countSelectedTargets(modelOptions.minimaxImageModels, modelOptions.minimaxImageModel)
-    + countSelectedTargets(modelOptions.glmImageModels, modelOptions.glmImageModel)
     + countSelectedTargets(modelOptions.grokImageModels, modelOptions.grokImageModel)
     + countSelectedTargets(modelOptions.runwayImageModels, modelOptions.runwayImageModel)
     + countSelectedTargets(modelOptions.bflImageModels, modelOptions.bflImageModel)

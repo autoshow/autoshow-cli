@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { BflImageModel, DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
+import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   isNativeGeminiImageModel,
@@ -7,7 +7,6 @@ import {
   validateBflImageModel,
   validateGeminiImageModel,
   validateDeapiImageModel,
-  validateGlmImageModel,
   validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
@@ -23,7 +22,6 @@ import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { getBflImageExtension, normalizeBflImageOutputFormat, normalizeBflImageSize, runBflImageGen } from './image-services/bfl/run-bfl-image-gen'
 import { normalizeDeapiImageSize, runDeapiImageGen } from './image-services/deapi/run-deapi-image-gen'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
-import { normalizeGlmImageQuality, normalizeGlmImageSize, runGlmImageGen } from './image-services/glm/run-glm-image-gen'
 import { normalizeGrokImageResolution, runGrokImageGen } from './image-services/grok/run-grok-image-gen'
 import { normalizeMinimaxImageSize, runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
@@ -127,8 +125,6 @@ const IMAGE_OPTION_LABELS: Record<keyof ImageGenOptions, string> = {
   openaiImageModel: '--openai-image',
   minimaxImageModels: '--minimax-image',
   minimaxImageModel: '--minimax-image',
-  glmImageModels: '--glm-image',
-  glmImageModel: '--glm-image',
   grokImageModels: '--grok-image',
   grokImageModel: '--grok-image',
   runwayImageModels: '--runway-image',
@@ -339,7 +335,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
   const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
   const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
   const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
-  const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
   const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
@@ -499,39 +494,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
           count: options.imageCount,
           imageSize: options.imageSize,
           inputs: options.imageInputs
-        })
-      }
-    })
-  }
-
-  for (const rawModel of glmModels) {
-    const model: GlmImageModel = validateGlmImageModel(rawModel)
-    rejectImageCountForSingleImageProvider('GLM', model, options.imageCount)
-    const unsupported = collectUnsupportedCommonFlags(options, [
-      'imageAspectRatio',
-      'imageFormat',
-      'imageBackground',
-      'imageInputs',
-      'imageMask',
-      'imageResponseMode',
-      'geminiPersonGeneration',
-      'imageCompression'
-    ], IMAGE_OPTION_LABELS)
-    if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
-    if (unsupported.length > 0) {
-      throw unsupportedFlagError('GLM', model, unsupported, 'Supported GLM image options: --image-size WIDTHxHEIGHT with dimensions 512-2048 divisible by 32 and --image-quality hd|standard.')
-    }
-    normalizeGlmImageSize(options.imageSize)
-    normalizeGlmImageQuality(options.imageQuality)
-
-    targets.push({
-      service: 'glm',
-      model,
-      run: async (prompt, outputDir) => {
-        return await runGlmImageGen(prompt, outputDir, {
-          model,
-          size: options.imageSize,
-          quality: options.imageQuality
         })
       }
     })

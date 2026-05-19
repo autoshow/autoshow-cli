@@ -3,7 +3,6 @@ import {
   validateBflImageModel,
   validateGeminiImageModel,
   validateDeapiImageModel,
-  validateGlmImageModel,
   validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
@@ -86,7 +85,6 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
   const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
   const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
-  const glmModels = options.glmImageModels ?? (options.glmImageModel ? [options.glmImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
   const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
@@ -131,19 +129,6 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
       costPerImageCents,
       totalCost: costPerImageCents * imageCount,
       note: 'Approximate cost; see MiniMax pricing for exact rates'
-    })
-  }
-
-  for (const rawModel of glmModels) {
-    const model = validateGlmImageModel(rawModel)
-    const costPerImageCents = getImageCost('glm', model)
-    estimates.push({
-      provider: 'glm',
-      model,
-      imageCount: 1,
-      costPerImageCents,
-      totalCost: costPerImageCents,
-      note: 'Approximate cost; see Z.AI pricing for exact rates'
     })
   }
 

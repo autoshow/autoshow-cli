@@ -14,8 +14,6 @@ export type ImageGenOptions = Pick<
   | 'openaiImageModel'
   | 'minimaxImageModels'
   | 'minimaxImageModel'
-  | 'glmImageModels'
-  | 'glmImageModel'
   | 'grokImageModels'
   | 'grokImageModel'
   | 'runwayImageModels'
@@ -61,8 +59,6 @@ export type EstimateImageCostOptions = {
   openaiImageModel?: string | undefined
   minimaxImageModels?: string[] | undefined
   minimaxImageModel?: string | undefined
-  glmImageModels?: string[] | undefined
-  glmImageModel?: string | undefined
   grokImageModels?: string[] | undefined
   grokImageModel?: string | undefined
   runwayImageModels?: string[] | undefined

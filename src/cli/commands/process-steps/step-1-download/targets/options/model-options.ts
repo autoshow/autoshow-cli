@@ -61,7 +61,6 @@ import {
   validateGeminiMusicModel,
   validateGeminiImageModel,
   validateDeapiImageModel,
-  validateGlmImageModel,
   validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
@@ -232,7 +231,6 @@ export const readRuntimeModelOptions = (
   const geminiImageModels = readValidatedMany('gemini-image', validateGeminiImageModel)
   const openaiImageModels = readValidatedMany('openai-image', validateOpenAIImageModel)
   const minimaxImageModels = readValidatedMany('minimax-image', validateMinimaxImageModel)
-  const glmImageModels = readValidatedMany('glm-image', validateGlmImageModel)
   const grokImageModels = readValidatedMany('grok-image', validateGrokImageModel)
   const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
   const bflImageModels = readValidatedMany('bfl-image', validateBflImageModel)
@@ -365,8 +363,6 @@ export const readRuntimeModelOptions = (
     openaiImageModel: first(openaiImageModels),
     minimaxImageModels,
     minimaxImageModel: first(minimaxImageModels),
-    glmImageModels,
-    glmImageModel: first(glmImageModels),
     grokImageModels,
     grokImageModel: first(grokImageModels),
     runwayImageModels,

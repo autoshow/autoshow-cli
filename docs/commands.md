@@ -218,7 +218,6 @@ bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ins
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
 bun as image "a sunset" --openai gpt-image-2 --image-size 1024x1024 --image-quality low --price
 bun as image "a sunset" --minimax image-01 --image-count 3 --price
-bun as image "a sunset" --glm glm-image --image-quality standard --price
 bun as image "a sunset" --bfl flux-2-klein-4b --price
 bun as image "a sunset" --deapi Flux1schnell --price
 bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental --price

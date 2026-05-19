@@ -111,7 +111,6 @@ const resumeImageFlags = pickFlags(imageGenFlags, [
   'gemini-image',
   'openai-image',
   'minimax-image',
-  'glm-image',
   'grok-image',
   'runway-image',
   'bfl-image',

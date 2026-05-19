@@ -7,7 +7,7 @@ const RUNWAY_INSUFFICIENT_CREDITS_MESSAGE = 'You do not have enough credits to r
 
 const hasGlmSignal = (output: string): boolean =>
   /\bGLM\b/i.test(output)
-  || /\bglm[-_](?:reader|ocr|llm|image|stt)\b/i.test(output)
+  || /\bglm[-_](?:reader|ocr|llm|stt)\b/i.test(output)
   || /\bZ\.?AI\b/i.test(output)
   || /\bapi\.z\.ai\b/i.test(output)
   || /\bpaas\/v4\b/i.test(output)
@@ -28,9 +28,12 @@ const isGlmReaderRateLimitFailure = (output: string): boolean =>
   /GLM Reader request failed \(429\b/i.test(output)
   || /\bglm-reader\b[\s\S]{0,240}(?:\b429\b|too many requests|rate limit)/i.test(output)
 
-const isGlmImageRateLimitFailure = (output: string): boolean =>
-  /GLM image generation failed \(429\b/i.test(output)
-  || /\bglm[-_ ]image\b[\s\S]{0,240}(?:\b429\b|too many requests|rate limit)/i.test(output)
+const isGlmCertificateExpiryFailure = (output: string): boolean =>
+  hasGlmSignal(output)
+  && (
+    /\bcertificate\s+(?:has\s+)?expired\b/i.test(output) ||
+    /\bCERT_HAS_EXPIRED\b/i.test(output)
+  )
 
 const isGlmRetryable429Exhaustion = (output: string): boolean =>
   /retryable status 429/i.test(output)
@@ -60,8 +63,8 @@ export const classifySkippableLiveProviderFailure = (output: string): string | n
   if (isGlmReaderRateLimitFailure(cleanOutput)) {
     return 'GLM Reader is rate limited'
   }
-  if (isGlmImageRateLimitFailure(cleanOutput)) {
-    return 'GLM image generation is rate limited'
+  if (isGlmCertificateExpiryFailure(cleanOutput)) {
+    return 'GLM provider TLS certificate has expired'
   }
   if (isGlmRetryable429Exhaustion(cleanOutput)) {
     return 'GLM provider remained rate limited after retries'

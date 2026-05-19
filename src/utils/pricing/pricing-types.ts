@@ -177,7 +177,6 @@ export type ComputeEstimatedCostsInput = {
   geminiImageModel?: string | undefined
   openaiImageModel?: string | undefined
   minimaxImageModel?: string | undefined
-  glmImageModel?: string | undefined
   grokImageModel?: string | undefined
   runwayImageModel?: string | undefined
   bflImageModel?: string | undefined

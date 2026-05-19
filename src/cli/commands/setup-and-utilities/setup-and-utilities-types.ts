@@ -62,7 +62,6 @@ import {
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
   SUPPORTED_DEAPI_IMAGE_MODELS,
-  SUPPORTED_GLM_IMAGE_MODELS,
   SUPPORTED_GROK_IMAGE_MODELS,
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
@@ -174,7 +173,6 @@ export type GeminiMusicModel = typeof SUPPORTED_GEMINI_MUSIC_MODELS[number]
 export type GeminiImageModel = typeof SUPPORTED_GEMINI_IMAGE_MODELS[number]
 export type OpenAIImageModel = typeof SUPPORTED_OPENAI_IMAGE_MODELS[number]
 export type MinimaxImageModel = typeof SUPPORTED_MINIMAX_IMAGE_MODELS[number]
-export type GlmImageModel = typeof SUPPORTED_GLM_IMAGE_MODELS[number]
 export type GrokImageModel = typeof SUPPORTED_GROK_IMAGE_MODELS[number]
 export type RunwayImageModel = typeof SUPPORTED_RUNWAY_IMAGE_MODELS[number]
 export type BflImageModel = typeof SUPPORTED_BFL_IMAGE_MODELS[number]

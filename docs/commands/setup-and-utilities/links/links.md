@@ -72,7 +72,7 @@ Accepted provider selectors are the lowercase names below.
 | `--openai` | `general`, `text`, `ocr`, `stt`, `tts`, `image` |
 | `--gemini` | `general`, `text`, `ocr`, `stt`, `tts`, `image`, `video`, `music` |
 | `--gladia` | `general`, `stt` |
-| `--glm` | `general`, `text`, `ocr`, `url`, `image`, `video`, `stt` |
+| `--glm` | `general`, `text`, `ocr`, `url`, `video`, `stt` |
 | `--grok` | `general`, `text`, `image`, `video`, `tts`, `stt` |
 | `--x` | `general`, `url` |
 | `--kimi` | `general`, `text`, `ocr` |

@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { BflImageModel, DeapiImageModel, GeminiImageModel, GlmImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
+import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
   'gemini-3.1-flash-image-preview',
@@ -34,13 +34,6 @@ export const SUPPORTED_MINIMAX_IMAGE_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateMinimaxImageModel = createModelValidator<MinimaxImageModel>(SUPPORTED_MINIMAX_IMAGE_MODELS, 'minimax-image')
-
-export const SUPPORTED_GLM_IMAGE_MODELS = [
-  'glm-image',
-  'cogView-4-250304'
-] as const satisfies readonly string[]
-
-export const validateGlmImageModel = createModelValidator<GlmImageModel>(SUPPORTED_GLM_IMAGE_MODELS, 'glm-image')
 
 export const SUPPORTED_GROK_IMAGE_MODELS = [
   'grok-imagine-image-quality',

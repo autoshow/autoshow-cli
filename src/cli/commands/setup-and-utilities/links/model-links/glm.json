@@ -20,10 +20,6 @@
     "URL": [
       "https://docs.z.ai/api-reference/tools/web-reader.md"
     ],
-    "Image": [
-      "https://docs.z.ai/guides/image/glm-image.md",
-      "https://docs.z.ai/guides/image/cogview-4.md"
-    ],
     "Video": [
       "https://docs.z.ai/guides/video/cogvideox-3.md",
       "https://docs.z.ai/guides/video/vidu-q1.md",

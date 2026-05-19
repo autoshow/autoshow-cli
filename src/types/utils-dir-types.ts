@@ -44,7 +44,6 @@ export type {
   GeminiImageModel,
   OpenAIImageModel,
   MinimaxImageModel,
-  GlmImageModel,
   GrokImageModel,
   RunwayImageModel,
   BflImageModel,

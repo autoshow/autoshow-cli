@@ -227,8 +227,8 @@ describe('provider selection contracts', () => {
     }, new Set(['openai', 'elevenlabs']), TTS_COMMAND_SELECTOR_FLAGS)
     const imageNormalized = normalizeCommandSelectorFlags({
       minimax: ['image-01'],
-      glm: ['glm-image']
-    }, new Set(['minimax', 'glm']), IMAGE_COMMAND_SELECTOR_FLAGS)
+      grok: ['grok-imagine-image']
+    }, new Set(['minimax', 'grok']), IMAGE_COMMAND_SELECTOR_FLAGS)
     const videoNormalized = normalizeCommandSelectorFlags({
       gemini: ['veo-3.1-lite-generate-preview'],
       runway: ['gen4.5']
@@ -247,7 +247,7 @@ describe('provider selection contracts', () => {
     expect(ttsOpts.elevenlabsTtsModels).toEqual(['eleven_v3'])
     expect(collectImageTargets(imageOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'minimax:image-01',
-      'glm:glm-image'
+      'grok:grok-imagine-image'
     ])
     expect(collectVideoTargets(videoOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'gemini:veo-3.1-lite-generate-preview',
@@ -391,7 +391,6 @@ describe('provider selection contracts', () => {
     ])
 
     for (const [flag, model, providerName] of [
-      ['glm-image', 'glm-image', 'GLM'],
       ['runway-image', 'gen4_image', 'Runway'],
       ['bfl-image', 'flux-2-pro-preview', 'BFL'],
       ['deapi-image', 'Flux1schnell', 'deAPI']
@@ -451,7 +450,7 @@ describe('provider selection contracts', () => {
     }
   })
 
-  test('MiniMax, BFL, and GLM accept newly mapped shared image options', () => {
+  test('MiniMax and BFL accept newly mapped shared image options', () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'autoshow-image-provider-flags-'))
     const imagePath = join(tempDir, 'reference.png')
     writeFileSync(imagePath, new Uint8Array([1, 2, 3]))
@@ -484,22 +483,6 @@ describe('provider selection contracts', () => {
       expect(collectImageTargets(bflOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
         'bfl:flux-2-pro-preview'
       ])
-
-      const glmOpts = buildOptsFromFlags(false, {
-        'glm-image': ['glm-image'],
-        'image-quality': 'hd'
-      })
-      expect(collectImageTargets(glmOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-        'glm:glm-image'
-      ])
-
-      for (const invalidQuality of ['low', 'medium', 'high', 'auto']) {
-        const invalidGlmOpts = buildOptsFromFlags(false, {
-          'glm-image': ['glm-image'],
-          'image-quality': invalidQuality
-        })
-        expect(() => collectImageTargets(invalidGlmOpts)).toThrow(`Invalid --image-quality value "${invalidQuality}" for GLM`)
-      }
     } finally {
       rmSync(tempDir, { recursive: true, force: true })
     }

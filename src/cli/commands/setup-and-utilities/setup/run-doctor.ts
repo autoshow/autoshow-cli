@@ -63,7 +63,7 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkEnvVar('OPENAI_API_KEY', 'OPENAI_API_KEY'))
   checks.push(checkEnvVar('XAI_API_KEY (Grok STT/TTS/image/video)', 'XAI_API_KEY'))
   checks.push(checkEnvVar('GEMINI_API_KEY', 'GEMINI_API_KEY'))
-  checks.push(checkEnvVar('GLM_API_KEY (GLM write/STT/OCR/image/video)', 'GLM_API_KEY'))
+  checks.push(checkEnvVar('GLM_API_KEY (GLM write/STT/OCR/video)', 'GLM_API_KEY'))
   checks.push(checkEnvVar('KIMI_API_KEY (Kimi write/OCR)', 'KIMI_API_KEY'))
   checks.push(checkEnvVar('RUNWAYML_API_SECRET (Runway image/video)', 'RUNWAYML_API_SECRET'))
   checks.push(checkEnvVar('MISTRAL_API_KEY (Mistral STT/OCR/TTS)', 'MISTRAL_API_KEY'))
