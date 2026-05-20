@@ -41,7 +41,7 @@ import {
 } from '~/types'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { collectEstimatedExtractTargets, resolveExtractEstimatedCosts } from '../step-2-ocr/ocr-costs'
+import { collectEstimatedExtractTargets, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts } from '../step-2-ocr/ocr-costs'
 import { buildExtractionCallOpts } from '../../step-1-download/targets/single/document-write'
 import {
   formatHtmlArticleOcrFlagsIgnoredWarning,
@@ -364,6 +364,7 @@ const buildManifestMetadata = (
       : [step2Metadata]
   const extractTargets = collectEstimatedExtractTargets(normalizedStep2)
   const estimated = resolveExtractEstimatedCosts(options.preflightEstimate, normalizedStep2)
+  const observedEstimate = resolveExtractObservedEstimateCosts(normalizedStep2)
   const actual = computeActualCosts({ step2: normalizedStep2 })
   const estimatedTiming = computeEstimatedProcessingTimes({
     extractTargets: extractTargets.map((target) => ({
@@ -394,7 +395,7 @@ const buildManifestMetadata = (
       .map((state) => ({ service: state.service, model: state.model })),
     ...(options.web ? { web: options.web } : {}),
     source: options.source,
-    cost: { estimated, actual },
+    cost: options.preflightEstimate ? { estimated, observedEstimate, actual } : { estimated, actual },
     ...(timing ? { timing } : {}),
     ...(options.failures.length > 0 ? { errors: options.failures.map((failure) => ({
       service: failure.backend,

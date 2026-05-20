@@ -13,7 +13,8 @@ const IMAGE_PROVIDER_FLAGS = [
   'grok-image',
   'runway-image',
   'bfl-image',
-  'deapi-image'
+  'deapi-image',
+  'reve-image'
 ] as const
 
 const IMAGE_MODEL_FIELDS = {
@@ -23,7 +24,8 @@ const IMAGE_MODEL_FIELDS = {
   grok: ['grokImageModels', 'grokImageModel'],
   runway: ['runwayImageModels', 'runwayImageModel'],
   bfl: ['bflImageModels', 'bflImageModel'],
-  deapi: ['deapiImageModels', 'deapiImageModel']
+  deapi: ['deapiImageModels', 'deapiImageModel'],
+  reve: ['reveImageModels', 'reveImageModel']
 } as const
 
 const clearImageProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
@@ -41,7 +43,9 @@ const clearImageProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
   bflImageModels: undefined,
   bflImageModel: undefined,
   deapiImageModels: undefined,
-  deapiImageModel: undefined
+  deapiImageModel: undefined,
+  reveImageModels: undefined,
+  reveImageModel: undefined
 })
 
 const collectImageTargetsForProviders = (

@@ -7,13 +7,22 @@ import {
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
+  requireConfiguredEnvVar,
   runCommandAndExpectOutputDir,
-  shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
 import { readRunMetadata } from './manifest-helpers'
 
 const MUSIC_GEN_TITLE = 'music-gen'
+type ExpectedLyricsSource = 'provided' | 'generated' | 'none'
+type MusicServiceModelCase = {
+  model: string
+  prompt: string
+  extraArgs?: string[]
+  expectedLyricsSource?: ExpectedLyricsSource
+  commandTimeoutMs?: number
+  testTimeoutMs?: number
+}
 
 export const defineMusicServiceTest = ({
   models,
@@ -21,7 +30,7 @@ export const defineMusicServiceTest = ({
   musicService,
   envVarKey,
 }: {
-  models: Array<{ model: string, prompt: string, extraArgs?: string[] }>
+  models: MusicServiceModelCase[]
   cliFlag: string
   musicService: string
   envVarKey: string
@@ -36,36 +45,41 @@ export const defineMusicServiceTest = ({
 
   withOutputLifecycle(MUSIC_GEN_TITLE)
 
-  for (const { model, prompt, extraArgs } of models) {
+  for (const { model, prompt, extraArgs, expectedLyricsSource, commandTimeoutMs, testTimeoutMs } of models) {
     const budgetKey = `music-${musicService}-${model}`
     budgetedTest(budgetKey, `${musicService} ${model} generates music and metadata`, async () => {
       await cleanupTestOutput(MUSIC_GEN_TITLE)
 
-      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} not configured`)) {
-        return
+      await requireConfiguredEnvVar(envVarKey, `${envVarKey} not configured`)
+
+      const outputDir = await runCommandAndExpectOutputDir(
+        MUSIC_GEN_TITLE,
+        [
+          'src/cli/create-cli.ts',
+          'music',
+          prompt,
+          cliFlag,
+          model,
+          ...(extraArgs ?? [])
+        ],
+        commandTimeoutMs === undefined ? undefined : { timeoutMs: commandTimeoutMs }
+      )
+
+      const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
+      expect(musicExists).toBe(true)
+      const musicFile = Bun.file(`${outputDir}/generated-music.mp3`)
+      expect(musicFile.size).toBeGreaterThan(0)
+
+      const metadata = await readRunMetadata(outputDir) as {
+        music?: Array<{ musicService?: string; musicModel?: string; musicFileName?: string; lyricsSource?: ExpectedLyricsSource }>
       }
-
-      const outputDir = await runCommandAndExpectOutputDir(MUSIC_GEN_TITLE, [
-        'src/cli/create-cli.ts',
-        'music',
-        prompt,
-        cliFlag,
-        model,
-        ...(extraArgs ?? [])
-      ])
-
-      if (outputDir) {
-        const musicExists = await fileExists(`${outputDir}/generated-music.mp3`)
-        expect(musicExists).toBe(true)
-
-        const metadata = await readRunMetadata(outputDir) as {
-          music?: Array<{ musicService?: string; musicModel?: string; musicFileName?: string }>
-        }
-        expect(metadata.music?.[0]?.musicService).toBe(musicService)
-        expect(metadata.music?.[0]?.musicModel).toBe(model)
-        expect(metadata.music?.[0]?.musicFileName).toBe('generated-music.mp3')
+      expect(metadata.music?.[0]?.musicService).toBe(musicService)
+      expect(metadata.music?.[0]?.musicModel).toBe(model)
+      expect(metadata.music?.[0]?.musicFileName).toBe('generated-music.mp3')
+      if (expectedLyricsSource) {
+        expect(metadata.music?.[0]?.lyricsSource).toBe(expectedLyricsSource)
       }
-    }, E2E_TEST_TIMEOUT_MS)
+    }, testTimeoutMs ?? E2E_TEST_TIMEOUT_MS)
   }
 }
 
@@ -74,7 +88,7 @@ export const defineMusicServicePriceTests = ({
   cliFlag,
   musicService,
 }: {
-  models: Array<{ model: string, prompt: string, extraArgs?: string[] }>
+  models: MusicServiceModelCase[]
   cliFlag: string
   musicService: string
 }): void => {

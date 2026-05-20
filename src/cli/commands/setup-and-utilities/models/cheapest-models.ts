@@ -407,6 +407,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestImageModel('bfl')
     case 'deapi-image':
       return selectCheapestImageModel('deapi')
+    case 'reve-image':
+      return selectCheapestImageModel('reve')
     case 'elevenlabs-music':
       return selectCheapestMusicModel('elevenlabs')
     case 'minimax-music':

@@ -43,13 +43,13 @@ bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Hosted Grok speech-to-text
-bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --grok speech-to-text
 
 # Render a synced speaker transcript video from a previous media extract run
 bun as extract output/<extract-run-dir> --transcript-video
 
 # Render a transcript video from explicit local artifacts
-bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
+bun as extract --transcript-video --audio https://ajc.pics/autoshow/examples/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
 
 # Compare every URL article backend for one remote article
 bun as extract https://example.com/article --all-url
@@ -61,10 +61,10 @@ bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.4
 
 # Full write pipeline with Z.AI GLM 5.1
-bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --glm glm-5.1
 
 # Full write pipeline with Kimi K2.6
-bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --kimi kimi-k2.6
 
 # Document OCR / extraction
 bun as extract input/examples/document/1-document.pdf --out json
@@ -100,13 +100,14 @@ bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male En
 bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
 # deAPI Qwen3 voice cloning
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3
 
 # Prompt-driven generation, then edit/reference the generated image; run this block in order
 bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
 bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+bun as image "place the same mug in a minimalist editorial product scene" --reve latest --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-reve
 
 # Video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
 bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
@@ -199,7 +200,7 @@ bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_12
 bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
 bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
-bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3
 bun as config --reset
 ```
 
@@ -214,9 +215,9 @@ Logging controls:
 
 ```bash
 # CLI flags
-bun as write input/examples/audio/1-audio.mp3 --verbose
-bun as write input/examples/audio/1-audio.mp3 --quiet
-bun as write input/examples/audio/1-audio.mp3 --json
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --verbose
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --quiet
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --json
 
 # Environment variables
 AUTOSHOW_LOG_FORMAT=auto   # auto | human | json | both

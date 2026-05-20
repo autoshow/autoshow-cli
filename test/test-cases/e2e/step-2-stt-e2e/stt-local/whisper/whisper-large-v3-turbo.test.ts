@@ -1,9 +1,9 @@
 import { expect, beforeAll, afterAll } from 'bun:test'
-import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_LOCAL_AUDIO_PATH, STABLE_LOCAL_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
+import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_EXAMPLE_AUDIO_URL, STABLE_EXAMPLE_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
 import { budgetedTest } from '../../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 
-const videoInputPath = 'input/examples/video/2-video.mp4'
+const videoInputPath = 'https://ajc.pics/autoshow/examples/2-video.mp4'
 const videoTitleSuffix = '2-video'
 
 const cleanupVideoOutput = async () => {
@@ -11,27 +11,27 @@ const cleanupVideoOutput = async () => {
 }
 
 beforeAll(async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
   await cleanupVideoOutput()
 })
 
 afterAll(async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
   await cleanupVideoOutput()
 })
 
 budgetedTest('transcribe-whisper-large-v3-turbo', 'whisper large-v3-turbo model transcribes local audio', async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
   const testName = 'whisper large-v3-turbo model transcribes local audio'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', 'large-v3-turbo'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_EXAMPLE_AUDIO_URL, '--whisper', 'large-v3-turbo'],
     { testName }
   )
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {

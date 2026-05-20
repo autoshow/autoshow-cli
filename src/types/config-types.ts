@@ -162,6 +162,7 @@ const ImageDefaultsSchema = v.strictObject({
   runwayImage: ModelArraySchema,
   bflImage: ModelArraySchema,
   deapiImage: ModelArraySchema,
+  reveImage: ModelArraySchema,
   imageAspectRatio: v.optional(v.string(), undefined),
   imageSize: v.optional(v.string(), undefined),
   imageQuality: v.optional(v.string(), undefined),

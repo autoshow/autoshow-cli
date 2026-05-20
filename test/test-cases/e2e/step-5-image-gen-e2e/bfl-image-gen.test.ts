@@ -12,6 +12,36 @@ defineImageServiceTest({
       model: 'flux-2-pro-preview',
       prompt: 'A clean product photo of a red enamel camping mug',
       extraArgs: ['--image-size', '1024x1024']
+    },
+    {
+      model: 'flux-2-klein-4b',
+      prompt: 'A tiny blue square on a white background',
+      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
+    },
+    {
+      model: 'flux-2-klein-9b-preview',
+      prompt: 'A tiny blue square on a white background',
+      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
+    },
+    {
+      model: 'flux-2-klein-9b',
+      prompt: 'A tiny blue square on a white background',
+      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
+    },
+    {
+      model: 'flux-2-pro',
+      prompt: 'A tiny blue square on a white background',
+      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
+    },
+    {
+      model: 'flux-2-max',
+      prompt: 'A tiny blue square on a white background',
+      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
+    },
+    {
+      model: 'flux-2-flex',
+      prompt: 'A tiny blue square on a white background',
+      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
     }
   ]
 })

@@ -120,7 +120,7 @@ export const dedupePriceCommands = (commands: ApiCheapPriceCommand[]): ApiCheapP
 }
 
 export const buildApiCheapPriceCommands = (): ApiCheapPriceCommand[] => {
-  const shortAudioPath = 'input/examples/audio/0-audio-short.mp3'
+  const shortAudioPath = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
   const shortTtsPath = 'input/examples/tts/0-tts-short.txt'
   const imagePrompt = 'a tiny red dot on white background'
   const videoPrompt = 'a static shot of a tiny red dot on white background'

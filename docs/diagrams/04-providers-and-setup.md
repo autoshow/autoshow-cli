@@ -135,7 +135,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     Mistral TTS is only in `setup --step tts`, not full setup
 
   Step 5 — Hosted image generation readiness
-    Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI
+    Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI, Reve
     MiniMax image uses MINIMAX_API_KEY but has no dedicated setup hook
 
   Step 6 — Hosted video generation readiness
@@ -233,6 +233,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | `image --runway` | `RUNWAYML_API_SECRET` |
 | `image --bfl` | `BFL_API_KEY` |
 | `image --deapi` | `DEAPI_API_KEY` |
+| `image --reve` | `REVE_API_KEY` |
 
 ### Step 6 — Video generation
 

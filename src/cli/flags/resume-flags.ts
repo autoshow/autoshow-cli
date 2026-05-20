@@ -115,6 +115,7 @@ const resumeImageFlags = pickFlags(imageGenFlags, [
   'runway-image',
   'bfl-image',
   'deapi-image',
+  'reve-image',
   'image-aspect-ratio',
   'image-size',
   'image-quality',

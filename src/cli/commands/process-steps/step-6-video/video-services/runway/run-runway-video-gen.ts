@@ -79,7 +79,7 @@ export const runRunwayVideoGen = async (
   logVideoEstimate(estimate)
 
   const startTime = Date.now()
-  const createResp = await fetch(`${RUNWAY_BASE_URL}/text_to_video`, {
+  const createResp = await fetch(`${RUNWAY_BASE_URL}/image_to_video`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,

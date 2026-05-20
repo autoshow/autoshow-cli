@@ -21,6 +21,16 @@ export type WebArticleMetadata = {
   description?: string
 }
 
+const CostSourceSchema = v.picklist([
+  'provider_usage',
+  'provider_quote',
+  'response_header',
+  'computed_usage',
+  'registry_fallback',
+  'heuristic',
+  'local_zero'
+])
+
 export const ExtractionOptionsSchema = v.object({
   filePath: v.string(),
   outputDir: v.string(),
@@ -160,7 +170,7 @@ export const ExtractionMetadataSchema = v.object({
   headerContentTypeOverridden: v.optional(v.boolean(), undefined),
   metadataSchemaVersion: v.optional(v.number(), undefined),
   providerCostCents: v.optional(v.number(), undefined),
-  providerCostSource: v.optional(v.string(), undefined),
+  providerCostSource: v.optional(CostSourceSchema, undefined),
   ocrProviderUsage: v.optional(v.array(v.record(v.string(), v.unknown())), undefined)
 })
 

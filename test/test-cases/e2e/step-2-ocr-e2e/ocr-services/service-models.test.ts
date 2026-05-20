@@ -1,4 +1,18 @@
 import { defineOCRServiceTest } from '../../../../test-utils/define-ocr-service-test'
+import { ensureAwsTextractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/aws-textract/aws-textract'
+import { ensureGcloudDocaiSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gcloud-docai/gcloud-docai'
+
+const HOSTED_OCR_IMAGE_INPUT = 'https://ajc.pics/autoshow/benchmarks/ocr/1-document.png'
+
+const requireAwsTextractReadiness = async (): Promise<boolean> => {
+  await ensureAwsTextractSetup()
+  return false
+}
+
+const requireGcloudDocaiReadiness = async (): Promise<boolean> => {
+  await ensureGcloudDocaiSetup()
+  return false
+}
 
 defineOCRServiceTest({
   models: ['glm-ocr'],
@@ -62,4 +76,61 @@ defineOCRServiceTest({
   envVarKey: 'DEEPINFRA_API_KEY',
   imageInput: 'input/examples/document/1-document.jpg',
   assertUsageMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['gpt-5.4', 'gpt-5.4-mini'],
+  cliFlag: '--openai',
+  extractionMethod: 'openai-ocr',
+  imageExtractionMethod: 'image+openai-ocr',
+  envVarKey: 'OPENAI_API_KEY',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  assertProviderMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['gemini-3.1-pro-preview'],
+  cliFlag: '--gemini',
+  extractionMethod: 'gemini-ocr',
+  imageExtractionMethod: 'image+gemini-ocr',
+  envVarKey: 'GEMINI_API_KEY',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  assertProviderMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['detect-text'],
+  cliFlag: '--aws',
+  expectedService: 'aws-textract',
+  extractionMethod: 'aws-textract',
+  imageExtractionMethod: 'image+aws-textract',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  shouldSkipReadiness: requireAwsTextractReadiness,
+  assertProviderMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['ocr'],
+  cliFlag: '--gcloud',
+  expectedService: 'gcloud-docai',
+  extractionMethod: 'gcloud-docai',
+  imageExtractionMethod: 'image+gcloud-docai',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  shouldSkipReadiness: requireGcloudDocaiReadiness,
+  assertProviderMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['hi_res_and_enrichment'],
+  cliFlag: '--unstructured',
+  extractionMethod: 'unstructured-ocr',
+  imageExtractionMethod: 'image+unstructured-ocr',
+  envVarKey: 'UNSTRUCTURED_API_KEY',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  assertProviderMetadata: true,
 })

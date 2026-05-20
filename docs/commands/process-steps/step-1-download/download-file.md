@@ -150,7 +150,7 @@ bun as download https://www.youtube.com/watch?v=u1-WHqATSQU
 bun as download https://www.youtube.com/watch?v=u1-WHqATSQU --best-quality
 
 # Download a local audio file
-bun as download input/examples/audio/1-audio.mp3
+bun as download https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # Download document metadata from a local PDF
 bun as download input/examples/document/1-document.pdf

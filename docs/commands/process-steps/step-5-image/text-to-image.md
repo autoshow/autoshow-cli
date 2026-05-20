@@ -17,6 +17,7 @@ Generate images from a text prompt with the hosted image providers.
   - [Runway](#runway)
   - [BFL](#bfl)
   - [deAPI](#deapi)
+  - [Reve](#reve)
 - [Output](#output)
 - [Notes](#notes)
 
@@ -29,7 +30,7 @@ There are no local image-generation models in this project.
 bun as setup --step image
 ```
 
-`setup --step image` checks API-key readiness for Gemini, OpenAI, Grok, Runway, BFL, and deAPI image providers. MiniMax image generation uses `MINIMAX_API_KEY` at runtime, but the image setup step does not have a dedicated MiniMax image hook today.
+`setup --step image` checks API-key readiness for Gemini, OpenAI, Grok, Runway, BFL, deAPI, and Reve image providers. MiniMax image generation uses `MINIMAX_API_KEY` at runtime, but the image setup step does not have a dedicated MiniMax image hook today.
 
 ### Environment
 
@@ -43,6 +44,8 @@ BFL_API_KEY=...
 BFL_BASE_URL=... # optional
 DEAPI_API_KEY=...
 DEAPI_BASE_URL=... # optional
+REVE_API_KEY=...
+REVE_BASE_URL=... # optional
 ```
 
 ## Usage
@@ -61,12 +64,12 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | `--image-provider-concurrency <n>` | Hosted image providers/models to run concurrently per item; default `2`, or up to `8` for `--all-image` |
 | `--image-local-concurrency <n>` | Local image providers to run concurrently per item; default `1` |
 | `--image-aspect-ratio <ratio>` | Provider-dependent aspect ratio control |
-| `--image-size <size>` | Provider-dependent size or resolution control |
+| `--image-size <size>` | Provider-dependent size or resolution control; Reve treats `WIDTHxHEIGHT` as a fit-within postprocess |
 | `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |
-| `--image-format <fmt>` | OpenAI/BFL output format: `png`, `jpeg`, or `webp` |
+| `--image-format <fmt>` | OpenAI/BFL/Reve output format: `png`, `jpeg`, or `webp` |
 | `--image-background <bg>` | OpenAI background mode: `transparent`, `opaque`, or `auto` |
 | `--image-count <n>` | Number of images in one request for OpenAI/Grok `1-10`, MiniMax `1-9`, or Gemini Imagen `1-4` |
-| `--image-input <path-or-url>` | Repeatable source/reference image for OpenAI, Grok, native Gemini, MiniMax, or BFL edits/references |
+| `--image-input <path-or-url>` | Repeatable source/reference image for OpenAI, Grok, native Gemini, MiniMax, BFL, or Reve edits/references |
 | `--image-mask <path>` | OpenAI mask image for inpainting/edit workflows |
 | `--image-compression <0-100>` | OpenAI JPEG/WebP output compression |
 | `--image-response-mode <image\|text-image>` | Native Gemini response mode |
@@ -92,13 +95,14 @@ bun as image "a clean studio product photo of a red enamel camping mug on white 
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 ```
 
-The same generated file can also be used as a reference input for native Gemini, MiniMax, Grok, or BFL workflows:
+The same generated file can also be used as a reference input for native Gemini, MiniMax, Grok, BFL, or Reve workflows:
 
 ```bash
 bun as image "restyle this product image as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
 bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --out output/mug-minimax
 bun as image "turn this into a glossy magazine ad on a warm kitchen counter" --grok grok-imagine-image-quality --image-input output/mug-base/generated-image.png --image-size 1K --out output/mug-grok
 bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+bun as image "place the same mug in a minimalist editorial product scene" --reve latest --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-reve
 ```
 
 ## Image Services
@@ -222,6 +226,25 @@ bun as image "a cozy cabin at dusk" --deapi Flux1schnell --image-size 768x768
 
 deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--image-background`, edit inputs, and `--image-count`.
 
+### Reve
+
+| Option | Value |
+|--------|-------|
+| Selector | `--reve <model>` or `--reve-image <model>` |
+| Models | `latest`, `reve-create@20250915` |
+| Aspect ratio | `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, or `1:1` |
+| Size | `--image-size WIDTHxHEIGHT` as a fit-within resize after generation |
+| Format | `--image-format png\|jpeg\|webp`; default `png` |
+| References | one PNG/JPEG/WebP `--image-input` uses edit; two to six inputs use remix |
+
+```bash
+bun as image "a quiet editorial product photo of a red enamel camping mug" --reve latest --image-aspect-ratio 1:1 --image-format png --out output/mug-base
+bun as image "make the mug matte black and keep the same camera angle" --reve latest --image-input output/mug-base/generated-image.png --image-format webp --out output/mug-reve-edit
+bun as image "combine the mug shape with the lighting and surface from these references" --reve latest --image-input output/mug-base/generated-image.png --image-input input/examples/document/1-document.png --image-size 1024x1024 --out output/mug-reve-remix
+```
+
+`--reve` with no model resolves to `latest`. `reve-create@20250915` is create-only in this command and rejects `--image-input`; use `latest` for edit or remix workflows. Reve rejects `--image-count`, `--image-quality`, `--image-background`, `--image-mask`, `--image-compression`, `--image-response-mode`, `--gemini-person-generation`, and `--gemini-search-grounding`. When Reve returns usage headers, AutoShow records provider-reported credits as cost at `$10 / 7500 credits`.
+
 ## Output
 
 - Standalone `image` runs always write `run.json`.
@@ -232,6 +255,7 @@ deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--im
 - Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.
 - BFL writes `generated-image.jpg`, `generated-image.png`, or `generated-image.webp`.
 - deAPI writes `generated-image.png`.
+- Reve writes `generated-image.png`, `generated-image.jpg`, or `generated-image.webp`.
 - Multi-provider runs rename outputs to include the provider and model, such as `generated-image-openai-gpt-image-1.5.png`.
 - `--out` / `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.
 - `run.json` includes `image`, `cost`, and `timing` sections. The `image` field is always an array, and each entry includes `imageFileNames`.
@@ -240,3 +264,4 @@ deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--im
 
 - OpenAI documents these latency caveats for GPT Image models: low quality is fastest, square images are typically fastest, JPEG is faster than PNG, and complex prompts can take up to about 2 minutes.
 - `gpt-image-2` estimate table: `1024x1024` costs about `0.6¢` low, `5.3¢` medium, `21.1¢` high; `1024x1536` and `1536x1024` cost about `0.5¢` low, `4.1¢` medium, `16.5¢` high. `auto` estimates as `1024x1024` medium; other valid flexible sizes use the `5.3¢` fallback and should be checked with OpenAI's calculator.
+- Reve `--image-size WIDTHxHEIGHT` uses Reve's `fit_image` postprocessor, so it constrains the output within the requested bounds rather than guaranteeing an exact canvas size.

@@ -67,10 +67,10 @@ TTS mode is selected with `--tts`. It takes an existing AutoShow TTS run directo
 
 ```bash
 # Full benchmark with all available STT services
-bun as benchmark input/examples/audio/1-audio.mp3
+bun as benchmark https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # Benchmark with local Whisper only (free, no API keys needed)
-bun as benchmark input/examples/audio/1-audio.mp3 --stt-services whisper
+bun as benchmark https://ajc.pics/autoshow/examples/1-audio.mp3 --stt-services whisper
 
 # Compression-only benchmark with select cloud services
 bun as benchmark audio.mp3 --stt-services deepgram,groq --skip-speed

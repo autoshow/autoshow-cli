@@ -15,6 +15,7 @@ export type AnthropicRequestOptions = {
 }
 
 export type AnthropicMessageResponse = {
+  model?: string | undefined
   content?: Array<{ type: string, text?: string | undefined } & Record<string, unknown>> | undefined
   usage?: {
     input_tokens?: number | undefined

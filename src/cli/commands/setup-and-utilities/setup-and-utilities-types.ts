@@ -66,7 +66,8 @@ import {
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
   SUPPORTED_RUNWAY_IMAGE_MODELS,
-  SUPPORTED_BFL_IMAGE_MODELS
+  SUPPORTED_BFL_IMAGE_MODELS,
+  SUPPORTED_REVE_IMAGE_MODELS
 } from './models/image-models'
 import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
@@ -177,6 +178,7 @@ export type GrokImageModel = typeof SUPPORTED_GROK_IMAGE_MODELS[number]
 export type RunwayImageModel = typeof SUPPORTED_RUNWAY_IMAGE_MODELS[number]
 export type BflImageModel = typeof SUPPORTED_BFL_IMAGE_MODELS[number]
 export type DeapiImageModel = typeof SUPPORTED_DEAPI_IMAGE_MODELS[number]
+export type ReveImageModel = typeof SUPPORTED_REVE_IMAGE_MODELS[number]
 export type GeminiVideoModel = typeof SUPPORTED_GEMINI_VIDEO_MODELS[number]
 export type MinimaxVideoModel = typeof SUPPORTED_MINIMAX_VIDEO_MODELS[number]
 export type GlmVideoModel = typeof SUPPORTED_GLM_VIDEO_MODELS[number]

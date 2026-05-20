@@ -34,6 +34,9 @@ type OcrModelFallbackOptions = {
   awsTextractModel?: string | undefined
   unstructuredOcrModel?: string | undefined
 }
+type CollectEstimatedExtractTargetsOptions = OcrModelFallbackOptions & {
+  useObservedUsage?: boolean | undefined
+}
 
 const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra'])
 const OCR_DIAGNOSTIC_PROVIDERS = new Set([
@@ -99,9 +102,31 @@ const buildTokenTarget = (
   ...(note ? { note } : {})
 })
 
+const withObservedTokenUsage = (
+  target: ExtractEstimateTarget,
+  entry: ExtractionMetadata,
+  useObservedUsage: boolean | undefined
+): ExtractEstimateTarget => {
+  if (
+    !useObservedUsage
+    || !TOKEN_PRICED_OCR_PROVIDERS.has(target.provider)
+    || typeof entry.promptTokens !== 'number'
+    || typeof entry.completionTokens !== 'number'
+  ) {
+    return target
+  }
+
+  return {
+    ...target,
+    promptTokens: entry.promptTokens,
+    completionTokens: entry.completionTokens,
+    estimateType: 'exact'
+  }
+}
+
 export const collectEstimatedExtractTargets = (
   metadata: ExtractionMetadata | ExtractionMetadata[],
-  opts: OcrModelFallbackOptions = {}
+  opts: CollectEstimatedExtractTargetsOptions = {}
 ): ExtractEstimateTarget[] => {
   const targets: ExtractEstimateTarget[] = []
 
@@ -145,32 +170,32 @@ export const collectEstimatedExtractTargets = (
     }
 
     if (provider === 'glm') {
-      targets.push(buildTokenTarget('glm', model || opts.glmOcrModel || 'glm-ocr', pageCount, GLM_OCR_PRICE_NOTE))
+      targets.push(withObservedTokenUsage(buildTokenTarget('glm', model || opts.glmOcrModel || 'glm-ocr', pageCount, GLM_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 
     if (provider === 'kimi') {
-      targets.push(buildTokenTarget('kimi', model || opts.kimiOcrModel || 'kimi-ocr', pageCount, KIMI_OCR_PRICE_NOTE))
+      targets.push(withObservedTokenUsage(buildTokenTarget('kimi', model || opts.kimiOcrModel || 'kimi-ocr', pageCount, KIMI_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 
     if (provider === 'openai') {
-      targets.push(buildTokenTarget('openai', model || opts.openaiOcrModel || 'openai-ocr', pageCount, OPENAI_OCR_PRICE_NOTE))
+      targets.push(withObservedTokenUsage(buildTokenTarget('openai', model || opts.openaiOcrModel || 'openai-ocr', pageCount, OPENAI_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 
     if (provider === 'anthropic') {
-      targets.push(buildTokenTarget('anthropic', model || opts.anthropicOcrModel || 'anthropic-ocr', pageCount, ANTHROPIC_OCR_PRICE_NOTE))
+      targets.push(withObservedTokenUsage(buildTokenTarget('anthropic', model || opts.anthropicOcrModel || 'anthropic-ocr', pageCount, ANTHROPIC_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 
     if (provider === 'gemini') {
-      targets.push(buildTokenTarget('gemini', model || opts.geminiOcrModel || 'gemini-ocr', pageCount, GEMINI_OCR_PRICE_NOTE))
+      targets.push(withObservedTokenUsage(buildTokenTarget('gemini', model || opts.geminiOcrModel || 'gemini-ocr', pageCount, GEMINI_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 
     if (provider === 'deepinfra') {
-      targets.push(buildTokenTarget('deepinfra', model || opts.deepinfraOcrModel || 'deepinfra-ocr', pageCount, DEEPINFRA_OCR_PRICE_NOTE))
+      targets.push(withObservedTokenUsage(buildTokenTarget('deepinfra', model || opts.deepinfraOcrModel || 'deepinfra-ocr', pageCount, DEEPINFRA_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 
@@ -240,6 +265,17 @@ export const resolveExtractEstimatedCosts = (
   })
 }
 
+export const resolveExtractObservedEstimateCosts = (
+  step2: ExtractionMetadata | ExtractionMetadata[],
+  opts: OcrModelFallbackOptions = {}
+): EstimatedCostBreakdown => computeEstimatedCosts({
+  applyCostMultipliers: false,
+  extractTargets: collectEstimatedExtractTargets(step2, {
+    ...opts,
+    useObservedUsage: true
+  })
+})
+
 export const resolveDocumentWriteEstimatedCosts = (
   preflightEstimate: AggregatedPriceEstimate | undefined,
   step2: ExtractionMetadata | ExtractionMetadata[],
@@ -256,6 +292,30 @@ export const resolveDocumentWriteEstimatedCosts = (
     ])
     return preflightToEstimated(filterPreflightEstimate(preflightEstimate, allowedKeys))
   }
+
+  return computeEstimatedCosts({
+    applyCostMultipliers: false,
+    extractTargets,
+    llmTargets: step3Entries.map((entry) => ({
+      service: entry.llmService,
+      model: entry.llmModel,
+      inputTokens: entry.inputTokenCount,
+      outputTokens: entry.outputTokenCount
+    })),
+    skipLLM: false
+  })
+}
+
+export const resolveDocumentWriteObservedEstimateCosts = (
+  step2: ExtractionMetadata | ExtractionMetadata[],
+  step3: Step3Metadata | Step3Metadata[],
+  opts: OcrModelFallbackOptions = {}
+): EstimatedCostBreakdown => {
+  const extractTargets = collectEstimatedExtractTargets(step2, {
+    ...opts,
+    useObservedUsage: true
+  })
+  const step3Entries = toArray(step3)
 
   return computeEstimatedCosts({
     applyCostMultipliers: false,
@@ -386,6 +446,7 @@ export const buildOcrCostDiagnostics = (
         ...(typeof actualRow?.inputValue === 'number' ? { inputValue: actualRow.inputValue } : {}),
         ...(typeof actualPromptTokens === 'number' ? { promptTokens: actualPromptTokens } : {}),
         ...(typeof actualCompletionTokens === 'number' ? { completionTokens: actualCompletionTokens } : {}),
+        ...(typeof actualRow?.costSource === 'string' ? { costSource: actualRow.costSource } : {}),
         ...(typeof entry.providerCostCents === 'number' ? { providerCostCents: entry.providerCostCents } : {}),
         ...(typeof entry.providerCostSource === 'string' ? { providerCostSource: entry.providerCostSource } : {}),
         ...(usageDetails ? { usageDetails } : {})

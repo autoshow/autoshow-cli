@@ -271,6 +271,7 @@ export type RepeatableModelFlag =
   | 'runway-image'
   | 'bfl-image'
   | 'deapi-image'
+  | 'reve-image'
   | 'elevenlabs-music'
   | 'minimax-music'
   | 'deapi-music'

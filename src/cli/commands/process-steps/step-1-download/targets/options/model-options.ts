@@ -66,6 +66,7 @@ import {
   validateOpenAIImageModel,
   validateRunwayImageModel,
   validateBflImageModel,
+  validateReveImageModel,
   validateGeminiVideoModel,
   validateDeapiVideoModel,
   validateMinimaxVideoModel,
@@ -235,6 +236,7 @@ export const readRuntimeModelOptions = (
   const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
   const bflImageModels = readValidatedMany('bfl-image', validateBflImageModel)
   const deapiImageModels = readValidatedMany('deapi-image', validateDeapiImageModel)
+  const reveImageModels = readValidatedMany('reve-image', validateReveImageModel)
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
   const deapiMusicModels = readValidatedMany('deapi-music', validateDeapiMusicModel)
@@ -371,6 +373,8 @@ export const readRuntimeModelOptions = (
     bflImageModel: first(bflImageModels),
     deapiImageModels,
     deapiImageModel: first(deapiImageModels),
+    reveImageModels,
+    reveImageModel: first(reveImageModels),
     elevenlabsMusicModels,
     elevenlabsMusicModel: first(elevenlabsMusicModels),
     minimaxMusicModels,

@@ -6,6 +6,7 @@ import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-util
 import { MISTRAL_DEFAULT_BASE_URL, mistralJsonRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
+import { materializeMediaInput } from '~/utils/media-url'
 
 const MAX_CHARS_PER_CHUNK = 4000
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
@@ -166,8 +167,16 @@ export const runMistralTts = async (
     throw new Error('Mistral TTS input text is empty')
   }
 
+  const materializedRefAudio = voiceSource.kind === 'refAudio'
+    ? await materializeMediaInput(voiceSource.path, {
+        accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+        label: 'Mistral TTS reference audio'
+      })
+    : undefined
+
+  try {
   const referenceAudio = voiceSource.kind === 'refAudio'
-    ? await prepareReferenceAudio(voiceSource.path, outputDir)
+    ? await prepareReferenceAudio(materializedRefAudio?.path ?? voiceSource.path, outputDir)
     : undefined
   const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
   const savedVoice = referenceAudio && voiceName
@@ -247,5 +256,8 @@ export const runMistralTts = async (
     if (referenceAudio?.convertedPath) {
       await Bun.$`rm -f ${referenceAudio.convertedPath}`.quiet().nothrow()
     }
+  }
+  } finally {
+    await materializedRefAudio?.cleanup()
   }
 }

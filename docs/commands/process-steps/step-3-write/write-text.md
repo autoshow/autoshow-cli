@@ -89,7 +89,7 @@ Project lyric draft mode is enabled only when the input is `./output/<name>/text
 | `--price` | Show the aggregated estimate and exit |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --prompt shortSummary longSummary
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --prompt shortSummary longSummary
 bun as write ./output/demo/text --prompt rockSong
 bun as write ./output/demo/text --price
 ```
@@ -107,8 +107,8 @@ Provider flags accept an omitted value and then resolve to the cheapest supporte
 | Default | Passing `--llama` without a value uses `ggml-org/gemma-3-270m-it-GGUF` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --llama
-bun as write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llama
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF
 bun as write input/examples/document/1-document.pdf --llama ggml-org/gemma-3-270m-it-GGUF
 bun as write input/examples/document/1-epub.epub --epub-bun --llama --out json
 ```
@@ -121,9 +121,9 @@ bun as write input/examples/document/1-epub.epub --epub-bun --llama --out json
 | Models | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4-nano
-bun as write input/examples/audio/1-audio.mp3 --gcloud-stt --openai gpt-5.4
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --openai gpt-5.4-mini
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4-nano
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --gcloud-stt --openai gpt-5.4
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --openai gpt-5.4-mini
 bun as write ./output/demo/text/01-track-one.md --openai gpt-5.4 --prompt folkSong
 ```
 
@@ -135,7 +135,7 @@ bun as write ./output/demo/text/01-track-one.md --openai gpt-5.4 --prompt folkSo
 | Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-6` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --anthropic claude-opus-4-7
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --anthropic claude-opus-4-7
 ```
 
 ### Gemini
@@ -146,7 +146,7 @@ bun as write input/examples/audio/1-audio.mp3 --anthropic claude-opus-4-7
 | Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview
 ```
 
 ### Groq
@@ -157,7 +157,7 @@ bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-pre
 | Models | `openai/gpt-oss-20b`, `openai/gpt-oss-120b` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --groq openai/gpt-oss-20b
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --groq openai/gpt-oss-20b
 ```
 
 ### MiniMax
@@ -168,7 +168,7 @@ bun as write input/examples/audio/1-audio.mp3 --groq openai/gpt-oss-20b
 | Models | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --minimax MiniMax-M2.5
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax MiniMax-M2.5
 ```
 
 ### Grok
@@ -179,7 +179,7 @@ bun as write input/examples/audio/1-audio.mp3 --minimax MiniMax-M2.5
 | Models | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --grok grok-4.20-non-reasoning
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --grok grok-4.20-non-reasoning
 ```
 
 ### Z.AI GLM
@@ -191,7 +191,7 @@ bun as write input/examples/audio/1-audio.mp3 --grok grok-4.20-non-reasoning
 | Structured output | Uses Z.AI's OpenAI-compatible chat API with JSON mode and disables GLM thinking for predictable write latency |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --glm glm-5.1
 ```
 
 GLM 5.1 estimates are based on the Z.AI GLM text docs in `project/links/glm-general-text-links.md`: input `$1.40 / 1M tokens`, output `$4.40 / 1M tokens`, cached input `$0.26 / 1M tokens`, and 200K context with 128K maximum output. AutoShow uses uncached input/output pricing for `--price` because the write pipeline does not use Z.AI context caching. The speed estimate is `18000 ms / 1K tokens`, matching AutoShow's hosted LLM fallback until live benchmarks are available.
@@ -205,14 +205,14 @@ GLM 5.1 estimates are based on the Z.AI GLM text docs in `project/links/glm-gene
 | Structured output | Uses Kimi's OpenAI-compatible chat API with JSON mode and disables K2.6 thinking for predictable write latency |
 
 ```bash
-bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --kimi kimi-k2.6
 ```
 
 Kimi K2.6 estimates are based on `project/links/kimi-general-ocr-text-links.md`: input `$0.95 / 1M tokens`, output `$4.00 / 1M tokens`, cached input `$0.16 / 1M tokens`, and 256K context. AutoShow uses cache-miss input/output pricing for `--price` and a speed estimate of `18000 ms / 1K tokens` until live benchmarks are available.
 
 ```bash
 # Multi-provider run
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b --glm glm-5.1 --kimi kimi-k2.6
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b --glm glm-5.1 --kimi kimi-k2.6
 ```
 
 ## Prompts

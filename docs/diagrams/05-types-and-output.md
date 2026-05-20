@@ -130,6 +130,7 @@ src/types/
 │                  'mistral'|'openai'|'gemini'|'deepgram'|'speechify'|        │
 │                  'gcloud'|'deapi'|'hume'|'cartesia'                         │
 │  ImageProvider = 'gemini'|'openai'|'minimax'|'grok'|'runway'|'bfl'|'deapi'   │
+│                |'reve'                                                       │
 │  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'|'deapi'            │
 │  MusicProvider = 'elevenlabs'|'minimax'|'deapi'|'gemini'                     │
 │                                                                              │

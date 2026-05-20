@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { defineSTTServicePriceTests } from '../../test-utils/define-stt-service-test'
-import { runCommand, STABLE_LOCAL_AUDIO_PATH } from '../../test-utils/test-helpers'
+import { runCommand, STABLE_EXAMPLE_AUDIO_URL } from '../../test-utils/test-helpers'
 import { E2E_TEST_TIMEOUT_MS } from '../../test-utils/budget'
 import { resolveDeapiTranscriptionPrice } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi-pricing'
 
@@ -9,7 +9,7 @@ for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as con
     const result = await runCommand([
       'src/cli/create-cli.ts',
       'extract',
-      STABLE_LOCAL_AUDIO_PATH,
+      STABLE_EXAMPLE_AUDIO_URL,
       '--whisper',
       model,
       '--price'
@@ -101,7 +101,7 @@ test('aws standard --price prints estimate', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'extract',
-    STABLE_LOCAL_AUDIO_PATH,
+    STABLE_EXAMPLE_AUDIO_URL,
     '--aws',
     'standard',
     '--price'
@@ -116,7 +116,7 @@ test('gcloud chirp_3 --price prints estimate', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'extract',
-    STABLE_LOCAL_AUDIO_PATH,
+    STABLE_EXAMPLE_AUDIO_URL,
     '--gcloud',
     'chirp_3',
     '--price'

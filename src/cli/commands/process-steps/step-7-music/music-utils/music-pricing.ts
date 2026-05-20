@@ -10,6 +10,9 @@ import type { EstimateMusicCostOptions, MusicCostEstimate } from '~/types'
 
 const formatRate = (amount: number): string => `${amount.toFixed(2)}¢`
 const DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS = 180
+const DEFAULT_MINIMAX_MUSIC_DURATION_SECONDS = 120
+const DEFAULT_DEAPI_MUSIC_DURATION_SECONDS = 30
+const GEMINI_CLIP_MUSIC_DURATION_SECONDS = 30
 const DEFAULT_GEMINI_PRO_MUSIC_DURATION_SECONDS = 120
 
 const assertValidMusicDuration = (durationSeconds: number | undefined): void => {
@@ -45,6 +48,7 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
     results.push({
       provider: 'elevenlabs',
       model,
+      durationSeconds,
       totalCost: ratePerMinute * (durationSeconds / 60),
       lyricsSource,
       note: options.musicDuration !== undefined
@@ -71,6 +75,7 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
     results.push({
       provider: 'minimax',
       model,
+      durationSeconds: DEFAULT_MINIMAX_MUSIC_DURATION_SECONDS,
       totalCost: baseCost + lyricsCost,
       lyricsSource,
       note: lyricsSource === 'generated'
@@ -87,6 +92,7 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
     results.push({
       provider: 'deapi',
       model,
+      durationSeconds: options.musicDuration ?? DEFAULT_DEAPI_MUSIC_DURATION_SECONDS,
       totalCost: 0,
       lyricsSource,
       note: 'Exact deAPI music pricing is resolved through the provider quote endpoint when DEAPI_API_KEY is available.'
@@ -110,6 +116,9 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
     results.push({
       provider: 'gemini',
       model,
+      durationSeconds: model === 'lyria-3-clip-preview'
+        ? GEMINI_CLIP_MUSIC_DURATION_SECONDS
+        : options.musicDuration ?? DEFAULT_GEMINI_PRO_MUSIC_DURATION_SECONDS,
       totalCost: baseCost,
       lyricsSource,
       note: model === 'lyria-3-clip-preview'

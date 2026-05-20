@@ -28,7 +28,7 @@ bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
 ## Price Preflight
 
 ```bash
-bun t test/test-price/step-2-stt/services --test-price
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/ --test-price
 bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/ --budget 2500
 ```
 

@@ -10,6 +10,7 @@ import { buildImageArtifactMap, collectImageTargets, getExpectedImageArtifactFil
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExpectedOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
@@ -29,7 +30,8 @@ export const imageCommand = defineCliCommand({
       ['bun as image "a futuristic observatory at sunset" --grok grok-imagine-image-quality --image-size 1K --image-count 4', 'Generate multiple Grok outputs'],
       ['bun as image "a cinematic product photo of a red enamel camping mug" --runway gen4_image --image-size 720p', 'Generate with Runway'],
       ['bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl', 'Generate with BFL reference input'],
-      ['bun as image "a cozy cabin at dusk" --deapi Flux1schnell --image-size 768x768', 'Generate with deAPI']
+      ['bun as image "a cozy cabin at dusk" --deapi Flux1schnell --image-size 768x768', 'Generate with deAPI'],
+      ['bun as image "a handmade ceramic espresso cup on a marble counter" --reve latest --image-aspect-ratio 3:2 --image-format webp', 'Generate with Reve']
     ]
   }
 }, async (ctx) => {
@@ -43,10 +45,10 @@ export const imageCommand = defineCliCommand({
   const imageOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, normalizedArgs)
   const imageTargets = collectImageTargets(imageOpts)
   if (imageTargets.length === 0) {
-    throw CLIUsageError('No image provider specified. Use --gemini, --openai, --minimax, --grok, --runway, --bfl, or --deapi.')
+    throw CLIUsageError('No image provider specified. Use --gemini, --openai, --minimax, --grok, --runway, --bfl, --deapi, or --reve.')
   }
 
-  const { shouldExit: imageShouldExit } = await runPreflight('image', prompt, imageOpts, imageMaxCents)
+  const { estimate: preflightEstimate, shouldExit: imageShouldExit } = await runPreflight('image', prompt, imageOpts, imageMaxCents)
   if (imageShouldExit) {
     const expectedFiles = [
       ...imageTargets.flatMap((target) =>
@@ -69,14 +71,18 @@ export const imageCommand = defineCliCommand({
     model: target.model,
     count: getExpectedImageCount(target, imageOpts)
   }))
-  const estimated = computeEstimatedCosts({
+  const observedEstimate = computeEstimatedCosts({
     applyCostMultipliers: false,
     imageTargets: estimatedImageTargets,
     imageSize: imageOpts.imageSize,
     imageQuality: imageOpts.imageQuality
   })
   const actual = computeActualCosts({ step5: metadata })
-  const cost = { estimated, actual }
+  const cost = {
+    estimated: preflightToEstimated(preflightEstimate),
+    observedEstimate,
+    actual
+  }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
       imageTargets: estimatedImageTargets,

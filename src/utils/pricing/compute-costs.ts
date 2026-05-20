@@ -71,6 +71,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          imageCount: s.imageCount,
         })
         break
       case 'video':
@@ -80,6 +81,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          durationSeconds: s.durationSeconds,
         })
         break
       case 'music':
@@ -88,7 +90,8 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           provider: s.provider,
           model: s.model,
           cost: s.totalCost,
-          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {})
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          durationSeconds: s.durationSeconds
         })
         break
     }

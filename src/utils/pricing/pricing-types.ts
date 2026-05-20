@@ -48,16 +48,19 @@ export type TtsStepEstimate = ProviderModelBase & {
 
 export type ImageStepEstimate = CostEstimateBase<ImageProvider> & {
   step: 'image'
+  imageCount: number
 }
 
 export type VideoStepEstimate = CostEstimateBase<VideoProvider> & {
   step: 'video'
+  durationSeconds: number
 }
 
 export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   step: 'music'
   totalCost: number
   costMultiplier?: number
+  durationSeconds: number
   lyricsSource: 'provided' | 'generated' | 'none'
   note?: string
 }
@@ -244,6 +247,8 @@ export type ComputeEstimatedProcessingTimesInput = {
   videoModel?: string | undefined
   videoDurationSeconds?: number | undefined
   videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
+  videoResolution?: string | undefined
+  videoMode?: string | undefined
   musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicService?: Step7MusicMetadata['musicService'] | undefined
   musicModel?: string | undefined
@@ -265,11 +270,21 @@ export type BilledSttCost = {
   cost: number
 }
 
+export type CostSource =
+  | 'provider_usage'
+  | 'provider_quote'
+  | 'response_header'
+  | 'computed_usage'
+  | 'registry_fallback'
+  | 'heuristic'
+  | 'local_zero'
+
 export type StepCostEntry = {
   step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
   provider: string
   model: string
   cost: number
+  costSource: CostSource
   inputMetric?: string
   inputValue?: number
   promptTokens?: number
@@ -288,6 +303,7 @@ export type EstimatedStepEntry = {
   cost: number
   costMultiplier?: number
   durationSeconds?: number
+  imageCount?: number
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
   pageCount?: number

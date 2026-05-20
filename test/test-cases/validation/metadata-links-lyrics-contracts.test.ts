@@ -1683,7 +1683,7 @@ test('music lyric-video render mode rejects generation-only price mode', async (
     'src/cli/create-cli.ts',
     'music',
     '--audio',
-    'input/examples/audio/0-audio-short.mp3',
+    'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
     '--price'
   ])
 

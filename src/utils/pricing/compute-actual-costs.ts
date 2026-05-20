@@ -15,6 +15,7 @@ import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/im
 import type {
   ActualCostBreakdown,
   ComputeActualCostsInput,
+  CostSource,
   ExtractionMetadata,
   Step2Metadata,
   Step5Metadata,
@@ -58,6 +59,55 @@ const isExtractionMetadata = (metadata: Step2Metadata | ExtractionMetadata): met
 
 const normalizeDurationSeconds = (value: number): number =>
   Number.isFinite(value) ? Math.max(0, value) : 0
+
+const COST_SOURCES = new Set<CostSource>([
+  'provider_usage',
+  'provider_quote',
+  'response_header',
+  'computed_usage',
+  'registry_fallback',
+  'heuristic',
+  'local_zero'
+])
+
+const normalizeCostSource = (value: unknown, fallback: CostSource): CostSource =>
+  typeof value === 'string' && COST_SOURCES.has(value as CostSource)
+    ? value as CostSource
+    : fallback
+
+const mapBillingCostSource = (source: unknown): CostSource => {
+  switch (source) {
+    case 'provider_usage':
+    case 'provider_quote':
+    case 'response_header':
+      return source
+    case 'response-header':
+      return 'response_header'
+    case 'registry_fallback':
+    case 'fallback-estimate':
+      return 'registry_fallback'
+    case 'heuristic':
+      return 'heuristic'
+    default:
+      return 'computed_usage'
+  }
+}
+
+const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra'])
+const LOCAL_ZERO_PROVIDERS = new Set([
+  'reverb',
+  'whisper',
+  'youtube-captions',
+  'tesseract',
+  'ocrmypdf',
+  'paddle-ocr',
+  'llama.cpp',
+  'llama',
+  'kitten'
+])
+
+const zeroCostSource = (provider: string, cost: number, fallback: CostSource): CostSource =>
+  cost === 0 && LOCAL_ZERO_PROVIDERS.has(provider) ? 'local_zero' : fallback
 
 const resolveSttBillingDurationSeconds = (input: ComputeActualCostsInput): number => {
   if (typeof input.audioDurationSeconds === 'number') {
@@ -144,7 +194,7 @@ const computeActualSttCharge = (
   metadata: Step2Metadata,
   durationSeconds: number,
   sourceUrl: string | undefined
-): { cost: number, inputMetric: string, inputValue: number } => {
+): { cost: number, costSource: CostSource, inputMetric: string, inputValue: number } => {
   const service = metadata.transcriptionService
   const model = resolveTranscriptionModel(metadata)
 
@@ -158,6 +208,7 @@ const computeActualSttCharge = (
     )
     return {
       cost: actual.totalCost,
+      costSource: metadata.billing?.source ? mapBillingCostSource(metadata.billing.source) : 'computed_usage',
       inputMetric: 'credits',
       inputValue: actual.creditsUsed
     }
@@ -170,6 +221,7 @@ const computeActualSttCharge = (
     )
     return {
       cost: actual.totalCost,
+      costSource: metadata.billing?.source ? mapBillingCostSource(metadata.billing.source) : 'computed_usage',
       inputMetric: 'credits',
       inputValue: actual.creditsUsed
     }
@@ -178,6 +230,7 @@ const computeActualSttCharge = (
   if (typeof metadata.billing?.totalCost === 'number' && Number.isFinite(metadata.billing.totalCost)) {
     return {
       cost: metadata.billing.totalCost,
+      costSource: mapBillingCostSource(metadata.billing.source),
       inputMetric: 'durationSeconds',
       inputValue: durationSeconds
     }
@@ -185,6 +238,7 @@ const computeActualSttCharge = (
 
   return {
     cost: computeSttCost(service, model, durationSeconds),
+    costSource: zeroCostSource(service, computeSttCost(service, model, durationSeconds), 'computed_usage'),
     inputMetric: 'durationSeconds',
     inputValue: durationSeconds
   }
@@ -207,12 +261,52 @@ const computeImageFallbackCost = (
   return getImageCost(metadata.imageService, metadata.imageModel) * imageCount
 }
 
+const buildProviderCostExtractionEntry = (
+  metadata: ExtractionMetadata,
+  provider: string,
+  model: string
+): StepCostEntry | undefined => {
+  if (typeof metadata.providerCostCents !== 'number') {
+    return undefined
+  }
+
+  const promptTokens = metadata.promptTokens ?? 0
+  const completionTokens = metadata.completionTokens ?? 0
+  const tokenValue = promptTokens + completionTokens
+  const useTokenInputs = TOKEN_PRICED_OCR_PROVIDERS.has(provider) || tokenValue > 0
+  return {
+    step: 'extract',
+    provider,
+    model,
+    cost: metadata.providerCostCents,
+    costSource: normalizeCostSource(
+      metadata.providerCostSource,
+      Array.isArray(metadata.ocrProviderUsage) && metadata.ocrProviderUsage.length > 0
+        ? 'provider_usage'
+        : 'provider_quote'
+    ),
+    inputMetric: useTokenInputs ? 'tokens' : 'pages',
+    inputValue: useTokenInputs ? tokenValue : metadata.totalPages,
+    ...(useTokenInputs ? { promptTokens, completionTokens } : {})
+  }
+}
+
+const tokenUsageCostSource = (metadata: ExtractionMetadata): CostSource =>
+  (Array.isArray(metadata.ocrProviderUsage) && metadata.ocrProviderUsage.length > 0)
+  || typeof metadata.promptTokens === 'number'
+  || typeof metadata.completionTokens === 'number'
+    ? 'provider_usage'
+    : 'computed_usage'
+
 export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBreakdown => {
   const steps: StepCostEntry[] = []
 
   if (input.step2 && !Array.isArray(input.step2) && isExtractionMetadata(input.step2)) {
     const { provider, model } = resolveExtractionProviderModel(input.step2)
-    if (provider === 'mistral') {
+    const providerCostEntry = buildProviderCostExtractionEntry(input.step2, provider, model)
+    if (providerCostEntry) {
+      steps.push(providerCostEntry)
+    } else if (provider === 'mistral') {
       const extractPricing = getExtractPricing('mistral', model)
       const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
       const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
@@ -221,6 +315,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'mistral',
         model,
         cost,
+        costSource: 'registry_fallback',
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
@@ -233,6 +328,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider,
         model,
         cost,
+        costSource: 'registry_fallback',
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
@@ -247,6 +343,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'glm',
         model: input.step2.ocrModel,
         cost,
+        costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
@@ -261,6 +358,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'kimi',
         model: input.step2.ocrModel,
         cost,
+        costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
@@ -277,6 +375,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'openai',
         model: input.step2.ocrModel,
         cost,
+        costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
@@ -291,6 +390,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'anthropic',
         model: input.step2.ocrModel,
         cost,
+        costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
@@ -305,6 +405,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'gemini',
         model: input.step2.ocrModel,
         cost,
+        costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
@@ -319,6 +420,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'deepinfra',
         model,
         cost,
+        costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
@@ -333,6 +435,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'gcloud-docai',
         model,
         cost,
+        costSource: 'registry_fallback',
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
@@ -345,6 +448,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'aws-textract',
         model,
         cost,
+        costSource: 'registry_fallback',
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
@@ -357,6 +461,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: 'unstructured',
         model,
         cost,
+        costSource: 'registry_fallback',
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
@@ -366,6 +471,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider,
         model,
         cost: 0,
+        costSource: zeroCostSource(provider, 0, 'registry_fallback'),
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
@@ -383,6 +489,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       provider: service,
       model,
       cost: actual.cost,
+      costSource: actual.costSource,
       inputMetric: actual.inputMetric,
       inputValue: actual.inputValue
     })
@@ -391,6 +498,11 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   if (Array.isArray(input.step2) && input.step2.every(isExtractionMetadata)) {
     for (const step2Entry of input.step2) {
       const { provider, model } = resolveExtractionProviderModel(step2Entry)
+      const providerCostEntry = buildProviderCostExtractionEntry(step2Entry, provider, model)
+      if (providerCostEntry) {
+        steps.push(providerCostEntry)
+        continue
+      }
       const promptTokens = step2Entry.promptTokens ?? 0
       const completionTokens = step2Entry.completionTokens ?? 0
       const cost = provider === 'mistral'
@@ -423,6 +535,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider,
         model,
         cost,
+        costSource: TOKEN_PRICED_OCR_PROVIDERS.has(provider)
+          ? tokenUsageCostSource(step2Entry)
+          : zeroCostSource(provider, cost, 'registry_fallback'),
         inputMetric: provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? 'tokens' : 'pages',
         inputValue: provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? promptTokens + completionTokens : step2Entry.totalPages,
         ...(provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? { promptTokens, completionTokens } : {})
@@ -441,6 +556,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: service,
         model,
         cost: actual.cost,
+        costSource: actual.costSource,
         inputMetric: actual.inputMetric,
         inputValue: actual.inputValue
       })
@@ -457,8 +573,13 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       provider: step3Entry.llmService,
       model: step3Entry.llmModel,
       cost: inputCost + outputCost,
+      costSource: step3Entry.tokenCountSource === 'provider_usage'
+        ? 'provider_usage'
+        : zeroCostSource(step3Entry.llmService, inputCost + outputCost, 'computed_usage'),
       inputMetric: 'tokens',
-      inputValue: step3Entry.inputTokenCount + step3Entry.outputTokenCount
+      inputValue: step3Entry.inputTokenCount + step3Entry.outputTokenCount,
+      promptTokens: step3Entry.inputTokenCount,
+      completionTokens: step3Entry.outputTokenCount
     })
   }
 
@@ -473,6 +594,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: step4.ttsService,
         model: step4.ttsModel,
         cost: ttsCost.cost + cloneCost,
+        costSource: zeroCostSource(step4.ttsService, ttsCost.cost + cloneCost, 'computed_usage'),
         inputMetric: 'characters',
         inputValue: input.ttsCharacterCount
       })
@@ -489,6 +611,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       provider: step5.imageService,
       model: step5.imageModel,
       cost,
+      costSource: typeof step5.providerCostCents === 'number'
+        ? normalizeCostSource(step5.providerCostSource, 'provider_quote')
+        : 'registry_fallback',
       inputMetric: 'images',
       inputValue: imageCount
     })
@@ -513,6 +638,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       provider: step6Entry.videoGenService,
       model: step6Entry.videoGenModel,
       cost,
+      costSource: typeof step6Entry.providerCostCents === 'number'
+        ? normalizeCostSource(step6Entry.providerCostSource, 'provider_quote')
+        : 'registry_fallback',
       inputMetric: 'durationSeconds',
       inputValue: videoDuration
     })
@@ -539,6 +667,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         provider: step7Entry.musicService,
         model: step7Entry.musicModel,
         cost,
+        costSource: typeof step7Entry.providerCostCents === 'number'
+          ? normalizeCostSource(step7Entry.providerCostSource, 'provider_quote')
+          : 'registry_fallback',
         ...(typeof step7Entry.musicDurationMs === 'number'
           ? { inputMetric: 'durationMs' as const, inputValue: step7Entry.musicDurationMs }
           : { inputMetric: 'tracks' as const, inputValue: 1 })

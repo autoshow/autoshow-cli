@@ -45,7 +45,7 @@ import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
-import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtractEstimatedCosts } from './ocr-costs'
+import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts } from './ocr-costs'
 import { logExtractManifestConsoleSummary } from '../../write-manifest-log'
 import { logOcrProviderLifecycle } from './ocr-logging'
 import { cleanupOcrPreparationCache, createOcrPreparationCache } from './ocr-utils/preparation-cache'
@@ -255,10 +255,12 @@ const buildDocumentMetadataPayload = (
   const failures = options.failures ?? []
   const extractTargets = collectEstimatedExtractTargets(normalizedStep2)
   const estimated = resolveExtractEstimatedCosts(options.preflightEstimate, normalizedStep2)
+  const observedEstimate = resolveExtractObservedEstimateCosts(normalizedStep2)
   const actual = computeActualCosts({ step2: normalizedStep2 })
   const ocrDiagnostics = buildOcrCostDiagnostics(normalizedStep2, estimated, actual)
   const cost = {
     estimated,
+    ...(options.preflightEstimate ? { observedEstimate } : {}),
     actual,
     ...(ocrDiagnostics.length > 0 ? { ocrDiagnostics } : {})
   }

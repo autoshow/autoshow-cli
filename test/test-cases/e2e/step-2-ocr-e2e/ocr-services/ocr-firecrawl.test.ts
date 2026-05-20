@@ -3,7 +3,7 @@ import { rm } from 'node:fs/promises'
 import { budgetedTest } from '../../../../test-utils/budget'
 import { runCommand, fileExists } from '../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
-import { shouldSkipMissingEnv } from '../../../../test-utils/service-test-kit'
+import { requireConfiguredEnvVar } from '../../../../test-utils/service-test-kit'
 
 type ExtractMetadata = {
   step1?: { format?: string }
@@ -13,9 +13,7 @@ type ExtractMetadata = {
 const articleUrl = 'https://ajcwebdev.com'
 
 budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --url-backend firecrawl', async () => {
-  if (await shouldSkipMissingEnv('FIRECRAWL_API_KEY', 'FIRECRAWL_API_KEY not configured')) {
-    return
-  }
+  await requireConfiguredEnvVar('FIRECRAWL_API_KEY', 'FIRECRAWL_API_KEY not configured')
 
   let outputDir: string | null = null
 
@@ -27,8 +25,9 @@ budgetedTest('extract-firecrawl-url', 'bun as extract https://ajcwebdev.com --ur
     expect(result.exitCode).toBe(0)
 
     outputDir = result.outputDir
-    expect(outputDir).not.toBeNull()
-    if (!outputDir) return
+    if (!outputDir) {
+      throw new Error('Expected output directory for firecrawl URL extraction')
+    }
 
     expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
 

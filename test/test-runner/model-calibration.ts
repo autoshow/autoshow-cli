@@ -15,6 +15,7 @@ type StepObservation = {
   rawEstimatedCostCents: number | null
   actualCostCents: number | null
   actualProcessingTimeMs: number | null
+  actualMsPerUnit: number | null
   unitValue: number | null
 }
 
@@ -31,6 +32,7 @@ type CalibrationUpdate = {
   oldTimeValue: number | null
   newTimeValue: number | null
   medianTimeValue: number | null
+  notes?: string[]
 }
 
 export type CalibrationReport = {
@@ -225,16 +227,18 @@ const getEstimatedCostSteps = (metadata: Record<string, unknown>): Map<string, {
   return out
 }
 
-const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { processingTimeMs: number, unitValue: number | null }> => {
+const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { processingTimeMs: number, msPerUnit: number | null, unitValue: number | null }> => {
   const timing = metadata['timing']
   if (!isRecord(timing)) return new Map()
   const actual = timing['actual']
   if (!isRecord(actual)) return new Map()
   const steps = Array.isArray(actual['steps']) ? actual['steps'] : []
-  const out = new Map<string, { processingTimeMs: number, unitValue: number | null }>()
+  const out = new Map<string, { processingTimeMs: number, msPerUnit: number | null, unitValue: number | null }>()
 
   for (const rawStep of steps) {
     if (!isRecord(rawStep)) continue
+    const timingScope = typeof rawStep['timingScope'] === 'string' ? rawStep['timingScope'] : null
+    if (timingScope !== null && timingScope !== 'wall') continue
     const kind = typeof rawStep['step'] === 'string' ? rawStep['step'] : ''
     const service = typeof rawStep['provider'] === 'string' ? rawStep['provider'] : ''
     const model = typeof rawStep['model'] === 'string' ? rawStep['model'] : ''
@@ -244,7 +248,11 @@ const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { 
 
     const metric = typeof rawStep['inputMetric'] === 'string' ? rawStep['inputMetric'] : null
     const inputValue = normalizeUnitValue(normalized.kind, metric, getFiniteNumber(rawStep['inputValue']))
-    out.set(buildStepKey(normalized), { processingTimeMs, unitValue: inputValue })
+    out.set(buildStepKey(normalized), {
+      processingTimeMs,
+      msPerUnit: getFiniteNumber(rawStep['msPerUnit']),
+      unitValue: inputValue
+    })
   }
 
   return out
@@ -279,6 +287,7 @@ const collectObservationsFromMetadata = (metadata: Record<string, unknown>): Ste
       rawEstimatedCostCents: estimatedCost?.rawCost ?? null,
       actualCostCents: actualCost?.cost ?? null,
       actualProcessingTimeMs: timing?.processingTimeMs ?? null,
+      actualMsPerUnit: timing?.msPerUnit ?? null,
       unitValue: timing?.unitValue ?? actualCost?.unitValue ?? null,
     })
   }
@@ -475,6 +484,7 @@ export const applyModelConfigCalibrations = async (
 
     const timeRates = group
       .map(obs => {
+        if (obs.actualMsPerUnit !== null) return obs.actualMsPerUnit
         if (obs.actualProcessingTimeMs === null || obs.unitValue === null) return null
         return computeObservedTimeRate(obs.kind, obs.actualProcessingTimeMs, obs.unitValue)
       })
@@ -510,6 +520,9 @@ export const applyModelConfigCalibrations = async (
     }
 
     if (newCost !== null || newTime !== null) {
+      const notes = newTime !== null && timeRates.length > 0
+        ? ['Timing calibration uses wall-clock latency observations.']
+        : []
       changedConfigPaths.add(configFilePath)
       updates.push({
         kind: calibrationKind,
@@ -524,6 +537,7 @@ export const applyModelConfigCalibrations = async (
         oldTimeValue: oldTime,
         newTimeValue: newTime,
         medianTimeValue: medianTime,
+        ...(notes.length > 0 ? { notes } : {}),
       })
     }
   }

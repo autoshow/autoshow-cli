@@ -341,7 +341,9 @@ export const runTextWrite = async (
             service: entry.service,
             model: entry.model,
             ...(opts.videoDuration !== undefined ? { durationSeconds: opts.videoDuration } : {})
-          }))
+          })),
+          ...(opts.videoResolution !== undefined ? { videoResolution: opts.videoResolution } : {}),
+          ...(opts.videoMode !== undefined ? { videoMode: opts.videoMode } : {})
         }
       : {}),
     ...(attemptedMusicTargets.length > 0

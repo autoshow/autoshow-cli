@@ -232,8 +232,8 @@ deAPI uses `--video-size WIDTHxHEIGHT`; `--video-aspect-ratio` and `--video-reso
 bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-fast-generate-preview --gemini veo-3.1-generate-preview --gemini veo-3.1-lite-generate-preview
 
 # Write pipeline
-bun as write input/examples/audio/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview --gemini-video veo-3.1-fast-generate-preview
-bun as write input/examples/audio/1-audio.mp3 --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --glm-video cogvideox-3 --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --gemini gemini-3.1-flash-lite-preview --gemini-video veo-3.1-fast-generate-preview
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --gemini-video veo-3.1-fast-generate-preview --minimax-video MiniMax-Hailuo-2.3 --glm-video cogvideox-3 --price
 ```
 
 ## Output

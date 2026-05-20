@@ -73,7 +73,7 @@ describe('manifest schema contracts', () => {
         schemaVersion: 1,
         createdAt: '2026-01-01T00:00:00.000Z',
         items: [{
-          input: 'input/examples/audio/1-audio.mp3',
+          input: 'https://ajc.pics/autoshow/examples/1-audio.mp3',
           inputFamily: 'media',
           routedChildKind: 'stt',
           childBatchEntry: {
@@ -146,7 +146,7 @@ describe('manifest schema contracts', () => {
       ])
 
       await writeBatchManifest(mediaDir, 'extract', [{
-        input: 'input/examples/audio/1-audio.mp3',
+        input: 'https://ajc.pics/autoshow/examples/1-audio.mp3',
         extractRoute: 'media',
         outputDir: mediaOutputDir,
         completionStatus: 'full',
@@ -186,7 +186,7 @@ describe('manifest schema contracts', () => {
         },
         items: [
           {
-            input: 'input/examples/audio/1-audio.mp3',
+            input: 'https://ajc.pics/autoshow/examples/1-audio.mp3',
             inputFamily: 'media',
             extractRoute: 'media',
             childBatchEntry: { route: 'media', index: 0 },

@@ -7,7 +7,7 @@ import { selectBatchItems } from '~/cli/commands/process-steps/step-1-download/t
 import { resolveProcessTargetDoubleDash } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { buildDownloadMediaOptions } from '~/cli/commands/process-steps/step-1-download/targets/single/media-runner'
 import { resolveYtDlpBinaryInfo } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
-import { STABLE_LOCAL_AUDIO_PATH, runCommand } from '../../test-utils/test-helpers'
+import { STABLE_EXAMPLE_AUDIO_URL, runCommand } from '../../test-utils/test-helpers'
 
 const EMPTY_CONFIG_PATH = 'test/test-utils/fixtures/empty-autoshow-config.json'
 const tempDirs: string[] = []
@@ -274,7 +274,7 @@ describe('yt-dlp passthrough execution contracts', () => {
     const result = await runCommand([
       'src/cli/create-cli.ts',
       'download',
-      STABLE_LOCAL_AUDIO_PATH,
+      STABLE_EXAMPLE_AUDIO_URL,
       '--config-path',
       EMPTY_CONFIG_PATH,
       '--',

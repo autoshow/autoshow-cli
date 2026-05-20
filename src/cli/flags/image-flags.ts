@@ -6,7 +6,8 @@ import {
   SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
   SUPPORTED_RUNWAY_IMAGE_MODELS,
-  SUPPORTED_BFL_IMAGE_MODELS
+  SUPPORTED_BFL_IMAGE_MODELS,
+  SUPPORTED_REVE_IMAGE_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { generationOutputFlags, priceFlag } from './shared-flags'
@@ -19,7 +20,8 @@ export const IMAGE_COMMAND_SELECTOR_FLAGS = {
   'grok-image': 'grok',
   'runway-image': 'runway',
   'bfl-image': 'bfl',
-  'deapi-image': 'deapi'
+  'deapi-image': 'deapi',
+  'reve-image': 'reve'
 } as const satisfies Record<string, string>
 
 export const imageGenFlags = {
@@ -67,12 +69,16 @@ export const imageGenFlags = {
     description: buildModelDescription('deAPI image model', SUPPORTED_DEAPI_IMAGE_MODELS),
     type: [String] as [StringConstructor]
   },
+  'reve-image': {
+    description: buildModelDescription('Reve image model', SUPPORTED_REVE_IMAGE_MODELS),
+    type: [String] as [StringConstructor]
+  },
   'image-aspect-ratio': {
     description: 'Image aspect ratio: 1:1|16:9|9:16|4:3|3:4|3:2|2:3|2:1|1:2|19.5:9|9:19.5|20:9|9:20|auto (provider-specific support)',
     type: String
   },
   'image-size': {
-    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, WIDTHxHEIGHT multiples of 8 (MiniMax when no aspect ratio), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL, or WIDTHxHEIGHT within deAPI model limits',
+    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, WIDTHxHEIGHT multiples of 8 (MiniMax when no aspect ratio), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL/Reve fit-within resizing, or WIDTHxHEIGHT within deAPI model limits',
     type: String
   },
   'image-quality': {
@@ -80,7 +86,7 @@ export const imageGenFlags = {
     type: String
   },
   'image-format': {
-    description: 'Image output format: png|jpeg|webp (OpenAI default: png; BFL default: jpeg)',
+    description: 'Image output format: png|jpeg|webp (OpenAI/Reve default: png; BFL default: jpeg)',
     type: String
   },
   'image-background': {
@@ -92,7 +98,7 @@ export const imageGenFlags = {
     type: String
   },
   'image-input': {
-    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native, MiniMax, BFL)',
+    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native, MiniMax, BFL, Reve)',
     type: [String] as [StringConstructor]
   },
   'image-mask': {

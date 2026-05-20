@@ -16,6 +16,10 @@ import { runOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-servic
 import { runSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/run-speechify-tts'
 import { splitTextIntoUtf8ByteChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 
+const SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
+const LOCAL_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')
+const LOCAL_AUDIO_PATH = join('input/examples/audio', '1-audio.mp3')
+
 const tempDirs: string[] = []
 const originalFetch = globalThis.fetch
 const previousEnv: Record<string, string | undefined> = {}
@@ -70,7 +74,7 @@ const makeTempDir = async (prefix: string): Promise<string> => {
 }
 
 const readMockMp3Base64 = async (): Promise<string> =>
-  Buffer.from(await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()).toString('base64')
+  Buffer.from(await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()).toString('base64')
 
 const createMockWavBase64 = (): string => {
   const sampleRate = 16000
@@ -237,7 +241,7 @@ describe('TTS provider service contracts', () => {
     }])
   }, 10_000)
 
-  test('Groq TTS defaults voice by selected model', async () => {
+  test('Groq TTS defaults to English Orpheus voice', async () => {
     const dir = await makeTempDir('autoshow-groq-tts-defaults-')
     const audioBytes = Buffer.from(createMockWavBase64(), 'base64')
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
@@ -255,24 +259,24 @@ describe('TTS provider service contracts', () => {
       return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/wav' } })
     }) as typeof fetch
 
-    const result = await runGroqTts('Groq Arabic synthesis.', dir, {
-      model: 'canopylabs/orpheus-arabic-saudi'
+    const result = await runGroqTts('Groq English synthesis.', dir, {
+      model: 'canopylabs/orpheus-v1-english'
     })
 
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(result.metadata).toMatchObject({
       ttsService: 'groq',
-      ttsModel: 'canopylabs/orpheus-arabic-saudi',
-      speaker: 'fahad'
+      ttsModel: 'canopylabs/orpheus-v1-english',
+      speaker: 'troy'
     })
     expect(calls).toEqual([{
       url: 'https://mock.groq.local/openai/v1/audio/speech',
       method: 'POST',
       authorization: 'Bearer groq-key',
       body: {
-        model: 'canopylabs/orpheus-arabic-saudi',
-        voice: 'fahad',
-        input: 'Groq Arabic synthesis.',
+        model: 'canopylabs/orpheus-v1-english',
+        voice: 'troy',
+        input: 'Groq English synthesis.',
         response_format: 'wav'
       }
     }])
@@ -280,7 +284,7 @@ describe('TTS provider service contracts', () => {
 
   test('MiniMax TTS sends voice controls, language boost, and pronunciation rules', async () => {
     const dir = await makeTempDir('autoshow-minimax-tts-controls-')
-    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, body?: Record<string, unknown> }> = []
 
     process.env['MINIMAX_API_KEY'] = 'minimax-key'
@@ -358,7 +362,7 @@ describe('TTS provider service contracts', () => {
 
   test('Deepgram TTS sends documented output controls as query parameters', async () => {
     const dir = await makeTempDir('autoshow-deepgram-tts-controls-')
-    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['DEEPGRAM_API_KEY'] = 'deepgram-key'
@@ -395,7 +399,7 @@ describe('TTS provider service contracts', () => {
 
   test('Hume TTS posts Octave file requests with chunked utterances and default named voice', async () => {
     const dir = await makeTempDir('autoshow-hume-tts-default-')
-    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{
       url: string
       method: string
@@ -453,7 +457,7 @@ describe('TTS provider service contracts', () => {
   test('Hume TTS sends UUID voice IDs unless a provider is explicit', async () => {
     const idDir = await makeTempDir('autoshow-hume-tts-id-')
     const providerDir = await makeTempDir('autoshow-hume-tts-provider-')
-    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const bodies: Record<string, unknown>[] = []
 
     process.env['HUME_API_KEY'] = 'hume-key'
@@ -576,7 +580,7 @@ describe('TTS provider service contracts', () => {
   test('deAPI TTS sends language, speed, format controls and enables VoiceDesign with instruction', async () => {
     const firstDir = await makeTempDir('autoshow-deapi-tts-controls-')
     const secondDir = await makeTempDir('autoshow-deapi-tts-voice-design-')
-    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, form?: Record<string, unknown> }> = []
     let requestIndex = 0
 
@@ -755,7 +759,7 @@ describe('TTS provider service contracts', () => {
     const sourcePath = join(dir, 'reference.m4a')
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
-    await Bun.$`ffmpeg -v error -y -i input/examples/audio/0-audio-short.mp3 -t 1 -c:a aac ${sourcePath}`.quiet()
+    await Bun.$`ffmpeg -v error -y -i ${LOCAL_SHORT_AUDIO_PATH} -t 1 -c:a aac ${sourcePath}`.quiet()
 
     process.env['MISTRAL_API_KEY'] = 'mistral-key'
     process.env['MISTRAL_BASE_URL'] = 'https://mock.mistral.local/v1'
@@ -811,7 +815,8 @@ describe('TTS provider service contracts', () => {
 
   test('Mistral creates a saved voice when reference audio is paired with a voice name', async () => {
     const dir = await makeTempDir('autoshow-mistral-tts-saved-voice-')
-    const sourcePath = 'input/examples/audio/0-audio-short.mp3'
+    const sourcePath = SHORT_AUDIO_URL
+    const mediaBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['MISTRAL_API_KEY'] = 'mistral-key'
@@ -819,13 +824,16 @@ describe('TTS provider service contracts', () => {
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const request = input instanceof Request ? input : undefined
+      const url = request?.url ?? String(input)
+      if (url === SHORT_AUDIO_URL) {
+        return new Response(mediaBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+      }
       const bodyText = typeof init?.body === 'string'
         ? init.body
         : request
           ? await request.clone().text()
           : ''
       const headers = new Headers(init?.headers ?? request?.headers)
-      const url = request?.url ?? String(input)
       const method = init?.method ?? request?.method ?? 'GET'
       const body = JSON.parse(bodyText) as Record<string, unknown>
       calls.push({ url, method, authorization: headers.get('authorization'), body })
@@ -888,7 +896,7 @@ describe('TTS provider service contracts', () => {
 
   test('ElevenLabs TTS sends output format, voice settings, seed, text normalization, pronunciation dictionaries, and PVC-as-IVC controls', async () => {
     const dir = await makeTempDir('autoshow-elevenlabs-tts-controls-')
-    const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['ELEVENLABS_API_KEY'] = 'elevenlabs-key'
@@ -960,7 +968,7 @@ describe('TTS provider service contracts', () => {
   test('Speechify custom voice creation posts multipart consent and uses the returned voice ID for synthesis', async () => {
     const dir = await makeTempDir('autoshow-speechify-custom-voice-')
     const samplePath = join(dir, 'speechify-sample.mp3')
-    await Bun.$`ffmpeg -v error -y -i input/examples/audio/1-audio.mp3 -t 12 -c copy ${samplePath}`.quiet()
+    await Bun.$`ffmpeg -v error -y -i ${LOCAL_AUDIO_PATH} -t 12 -c copy ${samplePath}`.quiet()
     const audioBase64 = await readMockMp3Base64()
     const calls: Array<{
       url: string
@@ -1134,10 +1142,14 @@ describe('TTS provider service contracts', () => {
     process.env['AUTOSHOW_GCLOUD_BIN'] = await writeFakeReadyGcloud(dir)
     process.env['GCLOUD_TTS_BASE_URL'] = 'https://mock.gcloud.local'
     const audioBase64 = createMockWavBase64()
+    const mediaBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, body: Record<string, unknown> }> = []
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const url = String(input)
+      if (url === SHORT_AUDIO_URL) {
+        return new Response(mediaBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+      }
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       calls.push({ url, body })
       if (url.endsWith('/v1beta1/voices:generateVoiceCloningKey')) {
@@ -1151,8 +1163,8 @@ describe('TTS provider service contracts', () => {
 
     const result = await runGcloudTts('Hello from instant custom voice.', dir, {
       model: 'instant-custom-voice',
-      refAudioPath: 'input/examples/audio/0-audio-short.mp3',
-      consentAudioPath: 'input/examples/audio/0-audio-short.mp3',
+      refAudioPath: SHORT_AUDIO_URL,
+      consentAudioPath: SHORT_AUDIO_URL,
       consentLanguage: 'en-US',
       voiceCloningKeyOut: keyOut
     })
@@ -1239,7 +1251,7 @@ describe('TTS provider service contracts', () => {
     await expect(runGcloudTts('Invalid audio.', dir, {
       model: 'instant-custom-voice',
       refAudioPath: emptyAudio,
-      consentAudioPath: 'input/examples/audio/0-audio-short.mp3',
+      consentAudioPath: LOCAL_SHORT_AUDIO_PATH,
       consentLanguage: 'en-US'
     })).rejects.toThrow('reference audio file is empty')
     expect(calls).toHaveLength(0)

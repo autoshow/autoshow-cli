@@ -4,8 +4,8 @@ import {
   fileExists,
   findLatestDirectory,
   cleanupTestOutput,
-  STABLE_LOCAL_AUDIO_PATH,
-  STABLE_LOCAL_AUDIO_TITLE
+  STABLE_EXAMPLE_AUDIO_URL,
+  STABLE_EXAMPLE_AUDIO_TITLE
 } from "../../test-utils/test-helpers"
 import { readRunManifest, readRunMetadata } from "../../test-utils/manifest-helpers"
 import { budgetedTest } from "../../test-utils/budget"
@@ -19,11 +19,11 @@ const getSummaryFileName = async (outputDir: string): Promise<string> => {
 }
 
 beforeAll(async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 })
 
 afterAll(async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 })
 
 test("bun setup help completes successfully", async () => {
@@ -33,9 +33,9 @@ test("bun setup help completes successfully", async () => {
 })
 
 test("bun as metadata prints metadata successfully", async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
-  const result = await runCommand(["src/cli/create-cli.ts", "metadata", STABLE_LOCAL_AUDIO_PATH])
+  const result = await runCommand(["src/cli/create-cli.ts", "metadata", STABLE_EXAMPLE_AUDIO_URL])
   
   expect(result.exitCode).toBe(0)
 
@@ -44,20 +44,20 @@ test("bun as metadata prints metadata successfully", async () => {
 })
 
 test("bun as without a subcommand fails", async () => {
-  const result = await runCommand(["src/cli/create-cli.ts", STABLE_LOCAL_AUDIO_PATH])
+  const result = await runCommand(["src/cli/create-cli.ts", STABLE_EXAMPLE_AUDIO_URL])
 
   expect(result.exitCode).toBeGreaterThan(0)
   expect(`${result.stdout}\n${result.stderr}`).toContain('Unknown command')
 })
 
 budgetedTest("write-groq-openai/gpt-oss-20b", "bun as write processes audio successfully", async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
-  const result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_LOCAL_AUDIO_PATH, "--groq", "openai/gpt-oss-20b"])
+  const result = await runCommand(["src/cli/create-cli.ts", "write", STABLE_EXAMPLE_AUDIO_URL, "--groq", "openai/gpt-oss-20b"])
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
 
   if (!outputDir) {
@@ -94,13 +94,13 @@ budgetedTest("write-groq-openai/gpt-oss-20b", "bun as write processes audio succ
 })
 
 budgetedTest("transcribe-whisper-tiny", "bun as extract skips LLM processing but creates prompt", async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
   
-  const result = await runCommand(["src/cli/create-cli.ts", 'extract', STABLE_LOCAL_AUDIO_PATH, "--prompt", "shortSummary"])
+  const result = await runCommand(["src/cli/create-cli.ts", 'extract', STABLE_EXAMPLE_AUDIO_URL, "--prompt", "shortSummary"])
   
   expect(result.exitCode).toBe(0)
   
-  const outputDir = await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+  const outputDir = await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
   
   if (outputDir) {

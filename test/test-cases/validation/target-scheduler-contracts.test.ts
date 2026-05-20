@@ -136,6 +136,8 @@ describe('target scheduler contracts', () => {
           bflImageModel: undefined,
           deapiImageModels: undefined,
           deapiImageModel: undefined,
+          reveImageModels: undefined,
+          reveImageModel: undefined,
           imageAspectRatio: undefined,
           imageSize: undefined,
           imageQuality: undefined,

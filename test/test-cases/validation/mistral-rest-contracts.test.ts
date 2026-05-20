@@ -91,7 +91,7 @@ describe('Mistral REST contracts', () => {
       })
     }) as typeof fetch
 
-    const { result, metadata } = await runMistralStt('input/examples/audio/0-audio-short.mp3', dir, {
+    const { result, metadata } = await runMistralStt('https://ajc.pics/autoshow/examples/0-audio-short.mp3', dir, {
       model: 'voxtral-mini-latest',
       segmentOffsetMinutes: 1
     })

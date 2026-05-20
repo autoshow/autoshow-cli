@@ -5,7 +5,7 @@ import { defineSingleCaseTest, setupDownloadInputTypeLifecycle, type SingleCase 
 const singleCases: SingleCase[] = [
   {
     name: 'download local audio input',
-    input: 'input/examples/audio/1-audio.mp3',
+    input: 'https://ajc.pics/autoshow/examples/1-audio.mp3',
     suffix: '1-audio',
     checks: async (metadata, outputDir) => {
       expect(metadata.step1?.audioFileName).toBeDefined()

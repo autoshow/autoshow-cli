@@ -8,13 +8,7 @@
       "hannah",
       "austin",
       "daniel",
-      "troy",
-      "abdullah",
-      "fahad",
-      "sultan",
-      "lulwa",
-      "noura",
-      "aisha"
+      "troy"
     ],
     "models": {
       "canopylabs/orpheus-v1-english": {
@@ -23,17 +17,6 @@
         "inputCostPer1MCharsCents": 1000,
         "outputCostPer1MCharsUSD": 22,
         "outputCostPer1MCharsCents": 2200,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 16316
-        }
-      },
-      "canopylabs/orpheus-arabic-saudi": {
-        "description": "Orpheus Arabic Saudi — authentic Saudi dialect cloud TTS",
-        "inputCostPer1MCharsUSD": 0,
-        "inputCostPer1MCharsCents": 0,
-        "outputCostPer1MCharsUSD": 40,
-        "outputCostPer1MCharsCents": 4000,
         "estimation": {
           "costMultiplier": 1,
           "msPer1KChars": 16316

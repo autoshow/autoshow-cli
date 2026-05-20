@@ -90,7 +90,7 @@
         "blockCost1080pCents": 49,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 12085
+          "msPerSecond": 17988
         }
       },
       "T2V-01-Director": {
@@ -175,12 +175,20 @@
       "cogvideox-3": {
         "description": "CogVideoX-3 text-to-video model",
         "baseJobFeeUSD": 0.2,
-        "baseJobFeeCents": 20
+        "baseJobFeeCents": 20,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 29669
+        }
       },
       "viduq1-text": {
         "description": "Vidu Q1 text-to-video model",
         "baseJobFeeUSD": 0.4,
-        "baseJobFeeCents": 40
+        "baseJobFeeCents": 40,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 36089
+        }
       },
       "viduq1-image": {
         "description": "Vidu Q1 image-to-video model",
@@ -239,7 +247,11 @@
         "description": "Grok Imagine text-to-video model",
         "baseCostPerSecondUSD": 0.05,
         "baseCostPerSecondCents": 5,
-        "resolutionMultiplier720p": 1.4
+        "resolutionMultiplier720p": 1.4,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 10833
+        }
       }
     }
   },
@@ -298,7 +310,7 @@
         "baseCostPerSecondCents": 0.08685,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 20000
+          "msPerSecond": 21883
         }
       },
       "Ltx2_3_22B_Dist_INT8": {
@@ -307,7 +319,7 @@
         "baseCostPerSecondCents": 0.08685,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 20000
+          "msPerSecond": 16826
         }
       }
     }

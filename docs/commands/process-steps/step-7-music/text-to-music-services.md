@@ -198,11 +198,11 @@ Lyric-video rendering uses local Whisper captions and ffmpeg rendering. In reren
 
 ```bash
 # Write pipeline
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
-bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.6 --music-lyrics-file input/examples/tts/1-tts.md
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --gemini-music lyria-3-pro-preview --music-duration 120
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.6 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
-bun as write input/examples/audio/1-audio.mp3 --minimax-music music-2.6 --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax-music music-2.6 --music-lyrics-file input/examples/tts/1-tts.md
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --gemini-music lyria-3-pro-preview --music-duration 120
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.6 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax-music music-2.6 --price
 ```
 
 ## Output

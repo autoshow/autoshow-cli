@@ -102,7 +102,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  ├── HUME_API_KEY                    Hume TTS                                │
 │  ├── CARTESIA_API_KEY                Cartesia TTS                            │
 │  ├── RUNWAYML_API_SECRET             Runway Image/Video                      │
-│  └── BFL_API_KEY                     BFL Image                               │
+│  ├── BFL_API_KEY                     BFL Image                               │
+│  └── REVE_API_KEY                    Reve Image                              │
 │                                                                              │
 │  Other                                                                       │
 │  └── HF_TOKEN                        HuggingFace private model access        │
@@ -119,7 +120,7 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  Base URL Overrides — Steps 4-7 (TTS/Image/Video/Music)                      │
 │  ├── ELEVENLABS_BASE_URL, DEAPI_BASE_URL                                     │
 │  ├── SPEECHIFY_BASE_URL, HUME_BASE_URL, CARTESIA_BASE_URL                    │
-│  └── RUNWAY_BASE_URL, BFL_BASE_URL                                           │
+│  └── RUNWAY_BASE_URL, BFL_BASE_URL, REVE_BASE_URL                            │
 │                                                                              │
 │  Logging                                                                     │
 │  ├── AUTOSHOW_LOG_FORMAT             human|json|both|auto (default: auto)    │

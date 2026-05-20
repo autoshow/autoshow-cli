@@ -2,13 +2,15 @@ import { afterAll, beforeAll, expect, test } from 'bun:test'
 import { copyFile, mkdir, rm, writeFile } from 'node:fs/promises'
 import { E2E_TEST_TIMEOUT_MS } from '../../test-utils/timeouts'
 import {
+  EXAMPLE_SHORT_AUDIO_URL,
+  LOCAL_EXAMPLE_SHORT_AUDIO_PATH,
   OUTPUT_DIR,
   fileExists,
   runCommand
 } from '../../test-utils/test-helpers'
 import { readRunManifest, writeProviderResultFixture, writeRunManifestFixture } from '../../test-utils/manifest-helpers'
 
-const SHORT_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
+const SHORT_AUDIO_PATH = EXAMPLE_SHORT_AUDIO_URL
 const FIXTURE_RUN_DIR = `${OUTPUT_DIR}/transcript-video-fixture-run`
 const FIXTURE_TEXT_PATH = `${FIXTURE_RUN_DIR}/transcription.txt`
 
@@ -34,7 +36,7 @@ const fixtureTranscriptionResult = {
 
 beforeAll(async () => {
   await mkdir(FIXTURE_RUN_DIR, { recursive: true })
-  await copyFile(SHORT_AUDIO_PATH, `${FIXTURE_RUN_DIR}/0-audio-short.mp3`)
+  await copyFile(LOCAL_EXAMPLE_SHORT_AUDIO_PATH, `${FIXTURE_RUN_DIR}/0-audio-short.mp3`)
   await writeRunManifestFixture(FIXTURE_RUN_DIR, 'extract', {
     step1: {
       title: 'Transcript Video Fixture',

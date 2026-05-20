@@ -10,6 +10,7 @@ import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } 
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExpectedOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
@@ -44,7 +45,7 @@ export const videoCommand = defineCliCommand({
     throw CLIUsageError('Specify a video generation provider: --gemini <model>, --minimax <model>, --glm <model>, --grok <model>, --runway <model>, or --deapi <model>')
   }
 
-  const { shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)
+  const { estimate: preflightEstimate, shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)
   if (videoShouldExit) {
     const singleTarget = videoTargets.length === 1
     l.report.expectedOutput(getGenerationExpectedOutputDir(flags as Record<string, unknown>, './output/<timestamp>_video-gen/'), [
@@ -65,7 +66,7 @@ export const videoCommand = defineCliCommand({
     model: target.model,
     ...(videoOpts.videoDuration !== undefined ? { durationSeconds: videoOpts.videoDuration } : {})
   }))
-  const estimated = computeEstimatedCosts({
+  const observedEstimate = computeEstimatedCosts({
     applyCostMultipliers: false,
     videoTargets: estimatedVideoTargets,
     videoDuration: videoOpts.videoDuration,
@@ -75,10 +76,16 @@ export const videoCommand = defineCliCommand({
     videoMode: videoOpts.videoMode
   })
   const actual = computeActualCosts({ step6: metadata })
-  const cost = { estimated, actual }
+  const cost = {
+    estimated: preflightToEstimated(preflightEstimate),
+    observedEstimate,
+    actual
+  }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
       videoTargets: estimatedVideoTargets,
+      ...(videoOpts.videoResolution !== undefined ? { videoResolution: videoOpts.videoResolution } : {}),
+      ...(videoOpts.videoMode !== undefined ? { videoMode: videoOpts.videoMode } : {}),
     }),
     actual: computeActualProcessingTimes({ step6: metadata }),
   }

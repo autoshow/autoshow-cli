@@ -10,7 +10,7 @@
         "nativeGeminiImage": true,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 12000
+          "msPerImage": 14895
         }
       },
       "imagen-4.0-generate-001": {
@@ -94,7 +94,7 @@
         "costPerImageCents": 5,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 12000
+          "msPerImage": 7713
         }
       },
       "grok-imagine-image": {
@@ -135,7 +135,7 @@
         "costPerImageCents": 1.4,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 15927
         }
       },
       "flux-2-klein-9b-preview": {
@@ -144,7 +144,7 @@
         "costPerImageCents": 1.5,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 16265
         }
       },
       "flux-2-klein-9b": {
@@ -153,7 +153,7 @@
         "costPerImageCents": 1.5,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 15813
         }
       },
       "flux-2-pro-preview": {
@@ -171,7 +171,7 @@
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 19394
         }
       },
       "flux-2-max": {
@@ -213,7 +213,7 @@
         "costPerImageCents": 0.405,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 20797
+          "msPerImage": 17659
         }
       },
       "Flux_2_Klein_4B_BF16": {
@@ -223,6 +223,32 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 9239
+        }
+      }
+    }
+  },
+  "reve": {
+    "description": "Reve image generation",
+    "type": "api",
+    "models": {
+      "latest": {
+        "description": "Reve latest image creation model",
+        "costPerImageUSD": 0.0013333333333333333,
+        "costPerImageCents": 0.13333333333333333,
+        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
+        }
+      },
+      "reve-create@20250915": {
+        "description": "Reve Create fixed text-to-image snapshot",
+        "costPerImageUSD": 0.0013333333333333333,
+        "costPerImageCents": 0.13333333333333333,
+        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerImage": 30000
         }
       }
     }

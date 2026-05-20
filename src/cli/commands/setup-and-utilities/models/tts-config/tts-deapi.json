@@ -8,7 +8,8 @@
         "costPer1kCharsUSD": 0.00077,
         "costPer1kCharsCents": 0.077,
         "estimation": {
-          "msPer1KChars": 5000
+          "msPer1KChars": 37970,
+          "costMultiplier": 0.9985
         }
       },
       "Chatterbox": {
@@ -16,7 +17,8 @@
         "costPer1kCharsUSD": 0.00077,
         "costPer1kCharsCents": 0.077,
         "estimation": {
-          "msPer1KChars": 5000
+          "msPer1KChars": 37970,
+          "costMultiplier": 0.0998
         }
       },
       "Qwen3_TTS_12Hz_1_7B_CustomVoice": {
@@ -24,7 +26,8 @@
         "costPer1kCharsUSD": 0.00077,
         "costPer1kCharsCents": 0.077,
         "estimation": {
-          "msPer1KChars": 8000
+          "msPer1KChars": 60750,
+          "costMultiplier": 0.0599
         }
       },
       "Qwen3_TTS_12Hz_1_7B_Base": {
@@ -32,8 +35,8 @@
         "costPer1kCharsUSD": 0.00077,
         "costPer1kCharsCents": 0.077,
         "estimation": {
-          "msPer1KChars": 132723,
-          "costMultiplier": 1
+          "msPer1KChars": 203695,
+          "costMultiplier": 0.169
         }
       },
       "Qwen3_TTS_12Hz_1_7B_VoiceDesign": {

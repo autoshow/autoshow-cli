@@ -227,7 +227,7 @@ test('music help includes hosted generation and lyric-video flags', async () => 
   expect(result.stdout).not.toContain('--track-list')
 })
 
-test('image and video help expose BFL/deAPI provider flags', async () => {
+test('image and video help expose BFL/deAPI/Reve provider flags', async () => {
   const imageResult = await runCommand(['src/cli/create-cli.ts', 'image', '--help'], { env: helpEnv })
   const videoResult = await runCommand(['src/cli/create-cli.ts', 'video', '--help'], { env: helpEnv })
 
@@ -238,9 +238,11 @@ test('image and video help expose BFL/deAPI provider flags', async () => {
   expect(imageResult.stdout).toContain('--image-local-concurrency')
   expect(imageResult.stdout).toContain('--bfl')
   expect(imageResult.stdout).toContain('--deapi')
+  expect(imageResult.stdout).toContain('--reve')
   expect(imageResult.stdout).not.toContain('--glm')
   expect(imageResult.stdout).not.toContain('--bfl-image')
   expect(imageResult.stdout).not.toContain('--deapi-image')
+  expect(imageResult.stdout).not.toContain('--reve-image')
   expect(videoResult.stdout).toContain('--video-provider-concurrency')
   expect(videoResult.stdout).toContain('--video-local-concurrency')
   expect(videoResult.stdout).toContain('--video-mode')

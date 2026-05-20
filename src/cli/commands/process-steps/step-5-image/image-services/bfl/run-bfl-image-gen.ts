@@ -1,10 +1,10 @@
 import * as v from 'valibot'
 import * as l from '~/utils/logger'
-import type { BflImageModel, Step5Metadata } from '~/types'
+import type { BflImageModel, RetryClass, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateImageCosts, logImageEstimate } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
-import { pollUntil } from '~/utils/retries'
+import { classifyFetchRetry, isRetryableStatus, pollUntil, withRetry } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { imageReferenceToUrlOrDataUrl } from '../../image-utils/image-inputs'
@@ -115,14 +115,28 @@ const fetchBflJson = async (
 const downloadBflImage = async (
   url: string,
   outputPath: string,
-  outputFormat: BflOutputFormat
+  outputFormat: BflOutputFormat,
+  signal?: AbortSignal | undefined
 ): Promise<void> => {
   const response = await fetch(url, {
     method: 'GET',
-    headers: { accept: `image/${outputFormat},image/*;q=0.9,*/*;q=0.8` }
+    headers: { accept: `image/${outputFormat},image/*;q=0.9,*/*;q=0.8` },
+    ...(signal ? { signal } : {})
   })
   if (!response.ok) {
-    throw new Error(`BFL image result download failed (${response.status})`)
+    const err = new Error(`BFL image result download failed (${response.status})`) as Error & {
+      status: number
+      headers: Headers
+      stage: string
+      retryClass: RetryClass
+      retryable: boolean
+    }
+    err.status = response.status
+    err.headers = response.headers
+    err.stage = 'result-download'
+    err.retryClass = 'runtime_http_read'
+    err.retryable = isRetryableStatus(response.status)
+    throw err
   }
 
   const bytes = new Uint8Array(await response.arrayBuffer())
@@ -222,7 +236,11 @@ export const runBflImageGen = async (
     throw new Error('BFL image generation completed without result.sample')
   }
 
-  await downloadBflImage(sampleUrl, outputPath, outputFormat)
+  await withRetry(
+    { retryClass: 'runtime_http_read', operationName: 'bfl-image-result-download' },
+    async (signal) => await downloadBflImage(sampleUrl, outputPath, outputFormat, signal),
+    (error) => classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
+  )
 
   const processingTime = Date.now() - startTime
   const imageFile = Bun.file(outputPath)

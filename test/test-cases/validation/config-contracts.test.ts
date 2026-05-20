@@ -23,7 +23,7 @@ describe('config contracts', () => {
   test('extractExplicitFlags ignores tokens after the positional separator', () => {
     expect(extractExplicitFlags([
       'extract',
-      'input/examples/audio/1-audio.mp3',
+      'https://ajc.pics/autoshow/examples/1-audio.mp3',
       '--openai-stt',
       'gpt-4o-mini-transcribe',
       '--',
@@ -127,7 +127,7 @@ describe('config contracts', () => {
       'config-path': '/tmp/autoshow.json',
       'elevenlabs-tts-pvc-sample': ['input/examples/audio/anthony-voice.mp3'],
       'elevenlabs-tts-pvc-captcha-out': '/tmp/captcha.png',
-      'elevenlabs-tts-pvc-verify-audio': 'input/examples/audio/0-audio-short.mp3',
+      'elevenlabs-tts-pvc-verify-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'elevenlabs-tts-pvc-wait': true,
       'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
       'speechify-tts-voice-name': 'AutoShow Anthony',
@@ -136,8 +136,8 @@ describe('config contracts', () => {
       'speechify-tts-voice-locale': 'en-US',
       'speechify-tts-voice-gender': 'notSpecified',
       'gcloud-tts': ['instant-custom-voice'],
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'gcloud-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+      'gcloud-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'gcloud-tts-voice-cloning-key': 'raw-secret-key',
       'gcloud-tts-voice-cloning-key-out': '/tmp/gcloud-key.txt'
     }, new Set([
@@ -170,8 +170,8 @@ describe('config contracts', () => {
         post: {
           tts: {
             gcloudTts: ['instant-custom-voice'],
-            gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3'
+            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
           }
         }
       }
@@ -181,13 +181,15 @@ describe('config contracts', () => {
   test('buildConfigPatchFromFlags saves BFL image defaults', () => {
     expect(buildConfigPatchFromFlags({
       'bfl-image': ['flux-2-pro-preview'],
+      'reve-image': ['latest'],
       'image-size': '1024x1024',
       'image-format': 'webp'
-    }, new Set(['bfl-image', 'image-size', 'image-format']))).toEqual({
+    }, new Set(['bfl-image', 'reve-image', 'image-size', 'image-format']))).toEqual({
       defaults: {
         post: {
           image: {
             bflImage: ['flux-2-pro-preview'],
+            reveImage: ['latest'],
             imageSize: '1024x1024',
             imageFormat: 'webp'
           }
@@ -211,8 +213,8 @@ describe('config contracts', () => {
       'gcloud-tts': ['chirp3-hd'],
       'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
       'gcloud-tts-language': 'en-US',
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'gcloud-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+      'gcloud-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'gcloud-tts-consent-language': 'en-US'
     }, new Set([
       'speechify-tts',
@@ -250,8 +252,8 @@ describe('config contracts', () => {
             gcloudTts: ['chirp3-hd'],
             gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
             gcloudTtsLanguage: 'en-US',
-            gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             gcloudTtsConsentLanguage: 'en-US'
           }
         }
@@ -272,8 +274,8 @@ describe('config contracts', () => {
       'gcloud-tts': ['chirp3-hd'],
       'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
       'gcloud-tts-language': 'en-US',
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'gcloud-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+      'gcloud-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'gcloud-tts-consent-language': 'en-US'
     })
   })
@@ -488,7 +490,7 @@ describe('config contracts', () => {
       'openai-tts': ['gpt-4o-mini-tts'],
       'openai-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
       'openai-tts-consent-id': 'cons_123',
-      'openai-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'openai-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'openai-tts-consent-language': 'en-US',
       'openai-tts-consent-name': 'Anthony Consent',
       'openai-tts-voice-name': 'AutoShow Anthony'
@@ -509,7 +511,7 @@ describe('config contracts', () => {
             openaiTts: ['gpt-4o-mini-tts'],
             openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             openaiTtsConsentId: 'cons_123',
-            openaiTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            openaiTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony'
@@ -522,7 +524,7 @@ describe('config contracts', () => {
       'openai-tts': ['gpt-4o-mini-tts'],
       'openai-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
       'openai-tts-consent-id': 'cons_123',
-      'openai-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3',
+      'openai-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'openai-tts-consent-language': 'en-US',
       'openai-tts-consent-name': 'Anthony Consent',
       'openai-tts-voice-name': 'AutoShow Anthony'
@@ -592,7 +594,7 @@ describe('config contracts', () => {
   test('buildConfigPatchFromFlags saves and merges deAPI TTS clone defaults', () => {
     const patch = buildConfigPatchFromFlags({
       'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'deapi-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'deapi-tts-ref-text': 'Reference transcript.'
     }, new Set(['deapi-tts', 'deapi-tts-ref-audio', 'deapi-tts-ref-text']))
 
@@ -601,7 +603,7 @@ describe('config contracts', () => {
         post: {
           tts: {
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
-            deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
+            deapiTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             deapiTtsRefText: 'Reference transcript.'
           }
         }
@@ -610,7 +612,7 @@ describe('config contracts', () => {
 
     expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
       'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'deapi-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       'deapi-tts-ref-text': 'Reference transcript.'
     })
   })
@@ -649,8 +651,8 @@ describe('config contracts', () => {
             gcloudTts: ['chirp3-hd'],
             gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
             gcloudTtsLanguage: 'en-US',
-            gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             gcloudTtsConsentLanguage: 'en-US',
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
@@ -665,7 +667,7 @@ describe('config contracts', () => {
             openaiVoice: 'voice_existing123',
             openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             openaiTtsConsentId: 'cons_123',
-            openaiTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            openaiTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
@@ -689,7 +691,7 @@ describe('config contracts', () => {
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
-            deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
+            deapiTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             deapiTtsRefText: 'Reference transcript.',
             deapiTtsLanguage: 'English',
             deapiTtsSpeed: 1.2,
@@ -738,8 +740,8 @@ describe('config contracts', () => {
             gcloudTts: ['chirp3-hd'],
             gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
             gcloudTtsLanguage: 'en-US',
-            gcloudTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
+            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             gcloudTtsConsentLanguage: 'en-US',
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
@@ -754,7 +756,7 @@ describe('config contracts', () => {
             openaiVoice: 'voice_existing123',
             openaiTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             openaiTtsConsentId: 'cons_123',
-            openaiTtsConsentAudio: 'input/examples/audio/0-audio-short.mp3',
+            openaiTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             openaiTtsConsentLanguage: 'en-US',
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
@@ -778,7 +780,7 @@ describe('config contracts', () => {
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice',
             deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
-            deapiTtsRefAudio: 'input/examples/audio/0-audio-short.mp3',
+            deapiTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
             deapiTtsRefText: 'Reference transcript.',
             deapiTtsLanguage: 'English',
             deapiTtsSpeed: 1.2,

@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { afterAll, beforeAll } from 'bun:test'
-import { STABLE_LOCAL_AUDIO_PATH } from '../../../test-utils/test-helpers'
+import { LOCAL_EXAMPLE_AUDIO_PATH } from '../../../test-utils/test-helpers'
 import {
   defineBatchCaseTest,
   setupDownloadInputTypeLifecycle,
@@ -30,7 +30,7 @@ const buildFeedXml = (): string => `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 beforeAll(async () => {
-  audioFixture = await readFile(STABLE_LOCAL_AUDIO_PATH)
+  audioFixture = await readFile(LOCAL_EXAMPLE_AUDIO_PATH)
 
   feedServer = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://127.0.0.1')

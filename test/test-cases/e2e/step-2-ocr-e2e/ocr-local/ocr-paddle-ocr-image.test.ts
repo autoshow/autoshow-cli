@@ -22,7 +22,7 @@ afterAll(async () => {
 
 budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle', async () => {
   if (!await fileExists(paddleOcrPython)) {
-    return
+    throw new Error(`${paddleOcrPython} is required for Paddle OCR coverage`)
   }
 
   await ensurePageImageFixture(imageInput)
@@ -32,8 +32,9 @@ budgetedTest('extract-paddle-ocr-image', 'extract image with --paddle', async ()
   expect(result.exitCode).toBe(0)
 
   const outputDir = await findLatestDirectory('1-document')
-  expect(outputDir).not.toBeNull()
-  if (!outputDir) return
+  if (!outputDir) {
+    throw new Error('Expected output directory for 1-document')
+  }
 
   const metadata = await readRunMetadata(outputDir) as ExtractMetadata
   expect(metadata.step1?.format).toBe('png')

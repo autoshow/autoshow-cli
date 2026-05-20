@@ -15,6 +15,7 @@ import type {
   Step5Metadata,
   Step6VideoMetadata,
   Step7MusicMetadata,
+  CostSource,
   CostEntryLike,
   IndexedRow,
   PromptUsageSection,
@@ -29,7 +30,7 @@ import type {
   WriteStepKind,
 } from '~/types'
 
-const SUMMARY_COLUMNS = ['step', 'providerModel', 'predCost', 'actCost', 'predTime', 'actTime', 'predSpeed', 'actSpeed'] as const
+const SUMMARY_COLUMNS = ['step', 'providerModel', 'predCost', 'actCost', 'actSource', 'predTime', 'actTime', 'predSpeed', 'actSpeed'] as const
 const PROMPT_USAGE_COLUMNS = ['step', 'providerModel', 'promptSource', 'usage'] as const
 const OCR_COST_COLUMNS = ['providerModel', 'pages', 'predInputs', 'actInputs', 'rates', 'predCost', 'actCost', 'delta'] as const
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
@@ -85,6 +86,21 @@ const isTimingEntry = (value: unknown): value is TimingEntryLike =>
   && typeof value['provider'] === 'string'
   && typeof value['model'] === 'string'
   && typeof value['processingTimeMs'] === 'number'
+
+const COST_SOURCES = new Set<CostSource>([
+  'provider_usage',
+  'provider_quote',
+  'response_header',
+  'computed_usage',
+  'registry_fallback',
+  'heuristic',
+  'local_zero'
+])
+
+const normalizeManifestCostSource = (value: unknown): CostSource =>
+  typeof value === 'string' && COST_SOURCES.has(value as CostSource)
+    ? value as CostSource
+    : 'registry_fallback'
 
 const toArray = <T,>(value: unknown, guard: (candidate: unknown) => candidate is T): T[] => {
   if (Array.isArray(value)) {
@@ -310,7 +326,12 @@ const getActualCostBreakdown = (metadata: WriteManifestMetadata): ActualCostBrea
   }
 
   const actual = cost['actual']
-  const steps = Array.isArray(actual['steps']) ? actual['steps'].filter(isCostEntry) : []
+  const steps = Array.isArray(actual['steps'])
+    ? actual['steps'].filter(isCostEntry).map((entry) => ({
+        ...entry,
+        costSource: normalizeManifestCostSource(entry.costSource)
+      }))
+    : []
   return typeof actual['totalCost'] === 'number'
     ? { totalCost: actual['totalCost'], steps }
     : undefined
@@ -375,6 +396,33 @@ export const formatWriteManifestThroughput = (
       return `${formatNumber(inputValue / (processingTimeMs / 60000))} img/min`
     default:
       return null
+  }
+}
+
+const formatPersistedWriteManifestThroughput = (
+  throughputValue: number | undefined,
+  throughputUnit: TimingEntryLike['throughputUnit'] | undefined
+): string | null => {
+  if (
+    typeof throughputValue !== 'number'
+    || !Number.isFinite(throughputValue)
+    || throughputValue <= 0
+    || !throughputUnit
+  ) {
+    return null
+  }
+
+  switch (throughputUnit) {
+    case 'x':
+      return `${formatNumber(throughputValue)}x`
+    case 'tokensPerSecond':
+      return `${formatNumber(throughputValue)} tok/s`
+    case 'charactersPerSecond':
+      return `${formatNumber(throughputValue)} char/s`
+    case 'pagesPerMinute':
+      return `${formatNumber(throughputValue)} p/min`
+    case 'imagesPerMinute':
+      return `${formatNumber(throughputValue)} img/min`
   }
 }
 
@@ -458,18 +506,21 @@ const buildRunSummary = (metadata: WriteManifestMetadata): SummarySection | unde
       providerModel: value.providerModel,
       predictedCostCents: predictedCost?.cost ?? null,
       actualCostCents: actualCost?.cost ?? null,
+      actualCostSource: actualCost?.costSource ?? null,
       predictedTimeMs: predictedTime?.processingTimeMs ?? null,
       actualTimeMs: actualTime?.processingTimeMs ?? null,
-      predictedSpeed: formatWriteManifestThroughput(
-        predictedTime?.inputMetric,
-        predictedTime?.inputValue,
-        predictedTime?.processingTimeMs
-      ),
-      actualSpeed: formatWriteManifestThroughput(
-        actualTime?.inputMetric,
-        actualTime?.inputValue,
-        actualTime?.processingTimeMs
-      ),
+      predictedSpeed: formatPersistedWriteManifestThroughput(predictedTime?.throughputValue, predictedTime?.throughputUnit)
+        ?? formatWriteManifestThroughput(
+          predictedTime?.inputMetric,
+          predictedTime?.inputValue,
+          predictedTime?.processingTimeMs
+        ),
+      actualSpeed: formatPersistedWriteManifestThroughput(actualTime?.throughputValue, actualTime?.throughputUnit)
+        ?? formatWriteManifestThroughput(
+          actualTime?.inputMetric,
+          actualTime?.inputValue,
+          actualTime?.processingTimeMs
+        ),
       predictedInputMetric: predictedTime?.inputMetric ?? null,
       predictedInputValue: predictedTime?.inputValue ?? null,
       actualInputMetric: actualTime?.inputMetric ?? null,
@@ -485,6 +536,7 @@ const buildRunSummary = (metadata: WriteManifestMetadata): SummarySection | unde
       providerModel: row.providerModel,
       predCost: row.predictedCostCents === null ? '' : formatCost(row.predictedCostCents),
       actCost: row.actualCostCents === null ? '' : formatCost(row.actualCostCents),
+      actSource: row.actualCostSource ?? '',
       predTime: row.predictedTimeMs === null ? '' : formatDuration(row.predictedTimeMs),
       actTime: row.actualTimeMs === null ? '' : formatDuration(row.actualTimeMs),
       predSpeed: row.predictedSpeed ?? '',

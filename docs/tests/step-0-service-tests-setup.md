@@ -23,7 +23,7 @@ bun t test/test-cases/setup/tts-models/tts-setup.test.ts
 
 ## Price Preflight
 
-Step 0 setup does not currently add any mapped price selectors. `--test-price` and `--budget` do not provide step-specific setup preflight coverage today.
+Step 0 setup does not currently add any mapped price commands. `--test-price` and `--budget` do not provide step-specific setup preflight coverage today.
 
 ## Related Docs
 

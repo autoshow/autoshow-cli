@@ -26,6 +26,14 @@ const SttBillingSchema = v.object({
   minimumSeconds: v.optional(v.number(), undefined)
 })
 
+const PricingProvenanceFields = {
+  pricingSourceUrl: v.optional(v.string(), undefined),
+  pricingCheckedAt: v.optional(v.string(), undefined),
+  pricingCurrency: v.optional(v.string(), undefined),
+  pricingTier: v.optional(v.string(), undefined),
+  pricingNotes: v.optional(v.string(), undefined)
+}
+
 export const SttLimitsSchema = v.object({
   effectiveBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   directUploadBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
@@ -37,6 +45,7 @@ export const SttLimitsSchema = v.object({
 
 const SttModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPerHourUSD: v.optional(v.number(), undefined),
   costPerHourCents: v.optional(v.number(), undefined),
   costPerThreeHours: v.optional(v.number(), undefined),
@@ -61,6 +70,7 @@ export const ExtractLimitsSchema = v.object({
 
 const ExtractModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPer1kPagesUSD: v.optional(v.number(), undefined),
   costPer1kPagesCents: v.optional(v.number(), undefined),
   costPer1kOutputCharsUSD: v.optional(v.number(), undefined),
@@ -86,6 +96,7 @@ const ExtractServiceSchema = v.object({
 
 const LlmModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   inputCostPer1MUSD: v.number(),
   inputCostPer1MCents: v.number(),
   outputCostPer1MUSD: v.number(),
@@ -106,6 +117,7 @@ const LlmServiceSchema = v.object({
 
 const TtsModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPer1kCharsUSD: v.optional(v.number(), undefined),
   costPer1kCharsCents: v.optional(v.number(), undefined),
   characterBillingBlockSize: v.optional(v.number(), undefined),
@@ -134,6 +146,7 @@ const TtsServiceSchema = v.object({
 
 const ImageModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPerImageUSD: v.number(),
   costPerImageCents: v.number(),
   costPerImage720pCents: v.optional(v.number(), undefined),
@@ -153,6 +166,7 @@ const ImageServiceSchema = v.object({
 
 const MusicModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPerTrackUSD: v.optional(v.number(), undefined),
   costPerTrackCents: v.optional(v.number(), undefined),
   providerPricing: v.optional(v.picklist(['quote']), undefined),
@@ -174,6 +188,7 @@ const MusicServiceSchema = v.object({
 
 const VideoModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   baseCostPerSecondUSD: v.optional(v.number(), undefined),
   baseCostPerSecondCents: v.optional(v.number(), undefined),
   baseJobFeeUSD: v.optional(v.number(), undefined),

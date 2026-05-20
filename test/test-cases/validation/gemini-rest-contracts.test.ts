@@ -476,6 +476,43 @@ describe('Gemini REST contracts', () => {
     })
   })
 
+  test('Gemini image generation retries transient Imagen availability errors', async () => {
+    process.env['GEMINI_API_KEY'] = 'gemini-key'
+    let predictAttempts = 0
+    const calls = installFetch((call) => {
+      if (call.url.endsWith('/models/imagen-4.0-generate-001:predict')) {
+        predictAttempts += 1
+        if (predictAttempts === 1) {
+          return jsonResponse({
+            error: {
+              code: 503,
+              status: 'UNAVAILABLE',
+              message: 'service unavailable'
+            }
+          }, {
+            status: 503,
+            headers: { 'retry-after': '0.001' }
+          })
+        }
+        return jsonResponse({
+          predictions: [{ bytesBase64Encoded: imageBase64, mimeType: 'image/png' }]
+        })
+      }
+      throw new Error(`Unexpected Gemini image fetch: ${call.method} ${call.url}`)
+    })
+
+    await withTempDir(async (dir) => {
+      const result = await runGeminiImageGen('a blue kite', dir, {
+        model: 'imagen-4.0-generate-001'
+      })
+
+      expect(result.imagePaths).toHaveLength(1)
+      expect(await Bun.file(result.imagePaths[0] as string).exists()).toBe(true)
+    })
+
+    expect(calls.filter((call) => call.url.endsWith('/models/imagen-4.0-generate-001:predict'))).toHaveLength(2)
+  })
+
   test('Gemini comic image generation sends inline references and image modalities', async () => {
     process.env['GEMINI_API_KEY'] = 'gemini-key'
     const calls = installFetch(() => jsonResponse({

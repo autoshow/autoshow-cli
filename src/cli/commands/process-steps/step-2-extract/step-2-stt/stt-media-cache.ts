@@ -181,6 +181,10 @@ const getEntryJsonPath = (cacheKey: string): string => join(getEntryDir(cacheKey
 const getEntryMetadataPath = (cacheKey: string): string => join(getEntryDir(cacheKey), 'metadata.json')
 const getLockDir = (cacheKey: string): string => join(getEntryDir(cacheKey), '.lock')
 const getLockOwnerPath = (lockDir: string): string => join(lockDir, LOCK_OWNER_FILE)
+const getProfiledSourceMediaCacheKey = (
+  cacheKey: string,
+  profile: AudioNormalizationProfile
+): string => sha256(`source-media|${cacheKey}|${profile}`)
 
 const isCacheRecoverableError = (error: unknown): boolean => {
   const code = error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
@@ -665,11 +669,12 @@ export const prepareSttMedia = async (
   const sourceMediaProfile = resolveSourceMediaProfile(targets)
 
   const cacheLookup = await resolveCacheLookup(source)
+  const sourceMediaCacheKey = getProfiledSourceMediaCacheKey(cacheLookup.cacheKey, sourceMediaProfile)
   if (cacheLookup.weakFingerprint) {
     logSttCacheEvent(l, {
       artifact: 'source_media',
       status: 'weak_fingerprint',
-      key: cacheLookup.cacheKey,
+      key: sourceMediaCacheKey,
       detail: 'metadata-derived fingerprint'
     })
   }
@@ -691,7 +696,7 @@ export const prepareSttMedia = async (
       logSttCacheEvent(l, {
         artifact: 'source_media',
         status: 'bypass',
-        key: cacheLookup.cacheKey,
+        key: sourceMediaCacheKey,
         detail: 'no-cache requested'
       })
 
@@ -747,19 +752,19 @@ export const prepareSttMedia = async (
   try {
     await mkdir(getCacheRootDir(), { recursive: true })
 
-    return await withCacheLock(cacheLookup.cacheKey, async () => {
+    return await withCacheLock(sourceMediaCacheKey, async () => {
       const timings: PreparedSttMedia['timings'] = {}
-      const entryDir = getEntryDir(cacheLookup.cacheKey)
-      const entryMetadataPath = getEntryMetadataPath(cacheLookup.cacheKey)
-      let entry = await readEntryJson(cacheLookup.cacheKey)
+      const entryDir = getEntryDir(sourceMediaCacheKey)
+      const entryMetadataPath = getEntryMetadataPath(sourceMediaCacheKey)
+      let entry = await readEntryJson(sourceMediaCacheKey)
       if (!entry) {
-        entry = buildEmptyEntry(cacheLookup.cacheKey, cacheLookup.weakFingerprint)
+        entry = buildEmptyEntry(sourceMediaCacheKey, cacheLookup.weakFingerprint)
       }
 
       await writeFile(entryMetadataPath, JSON.stringify(cacheLookup.metadata, null, 2))
 
       const sourceMediaRecord = entry.artifacts?.source_media
-      let sourceMediaExecutionPath = getEntryArtifactPath(cacheLookup.cacheKey, sourceMediaRecord)
+      let sourceMediaExecutionPath = getEntryArtifactPath(sourceMediaCacheKey, sourceMediaRecord)
       let sourceMediaStatus: CacheArtifactStatus = 'hit'
 
       const sourceMediaValid = sourceMediaExecutionPath
@@ -799,7 +804,7 @@ export const prepareSttMedia = async (
           logSttCacheEvent(l, {
             artifact: 'source_media',
             status: refreshCache ? 'rebuild' : 'miss',
-            key: cacheLookup.cacheKey
+            key: sourceMediaCacheKey
           })
         } finally {
           await rm(workspaceDir, { recursive: true, force: true })
@@ -808,7 +813,7 @@ export const prepareSttMedia = async (
         logSttCacheEvent(l, {
           artifact: 'source_media',
           status: 'hit',
-          key: cacheLookup.cacheKey
+          key: sourceMediaCacheKey
         })
       }
 
@@ -829,8 +834,8 @@ export const prepareSttMedia = async (
         : await probeDurationSeconds(sourceMediaExecutionPath, cacheLookup.metadata)
       entry.lastAccessedAt = new Date().toISOString()
       entry.metadataSchemaVersion = METADATA_SCHEMA_VERSION
-      await writeEntryJson(cacheLookup.cacheKey, entry)
-      await updateLastAccessed(cacheLookup.cacheKey, entry)
+      await writeEntryJson(sourceMediaCacheKey, entry)
+      await updateLastAccessed(sourceMediaCacheKey, entry)
 
       const outputPaths = buildPrimaryOutputPaths(
         cacheLookup.metadata,

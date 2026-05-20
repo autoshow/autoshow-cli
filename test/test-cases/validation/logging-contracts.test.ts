@@ -1122,6 +1122,7 @@ describe('logging contracts', () => {
           step: 'video',
           provider: 'gemini',
           model: 'veo-3.1-lite-generate-preview',
+          durationSeconds: 4,
           totalCost: 200
         },
         {

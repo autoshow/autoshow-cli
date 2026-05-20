@@ -1,30 +1,30 @@
 import { expect, beforeAll, afterAll } from 'bun:test'
-import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_LOCAL_AUDIO_PATH, STABLE_LOCAL_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
+import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_EXAMPLE_AUDIO_URL, STABLE_EXAMPLE_AUDIO_TITLE } from '../../../../../test-utils/test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 
 const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
 beforeAll(async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 })
 
 afterAll(async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 })
 
 budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audio', async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
   const testName = 'default transcribe processes local audio'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH],
+    ['src/cli/create-cli.ts', 'extract', STABLE_EXAMPLE_AUDIO_URL],
     { testName }
   )
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {
@@ -76,17 +76,17 @@ for (const modelCase of [
   const budgetKey = modelCase.model === 'base' ? 'transcribe-whisper-base' : 'transcribe-whisper-tiny'
 
   budgetedTest(budgetKey, `whisper ${modelCase.model} model transcribes local audio`, async () => {
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+    await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
     const testName = `whisper ${modelCase.model} model transcribes local audio`
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--whisper', modelCase.model],
+      ['src/cli/create-cli.ts', 'extract', STABLE_EXAMPLE_AUDIO_URL, '--whisper', modelCase.model],
       { testName }
     )
 
     expect(result.exitCode).toBe(0)
 
-    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
@@ -116,18 +116,18 @@ for (const modelCase of [
 }
 
 budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments', async () => {
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
   const testName = 'split mode processes audio in segments'
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--split', '--whisper', 'tiny'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_EXAMPLE_AUDIO_URL, '--split', '--whisper', 'tiny'],
     { testName }
   )
 
   expect(result.exitCode).toBe(0)
   expect(stripAnsi(result.stderr)).toContain('STT Segment')
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {

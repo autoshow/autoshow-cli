@@ -148,7 +148,7 @@ ElevenLabs TTS uses existing voices by default. Add `--elevenlabs-tts-ref-audio`
 
 Use `--elevenlabs-tts-pvc-voice <voice_id>` when the PVC voice is already trained; synthesis still uses normal ElevenLabs TTS character pricing, while metadata records `speaker: "pvc:<voice_id>"`. To start PVC setup from `tts`, provide one or more PVC sample flags. Without `--elevenlabs-tts-pvc-wait`, setup/status runs exit after writing artifacts and do not synthesize speech. With `--elevenlabs-tts-pvc-wait`, AutoShow polls until the selected model is `fine_tuned` or `failed`, then synthesizes with the PVC voice.
 
-PVC samples must be local, non-empty audio files with supported extensions. AutoShow warns when the known total duration is under 30 minutes or over 180 minutes. It does not automate ElevenLabs speaker separation; use clean single-speaker samples or process/select speakers in ElevenLabs before training.
+PVC samples must be non-empty audio files with supported extensions, provided as local paths or HTTP(S) URLs. AutoShow warns when the known total duration is under 30 minutes or over 180 minutes. It does not automate ElevenLabs speaker separation; use clean single-speaker samples or process/select speakers in ElevenLabs before training.
 
 ### MiniMax
 
@@ -172,15 +172,14 @@ MiniMax TTS uses existing/preset voices. Use `--minimax-tts-voice` to override t
 | Option | Value |
 |--------|-------|
 | Selector | `--groq <model>` |
-| Models | `canopylabs/orpheus-v1-english`, `canopylabs/orpheus-arabic-saudi` |
-| Voice | `--groq-voice <id>`; English voices `autumn`, `diana`, `hannah`, `austin`, `daniel`, `troy`; Arabic voices `abdullah`, `fahad`, `sultan`, `lulwa`, `noura`, `aisha` |
+| Models | `canopylabs/orpheus-v1-english` |
+| Voice | `--groq-voice <id>`; voices `autumn`, `diana`, `hannah`, `austin`, `daniel`, `troy` |
 
 ```bash
 bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-v1-english --groq-voice troy
-bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-arabic-saudi --groq-voice fahad
 ```
 
-Groq voices are validated against the selected model. English defaults to `troy`; Arabic Saudi defaults to `fahad`.
+Groq voices are validated against the selected model. Groq Orpheus English defaults to `troy`.
 
 ### Grok
 
@@ -213,10 +212,10 @@ bun as tts input/chat-and-duco.txt \
   --mistral voxtral-mini-tts-2603 \
   --tts-dialogue-format screenplay \
   --tts-speaker-ref-audio DUCO=input/examples/audio/anthony-voice.mp3 \
-  --tts-speaker-ref-audio CHAT=input/examples/audio/1-audio.mp3
+  --tts-speaker-ref-audio CHAT=https://ajc.pics/autoshow/examples/1-audio.mp3
 ```
 
-Mistral Voxtral TTS requires one voice source when generating audio: a saved/custom voice ID or a one-off local reference audio file. `--price` can estimate Mistral TTS with only `--mistral` because no synthesis request is made. Reference audio is base64-encoded for the request and is not written into run metadata; metadata records the speaker as `ref_audio:<basename>`.
+Mistral Voxtral TTS requires one voice source when generating audio: a saved/custom voice ID or a one-off reference audio file, provided as a local path or HTTP(S) URL. `--price` can estimate Mistral TTS with only `--mistral` because no synthesis request is made. Reference audio is base64-encoded for the request and is not written into run metadata; metadata records the speaker as `ref_audio:<basename>`.
 
 Dialogue mode is Mistral-only in v1 and uses per-speaker reference audio mappings instead of `--mistral-tts-voice` or `--mistral-tts-ref-audio`. `screenplay` mode extracts configured speaker dialogue, strips leading parentheticals, and omits scene/action directions. `labeled` mode expects `SPEAKER: text` lines. Runs write `dialogue-normalized.txt`, one WAV per turn under `segments/`, the final `speech.wav`, and `run.json`; price estimates use the spoken dialogue character count.
 
@@ -238,7 +237,7 @@ bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-voice v
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --openai-tts-voice-name AutoShowAnthony
 ```
 
-OpenAI custom voices are available only to eligible OpenAI customers. To create a custom voice, provide `--openai-tts-ref-audio` plus consent. Do not combine `--openai-voice` with `--openai-tts-ref-audio`. Sample and consent audio must be local, non-empty, at most 10 MiB, and have one of these extensions/MIME families: `mp3`/`mpeg`, `wav`, `ogg`, `aac`, `flac`, `webm`, `mp4`, or `m4a`.
+OpenAI custom voices are available only to eligible OpenAI customers. To create a custom voice, provide `--openai-tts-ref-audio` plus consent. Do not combine `--openai-voice` with `--openai-tts-ref-audio`. Sample and consent audio must be non-empty, at most 10 MiB, provided as local paths or HTTP(S) URLs, and have one of these extensions/MIME families: `mp3`/`mpeg`, `wav`, `ogg`, `aac`, `flac`, `webm`, `mp4`, or `m4a`.
 
 ### Gemini
 
@@ -296,7 +295,7 @@ Speechify TTS sends text chunks to `POST /v1/audio/speech` and requests MP3 outp
 
 To create a Speechify custom voice as part of `tts`, add `--speechify-tts-ref-audio` plus consent flags. AutoShow calls Speechify `POST /v1/voices` once, reuses the returned `id` for every selected Speechify model in that run, and records `speaker: ref_audio:<basename>`, `clonedVoiceId`, and `cloneCostCents: 0` in metadata. Do not combine custom voice creation with `--speechify-voice`.
 
-The reference sample must be local, non-empty audio with a supported extension (`mp3`/`mpeg`, `wav`, `m4a`/`mp4`, `ogg`, `flac`, `aac`, or `webm`) and at most 5 MiB. When `ffprobe` can detect duration, AutoShow requires 10-30 seconds to match Speechify's cloning guidance. `--speechify-tts-voice-locale` defaults to `en-US`; `--speechify-tts-voice-gender` defaults to `notSpecified` and accepts `male`, `female`, or `notSpecified`.
+The reference sample must be non-empty audio with a supported extension (`mp3`/`mpeg`, `wav`, `m4a`/`mp4`, `ogg`, `flac`, `aac`, or `webm`), provided as a local path or HTTP(S) URL, and at most 5 MiB. When `ffprobe` can detect duration, AutoShow requires 10-30 seconds to match Speechify's cloning guidance. `--speechify-tts-voice-locale` defaults to `en-US`; `--speechify-tts-voice-gender` defaults to `notSpecified` and accepts `male`, `female`, or `notSpecified`.
 
 ### Hume
 
@@ -349,12 +348,12 @@ Cartesia TTS uses `POST /tts/bytes`, sends the `Cartesia-Version` header, reques
 ```bash
 bun as tts input/examples/tts/1-tts.md --gcloud chirp3-hd --gcloud-tts-voice en-US-Chirp3-HD-Charon
 bun as tts input/examples/tts/1-tts.md --gcloud instant-custom-voice --gcloud-tts-voice-cloning-key "$GCLOUD_TTS_VOICE_CLONING_KEY"
-bun as tts input/examples/tts/1-tts.md --gcloud instant-custom-voice --gcloud-tts-ref-audio input/examples/audio/anthony-voice.mp3 --gcloud-tts-consent-audio input/examples/audio/0-audio-short.mp3 --gcloud-tts-voice-cloning-key-out output/gcloud-voice-key.txt
+bun as tts input/examples/tts/1-tts.md --gcloud instant-custom-voice --gcloud-tts-ref-audio input/examples/audio/anthony-voice.mp3 --gcloud-tts-consent-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3 --gcloud-tts-voice-cloning-key-out output/gcloud-voice-key.txt
 ```
 
 Google Cloud prebuilt TTS uses `gcloud` CLI auth to call `v1/text:synthesize` with `LINEAR16` output. `--gcloud-tts-language` overrides language code; otherwise AutoShow infers it from the voice name and falls back to `en-US`. Default voices are `en-US-Chirp3-HD-Charon` for `chirp3-hd` and `en-US-Studio-O` for `studio`.
 
-Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice cloning key. Provide an existing key with `--gcloud-tts-voice-cloning-key`, or generate one in the run with both `--gcloud-tts-ref-audio` and `--gcloud-tts-consent-audio`. Optional `--gcloud-tts-voice-cloning-key-out <path>` writes the generated key; AutoShow does not save raw cloning keys to config. Reference and consent audio must be local, non-empty `wav`, `mp3`, `m4a`, or `pcm`; when `ffprobe` can detect duration and channels, files must be at most 10 seconds and single-channel. `--gcloud-tts-consent-language` currently supports `en-US`.
+Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice cloning key. Provide an existing key with `--gcloud-tts-voice-cloning-key`, or generate one in the run with both `--gcloud-tts-ref-audio` and `--gcloud-tts-consent-audio`. Optional `--gcloud-tts-voice-cloning-key-out <path>` writes the generated key; AutoShow does not save raw cloning keys to config. Reference and consent audio must be non-empty `wav`, `mp3`, `m4a`, or `pcm`, provided as local paths or HTTP(S) URLs; when `ffprobe` can detect duration and channels, files must be at most 10 seconds and single-channel. `--gcloud-tts-consent-language` currently supports `en-US`.
 
 ### deAPI
 
@@ -369,7 +368,7 @@ Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice 
 bun as tts input/examples/tts/1-tts.md --deapi Kokoro
 bun as tts input/examples/tts/1-tts.md --deapi Kokoro --deapi-tts-voice af_heart --price
 bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/anthony-voice-8-seconds.mp3
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --deapi-tts-ref-text "Reference transcript"
+bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3 --deapi-tts-ref-text "Reference transcript"
 ```
 
 deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts-voice`. deAPI voice cloning uses `Qwen3_TTS_12Hz_1_7B_Base` plus `--deapi-tts-ref-audio`; optional `--deapi-tts-ref-text` is sent as `ref_text`. Reference audio must be a local `mp3`, `wav`, `flac`, `ogg`, or `m4a` file, at most 10 MB, and 3-10 seconds long. `--deapi-tts-voice` and `--deapi-tts-ref-audio` are mutually exclusive. `Qwen3_TTS_12Hz_1_7B_VoiceDesign` requires `--deapi-tts-instruction`. `--all-tts` selects only preset/runnable deAPI models and does not include clone or voice-design modes.
@@ -378,7 +377,7 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 
 - ElevenLabs API pricing is 10 cents / 1K characters for `eleven_v3`. IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate. PVC setup adds a 0 cent setup estimate; training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used.
 - MiniMax synthesis estimates are 6 cents / 1K characters for `speech-2.8-turbo` and 10 cents / 1K characters for `speech-2.8-hd`.
-- Groq English Orpheus estimates use $10 / 1M input characters plus $22 / 1M output characters. Groq Arabic Saudi uses $0 input plus $40 / 1M output characters.
+- Groq English Orpheus estimates use $10 / 1M input characters plus $22 / 1M output characters.
 - Mistral `voxtral-mini-tts-2603` is priced at $0 input and $16 per 1M output characters, equivalent to 1.6 cents per 1K characters. AutoShow uses a 36908 ms / 1K characters timing heuristic.
 - OpenAI `gpt-4o-mini-tts` estimates use 60 cents / 1M input characters plus 1200 cents / 1M output characters, equivalent to 1.26 cents per 1K characters in AutoShow's character estimator. OpenAI custom voice creation adds a one-time 0 cent setup estimate and a 15000 ms setup timing estimate.
 - Speechify Simba estimates use 1 cent / 1K characters for both `simba-english` and `simba-multilingual`, with a 3000 ms / 1K characters timing heuristic. Custom voice creation adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate.

@@ -1,8 +1,13 @@
-import { expect, test } from 'bun:test'
+import { expect } from 'bun:test'
 import { rm } from 'node:fs/promises'
+import { budgetedTest } from '../../../../test-utils/budget'
 import { runCommand, fileExists } from '../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
-import { classifySkippableLiveProviderFailure, shouldSkipMissingEnv } from '../../../../test-utils/service-test-kit'
+import {
+  classifyLiveProviderAvailabilityFailure,
+  formatCommandFailureDiagnostics,
+  requireConfiguredEnvVar
+} from '../../../../test-utils/service-test-kit'
 
 type ExtractMetadata = {
   step1?: { format?: string }
@@ -11,30 +16,30 @@ type ExtractMetadata = {
 
 const articleUrl = 'https://ajcwebdev.com'
 
-test('bun as extract https://ajcwebdev.com --url-backend glm-reader', async () => {
-  if (await shouldSkipMissingEnv('GLM_API_KEY', 'GLM_API_KEY not configured')) {
-    return
-  }
+budgetedTest('extract-glm-reader-url', 'bun as extract https://ajcwebdev.com --url-backend glm-reader', async () => {
+  await requireConfiguredEnvVar('GLM_API_KEY', 'GLM_API_KEY not configured')
 
   let outputDir: string | null = null
 
   try {
+    const args = ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'glm-reader']
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'extract', articleUrl, '--url-backend', 'glm-reader'],
+      args,
       { testName: 'bun as extract https://ajcwebdev.com --url-backend glm-reader' }
     )
     if (result.exitCode !== 0) {
-      const skipReason = classifySkippableLiveProviderFailure(`${result.stdout}\n${result.stderr}`)
-      if (skipReason) {
-        console.log(`Skipping: ${skipReason}`)
-        return
+      const availabilityReason = classifyLiveProviderAvailabilityFailure(`${result.stdout}\n${result.stderr}`)
+      if (availabilityReason) {
+        throw new Error(`Live provider availability failure: ${availabilityReason}\n${formatCommandFailureDiagnostics(args, result)}`)
       }
+      throw new Error(formatCommandFailureDiagnostics(args, result))
     }
     expect(result.exitCode).toBe(0)
 
     outputDir = result.outputDir
-    expect(outputDir).not.toBeNull()
-    if (!outputDir) return
+    if (!outputDir) {
+      throw new Error('Expected output directory for GLM Reader URL extraction')
+    }
 
     expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(true)
 

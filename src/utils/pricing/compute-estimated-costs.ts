@@ -55,6 +55,8 @@ const estimateImageTargetCost = (
         return estimateImageCosts({ ...sharedOptions, bflImageModel: target.model })[0]
       case 'deapi':
         return estimateImageCosts({ ...sharedOptions, deapiImageModel: target.model })[0]
+      case 'reve':
+        return estimateImageCosts({ ...sharedOptions, reveImageModel: target.model })[0]
     }
   })()
   const costPerImageCents = estimate?.costPerImageCents ?? getImageCost(target.service, target.model)
@@ -428,7 +430,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       provider: imageEstimate.provider,
       model: imageEstimate.model,
       cost,
-      costMultiplier
+      costMultiplier,
+      imageCount: imageEstimate.imageCount
     })
   }
 
@@ -464,7 +467,14 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
       const cost = applyCostMultiplier(estimate.totalCost, costMultiplier)
       totalCost += cost
-      steps.push({ step: 'video', provider: estimate.provider, model: estimate.model, cost, costMultiplier })
+      steps.push({
+        step: 'video',
+        provider: estimate.provider,
+        model: estimate.model,
+        cost,
+        costMultiplier,
+        durationSeconds: estimate.durationSeconds
+      })
     }
   }
 
@@ -492,7 +502,14 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
       const cost = applyCostMultiplier(estimate.totalCost, costMultiplier)
       totalCost += cost
-      steps.push({ step: 'music', provider: estimate.provider, model: estimate.model, cost, costMultiplier })
+      steps.push({
+        step: 'music',
+        provider: estimate.provider,
+        model: estimate.model,
+        cost,
+        costMultiplier,
+        durationSeconds: estimate.durationSeconds
+      })
     }
   }
 

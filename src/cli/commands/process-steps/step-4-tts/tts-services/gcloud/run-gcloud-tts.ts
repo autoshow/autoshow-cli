@@ -15,6 +15,7 @@ import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateDataSafe } from '~/utils/validate/validation'
 import { exec } from '~/utils/cli-utils'
+import { materializeMediaInput } from '~/utils/media-url'
 import { ensureGcloudTtsSetup } from './gcloud-tts'
 
 const GCLOUD_TTS_DEFAULT_BASE_URL = 'https://texttospeech.googleapis.com'
@@ -240,9 +241,21 @@ const generateGcloudVoiceCloningKey = async (
   }
 ): Promise<string> => {
   const consentLanguage = validateGcloudIcvConsentLanguage(options.consentLanguage)
+  const [materializedRefAudio, materializedConsentAudio] = await Promise.all([
+    materializeMediaInput(options.refAudioPath, {
+      accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+      label: 'Google Cloud instant custom voice reference audio'
+    }),
+    materializeMediaInput(options.consentAudioPath, {
+      accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+      label: 'Google Cloud instant custom voice consent audio'
+    })
+  ])
+
+  try {
   const [referenceAudio, consentAudio] = await Promise.all([
-    validateGcloudIcvAudioFile(options.refAudioPath, 'reference'),
-    validateGcloudIcvAudioFile(options.consentAudioPath, 'consent')
+    validateGcloudIcvAudioFile(materializedRefAudio.path, 'reference'),
+    validateGcloudIcvAudioFile(materializedConsentAudio.path, 'consent')
   ])
 
   const response = await withRetry(
@@ -288,6 +301,12 @@ const generateGcloudVoiceCloningKey = async (
   )
 
   return response.trim()
+  } finally {
+    await Promise.all([
+      materializedRefAudio.cleanup(),
+      materializedConsentAudio.cleanup()
+    ])
+  }
 }
 
 const resolveGcloudVoiceCloningKey = async (

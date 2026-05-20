@@ -126,19 +126,22 @@ describe('provider selection contracts', () => {
     }])
   })
 
-  test('BFL/deAPI image and deAPI video flags select targets and participate in all-provider shortcuts', () => {
+  test('BFL/deAPI/Reve image and deAPI video flags select targets and participate in all-provider shortcuts', () => {
     const explicitOpts = buildOptsFromFlags(false, {
       'bfl-image': ['flux-2-pro-preview'],
       'deapi-image': ['Flux1schnell'],
+      'reve-image': ['latest'],
       'deapi-video': ['Ltxv_13B_0_9_8_Distilled_FP8']
     })
 
     expect(explicitOpts.bflImageModels).toEqual(['flux-2-pro-preview'])
     expect(explicitOpts.deapiImageModels).toEqual(['Flux1schnell'])
+    expect(explicitOpts.reveImageModels).toEqual(['latest'])
     expect(explicitOpts.deapiVideoModels).toEqual(['Ltxv_13B_0_9_8_Distilled_FP8'])
     expect(collectImageTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'bfl:flux-2-pro-preview',
-      'deapi:Flux1schnell'
+      'deapi:Flux1schnell',
+      'reve:latest'
     ])
     expect(collectVideoTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'deapi:Ltxv_13B_0_9_8_Distilled_FP8'
@@ -177,6 +180,10 @@ describe('provider selection contracts', () => {
       'Flux1schnell',
       'ZImageTurbo_INT8',
       'Flux_2_Klein_4B_BF16'
+    ])
+    expect(allOpts.reveImageModels).toEqual([
+      'latest',
+      'reve-create@20250915'
     ])
     expect(allOpts.deapiVideoModels).toEqual([
       'Ltxv_13B_0_9_8_Distilled_FP8',
@@ -227,8 +234,9 @@ describe('provider selection contracts', () => {
     }, new Set(['openai', 'elevenlabs']), TTS_COMMAND_SELECTOR_FLAGS)
     const imageNormalized = normalizeCommandSelectorFlags({
       minimax: ['image-01'],
-      grok: ['grok-imagine-image']
-    }, new Set(['minimax', 'grok']), IMAGE_COMMAND_SELECTOR_FLAGS)
+      grok: ['grok-imagine-image'],
+      reve: ['latest']
+    }, new Set(['minimax', 'grok', 'reve']), IMAGE_COMMAND_SELECTOR_FLAGS)
     const videoNormalized = normalizeCommandSelectorFlags({
       gemini: ['veo-3.1-lite-generate-preview'],
       runway: ['gen4.5']
@@ -247,7 +255,8 @@ describe('provider selection contracts', () => {
     expect(ttsOpts.elevenlabsTtsModels).toEqual(['eleven_v3'])
     expect(collectImageTargets(imageOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'minimax:image-01',
-      'grok:grok-imagine-image'
+      'grok:grok-imagine-image',
+      'reve:latest'
     ])
     expect(collectVideoTargets(videoOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'gemini:veo-3.1-lite-generate-preview',
@@ -263,13 +272,17 @@ describe('provider selection contracts', () => {
       'a sunset',
       '--openai',
       'gpt-image-1.5',
-      '--gemini=imagen-4.0-generate-001'
+      '--gemini=imagen-4.0-generate-001',
+      '--reve',
+      'latest'
     ], IMAGE_COMMAND_SELECTOR_FLAGS)).toEqual([
       'image',
       'a sunset',
       '--openai-image',
       'gpt-image-1.5',
-      '--gemini-image=imagen-4.0-generate-001'
+      '--gemini-image=imagen-4.0-generate-001',
+      '--reve-image',
+      'latest'
     ])
   })
 
@@ -309,12 +322,12 @@ describe('provider selection contracts', () => {
     ])
     expect(normalizeExtractPublicSelectorArgs([
       'extract',
-      'input/examples/audio/0-audio-short.mp3',
+      'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       '--glm=glm-asr-2512',
       '--price'
     ], { media: true, document: false })).toEqual([
       'extract',
-      'input/examples/audio/0-audio-short.mp3',
+      'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
       '--glm-stt=glm-asr-2512',
       '--price'
     ])
@@ -483,6 +496,83 @@ describe('provider selection contracts', () => {
       expect(collectImageTargets(bflOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
         'bfl:flux-2-pro-preview'
       ])
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true })
+    }
+  })
+
+  test('Reve accepts matching shared image options and rejects unsupported ones', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'autoshow-reve-image-input-'))
+    const firstRef = join(tempDir, 'first.png')
+    const secondRef = join(tempDir, 'second.webp')
+    writeFileSync(firstRef, new Uint8Array([1, 2, 3]))
+    writeFileSync(secondRef, new Uint8Array([4, 5, 6]))
+
+    try {
+      const createOpts = buildOptsFromFlags(false, {
+        'reve-image': ['latest'],
+        'image-aspect-ratio': '3:2',
+        'image-size': '1024x768',
+        'image-format': 'webp'
+      })
+      const createTargets = collectImageTargets(createOpts)
+      expect(createTargets.map((target) => `${target.service}:${target.model}`)).toEqual(['reve:latest'])
+      expect(getExpectedImageArtifactFileNames(createTargets[0]!, createOpts, true)).toEqual(['generated-image.webp'])
+
+      const remixOpts = buildOptsFromFlags(false, {
+        'reve-image': ['latest'],
+        'image-input': [firstRef, secondRef],
+        'image-format': 'jpeg'
+      })
+      expect(collectImageTargets(remixOpts).map((target) => `${target.service}:${target.model}`)).toEqual(['reve:latest'])
+      expect(getExpectedImageArtifactFileNames(collectImageTargets(remixOpts)[0]!, remixOpts, true)).toEqual(['generated-image.jpg'])
+
+      for (const [flag, value] of [
+        ['image-size', '1K'],
+        ['image-aspect-ratio', '21:9'],
+        ['image-format', 'gif']
+      ] as const) {
+        const opts = buildOptsFromFlags(false, {
+          'reve-image': ['latest'],
+          [flag]: value
+        })
+        expect(() => collectImageTargets(opts)).toThrow(`Invalid --${flag} value "${value}" for Reve`)
+      }
+
+      for (const [flag, value] of [
+        ['image-count', '2'],
+        ['image-quality', 'high'],
+        ['image-background', 'transparent'],
+        ['image-compression', '80'],
+        ['image-response-mode', 'text-image'],
+        ['gemini-person-generation', 'allow_all'],
+        ['gemini-search-grounding', true]
+      ] as const) {
+        const opts = buildOptsFromFlags(false, {
+          'reve-image': ['latest'],
+          [flag]: value
+        })
+        expect(() => collectImageTargets(opts)).toThrow('not supported by Reve/latest')
+      }
+
+      const maskOpts = buildOptsFromFlags(false, {
+        'reve-image': ['latest'],
+        'image-input': [firstRef],
+        'image-mask': firstRef
+      })
+      expect(() => collectImageTargets(maskOpts)).toThrow('not supported by Reve/latest')
+
+      const tooManyInputs = buildOptsFromFlags(false, {
+        'reve-image': ['latest'],
+        'image-input': [firstRef, firstRef, firstRef, firstRef, firstRef, firstRef, firstRef]
+      })
+      expect(() => collectImageTargets(tooManyInputs)).toThrow('--image-input supports at most 6 reference images for Reve/latest')
+
+      const snapshotEdit = buildOptsFromFlags(false, {
+        'reve-image': ['reve-create@20250915'],
+        'image-input': [firstRef]
+      })
+      expect(() => collectImageTargets(snapshotEdit)).toThrow('Use --reve latest for Reve edit/remix workflows')
     } finally {
       rmSync(tempDir, { recursive: true, force: true })
     }

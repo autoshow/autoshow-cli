@@ -6,14 +6,10 @@ import {
   cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
-  hasConfiguredEnvVar,
 } from '../../../../test-utils/test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
-
-const hasOpenAiTtsEnv = async (): Promise<boolean> => {
-  return await hasConfiguredEnvVar('OPENAI_API_KEY')
-}
+import { requireConfiguredEnvVar } from '../../../../test-utils/service-test-kit'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null
@@ -86,10 +82,7 @@ describe('kitten-tts', () => {
     }
 
     budgetedTest(['tts-kitten-mini', 'tts-openai-gpt-4o-mini-tts'], 'multi-provider run succeeds when one local and one API target are both available', async () => {
-      if (!await hasOpenAiTtsEnv()) {
-        console.log('Skipping: OPENAI_API_KEY is required for multi-provider TTS success coverage')
-        return
-      }
+      await requireConfiguredEnvVar('OPENAI_API_KEY', 'OPENAI_API_KEY is required for multi-provider TTS success coverage')
 
       await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 

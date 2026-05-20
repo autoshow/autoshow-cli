@@ -21,6 +21,7 @@ export type MinimaxMusicResponse = v.InferOutput<typeof MinimaxMusicResponseSche
 
 export type MusicCostEstimate = ProviderModelBase<MusicProvider> & {
   totalCost: number
+  durationSeconds: number
   lyricsSource: 'provided' | 'generated' | 'none'
   note?: string
 }

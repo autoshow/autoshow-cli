@@ -6,6 +6,18 @@ export type RunnerArgs = {
   pathFilters: string[]
 }
 
+export const DEFAULT_TEST_RUNNER_CONCURRENCY = 30
+
+const BUN_TEST_MAX_CONCURRENCY_FLAG = '--max-concurrency'
+
+const hasMaxConcurrencyFlag = (args: string[]): boolean =>
+  args.some(arg => arg === BUN_TEST_MAX_CONCURRENCY_FLAG || arg.startsWith(`${BUN_TEST_MAX_CONCURRENCY_FLAG}=`))
+
+export const withDefaultTestConcurrency = (args: string[]): string[] =>
+  hasMaxConcurrencyFlag(args)
+    ? args
+    : [`${BUN_TEST_MAX_CONCURRENCY_FLAG}=${DEFAULT_TEST_RUNNER_CONCURRENCY}`, ...args]
+
 export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
   let priceMode = false
   let budgetHundredthCents: number | undefined
@@ -23,6 +35,8 @@ export const parseRunnerArgs = (argv: string[]): RunnerArgs => {
       case '--cleanup':            break
       case '--no-cleanup':         preserveTestOutput = true; break
       case '--test-price':         priceMode = true; break
+      case '--testprice':
+        throw new Error('Error: --testprice is not supported. Use --test-price for test-runner price mode.')
       case '--budget': {
         const value = argv[++i]
         if (!value) {

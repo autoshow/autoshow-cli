@@ -171,7 +171,7 @@ describe('comic source coverage contracts', () => {
 
   test('character sketch sheet composition uses ImageMagick without sharp', async () => {
     if (!Bun.which('magick') && !Bun.which('convert')) {
-      return
+      throw new Error('ImageMagick magick or convert is required for sketch sheet composition coverage')
     }
 
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-comic-sketch-sheet-'))
@@ -199,7 +199,7 @@ describe('comic source coverage contracts', () => {
 
   test('comic grid composition uses ImageMagick and leaves partial cells blank', async () => {
     if (!Bun.which('magick') && !Bun.which('convert')) {
-      return
+      throw new Error('ImageMagick magick or convert is required for comic grid composition coverage')
     }
 
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-comic-grid-page-'))

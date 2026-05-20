@@ -1,6 +1,6 @@
 import * as l from '~/utils/logger'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
-import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
+import { runWithLLMInstrumentation, buildStep3Metadata, type LlmApiCallResult } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
@@ -14,7 +14,7 @@ export const runOpenAIModel = async (
   try {
     const config = getOpenAIClientConfig()
 
-    const apiCall = (): Promise<string> => withRetry(
+    const apiCall = (): Promise<LlmApiCallResult> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName: 'openai-llm' },
       async (signal) => {
         const timeoutSignal = AbortSignal.timeout(LLM_REQUEST_TIMEOUT_MS)
@@ -45,15 +45,20 @@ export const runOpenAIModel = async (
         if (!text) {
           throw new Error('No response text from model')
         }
-        return text
+        return {
+          text,
+          usage: response.usage,
+          rawProviderUsage: response.usage,
+          returnedModel: response.model
+        }
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
     )
 
-    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
-    const metadata = buildStep3Metadata('openai', model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
+    const instrumentation = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata('openai', model, instrumentation, structuredOpts)
 
-    return { result: responseText, metadata }
+    return { result: instrumentation.responseText, metadata }
   } catch (error) {
     l.error(`Failed to run OpenAI model`, error)
     throw error

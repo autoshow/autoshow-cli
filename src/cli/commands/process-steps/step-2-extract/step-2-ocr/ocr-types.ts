@@ -158,7 +158,7 @@ export type HostedOcrRun = {
   promptTokens?: number
   completionTokens?: number
   providerCostCents?: number
-  providerCostSource?: 'provider_quote' | 'registry_fallback'
+  providerCostSource?: 'provider_usage' | 'provider_quote' | 'registry_fallback'
   providerUsage?: Array<Record<string, unknown>>
 }
 

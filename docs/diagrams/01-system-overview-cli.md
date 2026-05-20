@@ -35,7 +35,7 @@ bun as <command> <input> [flags]
    - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM, Together) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/Unstructured/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
    - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Speechify, Hume, Cartesia, Google Cloud, deAPI)
-   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI)
+   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI, Reve)
    - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway, deAPI)
    - Step 7: Music generation - optional (ElevenLabs, MiniMax, deAPI, Gemini)
 

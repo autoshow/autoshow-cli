@@ -42,7 +42,7 @@ test('--price with both providers shows two cost rows and per-provider filenames
 
 test('write --price includes MiniMax music estimate for a real input', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
+    ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--minimax-music', 'music-2.5', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
 

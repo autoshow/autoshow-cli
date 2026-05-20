@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
+import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, ReveImageModel, RunwayImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
   isNativeGeminiImageModel,
@@ -10,6 +10,7 @@ import {
   validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
+  validateReveImageModel,
   validateRunwayImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureBflImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/bfl-image-gen'
@@ -17,6 +18,7 @@ import { ensureDeapiImageGenSetup } from '~/cli/commands/process-steps/step-5-im
 import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { ensureGrokImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
+import { ensureReveImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/reve/reve-image-gen'
 import { ensureRunwayImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { getBflImageExtension, normalizeBflImageOutputFormat, normalizeBflImageSize, runBflImageGen } from './image-services/bfl/run-bfl-image-gen'
@@ -25,6 +27,7 @@ import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
 import { normalizeGrokImageResolution, runGrokImageGen } from './image-services/grok/run-grok-image-gen'
 import { normalizeMinimaxImageSize, runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
+import { getReveImageExtension, normalizeReveImageAspectRatio, normalizeReveImageOutputFormat, normalizeReveImageSize, runReveImageGen } from './image-services/reve/run-reve-image-gen'
 import { normalizeRunwayImageRatio, normalizeRunwayImageResolution, runRunwayImageGen } from './image-services/runway/run-runway-image-gen'
 import {
   BFL_IMAGE_INPUT_MIME_TYPES,
@@ -33,6 +36,7 @@ import {
   MINIMAX_IMAGE_INPUT_MIME_TYPES,
   OPENAI_IMAGE_INPUT_MIME_TYPES,
   OPENAI_IMAGE_MASK_MIME_TYPES,
+  REVE_IMAGE_INPUT_MIME_TYPES,
   validateImageInputReferences,
   validateImageMaskReference
 } from './image-utils/image-inputs'
@@ -133,6 +137,8 @@ const IMAGE_OPTION_LABELS: Record<keyof ImageGenOptions, string> = {
   bflImageModel: '--bfl-image',
   deapiImageModels: '--deapi-image',
   deapiImageModel: '--deapi-image',
+  reveImageModels: '--reve-image',
+  reveImageModel: '--reve-image',
   imageAspectRatio: '--image-aspect-ratio',
   imageSize: '--image-size',
   imageQuality: '--image-quality',
@@ -261,6 +267,10 @@ const getExpectedImageExtension = (
     return getBflImageExtension(options.imageFormat)
   }
 
+  if (target.service === 'reve') {
+    return getReveImageExtension(options.imageFormat)
+  }
+
   return 'png'
 }
 
@@ -339,6 +349,7 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
   const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
   const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
+  const reveModels = options.reveImageModels ?? (options.reveImageModel ? [options.reveImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model: GeminiImageModel = validateGeminiImageModel(rawModel)
@@ -643,6 +654,49 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
         return await runDeapiImageGen(prompt, outputDir, {
           model,
           imageSize: options.imageSize
+        })
+      }
+    })
+  }
+
+  for (const rawModel of reveModels) {
+    const model: ReveImageModel = validateReveImageModel(rawModel)
+    normalizeReveImageAspectRatio(options.imageAspectRatio)
+    normalizeReveImageSize(options.imageSize)
+    normalizeReveImageOutputFormat(options.imageFormat)
+    const unsupported: string[] = []
+    if (options.imageQuality) unsupported.push('--image-quality')
+    if (options.imageBackground) unsupported.push('--image-background')
+    if (options.imageCount !== undefined) unsupported.push('--image-count')
+    if (options.imageMask !== undefined) unsupported.push('--image-mask')
+    if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
+    if (options.geminiPersonGeneration !== undefined) unsupported.push('--gemini-person-generation')
+    if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
+    if (options.imageCompression !== undefined) unsupported.push('--image-compression')
+    if (unsupported.length > 0) {
+      throw unsupportedFlagError('Reve', model, unsupported, 'Supported Reve image options: --image-aspect-ratio, --image-size WIDTHxHEIGHT fit-within resizing, --image-format png|jpeg|webp, and up to six --image-input references.')
+    }
+    if ((options.imageInputs?.length ?? 0) > 0 && model === 'reve-create@20250915') {
+      throw unsupportedFlagError('Reve', model, ['--image-input'], 'Use --reve latest for Reve edit/remix workflows.')
+    }
+    validateImageInputReferences(options.imageInputs, {
+      provider: 'Reve',
+      model,
+      allowedMimeTypes: REVE_IMAGE_INPUT_MIME_TYPES,
+      maxInputs: 6
+    })
+
+    targets.push({
+      service: 'reve',
+      model,
+      run: async (prompt, outputDir) => {
+        await ensureReveImageGenSetup()
+        return await runReveImageGen(prompt, outputDir, {
+          model,
+          inputs: options.imageInputs,
+          aspectRatio: options.imageAspectRatio,
+          imageSize: options.imageSize,
+          outputFormat: options.imageFormat
         })
       }
     })

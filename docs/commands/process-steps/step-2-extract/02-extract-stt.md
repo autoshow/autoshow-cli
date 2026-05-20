@@ -134,7 +134,7 @@ bun as setup --step reverb
 bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --youtube-captions --deepgram nova-3
 
 # Split a long file before transcription
-bun as extract input/examples/video/2-video.mp4 --whisper large-v3-turbo --split
+bun as extract https://ajc.pics/autoshow/examples/2-video.mp4 --whisper large-v3-turbo --split
 
 # Process a whole YouTube channel batch with caption-first routing
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
@@ -154,10 +154,10 @@ bun as extract output/<extract-run-dir> --transcript-video
 bun as extract output/<extract-run-dir> --transcript-video --transcript-result output/<extract-run-dir>/providers/deepgram-nova-3/result.json
 
 # render from explicit files without an extract run directory
-bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
+bun as extract --transcript-video --audio https://ajc.pics/autoshow/examples/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
 
 # render from the timestamped text transcript format
-bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-text output/<extract-run-dir>/transcription.txt
+bun as extract --transcript-video --audio https://ajc.pics/autoshow/examples/1-audio.mp3 --transcript-text output/<extract-run-dir>/transcription.txt
 ```
 
 The output directory contains `<label>.mp4`, `<label>.vtt`, `<label>.srt`, and `run.json`. Speaker labels from `result.json` or `[HH:MM:SS] [speaker] text` transcript lines are preserved in the rendered video and caption files. The renderer uses the same fixed 1920x1080 local ffmpeg pipeline as lyric videos, with `--font` and `--keep-tmp` available for transcript-video rendering.
@@ -176,7 +176,7 @@ These services either work best with provider-side URLs or have source-URL-speci
 | Pricing | Exact provider quote support when the quote endpoint succeeds |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --deapi WhisperLargeV3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deapi WhisperLargeV3
 bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi WhisperLargeV3 --price
 ```
 
@@ -193,8 +193,8 @@ Supported passthrough URLs use remote URL mode, while local files and unsupporte
 | Diarization | Enabled by default; `--speaker-count` is ignored |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe auto
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe --happyscribe-organization-id org_123
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --happyscribe auto
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --happyscribe --happyscribe-organization-id org_123
 ```
 
 Organization resolution order is CLI `--happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
@@ -246,8 +246,8 @@ ScrapeCreators skips local files, direct media URLs, and non-YouTube URLs as non
 | Diarization | Supports exact `--speaker-count` hints |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --gladia default
-bun as extract input/examples/audio/1-audio.mp3 --gladia --speaker-count 2
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --gladia default
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --gladia --speaker-count 2
 ```
 
 ## Non-diarized STT
@@ -263,8 +263,8 @@ These providers are documented as single-speaker or non-diarized in the CLI.
 | Runtime | Local `whisper.cpp` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3
-bun as extract input/examples/audio/1-audio.mp3 --whisper large-v3-turbo
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --whisper large-v3-turbo
 ```
 
 ### Groq
@@ -275,7 +275,7 @@ bun as extract input/examples/audio/1-audio.mp3 --whisper large-v3-turbo
 | Models | `whisper-large-v3-turbo`, `whisper-large-v3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --groq
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --groq
 ```
 
 ### DeepInfra
@@ -286,7 +286,7 @@ bun as extract input/examples/audio/1-audio.mp3 --groq
 | Models | `openai/whisper-large-v3-turbo`, `openai/whisper-large-v3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --deepinfra
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deepinfra
 ```
 
 ### Together
@@ -297,7 +297,7 @@ bun as extract input/examples/audio/1-audio.mp3 --deepinfra
 | Models | `openai/whisper-large-v3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --together
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --together
 ```
 
 ### OpenAI STT
@@ -308,7 +308,7 @@ bun as extract input/examples/audio/1-audio.mp3 --together
 | Models | `gpt-4o-mini-transcribe`, `gpt-4o-transcribe` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --openai gpt-4o-mini-transcribe
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-4o-mini-transcribe
 ```
 
 ### Gemini STT
@@ -320,7 +320,7 @@ bun as extract input/examples/audio/1-audio.mp3 --openai gpt-4o-mini-transcribe
 | Behavior | Prompted JSON transcription via Gemini multimodal input |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --gemini
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --gemini
 ```
 
 ### GLM STT
@@ -332,7 +332,7 @@ bun as extract input/examples/audio/1-audio.mp3 --gemini
 | Behavior | Single-speaker transcription with a 30-second auto-split policy |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --glm
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --glm
 ```
 
 ### Mistral
@@ -343,7 +343,7 @@ bun as extract input/examples/audio/1-audio.mp3 --glm
 | Models | `voxtral-mini-2602` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --mistral
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --mistral
 ```
 
 Mistral STT follows the current documented Voxtral Mini Transcribe 2 limits: up to 500 MB per audio transcription request and approximately 3 hours of audio per request. Requests are internally serialized across batch items and split segments to reduce provider-side rate limits.
@@ -361,7 +361,7 @@ These engines either support diarization directly or AutoShow enables diarizatio
 | Runtime | Local diarized transcription |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --reverb --reverb-verbatimicity 0.5
 ```
 
 ### Grok STT
@@ -373,7 +373,7 @@ bun as extract input/examples/audio/1-audio.mp3 --reverb --reverb-verbatimicity 
 | Behavior | REST STT with formatted output, word timestamps, and diarization enabled |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --grok speech-to-text
 ```
 
 Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST STT endpoint and records word timing, confidence, and speaker evidence when the response includes it.
@@ -387,7 +387,7 @@ Grok STT sends `format=true`, `language=en`, and `diarize=true` to xAI's REST ST
 | Diarization | Supports `--speaker-count` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --elevenlabs scribe_v2 --speaker-count 2
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --elevenlabs scribe_v2 --speaker-count 2
 ```
 
 ### Deepgram
@@ -398,7 +398,7 @@ bun as extract input/examples/audio/1-audio.mp3 --elevenlabs scribe_v2 --speaker
 | Models | `nova-3` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deepgram nova-3
 ```
 
 ### Soniox
@@ -409,7 +409,7 @@ bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3
 | Models | `stt-async-v4` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --soniox
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --soniox
 ```
 
 ### Speechmatics
@@ -420,7 +420,7 @@ bun as extract input/examples/audio/1-audio.mp3 --soniox
 | Models | `standard`, `enhanced` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --speechmatics standard --speechmatics enhanced
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --speechmatics standard --speechmatics enhanced
 ```
 
 ### Rev
@@ -431,7 +431,7 @@ bun as extract input/examples/audio/1-audio.mp3 --speechmatics standard --speech
 | Models | `machine`, `low_cost` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --rev low_cost
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --rev low_cost
 ```
 
 ### Google Cloud STT
@@ -443,8 +443,8 @@ bun as extract input/examples/audio/1-audio.mp3 --rev low_cost
 | Diarization | Always enabled; supports exact `--speaker-count` hints |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --gcloud
-bun as extract input/examples/audio/1-audio.mp3 --gcloud --speaker-count 2
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --gcloud
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --gcloud --speaker-count 2
 ```
 
 ### AWS Transcribe
@@ -458,8 +458,8 @@ bun as extract input/examples/audio/1-audio.mp3 --gcloud --speaker-count 2
 | Diarization | Always enabled; `--speaker-count` maps to `MaxSpeakerLabels` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --aws
-bun as extract input/examples/audio/1-audio.mp3 --aws --speaker-count 2
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --aws
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --aws --speaker-count 2
 ```
 
 ### AssemblyAI
@@ -471,7 +471,7 @@ bun as extract input/examples/audio/1-audio.mp3 --aws --speaker-count 2
 | Diarization | Supports `--speaker-count` |
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --assemblyai
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --assemblyai
 ```
 
 ## STT Pricing And Manifests

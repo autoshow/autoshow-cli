@@ -352,6 +352,7 @@ export const geminiGenerateImages = async (
     aspectRatio?: string | undefined
     imageSize?: string | undefined
     personGeneration?: string | undefined
+    abortSignal?: AbortSignal | undefined
   }
 ): Promise<GeminiGenerateImagesResponse> => {
   const body: Record<string, unknown> = {
@@ -366,7 +367,8 @@ export const geminiGenerateImages = async (
   const modelPath = normalizeGeminiModelPath(params.model)
   const { json, headers, status } = await geminiJsonRequest(apiKey, `${encodePath(modelPath)}:predict`, {
     method: 'POST',
-    body
+    body,
+    ...(params.abortSignal ? { abortSignal: params.abortSignal } : {})
   })
   const raw = isRecord(json) ? json : {}
   const predictions = Array.isArray(raw['predictions']) ? raw['predictions'] : []

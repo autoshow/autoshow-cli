@@ -29,6 +29,7 @@ export type OpenAIResponsesResponse = {
 }
 
 export type OpenAIChatCompletionResponse = {
+  model?: string | undefined
   choices?: Array<{
     finish_reason?: string | null | undefined
     message?: {

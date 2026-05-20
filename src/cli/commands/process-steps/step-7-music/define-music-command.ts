@@ -11,6 +11,7 @@ import { buildMusicArtifactMap, collectMusicTargets, getMusicArtifactFileName } 
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExpectedOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
@@ -78,7 +79,7 @@ const runHostedMusicGeneration = async (
     throw CLIUsageError('Specify a music generation provider: --elevenlabs <model>, --minimax <model>, --deapi <model>, or --gemini <model>')
   }
 
-  const { shouldExit: musicShouldExit } = await runPreflight('music', prompt, musicOpts, musicMaxCents)
+  const { estimate: preflightEstimate, shouldExit: musicShouldExit } = await runPreflight('music', prompt, musicOpts, musicMaxCents)
   if (musicShouldExit) {
     const singleTarget = musicTargets.length === 1
     const expectedFiles = [
@@ -100,7 +101,7 @@ const runHostedMusicGeneration = async (
     model: target.model,
     ...(musicDuration !== undefined ? { durationSeconds: musicDuration } : {})
   }))
-  const estimated = computeEstimatedCosts({
+  const observedEstimate = computeEstimatedCosts({
     applyCostMultipliers: false,
     musicTargets: estimatedMusicTargets,
     musicDuration,
@@ -108,7 +109,11 @@ const runHostedMusicGeneration = async (
     musicInstrumental
   })
   const actual = computeActualCosts({ step7: metadata })
-  const cost = { estimated, actual }
+  const cost = {
+    estimated: preflightToEstimated(preflightEstimate),
+    observedEstimate,
+    actual
+  }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
       musicTargets: estimatedMusicTargets,

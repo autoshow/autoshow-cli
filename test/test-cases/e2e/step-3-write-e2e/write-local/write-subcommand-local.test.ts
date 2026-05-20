@@ -5,8 +5,8 @@ import {
   findLatestDirectory,
   cleanupTestOutput,
   stopLlamaServer,
-  STABLE_LOCAL_AUDIO_PATH,
-  STABLE_LOCAL_AUDIO_TITLE,
+  STABLE_EXAMPLE_AUDIO_URL,
+  STABLE_EXAMPLE_AUDIO_TITLE,
 } from '../../../../test-utils/test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from '../../../../test-utils/budget'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
@@ -15,19 +15,19 @@ import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
 describe('write subcommand with llama', () => {
   beforeAll(async () => {
     await stopLlamaServer()
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+    await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
   })
 
   afterAll(async () => {
     await stopLlamaServer()
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+    await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
   })
 
-  budgetedTest('write-llama-qwen3-0.6b', 'write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF', async () => {
+  budgetedTest('write-llama-qwen3-0.6b', 'write https://ajc.pics/autoshow/examples/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF', async () => {
     await stopLlamaServer()
 
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'ggml-org/Qwen3-0.6B-GGUF'],
+      ['src/cli/create-cli.ts', 'write', STABLE_EXAMPLE_AUDIO_URL, '--llama', 'ggml-org/Qwen3-0.6B-GGUF'],
       {
         env: {
           AUTOSHOW_LOG_FORMAT: 'human',
@@ -45,7 +45,7 @@ describe('write subcommand with llama', () => {
     expect(output).not.toContain('Run manifest:\n{')
     expect(output).not.toContain('"step1": {')
 
-    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
@@ -80,17 +80,17 @@ describe('write subcommand with llama', () => {
     }
   }, E2E_TEST_TIMEOUT_MS)
 
-  budgetedTest('write-llama-qwen3-0.6b', 'write input/examples/audio/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary', async () => {
+  budgetedTest('write-llama-qwen3-0.6b', 'write https://ajc.pics/autoshow/examples/1-audio.mp3 --llama ggml-org/Qwen3-0.6B-GGUF --prompt shortSummary longSummary', async () => {
     await stopLlamaServer()
-    await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+    await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--prompt', 'shortSummary', 'longSummary'],
+      ['src/cli/create-cli.ts', 'write', STABLE_EXAMPLE_AUDIO_URL, '--llama', 'ggml-org/Qwen3-0.6B-GGUF', '--prompt', 'shortSummary', 'longSummary'],
     )
 
     expect(result.exitCode).toBe(0)
 
-    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {

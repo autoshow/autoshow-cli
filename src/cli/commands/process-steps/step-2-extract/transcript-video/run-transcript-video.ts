@@ -17,6 +17,7 @@ import { parseStoredTranscriptionResult } from '~/cli/commands/process-steps/ste
 import { getAudioDuration } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/audio-splitter'
 import { ensureDirectory, fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
+import { materializeMediaInput } from '~/utils/media-url'
 import * as l from '~/utils/logger'
 import type { CaptionCue, ProviderResult, RunManifest, TranscriptionResult } from '~/types'
 
@@ -36,10 +37,12 @@ type LoadedTranscription = {
 
 type TranscriptVideoSource = {
   audioPath: string
+  audioDisplayPath?: string | undefined
   transcription: LoadedTranscription
   title: string
   label: string
   extractRunDir?: string | undefined
+  cleanup?: (() => Promise<void>) | undefined
 }
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../')
@@ -66,6 +69,28 @@ const toProjectDisplayPath = (absolutePath: string): string => {
 
 const resolveUserPath = (value: string): string =>
   resolve(PROJECT_ROOT, value)
+
+const materializeAudioInput = async (
+  value: string
+): Promise<{ audioPath: string, audioDisplayPath?: string | undefined, cleanup: () => Promise<void> }> => {
+  const materialized = await materializeMediaInput(value, {
+    accept: 'audio/*,video/*,application/octet-stream;q=0.9,*/*;q=0.8',
+    label: 'transcript-video audio'
+  })
+
+  if (materialized.isRemote) {
+    return {
+      audioPath: materialized.path,
+      audioDisplayPath: materialized.input,
+      cleanup: materialized.cleanup
+    }
+  }
+
+  return {
+    audioPath: resolveUserPath(materialized.path),
+    cleanup: materialized.cleanup
+  }
+}
 
 const baseStem = (filePath: string): string =>
   basename(filePath, extname(filePath))
@@ -497,7 +522,8 @@ const resolveExtractRunSource = async (
     throw CLIUsageError('Use only one of --transcript-result or --transcript-text')
   }
 
-  const audioPath = audioFlag ? resolveUserPath(audioFlag) : await resolveAudioFromExtractRun(runDir, manifest)
+  const audioInput = audioFlag ? await materializeAudioInput(audioFlag) : undefined
+  const audioPath = audioInput?.audioPath ?? await resolveAudioFromExtractRun(runDir, manifest)
   if (!await fileExists(audioPath)) {
     throw new Error(`Audio file not found: ${toProjectDisplayPath(audioPath)}`)
   }
@@ -511,10 +537,12 @@ const resolveExtractRunSource = async (
     const loaded = await loadTranscriptText(transcriptPath, audioDurationSeconds)
     return {
       audioPath,
+      ...(audioInput?.audioDisplayPath ? { audioDisplayPath: audioInput.audioDisplayPath } : {}),
       transcription: loaded.transcription,
       title: resolveTitleFromExtractRun(manifest, audioPath),
       label: baseStem(transcriptPath),
-      extractRunDir: runDir
+      extractRunDir: runDir,
+      ...(audioInput ? { cleanup: audioInput.cleanup } : {})
     }
   }
 
@@ -525,10 +553,12 @@ const resolveExtractRunSource = async (
 
   return {
     audioPath,
+    ...(audioInput?.audioDisplayPath ? { audioDisplayPath: audioInput.audioDisplayPath } : {}),
     transcription: await loadTranscriptionResultJson(resultPath),
     title: resolveTitleFromExtractRun(manifest, audioPath),
     label: baseStem(audioPath),
-    extractRunDir: runDir
+    extractRunDir: runDir,
+    ...(audioInput ? { cleanup: audioInput.cleanup } : {})
   }
 }
 
@@ -544,7 +574,8 @@ const resolveManualSource = async (flags: Record<string, unknown>): Promise<Tran
     throw CLIUsageError('Manual transcript-video mode requires exactly one of --transcript-result or --transcript-text')
   }
 
-  const audioPath = resolveUserPath(audioFlag)
+  const audioInput = await materializeAudioInput(audioFlag)
+  const audioPath = audioInput.audioPath
   if (!await fileExists(audioPath)) {
     throw new Error(`Audio file not found: ${toProjectDisplayPath(audioPath)}`)
   }
@@ -558,9 +589,11 @@ const resolveManualSource = async (flags: Record<string, unknown>): Promise<Tran
     const loaded = await loadTranscriptText(transcriptPath, audioDurationSeconds)
     return {
       audioPath,
+      ...(audioInput.audioDisplayPath ? { audioDisplayPath: audioInput.audioDisplayPath } : {}),
       transcription: loaded.transcription,
       title: extractTitle(audioPath),
-      label: baseStem(transcriptPath)
+      label: baseStem(transcriptPath),
+      cleanup: audioInput.cleanup
     }
   }
 
@@ -571,9 +604,11 @@ const resolveManualSource = async (flags: Record<string, unknown>): Promise<Tran
 
   return {
     audioPath,
+    ...(audioInput.audioDisplayPath ? { audioDisplayPath: audioInput.audioDisplayPath } : {}),
     transcription: await loadTranscriptionResultJson(resultPath),
     title: extractTitle(audioPath),
-    label: baseStem(audioPath)
+    label: baseStem(audioPath),
+    cleanup: audioInput.cleanup
   }
 }
 
@@ -661,7 +696,7 @@ const processTranscriptVideoRun = async (
     await writeRunManifest(options.outputDirAbsolute, 'video', {
       mode: 'transcript-video',
       source: {
-        audioPath: toProjectDisplayPath(source.audioPath),
+        audioPath: source.audioDisplayPath ?? toProjectDisplayPath(source.audioPath),
         transcriptPath: toProjectDisplayPath(source.transcription.sourcePath),
         transcriptSource: source.transcription.source,
         ...(source.extractRunDir ? { extractRunDir: toProjectDisplayPath(source.extractRunDir) } : {}),
@@ -725,17 +760,21 @@ export const runExtractTranscriptVideo = async (
   flags: Record<string, unknown>
 ): Promise<void> => {
   const source = await resolveTranscriptVideoSource(inputPath, flags)
-  const font = typeof flags['font'] === 'string' && flags['font'].trim().length > 0 ? flags['font'] : 'DejaVu Sans'
-  const keepTmp = flags['keep-tmp'] === true
-  const outputDirRelative = joinOutputRoot(createUniqueDirectoryName(`transcript-video-${source.label}`))
-  const outputDirAbsolute = resolve(PROJECT_ROOT, outputDirRelative)
-  await ensureDirectory(OUTPUT_ROOT)
-  await ensureDirectory(outputDirAbsolute)
+  try {
+    const font = typeof flags['font'] === 'string' && flags['font'].trim().length > 0 ? flags['font'] : 'DejaVu Sans'
+    const keepTmp = flags['keep-tmp'] === true
+    const outputDirRelative = joinOutputRoot(createUniqueDirectoryName(`transcript-video-${source.label}`))
+    const outputDirAbsolute = resolve(PROJECT_ROOT, outputDirRelative)
+    await ensureDirectory(OUTPUT_ROOT)
+    await ensureDirectory(outputDirAbsolute)
 
-  await processTranscriptVideoRun(source, {
-    outputDirAbsolute,
-    outputDirRelative,
-    font,
-    keepTmp
-  })
+    await processTranscriptVideoRun(source, {
+      outputDirAbsolute,
+      outputDirRelative,
+      font,
+      keepTmp
+    })
+  } finally {
+    await source.cleanup?.()
+  }
 }

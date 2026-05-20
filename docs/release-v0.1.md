@@ -93,9 +93,9 @@ Quick start:
 ```bash
 bun as setup --doctor
 bun as sock
-bun as extract input/examples/audio/1-audio.mp3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3
 bun as extract output/<extract-run-dir> --transcript-video
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4
 bun as write ./output/demo/text --prompt rockSong
 bun as extract input/examples/document/1-document.pdf --out json
 bun as extract https://ajcwebdev.com --url-backend firecrawl

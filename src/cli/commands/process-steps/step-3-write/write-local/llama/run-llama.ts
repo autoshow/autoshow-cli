@@ -65,6 +65,7 @@ export const runLlamaModel = async (
           processingTime,
           inputTokenCount,
           outputTokenCount,
+          tokenCountSource: 'local_count',
           outputFileName: '',
           outputFormat: 'json',
           structuredMode: structuredOpts?.strategy ?? 'schema-guided',

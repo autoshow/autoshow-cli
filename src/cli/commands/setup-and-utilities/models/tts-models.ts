@@ -161,8 +161,7 @@ export const validateMinimaxTtsEmotion = (value: string): string => {
 }
 
 export const SUPPORTED_GROQ_TTS_MODELS = [
-  'canopylabs/orpheus-v1-english',
-  'canopylabs/orpheus-arabic-saudi'
+  'canopylabs/orpheus-v1-english'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GROQ_ENGLISH_TTS_VOICES = [
@@ -174,18 +173,8 @@ export const SUPPORTED_GROQ_ENGLISH_TTS_VOICES = [
   'troy'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES = [
-  'abdullah',
-  'fahad',
-  'sultan',
-  'lulwa',
-  'noura',
-  'aisha'
-] as const satisfies readonly string[]
-
 export const SUPPORTED_GROQ_TTS_VOICES = getGroqTtsVoices()
 export const GROQ_DEFAULT_TTS_VOICE = 'troy'
-export const GROQ_DEFAULT_ARABIC_SAUDI_TTS_VOICE = 'fahad'
 
 export const validateGroqTtsModel = createModelValidator<GroqTtsModel>(SUPPORTED_GROQ_TTS_MODELS, 'groq-tts')
 
@@ -199,15 +188,11 @@ export const validateGroqTtsVoice = (voice: string): string => {
   return normalized
 }
 
-export const getGroqTtsVoicesForModel = (model: GroqTtsModel): readonly string[] =>
-  model === 'canopylabs/orpheus-arabic-saudi'
-    ? SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES
-    : SUPPORTED_GROQ_ENGLISH_TTS_VOICES
+export const getGroqTtsVoicesForModel = (_model: GroqTtsModel): readonly string[] =>
+  SUPPORTED_GROQ_ENGLISH_TTS_VOICES
 
-export const getGroqDefaultTtsVoiceForModel = (model: GroqTtsModel): string =>
-  model === 'canopylabs/orpheus-arabic-saudi'
-    ? GROQ_DEFAULT_ARABIC_SAUDI_TTS_VOICE
-    : GROQ_DEFAULT_TTS_VOICE
+export const getGroqDefaultTtsVoiceForModel = (_model: GroqTtsModel): string =>
+  GROQ_DEFAULT_TTS_VOICE
 
 export const validateGroqTtsVoiceForModel = (model: GroqTtsModel, voice: string): string => {
   const normalized = voice.trim().toLowerCase()
@@ -300,20 +285,13 @@ export const SUPPORTED_DEEPGRAM_TTS_MODELS = [
   'aura-2-andromeda-en',
   'aura-2-apollo-en',
   'aura-2-arcas-en',
-  'aura-2-ariadne-en',
   'aura-2-aries-en',
   'aura-2-asteria-en',
   'aura-2-athena-en',
   'aura-2-atlas-en',
   'aura-2-aurora-en',
   'aura-2-callista-en',
-  'aura-2-canto-en',
-  'aura-2-cassiopeia-en',
-  'aura-2-castor-en',
-  'aura-2-celeste-en',
-  'aura-2-cepheus-en',
-  'aura-2-charisma-en',
-  'aura-2-clara-en',
+  'aura-2-cora-en',
   'aura-2-cordelia-en',
   'aura-2-delia-en',
   'aura-2-draco-en',
@@ -329,8 +307,7 @@ export const SUPPORTED_DEEPGRAM_TTS_MODELS = [
   'aura-2-jupiter-en',
   'aura-2-luna-en',
   'aura-2-mars-en',
-  'aura-2-messenger-en',
-  'aura-2-moneta-en',
+  'aura-2-minerva-en',
   'aura-2-neptune-en',
   'aura-2-odysseus-en',
   'aura-2-ophelia-en',
@@ -349,21 +326,50 @@ export const SUPPORTED_DEEPGRAM_TTS_MODELS = [
   'aura-2-carina-es',
   'aura-2-celeste-es',
   'aura-2-alvaro-es',
-  'aura-2-gisela-de',
-  'aura-2-eva-de',
-  'aura-2-katrin-de',
-  'aura-2-stefan-de',
-  'aura-2-florian-de',
-  'aura-2-luna-it',
-  'aura-2-bianca-it',
-  'aura-2-stella-it',
-  'aura-2-luca-it',
-  'aura-2-marco-it',
-  'aura-2-asteria-ja',
-  'aura-2-luna-ja',
-  'aura-2-stella-ja',
-  'aura-2-athena-ja',
-  'aura-2-orion-ja'
+  'aura-2-diana-es',
+  'aura-2-aquila-es',
+  'aura-2-selena-es',
+  'aura-2-estrella-es',
+  'aura-2-javier-es',
+  'aura-2-agustina-es',
+  'aura-2-antonia-es',
+  'aura-2-gloria-es',
+  'aura-2-luciano-es',
+  'aura-2-olivia-es',
+  'aura-2-silvia-es',
+  'aura-2-valerio-es',
+  'aura-2-beatrix-nl',
+  'aura-2-daphne-nl',
+  'aura-2-cornelia-nl',
+  'aura-2-sander-nl',
+  'aura-2-hestia-nl',
+  'aura-2-lars-nl',
+  'aura-2-roman-nl',
+  'aura-2-rhea-nl',
+  'aura-2-leda-nl',
+  'aura-2-agathe-fr',
+  'aura-2-hector-fr',
+  'aura-2-elara-de',
+  'aura-2-aurelia-de',
+  'aura-2-lara-de',
+  'aura-2-julius-de',
+  'aura-2-fabian-de',
+  'aura-2-kara-de',
+  'aura-2-viktoria-de',
+  'aura-2-melia-it',
+  'aura-2-elio-it',
+  'aura-2-flavio-it',
+  'aura-2-maia-it',
+  'aura-2-cinzia-it',
+  'aura-2-cesare-it',
+  'aura-2-livia-it',
+  'aura-2-dionisio-it',
+  'aura-2-demetra-it',
+  'aura-2-uzume-ja',
+  'aura-2-ebisu-ja',
+  'aura-2-fujin-ja',
+  'aura-2-izanami-ja',
+  'aura-2-ama-ja'
 ] as const satisfies readonly string[]
 
 export const DEEPGRAM_DEFAULT_VOICE = 'aura-2-thalia-en'

@@ -88,6 +88,11 @@ import {
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
 import type { ExpandedScenePromptData, PromptsConfig } from '~/cli/commands/process-steps/step-8-comic/types'
 
+const SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
+const LOCAL_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')
+const REMOVED_GROQ_TTS_MODEL = ['canopylabs/orpheus', 'arabic-saudi'].join('-')
+const REMOVED_GROQ_TTS_VOICE = ['no', 'ura'].join('')
+
 describe('option resolution contracts', () => {
   test('comic generate-images args parse page image options', () => {
     const opts = parseGenerateImagesArgs([
@@ -502,14 +507,14 @@ describe('option resolution contracts', () => {
       'mistral-tts': 'voxtral-mini-tts-2603',
       'mistral-tts-voice': 'voice_abc123',
       'mistral-tts-voice-name': 'Saved Voice Name',
-      'deepgram-tts': 'aura-2-athena-ja',
+      'deepgram-tts': 'aura-2-fujin-ja',
       'deepgram-tts-encoding': 'linear16',
       'deepgram-tts-container': 'wav',
       'deepgram-tts-bit-rate': '128000',
       'deepgram-tts-sample-rate': '24000',
       'deepgram-tts-speed': '1.1',
       'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
+      'deapi-tts-ref-audio': SHORT_AUDIO_URL,
       'deapi-tts-ref-text': 'Reference transcript.',
       'deapi-tts-language': 'English',
       'deapi-tts-speed': '1.25',
@@ -576,14 +581,14 @@ describe('option resolution contracts', () => {
     expect(opts.mistralTtsModel).toBe('voxtral-mini-tts-2603')
     expect(opts.mistralTtsVoice).toBe('voice_abc123')
     expect(opts.mistralTtsVoiceName).toBe('Saved Voice Name')
-    expect(opts.deepgramTtsModel).toBe('aura-2-athena-ja')
+    expect(opts.deepgramTtsModel).toBe('aura-2-fujin-ja')
     expect(opts.deepgramTtsEncoding).toBe('linear16')
     expect(opts.deepgramTtsContainer).toBe('wav')
     expect(opts.deepgramTtsBitRate).toBe(128000)
     expect(opts.deepgramTtsSampleRate).toBe(24000)
     expect(opts.deepgramTtsSpeed).toBe(1.1)
     expect(opts.deapiTtsModel).toBe('Qwen3_TTS_12Hz_1_7B_Base')
-    expect(opts.deapiTtsRefAudio).toBe('input/examples/audio/0-audio-short.mp3')
+    expect(opts.deapiTtsRefAudio).toBe(SHORT_AUDIO_URL)
     expect(opts.deapiTtsRefText).toBe('Reference transcript.')
     expect(opts.deapiTtsLanguage).toBe('English')
     expect(opts.deapiTtsSpeed).toBe(1.25)
@@ -661,7 +666,7 @@ describe('option resolution contracts', () => {
       'gpt-4o-mini-transcribe'
     ], {}, new Set(), [
       'extract',
-      'input/examples/audio/1-audio.mp3',
+      'https://ajc.pics/autoshow/examples/1-audio.mp3',
       '--',
       '--openai-stt',
       'gpt-4o-mini-transcribe',
@@ -748,14 +753,14 @@ describe('option resolution contracts', () => {
       'tts-dialogue-format': 'screenplay',
       'tts-speaker-ref-audio': [
         'DUCO=input/examples/audio/anthony-voice.mp3',
-        'CHAT=input/examples/audio/0-audio-short.mp3'
+        'CHAT=https://ajc.pics/autoshow/examples/0-audio-short.mp3'
       ]
     })
 
     expect(opts.ttsDialogueFormat).toBe('screenplay')
     expect(opts.ttsSpeakerRefAudios).toEqual([
       'DUCO=input/examples/audio/anthony-voice.mp3',
-      'CHAT=input/examples/audio/0-audio-short.mp3'
+      'CHAT=https://ajc.pics/autoshow/examples/0-audio-short.mp3'
     ])
   })
 
@@ -1194,13 +1199,13 @@ describe('option resolution contracts', () => {
   test('--all-tts rejects special-input modes that need an explicit model', () => {
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'all-tts': true,
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
+      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
     }))).toThrow('require --gcloud-tts instant-custom-voice')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'all-tts': true,
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3'
+      'deapi-tts-ref-audio': SHORT_AUDIO_URL
     }))).toThrow('requires --deapi-tts Qwen3_TTS_12Hz_1_7B_Base')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
@@ -1210,8 +1215,8 @@ describe('option resolution contracts', () => {
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'all-tts': true,
-      'groq-voice': 'noura'
-    }))).toThrow('use explicit --groq-tts canopylabs/orpheus-arabic-saudi')
+      'groq-voice': REMOVED_GROQ_TTS_VOICE
+    }))).toThrow(`Invalid --groq-voice "${REMOVED_GROQ_TTS_VOICE}"`)
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'all-tts': true,
@@ -1221,43 +1226,37 @@ describe('option resolution contracts', () => {
     }))).toThrow('cannot be combined with other TTS providers')
   })
 
-  test('Groq TTS voices are validated by selected Orpheus model', () => {
+  test('Groq TTS exposes only English Orpheus model and voices', () => {
     const englishTargets = collectTtsTargets(buildOptsFromFlags(false, {
       'groq-tts': 'canopylabs/orpheus-v1-english'
     })).filter((target) => target.service === 'groq')
-    const arabicTargets = collectTtsTargets(buildOptsFromFlags(false, {
-      'groq-tts': 'canopylabs/orpheus-arabic-saudi'
-    })).filter((target) => target.service === 'groq')
-    const explicitArabicTargets = collectTtsTargets(buildOptsFromFlags(false, {
-      'groq-tts': 'canopylabs/orpheus-arabic-saudi',
-      'groq-voice': 'NOURA'
+    const explicitEnglishTargets = collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': 'canopylabs/orpheus-v1-english',
+      'groq-voice': 'HANNAH'
     })).filter((target) => target.service === 'groq')
 
     expect(getGroqDefaultTtsVoiceForModel('canopylabs/orpheus-v1-english')).toBe('troy')
-    expect(getGroqDefaultTtsVoiceForModel('canopylabs/orpheus-arabic-saudi')).toBe('fahad')
     expect(englishTargets.map((target) => target.voice)).toEqual(['troy'])
-    expect(arabicTargets.map((target) => target.voice)).toEqual(['fahad'])
-    expect(explicitArabicTargets.map((target) => target.voice)).toEqual(['noura'])
+    expect(explicitEnglishTargets.map((target) => target.voice)).toEqual(['hannah'])
+    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
+      'groq-tts': REMOVED_GROQ_TTS_MODEL
+    }))).toThrow(`Invalid --groq-tts model "${REMOVED_GROQ_TTS_MODEL}"`)
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'groq-tts': 'canopylabs/orpheus-v1-english',
-      'groq-voice': 'noura'
-    }))).toThrow('Invalid --groq-voice "noura" for canopylabs/orpheus-v1-english')
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'groq-tts': 'canopylabs/orpheus-arabic-saudi',
-      'groq-voice': 'troy'
-    }))).toThrow('Invalid --groq-voice "troy" for canopylabs/orpheus-arabic-saudi')
+      'groq-voice': REMOVED_GROQ_TTS_VOICE
+    }))).toThrow(`Invalid --groq-voice "${REMOVED_GROQ_TTS_VOICE}"`)
   })
 
   test('Google Cloud instant custom voice flags validate model and key generation mode', () => {
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
+      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
     }))).toThrow('require --gcloud-tts instant-custom-voice')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'gcloud-tts': 'chirp3-hd',
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
+      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
     }))).toThrow('require --gcloud-tts instant-custom-voice')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
@@ -1267,8 +1266,8 @@ describe('option resolution contracts', () => {
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'gcloud-tts': 'instant-custom-voice',
       'gcloud-tts-voice-cloning-key': 'existing-key',
-      'gcloud-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
+      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
     }))).toThrow('cannot be combined with key generation flags')
 
     expect(collectTtsTargets(buildOptsFromFlags(false, {
@@ -1463,7 +1462,7 @@ describe('option resolution contracts', () => {
       await expect(validateElevenLabsTtsIvcAudio('input/examples/audio/missing.mp3')).rejects.toThrow('not found')
       await expect(validateElevenLabsTtsIvcAudio(textPath)).rejects.toThrow('mp3/mpeg, wav, m4a/mp4, ogg, flac, aac, or webm')
       await expect(validateElevenLabsTtsIvcAudio(emptyPath)).rejects.toThrow('is empty')
-      await expect(validateElevenLabsTtsIvcAudio('input/examples/audio/0-audio-short.mp3')).resolves.toMatchObject({
+      await expect(validateElevenLabsTtsIvcAudio(LOCAL_SHORT_AUDIO_PATH)).resolves.toMatchObject({
         basename: '0-audio-short.mp3'
       })
     } finally {
@@ -1481,7 +1480,7 @@ describe('option resolution contracts', () => {
     try {
       process.env['ELEVENLABS_API_KEY'] = 'test-key'
       process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
-      const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+      const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
 
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = String(input)
@@ -1741,7 +1740,7 @@ describe('option resolution contracts', () => {
     const sampleCopyPath = join(tempDir, 'sample.mp3')
     await writeFile(emptyPath, '')
     await writeFile(textPath, 'hello')
-    await writeFile(sampleCopyPath, new Uint8Array(await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()))
+    await writeFile(sampleCopyPath, new Uint8Array(await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()))
 
     try {
       await expect(validateElevenLabsTtsPvcAudio('input/examples/audio/missing.mp3')).rejects.toThrow('not found')
@@ -1758,11 +1757,15 @@ describe('option resolution contracts', () => {
   test('elevenlabs PVC setup creates a voice, uploads samples, writes captcha and status artifact', async () => {
     const previousFetch = globalThis.fetch
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-create-'))
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, body?: unknown }> = []
 
     try {
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = String(input)
+        if (url === SHORT_AUDIO_URL) {
+          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+        }
         const method = init?.method ?? 'GET'
         const body = init?.body
         if (url.endsWith('/v1/voices/pvc')) {
@@ -1802,7 +1805,7 @@ describe('option resolution contracts', () => {
       const captchaPath = join(tempDir, 'captcha.png')
       const result = await runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
         model: 'eleven_v3',
-        samplePaths: ['input/examples/audio/0-audio-short.mp3'],
+        samplePaths: [SHORT_AUDIO_URL],
         voiceName: 'AutoShow PVC',
         language: 'en',
         description: 'Narration PVC',
@@ -1853,12 +1856,16 @@ describe('option resolution contracts', () => {
 
   test('elevenlabs PVC setup verifies, trains, and waits for fine tuning', async () => {
     const previousFetch = globalThis.fetch
+    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, body?: unknown }> = []
     let statusPolls = 0
 
     try {
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = String(input)
+        if (url === SHORT_AUDIO_URL) {
+          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+        }
         const method = init?.method ?? 'GET'
         const body = init?.body
         if (url.endsWith('/v1/voices/pvc/pvc_existing/captcha') && method === 'POST' && body instanceof FormData) {
@@ -1896,7 +1903,7 @@ describe('option resolution contracts', () => {
       const result = await runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
         model: 'eleven_v3',
         pvcVoiceId: 'pvc_existing',
-        verifyAudioPath: 'input/examples/audio/0-audio-short.mp3',
+        verifyAudioPath: SHORT_AUDIO_URL,
         wait: true,
         pollIntervalMs: 1,
         timeoutMs: 1000
@@ -1980,7 +1987,7 @@ describe('option resolution contracts', () => {
     try {
       process.env['ELEVENLABS_API_KEY'] = 'test-key'
       process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
-      const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+      const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
 
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = String(input)
@@ -2052,7 +2059,7 @@ describe('option resolution contracts', () => {
   test('deapi voice clone target records reference audio speaker', () => {
     const opts = buildOptsFromFlags(false, {
       'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3'
+      'deapi-tts-ref-audio': SHORT_AUDIO_URL
     })
     const targets = collectTtsTargets(opts).filter((target) => target.service === 'deapi')
 
@@ -2122,7 +2129,7 @@ describe('option resolution contracts', () => {
       'openai-tts': 'gpt-4o-mini-tts',
       'openai-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
       'openai-tts-consent-id': 'cons_123',
-      'openai-tts-consent-audio': 'input/examples/audio/0-audio-short.mp3'
+      'openai-tts-consent-audio': SHORT_AUDIO_URL
     })
     const voiceWithClone = buildOptsFromFlags(false, {
       'openai-tts': 'gpt-4o-mini-tts',
@@ -2181,10 +2188,13 @@ describe('option resolution contracts', () => {
     try {
       process.env['OPENAI_API_KEY'] = 'test-key'
       process.env['OPENAI_BASE_URL'] = 'https://mock.openai.local/v1'
-      const audioBytes = await Bun.file('input/examples/audio/0-audio-short.mp3').arrayBuffer()
+      const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
 
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = typeof input === 'string' || input instanceof URL ? String(input) : input.url
+        if (url === SHORT_AUDIO_URL) {
+          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
+        }
         const method = init?.method ?? 'GET'
         const body = init?.body
 
@@ -2235,7 +2245,7 @@ describe('option resolution contracts', () => {
       await mkdir(secondDir, { recursive: true })
       const clone = {
         refAudioPath: 'input/examples/audio/anthony-voice.mp3',
-        consentAudioPath: 'input/examples/audio/0-audio-short.mp3',
+        consentAudioPath: SHORT_AUDIO_URL,
         consentLanguage: 'en-US',
         consentName: 'Consent Test',
         voiceName: 'AutoShowTestVoice',
@@ -2293,7 +2303,7 @@ describe('option resolution contracts', () => {
     const opts = buildOptsFromFlags(false, {
       'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
       'deapi-tts-voice': 'Vivian',
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3'
+      'deapi-tts-ref-audio': SHORT_AUDIO_URL
     })
 
     expect(() => collectTtsTargets(opts)).toThrow('Use either --deapi-tts-voice or --deapi-tts-ref-audio, not both')
@@ -2302,7 +2312,7 @@ describe('option resolution contracts', () => {
   test('deapi tts rejects unsupported clone model combinations', () => {
     const cloneWithPresetModel = buildOptsFromFlags(false, {
       'deapi-tts': 'Kokoro',
-      'deapi-tts-ref-audio': 'input/examples/audio/0-audio-short.mp3'
+      'deapi-tts-ref-audio': SHORT_AUDIO_URL
     })
     const cloneWithoutAudio = buildOptsFromFlags(false, {
       'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base'
@@ -2317,7 +2327,7 @@ describe('option resolution contracts', () => {
   })
 
   test('deapi tts reference audio validation enforces file, extension, size, and duration', async () => {
-    const valid = await validateDeapiTtsReferenceAudio('input/examples/audio/0-audio-short.mp3')
+    const valid = await validateDeapiTtsReferenceAudio(LOCAL_SHORT_AUDIO_PATH)
     expect(valid.basename).toBe('0-audio-short.mp3')
     expect(valid.durationSeconds).toBeGreaterThanOrEqual(3)
     expect(valid.durationSeconds).toBeLessThanOrEqual(10)
@@ -2353,7 +2363,7 @@ describe('option resolution contracts', () => {
     expect(targets.map((target) => target.voice)).toEqual([GROK_DEFAULT_TTS_VOICE])
   })
 
-  test('explicit deepgram tts flags can still select multiple voices', () => {
+  test('explicit deepgram tts flags can still select multiple voices and apply voice overrides', () => {
     const opts = buildOptsFromFlags(false, {
       'deepgram-tts': ['aura-2-thalia-en', 'aura-2-andromeda-en']
     })
@@ -2361,6 +2371,21 @@ describe('option resolution contracts', () => {
 
     expect(opts.deepgramTtsModels).toEqual(['aura-2-thalia-en', 'aura-2-andromeda-en'])
     expect(deepgramTargets.map((target) => target.model)).toEqual(['aura-2-thalia-en', 'aura-2-andromeda-en'])
+
+    const overrideOpts = buildOptsFromFlags(false, {
+      'deepgram-tts': ['aura-2-thalia-en'],
+      'deepgram-voice': 'aura-2-andromeda-en'
+    })
+    const overrideTargets = collectTtsTargets(overrideOpts).filter((target) => target.service === 'deepgram')
+
+    expect(overrideOpts.deepgramVoiceId).toBe('aura-2-andromeda-en')
+    expect(overrideTargets.map((target) => ({
+      model: target.model,
+      voice: target.voice
+    }))).toEqual([{
+      model: 'aura-2-thalia-en',
+      voice: 'aura-2-andromeda-en'
+    }])
   })
 
   test('video mode defaults to text and validates media inputs', () => {

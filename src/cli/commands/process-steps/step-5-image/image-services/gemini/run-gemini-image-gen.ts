@@ -6,6 +6,8 @@ import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generatio
 import { isNativeGeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { geminiGenerateContent, geminiGenerateImages } from '~/utils/gemini/gemini-rest'
+import { withRetry } from '~/utils/retries'
+import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import { imageReferenceToInlineDataPart } from '../../image-utils/image-inputs'
 import { getProviderReturnedModel } from '../../image-utils/image-output'
 
@@ -48,20 +50,29 @@ export const runGeminiImageGen = async (
     const inputParts = await Promise.all((options.inputs ?? []).map(imageReferenceToInlineDataPart))
     const responseModalities = options.responseMode === 'text-image' ? ['TEXT', 'IMAGE'] : ['IMAGE']
 
-    const response = await geminiGenerateContent(apiKey, {
-      model: options.model,
-      contents: [{ text: prompt }, ...inputParts],
-      generationConfig: {
-        responseModalities,
-        ...(options.aspectRatio || options.imageSize ? {
-          imageConfig: {
-            ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-            ...(options.imageSize ? { imageSize: options.imageSize } : {})
-          }
-        } : {})
+    const response = await withRetry(
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'gemini-image-generate',
+        policy: { maxAttempts: 3 }
       },
-      ...(options.searchGrounding ? { tools: [{ googleSearch: {} }] } : {})
-    })
+      async (signal) => await geminiGenerateContent(apiKey, {
+        model: options.model,
+        contents: [{ text: prompt }, ...inputParts],
+        generationConfig: {
+          responseModalities,
+          ...(options.aspectRatio || options.imageSize ? {
+            imageConfig: {
+              ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+              ...(options.imageSize ? { imageSize: options.imageSize } : {})
+            }
+          } : {})
+        },
+        ...(options.searchGrounding ? { tools: [{ googleSearch: {} }] } : {}),
+        ...(signal ? { abortSignal: signal } : {})
+      }),
+      classifyGeminiRetry
+    )
     providerReturnedModel = getProviderReturnedModel(options.model, response)
     groundingMetadata = response.candidates?.find((candidate) => candidate.groundingMetadata !== undefined)?.groundingMetadata
 
@@ -93,14 +104,23 @@ export const runGeminiImageGen = async (
     })
     const numberOfImages = options.imageCount ?? 1
 
-    const response = await geminiGenerateImages(apiKey, {
-      model: options.model,
-      prompt,
-      numberOfImages,
-      ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-      ...(options.imageSize ? { imageSize: options.imageSize } : {}),
-      ...(options.personGeneration ? { personGeneration: options.personGeneration } : {})
-    })
+    const response = await withRetry(
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'gemini-image-generate',
+        policy: { maxAttempts: 3 }
+      },
+      async (signal) => await geminiGenerateImages(apiKey, {
+        model: options.model,
+        prompt,
+        numberOfImages,
+        ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+        ...(options.imageSize ? { imageSize: options.imageSize } : {}),
+        ...(options.personGeneration ? { personGeneration: options.personGeneration } : {}),
+        ...(signal ? { abortSignal: signal } : {})
+      }),
+      classifyGeminiRetry
+    )
 
     const generatedImages = response.generatedImages ?? []
     for (let i = 0; i < generatedImages.length; i++) {

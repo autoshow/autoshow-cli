@@ -22,6 +22,7 @@ export type WriteRunSummaryRow = {
   providerModel: string
   predictedCostCents: number | null
   actualCostCents: number | null
+  actualCostSource: string | null
   predictedTimeMs: number | null
   actualTimeMs: number | null
   predictedSpeed: string | null
@@ -63,6 +64,7 @@ export type CostEntryLike = {
   provider: string
   model: string
   cost: number
+  costSource?: string
   inputMetric?: string
   inputValue?: number
 }
@@ -74,6 +76,8 @@ export type TimingEntryLike = {
   processingTimeMs: number
   inputMetric?: string
   inputValue?: number
+  throughputValue?: number
+  throughputUnit?: TimingStepEntry['throughputUnit']
 }
 
 export type IndexedRow<T> = {

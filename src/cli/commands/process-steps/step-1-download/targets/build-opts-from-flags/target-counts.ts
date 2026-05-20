@@ -59,6 +59,7 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.runwayImageModels, modelOptions.runwayImageModel)
     + countSelectedTargets(modelOptions.bflImageModels, modelOptions.bflImageModel)
     + countSelectedTargets(modelOptions.deapiImageModels, modelOptions.deapiImageModel)
+    + countSelectedTargets(modelOptions.reveImageModels, modelOptions.reveImageModel)
   const hostedVideoTargetCount =
     countSelectedTargets(modelOptions.geminiVideoModels, modelOptions.geminiVideoModel)
     + countSelectedTargets(modelOptions.minimaxVideoModels, modelOptions.minimaxVideoModel)

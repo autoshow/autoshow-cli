@@ -12,7 +12,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2238
+          "msPerPage": 3303
         }
       }
     }
@@ -35,7 +35,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 5193,
+          "msPerPage": 4127,
           "promptTokensPerPage": 2403,
           "completionTokensPerPage": 434.5
         }
@@ -57,8 +57,8 @@
           "notes": "project/links/kimi-general-ocr-text-links.md documents Kimi image support for PNG/JPEG/WebP/GIF, a 100 MB request-body/file limit, and recommended image resolution no higher than 4K. AutoShow renders PDFs to page images before calling Kimi OCR."
         },
         "estimation": {
-          "costMultiplier": 0.6066,
-          "msPerPage": 9493,
+          "costMultiplier": 0.4405,
+          "msPerPage": 14240,
           "promptTokensPerPage": 4232,
           "completionTokensPerPage": 2068
         }
@@ -81,7 +81,9 @@
         },
         "estimation": {
           "promptTokensPerPage": 2986,
-          "completionTokensPerPage": 1903
+          "completionTokensPerPage": 1903,
+          "costMultiplier": 0.2165,
+          "msPerPage": 4931
         }
       },
       "gpt-5.4-mini": {
@@ -96,7 +98,9 @@
         },
         "estimation": {
           "promptTokensPerPage": 2986,
-          "completionTokensPerPage": 1868
+          "completionTokensPerPage": 1868,
+          "costMultiplier": 0.2239,
+          "msPerPage": 2844
         }
       },
       "gpt-5.4-nano": {
@@ -110,8 +114,8 @@
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         },
         "estimation": {
-          "costMultiplier": 0.5433,
-          "msPerPage": 11349,
+          "costMultiplier": 0.2692,
+          "msPerPage": 8245,
           "promptTokensPerPage": 2986,
           "completionTokensPerPage": 1844
         }
@@ -159,7 +163,9 @@
         },
         "estimation": {
           "promptTokensPerPage": 1157,
-          "completionTokensPerPage": 2063
+          "completionTokensPerPage": 2063,
+          "costMultiplier": 0.2928,
+          "msPerPage": 5089
         }
       },
       "gemini-3.1-flash-lite-preview": {
@@ -175,8 +181,8 @@
           "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
         },
         "estimation": {
-          "costMultiplier": 0.6139,
-          "msPerPage": 3280,
+          "costMultiplier": 0.4492,
+          "msPerPage": 2921,
           "promptTokensPerPage": 1157,
           "completionTokensPerPage": 1626
         }
@@ -216,7 +222,7 @@
         },
         "estimation": {
           "costMultiplier": 0.7802,
-          "msPerPage": 12920,
+          "msPerPage": 14451,
           "promptTokensPerPage": 7981,
           "completionTokensPerPage": 471.5
         }
@@ -254,7 +260,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 41
+          "msPerPage": 210
         }
       }
     }
@@ -272,7 +278,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2253
+          "msPerPage": 2540
         }
       }
     }
@@ -329,7 +335,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 1500
+          "msPerPage": 1918
         }
       }
     }
@@ -350,7 +356,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 1200
+          "msPerPage": 2291
         }
       }
     }
@@ -370,7 +376,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3500
+          "msPerPage": 11813
         }
       }
     }

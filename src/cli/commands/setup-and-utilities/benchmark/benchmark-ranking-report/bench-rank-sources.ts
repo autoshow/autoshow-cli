@@ -151,8 +151,8 @@ const readRawRunEstimatedCosts = async (report: RawReportFile): Promise<Map<stri
   return buildEstimatedCostCentsByProviderModel(await readJson(runPath))
 }
 
-const rawSpeedMs = (provider: JsonObject): number | undefined =>
-  getNumber(provider, 'actualProcessingTimeMs') ?? getNumber(provider, 'processingTimeMs')
+export const resolveRawSpeedMsForRanking = (provider: JsonObject): number | undefined =>
+  getNumber(provider, 'msPerUnit') ?? getNumber(provider, 'actualProcessingTimeMs') ?? getNumber(provider, 'processingTimeMs')
 
 const rawQualityScore = (provider: JsonObject, rawType: string): number | undefined => {
   if (rawType === 'url') {
@@ -251,11 +251,11 @@ const providerRowsFromRawReport = (json: unknown, rawType: string): JsonObject[]
   return getArray(json, 'overall').filter(isObject)
 }
 
-const dashboardSpeedMs = (test: JsonObject): number | undefined => {
+export const resolveDashboardSpeedMsForRanking = (test: JsonObject): number | undefined => {
   const durations = getObject(test, 'durations')
   const primaryStep = durations ? getObject(durations, 'primaryStep') : undefined
   const endToEnd = durations ? getObject(durations, 'endToEnd') : undefined
-  return getNestedNumber(primaryStep, 'actualMs') ?? getNestedNumber(endToEnd, 'actualMs')
+  return getNestedNumber(primaryStep, 'actualMsPerUnit') ?? getNestedNumber(primaryStep, 'actualMs') ?? getNestedNumber(endToEnd, 'actualMs')
 }
 
 const dashboardCostUsd = (test: JsonObject): number | undefined => {
@@ -392,7 +392,7 @@ export const processRawReport = async (
       }
     }
 
-    const speedMs = rawSpeedMs(provider)
+    const speedMs = resolveRawSpeedMsForRanking(provider)
     if (speedMs !== undefined) {
       sample.speedMs = speedMs
     }
@@ -462,7 +462,7 @@ export const processDashboardReport = async (
       sample.priceUsd = priceUsd
     }
 
-    const speedMs = dashboardSpeedMs(test)
+    const speedMs = resolveDashboardSpeedMsForRanking(test)
     if (speedMs !== undefined) {
       sample.speedMs = speedMs
     }
@@ -508,18 +508,23 @@ export const rawReportFiles = async (): Promise<RawReportFile[]> => {
   const files = await listFilesRecursive(RAW_BENCHMARKS_DIR)
   return files
     .filter((file) => file.endsWith('provider-comparison-report.json') || file.endsWith('reference-comparison-report.json'))
-    .map((absPath) => {
+    .flatMap((absPath): RawReportFile[] => {
       const rawRelative = relative(RAW_BENCHMARKS_DIR, absPath)
       const rawType = firstPathSegment(rawRelative)
       if (!rawType) {
         throw new Error(`Cannot determine raw benchmark type for ${absPath}`)
       }
-      return {
+
+      if (!RAW_STEP_BY_TYPE.has(rawType)) {
+        return []
+      }
+
+      return [{
         absPath,
         relPath: relativeToProject(absPath),
         rawType,
         runId: parentDirectoryName(rawRelative)
-      }
+      }]
     })
     .sort((left, right) => left.relPath.localeCompare(right.relPath))
 }

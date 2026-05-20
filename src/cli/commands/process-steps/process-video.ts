@@ -468,9 +468,7 @@ export const processVideo = async (
 	      model: entry.transcriptionModel
 	    }))
 
-	    const estimated = preflightEstimate
-	      ? preflightToEstimated(preflightEstimate)
-	      : computeEstimatedCosts({
+	    const observedEstimate = computeEstimatedCosts({
 	        applyCostMultipliers: false,
 	        sttTargets: selectedSttTargets,
 	        audioDurationSeconds: mediaDurationSeconds,
@@ -501,6 +499,9 @@ export const processVideo = async (
 	        musicLyricsFile: processingOptions.musicLyricsFile,
 	        musicInstrumental: processingOptions.musicInstrumental
 	      })
+	    const estimated = preflightEstimate
+	      ? preflightToEstimated(preflightEstimate)
+	      : observedEstimate
 
 	    const actual = computeActualCosts({
 	      step1: step1Metadata,
@@ -513,7 +514,9 @@ export const processVideo = async (
 	      ...(step7Metadata ? { step7: step7Metadata } : {})
 	    })
 
-	    const cost = { estimated, actual }
+	    const cost = preflightEstimate
+	      ? { estimated, observedEstimate, actual }
+	      : { estimated, actual }
 	    const estimatedTiming = computeEstimatedProcessingTimes({
 	      sttTargets: selectedSttTargets,
 	      audioDurationSeconds: mediaDurationSeconds,
@@ -528,7 +531,9 @@ export const processVideo = async (
 	              service: t.service,
 	              model: t.model,
 	              ...(processingOptions.videoDuration !== undefined ? { durationSeconds: processingOptions.videoDuration } : {})
-	            }))
+	            })),
+	            ...(processingOptions.videoResolution !== undefined ? { videoResolution: processingOptions.videoResolution } : {}),
+	            ...(processingOptions.videoMode !== undefined ? { videoMode: processingOptions.videoMode } : {})
 	          }
 	        : {}),
 	      ...(attemptedMusicTargets.length > 0

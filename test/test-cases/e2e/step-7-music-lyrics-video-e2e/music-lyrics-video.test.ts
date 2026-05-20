@@ -13,7 +13,7 @@ import {
 import { readBatchManifest, readRunManifest } from '../../../test-utils/manifest-helpers'
 import { exec } from '~/utils/cli-utils'
 
-const SHORT_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
+const SHORT_AUDIO_PATH = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
 const SHORT_AUDIO_SUFFIX = 'music-lyrics-0-audio-short'
 const RERENDER_SUFFIX = 'music-lyrics-0-audio-short-fixed'
 const EXAMPLE_SONG_AUDIO_PATH = 'input/examples/lyrics/01-example-song.mp3'

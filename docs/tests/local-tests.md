@@ -49,7 +49,9 @@ bun t test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.
 
 - Test discovery comes from `test/test-cases/**/*.test.ts`.
 - Selection is path-based only.
-- `--test-price` uses `test/test-price/...` price-suite selectors. `--budget <whole-number-hundredths-of-a-cent>` still operates on the selected normal test paths as a live-test skip mechanism. For example, `--budget 100` allows tests estimated at up to 1 cent.
+- Normal test mode passes `--max-concurrency=30` to `bun test` by default. Pass an explicit `--max-concurrency=<n>` to override it for a run.
+- Price and budget preflight commands run with the same default runner concurrency of 30.
+- `--test-price` uses the same normal `test/test-cases/...` path filters as `bun t`: append it to the command you would otherwise run to price-check the mapped commands without running the live tests. `--budget <whole-number-hundredths-of-a-cent>` remains a live-test skip mechanism for the selected normal test paths. For example, `--budget 100` allows tests estimated at up to 1 cent.
 - Each run writes artifacts under `./project/test-output/YYYY-MM-DD_HH-MM-SS_test-run/`, including `runner.log`, `commands.log`, `metrics.ndjson`, `metadata/`, and `report.json`. Normal test mode also writes `junit.xml`, `e2e-report.json`, and `model-calibration.json`.
 - By default, `bun t` cleans test outputs after every run and leaves `./project/test-output/latest.log` with the run summary, failures, runner log, and command log. Normal test mode also sets `AUTOSHOW_TEST_PRESERVE_ARTIFACTS=0`, which deletes per-test output directories as tests finish.
 - Use `--no-cleanup` to keep the full run directory, per-test CLI outputs, and test cache under `./project/test-output/`. The older `--cleanup` flag is still accepted but no longer changes behavior.
@@ -81,18 +83,19 @@ cat project/test-output/latest.log
 Local price and budget commands are now path-based:
 
 ```bash
-bun t test/test-price/step-2-stt/local/whisper --test-price
-bun t test/test-price/step-2-stt/local/reverb --test-price
-bun t test/test-price/step-3-write/local/subcommand --test-price
-bun t test/test-price/step-3-write/local/project-lyrics --test-price
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/whisper/ --test-price
+bun t test/test-cases/e2e/step-2-stt-e2e/stt-local/reverb/ --test-price
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --test-price
+bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-project-lyrics.test.ts --test-price
 bun t test/test-cases/e2e/step-3-write-e2e/write-local/write-subcommand-local.test.ts --budget 500
-bun t test/test-price/step-4-tts/local/kitten --test-price
+bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --test-price
 bun t test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts --budget 500
+bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --test-price
 bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts --budget 500
 ```
 
 Notes:
-- `--test-price` with no path filters resolves all mapped price suites.
+- `--test-price` with no path filters resolves all mapped test price commands.
 - `--budget` in normal mode only skips tests that use a matching `budgetedTest()` key.
 - Some local paths still have no mapped price commands, including `test/test-cases/validation/`, `test/test-cases/setup/`, and local lyric-video rendering.
 

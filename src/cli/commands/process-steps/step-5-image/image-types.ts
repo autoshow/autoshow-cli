@@ -22,6 +22,8 @@ export type ImageGenOptions = Pick<
   | 'bflImageModel'
   | 'deapiImageModels'
   | 'deapiImageModel'
+  | 'reveImageModels'
+  | 'reveImageModel'
   | 'imageAspectRatio'
   | 'imageSize'
   | 'imageQuality'
@@ -67,6 +69,8 @@ export type EstimateImageCostOptions = {
   bflImageModel?: string | undefined
   deapiImageModels?: string[] | undefined
   deapiImageModel?: string | undefined
+  reveImageModels?: string[] | undefined
+  reveImageModel?: string | undefined
   imageSize?: string | undefined
   imageQuality?: string | undefined
   imageCount?: number | undefined

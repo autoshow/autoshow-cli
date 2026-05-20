@@ -21,7 +21,7 @@ export const GladiaUtteranceSchema = v.object({
 
 export const GladiaUploadAudioMetadataSchema = v.object({
   id: v.string(),
-  filename: v.string(),
+  filename: v.optional(v.nullable(v.string()), undefined),
   source: v.optional(v.string(), undefined),
   extension: v.string(),
   size: v.number(),

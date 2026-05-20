@@ -13,7 +13,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 300
+          "msPerSecond": 794
         }
       }
     }

@@ -15,6 +15,7 @@ import {
   pollDeapiJob,
   readJsonOrText
 } from '~/utils/deapi'
+import { materializeMediaInput } from '~/utils/media-url'
 
 export const DEAPI_TTS_VOICE_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
 export const DEAPI_TTS_VOICE_DESIGN_MODEL = 'Qwen3_TTS_12Hz_1_7B_VoiceDesign'
@@ -230,7 +231,15 @@ export const runDeapiTts = async (
   const mode: DeapiTtsMode = options.model === DEAPI_TTS_VOICE_DESIGN_MODEL
     ? 'voice_design'
     : refAudioPath ? 'voice_clone' : 'custom_voice'
-  const refAudio = refAudioPath ? await validateDeapiTtsReferenceAudio(refAudioPath) : undefined
+  const materializedRefAudio = refAudioPath
+    ? await materializeMediaInput(refAudioPath, {
+        accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+        label: 'deAPI TTS reference audio'
+      })
+    : undefined
+
+  try {
+  const refAudio = materializedRefAudio ? await validateDeapiTtsReferenceAudio(materializedRefAudio.path) : undefined
   if (mode === 'custom_voice' && !config.voice) {
     throw new Error(`deAPI TTS model ${options.model} requires --deapi-tts-ref-audio.`)
   }
@@ -308,4 +317,7 @@ export const runDeapiTts = async (
     chunkCount: 1,
     startTime
   })
+  } finally {
+    await materializedRefAudio?.cleanup()
+  }
 }

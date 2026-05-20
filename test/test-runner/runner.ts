@@ -1,6 +1,6 @@
 import { appendFile } from 'node:fs/promises'
 import type { PriceCommandResult, PriceCommandSpec, TestRunArtifacts } from '~/types'
-import { parseRunnerArgs, type RunnerArgs } from './args'
+import { DEFAULT_TEST_RUNNER_CONCURRENCY, parseRunnerArgs, withDefaultTestConcurrency, type RunnerArgs } from './args'
 import {
   appendRunnerLog,
   appendCommandLog,
@@ -32,7 +32,7 @@ const formatCents = (cents: number): string => `${cents.toFixed(3)}¢`
 const budgetHundredthCentsToCents = (budgetHundredthCents: number): number => budgetHundredthCents / 100
 const formatBudgetHundredthCents = (budgetHundredthCents: number): string => formatCents(budgetHundredthCentsToCents(budgetHundredthCents))
 
-const PRICE_CONCURRENCY = 16
+const PRICE_CONCURRENCY = DEFAULT_TEST_RUNNER_CONCURRENCY
 
 const runWithConcurrency = async <T, R>(
   items: T[],
@@ -267,7 +267,7 @@ const runBunTest = async (
     'test',
     '--timeout',
     String(E2E_TEST_TIMEOUT_MS),
-    ...passthroughArgs,
+    ...withDefaultTestConcurrency(passthroughArgs),
     '--reporter',
     'junit',
     '--reporter-outfile',
@@ -566,7 +566,7 @@ const runPriceMode = async (
   artifacts: TestRunArtifacts,
   argv: string[]
 ): Promise<number> => {
-  let suiteName = 'All mapped price suites'
+  let suiteName = 'All mapped tests'
   let results: PriceCommandResult[] = []
   let budgetSummary: BudgetPreflightSummary | undefined
   let exitCode = 0

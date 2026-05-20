@@ -7,8 +7,8 @@ import {
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
+  requireConfiguredEnvVar,
   runCommandAndExpectOutputDir,
-  shouldSkipMissingEnv,
   withOutputLifecycle
 } from './service-test-kit'
 import { readRunMetadata } from './manifest-helpers'
@@ -16,6 +16,7 @@ import { readRunMetadata } from './manifest-helpers'
 const VIDEO_GEN_TITLE = 'video-gen'
 const PRICE_PROMPT = 'a cinematic mountain sunrise'
 const DEFAULT_LIVE_PROMPT = 'a static shot of a tiny red dot on white background'
+type VideoTestService = 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
 
 export const defineVideoServiceTest = ({
   models,
@@ -27,7 +28,7 @@ export const defineVideoServiceTest = ({
 }: {
   models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
   cliFlag: string
-  videoService: 'gemini' | 'minimax' | 'deapi'
+  videoService: VideoTestService
   envVarKey: string
   envVarDescription: string
   timeoutMs?: number
@@ -45,9 +46,7 @@ export const defineVideoServiceTest = ({
   for (const { model, extraArgs, expectedDuration, prompt } of models) {
     const budgetKey = `video-${videoService}-${model}`
     budgetedTest(budgetKey, `${videoService} ${model} generates video and metadata`, async () => {
-      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
-        return
-      }
+      await requireConfiguredEnvVar(envVarKey, `${envVarKey} is required for ${envVarDescription}`)
 
       await cleanupTestOutput(VIDEO_GEN_TITLE)
 
@@ -60,29 +59,27 @@ export const defineVideoServiceTest = ({
         ...(extraArgs ?? [])
       ])
 
-      if (outputDir) {
-        const videoExists = await fileExists(`${outputDir}/generated-video.mp4`)
-        expect(videoExists).toBe(true)
+      const videoExists = await fileExists(`${outputDir}/generated-video.mp4`)
+      expect(videoExists).toBe(true)
 
-        const videoFile = Bun.file(`${outputDir}/generated-video.mp4`)
-        expect(videoFile.size).toBeGreaterThan(0)
+      const videoFile = Bun.file(`${outputDir}/generated-video.mp4`)
+      expect(videoFile.size).toBeGreaterThan(0)
 
-        const metadata = await readRunMetadata(outputDir) as {
-          video?: Array<{
-            videoGenService?: string
-            videoGenModel?: string
-            videoFileName?: string
-            videoFileSize?: number
-            videoDuration?: number
-          }>
-        }
-        expect(metadata.video?.[0]?.videoGenService).toBe(videoService)
-        expect(metadata.video?.[0]?.videoGenModel).toBe(model)
-        expect(metadata.video?.[0]?.videoFileName).toBe('generated-video.mp4')
-        expect(metadata.video?.[0]?.videoFileSize).toBe(videoFile.size)
-        if (expectedDuration !== undefined) {
-          expect(metadata.video?.[0]?.videoDuration).toBe(expectedDuration)
-        }
+      const metadata = await readRunMetadata(outputDir) as {
+        video?: Array<{
+          videoGenService?: string
+          videoGenModel?: string
+          videoFileName?: string
+          videoFileSize?: number
+          videoDuration?: number
+        }>
+      }
+      expect(metadata.video?.[0]?.videoGenService).toBe(videoService)
+      expect(metadata.video?.[0]?.videoGenModel).toBe(model)
+      expect(metadata.video?.[0]?.videoFileName).toBe('generated-video.mp4')
+      expect(metadata.video?.[0]?.videoFileSize).toBe(videoFile.size)
+      if (expectedDuration !== undefined) {
+        expect(metadata.video?.[0]?.videoDuration).toBe(expectedDuration)
       }
     }, timeoutMs)
   }
@@ -95,7 +92,7 @@ export const defineVideoServicePriceTests = ({
 }: {
   models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
   cliFlag: string
-  videoService: 'gemini' | 'minimax' | 'deapi'
+  videoService: VideoTestService
 }): void => {
   for (const { model } of models) {
     test(`${videoService} ${model} --price prints estimate`, async () => {

@@ -25,6 +25,8 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
     || !!opts.bflImageModel
     || (opts.deapiImageModels?.length ?? 0) > 0
     || !!opts.deapiImageModel
+    || (opts.reveImageModels?.length ?? 0) > 0
+    || !!opts.reveImageModel
   if (!hasImage) return []
 
   return estimateImageCosts({
@@ -42,6 +44,8 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
     bflImageModel: opts.bflImageModel,
     deapiImageModels: opts.deapiImageModels,
     deapiImageModel: opts.deapiImageModel,
+    reveImageModels: opts.reveImageModels,
+    reveImageModel: opts.reveImageModel,
     imageSize: opts.imageSize,
     imageQuality: opts.imageQuality,
     imageCount: opts.imageCount
@@ -51,6 +55,7 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
       step: 'image' as const,
       provider: estimate.provider,
       model: estimate.model,
+      imageCount: estimate.imageCount,
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,
     }
@@ -96,6 +101,7 @@ export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] =
       step: 'video' as const,
       provider: estimate.provider,
       model: estimate.model,
+      durationSeconds: estimate.durationSeconds,
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,
     }
@@ -143,6 +149,7 @@ export const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicSt
         step: 'music',
         provider: estimate.provider,
         model: estimate.model,
+        durationSeconds: estimate.durationSeconds,
         lyricsSource: estimate.lyricsSource,
         totalCost: price.source === 'provider_quote'
           ? price.totalCost
@@ -157,6 +164,7 @@ export const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicSt
       step: 'music',
       provider: estimate.provider,
       model: estimate.model,
+      durationSeconds: estimate.durationSeconds,
       lyricsSource: estimate.lyricsSource,
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,

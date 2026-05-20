@@ -234,6 +234,8 @@ export const ProcessingOptionsSchema = v.pipe(
     bflImageModel: v.optional(v.string(), undefined),
     deapiImageModels: v.optional(v.array(v.string()), undefined),
     deapiImageModel: v.optional(v.string(), undefined),
+    reveImageModels: v.optional(v.array(v.string()), undefined),
+    reveImageModel: v.optional(v.string(), undefined),
     imageAspectRatio: v.optional(v.string(), undefined),
     imageSize: v.optional(v.string(), undefined),
     imageQuality: v.optional(v.string(), undefined),

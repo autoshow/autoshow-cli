@@ -10,6 +10,7 @@ import { buildEstimatedTtsTargets, buildTtsArtifactMap, collectTtsTargets, getTt
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
+import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { runPreflight } from '~/utils/pricing/preflight'
 import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExpectedOutputDir, resolveMaxCentsFromFlags, writeGenerationMetadata } from '~/cli/commands/process-steps/generation-command-utils'
 import * as l from '~/utils/logger'
@@ -88,7 +89,7 @@ export const ttsCommand = defineCliCommand({
   const dialoguePreview = dialogueRequested ? normalizeDialogueFromOptions(text, ttsOptions) : undefined
   const ttsCharacterCount = dialoguePreview?.spokenCharacterCount ?? text.length
 
-  const { shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, ttsCharacterCount)
+  const { estimate: preflightEstimate, shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, ttsCharacterCount)
   if (shouldExit) {
     l.report.expectedOutput(
       getGenerationExpectedOutputDir(flags as Record<string, unknown>, './output/<timestamp>_<label>/'),
@@ -138,6 +139,9 @@ export const ttsCommand = defineCliCommand({
     if (ttsOptions.elevenlabsTtsPvcWait !== true || !setupResult.readyForSynthesis) {
       await writeRunManifest(outputDir, 'tts', {
         elevenlabsPvc: statusArtifact,
+        cost: {
+          estimated: preflightToEstimated(preflightEstimate)
+        },
         input: text,
         requestedProviders: targets.map((t) => ({ service: t.service, model: t.model }))
       })
@@ -166,7 +170,7 @@ export const ttsCommand = defineCliCommand({
   )
 
   const estimatedTtsTargets = buildEstimatedTtsTargets(effectiveTargets)
-  const estimated = computeEstimatedCosts({
+  const observedEstimate = computeEstimatedCosts({
     applyCostMultipliers: false,
     ttsTargets: estimatedTtsTargets,
     ttsCharacterCount
@@ -175,7 +179,11 @@ export const ttsCommand = defineCliCommand({
     step4: metadata,
     ttsCharacterCount
   })
-  const cost = { estimated, actual }
+  const cost = {
+    estimated: preflightToEstimated(preflightEstimate),
+    observedEstimate,
+    actual
+  }
   const timing = {
     estimated: computeEstimatedProcessingTimes({
       ttsTargets: estimatedTtsTargets,

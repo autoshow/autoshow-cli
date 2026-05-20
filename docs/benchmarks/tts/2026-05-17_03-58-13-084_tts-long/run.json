@@ -159,7 +159,7 @@
     ],
     "cost": {
       "estimated": {
-        "totalCost": 17.963946,
+        "totalCost": 16.819946,
         "steps": [
           {
             "step": "tts",
@@ -225,15 +225,6 @@
             "costMultiplier": 1,
             "inputCostPer1MCharactersCents": 1000,
             "outputCostPer1MCharactersCents": 2200
-          },
-          {
-            "step": "tts",
-            "provider": "groq",
-            "model": "canopylabs/orpheus-arabic-saudi",
-            "cost": 1.1440000000000001,
-            "costMultiplier": 1,
-            "inputCostPer1MCharactersCents": 0,
-            "outputCostPer1MCharactersCents": 4000
           },
           {
             "step": "tts",
@@ -480,7 +471,7 @@
     },
     "timing": {
       "estimated": {
-        "totalProcessingTimeMs": 185229,
+        "totalProcessingTimeMs": 180563,
         "steps": [
           {
             "step": "tts",
@@ -542,14 +533,6 @@
             "step": "tts",
             "provider": "groq",
             "model": "canopylabs/orpheus-v1-english",
-            "processingTimeMs": 4666,
-            "inputMetric": "characters",
-            "inputValue": 286
-          },
-          {
-            "step": "tts",
-            "provider": "groq",
-            "model": "canopylabs/orpheus-arabic-saudi",
             "processingTimeMs": 4666,
             "inputMetric": "characters",
             "inputValue": 286
@@ -827,10 +810,6 @@
       {
         "service": "groq",
         "model": "canopylabs/orpheus-v1-english"
-      },
-      {
-        "service": "groq",
-        "model": "canopylabs/orpheus-arabic-saudi"
       },
       {
         "service": "grok",

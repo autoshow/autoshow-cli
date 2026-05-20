@@ -6,6 +6,7 @@ import {
   validateGrokImageModel,
   validateMinimaxImageModel,
   validateOpenAIImageModel,
+  validateReveImageModel,
   validateRunwayImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getImageCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
@@ -89,6 +90,7 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
   const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
   const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
+  const reveModels = options.reveImageModels ?? (options.reveImageModel ? [options.reveImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model = validateGeminiImageModel(rawModel)
@@ -185,6 +187,19 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
       costPerImageCents,
       totalCost: costPerImageCents,
       note: 'Approximate cost; deAPI image pricing varies by model, resolution, and steps'
+    })
+  }
+
+  for (const rawModel of reveModels) {
+    const model = validateReveImageModel(rawModel)
+    const costPerImageCents = getImageCost('reve', model)
+    estimates.push({
+      provider: 'reve',
+      model,
+      imageCount: 1,
+      costPerImageCents,
+      totalCost: costPerImageCents,
+      note: 'Approximate fallback based on $10 / 7500 Reve credits; provider usage headers are used when returned'
     })
   }
 

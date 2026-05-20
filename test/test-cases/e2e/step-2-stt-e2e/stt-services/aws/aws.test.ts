@@ -5,8 +5,8 @@ import {
   fileExists,
   findLatestDirectory,
   runCommand,
-  STABLE_LOCAL_AUDIO_PATH,
-  STABLE_LOCAL_AUDIO_TITLE
+  STABLE_EXAMPLE_AUDIO_URL,
+  STABLE_EXAMPLE_AUDIO_TITLE
 } from '../../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../../test-utils/manifest-helpers'
 import {
@@ -28,7 +28,7 @@ test('rejects invalid aws model', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'extract',
-    STABLE_LOCAL_AUDIO_PATH,
+    STABLE_EXAMPLE_AUDIO_URL,
     '--aws',
     'invalid-model'
   ])
@@ -39,16 +39,15 @@ test('rejects invalid aws model', async () => {
 budgetedTest('transcribe-aws-standard', 'aws standard transcribes local audio when AWS CLI Transcribe is configured', async () => {
   const { state } = await readAwsTestReadiness()
   if (!state.hasCli || !state.authConfigured || !state.region || state.bucketAccessible !== true || state.transcribeAccessible !== true) {
-    console.log('Skipping: AWS CLI auth, region, bucket, and Amazon Transcribe readiness are required for AWS transcription')
-    return
+    throw new Error('AWS CLI auth, region, bucket, and Amazon Transcribe readiness are required for AWS transcription')
   }
 
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'extract',
-    STABLE_LOCAL_AUDIO_PATH,
+    STABLE_EXAMPLE_AUDIO_URL,
     '--aws',
     'standard',
     '--speaker-count',
@@ -57,17 +56,17 @@ budgetedTest('transcribe-aws-standard', 'aws standard transcribes local audio wh
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    expect(await fileExists(`${outputDir}/transcription.txt`)).toBe(true)
-    expect(await fileExists(`${outputDir}/result.json`)).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      step2?: { transcriptionService?: string, transcriptionModel?: string }
-    }
-    expect(metadata.step2?.transcriptionService).toBe('aws')
-    expect(metadata.step2?.transcriptionModel).toBe('standard')
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+  if (!outputDir) {
+    throw new Error(`Expected output directory for ${STABLE_EXAMPLE_AUDIO_TITLE}`)
   }
+
+  expect(await fileExists(`${outputDir}/transcription.txt`)).toBe(true)
+  expect(await fileExists(`${outputDir}/result.json`)).toBe(true)
+
+  const metadata = await readRunMetadata(outputDir) as {
+    step2?: { transcriptionService?: string, transcriptionModel?: string }
+  }
+  expect(metadata.step2?.transcriptionService).toBe('aws')
+  expect(metadata.step2?.transcriptionModel).toBe('standard')
 }, E2E_TEST_TIMEOUT_MS)

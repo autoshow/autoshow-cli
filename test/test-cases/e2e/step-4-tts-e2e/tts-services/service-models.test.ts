@@ -11,10 +11,14 @@ import {
   cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
-  hasConfiguredEnvVar,
   readConfiguredEnvVar,
 } from '../../../../test-utils/test-helpers'
 import { readRunMetadata } from '../../../../test-utils/manifest-helpers'
+import {
+  formatCommandFailureDiagnostics,
+  requireConfiguredEnvVar,
+  requireConfiguredValue
+} from '../../../../test-utils/service-test-kit'
 import {
   ELEVENLABS_DEFAULT_VOICE_ID,
   GEMINI_DEFAULT_TTS_VOICE,
@@ -23,12 +27,21 @@ import {
   GCLOUD_DEFAULT_TTS_VOICES,
   GROK_DEFAULT_TTS_VOICE,
   SPEECHIFY_DEFAULT_TTS_VOICE,
+  SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
+  DEAPI_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-2603'
 const MISTRAL_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
 const DEAPI_TTS_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
-const DEAPI_REF_AUDIO_PATH = 'input/examples/audio/0-audio-short.mp3'
+const DEAPI_REF_AUDIO_PATH = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
+const SHORT_TTS_INPUT_PATH = 'input/examples/tts/0-tts-short.txt'
+const SHORT_TTS_INPUT_TITLE = '0-tts-short'
+const resolveDeapiDefaultSpeaker = (model: string): string => {
+  if (model === 'Kokoro') return DEAPI_DEFAULT_TTS_VOICE
+  if (model === 'Chatterbox') return 'default'
+  return 'Vivian'
+}
 
 const isTransientMistralTtsFailure = (output: string): boolean =>
   /Unable to connect|Unexpected HTTP client error|fetch failed|network error|econnreset|econnrefused|etimedout|socket hang up|dns/i.test(output)
@@ -47,20 +60,13 @@ defineTTSServiceTest({
 
 budgetedTest('tts-openai-gpt-4o-mini-tts-clone', 'OpenAI custom voice clone generates speech.wav when explicitly enabled', async () => {
   const enabled = await readConfiguredEnvVar('OPENAI_TTS_CUSTOM_VOICE_TEST')
-  if (enabled !== '1') {
-    console.log('Skipping: OPENAI_TTS_CUSTOM_VOICE_TEST=1 is required for OpenAI custom voice TTS test')
-    return
-  }
-  if (!await hasConfiguredEnvVar('OPENAI_API_KEY')) {
-    console.log('Skipping: OPENAI_API_KEY is required for OpenAI custom voice TTS test')
-    return
-  }
-  const consentId = await readConfiguredEnvVar('OPENAI_TTS_CONSENT_ID')
-  const refAudio = await readConfiguredEnvVar('OPENAI_TTS_REF_AUDIO')
-  if (!consentId || !refAudio) {
-    console.log('Skipping: OPENAI_TTS_CONSENT_ID and OPENAI_TTS_REF_AUDIO are required for OpenAI custom voice TTS test')
-    return
-  }
+  requireConfiguredValue(
+    enabled === '1' ? enabled : null,
+    'OPENAI_TTS_CUSTOM_VOICE_TEST=1 is required for OpenAI custom voice TTS test'
+  )
+  await requireConfiguredEnvVar('OPENAI_API_KEY', 'OPENAI_API_KEY is required for OpenAI custom voice TTS test')
+  const consentId = await requireConfiguredEnvVar('OPENAI_TTS_CONSENT_ID', 'OPENAI_TTS_CONSENT_ID and OPENAI_TTS_REF_AUDIO are required for OpenAI custom voice TTS test')
+  const refAudio = await requireConfiguredEnvVar('OPENAI_TTS_REF_AUDIO', 'OPENAI_TTS_CONSENT_ID and OPENAI_TTS_REF_AUDIO are required for OpenAI custom voice TTS test')
 
   await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 
@@ -110,10 +116,7 @@ defineTTSServiceTest({
 })
 
 budgetedTest('tts-gemini-gemini-3.1-flash-tts-preview', 'gemini multispeaker with explicit speaker mappings generates speech.wav', async () => {
-  if (!await hasConfiguredEnvVar('GEMINI_API_KEY')) {
-    console.log('Skipping: GEMINI_API_KEY is required for Gemini TTS test')
-    return
-  }
+  await requireConfiguredEnvVar('GEMINI_API_KEY', 'GEMINI_API_KEY is required for Gemini TTS test')
 
   await cleanupTestOutput('gemini-multispeaker-dialogue')
 
@@ -208,11 +211,13 @@ defineTTSServiceTest({
 })
 
 defineTTSServiceTest({
-  models: ['aura-2-thalia-en'],
+  models: [DEEPGRAM_DEFAULT_VOICE],
   cliFlag: '--deepgram',
   ttsService: 'deepgram',
   envVarKey: 'DEEPGRAM_API_KEY',
   envVarDescription: 'Deepgram TTS',
+  inputPath: SHORT_TTS_INPUT_PATH,
+  inputTitle: SHORT_TTS_INPUT_TITLE,
   resolveExpectedSpeaker: async () => {
     const voice = await readConfiguredEnvVar('DEEPGRAM_TTS_VOICE')
     return voice ?? DEEPGRAM_DEFAULT_VOICE
@@ -232,12 +237,25 @@ defineTTSServiceTest({
 })
 
 defineTTSServiceTest({
-  models: ['chirp3-hd'],
+  models: ['chirp3-hd', 'studio'],
   cliFlag: '--gcloud',
   ttsService: 'gcloud',
   envVarKey: 'AUTOSHOW_GCLOUD_TTS_E2E',
   envVarDescription: 'Google Cloud TTS readiness with AUTOSHOW_GCLOUD_TTS_E2E=1',
-  resolveExpectedSpeaker: async () => GCLOUD_DEFAULT_TTS_VOICES['chirp3-hd'],
+  inputPath: SHORT_TTS_INPUT_PATH,
+  inputTitle: SHORT_TTS_INPUT_TITLE,
+  resolveExpectedSpeaker: async (model) => GCLOUD_DEFAULT_TTS_VOICES[model as 'chirp3-hd' | 'studio'],
+})
+
+defineTTSServiceTest({
+  models: SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
+  cliFlag: '--deapi',
+  ttsService: 'deapi',
+  envVarKey: 'DEAPI_API_KEY',
+  envVarDescription: 'deAPI TTS',
+  inputPath: SHORT_TTS_INPUT_PATH,
+  inputTitle: SHORT_TTS_INPUT_TITLE,
+  resolveExpectedSpeaker: async (model) => resolveDeapiDefaultSpeaker(model),
 })
 
 test('rejects invalid mistral model', async () => {
@@ -277,15 +295,8 @@ test('mistral execution requires a voice source before API key validation', asyn
 })
 
 budgetedTest('tts-mistral-voxtral-mini-tts-2603-voice', 'mistral saved voice generates speech.wav when MISTRAL_TTS_VOICE is configured', async () => {
-  if (!await hasConfiguredEnvVar('MISTRAL_API_KEY')) {
-    console.log('Skipping: MISTRAL_API_KEY is required for Mistral TTS test')
-    return
-  }
-  const voice = await readConfiguredEnvVar('MISTRAL_TTS_VOICE')
-  if (!voice) {
-    console.log('Skipping: MISTRAL_TTS_VOICE is required for Mistral saved-voice TTS test')
-    return
-  }
+  await requireConfiguredEnvVar('MISTRAL_API_KEY', 'MISTRAL_API_KEY is required for Mistral TTS test')
+  const voice = await requireConfiguredEnvVar('MISTRAL_TTS_VOICE', 'MISTRAL_TTS_VOICE is required for Mistral saved-voice TTS test')
 
   await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 
@@ -317,10 +328,7 @@ budgetedTest('tts-mistral-voxtral-mini-tts-2603-voice', 'mistral saved voice gen
 }, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('tts-mistral-voxtral-mini-tts-2603-ref-audio', 'mistral reference audio generates speech.wav', async () => {
-  if (!await hasConfiguredEnvVar('MISTRAL_API_KEY')) {
-    console.log('Skipping: MISTRAL_API_KEY is required for Mistral TTS test')
-    return
-  }
+  await requireConfiguredEnvVar('MISTRAL_API_KEY', 'MISTRAL_API_KEY is required for Mistral TTS test')
 
   await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 
@@ -352,10 +360,7 @@ budgetedTest('tts-mistral-voxtral-mini-tts-2603-ref-audio', 'mistral reference a
 }, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates normalized dialogue, segments, and speech.wav', async () => {
-  if (!await hasConfiguredEnvVar('MISTRAL_API_KEY')) {
-    console.log('Skipping: MISTRAL_API_KEY is required for Mistral dialogue TTS test')
-    return
-  }
+  await requireConfiguredEnvVar('MISTRAL_API_KEY', 'MISTRAL_API_KEY is required for Mistral dialogue TTS test')
 
   await cleanupTestOutput('mistral-dialogue')
 
@@ -368,7 +373,7 @@ budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates 
       'Guest: Hi. This keeps the live test short.'
     ].join('\n'))
 
-    const result = await runCommand([
+    const args = [
       'src/cli/create-cli.ts',
       'tts',
       inputPath,
@@ -379,12 +384,12 @@ budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates 
       '--tts-speaker-ref-audio',
       `Host=${MISTRAL_REF_AUDIO_PATH}`,
       '--tts-speaker-ref-audio',
-      'Guest=input/examples/audio/1-audio.mp3'
-    ])
+      'Guest=https://ajc.pics/autoshow/examples/1-audio.mp3'
+    ]
+    const result = await runCommand(args)
 
     if (result.exitCode !== 0 && isTransientMistralTtsFailure(`${result.stdout}\n${result.stderr}`)) {
-      console.log('Skipping: Mistral TTS endpoint was not reachable for dialogue TTS test')
-      return
+      throw new Error(`Mistral TTS endpoint was not reachable for dialogue TTS test\n${formatCommandFailureDiagnostics(args, result)}`)
     }
 
     expect(result.exitCode).toBe(0)
@@ -413,10 +418,7 @@ budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates 
 }, E2E_TEST_TIMEOUT_MS)
 
 budgetedTest('tts-deapi-qwen3-voice-clone', 'deAPI Qwen3 voice clone generates speech.wav', async () => {
-  if (!await hasConfiguredEnvVar('DEAPI_API_KEY')) {
-    console.log('Skipping: DEAPI_API_KEY is required for deAPI TTS test')
-    return
-  }
+  await requireConfiguredEnvVar('DEAPI_API_KEY', 'DEAPI_API_KEY is required for deAPI TTS test')
 
   await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 
@@ -447,46 +449,8 @@ budgetedTest('tts-deapi-qwen3-voice-clone', 'deAPI Qwen3 voice clone generates s
   }
 }, E2E_TEST_TIMEOUT_MS)
 
-budgetedTest('tts-deepgram-aura-2-thalia-en', 'deepgram with --deepgram-voice aura-2-andromeda-en records speaker override', async () => {
-  if (!await hasConfiguredEnvVar('DEEPGRAM_API_KEY')) {
-    console.log('Skipping: DEEPGRAM_API_KEY is required for Deepgram TTS test')
-    return
-  }
-
-  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
-
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--deepgram',
-    'aura-2-thalia-en',
-    '--deepgram-voice',
-    'aura-2-andromeda-en'
-  ])
-
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
-    }
-    expect(metadata.tts?.[0]?.ttsService).toBe('deepgram')
-    expect(metadata.tts?.[0]?.ttsModel).toBe('aura-2-thalia-en')
-    expect(metadata.tts?.[0]?.speaker).toBe('aura-2-andromeda-en')
-  }
-})
-
 budgetedTest('tts-groq-canopylabs/orpheus-v1-english', 'orpheus english with --groq-voice hannah generates speech.wav', async () => {
-  if (!await hasConfiguredEnvVar('GROQ_API_KEY')) {
-    console.log('Skipping: GROQ_API_KEY is required for Groq TTS test')
-    return
-  }
+  await requireConfiguredEnvVar('GROQ_API_KEY', 'GROQ_API_KEY is required for Groq TTS test')
 
   await cleanupTestOutput(STABLE_TTS_MD_TITLE)
 

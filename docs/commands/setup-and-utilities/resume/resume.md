@@ -103,6 +103,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fas
 # Retry missing deAPI image outputs, or append deAPI image
 bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-image Flux1schnell
 
+# Retry missing Reve image outputs, or append Reve image
+bun as resume ./output/2026-04-22_12-00-00-000_run --reve-image latest
+
 # Retry missing Runway video outputs, or append Runway video
 bun as resume ./output/2026-04-22_12-00-00-000_run --runway-video gen4.5
 
@@ -252,10 +255,11 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--runway-image <model>` | Select one or more Runway image models |
 | `--bfl-image <model>` | Select one or more BFL image models |
 | `--deapi-image <model>` | Select one or more deAPI image models |
+| `--reve-image <model>` | Select one or more Reve image models |
 | `--image-aspect-ratio <ratio>` | Image aspect ratio |
 | `--image-size <size>` | Image size/resolution |
 | `--image-quality <quality>` | Image quality (OpenAI) |
-| `--image-format <format>` | Image output format (OpenAI/BFL) |
+| `--image-format <format>` | Image output format (OpenAI/BFL/Reve) |
 | `--image-background <bg>` | Image background (OpenAI) |
 | `--image-count <n>` | Number of images to generate in one supported provider request |
 | `--image-input <path-or-url>` | Reference/source image for image edits or provider references |

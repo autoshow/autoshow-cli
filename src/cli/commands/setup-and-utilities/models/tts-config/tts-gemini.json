@@ -11,7 +11,7 @@
         "outputCostPer1MCharsCents": 2000,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 42246
+          "msPer1KChars": 86509
         }
       }
     }

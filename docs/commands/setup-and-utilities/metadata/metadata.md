@@ -130,7 +130,7 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown --save
 
 # Local media file metadata
-bun as metadata input/examples/audio/1-audio.mp3
+bun as metadata https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # Document metadata from a local PDF
 bun as metadata input/examples/document/1-document.pdf

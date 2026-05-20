@@ -4,16 +4,12 @@ import {
   fileExists,
   findLatestDirectory,
   cleanupTestOutput,
-  STABLE_LOCAL_AUDIO_PATH,
-  STABLE_LOCAL_AUDIO_TITLE,
-  hasConfiguredEnvVar,
+  STABLE_EXAMPLE_AUDIO_URL,
+  STABLE_EXAMPLE_AUDIO_TITLE,
 } from "../../../../test-utils/test-helpers"
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from "../../../../test-utils/budget"
 import { readRunMetadata } from "../../../../test-utils/manifest-helpers"
-
-const hasOpenAiEnv = async (): Promise<boolean> => {
-  return await hasConfiguredEnvVar('OPENAI_API_KEY')
-}
+import { requireConfiguredEnvVar } from "../../../../test-utils/service-test-kit"
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null
@@ -29,11 +25,11 @@ const toRecordArray = (value: unknown): Record<string, unknown>[] => {
 describe("kitten-tts pipeline", () => {
   describe("write with tts", () => {
     beforeAll(async () => {
-      await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+      await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
     })
 
     afterAll(async () => {
-      await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+      await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
     })
 
     budgetedTest(['write-groq-openai/gpt-oss-20b', 'tts-kitten-mini'], "kitten-tts-mini runs full pipeline with --prompt shortSummary and generates speech.wav", async () => {
@@ -42,7 +38,7 @@ describe("kitten-tts pipeline", () => {
         [
           "src/cli/create-cli.ts",
           "write",
-          STABLE_LOCAL_AUDIO_PATH,
+          STABLE_EXAMPLE_AUDIO_URL,
           "--groq", "openai/gpt-oss-20b",
           "--kitten-tts", model,
           "--prompt", "shortSummary",
@@ -51,7 +47,7 @@ describe("kitten-tts pipeline", () => {
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {
@@ -89,17 +85,14 @@ describe("kitten-tts pipeline", () => {
     })
 
     budgetedTest(['write-openai-gpt-5.4', 'tts-kitten-mini', 'tts-openai-gpt-4o-mini-tts'], 'write can emit multiple speech artifacts from one summary', async () => {
-      if (!await hasOpenAiEnv()) {
-        console.log('Skipping: OPENAI_API_KEY is required for multi-provider write TTS coverage')
-        return
-      }
+      await requireConfiguredEnvVar('OPENAI_API_KEY', 'OPENAI_API_KEY is required for multi-provider write TTS coverage')
 
-      await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+      await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
       const result = await runCommand([
         'src/cli/create-cli.ts',
         'write',
-        STABLE_LOCAL_AUDIO_PATH,
+        STABLE_EXAMPLE_AUDIO_URL,
         '--openai',
         'gpt-5.4',
         '--kitten-tts',
@@ -112,7 +105,7 @@ describe("kitten-tts pipeline", () => {
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_LOCAL_AUDIO_TITLE)
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {

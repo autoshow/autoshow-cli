@@ -86,7 +86,7 @@ export type Step2BillingMetadata = {
   creditsUsed?: number | undefined
   creditRateCents?: number | undefined
   totalCost?: number | undefined
-  source?: 'response-header' | 'fallback-estimate' | 'provider_quote' | 'registry_fallback' | undefined
+  source?: 'response-header' | 'response_header' | 'fallback-estimate' | 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
   mode?: 'url' | 'duration' | 'order' | 'segment_sum' | undefined
 }
 

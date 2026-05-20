@@ -7,6 +7,7 @@ import { getAudioDuration } from '~/cli/commands/process-steps/step-2-extract/st
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
 import { readElevenLabsError } from './elevenlabs-utils'
+import { materializeMediaInput, type MaterializedMediaInput } from '~/utils/media-url'
 
 export const ELEVENLABS_TTS_PVC_COST_CENTS = 0
 export const ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS = 3 * 60 * 60 * 1000
@@ -554,21 +555,50 @@ export const runElevenLabsTtsPvcSetup = async (
   apiKey: string,
   options: ElevenLabsTtsPvcSetupOptions
 ): Promise<ElevenLabsTtsPvcSetupResult> => {
+  const materializedSamplePaths: MaterializedMediaInput[] = []
+  let materializedVerifyAudio: MaterializedMediaInput | undefined
+
+  try {
+  for (const samplePath of options.samplePaths ?? []) {
+    materializedSamplePaths.push(await materializeMediaInput(samplePath, {
+      accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+      label: 'ElevenLabs PVC sample audio'
+    }))
+  }
+  if (options.verifyAudioPath?.trim()) {
+    materializedVerifyAudio = await materializeMediaInput(options.verifyAudioPath, {
+      accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+      label: 'ElevenLabs PVC verification audio'
+    })
+  }
+
   const actions: string[] = []
   const language = options.language?.trim() || 'en'
   const description = options.description?.trim() || undefined
   const hasSamples = (options.samplePaths?.length ?? 0) > 0 || Boolean(options.sampleDir?.trim())
-  const sampleAudio = hasSamples
-    ? await validateElevenLabsTtsPvcSamples(options.samplePaths, options.sampleDir)
+  const samplePaths = materializedSamplePaths.length > 0
+    ? materializedSamplePaths.map((item) => item.path)
+    : options.samplePaths
+  const sampleAudioForUpload = hasSamples
+    ? await validateElevenLabsTtsPvcSamples(samplePaths, options.sampleDir)
     : []
-  const totalSampleDurationSeconds = sampleAudio.every((sample) => typeof sample.durationSeconds === 'number')
-    ? sampleAudio.reduce((sum, sample) => sum + (sample.durationSeconds ?? 0), 0)
+  const sampleInputByMaterializedPath = new Map(
+    materializedSamplePaths
+      .filter((item) => item.isRemote)
+      .map((item) => [item.path, item.input])
+  )
+  const sampleAudio = sampleAudioForUpload.map((sample) => {
+    const sourceInput = sampleInputByMaterializedPath.get(sample.path)
+    return sourceInput ? { ...sample, path: sourceInput, basename: basename(sourceInput) } : sample
+  })
+  const totalSampleDurationSeconds = sampleAudioForUpload.every((sample) => typeof sample.durationSeconds === 'number')
+    ? sampleAudioForUpload.reduce((sum, sample) => sum + (sample.durationSeconds ?? 0), 0)
     : undefined
 
   let voiceId = options.pvcVoiceId?.trim()
   let voiceName = options.voiceName?.trim() || undefined
   let createdVoice = false
-  if (sampleAudio.length > 0 && !voiceId) {
+  if (sampleAudioForUpload.length > 0 && !voiceId) {
     const created = await createElevenLabsTtsPvcVoice(baseURL, apiKey, {
       voiceName,
       language,
@@ -585,8 +615,8 @@ export const runElevenLabsTtsPvcSetup = async (
   }
 
   let uploadedSamples: ElevenLabsTtsPvcUploadedSample[] = []
-  if (sampleAudio.length > 0) {
-    uploadedSamples = await uploadElevenLabsTtsPvcSamples(baseURL, apiKey, voiceId, sampleAudio)
+  if (sampleAudioForUpload.length > 0) {
+    uploadedSamples = await uploadElevenLabsTtsPvcSamples(baseURL, apiKey, voiceId, sampleAudioForUpload)
     actions.push('upload_samples')
   }
 
@@ -597,8 +627,8 @@ export const runElevenLabsTtsPvcSetup = async (
     actions.push('write_captcha')
   }
 
-  const verificationStatus = options.verifyAudioPath?.trim()
-    ? await verifyElevenLabsTtsPvcCaptcha(baseURL, apiKey, voiceId, options.verifyAudioPath.trim())
+  const verificationStatus = materializedVerifyAudio
+    ? await verifyElevenLabsTtsPvcCaptcha(baseURL, apiKey, voiceId, materializedVerifyAudio.path)
     : undefined
   if (verificationStatus) {
     actions.push('verify_captcha')
@@ -638,6 +668,12 @@ export const runElevenLabsTtsPvcSetup = async (
     ...(typeof pollResult?.progress === 'number' ? { fineTuningProgress: pollResult.progress } : {}),
     readyForSynthesis: pollResult?.state === 'fine_tuned',
     actions
+  }
+  } finally {
+    await Promise.all([
+      ...materializedSamplePaths.map((item) => item.cleanup()),
+      materializedVerifyAudio?.cleanup() ?? Promise.resolve()
+    ])
   }
 }
 

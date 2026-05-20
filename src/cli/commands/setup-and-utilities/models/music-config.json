@@ -26,7 +26,7 @@
         "lyricsCostPerTrackCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 3390
+          "msPerSecond": 2762
         }
       },
       "music-2.6": {
@@ -37,7 +37,7 @@
         "lyricsCostPerTrackCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 2015
+          "msPerSecond": 1563
         }
       },
       "music-2.6-free": {
@@ -62,7 +62,8 @@
         "costPerTrackCents": 0,
         "providerPricing": "quote",
         "estimation": {
-          "msPerSecond": 1000
+          "msPerSecond": 713,
+          "costMultiplier": 1
         }
       },
       "AceStep_1_5_Base": {
@@ -70,7 +71,8 @@
         "costPerTrackCents": 0,
         "providerPricing": "quote",
         "estimation": {
-          "msPerSecond": 3000
+          "msPerSecond": 1473,
+          "costMultiplier": 1
         }
       },
       "AceStep_1_5_XL_Turbo_INT8": {
@@ -78,7 +80,8 @@
         "costPerTrackCents": 0,
         "providerPricing": "quote",
         "estimation": {
-          "msPerSecond": 1500
+          "msPerSecond": 881,
+          "costMultiplier": 1
         }
       }
     }

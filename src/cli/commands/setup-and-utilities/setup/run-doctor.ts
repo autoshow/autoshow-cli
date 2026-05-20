@@ -69,6 +69,7 @@ export const runDoctor = async (): Promise<void> => {
   checks.push(checkEnvVar('MISTRAL_API_KEY (Mistral STT/OCR/TTS)', 'MISTRAL_API_KEY'))
   checks.push(checkEnvVar('UNSTRUCTURED_API_KEY (Unstructured OCR)', 'UNSTRUCTURED_API_KEY'))
   checks.push(checkEnvVar('BFL_API_KEY', 'BFL_API_KEY'))
+  checks.push(checkEnvVar('REVE_API_KEY', 'REVE_API_KEY'))
   checks.push(checkEnvVar('ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY'))
   checks.push(checkEnvVar('GROQ_API_KEY', 'GROQ_API_KEY'))
   checks.push(checkEnvVar('DEEPINFRA_API_KEY', 'DEEPINFRA_API_KEY'))

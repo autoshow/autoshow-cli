@@ -11,7 +11,7 @@ describe('TTS dialogue contracts', () => {
     const input = await Bun.file('input/chat-and-duco.txt').text()
     const registry = parseSpeakerRefAudioMappings([
       'DUCO=input/examples/audio/anthony-voice.mp3',
-      'CHAT=input/examples/audio/0-audio-short.mp3'
+      'CHAT=https://ajc.pics/autoshow/examples/0-audio-short.mp3'
     ])
     const normalized = normalizeDialogueText(input, 'screenplay', registry)
 

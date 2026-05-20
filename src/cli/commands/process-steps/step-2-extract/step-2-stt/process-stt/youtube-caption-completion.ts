@@ -82,12 +82,13 @@ export const completeYoutubeCaptionStt = async ({
   })
 
   const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], prepared.durationSeconds, prepared.step1Metadata.url))
+  const observedEstimate = filterEstimatedSttCosts(resolveSttEstimatedCosts(undefined, [captionTranscription.target], prepared.durationSeconds, prepared.step1Metadata.url))
   const actual = computeActualCosts({
     step1: prepared.step1Metadata,
     step2: captionTranscription.metadata,
     audioDurationSeconds: prepared.durationSeconds
   })
-  const cost = { estimated, actual }
+  const cost = preflightEstimate ? { estimated, observedEstimate, actual } : { estimated, actual }
   const estimatedTiming = computeEstimatedProcessingTimes({
     sttTargets: [{
       service: captionTranscription.target.service,

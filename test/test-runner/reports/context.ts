@@ -65,6 +65,7 @@ const ARG_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
   '--runway-image': { service: 'runway', kind: 'image' },
   '--bfl-image': { service: 'bfl', kind: 'image' },
   '--deapi-image': { service: 'deapi', kind: 'image' },
+  '--reve-image': { service: 'reve', kind: 'image' },
   '--gemini-video': { service: 'gemini', kind: 'video' },
   '--minimax-video': { service: 'minimax', kind: 'video' },
   '--glm-video': { service: 'glm', kind: 'video' },

@@ -28,10 +28,18 @@ const resolveTestOutputDir = (): string => {
 
 export const OUTPUT_DIR = resolveTestOutputDir()
 process.env['AUTOSHOW_OUTPUT_DIR'] = OUTPUT_DIR
-export const STABLE_AUDIO_URL = 'https://ajc.pics/autoshow/1-audio.mp3'
+export const EXAMPLE_AUDIO_URL = 'https://ajc.pics/autoshow/examples/1-audio.mp3'
+export const EXAMPLE_SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
+export const EXAMPLE_VIDEO_URL = 'https://ajc.pics/autoshow/examples/2-video.mp4'
+export const LOCAL_EXAMPLE_AUDIO_PATH = join('input/examples/audio', '1-audio.mp3')
+export const LOCAL_EXAMPLE_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')
+export const LOCAL_EXAMPLE_VIDEO_PATH = join('input/examples/video', '2-video.mp4')
+export const SHORT_LOCAL_AUDIO_PATH = LOCAL_EXAMPLE_SHORT_AUDIO_PATH
+export const SHORT_LOCAL_AUDIO_TITLE = basename(SHORT_LOCAL_AUDIO_PATH).replace(/\.[^/.]+$/, '')
+export const STABLE_AUDIO_URL = EXAMPLE_AUDIO_URL
 export const STABLE_AUDIO_TITLE = new URL(STABLE_AUDIO_URL).pathname.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
-export const STABLE_LOCAL_AUDIO_PATH = 'input/examples/audio/1-audio.mp3'
-export const STABLE_LOCAL_AUDIO_TITLE = STABLE_LOCAL_AUDIO_PATH.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
+export const STABLE_EXAMPLE_AUDIO_URL = EXAMPLE_AUDIO_URL
+export const STABLE_EXAMPLE_AUDIO_TITLE = STABLE_EXAMPLE_AUDIO_URL.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
 export const STABLE_TTS_MD_PATH = 'input/examples/tts/1-tts.md'
 export const STABLE_TTS_MD_TITLE = '1-tts'
 const PAGE_IMAGE_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAN0lEQVR4nO3RwQ0AMAjDwJT9d05HMB9+vgGCZF7bXJrT9XhgwR8gEyETIRMhEyETIRMhEyEThXzH8QM9OMM6fAAAAABJRU5ErkJggg=='
@@ -142,13 +150,12 @@ const copyRunManifestToArtifacts = async (outputDir: string | null): Promise<voi
 }
 
 const SUBPROCESS_TIMEOUT = E2E_TEST_TIMEOUT_MS
-const E2E_CHILD_TIMEOUT_MS = String(E2E_TEST_TIMEOUT_MS)
-const E2E_CHILD_TIMEOUT_DEFAULTS: Record<string, string> = {
-  AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS,
-  AUTOSHOW_LLM_REQUEST_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS,
-  AUTOSHOW_OCR_REQUEST_TIMEOUT_MS: E2E_CHILD_TIMEOUT_MS,
-  AUTOSHOW_OCR_POLL_DEADLINE_MS: E2E_CHILD_TIMEOUT_MS
-}
+const E2E_CHILD_TIMEOUT_KEYS = [
+  'AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS',
+  'AUTOSHOW_LLM_REQUEST_TIMEOUT_MS',
+  'AUTOSHOW_OCR_REQUEST_TIMEOUT_MS',
+  'AUTOSHOW_OCR_POLL_DEADLINE_MS'
+] as const
 const TEST_CONFIG_PATH = resolve(import.meta.dir, 'fixtures/empty-autoshow-config.json')
 const TEST_CACHE_DIR = resolve(process.cwd(), TEST_OUTPUT_ROOT, '.test-cache')
 const PROCESSING_COMMANDS = new Set([
@@ -170,9 +177,10 @@ const BASE_CHILD_ENV = Object.entries(process.env).reduce<Record<string, string>
   return env
 }, {})
 
-const resolveE2EChildTimeoutDefaults = (): Record<string, string> => {
+const resolveE2EChildTimeoutDefaults = (timeoutMs: number): Record<string, string> => {
   const defaults: Record<string, string> = {}
-  for (const [key, value] of Object.entries(E2E_CHILD_TIMEOUT_DEFAULTS)) {
+  const value = String(timeoutMs)
+  for (const key of E2E_CHILD_TIMEOUT_KEYS) {
     if (!BASE_CHILD_ENV[key]?.trim()) {
       defaults[key] = value
     }
@@ -209,6 +217,7 @@ export type RunCommandOptions = {
   testName?: string
   env?: Record<string, string | undefined>
   cwd?: string
+  timeoutMs?: number
 }
 
 export type RunCommandResult = {
@@ -245,10 +254,11 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
   const startTime = Date.now()
   const commandLogPath = process.env['AUTOSHOW_TEST_COMMAND_LOG']
   const metricsLogPath = process.env['AUTOSHOW_TEST_METRICS_LOG']
+  const timeoutMs = opts?.timeoutMs ?? SUBPROCESS_TIMEOUT
 
   const env = {
     ...BASE_CHILD_ENV,
-    ...resolveE2EChildTimeoutDefaults(),
+    ...resolveE2EChildTimeoutDefaults(timeoutMs),
     AUTOSHOW_CACHE_DIR: TEST_CACHE_DIR,
     ...(opts?.env ?? {})
   }
@@ -265,7 +275,7 @@ export const runCommand = async (args: string[], opts?: RunCommandOptions): Prom
     } catch {
       proc.kill()
     }
-  }, SUBPROCESS_TIMEOUT)
+  }, timeoutMs)
 
   const [stdout, stderr, exitCode] = await Promise.all([
     readStreamText(proc.stdout),

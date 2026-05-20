@@ -301,6 +301,8 @@ export type RuntimeOptions = {
   bflImageModel: string | undefined
   deapiImageModels: string[] | undefined
   deapiImageModel: string | undefined
+  reveImageModels: string[] | undefined
+  reveImageModel: string | undefined
   imageAspectRatio: string | undefined
   imageSize: string | undefined
   imageQuality: string | undefined

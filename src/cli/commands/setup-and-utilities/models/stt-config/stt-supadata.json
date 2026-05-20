@@ -12,7 +12,8 @@
           "notes": "Supadata accepts public YouTube, TikTok, Instagram, X/Twitter, Facebook, and direct media/file URLs. Pricing is credit-based rather than USD-based: auto mode is approximately 1 credit when a native transcript exists, otherwise approximately 2 credits per minute when AI generation is required. Direct media/file URLs are always treated as generated transcripts by Supadata."
         },
         "estimation": {
-          "msPerSecond": 160
+          "msPerSecond": 61,
+          "costMultiplier": 0.25
         }
       }
     }

@@ -15,7 +15,7 @@ const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
 const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'hume-tts', 'cartesia-tts', 'gcloud-tts', 'deapi-tts'] as const
-const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image'] as const
+const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image', 'reve-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video', 'glm-video', 'grok-video', 'runway-video', 'deapi-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music', 'deapi-music', 'gemini-music'] as const
 const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
@@ -215,6 +215,7 @@ export const mergeConfigIntoRawFlags = (
       ['minimax-image', d.post.image.minimaxImage],
       ['grok-image', d.post.image.grokImage], ['runway-image', d.post.image.runwayImage],
       ['bfl-image', d.post.image.bflImage], ['deapi-image', d.post.image.deapiImage],
+      ['reve-image', d.post.image.reveImage],
     ])
     inject('image-aspect-ratio', d.post.image.imageAspectRatio)
     inject('image-size', d.post.image.imageSize)
@@ -423,6 +424,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'runway-image':      ['defaults', 'post', 'image', 'runwayImage'],
   'bfl-image':         ['defaults', 'post', 'image', 'bflImage'],
   'deapi-image':       ['defaults', 'post', 'image', 'deapiImage'],
+  'reve-image':        ['defaults', 'post', 'image', 'reveImage'],
   'image-aspect-ratio': ['defaults', 'post', 'image', 'imageAspectRatio'],
   'image-size':        ['defaults', 'post', 'image', 'imageSize'],
   'image-quality':     ['defaults', 'post', 'image', 'imageQuality'],

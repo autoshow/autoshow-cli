@@ -6,6 +6,7 @@ import { runGeminiVideoGen } from '~/cli/commands/process-steps/step-6-video/vid
 import { runGrokVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/grok/run-grok-video-gen'
 import { runGlmVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/glm/run-glm-video-gen'
 import { runMinimaxVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/minimax/run-minimax-video-gen'
+import { runRunwayVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/runway/run-runway-video-gen'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 
 type FetchCall = {
@@ -18,7 +19,7 @@ type FetchCall = {
 
 const originalFetch = globalThis.fetch
 const previousEnv: Record<string, string | undefined> = {}
-const envKeys = ['GEMINI_API_KEY', 'XAI_API_KEY', 'XAI_BASE_URL', 'GLM_API_KEY', 'ZAI_BASE_URL', 'MINIMAX_API_KEY', 'MINIMAX_BASE_URL']
+const envKeys = ['GEMINI_API_KEY', 'XAI_API_KEY', 'XAI_BASE_URL', 'GLM_API_KEY', 'ZAI_BASE_URL', 'MINIMAX_API_KEY', 'MINIMAX_BASE_URL', 'RUNWAYML_API_SECRET']
 const tempDirs: string[] = []
 const videoBytes = new Uint8Array([9, 8, 7])
 const inlineVideo = Buffer.from(videoBytes).toString('base64')
@@ -491,5 +492,60 @@ describe('video provider REST contracts', () => {
         model: 'grok-imagine-video'
       })).rejects.toThrow('blocked by moderation')
     })
+  })
+
+  test('Runway Gen-4.5 uses image_to_video text-only request shape and downloads output', async () => {
+    process.env['RUNWAYML_API_SECRET'] = 'runway-key'
+    const calls = installFetch((call) => {
+      if (call.url === 'https://api.dev.runwayml.com/v1/image_to_video' && call.method === 'POST') {
+        return jsonResponse({ id: 'runway-task-123' })
+      }
+      if (call.url === 'https://api.dev.runwayml.com/v1/tasks/runway-task-123' && call.method === 'GET') {
+        return jsonResponse({
+          id: 'runway-task-123',
+          status: 'SUCCEEDED',
+          output: ['https://cdn.example.com/runway.mp4'],
+          createdAt: '2026-05-20T12:00:00.000Z'
+        })
+      }
+      if (call.url === 'https://cdn.example.com/runway.mp4' && call.method === 'GET') return videoResponse()
+      throw new Error(`Unexpected Runway fetch: ${call.method} ${call.url}`)
+    })
+
+    await withTempDir(async (dir) => {
+      const result = await runRunwayVideoGen(
+        'A serene mountain landscape at sunrise with mist rolling through the valleys',
+        dir,
+        { model: 'gen4.5', durationSeconds: 5, aspectRatio: '16:9' }
+      )
+
+      expect(result.videoPath).toBe(`${dir}/generated-video.mp4`)
+      expect(Array.from(new Uint8Array(await Bun.file(result.videoPath).arrayBuffer()))).toEqual(Array.from(videoBytes))
+      expect(result.metadata).toMatchObject({
+        videoGenService: 'runway',
+        videoGenModel: 'gen4.5',
+        videoFileName: 'generated-video.mp4',
+        videoFileSize: videoBytes.byteLength,
+        videoDuration: 5
+      })
+    })
+
+    expect(calls.map((call) => `${call.method} ${call.url}`)).toEqual([
+      'POST https://api.dev.runwayml.com/v1/image_to_video',
+      'GET https://api.dev.runwayml.com/v1/tasks/runway-task-123',
+      'GET https://cdn.example.com/runway.mp4'
+    ])
+
+    const createCall = calls[0]!
+    expect(createCall.headers.get('Authorization')).toBe('Bearer runway-key')
+    expect(createCall.headers.get('X-Runway-Version')).toBe('2024-11-06')
+    expect(createCall.headers.get('Content-Type')).toBe('application/json')
+    expect(createCall.bodyJson).toEqual({
+      model: 'gen4.5',
+      promptText: 'A serene mountain landscape at sunrise with mist rolling through the valleys',
+      ratio: '1280:720',
+      duration: 5
+    })
+    expect(createCall.bodyJson).not.toHaveProperty('promptImage')
   })
 })

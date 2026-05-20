@@ -9,7 +9,7 @@ import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { writeShowNoteArtifacts } from '~/cli/commands/process-steps/step-3-write/show-note-artifacts'
 import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
-import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumentWriteEstimatedCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
+import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumentWriteEstimatedCosts, resolveDocumentWriteObservedEstimateCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import type { AggregatedPriceEstimate, BatchChildRunContext, ExtractionMetadata, ExtractionOptions, PreparedDocument, RuntimeOptions, Step1SourceRef, Step3Metadata, TranscriptionResult, VideoMetadata, WriteDocumentOutputMetadataOptions } from '~/types'
@@ -209,10 +209,21 @@ const writeDocumentOutputMetadata = async (
     deepinfraOcrModel,
     unstructuredOcrModel
   })
+  const observedEstimate = resolveDocumentWriteObservedEstimateCosts(step2, step3, {
+    mistralOcrModel,
+    glmOcrModel,
+    kimiOcrModel,
+    openaiOcrModel,
+    anthropicOcrModel,
+    geminiOcrModel,
+    deepinfraOcrModel,
+    unstructuredOcrModel
+  })
   const actual = computeActualCosts({ step2, step3 })
   const ocrDiagnostics = buildOcrCostDiagnostics(step2, estimated, actual)
   const cost = {
     estimated,
+    ...(preflightEstimate ? { observedEstimate } : {}),
     actual,
     ...(ocrDiagnostics.length > 0 ? { ocrDiagnostics } : {})
   }

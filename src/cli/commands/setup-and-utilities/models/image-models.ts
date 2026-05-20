@@ -1,6 +1,6 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
 import { isNativeGeminiImage } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, RunwayImageModel } from '~/types'
+import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, MinimaxImageModel, OpenAIImageModel, ReveImageModel, RunwayImageModel } from '~/types'
 
 export const SUPPORTED_GEMINI_IMAGE_MODELS = [
   'gemini-3.1-flash-image-preview',
@@ -67,3 +67,10 @@ export const SUPPORTED_DEAPI_IMAGE_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateDeapiImageModel = createModelValidator<DeapiImageModel>(SUPPORTED_DEAPI_IMAGE_MODELS, 'deapi-image')
+
+export const SUPPORTED_REVE_IMAGE_MODELS = [
+  'latest',
+  'reve-create@20250915'
+] as const satisfies readonly string[]
+
+export const validateReveImageModel = createModelValidator<ReveImageModel>(SUPPORTED_REVE_IMAGE_MODELS, 'reve-image')

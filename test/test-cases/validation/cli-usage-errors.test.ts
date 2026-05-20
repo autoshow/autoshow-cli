@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { STABLE_LOCAL_AUDIO_PATH, runCommand } from '../../test-utils/test-helpers'
+import { STABLE_EXAMPLE_AUDIO_URL, runCommand } from '../../test-utils/test-helpers'
 
 const tempDirs: string[] = []
 const repoFixtureFiles: string[] = []
@@ -109,17 +109,17 @@ test('benchmark --tts rejects missing source text without override', async () =>
 })
 
 test('unknown flag exits 2', async () => {
-  await expectUsageExit(['write', STABLE_LOCAL_AUDIO_PATH, '--structured'], 'Unexpected flag: structured')
+  await expectUsageExit(['write', STABLE_EXAMPLE_AUDIO_URL, '--structured'], 'Unexpected flag: structured')
 })
 
 test('legacy step-2 command names are not public commands', async () => {
   for (const command of ['stt', 'ocr'] as const) {
-    await expectUsageExit([command, STABLE_LOCAL_AUDIO_PATH], `Unknown command "${command}`)
+    await expectUsageExit([command, STABLE_EXAMPLE_AUDIO_URL], `Unknown command "${command}`)
   }
 })
 
 test('extract rejects LLM-only provider flags as unknown flags', async () => {
-  await expectUsageExit(['extract', STABLE_LOCAL_AUDIO_PATH, '--llama'], 'Unexpected flag: llama')
+  await expectUsageExit(['extract', STABLE_EXAMPLE_AUDIO_URL, '--llama'], 'Unexpected flag: llama')
 })
 
 test('extract rejects unsupported URL article option flags', async () => {
@@ -138,7 +138,7 @@ test('extract rejects invalid URL article backend names', async () => {
 
 test('write rejects all URL article backend mode', async () => {
   await expectUsageExit(
-    ['write', STABLE_LOCAL_AUDIO_PATH, '--all-url', '--price'],
+    ['write', STABLE_EXAMPLE_AUDIO_URL, '--all-url', '--price'],
     '--all-url is only supported on extract for this release'
   )
 })
@@ -165,7 +165,7 @@ test('extract accepts route-aware GLM OCR model in price mode', async () => {
 
 test('extract accepts route-aware GLM STT model in price mode', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'extract', STABLE_LOCAL_AUDIO_PATH, '--glm', 'glm-asr-2512', '--price'],
+    ['src/cli/create-cli.ts', 'extract', STABLE_EXAMPLE_AUDIO_URL, '--glm', 'glm-asr-2512', '--price'],
     { env: { NO_COLOR: '1' } }
   )
 
@@ -207,7 +207,7 @@ test('extract rejects old suffixed provider selector flags', async () => {
     'Unexpected flag: glmOcr'
   )
   await expectUsageExit(
-    ['extract', STABLE_LOCAL_AUDIO_PATH, '--glm-stt', 'glm-asr-2512', '--price'],
+    ['extract', STABLE_EXAMPLE_AUDIO_URL, '--glm-stt', 'glm-asr-2512', '--price'],
     'Unexpected flag: glmStt'
   )
 })
@@ -246,7 +246,7 @@ test('extract rejects unsupported ScrapeCreators STT modes', async () => {
 
 test('extract transcript-video flags require transcript-video mode', async () => {
   await expectUsageExit(
-    ['extract', STABLE_LOCAL_AUDIO_PATH, '--transcript-result', 'output/run/result.json'],
+    ['extract', STABLE_EXAMPLE_AUDIO_URL, '--transcript-result', 'output/run/result.json'],
     '--transcript-result require --transcript-video'
   )
 })
@@ -257,7 +257,7 @@ test('extract transcript-video manual mode requires audio and one transcript sou
     'Manual transcript-video mode requires --audio'
   )
   await expectUsageExit(
-    ['extract', '--transcript-video', '--audio', STABLE_LOCAL_AUDIO_PATH],
+    ['extract', '--transcript-video', '--audio', STABLE_EXAMPLE_AUDIO_URL],
     'Manual transcript-video mode requires exactly one of --transcript-result or --transcript-text'
   )
 })
@@ -268,11 +268,11 @@ test('music lyric-video mode rejects missing audio or batch', async () => {
 
 test('music rejects mixed hosted generation and lyric-video modes', async () => {
   await expectUsageExit(
-    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--minimax', 'music-2.5'],
+    ['music', '--audio', STABLE_EXAMPLE_AUDIO_URL, '--minimax', 'music-2.5'],
     'Do not combine hosted music flags'
   )
   await expectUsageExit(
-    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--out', 'output/music-run'],
+    ['music', '--audio', STABLE_EXAMPLE_AUDIO_URL, '--out', 'output/music-run'],
     'Do not combine hosted music flags'
   )
   await expectUsageExit(
@@ -290,7 +290,7 @@ test('standalone generation output directory aliases are mutually exclusive', as
 
 test('music lyric-video mode rejects price mode', async () => {
   await expectUsageExit(
-    ['music', '--audio', STABLE_LOCAL_AUDIO_PATH, '--price'],
+    ['music', '--audio', STABLE_EXAMPLE_AUDIO_URL, '--price'],
     'Do not combine hosted music flags'
   )
 })

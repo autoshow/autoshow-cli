@@ -48,6 +48,7 @@ export type {
   RunwayImageModel,
   BflImageModel,
   DeapiImageModel,
+  ReveImageModel,
   GeminiVideoModel,
   MinimaxVideoModel,
   GlmVideoModel,
