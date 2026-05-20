@@ -7,6 +7,7 @@ import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing
 import type { ResumeTarget, RuntimeOptions, Step7MusicMetadata, MusicTarget } from '~/types'
 
 const MUSIC_PROVIDER_FLAGS = [
+  'all-music',
   'elevenlabs-music',
   'minimax-music',
   'deapi-music',

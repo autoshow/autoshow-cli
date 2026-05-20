@@ -1,168 +1,120 @@
 import type { CliFlagDefinition, CliFlagsDefinition } from '~/cli/native'
 import {
-  ocrTuningFlags,
   batchFlags,
-  ocrInputFlags,
-  promptFlag,
-  transcriptionFlags
+  promptFlag
 } from './shared-flags'
-import { epubInspectFlags } from './ocr-flags'
-import { ttsFlags } from './tts-flags'
-import { imageGenFlags } from './image-flags'
-import { videoGenFlags } from './video-flags'
-import { musicGenFlags } from './music-flags'
-import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
+import { ocrCommandFlags } from './ocr-flags'
+import { sttFlags } from './stt-flags'
+import { TTS_COMMAND_SELECTOR_FLAGS, ttsFlags } from './tts-flags'
+import { IMAGE_COMMAND_SELECTOR_FLAGS, imageGenFlags } from './image-flags'
+import { VIDEO_COMMAND_SELECTOR_FLAGS, videoGenFlags } from './video-flags'
+import { MUSIC_COMMAND_SELECTOR_FLAGS, musicGenFlags } from './music-flags'
+import { EXTRACT_PUBLIC_SELECTOR_FLAGS } from '~/cli/commands/process-steps/service-selector-normalization'
+import { getStep2ProviderEntry } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
-const pickFlags = (
+const omitFlags = (
   flags: CliFlagsDefinition,
-  keys: readonly string[]
+  omittedKeys: readonly string[]
 ): CliFlagsDefinition => {
-  const picked: CliFlagsDefinition = {}
-  for (const key of keys) {
-    const definition = flags[key]
-    if (definition !== undefined) {
-      picked[key] = definition as CliFlagDefinition
-    }
-  }
-  return picked
+  const omitted = new Set(omittedKeys)
+  return Object.fromEntries(
+    Object.entries(flags).filter(([name]) => !omitted.has(name))
+  ) as CliFlagsDefinition
 }
 
-const resumeSttFlags = pickFlags(transcriptionFlags, [
-  ...getStep2ProviderSelectionFlagNames('stt'),
-  'youtube-captions',
-  'aws-region',
-  'aws-bucket',
-  'happyscribe-organization-id',
-  'supadata-lang',
-  'scrapecreators-lang',
-  'speaker-count',
-  'split',
-  'stt-provider-concurrency',
-  'stt-local-concurrency',
-  'stt-segment-concurrency',
-  'stt-preflight-concurrency',
-  'refresh-cache',
-  'no-cache'
+const hideFlag = (definition: CliFlagDefinition): CliFlagDefinition => ({
+  ...definition,
+  help: {
+    ...(definition.help ?? {}),
+    hidden: true
+  }
+})
+
+const modelSelectorDefinition = (name: string): CliFlagDefinition => ({
+  description: `Target-aware resume provider/model selector for --${name}`,
+  type: [String] as [StringConstructor],
+  help: { hidden: true }
+})
+
+const extractPublicSelectorHasModel = (publicName: string): boolean => {
+  const target = EXTRACT_PUBLIC_SELECTOR_FLAGS[publicName as keyof typeof EXTRACT_PUBLIC_SELECTOR_FLAGS]
+  return [target?.stt, target?.ocr].some((flagName) => {
+    const entry = typeof flagName === 'string' ? getStep2ProviderEntry(flagName) : undefined
+    return entry?.selection.type === 'models'
+  })
+}
+
+const buildPublicSelectorFlags = (): CliFlagsDefinition => {
+  const ttsPublicNames = Object.values(TTS_COMMAND_SELECTOR_FLAGS) as readonly string[]
+  const imagePublicNames = Object.values(IMAGE_COMMAND_SELECTOR_FLAGS) as readonly string[]
+  const videoPublicNames = Object.values(VIDEO_COMMAND_SELECTOR_FLAGS) as readonly string[]
+  const musicPublicNames = Object.values(MUSIC_COMMAND_SELECTOR_FLAGS) as readonly string[]
+  const publicNames = new Set([
+    ...ttsPublicNames,
+    ...imagePublicNames,
+    ...videoPublicNames,
+    ...musicPublicNames,
+    ...Object.keys(EXTRACT_PUBLIC_SELECTOR_FLAGS)
+  ])
+
+  const flags: CliFlagsDefinition = {}
+  for (const publicName of publicNames) {
+    if (extractPublicSelectorHasModel(publicName)
+      || ttsPublicNames.includes(publicName)
+      || imagePublicNames.includes(publicName)
+      || videoPublicNames.includes(publicName)
+      || musicPublicNames.includes(publicName)) {
+      flags[publicName] = modelSelectorDefinition(publicName)
+      continue
+    }
+
+    const extractTarget = EXTRACT_PUBLIC_SELECTOR_FLAGS[publicName as keyof typeof EXTRACT_PUBLIC_SELECTOR_FLAGS]
+    const extractEntry = extractTarget?.stt
+      ? getStep2ProviderEntry(extractTarget.stt)
+      : extractTarget?.ocr
+        ? getStep2ProviderEntry(extractTarget.ocr)
+        : undefined
+    flags[publicName] = hideFlag((extractEntry?.flag ?? {
+      description: `Target-aware resume provider selector for --${publicName}`,
+      type: Boolean,
+      default: false,
+      negatable: false
+    }) as CliFlagDefinition)
+  }
+
+  return flags
+}
+
+const resumeSttFlags = omitFlags(sttFlags, [
+  'batch-limit',
+  'batch-all',
+  'batch-order',
+  'price'
 ])
 
-const resumeOcrFlags = {
-  ...pickFlags(ocrInputFlags, [
-    ...getStep2ProviderSelectionFlagNames('ocr'),
-    'lang',
-    'out',
-    'password',
-    'ocr-provider-concurrency',
-    'ocr-local-concurrency'
-  ]),
-  ...pickFlags(ocrTuningFlags, [
-    'dpi',
-    'psm',
-    'oem',
-    'page-separator',
-    'preserve-spaces',
-    'rotate'
-  ]),
-  ...epubInspectFlags
-} as const satisfies CliFlagsDefinition
-
-const resumeTtsFlags = pickFlags(ttsFlags, [
-  'kitten-tts',
-  'elevenlabs-tts',
-  'minimax-tts',
-  'groq-tts',
-  'mistral-tts',
-  'openai-tts',
-  'gemini-tts',
-  'deepgram-tts',
-  'hume-tts',
-  'cartesia-tts',
-  'kitten-voice',
-  'elevenlabs-voice',
-  'elevenlabs-tts-pvc-voice',
-  'elevenlabs-tts-ref-audio',
-  'elevenlabs-tts-voice-name',
-  'elevenlabs-tts-clone-remove-background-noise',
-  'minimax-tts-voice',
-  'openai-voice',
-  'openai-tts-ref-audio',
-  'openai-tts-consent-id',
-  'openai-tts-consent-audio',
-  'openai-tts-consent-language',
-  'openai-tts-consent-name',
-  'openai-tts-voice-name',
-  'gemini-voice',
-  'deepgram-voice',
-  'hume-tts-voice',
-  'hume-tts-voice-provider',
-  'cartesia-tts-voice',
-  'cartesia-tts-language',
-  'groq-voice',
-  'mistral-tts-voice',
-  'mistral-tts-ref-audio',
-  'gemini-speaker-1-name',
-  'gemini-speaker-1-voice',
-  'gemini-speaker-2-name',
-  'gemini-speaker-2-voice',
-  'tts-provider-concurrency',
-  'tts-local-concurrency'
+const resumeOcrFlags = omitFlags(ocrCommandFlags, [
+  'batch-limit',
+  'batch-all',
+  'batch-order',
+  'all-url',
+  'url-backend',
+  'url-provider-concurrency',
+  'primary-ocr',
+  'price'
 ])
 
-const resumeImageFlags = pickFlags(imageGenFlags, [
-  'gemini-image',
-  'openai-image',
-  'minimax-image',
-  'grok-image',
-  'runway-image',
-  'bfl-image',
-  'deapi-image',
-  'reve-image',
-  'image-aspect-ratio',
-  'image-size',
-  'image-quality',
-  'image-format',
-  'image-background',
-  'image-count',
-  'image-input',
-  'image-mask',
-  'image-response-mode',
-  'gemini-person-generation',
-  'gemini-search-grounding',
-  'image-compression',
-  'image-provider-concurrency',
-  'image-local-concurrency'
-])
+const resumeTtsFlags = omitFlags(ttsFlags, ['price'])
+const resumeImageFlags = omitFlags(imageGenFlags, ['price'])
+const resumeVideoFlags = omitFlags(videoGenFlags, ['price'])
+const resumeMusicFlags = omitFlags(musicGenFlags, ['price'])
 
-const resumeVideoFlags = pickFlags(videoGenFlags, [
-  'gemini-video',
-  'minimax-video',
-  'glm-video',
-  'grok-video',
-  'runway-video',
-  'deapi-video',
-  'video-duration',
-  'video-size',
-  'video-aspect-ratio',
-  'video-resolution',
-  'video-provider-concurrency',
-  'video-local-concurrency'
-])
-
-const resumeMusicFlags = pickFlags(musicGenFlags, [
-  'elevenlabs-music',
-  'minimax-music',
-  'deapi-music',
-  'gemini-music',
-  'music-duration',
-  'music-lyrics-file',
-  'music-instrumental',
-  'music-provider-concurrency',
-  'music-local-concurrency'
-])
+const resumePublicSelectorFlags = buildPublicSelectorFlags()
 
 export const resumeFlags = {
+  ...resumePublicSelectorFlags,
   ...resumeSttFlags,
   ...promptFlag,
-  ...pickFlags(batchFlags, ['batch-concurrency']),
+  'batch-concurrency': batchFlags['batch-concurrency'],
   ...resumeOcrFlags,
   ...resumeTtsFlags,
   ...resumeImageFlags,

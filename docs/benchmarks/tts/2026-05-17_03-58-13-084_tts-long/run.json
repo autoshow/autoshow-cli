@@ -155,6 +155,33 @@
         "audioFileName": "speech-deapi-Qwen3_TTS_12Hz_1_7B_CustomVoice.wav",
         "audioFileSize": 1129038,
         "chunkCount": 1
+      },
+      {
+        "ttsService": "hume",
+        "ttsModel": "octave-2",
+        "speaker": "Male English Actor",
+        "processingTime": 3964,
+        "audioFileName": "speech-hume-octave-2.wav",
+        "audioFileSize": 533838,
+        "chunkCount": 1
+      },
+      {
+        "ttsService": "cartesia",
+        "ttsModel": "sonic-3",
+        "speaker": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+        "processingTime": 7556,
+        "audioFileName": "speech-cartesia-sonic-3.wav",
+        "audioFileSize": 489238,
+        "chunkCount": 1
+      },
+      {
+        "ttsService": "cartesia",
+        "ttsModel": "sonic-3.5",
+        "speaker": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+        "processingTime": 2921,
+        "audioFileName": "speech-cartesia-sonic-3.5.wav",
+        "audioFileSize": 522148,
+        "chunkCount": 1
       }
     ],
     "cost": {
@@ -328,13 +355,14 @@
         ]
       },
       "actual": {
-        "totalCost": 15.790346,
+        "totalCost": 22.218196,
         "steps": [
           {
             "step": "tts",
             "provider": "kitten",
             "model": "kitten-tts-mini",
             "cost": 0,
+            "costSource": "local_zero",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -343,6 +371,7 @@
             "provider": "kitten",
             "model": "kitten-tts-micro",
             "cost": 0,
+            "costSource": "local_zero",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -351,6 +380,7 @@
             "provider": "kitten",
             "model": "kitten-tts-nano",
             "cost": 0,
+            "costSource": "local_zero",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -359,6 +389,7 @@
             "provider": "kitten",
             "model": "kitten-tts-nano-0.8-int8",
             "cost": 0,
+            "costSource": "local_zero",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -367,6 +398,7 @@
             "provider": "elevenlabs",
             "model": "eleven_v3",
             "cost": 2.86,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -375,6 +407,7 @@
             "provider": "minimax",
             "model": "speech-2.8-hd",
             "cost": 2.86,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -383,6 +416,7 @@
             "provider": "minimax",
             "model": "speech-2.8-turbo",
             "cost": 1.7159999999999997,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -391,6 +425,7 @@
             "provider": "groq",
             "model": "canopylabs/orpheus-v1-english",
             "cost": 0.9152,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -399,6 +434,7 @@
             "provider": "grok",
             "model": "grok-tts",
             "cost": 0.12011999999999999,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -407,6 +443,7 @@
             "provider": "openai",
             "model": "gpt-4o-mini-tts",
             "cost": 0.36036,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -415,6 +452,7 @@
             "provider": "gemini",
             "model": "gemini-3.1-flash-tts-preview",
             "cost": 0.6006,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -423,6 +461,7 @@
             "provider": "deepgram",
             "model": "aura-2-thalia-en",
             "cost": 0.8579999999999999,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -431,6 +470,7 @@
             "provider": "gcloud",
             "model": "chirp3-hd",
             "cost": 0.8579999999999999,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -439,6 +479,7 @@
             "provider": "gcloud",
             "model": "studio",
             "cost": 4.576,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -447,6 +488,7 @@
             "provider": "deapi",
             "model": "Kokoro",
             "cost": 0.022021999999999996,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -455,6 +497,7 @@
             "provider": "deapi",
             "model": "Chatterbox",
             "cost": 0.022021999999999996,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           },
@@ -463,6 +506,34 @@
             "provider": "deapi",
             "model": "Qwen3_TTS_12Hz_1_7B_CustomVoice",
             "cost": 0.022021999999999996,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 286
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2",
+            "cost": 4.29,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 286
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3",
+            "cost": 1.068925,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 286
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5",
+            "cost": 1.068925,
+            "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 286
           }
@@ -636,7 +707,7 @@
         ]
       },
       "actual": {
-        "totalProcessingTimeMs": 262813,
+        "totalProcessingTimeMs": 277254,
         "steps": [
           {
             "step": "tts",
@@ -644,7 +715,12 @@
             "model": "kitten-tts-mini",
             "processingTimeMs": 9042,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 31615.385,
+            "throughputValue": 31.63,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -652,7 +728,12 @@
             "model": "kitten-tts-micro",
             "processingTimeMs": 7841,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 27416.084,
+            "throughputValue": 36.475,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -660,7 +741,12 @@
             "model": "kitten-tts-nano",
             "processingTimeMs": 6083,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 21269.231,
+            "throughputValue": 47.016,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -668,7 +754,12 @@
             "model": "kitten-tts-nano-0.8-int8",
             "processingTimeMs": 7839,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 27409.091,
+            "throughputValue": 36.484,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -676,7 +767,12 @@
             "model": "eleven_v3",
             "processingTimeMs": 11408,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 39888.112,
+            "throughputValue": 25.07,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -684,7 +780,12 @@
             "model": "speech-2.8-hd",
             "processingTimeMs": 80862,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 282734.266,
+            "throughputValue": 3.537,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -692,7 +793,12 @@
             "model": "speech-2.8-turbo",
             "processingTimeMs": 11580,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 40489.51,
+            "throughputValue": 24.698,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -700,7 +806,12 @@
             "model": "canopylabs/orpheus-v1-english",
             "processingTimeMs": 4164,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 14559.441,
+            "throughputValue": 68.684,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -708,7 +819,12 @@
             "model": "grok-tts",
             "processingTimeMs": 4857,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16982.517,
+            "throughputValue": 58.884,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -716,7 +832,12 @@
             "model": "gpt-4o-mini-tts",
             "processingTimeMs": 5108,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 17860.14,
+            "throughputValue": 55.991,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -724,7 +845,12 @@
             "model": "gemini-3.1-flash-tts-preview",
             "processingTimeMs": 14128,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 49398.601,
+            "throughputValue": 20.243,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -732,7 +858,12 @@
             "model": "aura-2-thalia-en",
             "processingTimeMs": 9427,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 32961.538,
+            "throughputValue": 30.338,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -740,7 +871,12 @@
             "model": "chirp3-hd",
             "processingTimeMs": 2750,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 9615.385,
+            "throughputValue": 104,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -748,7 +884,12 @@
             "model": "studio",
             "processingTimeMs": 1798,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 6286.713,
+            "throughputValue": 159.066,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -756,7 +897,12 @@
             "model": "Kokoro",
             "processingTimeMs": 4941,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 17276.224,
+            "throughputValue": 57.883,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -764,7 +910,12 @@
             "model": "Chatterbox",
             "processingTimeMs": 16030,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 56048.951,
+            "throughputValue": 17.842,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           },
           {
             "step": "tts",
@@ -772,7 +923,51 @@
             "model": "Qwen3_TTS_12Hz_1_7B_CustomVoice",
             "processingTimeMs": 64955,
             "inputMetric": "characters",
-            "inputValue": 286
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 227115.385,
+            "throughputValue": 4.403,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2",
+            "processingTimeMs": 3964,
+            "inputMetric": "characters",
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 13860.14,
+            "throughputValue": 72.149,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3",
+            "processingTimeMs": 7556,
+            "inputMetric": "characters",
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 26419.58,
+            "throughputValue": 37.851,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5",
+            "processingTimeMs": 2921,
+            "inputMetric": "characters",
+            "inputValue": 286,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 10213.287,
+            "throughputValue": 97.912,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
           }
         ]
       }
@@ -858,6 +1053,18 @@
       {
         "service": "deapi",
         "model": "Qwen3_TTS_12Hz_1_7B_CustomVoice"
+      },
+      {
+        "service": "hume",
+        "model": "octave-2"
+      },
+      {
+        "service": "cartesia",
+        "model": "sonic-3"
+      },
+      {
+        "service": "cartesia",
+        "model": "sonic-3.5"
       }
     ]
   }

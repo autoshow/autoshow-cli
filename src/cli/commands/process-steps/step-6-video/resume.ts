@@ -7,6 +7,7 @@ import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing
 import type { ResumeTarget, RuntimeOptions, Step6VideoMetadata, VideoTarget } from '~/types'
 
 const VIDEO_PROVIDER_FLAGS = [
+  'all-video',
   'gemini-video',
   'minimax-video',
   'glm-video',

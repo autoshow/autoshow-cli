@@ -3,7 +3,7 @@
 ## Summary
 
 - Run directory: `/Users/ajc/c/as/autoshow-cli/docs/benchmarks/tts/2026-05-17_03-58-13-084_tts-long`
-- Total providers: 17 (4 local, 13 service)
+- Total providers: 20 (4 local, 16 service)
 - Local and service providers are intentionally not ranked against each other.
 - Reports expose separate fastest, cheapest, and highest-quality surfaces for each group.
 
@@ -53,7 +53,7 @@ Unavailable: No roundtrip WER or explicit voice-quality metric was available for
 | ---: | --- | --- |
 | 1 | `gcloud/studio` | 1.80s |
 | 2 | `gcloud/chirp3-hd` | 2.75s |
-| 3 | `groq/canopylabs/orpheus-v1-english` | 4.16s |
+| 3 | `cartesia/sonic-3.5` | 2.92s |
 
 ### Top 3 Cheapest
 
@@ -71,6 +71,8 @@ Unavailable: No roundtrip WER or explicit voice-quality metric was available for
 
 | Provider | Quality Evidence | Processing Time | Monetary Cost |
 | --- | --- | ---: | ---: |
+| `cartesia/sonic-3` | n/a | 7.56s | $0.0107 |
+| `cartesia/sonic-3.5` | n/a | 2.92s | $0.0107 |
 | `deapi/Chatterbox` | n/a | 16.03s | $0.0002 |
 | `deapi/Kokoro` | n/a | 4.94s | $0.0002 |
 | `deapi/Qwen3_TTS_12Hz_1_7B_CustomVoice` | n/a | 64.95s | $0.0002 |
@@ -81,6 +83,7 @@ Unavailable: No roundtrip WER or explicit voice-quality metric was available for
 | `gemini/gemini-3.1-flash-tts-preview` | n/a | 14.13s | $0.0060 |
 | `grok/grok-tts` | n/a | 4.86s | $0.0012 |
 | `groq/canopylabs/orpheus-v1-english` | n/a | 4.16s | $0.0092 |
+| `hume/octave-2` | n/a | 3.96s | $0.0429 |
 | `minimax/speech-2.8-hd` | n/a | 80.86s | $0.0286 |
 | `minimax/speech-2.8-turbo` | n/a | 11.58s | $0.0172 |
 | `openai/gpt-4o-mini-tts` | n/a | 5.11s | $0.0036 |

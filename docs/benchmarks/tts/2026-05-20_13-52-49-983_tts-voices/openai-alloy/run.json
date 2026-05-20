@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "kind": "tts",
+  "metadata": {
+    "tts": [
+      {
+        "ttsService": "openai",
+        "ttsModel": "gpt-4o-mini-tts",
+        "speaker": "alloy",
+        "processingTime": 9203,
+        "audioFileName": "speech.wav",
+        "audioFileSize": 1176078,
+        "chunkCount": 1
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 0.64008,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts",
+            "cost": 0.64008,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 60,
+            "outputCostPer1MCharactersCents": 1200
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 0.64008,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts",
+            "cost": 0.64008,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 60,
+            "outputCostPer1MCharactersCents": 1200
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 0.64008,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts",
+            "cost": 0.64008,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 10846,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts",
+            "processingTimeMs": 10846,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 21350.394,
+            "throughputValue": 46.838,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 9203,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts",
+            "processingTimeMs": 9203,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 18116.142,
+            "throughputValue": 55.199,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "This is a short test passage used by AutoShow to demonstrate text-to-speech generation.\n\nAt 6:45 a.m. on February 29, 2026, Professor Saoirse Nguyen-Langford carried 14.8 million red leather, yellow leather seashells through Reykjavík Gate B-17, past Maya O’Shaughnessy and a naïve jalapeño vendor in rural Worcestershire, while a flight attendant announced, “You know you need unique New York,” and thirty-three slick swans swiftly synthesized cinnamon statistics beside six securely sorted seashore shells.",
+    "requestedProviders": [
+      {
+        "service": "openai",
+        "model": "gpt-4o-mini-tts"
+      }
+    ]
+  }
+}

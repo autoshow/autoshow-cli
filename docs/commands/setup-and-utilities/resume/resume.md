@@ -48,11 +48,12 @@ bun as resume <output-dir> [flags]
 - Stored provider order is preserved in `requestedProviders`; newly selected provider/models are appended in the order selected.
 - `extract` media-route runs accept STT provider/runtime flags.
 - `extract` document-route runs accept OCR provider/runtime flags.
-- TTS runs accept the resume-specific TTS provider/voice flags listed below. Omitting explicit provider flags still uses the original requested providers stored in the manifest.
+- TTS, image, video, and music runs accept the same resumable provider/model and control flags as their standalone commands, excluding generation output path and price flags. Omitting explicit provider flags still uses the original requested providers stored in the manifest.
 - Image runs accept image provider/option flags.
 - Video runs accept video provider/option flags.
 - Music runs accept music provider/option flags.
 - `extract` parent batches forward explicit STT flags only to routed `media/` child batches and explicit OCR flags only to routed `document/` child batches.
+- Public provider aliases are target-aware. For example, `--gcloud chirp3-hd` on a TTS run maps to `--gcloud-tts chirp3-hd`, while `--openai gpt-image-2` on an image run maps to `--openai-image gpt-image-2`. Aliases that do not apply to the resolved target fail with a usage error.
 
 ## Examples
 
@@ -130,6 +131,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 | Flag | Description |
 |------|-------------|
+| `--all-stt` | Select every supported STT provider/model |
 | `--whisper-stt <model>` | Select one or more local Whisper models |
 | `--reverb-stt` | Use Reverb instead of Whisper |
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
@@ -172,6 +174,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 | Flag | Description |
 |------|-------------|
+| `--all-ocr` | Select every supported OCR engine/provider model |
 | `--lang <codes>` | Tesseract language codes such as `eng` or `eng+fra` |
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
@@ -193,6 +196,9 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--page-separator <text>` | Custom page separator string |
 | `--preserve-spaces` | Enable Tesseract `preserve_interword_spaces=1` |
 | `--rotate <degrees>` | Rotate pages before OCR |
+| `--chapters` | Write EPUB/PDF chapter files when the resumed path rebuilds extraction artifacts |
+| `--length <thousands>` | Hard export limit in thousands of characters for EPUB/PDF chunking |
+| `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
 | `--epub-bun` | Inspect EPUB structure with the Bun parser |
 | `--epub-calibre` | Compatibility alias for the Bun EPUB parser |
 | `--ocr-provider-concurrency <n>` | Max hosted OCR providers/models running in parallel for one item |
@@ -200,30 +206,56 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 ### TTS
 
-The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, Groq, Mistral, OpenAI, Gemini, Deepgram, Hume, and Cartesia TTS. It does not expose newer standalone TTS-only flags for Grok, Speechify, Google Cloud, deAPI, MiniMax synthesis controls, OpenAI instructions/speed, or Grok language/normalization.
+Resume supports the full resumable TTS provider/model surface, including Grok, Speechify, Google Cloud, deAPI, voice flags, request-control flags, and `--all-tts`. `--all-tts` is additive during resume: completed stored providers are skipped and newly selected runnable providers are appended.
 
 | Flag | Description |
 |------|-------------|
+| `--all-tts` | Select the default all-provider TTS target set |
 | `--kitten-tts <model>` | Select one or more Kitten TTS models |
 | `--elevenlabs-tts <model>` | Select one or more ElevenLabs TTS models |
 | `--minimax-tts <model>` | Select one or more MiniMax TTS models |
 | `--groq-tts <model>` | Select one or more Groq TTS models |
+| `--grok-tts <model>` | Select one or more xAI Grok TTS models |
 | `--mistral-tts <model>` | Select one or more Mistral Voxtral TTS models |
 | `--openai-tts <model>` | Select one or more OpenAI TTS models |
 | `--gemini-tts <model>` | Select one or more Gemini TTS models |
 | `--deepgram-tts <model>` | Select one or more Deepgram TTS models |
+| `--speechify-tts <model>` | Select one or more Speechify TTS models |
 | `--hume-tts <model>` | Select one or more Hume TTS models |
 | `--cartesia-tts <model>` | Select one or more Cartesia TTS models |
+| `--gcloud-tts <model>` | Select one or more Google Cloud TTS models |
+| `--deapi-tts <model>` | Select one or more deAPI TTS models |
 | `--tts-provider-concurrency <n>` | Max hosted TTS providers/models running in parallel for one item |
 | `--tts-local-concurrency <n>` | Max local TTS providers running in parallel for one item |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
 | `--elevenlabs-voice <id>` | ElevenLabs voice ID override |
 | `--elevenlabs-tts-pvc-voice <id>` | Trained ElevenLabs PVC voice ID for resumed synthesis |
+| `--elevenlabs-tts-output-format <format>` | ElevenLabs output format |
+| `--elevenlabs-tts-language-code <code>` | ElevenLabs language code override |
+| `--elevenlabs-tts-stability <0-1>` | ElevenLabs stability |
+| `--elevenlabs-tts-similarity-boost <0-1>` | ElevenLabs similarity boost |
+| `--elevenlabs-tts-style <0-1>` | ElevenLabs style |
+| `--elevenlabs-tts-use-speaker-boost` | Enable ElevenLabs speaker boost |
+| `--elevenlabs-tts-speed <n>` | ElevenLabs voice speed |
+| `--elevenlabs-tts-seed <n>` | ElevenLabs deterministic seed |
+| `--elevenlabs-tts-text-normalization <mode>` | ElevenLabs text normalization mode |
+| `--elevenlabs-tts-pronunciation-dictionary-locator <id>` | ElevenLabs pronunciation dictionary locator |
+| `--elevenlabs-tts-optimize-streaming-latency <n>` | ElevenLabs streaming latency optimization |
+| `--elevenlabs-tts-pvc-*` | ElevenLabs PVC setup flags for sample input, verification, and wait behavior |
 | `--elevenlabs-tts-ref-audio <path>` | ElevenLabs IVC reference audio path |
 | `--elevenlabs-tts-voice-name <name>` | Created ElevenLabs clone label |
 | `--elevenlabs-tts-clone-remove-background-noise` | Enable ElevenLabs IVC background noise removal |
 | `--minimax-tts-voice <id>` | MiniMax TTS voice ID override |
+| `--minimax-tts-language-boost <mode>` | MiniMax language boost |
+| `--minimax-tts-speed <n>` | MiniMax speech speed |
+| `--minimax-tts-volume <n>` | MiniMax volume |
+| `--minimax-tts-pitch <n>` | MiniMax pitch adjustment |
+| `--minimax-tts-emotion <emotion>` | MiniMax emotion |
+| `--minimax-tts-english-normalization` | Enable MiniMax English normalization |
+| `--minimax-tts-pronunciation <rule>` | MiniMax pronunciation rule |
 | `--openai-voice <id>` | OpenAI TTS voice ID override |
+| `--openai-tts-instructions <text>` | OpenAI TTS voice/style instructions |
+| `--openai-tts-speed <n>` | OpenAI TTS speed |
 | `--openai-tts-ref-audio <path>` | OpenAI custom voice sample audio path |
 | `--openai-tts-consent-id <id>` | Existing OpenAI consent recording ID |
 | `--openai-tts-consent-audio <path>` | OpenAI consent recording audio path to upload |
@@ -232,13 +264,45 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--openai-tts-voice-name <name>` | Created OpenAI custom voice label |
 | `--gemini-voice <name>` | Gemini TTS voice name override |
 | `--deepgram-voice <id>` | Deepgram TTS voice override |
+| `--deepgram-tts-encoding <encoding>` | Deepgram output encoding |
+| `--deepgram-tts-container <container>` | Deepgram output container |
+| `--deepgram-tts-bit-rate <bps>` | Deepgram bit rate |
+| `--deepgram-tts-sample-rate <hz>` | Deepgram sample rate |
+| `--deepgram-tts-speed <n>` | Deepgram voice speed |
+| `--speechify-voice <id>` | Speechify voice ID override |
+| `--speechify-tts-audio-format <format>` | Speechify audio format |
+| `--speechify-tts-language <tag>` | Speechify language hint |
+| `--speechify-tts-ref-audio <path>` | Speechify custom voice reference audio |
+| `--speechify-tts-voice-*` | Speechify custom voice label, locale, and gender flags |
+| `--speechify-tts-consent-*` | Speechify custom voice consent flags |
 | `--hume-tts-voice <name-or-id>` | Hume voice name or ID override |
 | `--hume-tts-voice-provider <provider>` | Hume named voice provider, `HUME_AI` or `CUSTOM_VOICE` |
 | `--cartesia-tts-voice <id>` | Cartesia voice ID override |
 | `--cartesia-tts-language <code>` | Cartesia language code override |
+| `--gcloud-tts-voice <name>` | Google Cloud TTS voice name |
+| `--gcloud-tts-language <tag>` | Google Cloud TTS language tag |
+| `--gcloud-tts-ref-audio <path>` | Google Cloud instant custom voice reference audio |
+| `--gcloud-tts-consent-audio <path>` | Google Cloud instant custom voice consent audio |
+| `--gcloud-tts-consent-language <tag>` | Google Cloud instant custom voice consent language |
+| `--gcloud-tts-voice-cloning-key <key>` | Google Cloud instant custom voice cloning key |
+| `--gcloud-tts-voice-cloning-key-out <path>` | Write generated Google Cloud voice cloning key |
+| `--deapi-tts-voice <id>` | deAPI voice override |
+| `--deapi-tts-ref-audio <path>` | deAPI voice clone reference audio |
+| `--deapi-tts-ref-text <text>` | deAPI reference audio transcript |
+| `--deapi-tts-language <language>` | deAPI language override |
+| `--deapi-tts-speed <n>` | deAPI speech speed |
+| `--deapi-tts-format <format>` | deAPI output format |
+| `--deapi-tts-sample-rate <hz>` | deAPI output sample rate |
+| `--deapi-tts-instruction <text>` | deAPI voice-design instruction |
 | `--groq-voice <id>` | Groq TTS voice ID override |
+| `--grok-tts-voice <id>` | Grok TTS voice override |
+| `--grok-tts-language <code>` | Grok TTS language code |
+| `--grok-tts-text-normalization` | Enable Grok TTS text normalization |
 | `--mistral-tts-voice <id>` | Mistral saved/custom voice ID |
 | `--mistral-tts-ref-audio <path>` | Mistral one-off voice clone reference audio path |
+| `--mistral-tts-voice-name <name>` | Mistral saved voice name |
+| `--tts-dialogue-format <mode>` | Dialogue input format |
+| `--tts-speaker-ref-audio <speaker=path>` | Speaker reference audio mapping |
 | `--gemini-speaker-1-name <name>` | Gemini multispeaker speaker 1 name |
 | `--gemini-speaker-1-voice <voice>` | Gemini multispeaker speaker 1 voice |
 | `--gemini-speaker-2-name <name>` | Gemini multispeaker speaker 2 name |
@@ -248,6 +312,7 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 
 | Flag | Description |
 |------|-------------|
+| `--all-image` | Select every supported image provider/model |
 | `--gemini-image <model>` | Select one or more Gemini image models |
 | `--openai-image <model>` | Select one or more OpenAI image models |
 | `--minimax-image <model>` | Select one or more MiniMax image models |
@@ -275,6 +340,7 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 
 | Flag | Description |
 |------|-------------|
+| `--all-video` | Select every supported video provider/model |
 | `--gemini-video <model>` | Select one or more Gemini video models |
 | `--minimax-video <model>` | Select one or more MiniMax video models |
 | `--glm-video <model>` | Select one or more GLM video models |
@@ -282,9 +348,16 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 | `--runway-video <model>` | Select one or more Runway video models |
 | `--deapi-video <model>` | Select one or more deAPI video models |
 | `--video-duration <seconds>` | Video duration in seconds |
+| `--video-mode <mode>` | Video generation mode |
 | `--video-size <size>` | Video size |
 | `--video-aspect-ratio <ratio>` | Video aspect ratio |
 | `--video-resolution <res>` | Video resolution (Gemini) |
+| `--video-input-image <path-or-url>` | Input image for image-to-video and interpolation |
+| `--video-last-frame <path-or-url>` | Last-frame image for interpolation |
+| `--video-reference-image <path-or-url>` | Reference image for reference-to-video |
+| `--video-input-video <path-or-url>` | Input video for extension or editing |
+| `--grok-video-storage-filename <name>` | Grok video storage filename |
+| `--grok-video-storage-expires-after <seconds>` | Grok video storage expiration |
 | `--video-provider-concurrency <n>` | Max hosted video providers/models running in parallel for one item |
 | `--video-local-concurrency <n>` | Max local video providers running in parallel for one item |
 
@@ -292,6 +365,7 @@ The explicit resume flag surface currently covers Kitten, ElevenLabs, MiniMax, G
 
 | Flag | Description |
 |------|-------------|
+| `--all-music` | Select every supported hosted music provider/model |
 | `--elevenlabs-music <model>` | Select one or more ElevenLabs music models |
 | `--minimax-music <model>` | Select one or more MiniMax music models |
 | `--deapi-music <model>` | Select one or more deAPI music models |

@@ -25,5 +25,5 @@ export const resumeCommand = defineCliCommand({
     ]
   }
 }, async (ctx) => {
-  await dispatchResume(ctx.parameters.outputDir, ctx.flags, ctx.rawParsed.doubleDash)
+  await dispatchResume(ctx.parameters.outputDir, ctx.flags, ctx.rawParsed.doubleDash, ctx.argv)
 })

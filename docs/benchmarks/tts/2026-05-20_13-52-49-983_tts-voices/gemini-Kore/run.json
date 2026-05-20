@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "kind": "tts",
+  "metadata": {
+    "tts": [
+      {
+        "ttsService": "gemini",
+        "ttsModel": "gemini-3.1-flash-tts-preview",
+        "speaker": "Kore",
+        "processingTime": 19485,
+        "audioFileName": "speech.wav",
+        "audioFileSize": 977998,
+        "chunkCount": 1
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 1.0668,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview",
+            "cost": 1.0668,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 100,
+            "outputCostPer1MCharactersCents": 2000
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 1.0668,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview",
+            "cost": 1.0668,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 100,
+            "outputCostPer1MCharactersCents": 2000
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 1.0668,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview",
+            "cost": 1.0668,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 43947,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview",
+            "processingTimeMs": 43947,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 86509.843,
+            "throughputValue": 11.559,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 19485,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview",
+            "processingTimeMs": 19485,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 38356.299,
+            "throughputValue": 26.071,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "This is a short test passage used by AutoShow to demonstrate text-to-speech generation.\n\nAt 6:45 a.m. on February 29, 2026, Professor Saoirse Nguyen-Langford carried 14.8 million red leather, yellow leather seashells through Reykjavík Gate B-17, past Maya O’Shaughnessy and a naïve jalapeño vendor in rural Worcestershire, while a flight attendant announced, “You know you need unique New York,” and thirty-three slick swans swiftly synthesized cinnamon statistics beside six securely sorted seashore shells.",
+    "requestedProviders": [
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-flash-tts-preview"
+      }
+    ]
+  }
+}

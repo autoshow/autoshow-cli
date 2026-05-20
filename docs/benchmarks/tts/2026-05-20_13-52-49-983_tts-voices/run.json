@@ -1,0 +1,1894 @@
+{
+  "schemaVersion": 1,
+  "kind": "tts",
+  "metadata": {
+    "tts": [
+      {
+        "ttsService": "cartesia",
+        "ttsModel": "sonic-3#sonic-3-default",
+        "speaker": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+        "processingTime": 10221,
+        "audioFileName": "cartesia-sonic-3-default/speech.wav",
+        "audioFileSize": 924658,
+        "chunkCount": 1,
+        "voiceLabel": "sonic-3-default",
+        "sourceRunDirectory": "cartesia-sonic-3-default"
+      },
+      {
+        "ttsService": "cartesia",
+        "ttsModel": "sonic-3.5#sonic-3.5-default",
+        "speaker": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+        "processingTime": 5085,
+        "audioFileName": "cartesia-sonic-3.5-default/speech.wav",
+        "audioFileSize": 934308,
+        "chunkCount": 1,
+        "voiceLabel": "sonic-3.5-default",
+        "sourceRunDirectory": "cartesia-sonic-3.5-default"
+      },
+      {
+        "ttsService": "deepgram",
+        "ttsModel": "aura-2-andromeda-en#andromeda",
+        "speaker": "aura-2-andromeda-en",
+        "processingTime": 15016,
+        "audioFileName": "deepgram-andromeda/speech.wav",
+        "audioFileSize": 1010766,
+        "chunkCount": 1,
+        "voiceLabel": "andromeda",
+        "sourceRunDirectory": "deepgram-andromeda"
+      },
+      {
+        "ttsService": "deepgram",
+        "ttsModel": "aura-2-apollo-en#apollo",
+        "speaker": "aura-2-apollo-en",
+        "processingTime": 17354,
+        "audioFileName": "deepgram-apollo/speech.wav",
+        "audioFileSize": 1192014,
+        "chunkCount": 1,
+        "voiceLabel": "apollo",
+        "sourceRunDirectory": "deepgram-apollo"
+      },
+      {
+        "ttsService": "deepgram",
+        "ttsModel": "aura-2-arcas-en#arcas",
+        "speaker": "aura-2-arcas-en",
+        "processingTime": 17444,
+        "audioFileName": "deepgram-arcas/speech.wav",
+        "audioFileSize": 1183566,
+        "chunkCount": 1,
+        "voiceLabel": "arcas",
+        "sourceRunDirectory": "deepgram-arcas"
+      },
+      {
+        "ttsService": "deepgram",
+        "ttsModel": "aura-2-asteria-en#asteria",
+        "speaker": "aura-2-asteria-en",
+        "processingTime": 16049,
+        "audioFileName": "deepgram-asteria/speech.wav",
+        "audioFileSize": 1101390,
+        "chunkCount": 1,
+        "voiceLabel": "asteria",
+        "sourceRunDirectory": "deepgram-asteria"
+      },
+      {
+        "ttsService": "deepgram",
+        "ttsModel": "aura-2-thalia-en#thalia",
+        "speaker": "aura-2-thalia-en",
+        "processingTime": 16955,
+        "audioFileName": "deepgram-thalia/speech.wav",
+        "audioFileSize": 1166670,
+        "chunkCount": 1,
+        "voiceLabel": "thalia",
+        "sourceRunDirectory": "deepgram-thalia"
+      },
+      {
+        "ttsService": "elevenlabs",
+        "ttsModel": "eleven_v3#default",
+        "speaker": "hpp4J3VqNfWAUOO0d1Us",
+        "processingTime": 24731,
+        "audioFileName": "elevenlabs-default/speech.wav",
+        "audioFileSize": 1236558,
+        "chunkCount": 1,
+        "voiceLabel": "default",
+        "sourceRunDirectory": "elevenlabs-default"
+      },
+      {
+        "ttsService": "gemini",
+        "ttsModel": "gemini-3.1-flash-tts-preview#Kore",
+        "speaker": "Kore",
+        "processingTime": 19485,
+        "audioFileName": "gemini-Kore/speech.wav",
+        "audioFileSize": 977998,
+        "chunkCount": 1,
+        "voiceLabel": "Kore",
+        "sourceRunDirectory": "gemini-Kore"
+      },
+      {
+        "ttsService": "gemini",
+        "ttsModel": "gemini-3.1-flash-tts-preview#Puck",
+        "speaker": "Puck",
+        "processingTime": 15343,
+        "audioFileName": "gemini-Puck/speech.wav",
+        "audioFileSize": 999758,
+        "chunkCount": 1,
+        "voiceLabel": "Puck",
+        "sourceRunDirectory": "gemini-Puck"
+      },
+      {
+        "ttsService": "grok",
+        "ttsModel": "grok-tts#ara",
+        "speaker": "ara",
+        "processingTime": 7659,
+        "audioFileName": "grok-ara/speech.wav",
+        "audioFileSize": 987278,
+        "chunkCount": 1,
+        "voiceLabel": "ara",
+        "sourceRunDirectory": "grok-ara"
+      },
+      {
+        "ttsService": "grok",
+        "ttsModel": "grok-tts#eve",
+        "speaker": "eve",
+        "processingTime": 8461,
+        "audioFileName": "grok-eve/speech.wav",
+        "audioFileSize": 1076878,
+        "chunkCount": 1,
+        "voiceLabel": "eve",
+        "sourceRunDirectory": "grok-eve"
+      },
+      {
+        "ttsService": "grok",
+        "ttsModel": "grok-tts#leo",
+        "speaker": "leo",
+        "processingTime": 9129,
+        "audioFileName": "grok-leo/speech.wav",
+        "audioFileSize": 1166478,
+        "chunkCount": 1,
+        "voiceLabel": "leo",
+        "sourceRunDirectory": "grok-leo"
+      },
+      {
+        "ttsService": "grok",
+        "ttsModel": "grok-tts#rex",
+        "speaker": "rex",
+        "processingTime": 9002,
+        "audioFileName": "grok-rex/speech.wav",
+        "audioFileSize": 1099278,
+        "chunkCount": 1,
+        "voiceLabel": "rex",
+        "sourceRunDirectory": "grok-rex"
+      },
+      {
+        "ttsService": "grok",
+        "ttsModel": "grok-tts#sal",
+        "speaker": "sal",
+        "processingTime": 9038,
+        "audioFileName": "grok-sal/speech.wav",
+        "audioFileSize": 1109518,
+        "chunkCount": 1,
+        "voiceLabel": "sal",
+        "sourceRunDirectory": "grok-sal"
+      },
+      {
+        "ttsService": "groq",
+        "ttsModel": "canopylabs/orpheus-v1-english#english-austin",
+        "speaker": "austin",
+        "processingTime": 6205,
+        "audioFileName": "groq-english-austin/speech.wav",
+        "audioFileSize": 1262142,
+        "chunkCount": 3,
+        "voiceLabel": "english-austin",
+        "sourceRunDirectory": "groq-english-austin"
+      },
+      {
+        "ttsService": "groq",
+        "ttsModel": "canopylabs/orpheus-v1-english#english-autumn",
+        "speaker": "autumn",
+        "processingTime": 8829,
+        "audioFileName": "groq-english-autumn/speech.wav",
+        "audioFileSize": 1513022,
+        "chunkCount": 3,
+        "voiceLabel": "english-autumn",
+        "sourceRunDirectory": "groq-english-autumn"
+      },
+      {
+        "ttsService": "groq",
+        "ttsModel": "canopylabs/orpheus-v1-english#english-daniel",
+        "speaker": "daniel",
+        "processingTime": 6880,
+        "audioFileName": "groq-english-daniel/speech.wav",
+        "audioFileSize": 1374782,
+        "chunkCount": 3,
+        "voiceLabel": "english-daniel",
+        "sourceRunDirectory": "groq-english-daniel"
+      },
+      {
+        "ttsService": "groq",
+        "ttsModel": "canopylabs/orpheus-v1-english#english-diana",
+        "speaker": "diana",
+        "processingTime": 9319,
+        "audioFileName": "groq-english-diana/speech.wav",
+        "audioFileSize": 1313342,
+        "chunkCount": 3,
+        "voiceLabel": "english-diana",
+        "sourceRunDirectory": "groq-english-diana"
+      },
+      {
+        "ttsService": "groq",
+        "ttsModel": "canopylabs/orpheus-v1-english#english-hannah",
+        "speaker": "hannah",
+        "processingTime": 6916,
+        "audioFileName": "groq-english-hannah/speech.wav",
+        "audioFileSize": 1402942,
+        "chunkCount": 3,
+        "voiceLabel": "english-hannah",
+        "sourceRunDirectory": "groq-english-hannah"
+      },
+      {
+        "ttsService": "groq",
+        "ttsModel": "canopylabs/orpheus-v1-english#english-troy",
+        "speaker": "troy",
+        "processingTime": 7364,
+        "audioFileName": "groq-english-troy/speech.wav",
+        "audioFileSize": 1510462,
+        "chunkCount": 3,
+        "voiceLabel": "english-troy",
+        "sourceRunDirectory": "groq-english-troy"
+      },
+      {
+        "ttsService": "hume",
+        "ttsModel": "octave-2#Male-English-Actor",
+        "speaker": "Male English Actor",
+        "processingTime": 6036,
+        "audioFileName": "hume-Male-English-Actor/speech.wav",
+        "audioFileSize": 1182798,
+        "chunkCount": 1,
+        "voiceLabel": "Male-English-Actor",
+        "sourceRunDirectory": "hume-Male-English-Actor"
+      },
+      {
+        "ttsService": "minimax",
+        "ttsModel": "speech-2.8-hd#hd-English_expressive_narrator",
+        "speaker": "English_expressive_narrator",
+        "processingTime": 36107,
+        "audioFileName": "minimax-hd-English_expressive_narrator/speech.wav",
+        "audioFileSize": 1169358,
+        "chunkCount": 1,
+        "voiceLabel": "hd-English_expressive_narrator",
+        "sourceRunDirectory": "minimax-hd-English_expressive_narrator"
+      },
+      {
+        "ttsService": "minimax",
+        "ttsModel": "speech-2.8-turbo#turbo-English_expressive_narrator",
+        "speaker": "English_expressive_narrator",
+        "processingTime": 26404,
+        "audioFileName": "minimax-turbo-English_expressive_narrator/speech.wav",
+        "audioFileSize": 1237326,
+        "chunkCount": 1,
+        "voiceLabel": "turbo-English_expressive_narrator",
+        "sourceRunDirectory": "minimax-turbo-English_expressive_narrator"
+      },
+      {
+        "ttsService": "openai",
+        "ttsModel": "gpt-4o-mini-tts#alloy",
+        "speaker": "alloy",
+        "processingTime": 9203,
+        "audioFileName": "openai-alloy/speech.wav",
+        "audioFileSize": 1176078,
+        "chunkCount": 1,
+        "voiceLabel": "alloy",
+        "sourceRunDirectory": "openai-alloy"
+      },
+      {
+        "ttsService": "speechify",
+        "ttsModel": "simba-english#english-george",
+        "speaker": "george",
+        "processingTime": 5810,
+        "audioFileName": "speechify-english-george/speech.wav",
+        "audioFileSize": 1145166,
+        "chunkCount": 1,
+        "voiceLabel": "english-george",
+        "sourceRunDirectory": "speechify-english-george"
+      },
+      {
+        "ttsService": "speechify",
+        "ttsModel": "simba-multilingual#multilingual-george",
+        "speaker": "george",
+        "processingTime": 7368,
+        "audioFileName": "speechify-multilingual-george/speech.wav",
+        "audioFileSize": 1013070,
+        "chunkCount": 1,
+        "voiceLabel": "multilingual-george",
+        "sourceRunDirectory": "speechify-multilingual-george"
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 46.855380000000004,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3#sonic-3-default",
+            "cost": 1.89865,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3.7375
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5#sonic-3.5-default",
+            "cost": 1.89865,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3.7375
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-andromeda-en#andromeda",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-apollo-en#apollo",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-arcas-en#arcas",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-asteria-en#asteria",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-thalia-en#thalia",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "elevenlabs",
+            "model": "eleven_v3#default",
+            "cost": 5.08,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 10
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Kore",
+            "cost": 1.0668,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 100,
+            "outputCostPer1MCharactersCents": 2000
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Puck",
+            "cost": 1.0668,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 100,
+            "outputCostPer1MCharactersCents": 2000
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#ara",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#eve",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#leo",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#rex",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#sal",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-austin",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-autumn",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-daniel",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-diana",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-hannah",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-troy",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2#Male-English-Actor",
+            "cost": 7.62,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 15
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-hd#hd-English_expressive_narrator",
+            "cost": 5.08,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 10
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-turbo#turbo-English_expressive_narrator",
+            "cost": 3.048,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 6
+          },
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts#alloy",
+            "cost": 0.64008,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 60,
+            "outputCostPer1MCharactersCents": 1200
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-english#english-george",
+            "cost": 0.508,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 1
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-multilingual#multilingual-george",
+            "cost": 0.508,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 1
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 46.855380000000004,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3#sonic-3-default",
+            "cost": 1.89865,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3.7375
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5#sonic-3.5-default",
+            "cost": 1.89865,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3.7375
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-andromeda-en#andromeda",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-apollo-en#apollo",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-arcas-en#arcas",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-asteria-en#asteria",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-thalia-en#thalia",
+            "cost": 1.524,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 3
+          },
+          {
+            "step": "tts",
+            "provider": "elevenlabs",
+            "model": "eleven_v3#default",
+            "cost": 5.08,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 10
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Kore",
+            "cost": 1.0668,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 100,
+            "outputCostPer1MCharactersCents": 2000
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Puck",
+            "cost": 1.0668,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 100,
+            "outputCostPer1MCharactersCents": 2000
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#ara",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#eve",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#leo",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#rex",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#sal",
+            "cost": 0.21336,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 0.42
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-austin",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-autumn",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-daniel",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-diana",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-hannah",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-troy",
+            "cost": 1.6256,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 1000,
+            "outputCostPer1MCharactersCents": 2200
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2#Male-English-Actor",
+            "cost": 7.62,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 15
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-hd#hd-English_expressive_narrator",
+            "cost": 5.08,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 10
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-turbo#turbo-English_expressive_narrator",
+            "cost": 3.048,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 6
+          },
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts#alloy",
+            "cost": 0.64008,
+            "costMultiplier": 1,
+            "inputCostPer1MCharactersCents": 60,
+            "outputCostPer1MCharactersCents": 1200
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-english#english-george",
+            "cost": 0.508,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 1
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-multilingual#multilingual-george",
+            "cost": 0.508,
+            "costMultiplier": 1,
+            "costPer1kCharactersCents": 1
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 46.855380000000004,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3#sonic-3-default",
+            "cost": 1.89865,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5#sonic-3.5-default",
+            "cost": 1.89865,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-andromeda-en#andromeda",
+            "cost": 1.524,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-apollo-en#apollo",
+            "cost": 1.524,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-arcas-en#arcas",
+            "cost": 1.524,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-asteria-en#asteria",
+            "cost": 1.524,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-thalia-en#thalia",
+            "cost": 1.524,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "elevenlabs",
+            "model": "eleven_v3#default",
+            "cost": 5.08,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Kore",
+            "cost": 1.0668,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Puck",
+            "cost": 1.0668,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#ara",
+            "cost": 0.21336,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#eve",
+            "cost": 0.21336,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#leo",
+            "cost": 0.21336,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#rex",
+            "cost": 0.21336,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#sal",
+            "cost": 0.21336,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-austin",
+            "cost": 1.6256,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-autumn",
+            "cost": 1.6256,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-daniel",
+            "cost": 1.6256,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-diana",
+            "cost": 1.6256,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-hannah",
+            "cost": 1.6256,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-troy",
+            "cost": 1.6256,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2#Male-English-Actor",
+            "cost": 7.62,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-hd#hd-English_expressive_narrator",
+            "cost": 5.08,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-turbo#turbo-English_expressive_narrator",
+            "cost": 3.048,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts#alloy",
+            "cost": 0.64008,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-english#english-george",
+            "cost": 0.508,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-multilingual#multilingual-george",
+            "cost": 0.508,
+            "costSource": "computed_usage",
+            "inputMetric": "characters",
+            "inputValue": 508
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 533863,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3#sonic-3-default",
+            "processingTimeMs": 1524,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 3000,
+            "throughputValue": 333.333,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5#sonic-3.5-default",
+            "processingTimeMs": 1524,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 3000,
+            "throughputValue": 333.333,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-andromeda-en#andromeda",
+            "processingTimeMs": 17523,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 34494.094,
+            "throughputValue": 28.99,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-apollo-en#apollo",
+            "processingTimeMs": 18402,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 36224.409,
+            "throughputValue": 27.606,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-arcas-en#arcas",
+            "processingTimeMs": 17847,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 35131.89,
+            "throughputValue": 28.464,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-asteria-en#asteria",
+            "processingTimeMs": 20574,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 40500,
+            "throughputValue": 24.691,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-thalia-en#thalia",
+            "processingTimeMs": 23828,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 46905.512,
+            "throughputValue": 21.319,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "elevenlabs",
+            "model": "eleven_v3#default",
+            "processingTimeMs": 18230,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 35885.827,
+            "throughputValue": 27.866,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Kore",
+            "processingTimeMs": 43947,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 86509.843,
+            "throughputValue": 11.559,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Puck",
+            "processingTimeMs": 43947,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 86509.843,
+            "throughputValue": 11.559,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#ara",
+            "processingTimeMs": 11269,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 22183.071,
+            "throughputValue": 45.079,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#eve",
+            "processingTimeMs": 11269,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 22183.071,
+            "throughputValue": 45.079,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#leo",
+            "processingTimeMs": 11269,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 22183.071,
+            "throughputValue": 45.079,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#rex",
+            "processingTimeMs": 11269,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 22183.071,
+            "throughputValue": 45.079,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#sal",
+            "processingTimeMs": 11269,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 22183.071,
+            "throughputValue": 45.079,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-austin",
+            "processingTimeMs": 8289,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16316.929,
+            "throughputValue": 61.286,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-autumn",
+            "processingTimeMs": 8289,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16316.929,
+            "throughputValue": 61.286,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-daniel",
+            "processingTimeMs": 8289,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16316.929,
+            "throughputValue": 61.286,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-diana",
+            "processingTimeMs": 8289,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16316.929,
+            "throughputValue": 61.286,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-hannah",
+            "processingTimeMs": 8289,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16316.929,
+            "throughputValue": 61.286,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-troy",
+            "processingTimeMs": 8289,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16316.929,
+            "throughputValue": 61.286,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2#Male-English-Actor",
+            "processingTimeMs": 1524,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 3000,
+            "throughputValue": 333.333,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-hd#hd-English_expressive_narrator",
+            "processingTimeMs": 120690,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 237578.74,
+            "throughputValue": 4.209,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-turbo#turbo-English_expressive_narrator",
+            "processingTimeMs": 84330,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 166003.937,
+            "throughputValue": 6.024,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts#alloy",
+            "processingTimeMs": 10846,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 21350.394,
+            "throughputValue": 46.838,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-english#english-george",
+            "processingTimeMs": 1524,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 3000,
+            "throughputValue": 333.333,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-multilingual#multilingual-george",
+            "processingTimeMs": 1524,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 3000,
+            "throughputValue": 333.333,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 337413,
+        "steps": [
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3#sonic-3-default",
+            "processingTimeMs": 10221,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 20120.079,
+            "throughputValue": 49.702,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "cartesia",
+            "model": "sonic-3.5#sonic-3.5-default",
+            "processingTimeMs": 5085,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 10009.843,
+            "throughputValue": 99.902,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-andromeda-en#andromeda",
+            "processingTimeMs": 15016,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 29559.055,
+            "throughputValue": 33.831,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-apollo-en#apollo",
+            "processingTimeMs": 17354,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 34161.417,
+            "throughputValue": 29.273,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-arcas-en#arcas",
+            "processingTimeMs": 17444,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 34338.583,
+            "throughputValue": 29.122,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-asteria-en#asteria",
+            "processingTimeMs": 16049,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 31592.52,
+            "throughputValue": 31.653,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "deepgram",
+            "model": "aura-2-thalia-en#thalia",
+            "processingTimeMs": 16955,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 33375.984,
+            "throughputValue": 29.962,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "elevenlabs",
+            "model": "eleven_v3#default",
+            "processingTimeMs": 24731,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 48683.071,
+            "throughputValue": 20.541,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Kore",
+            "processingTimeMs": 19485,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 38356.299,
+            "throughputValue": 26.071,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-tts-preview#Puck",
+            "processingTimeMs": 15343,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 30202.756,
+            "throughputValue": 33.11,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#ara",
+            "processingTimeMs": 7659,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 15076.772,
+            "throughputValue": 66.327,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#eve",
+            "processingTimeMs": 8461,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 16655.512,
+            "throughputValue": 60.04,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#leo",
+            "processingTimeMs": 9129,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 17970.472,
+            "throughputValue": 55.647,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#rex",
+            "processingTimeMs": 9002,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 17720.472,
+            "throughputValue": 56.432,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "grok",
+            "model": "grok-tts#sal",
+            "processingTimeMs": 9038,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 17791.339,
+            "throughputValue": 56.207,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-austin",
+            "processingTimeMs": 6205,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 12214.567,
+            "throughputValue": 81.869,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-autumn",
+            "processingTimeMs": 8829,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 17379.921,
+            "throughputValue": 57.538,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-daniel",
+            "processingTimeMs": 6880,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 13543.307,
+            "throughputValue": 73.837,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-diana",
+            "processingTimeMs": 9319,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 18344.488,
+            "throughputValue": 54.512,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-hannah",
+            "processingTimeMs": 6916,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 13614.173,
+            "throughputValue": 73.453,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "groq",
+            "model": "canopylabs/orpheus-v1-english#english-troy",
+            "processingTimeMs": 7364,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 14496.063,
+            "throughputValue": 68.984,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "hume",
+            "model": "octave-2#Male-English-Actor",
+            "processingTimeMs": 6036,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 11881.89,
+            "throughputValue": 84.162,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-hd#hd-English_expressive_narrator",
+            "processingTimeMs": 36107,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 71076.772,
+            "throughputValue": 14.069,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "minimax",
+            "model": "speech-2.8-turbo#turbo-English_expressive_narrator",
+            "processingTimeMs": 26404,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 51976.378,
+            "throughputValue": 19.24,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "openai",
+            "model": "gpt-4o-mini-tts#alloy",
+            "processingTimeMs": 9203,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 18116.142,
+            "throughputValue": 55.199,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-english#english-george",
+            "processingTimeMs": 5810,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 11437.008,
+            "throughputValue": 87.435,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          },
+          {
+            "step": "tts",
+            "provider": "speechify",
+            "model": "simba-multilingual#multilingual-george",
+            "processingTimeMs": 7368,
+            "inputMetric": "characters",
+            "inputValue": 508,
+            "rateBasis": "1KCharacters",
+            "msPerUnit": 14503.937,
+            "throughputValue": 68.947,
+            "throughputUnit": "charactersPerSecond",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "This is a short test passage used by AutoShow to demonstrate text-to-speech generation.\n\nAt 6:45 a.m. on February 29, 2026, Professor Saoirse Nguyen-Langford carried 14.8 million red leather, yellow leather seashells through Reykjavík Gate B-17, past Maya O’Shaughnessy and a naïve jalapeño vendor in rural Worcestershire, while a flight attendant announced, “You know you need unique New York,” and thirty-three slick swans swiftly synthesized cinnamon statistics beside six securely sorted seashore shells.",
+    "requestedProviders": [
+      {
+        "service": "cartesia",
+        "model": "sonic-3#sonic-3-default",
+        "voiceLabel": "sonic-3-default",
+        "sourceModel": "sonic-3"
+      },
+      {
+        "service": "cartesia",
+        "model": "sonic-3.5#sonic-3.5-default",
+        "voiceLabel": "sonic-3.5-default",
+        "sourceModel": "sonic-3.5"
+      },
+      {
+        "service": "deepgram",
+        "model": "aura-2-andromeda-en#andromeda",
+        "voiceLabel": "andromeda",
+        "sourceModel": "aura-2-andromeda-en"
+      },
+      {
+        "service": "deepgram",
+        "model": "aura-2-apollo-en#apollo",
+        "voiceLabel": "apollo",
+        "sourceModel": "aura-2-apollo-en"
+      },
+      {
+        "service": "deepgram",
+        "model": "aura-2-arcas-en#arcas",
+        "voiceLabel": "arcas",
+        "sourceModel": "aura-2-arcas-en"
+      },
+      {
+        "service": "deepgram",
+        "model": "aura-2-asteria-en#asteria",
+        "voiceLabel": "asteria",
+        "sourceModel": "aura-2-asteria-en"
+      },
+      {
+        "service": "deepgram",
+        "model": "aura-2-thalia-en#thalia",
+        "voiceLabel": "thalia",
+        "sourceModel": "aura-2-thalia-en"
+      },
+      {
+        "service": "elevenlabs",
+        "model": "eleven_v3#default",
+        "voiceLabel": "default",
+        "sourceModel": "eleven_v3"
+      },
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-flash-tts-preview#Kore",
+        "voiceLabel": "Kore",
+        "sourceModel": "gemini-3.1-flash-tts-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-flash-tts-preview#Puck",
+        "voiceLabel": "Puck",
+        "sourceModel": "gemini-3.1-flash-tts-preview"
+      },
+      {
+        "service": "grok",
+        "model": "grok-tts#ara",
+        "voiceLabel": "ara",
+        "sourceModel": "grok-tts"
+      },
+      {
+        "service": "grok",
+        "model": "grok-tts#eve",
+        "voiceLabel": "eve",
+        "sourceModel": "grok-tts"
+      },
+      {
+        "service": "grok",
+        "model": "grok-tts#leo",
+        "voiceLabel": "leo",
+        "sourceModel": "grok-tts"
+      },
+      {
+        "service": "grok",
+        "model": "grok-tts#rex",
+        "voiceLabel": "rex",
+        "sourceModel": "grok-tts"
+      },
+      {
+        "service": "grok",
+        "model": "grok-tts#sal",
+        "voiceLabel": "sal",
+        "sourceModel": "grok-tts"
+      },
+      {
+        "service": "groq",
+        "model": "canopylabs/orpheus-v1-english#english-austin",
+        "voiceLabel": "english-austin",
+        "sourceModel": "canopylabs/orpheus-v1-english"
+      },
+      {
+        "service": "groq",
+        "model": "canopylabs/orpheus-v1-english#english-autumn",
+        "voiceLabel": "english-autumn",
+        "sourceModel": "canopylabs/orpheus-v1-english"
+      },
+      {
+        "service": "groq",
+        "model": "canopylabs/orpheus-v1-english#english-daniel",
+        "voiceLabel": "english-daniel",
+        "sourceModel": "canopylabs/orpheus-v1-english"
+      },
+      {
+        "service": "groq",
+        "model": "canopylabs/orpheus-v1-english#english-diana",
+        "voiceLabel": "english-diana",
+        "sourceModel": "canopylabs/orpheus-v1-english"
+      },
+      {
+        "service": "groq",
+        "model": "canopylabs/orpheus-v1-english#english-hannah",
+        "voiceLabel": "english-hannah",
+        "sourceModel": "canopylabs/orpheus-v1-english"
+      },
+      {
+        "service": "groq",
+        "model": "canopylabs/orpheus-v1-english#english-troy",
+        "voiceLabel": "english-troy",
+        "sourceModel": "canopylabs/orpheus-v1-english"
+      },
+      {
+        "service": "hume",
+        "model": "octave-2#Male-English-Actor",
+        "voiceLabel": "Male-English-Actor",
+        "sourceModel": "octave-2"
+      },
+      {
+        "service": "minimax",
+        "model": "speech-2.8-hd#hd-English_expressive_narrator",
+        "voiceLabel": "hd-English_expressive_narrator",
+        "sourceModel": "speech-2.8-hd"
+      },
+      {
+        "service": "minimax",
+        "model": "speech-2.8-turbo#turbo-English_expressive_narrator",
+        "voiceLabel": "turbo-English_expressive_narrator",
+        "sourceModel": "speech-2.8-turbo"
+      },
+      {
+        "service": "openai",
+        "model": "gpt-4o-mini-tts#alloy",
+        "voiceLabel": "alloy",
+        "sourceModel": "gpt-4o-mini-tts"
+      },
+      {
+        "service": "speechify",
+        "model": "simba-english#english-george",
+        "voiceLabel": "english-george",
+        "sourceModel": "simba-english"
+      },
+      {
+        "service": "speechify",
+        "model": "simba-multilingual#multilingual-george",
+        "voiceLabel": "multilingual-george",
+        "sourceModel": "simba-multilingual"
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing
 import type { ResumeTarget, RuntimeOptions, Step5Metadata, ImageTarget } from '~/types'
 
 const IMAGE_PROVIDER_FLAGS = [
+  'all-image',
   'gemini-image',
   'openai-image',
   'minimax-image',

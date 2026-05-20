@@ -7,6 +7,7 @@ import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing
 import type { ResumeTarget, RuntimeOptions, Step4Metadata, TtsTarget } from '~/types'
 
 const TTS_PROVIDER_FLAGS = [
+  'all-tts',
   'kitten-tts',
   'elevenlabs-tts',
   'minimax-tts',

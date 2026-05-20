@@ -1,1 +1,3 @@
-This is a short test passage used by AutoShow to demonstrate text-to-speech generation. Red leather, yellow leather, red leather, yellow leather. You know you need unique New York, unique New York.
+This is a short test passage used by AutoShow to demonstrate text-to-speech generation.
+
+At 12:06 on February 29, the Worcestershire choir queued quietly beside Colonel Chiwetel Ejiofor, who asked an anemone, a mischievous isthmus, and a sixth squirrel to pronounce “rural juror,” “specific Pacific statistics,” “Irish wristwatch,” “red leather, yellow leather,” “toy boat,” and “unique New York” while delivering miniature aluminum crêpes, soufflés, piñatas, jalapeños, façades, naïve résumés, pâté, and crème brûlée to Massachusetts.

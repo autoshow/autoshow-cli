@@ -1,0 +1,3 @@
+This is a short test passage used by AutoShow to demonstrate text-to-speech generation.
+
+At 6:45 a.m. on February 29, 2026, Professor Saoirse Nguyen-Langford carried 14.8 million red leather, yellow leather seashells through Reykjavík Gate B-17, past Maya O’Shaughnessy and a naïve jalapeño vendor in rural Worcestershire, while a flight attendant announced, “You know you need unique New York,” and thirty-three slick swans swiftly synthesized cinnamon statistics beside six securely sorted seashore shells.
