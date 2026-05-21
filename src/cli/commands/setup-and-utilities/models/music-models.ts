@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { DeapiMusicModel, ElevenlabsMusicModel, GeminiMusicModel, MinimaxMusicModel } from '~/types'
+import type { ElevenlabsMusicModel, GeminiMusicModel, MinimaxMusicModel } from '~/types'
 
 export const SUPPORTED_ELEVENLABS_MUSIC_MODELS = [
   'music_v1'
@@ -8,7 +8,6 @@ export const SUPPORTED_ELEVENLABS_MUSIC_MODELS = [
 export const validateElevenlabsMusicModel = createModelValidator<ElevenlabsMusicModel>(SUPPORTED_ELEVENLABS_MUSIC_MODELS, 'elevenlabs-music')
 
 export const SUPPORTED_MINIMAX_MUSIC_MODELS = [
-  'music-2.5',
   'music-2.6',
   'music-2.6-free'
 ] as const satisfies readonly string[]
@@ -24,14 +23,6 @@ export const isMinimaxInstrumentalMusicModel = (
   model: string
 ): model is typeof MINIMAX_INSTRUMENTAL_MUSIC_MODELS[number] =>
   (MINIMAX_INSTRUMENTAL_MUSIC_MODELS as readonly string[]).includes(model)
-
-export const SUPPORTED_DEAPI_MUSIC_MODELS = [
-  'AceStep_1_5_Turbo',
-  'AceStep_1_5_Base',
-  'AceStep_1_5_XL_Turbo_INT8'
-] as const satisfies readonly string[]
-
-export const validateDeapiMusicModel = createModelValidator<DeapiMusicModel>(SUPPORTED_DEAPI_MUSIC_MODELS, 'deapi-music')
 
 export const SUPPORTED_GEMINI_MUSIC_MODELS = [
   'lyria-3-clip-preview',

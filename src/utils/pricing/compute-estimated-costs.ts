@@ -45,16 +45,10 @@ const estimateImageTargetCost = (
         return estimateImageCosts({ ...sharedOptions, geminiImageModel: target.model })[0]
       case 'openai':
         return estimateImageCosts({ ...sharedOptions, openaiImageModel: target.model })[0]
-      case 'minimax':
-        return estimateImageCosts({ ...sharedOptions, minimaxImageModel: target.model })[0]
       case 'grok':
         return estimateImageCosts({ ...sharedOptions, grokImageModel: target.model })[0]
-      case 'runway':
-        return estimateImageCosts({ ...sharedOptions, runwayImageModel: target.model })[0]
       case 'bfl':
         return estimateImageCosts({ ...sharedOptions, bflImageModel: target.model })[0]
-      case 'deapi':
-        return estimateImageCosts({ ...sharedOptions, deapiImageModel: target.model })[0]
       case 'reve':
         return estimateImageCosts({ ...sharedOptions, reveImageModel: target.model })[0]
     }
@@ -134,7 +128,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       { field: 'gcloudSttModel' as const, provider: 'gcloud' },
       { field: 'awsSttModel' as const, provider: 'aws' },
       { field: 'deepinfraSttModel' as const, provider: 'deepinfra' },
-      { field: 'deapiSttModel' as const, provider: 'deapi' },
       { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
       { field: 'deepgramSttModel' as const, provider: 'deepgram' },
       { field: 'sonioxSttModel' as const, provider: 'soniox' },
@@ -230,6 +223,14 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
           ? [{
               provider: 'openai' as const,
               model: input.openaiOcrModel,
+              pageCount: input.extractPageCount,
+              estimateType: 'heuristic' as const
+            }]
+          : []),
+        ...(input.grokOcrModel && typeof input.extractPageCount === 'number'
+          ? [{
+              provider: 'grok' as const,
+              model: input.grokOcrModel,
               pageCount: input.extractPageCount,
               estimateType: 'heuristic' as const
             }]
@@ -410,11 +411,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     : estimateImageCosts({
         geminiImageModel: input.geminiImageModel,
         openaiImageModel: input.openaiImageModel,
-        minimaxImageModel: input.minimaxImageModel,
         grokImageModel: input.grokImageModel,
-        runwayImageModel: input.runwayImageModel,
         bflImageModel: input.bflImageModel,
-        deapiImageModel: input.deapiImageModel,
         imageSize: input.imageSize,
         imageQuality: input.imageQuality,
         imageCount: input.imageCount
@@ -441,7 +439,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     || input.glmVideoModel
     || input.grokVideoModel
     || input.runwayVideoModel
-    || input.deapiVideoModel
   if (hasVideo) {
     const videoEstimates = estimateVideoCosts({
       geminiVideoModels: input.videoTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
@@ -454,8 +451,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       grokVideoModel: input.grokVideoModel,
       runwayVideoModels: input.videoTargets?.filter((target) => target.service === 'runway').map((target) => target.model),
       runwayVideoModel: input.runwayVideoModel,
-      deapiVideoModels: input.videoTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
-      deapiVideoModel: input.deapiVideoModel,
       videoDuration: input.videoTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.videoDuration,
       videoSize: input.videoSize,
       videoAspectRatio: input.videoAspectRatio,
@@ -481,7 +476,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
   const hasMusic = input.musicTargets?.length
     || input.elevenlabsMusicModel
     || input.minimaxMusicModel
-    || input.deapiMusicModel
     || input.geminiMusicModel
   if (hasMusic) {
     const estimates = estimateMusicCosts({
@@ -489,8 +483,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       elevenlabsMusicModel: input.elevenlabsMusicModel,
       minimaxMusicModels: input.musicTargets?.filter((target) => target.service === 'minimax').map((target) => target.model),
       minimaxMusicModel: input.minimaxMusicModel,
-      deapiMusicModels: input.musicTargets?.filter((target) => target.service === 'deapi').map((target) => target.model),
-      deapiMusicModel: input.deapiMusicModel,
       geminiMusicModels: input.musicTargets?.filter((target) => target.service === 'gemini').map((target) => target.model),
       geminiMusicModel: input.geminiMusicModel,
       musicDuration: input.musicTargets?.find((target) => typeof target.durationSeconds === 'number')?.durationSeconds ?? input.musicDuration,

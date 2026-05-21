@@ -10,7 +10,8 @@ import {
   estimateGlmOcrCost,
   estimateKimiOcrCost,
   estimateMistralOcrCost,
-  estimateOpenAIOcrCost
+  estimateOpenAIOcrCost,
+  estimateUnstructuredOcrCost
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { getExtractEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
@@ -216,6 +217,22 @@ export const buildExtractEstimates = async (
 
     if (provider.service === 'aws-textract') {
       const estimate = await estimateAwsTextractCost(provider.model, resolvedTarget)
+      const estimation = getExtractEstimation(estimate.provider, estimate.model)
+      estimates.push({
+        step: 'extract',
+        provider: estimate.provider,
+        model: estimate.model,
+        costPer1kPagesCents: estimate.costPer1kPagesCents,
+        pageCount: estimate.pageCount,
+        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
+        costMultiplier: estimation.costMultiplier,
+        estimateType: 'exact'
+      })
+      continue
+    }
+
+    if (provider.service === 'unstructured') {
+      const estimate = await estimateUnstructuredOcrCost(provider.model, resolvedTarget)
       const estimation = getExtractEstimation(estimate.provider, estimate.model)
       estimates.push({
         step: 'extract',

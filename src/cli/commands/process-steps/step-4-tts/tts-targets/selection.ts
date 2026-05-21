@@ -17,7 +17,6 @@ export type TtsTargetSelection = {
   humeModels: string[]
   cartesiaModels: string[]
   gcloudModels: string[]
-  deapiModels: string[]
   geminiMultiSpeakerConfig: GeminiMultiSpeakerConfig | undefined
   minimaxVoiceId: string | undefined
   minimaxLanguageBoost: string | undefined
@@ -94,14 +93,6 @@ export type TtsTargetSelection = {
   mistralVoiceName: string | undefined
   geminiVoiceId: string | undefined
   deepgramVoiceId: string | undefined
-  deapiVoiceId: string | undefined
-  deapiRefAudioPath: string | undefined
-  deapiRefText: string | undefined
-  deapiLanguage: string | undefined
-  deapiSpeed: number | undefined
-  deapiFormat: string | undefined
-  deapiSampleRate: number | undefined
-  deapiInstruction: string | undefined
   hasElevenLabsPvcActionFlags: boolean
   hasElevenLabsPvcSetupFlags: boolean
   hasOpenAICloneFlags: boolean
@@ -200,7 +191,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     humeModels: selectModels(options.humeTtsModels, options.humeTtsModel),
     cartesiaModels: selectModels(options.cartesiaTtsModels, options.cartesiaTtsModel),
     gcloudModels: selectModels(options.gcloudTtsModels, options.gcloudTtsModel),
-    deapiModels: selectModels(options.deapiTtsModels, options.deapiTtsModel),
     geminiMultiSpeakerConfig: resolveGeminiMultiSpeakerConfig(options),
     minimaxVoiceId: trimmed(options.minimaxTtsVoice),
     minimaxLanguageBoost: trimmed(options.minimaxTtsLanguageBoost),
@@ -277,14 +267,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     mistralVoiceName: trimmed(options.mistralTtsVoiceName),
     geminiVoiceId: trimmed(options.geminiVoiceId),
     deepgramVoiceId: trimmed(options.deepgramVoiceId),
-    deapiVoiceId: trimmed(options.deapiTtsVoice),
-    deapiRefAudioPath: trimmed(options.deapiTtsRefAudio),
-    deapiRefText: trimmed(options.deapiTtsRefText),
-    deapiLanguage: trimmed(options.deapiTtsLanguage),
-    deapiSpeed: options.deapiTtsSpeed,
-    deapiFormat: trimmed(options.deapiTtsFormat),
-    deapiSampleRate: options.deapiTtsSampleRate,
-    deapiInstruction: trimmed(options.deapiTtsInstruction),
     hasElevenLabsPvcActionFlags,
     hasElevenLabsPvcSetupFlags,
     hasOpenAICloneFlags,

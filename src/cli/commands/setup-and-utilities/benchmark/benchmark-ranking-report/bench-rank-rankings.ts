@@ -11,6 +11,7 @@ import type {
   ProviderAggregate,
   RankingRow,
   ReleaseDateMap,
+  ReleaseDateMetadata,
   StepKey,
   TopBenchmarkPick,
   TopBenchmarkPickSelection,
@@ -162,6 +163,12 @@ const component = ({
   }
 }
 
+const releaseMetadataForKey = (
+  key: string,
+  releaseDates: ReleaseDateMap
+): ReleaseDateMetadata | undefined =>
+  releaseDates[key] ?? releaseDates[key.split('#')[0] ?? key]
+
 export const combinedRankingRows = ({
   priceRows,
   speedRows,
@@ -188,7 +195,7 @@ export const combinedRankingRows = ({
   ])].sort()
 
   const rows = keys.map((key): Omit<CombinedRankingRow, 'rank'> => {
-    const releaseDate = assertValidReleaseDate(key, releaseDates[key])
+    const releaseDate = assertValidReleaseDate(key, releaseMetadataForKey(key, releaseDates))
     const price = component({ key, rows: priceRows, rowsByKey: priceRowsByKey, metric: 'price' })
     const speed = component({ key, rows: speedRows, rowsByKey: speedRowsByKey, metric: 'speed' })
     const quality = component({ key, rows: qualityRows, rowsByKey: qualityRowsByKey, metric: 'quality' })

@@ -17,8 +17,6 @@ import { shouldSkipBudgetKeys } from '../../test-utils/budget'
 import type { ParsedCommandMetric, ParsedJunitCase } from '~/types'
 import {
   MINIMAX_INSTRUMENTAL_MUSIC_MODELS,
-  SUPPORTED_DEAPI_MUSIC_MODELS,
-  SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
   DEEPGRAM_DEFAULT_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
@@ -1044,7 +1042,6 @@ describe('test-runner contracts', () => {
   test('price path selections match path boundaries', () => {
     const allFiles = [
       'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
-      'test/test-cases/e2e/step-7-music-gen-e2e/deapi-music-gen.test.ts',
       'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts',
       'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts',
       'test/test-cases/e2e/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts'
@@ -1056,7 +1053,6 @@ describe('test-runner contracts', () => {
       .commands.map((command) => command.key)
 
     expect(musicKeys).toContain('music-elevenlabs-music_v1')
-    expect(musicKeys).toContain('music-deapi-AceStep_1_5_Turbo')
     expect(musicKeys).not.toContain('transcribe-whisper-large-v3-turbo')
     expect(lyricsVideoKeys).toContain('transcribe-whisper-large-v3-turbo')
     expect(lyricsVideoKeys).not.toContain('music-elevenlabs-music_v1')
@@ -1191,7 +1187,7 @@ describe('test-runner contracts', () => {
     expect(filesWithPriceFlag).toEqual([])
   })
 
-  test('TTS service budget preflight includes remaining voice clone entries', () => {
+  test('TTS service budget preflight includes remaining service entries', () => {
     const allFiles = [
       'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
     ]
@@ -1200,21 +1196,16 @@ describe('test-runner contracts', () => {
       'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
     ], true).commands.map((command) => command.key)
 
-    expect(keys).toContain('tts-deapi-qwen3-voice-clone')
     expect(keys).toContain('tts-groq-canopylabs/orpheus-v1-english')
     expect(keys).not.toContain(['tts-groq-canopylabs/orpheus', 'arabic-saudi'].join('-'))
     expect(keys).toContain('tts-gcloud-studio')
     expect(keys.filter((key) => key.startsWith('tts-deepgram-'))).toEqual([`tts-deepgram-${DEEPGRAM_DEFAULT_VOICE}`])
-    for (const model of SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS) {
-      expect(keys).toContain(`tts-deapi-${model}`)
-    }
     expect(keys).not.toContain('tts-minimax-speech-2.8-turbo-clone')
   })
 
   test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {
     const allFiles = [
       'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
-      'test/test-cases/e2e/step-7-music-gen-e2e/deapi-music-gen.test.ts',
       'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts',
       'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
     ]
@@ -1228,19 +1219,12 @@ describe('test-runner contracts', () => {
     const minimaxKeys = resolvePriceSelection(allFiles, [
       'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
     ], true).commands.map((command) => command.key)
-    expect(minimaxKeys).toContain('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview')
-    expect(minimaxKeys).toContain('music-pipeline-minimax-music-2.5')
+    expect(minimaxKeys).toContain('music-multi-minimax-music-2.6-gemini-lyria-3-clip-preview')
+    expect(minimaxKeys).toContain('music-pipeline-minimax-music-2.6')
     for (const model of MINIMAX_INSTRUMENTAL_MUSIC_MODELS) {
       expect(minimaxKeys).toContain(`music-minimax-${model}`)
     }
-    expect(minimaxKeys).not.toContain('music-minimax-music-2.5')
-
-    const deapiKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/step-7-music-gen-e2e/deapi-music-gen.test.ts'
-    ], true).commands.map((command) => command.key)
-    for (const model of SUPPORTED_DEAPI_MUSIC_MODELS) {
-      expect(deapiKeys).toContain(`music-deapi-${model}`)
-    }
+    expect(minimaxKeys).not.toContain('music-minimax-' + 'music-2' + '.5')
 
     const geminiKeys = resolvePriceSelection(allFiles, [
       'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts'

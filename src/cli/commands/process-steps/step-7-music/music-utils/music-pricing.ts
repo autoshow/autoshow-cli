@@ -1,6 +1,5 @@
 import {
   isMinimaxInstrumentalMusicModel,
-  validateDeapiMusicModel,
   validateElevenlabsMusicModel,
   validateGeminiMusicModel,
   validateMinimaxMusicModel
@@ -11,7 +10,6 @@ import type { EstimateMusicCostOptions, MusicCostEstimate } from '~/types'
 const formatRate = (amount: number): string => `${amount.toFixed(2)}¢`
 const DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS = 180
 const DEFAULT_MINIMAX_MUSIC_DURATION_SECONDS = 120
-const DEFAULT_DEAPI_MUSIC_DURATION_SECONDS = 30
 const GEMINI_CLIP_MUSIC_DURATION_SECONDS = 30
 const DEFAULT_GEMINI_PRO_MUSIC_DURATION_SECONDS = 120
 
@@ -27,7 +25,6 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
   const results: MusicCostEstimate[] = []
   const elevenlabsModels = options.elevenlabsMusicModels ?? (options.elevenlabsMusicModel ? [options.elevenlabsMusicModel] : [])
   const minimaxModels = options.minimaxMusicModels ?? (options.minimaxMusicModel ? [options.minimaxMusicModel] : [])
-  const deapiModels = options.deapiMusicModels ?? (options.deapiMusicModel ? [options.deapiMusicModel] : [])
   const geminiModels = options.geminiMusicModels ?? (options.geminiMusicModel ? [options.geminiMusicModel] : [])
 
   for (const rawModel of elevenlabsModels) {
@@ -83,19 +80,6 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
         : lyricsSource === 'none'
           ? 'Instrumental mode omits lyrics generation'
           : 'Assumes provided lyrics; no lyrics-generation add-on'
-    })
-  }
-
-  for (const rawModel of deapiModels) {
-    const model = validateDeapiMusicModel(rawModel)
-    const lyricsSource: MusicCostEstimate['lyricsSource'] = options.musicLyricsFile && !options.musicInstrumental ? 'provided' : 'none'
-    results.push({
-      provider: 'deapi',
-      model,
-      durationSeconds: options.musicDuration ?? DEFAULT_DEAPI_MUSIC_DURATION_SECONDS,
-      totalCost: 0,
-      lyricsSource,
-      note: 'Exact deAPI music pricing is resolved through the provider quote endpoint when DEAPI_API_KEY is available.'
     })
   }
 

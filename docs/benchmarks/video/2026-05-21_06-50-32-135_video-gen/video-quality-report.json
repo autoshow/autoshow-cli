@@ -1,0 +1,1851 @@
+{
+  "schemaVersion": 1,
+  "kind": "video-quality-report",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen",
+  "runName": "2026-05-21_06-50-32-135_video-gen",
+  "generatedAt": "2026-05-21T15:40:00.303Z",
+  "judge": {
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "endpoint": "responses"
+  },
+  "prompt": "a rainy neon city street, slow camera pan",
+  "rubric": {
+    "scale": "1-10",
+    "qualityScore": "average criterion score x 10",
+    "frameSampling": "10 midpoint-interval screenshots per video",
+    "criteria": [
+      "prompt adherence",
+      "visual quality",
+      "artifact control",
+      "temporal consistency",
+      "composition/camera"
+    ]
+  },
+  "providerCount": 9,
+  "videoCount": 9,
+  "frameCount": 90,
+  "providers": [
+    {
+      "rank": 1,
+      "providerKey": "gemini/veo-3.1-generate-preview",
+      "provider": "gemini",
+      "model": "veo-3.1-generate-preview",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-gemini-veo-3.1-generate-preview.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 72026,
+      "costCents": 320,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 9,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-gemini-veo-3.1-generate-preview.mp4: Strong match to a rainy neon city street with a slow, coherent camera move. The scene is atmospheric, reflective, and visually polished, with only minor generative issues in sign text and some vehicle/detail softness.",
+        "strengths": [
+          "Excellent rainy neon atmosphere with wet street reflections",
+          "Consistent urban canyon setting across frames",
+          "Convincing slow camera movement with readable parallax",
+          "Rich lighting, color, and cinematic composition"
+        ],
+        "issues": [
+          "Neon sign text is often nonsensical or distorted",
+          "Some vehicles and small architectural details appear slightly soft or warped",
+          "Camera motion reads more like a forward glide than a pure pan"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 1,
+            "timestampSeconds": 0.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 2,
+            "timestampSeconds": 1.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 3,
+            "timestampSeconds": 2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 4,
+            "timestampSeconds": 2.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 5,
+            "timestampSeconds": 3.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 6,
+            "timestampSeconds": 4.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 7,
+            "timestampSeconds": 5.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 8,
+            "timestampSeconds": 6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 9,
+            "timestampSeconds": 6.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+            "index": 10,
+            "timestampSeconds": 7.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+          "durationSeconds": 8,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 1.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 2.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 3.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 4.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 5.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 6.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 7.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-generate-preview/generated-video-gemini-veo-3.1-generate-preview/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 9,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "Strong match to a rainy neon city street with a slow, coherent camera move. The scene is atmospheric, reflective, and visually polished, with only minor generative issues in sign text and some vehicle/detail softness.",
+          "strengths": [
+            "Excellent rainy neon atmosphere with wet street reflections",
+            "Consistent urban canyon setting across frames",
+            "Convincing slow camera movement with readable parallax",
+            "Rich lighting, color, and cinematic composition"
+          ],
+          "issues": [
+            "Neon sign text is often nonsensical or distorted",
+            "Some vehicles and small architectural details appear slightly soft or warped",
+            "Camera motion reads more like a forward glide than a pure pan"
+          ],
+          "usage": {
+            "input_tokens": 11516,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 376,
+            "output_tokens_details": {
+              "reasoning_tokens": 211
+            },
+            "total_tokens": 11892
+          }
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "providerKey": "minimax/MiniMax-Hailuo-2.3",
+      "provider": "minimax",
+      "model": "MiniMax-Hailuo-2.3",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-minimax-MiniMax-Hailuo-2.3.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 123608,
+      "costCents": 56,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 9,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4: Strong fit to the prompt: a wet, rainy-feeling neon city street with a clear slow pan and consistent nighttime atmosphere. Visuals are cinematic with rich reflections and stable lighting, though some signage is nonsensical and rain is mostly implied by wet pavement rather than visible rainfall.",
+        "strengths": [
+          "Excellent neon-lit rainy street atmosphere",
+          "Wet road reflections are vivid and aesthetically strong",
+          "Slow camera pan is readable and coherent across frames",
+          "Scene remains stable with consistent buildings, lighting, and perspective"
+        ],
+        "issues": [
+          "Neon text/signage is often garbled or unreadable",
+          "Falling rain is not clearly visible, mostly suggested by wet surfaces and mist",
+          "Minor AI softness/distortion in distant signs and building details"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 1,
+            "timestampSeconds": 0.51,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 2,
+            "timestampSeconds": 1.52,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 3,
+            "timestampSeconds": 2.53,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 4,
+            "timestampSeconds": 3.54,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 5,
+            "timestampSeconds": 4.56,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 6,
+            "timestampSeconds": 5.57,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 7,
+            "timestampSeconds": 6.58,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 8,
+            "timestampSeconds": 7.59,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 9,
+            "timestampSeconds": 8.61,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 10,
+            "timestampSeconds": 9.62,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+          "durationSeconds": 10.13,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.51,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 1.52,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 2.53,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 3.54,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 4.56,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 5.57,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 6.58,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 7.59,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 8.61,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 9.62,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 9,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "Strong fit to the prompt: a wet, rainy-feeling neon city street with a clear slow pan and consistent nighttime atmosphere. Visuals are cinematic with rich reflections and stable lighting, though some signage is nonsensical and rain is mostly implied by wet pavement rather than visible rainfall.",
+          "strengths": [
+            "Excellent neon-lit rainy street atmosphere",
+            "Wet road reflections are vivid and aesthetically strong",
+            "Slow camera pan is readable and coherent across frames",
+            "Scene remains stable with consistent buildings, lighting, and perspective"
+          ],
+          "issues": [
+            "Neon text/signage is often garbled or unreadable",
+            "Falling rain is not clearly visible, mostly suggested by wet surfaces and mist",
+            "Minor AI softness/distortion in distant signs and building details"
+          ],
+          "usage": {
+            "input_tokens": 12860,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 336,
+            "output_tokens_details": {
+              "reasoning_tokens": 152
+            },
+            "total_tokens": 13196
+          }
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "providerKey": "minimax/T2V-01-Director",
+      "provider": "minimax",
+      "model": "T2V-01-Director",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-minimax-T2V-01-Director.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 155057,
+      "costCents": 19,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 9,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-minimax-T2V-01-Director.mp4: Strong match to the prompt: a rainy neon city street with glossy reflections and a slow, coherent camera pan. The scene remains stable and visually striking across frames, with only minor AI artifacts such as unreadable signage and slight neon bloom/overexposure.",
+        "strengths": [
+          "Clear rainy atmosphere with visible falling rain",
+          "Vivid neon lighting and strong wet-street reflections",
+          "Consistent city street setting across all frames",
+          "Slow pan is readable and smooth from the ordered frames",
+          "Balanced cinematic composition with strong depth and vanishing point"
+        ],
+        "issues": [
+          "Storefront text/signage is nonsensical and distorted",
+          "Some neon areas are overly blown out",
+          "Rain and reflections look slightly stylized/uniform rather than fully natural"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 1,
+            "timestampSeconds": 0.28,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 2,
+            "timestampSeconds": 0.85,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 3,
+            "timestampSeconds": 1.41,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 4,
+            "timestampSeconds": 1.97,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 5,
+            "timestampSeconds": 2.54,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 6,
+            "timestampSeconds": 3.1,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 7,
+            "timestampSeconds": 3.67,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 8,
+            "timestampSeconds": 4.23,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 9,
+            "timestampSeconds": 4.79,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 10,
+            "timestampSeconds": 5.36,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-minimax-T2V-01-Director.mp4",
+          "durationSeconds": 5.64,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.28,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.85,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.41,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.97,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.54,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 3.1,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.67,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 4.23,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.79,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 5.36,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 9,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "Strong match to the prompt: a rainy neon city street with glossy reflections and a slow, coherent camera pan. The scene remains stable and visually striking across frames, with only minor AI artifacts such as unreadable signage and slight neon bloom/overexposure.",
+          "strengths": [
+            "Clear rainy atmosphere with visible falling rain",
+            "Vivid neon lighting and strong wet-street reflections",
+            "Consistent city street setting across all frames",
+            "Slow pan is readable and smooth from the ordered frames",
+            "Balanced cinematic composition with strong depth and vanishing point"
+          ],
+          "issues": [
+            "Storefront text/signage is nonsensical and distorted",
+            "Some neon areas are overly blown out",
+            "Rain and reflections look slightly stylized/uniform rather than fully natural"
+          ],
+          "usage": {
+            "input_tokens": 11514,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 305,
+            "output_tokens_details": {
+              "reasoning_tokens": 121
+            },
+            "total_tokens": 11819
+          }
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "providerKey": "grok/grok-imagine-video",
+      "provider": "grok",
+      "model": "grok-imagine-video",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-grok-grok-imagine-video.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 41605,
+      "costCents": 40,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 8,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.6,
+      "qualityScore": 86,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-grok-grok-imagine-video.mp4: Strong match to the prompt: a rainy neon city street with reflective pavement and a slow lateral pan. The scene is visually polished and atmospheric, with only minor AI-text/sign artifacts and slight continuity concerns in vehicles/pedestrians.",
+        "strengths": [
+          "Excellent rainy nighttime neon atmosphere",
+          "Wet street reflections are vivid and cinematic",
+          "Slow camera pan is readable across the ordered frames",
+          "Good depth, lighting, and urban composition"
+        ],
+        "issues": [
+          "Some signage/text appears malformed or unnatural",
+          "Minor possible temporal inconsistencies in moving cars and pedestrians",
+          "Rain and reflections are strong but slightly stylized/over-smooth in places"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 1,
+            "timestampSeconds": 0.4,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 2,
+            "timestampSeconds": 1.21,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 3,
+            "timestampSeconds": 2.01,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 4,
+            "timestampSeconds": 2.81,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 5,
+            "timestampSeconds": 3.62,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 6,
+            "timestampSeconds": 4.42,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 7,
+            "timestampSeconds": 5.23,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 8,
+            "timestampSeconds": 6.03,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 9,
+            "timestampSeconds": 6.84,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 10,
+            "timestampSeconds": 7.64,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-grok-grok-imagine-video.mp4",
+          "durationSeconds": 8.04,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.4,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 1.21,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 2.01,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 2.81,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 3.62,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 4.42,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 5.23,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 6.03,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 6.84,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 7.64,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 8,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.6,
+          "qualityScore": 86,
+          "summary": "Strong match to the prompt: a rainy neon city street with reflective pavement and a slow lateral pan. The scene is visually polished and atmospheric, with only minor AI-text/sign artifacts and slight continuity concerns in vehicles/pedestrians.",
+          "strengths": [
+            "Excellent rainy nighttime neon atmosphere",
+            "Wet street reflections are vivid and cinematic",
+            "Slow camera pan is readable across the ordered frames",
+            "Good depth, lighting, and urban composition"
+          ],
+          "issues": [
+            "Some signage/text appears malformed or unnatural",
+            "Minor possible temporal inconsistencies in moving cars and pedestrians",
+            "Rain and reflections are strong but slightly stylized/over-smooth in places"
+          ],
+          "usage": {
+            "input_tokens": 5330,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 290,
+            "output_tokens_details": {
+              "reasoning_tokens": 128
+            },
+            "total_tokens": 5620
+          }
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "providerKey": "gemini/veo-3.1-lite-generate-preview",
+      "provider": "gemini",
+      "model": "veo-3.1-lite-generate-preview",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-gemini-veo-3.1-lite-generate-preview.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 62049,
+      "costCents": 40,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 8,
+        "compositionCamera": 8
+      },
+      "averageScore10": 8.4,
+      "qualityScore": 84,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4: Strong depiction of a rainy neon city street with wet reflective pavement, heavy rain, pedestrians, signs, and a coherent slow camera move. The motion reads more like a forward tracking pan into an alley than a pure lateral pan, but it fits the requested mood very well.",
+        "strengths": [
+          "Excellent rainy neon atmosphere with vivid reflections and cinematic lighting",
+          "Consistent urban night setting across frames",
+          "Rain, steam, umbrellas, cars, and signage reinforce the prompt",
+          "Smooth implied camera movement with strong depth and perspective"
+        ],
+        "issues": [
+          "Some neon text is nonsensical or distorted",
+          "Pedestrians and small background details are soft or slightly malformed",
+          "Camera movement appears more like a forward dolly/track than strictly a slow pan",
+          "Heavy rain and blur obscure some fine detail"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 1,
+            "timestampSeconds": 0.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 2,
+            "timestampSeconds": 1.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 3,
+            "timestampSeconds": 2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 4,
+            "timestampSeconds": 2.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 5,
+            "timestampSeconds": 3.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 6,
+            "timestampSeconds": 4.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 7,
+            "timestampSeconds": 5.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 8,
+            "timestampSeconds": 6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 9,
+            "timestampSeconds": 6.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 10,
+            "timestampSeconds": 7.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+          "durationSeconds": 8,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 1.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 2.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 3.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 4.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 5.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 6.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 7.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 8,
+            "compositionCamera": 8
+          },
+          "averageScore10": 8.4,
+          "qualityScore": 84,
+          "summary": "Strong depiction of a rainy neon city street with wet reflective pavement, heavy rain, pedestrians, signs, and a coherent slow camera move. The motion reads more like a forward tracking pan into an alley than a pure lateral pan, but it fits the requested mood very well.",
+          "strengths": [
+            "Excellent rainy neon atmosphere with vivid reflections and cinematic lighting",
+            "Consistent urban night setting across frames",
+            "Rain, steam, umbrellas, cars, and signage reinforce the prompt",
+            "Smooth implied camera movement with strong depth and perspective"
+          ],
+          "issues": [
+            "Some neon text is nonsensical or distorted",
+            "Pedestrians and small background details are soft or slightly malformed",
+            "Camera movement appears more like a forward dolly/track than strictly a slow pan",
+            "Heavy rain and blur obscure some fine detail"
+          ],
+          "usage": {
+            "input_tokens": 11518,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 318,
+            "output_tokens_details": {
+              "reasoning_tokens": 124
+            },
+            "total_tokens": 11836
+          }
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "providerKey": "gemini/veo-3.1-fast-generate-preview",
+      "provider": "gemini",
+      "model": "veo-3.1-fast-generate-preview",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-gemini-veo-3.1-fast-generate-preview.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 72172,
+      "costCents": 80,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 7,
+        "temporalConsistency": 7,
+        "compositionCamera": 8
+      },
+      "averageScore10": 8,
+      "qualityScore": 80,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4: Strong fit to a rainy neon city street with vivid reflections, heavy rain, signage, pedestrians, and a coherent slow moving camera feel. Visuals are cinematic and atmospheric, though some generated signage is nonsensical and the prominent fish hologram changes color/shape noticeably over time.",
+        "strengths": [
+          "Excellent rainy cyberpunk/neon atmosphere with wet pavement reflections",
+          "High visual clarity, lighting, and color richness",
+          "Camera movement feels smooth and readable across the street",
+          "Good depth and urban scale with pedestrians, vehicles, signs, and steam"
+        ],
+        "issues": [
+          "Neon fish sign morphs and changes color/shape, reducing temporal consistency",
+          "Some text/signage is garbled or artificial",
+          "Steam vents and foreground elements appear somewhat abruptly",
+          "Motion reads more like a forward dolly than purely a slow pan"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 1,
+            "timestampSeconds": 0.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 2,
+            "timestampSeconds": 1.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 3,
+            "timestampSeconds": 2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 4,
+            "timestampSeconds": 2.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 5,
+            "timestampSeconds": 3.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 6,
+            "timestampSeconds": 4.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 7,
+            "timestampSeconds": 5.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 8,
+            "timestampSeconds": 6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 9,
+            "timestampSeconds": 6.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 10,
+            "timestampSeconds": 7.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+          "durationSeconds": 8,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 1.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 2.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 3.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 4.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 5.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 6.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 7.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 7,
+            "temporalConsistency": 7,
+            "compositionCamera": 8
+          },
+          "averageScore10": 8,
+          "qualityScore": 80,
+          "summary": "Strong fit to a rainy neon city street with vivid reflections, heavy rain, signage, pedestrians, and a coherent slow moving camera feel. Visuals are cinematic and atmospheric, though some generated signage is nonsensical and the prominent fish hologram changes color/shape noticeably over time.",
+          "strengths": [
+            "Excellent rainy cyberpunk/neon atmosphere with wet pavement reflections",
+            "High visual clarity, lighting, and color richness",
+            "Camera movement feels smooth and readable across the street",
+            "Good depth and urban scale with pedestrians, vehicles, signs, and steam"
+          ],
+          "issues": [
+            "Neon fish sign morphs and changes color/shape, reducing temporal consistency",
+            "Some text/signage is garbled or artificial",
+            "Steam vents and foreground elements appear somewhat abruptly",
+            "Motion reads more like a forward dolly than purely a slow pan"
+          ],
+          "usage": {
+            "input_tokens": 11518,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 379,
+            "output_tokens_details": {
+              "reasoning_tokens": 178
+            },
+            "total_tokens": 11897
+          }
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "providerKey": "glm/viduq1-text",
+      "provider": "glm",
+      "model": "viduq1-text",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-glm-viduq1-text.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 196374,
+      "costCents": 40,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "temporalConsistency": 8,
+        "compositionCamera": 8
+      },
+      "averageScore10": 8,
+      "qualityScore": 80,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-glm-viduq1-text.mp4: Strong match to the prompt: a rainy neon city street with wet reflections, umbrellas, and an apparent slow rightward camera pan. The scene is visually rich and coherent, though some signage/text, rain streaks, and distant pedestrians show typical generative artifacts.",
+        "strengths": [
+          "Clear rainy nighttime city atmosphere with neon lighting",
+          "Excellent wet pavement reflections and color contrast",
+          "Slow pan is readable across the ordered frames",
+          "Consistent urban layout and mood throughout"
+        ],
+        "issues": [
+          "Neon sign text is mostly nonsensical or malformed",
+          "Some pedestrians and umbrellas are simplified or slightly warped",
+          "Rain streaks and building facade details can look overprocessed",
+          "Minor wide-angle distortion and AI texture smearing in distant areas"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 1,
+            "timestampSeconds": 0.26,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 2,
+            "timestampSeconds": 0.78,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 3,
+            "timestampSeconds": 1.3,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 4,
+            "timestampSeconds": 1.82,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 5,
+            "timestampSeconds": 2.34,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 6,
+            "timestampSeconds": 2.86,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 7,
+            "timestampSeconds": 3.39,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 8,
+            "timestampSeconds": 3.91,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 9,
+            "timestampSeconds": 4.43,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 10,
+            "timestampSeconds": 4.95,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-glm-viduq1-text.mp4",
+          "durationSeconds": 5.21,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.26,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.78,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.3,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.82,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.34,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 2.86,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.39,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 3.91,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.43,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 4.95,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "temporalConsistency": 8,
+            "compositionCamera": 8
+          },
+          "averageScore10": 8,
+          "qualityScore": 80,
+          "summary": "Strong match to the prompt: a rainy neon city street with wet reflections, umbrellas, and an apparent slow rightward camera pan. The scene is visually rich and coherent, though some signage/text, rain streaks, and distant pedestrians show typical generative artifacts.",
+          "strengths": [
+            "Clear rainy nighttime city atmosphere with neon lighting",
+            "Excellent wet pavement reflections and color contrast",
+            "Slow pan is readable across the ordered frames",
+            "Consistent urban layout and mood throughout"
+          ],
+          "issues": [
+            "Neon sign text is mostly nonsensical or malformed",
+            "Some pedestrians and umbrellas are simplified or slightly warped",
+            "Rain streaks and building facade details can look overprocessed",
+            "Minor wide-angle distortion and AI texture smearing in distant areas"
+          ],
+          "usage": {
+            "input_tokens": 24949,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 361,
+            "output_tokens_details": {
+              "reasoning_tokens": 179
+            },
+            "total_tokens": 25310
+          }
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "providerKey": "minimax/T2V-01",
+      "provider": "minimax",
+      "model": "T2V-01",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-minimax-T2V-01.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 165165,
+      "costCents": 19,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "temporalConsistency": 8,
+        "compositionCamera": 8
+      },
+      "averageScore10": 8,
+      "qualityScore": 80,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-minimax-T2V-01.mp4: Strong fit to the prompt with a vivid rainy neon city street, wet reflections, umbrellas, traffic, and an implied slow pan/steady camera move. Visuals are cinematic and coherent, though headlights and neon bloom are overexposed and some signage/object details show AI artifacts.",
+        "strengths": [
+          "Clear rainy urban street atmosphere with neon lighting and reflective pavement",
+          "Consistent city scene across frames with plausible vehicle motion",
+          "Good cinematic framing and depth down the avenue",
+          "Umbrellas, traffic lights, cars, and wet surfaces reinforce the prompt"
+        ],
+        "issues": [
+          "Very intense yellow light/headlight bloom obscures detail",
+          "Some unreadable/malformed signage and small pedestrian details",
+          "Motion reads more like a slow forward drift/pan than a clearly deliberate camera pan",
+          "Minor object warping and stylized vehicle shapes in places"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 1,
+            "timestampSeconds": 0.28,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 2,
+            "timestampSeconds": 0.85,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 3,
+            "timestampSeconds": 1.41,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 4,
+            "timestampSeconds": 1.97,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 5,
+            "timestampSeconds": 2.54,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 6,
+            "timestampSeconds": 3.1,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 7,
+            "timestampSeconds": 3.67,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 8,
+            "timestampSeconds": 4.23,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 9,
+            "timestampSeconds": 4.79,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 10,
+            "timestampSeconds": 5.36,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-minimax-T2V-01.mp4",
+          "durationSeconds": 5.64,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.28,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.85,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.41,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.97,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.54,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 3.1,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.67,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 4.23,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.79,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 5.36,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "temporalConsistency": 8,
+            "compositionCamera": 8
+          },
+          "averageScore10": 8,
+          "qualityScore": 80,
+          "summary": "Strong fit to the prompt with a vivid rainy neon city street, wet reflections, umbrellas, traffic, and an implied slow pan/steady camera move. Visuals are cinematic and coherent, though headlights and neon bloom are overexposed and some signage/object details show AI artifacts.",
+          "strengths": [
+            "Clear rainy urban street atmosphere with neon lighting and reflective pavement",
+            "Consistent city scene across frames with plausible vehicle motion",
+            "Good cinematic framing and depth down the avenue",
+            "Umbrellas, traffic lights, cars, and wet surfaces reinforce the prompt"
+          ],
+          "issues": [
+            "Very intense yellow light/headlight bloom obscures detail",
+            "Some unreadable/malformed signage and small pedestrian details",
+            "Motion reads more like a slow forward drift/pan than a clearly deliberate camera pan",
+            "Minor object warping and stylized vehicle shapes in places"
+          ],
+          "usage": {
+            "input_tokens": 11510,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 336,
+            "output_tokens_details": {
+              "reasoning_tokens": 134
+            },
+            "total_tokens": 11846
+          }
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "providerKey": "glm/cogvideox-3",
+      "provider": "glm",
+      "model": "cogvideox-3",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-glm-cogvideox-3.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 348386,
+      "costCents": 20,
+      "criterionScores": {
+        "promptAdherence": 8,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "temporalConsistency": 8,
+        "compositionCamera": 8
+      },
+      "averageScore10": 7.8,
+      "qualityScore": 78,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-glm-cogvideox-3.mp4: Strong neon rainy city street scene with vivid wet-road reflections and consistent urban atmosphere. The requested slow pan is only subtly implied, and some generated details show typical artifacts, but the overall video fits the prompt well.",
+        "strengths": [
+          "Excellent neon lighting and colorful reflections on wet pavement",
+          "Clear rainy-night atmosphere with umbrellas, mist, and slick streets",
+          "Stable wide street composition with good depth and readable traffic flow",
+          "Generally coherent scene continuity across frames"
+        ],
+        "issues": [
+          "Camera pan is not very obvious from the sampled frames",
+          "Sign text is mostly nonsensical and some pedestrians are blob-like",
+          "Some vehicle motion/shape blur and minor warping in foreground cars",
+          "Rain itself is mostly implied rather than visibly falling"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 1,
+            "timestampSeconds": 0.51,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 2,
+            "timestampSeconds": 1.53,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 3,
+            "timestampSeconds": 2.56,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 4,
+            "timestampSeconds": 3.58,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 5,
+            "timestampSeconds": 4.6,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 6,
+            "timestampSeconds": 5.62,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 7,
+            "timestampSeconds": 6.65,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 8,
+            "timestampSeconds": 7.67,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 9,
+            "timestampSeconds": 8.69,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 10,
+            "timestampSeconds": 9.71,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-glm-cogvideox-3.mp4",
+          "durationSeconds": 10.23,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.51,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 1.53,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 2.56,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 3.58,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 4.6,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 5.62,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 6.65,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 7.67,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 8.69,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 9.71,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 8,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "temporalConsistency": 8,
+            "compositionCamera": 8
+          },
+          "averageScore10": 7.8,
+          "qualityScore": 78,
+          "summary": "Strong neon rainy city street scene with vivid wet-road reflections and consistent urban atmosphere. The requested slow pan is only subtly implied, and some generated details show typical artifacts, but the overall video fits the prompt well.",
+          "strengths": [
+            "Excellent neon lighting and colorful reflections on wet pavement",
+            "Clear rainy-night atmosphere with umbrellas, mist, and slick streets",
+            "Stable wide street composition with good depth and readable traffic flow",
+            "Generally coherent scene continuity across frames"
+          ],
+          "issues": [
+            "Camera pan is not very obvious from the sampled frames",
+            "Sign text is mostly nonsensical and some pedestrians are blob-like",
+            "Some vehicle motion/shape blur and minor warping in foreground cars",
+            "Rain itself is mostly implied rather than visibly falling"
+          ],
+          "usage": {
+            "input_tokens": 24951,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 559,
+            "output_tokens_details": {
+              "reasoning_tokens": 377
+            },
+            "total_tokens": 25510
+          }
+        }
+      ]
+    }
+  ]
+}

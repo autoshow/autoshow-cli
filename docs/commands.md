@@ -30,8 +30,6 @@ bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --grok speech-to-t
 # extract with DeepInfra Whisper STT
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deepinfra openai/whisper-large-v3-turbo
 
-# extract with deAPI STT
-bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deapi WhisperLargeV3
 
 # extract with Happy Scribe STT
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --happyscribe auto
@@ -43,7 +41,10 @@ bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deepgram nova-3
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --assemblyai universal-3-pro
 
 # full pipeline (download/transcribe + LLM write)
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.5
+
+# full pipeline with xAI Grok 4.3
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --grok grok-4.3
 
 # full pipeline with Z.AI GLM 5.1
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --glm glm-5.1
@@ -65,6 +66,9 @@ bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-
 
 # document OCR with Kimi
 bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+
+# document OCR with Grok
+bun as extract input/examples/document/1-document.pdf --grok-ocr grok-4.3
 
 # URL article extraction with every backend
 bun as extract https://example.com/article --all-url
@@ -108,8 +112,6 @@ bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male En
 # text-to-speech with Cartesia Sonic
 bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
-# text-to-speech with deAPI Qwen3 voice cloning
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3
 
 # image generation, then edit/reference the generated image; run this block in order
 bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
@@ -118,9 +120,8 @@ bun as image "make the mug matte black, keep the same camera angle, and place it
 # image reference with native Gemini
 bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
 
-# image references with MiniMax, BFL, and Reve
-bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
-bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+# image references with BFL and Reve
+bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
 bun as image "place the same mug in a minimalist editorial product scene" --reve latest --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-reve
 
 # video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
@@ -128,11 +129,9 @@ bun as video "animate the red enamel mug on a slow turntable with glossy highlig
 bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
 bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
 
-# image generation with deAPI
-bun as image "a sunset over mountains" --deapi Flux1schnell --image-size 768x768
 
 # image generation with BFL
-bun as image "a sunset over mountains" --bfl flux-2-pro-preview --image-size 1024x1024
+bun as image "a sunset over mountains" --bfl flux-2-pro --image-size 1024x1024
 
 # image generation with Reve
 bun as image "a sunset over mountains" --reve latest --image-aspect-ratio 16:9 --image-format webp
@@ -153,7 +152,6 @@ bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-prev
 bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview
 
 # video generation with multiple providers
-bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview --minimax MiniMax-Hailuo-2.3 --runway gen4.5 --deapi Ltxv_13B_0_9_8_Distilled_FP8
 ```
 
 ## Command Map
@@ -189,12 +187,11 @@ bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-previ
 
 ## Pricing Preflight
 
-Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `music --audio` and `music --batch` are local lyric-video modes and reject `--price`:
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. The human `Cost Estimate` table is intentionally compact and always uses `step`, `provider`, `model`, and `cost` columns; the `--json` dry-run result keeps the structured pricing basis fields such as token counts, page counts, character counts, and registry rates. `music --audio` and `music --batch` are local lyric-video modes and reject `--price`:
 
 ```bash
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --elevenlabs scribe_v2 --price
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deepinfra openai/whisper-large-v3-turbo --price
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi WhisperLargeV3 --price
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --happyscribe auto --price
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deepgram nova-3 --price
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --groq whisper-large-v3 --price
@@ -202,7 +199,7 @@ bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --grok speech-to-t
 bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct --price
 bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6 --price
 bun as extract https://example.com/article --all-url --price
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.5 --price
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --glm glm-5.1 --price
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --kimi kimi-k2.6 --price
 bun as write ./output/demo/text --price
@@ -215,14 +212,11 @@ bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --price
 bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --price
 bun as tts input/examples/tts/1-tts.md --hume octave-2 --price
 bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --price
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3 --price
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --price
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
 bun as image "a sunset" --openai gpt-image-2 --image-size 1024x1024 --image-quality low --price
-bun as image "a sunset" --minimax image-01 --image-count 3 --price
-bun as image "a sunset" --bfl flux-2-klein-4b --price
-bun as image "a sunset" --deapi Flux1schnell --price
+bun as image "a sunset" --bfl flux-2-pro --price
 bun as image "a sunset" --reve latest --price
 bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental --price
 bun as music "an ambient piano instrumental" --minimax music-2.6-free --music-instrumental --price
@@ -232,7 +226,6 @@ bun as video "a sunset timelapse" --minimax MiniMax-Hailuo-2.3 --price
 bun as video "a sunset timelapse" --glm cogvideox-3 --price
 bun as video "a sunset timelapse" --grok grok-imagine-video --price
 bun as video "a sunset timelapse" --runway gen4.5 --video-duration 5 --price
-bun as video "a sunset timelapse" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
 bun as video "a sunset timelapse" --all-video --price
 bun as comic generate-images 02-01 --target images --panels 1-16 --price
 bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --price
@@ -240,4 +233,4 @@ bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.
 bun as comic character-sketch --image input/characters/01-peaches.webp --price
 ```
 
-For token-priced hosted OCR providers, price preflight uses registry token rates with model-specific input/output token heuristics from recent OCR benchmark usage and adds page processing-time estimates. URL article estimates include the selected `--url-backend`, or every URL backend when `--all-url` is set. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0059/page`. For `extract --deapi`, `tts --deapi`, and `music --deapi`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. MiniMax music estimates use current model rates, including the `music-2.6-free` zero-cost track estimate and any generated-lyrics add-on. For `extract --happyscribe`, price preflight is side-effect free and uses the published `$0.01/min` AI rate; exact billing is captured only during real runs with a resolvable USD organization. Supadata STT estimates use the Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, with plan-pricing variance possible.
+Pricing preflight uses the same model registry and pricing helpers as post-run cost accounting. Token-priced hosted OCR and write estimates use provider/model input and output rates plus command-specific input heuristics; URL article estimates use the selected backend, or every backend when `--all-url` is set. MiniMax music estimates include the zero-cost `music-2.6-free` track estimate and any generated-lyrics add-on. Happy Scribe preflight is side-effect free and uses the published AI rate; Supadata STT estimates use the Basic/Pro auto-recharge credit reference rate, with plan-pricing variance possible.

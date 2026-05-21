@@ -8,7 +8,6 @@ import type {
 } from '~/types'
 import * as l from '~/utils/logger'
 import { dispatchStt, ensureSttTargetSetup } from './dispatch'
-import { isDeapiSupportedSourceUrl } from '../stt-services/deapi/deapi'
 import { isSupadataSupportedSourceUrl } from '../stt-services/supadata/supadata'
 import { isScrapeCreatorsSupportedSourceUrl } from '../stt-services/scrapecreators/scrapecreators'
 import { writeSttResultArtifact } from '../stt-utils/stt-result-artifacts'
@@ -91,12 +90,6 @@ export const sttTarget = async (
   }
 
   if (target.service === 'scrapecreators') {
-    const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
-    await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
-    return transcription
-  }
-
-  if (target.service === 'deapi' && effectiveOptions.split !== true && isDeapiSupportedSourceUrl(effectiveOptions.sourceUrl)) {
     const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
     await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
     return transcription

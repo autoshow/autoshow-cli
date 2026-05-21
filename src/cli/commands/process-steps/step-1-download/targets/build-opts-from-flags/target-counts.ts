@@ -22,6 +22,7 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.glmOcrModels, modelOptions.glmOcrModel)
     + countSelectedTargets(modelOptions.kimiOcrModels, modelOptions.kimiOcrModel)
     + countSelectedTargets(modelOptions.openaiOcrModels, modelOptions.openaiOcrModel)
+    + countSelectedTargets(modelOptions.grokOcrModels, modelOptions.grokOcrModel)
     + countSelectedTargets(modelOptions.anthropicOcrModels, modelOptions.anthropicOcrModel)
     + countSelectedTargets(modelOptions.geminiOcrModels, modelOptions.geminiOcrModel)
     + countSelectedTargets(modelOptions.deepinfraOcrModels, modelOptions.deepinfraOcrModel)
@@ -50,15 +51,11 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.humeTtsModels, modelOptions.humeTtsModel)
     + countSelectedTargets(modelOptions.cartesiaTtsModels, modelOptions.cartesiaTtsModel)
     + countSelectedTargets(modelOptions.gcloudTtsModels, modelOptions.gcloudTtsModel)
-    + countSelectedTargets(modelOptions.deapiTtsModels, modelOptions.deapiTtsModel)
   const hostedImageTargetCount =
     countSelectedTargets(modelOptions.geminiImageModels, modelOptions.geminiImageModel)
     + countSelectedTargets(modelOptions.openaiImageModels, modelOptions.openaiImageModel)
-    + countSelectedTargets(modelOptions.minimaxImageModels, modelOptions.minimaxImageModel)
     + countSelectedTargets(modelOptions.grokImageModels, modelOptions.grokImageModel)
-    + countSelectedTargets(modelOptions.runwayImageModels, modelOptions.runwayImageModel)
     + countSelectedTargets(modelOptions.bflImageModels, modelOptions.bflImageModel)
-    + countSelectedTargets(modelOptions.deapiImageModels, modelOptions.deapiImageModel)
     + countSelectedTargets(modelOptions.reveImageModels, modelOptions.reveImageModel)
   const hostedVideoTargetCount =
     countSelectedTargets(modelOptions.geminiVideoModels, modelOptions.geminiVideoModel)
@@ -66,11 +63,9 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.glmVideoModels, modelOptions.glmVideoModel)
     + countSelectedTargets(modelOptions.grokVideoModels, modelOptions.grokVideoModel)
     + countSelectedTargets(modelOptions.runwayVideoModels, modelOptions.runwayVideoModel)
-    + countSelectedTargets(modelOptions.deapiVideoModels, modelOptions.deapiVideoModel)
   const hostedMusicTargetCount =
     countSelectedTargets(modelOptions.elevenlabsMusicModels, modelOptions.elevenlabsMusicModel)
     + countSelectedTargets(modelOptions.minimaxMusicModels, modelOptions.minimaxMusicModel)
-    + countSelectedTargets(modelOptions.deapiMusicModels, modelOptions.deapiMusicModel)
     + countSelectedTargets(modelOptions.geminiMusicModels, modelOptions.geminiMusicModel)
 
   return {

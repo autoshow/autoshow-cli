@@ -45,8 +45,6 @@ export type RuntimeOptions = {
   awsBucket: string | undefined
   deepinfraSttModels: string[] | undefined
   deepinfraSttModel: string | undefined
-  deapiSttModels: string[] | undefined
-  deapiSttModel: string | undefined
   groqSttModels: string[] | undefined
   groqSttModel: string | undefined
   grokSttModels: string[] | undefined
@@ -128,6 +126,8 @@ export type RuntimeOptions = {
   kimiOcrModel: string | undefined
   openaiOcrModels: string[] | undefined
   openaiOcrModel: string | undefined
+  grokOcrModels: string[] | undefined
+  grokOcrModel: string | undefined
   anthropicOcrModels: string[] | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModels: string[] | undefined
@@ -150,6 +150,8 @@ export type RuntimeOptions = {
   urlBackendExplicit: boolean
   urlBackends: HtmlArticleBackend[] | undefined
   urlProviderConcurrency: number
+  urlRequestTimeoutMs: number
+  urlRequestAttempts: number
 
   batchLimit: number
   batchAll: boolean
@@ -277,30 +279,14 @@ export type RuntimeOptions = {
   minimaxTtsEmotion: string | undefined
   minimaxTtsEnglishNormalization: boolean
   minimaxTtsPronunciations: string[] | undefined
-  deapiTtsModels: string[] | undefined
-  deapiTtsModel: string | undefined
-  deapiTtsVoice: string | undefined
-  deapiTtsRefAudio: string | undefined
-  deapiTtsRefText: string | undefined
-  deapiTtsLanguage: string | undefined
-  deapiTtsSpeed: number | undefined
-  deapiTtsFormat: string | undefined
-  deapiTtsSampleRate: number | undefined
-  deapiTtsInstruction: string | undefined
   geminiImageModels: string[] | undefined
   geminiImageModel: string | undefined
   openaiImageModels: string[] | undefined
   openaiImageModel: string | undefined
-  minimaxImageModels: string[] | undefined
-  minimaxImageModel: string | undefined
   grokImageModels: string[] | undefined
   grokImageModel: string | undefined
-  runwayImageModels: string[] | undefined
-  runwayImageModel: string | undefined
   bflImageModels: string[] | undefined
   bflImageModel: string | undefined
-  deapiImageModels: string[] | undefined
-  deapiImageModel: string | undefined
   reveImageModels: string[] | undefined
   reveImageModel: string | undefined
   imageAspectRatio: string | undefined
@@ -312,7 +298,6 @@ export type RuntimeOptions = {
   imageInputs: string[] | undefined
   imageMask: string | undefined
   imageResponseMode: string | undefined
-  geminiPersonGeneration: string | undefined
   geminiSearchGrounding: boolean | undefined
   imageCompression: number | undefined
 
@@ -320,8 +305,6 @@ export type RuntimeOptions = {
   elevenlabsMusicModel: string | undefined
   minimaxMusicModels: string[] | undefined
   minimaxMusicModel: string | undefined
-  deapiMusicModels: string[] | undefined
-  deapiMusicModel: string | undefined
   geminiMusicModels: string[] | undefined
   geminiMusicModel: string | undefined
   musicDuration: number | undefined
@@ -338,8 +321,6 @@ export type RuntimeOptions = {
   grokVideoModel: string | undefined
   runwayVideoModels: string[] | undefined
   runwayVideoModel: string | undefined
-  deapiVideoModels: string[] | undefined
-  deapiVideoModel: string | undefined
   allVideo: boolean | undefined
   videoDuration: number | undefined
   videoSize: string | undefined

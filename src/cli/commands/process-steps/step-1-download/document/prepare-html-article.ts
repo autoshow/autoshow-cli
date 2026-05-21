@@ -18,6 +18,7 @@ import {
   isRemoteSource,
   type UrlArticleRunResult
 } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-utils'
+import type { UrlArticleRunOptions } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-adapter'
 
 export const buildArticleSlug = (
   source: string,
@@ -58,7 +59,8 @@ export async function prepareHtmlArticle(
   source: string,
   outputDir: string,
   backend: HtmlArticleBackend,
-  batchChildContext?: BatchChildRunContext
+  batchChildContext?: BatchChildRunContext,
+  urlRunOptions?: UrlArticleRunOptions
 ): Promise<PreparedDocument> {
   const remote = isRemoteSource(source)
   let resolvedBackend = backend
@@ -77,11 +79,11 @@ export async function prepareHtmlArticle(
   if (resolvedBackend === 'defuddle') {
     if (remote) {
       try {
-        article = await runUrlArticleProvider('defuddle', source, sourceUrl)
+        article = await runUrlArticleProvider('defuddle', source, sourceUrl, urlRunOptions)
       } catch (defuddleError) {
         l.warn(`Defuddle article extraction failed; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
         try {
-          article = await runUrlArticleProvider('firecrawl', source, sourceUrl)
+          article = await runUrlArticleProvider('firecrawl', source, sourceUrl, urlRunOptions)
           resolvedBackend = 'firecrawl'
         } catch (firecrawlError) {
           throw new Error(
@@ -91,10 +93,10 @@ export async function prepareHtmlArticle(
         }
       }
     } else {
-      article = await runUrlArticleProvider('defuddle', source, undefined)
+      article = await runUrlArticleProvider('defuddle', source, undefined, urlRunOptions)
     }
   } else {
-    article = await runUrlArticleProvider(resolvedBackend, source, sourceUrl)
+    article = await runUrlArticleProvider(resolvedBackend, source, sourceUrl, urlRunOptions)
   }
   const htmlArticleProcessingTimeMs = Date.now() - articleStartedAt
 

@@ -3,7 +3,6 @@ import {
   SUPPORTED_GCLOUD_STT_MODELS,
   SUPPORTED_AWS_STT_MODELS,
   SUPPORTED_DEEPINFRA_STT_MODELS,
-  SUPPORTED_DEAPI_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_SONIOX_STT_MODELS,
@@ -25,7 +24,6 @@ import {
   validateGcloudSttModel,
   validateAwsSttModel,
   validateDeepinfraSttModel,
-  validateDeapiSttModel,
   validateElevenlabsSttModel,
   validateDeepgramSttModel,
   validateSonioxSttModel,
@@ -106,21 +104,6 @@ export const STEP2_STT_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_DEEPINFRA_STT_MODELS,
     validateModel: validateDeepinfraSttModel,
     description: buildModelDescription('DeepInfra Whisper STT model (API, billed)', SUPPORTED_DEEPINFRA_STT_MODELS)
-  }),
-  modelProvider({
-    step: 'stt',
-    modality: 'media',
-    flagName: 'deapi-stt',
-    targetService: 'deapi',
-    providerSpecProvider: 'deapi',
-    bootstrapProviderId: 'deapi-stt',
-    configKey: 'deapiStt',
-    allShortcut: 'all-stt',
-    runtimeModelsKey: 'deapiSttModels',
-    runtimeModelKey: 'deapiSttModel',
-    supportedModels: SUPPORTED_DEAPI_STT_MODELS,
-    validateModel: validateDeapiSttModel,
-    description: buildModelDescription('deAPI STT model', SUPPORTED_DEAPI_STT_MODELS)
   }),
   modelProvider({
     step: 'stt',

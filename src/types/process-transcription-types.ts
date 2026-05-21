@@ -91,7 +91,7 @@ export type Step2BillingMetadata = {
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'scrapecreators' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'scrapecreators' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

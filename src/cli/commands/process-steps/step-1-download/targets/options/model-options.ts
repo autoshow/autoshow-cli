@@ -12,7 +12,6 @@ import {
   validateWhisperModel,
   validateGcloudSttModel,
   validateAwsSttModel,
-  validateDeapiSttModel,
   validateDeepinfraSttModel,
   validateElevenlabsSttModel,
   validateDeepgramSttModel,
@@ -41,6 +40,7 @@ import {
   validateUnstructuredOcrModel,
   validateMistralOcrModel,
   validateOpenAIOcrModel,
+  validateGrokOcrModel,
   validateKittenTtsModel,
   validateElevenlabsTtsModel,
   validateMinimaxTtsModel,
@@ -49,7 +49,6 @@ import {
   validateMistralTtsModel,
   validateOpenAITtsModel,
   validateGeminiTtsModel,
-  validateDeapiTtsModel,
   validateDeepgramTtsModel,
   validateSpeechifyTtsModel,
   validateHumeTtsModel,
@@ -57,18 +56,13 @@ import {
   validateGcloudTtsModel,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
-  validateDeapiMusicModel,
   validateGeminiMusicModel,
   validateGeminiImageModel,
-  validateDeapiImageModel,
   validateGrokImageModel,
-  validateMinimaxImageModel,
   validateOpenAIImageModel,
-  validateRunwayImageModel,
   validateBflImageModel,
   validateReveImageModel,
   validateGeminiVideoModel,
-  validateDeapiVideoModel,
   validateMinimaxVideoModel,
   validateGlmVideoModel,
   validateGrokVideoModel,
@@ -118,7 +112,6 @@ export const readRuntimeModelOptions = (
   const gcloudSttModels = readValidatedMany('gcloud-stt', validateGcloudSttModel)
   const awsSttModels = readValidatedMany('aws-stt', validateAwsSttModel)
   const deepinfraSttModels = readValidatedMany('deepinfra-stt', validateDeepinfraSttModel)
-  const deapiSttModels = readValidatedMany('deapi-stt', validateDeapiSttModel)
   const groqSttModels = readValidatedMany('groq-stt', validateGroqSttModel)
   const grokSttModels = readValidatedMany('grok-stt', validateGrokSttModel)
   const elevenlabsSttModels = readValidatedMany('elevenlabs-stt', validateElevenlabsSttModel)
@@ -140,6 +133,7 @@ export const readRuntimeModelOptions = (
   const glmOcrModels = readValidatedMany('glm-ocr', validateGlmOcrModel)
   const kimiOcrModels = readValidatedMany('kimi-ocr', validateKimiOcrModel)
   const openaiOcrModels = readValidatedMany('openai-ocr', validateOpenAIOcrModel)
+  const grokOcrModels = readValidatedMany('grok-ocr', validateGrokOcrModel)
   const anthropicOcrModels = readValidatedMany('anthropic-ocr', validateAnthropicOcrModel)
   const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
   const deepinfraOcrModels = readValidatedMany('deepinfra-ocr', validateDeepinfraOcrModel)
@@ -158,7 +152,6 @@ export const readRuntimeModelOptions = (
   const gcloudSttModel = first(gcloudSttModels)
   const awsSttModel = first(awsSttModels)
   const deepinfraSttModel = first(deepinfraSttModels)
-  const deapiSttModel = first(deapiSttModels)
   const groqSttModel = first(groqSttModels)
   const grokSttModel = first(grokSttModels)
   const elevenlabsSttModel = first(elevenlabsSttModels)
@@ -180,6 +173,7 @@ export const readRuntimeModelOptions = (
   const glmOcrModel = first(glmOcrModels)
   const kimiOcrModel = first(kimiOcrModels)
   const openaiOcrModel = first(openaiOcrModels)
+  const grokOcrModel = first(grokOcrModels)
   const anthropicOcrModel = first(anthropicOcrModels)
   const geminiOcrModel = first(geminiOcrModels)
   const deepinfraOcrModel = first(deepinfraOcrModels)
@@ -208,7 +202,6 @@ export const readRuntimeModelOptions = (
   const humeTtsModels = readValidatedMany('hume-tts', validateHumeTtsModel)
   const cartesiaTtsModels = readValidatedMany('cartesia-tts', validateCartesiaTtsModel)
   const gcloudTtsModels = readValidatedMany('gcloud-tts', validateGcloudTtsModel)
-  const deapiTtsModels = readValidatedMany('deapi-tts', validateDeapiTtsModel)
   const hasExplicitTtsEngine = [
     kittenTtsModels,
     elevenlabsTtsModels,
@@ -223,7 +216,6 @@ export const readRuntimeModelOptions = (
     humeTtsModels,
     cartesiaTtsModels,
     gcloudTtsModels,
-    deapiTtsModels
   ].some((value) => value !== undefined && value.length > 0)
   const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
     ? [DEFAULT_KITTEN_TTS_MODEL]
@@ -231,22 +223,17 @@ export const readRuntimeModelOptions = (
   const kittenTtsModelValue = first(kittenTtsModelValues)
   const geminiImageModels = readValidatedMany('gemini-image', validateGeminiImageModel)
   const openaiImageModels = readValidatedMany('openai-image', validateOpenAIImageModel)
-  const minimaxImageModels = readValidatedMany('minimax-image', validateMinimaxImageModel)
   const grokImageModels = readValidatedMany('grok-image', validateGrokImageModel)
-  const runwayImageModels = readValidatedMany('runway-image', validateRunwayImageModel)
   const bflImageModels = readValidatedMany('bfl-image', validateBflImageModel)
-  const deapiImageModels = readValidatedMany('deapi-image', validateDeapiImageModel)
   const reveImageModels = readValidatedMany('reve-image', validateReveImageModel)
   const elevenlabsMusicModels = readValidatedMany('elevenlabs-music', validateElevenlabsMusicModel)
   const minimaxMusicModels = readValidatedMany('minimax-music', validateMinimaxMusicModel)
-  const deapiMusicModels = readValidatedMany('deapi-music', validateDeapiMusicModel)
   const geminiMusicModels = readValidatedMany('gemini-music', validateGeminiMusicModel)
   const geminiVideoModels = readValidatedMany('gemini-video', validateGeminiVideoModel)
   const minimaxVideoModels = readValidatedMany('minimax-video', validateMinimaxVideoModel)
   const glmVideoModels = readValidatedMany('glm-video', validateGlmVideoModel)
   const grokVideoModels = readValidatedMany('grok-video', validateGrokVideoModel)
   const runwayVideoModels = readValidatedMany('runway-video', validateRunwayVideoModel)
-  const deapiVideoModels = readValidatedMany('deapi-video', validateDeapiVideoModel)
 
   return {
     whisperModels,
@@ -257,8 +244,6 @@ export const readRuntimeModelOptions = (
     awsSttModel,
     deepinfraSttModels,
     deepinfraSttModel,
-    deapiSttModels,
-    deapiSttModel,
     groqSttModels,
     groqSttModel,
     grokSttModels,
@@ -301,6 +286,8 @@ export const readRuntimeModelOptions = (
     kimiOcrModel,
     openaiOcrModels,
     openaiOcrModel,
+    grokOcrModels,
+    grokOcrModel,
     anthropicOcrModels,
     anthropicOcrModel,
     geminiOcrModels,
@@ -357,30 +344,20 @@ export const readRuntimeModelOptions = (
     cartesiaTtsModel: first(cartesiaTtsModels),
     gcloudTtsModels,
     gcloudTtsModel: first(gcloudTtsModels),
-    deapiTtsModels,
-    deapiTtsModel: first(deapiTtsModels),
     geminiImageModels,
     geminiImageModel: first(geminiImageModels),
     openaiImageModels,
     openaiImageModel: first(openaiImageModels),
-    minimaxImageModels,
-    minimaxImageModel: first(minimaxImageModels),
     grokImageModels,
     grokImageModel: first(grokImageModels),
-    runwayImageModels,
-    runwayImageModel: first(runwayImageModels),
     bflImageModels,
     bflImageModel: first(bflImageModels),
-    deapiImageModels,
-    deapiImageModel: first(deapiImageModels),
     reveImageModels,
     reveImageModel: first(reveImageModels),
     elevenlabsMusicModels,
     elevenlabsMusicModel: first(elevenlabsMusicModels),
     minimaxMusicModels,
     minimaxMusicModel: first(minimaxMusicModels),
-    deapiMusicModels,
-    deapiMusicModel: first(deapiMusicModels),
     geminiMusicModels,
     geminiMusicModel: first(geminiMusicModels),
     geminiVideoModels,
@@ -392,8 +369,6 @@ export const readRuntimeModelOptions = (
     grokVideoModels,
     grokVideoModel: first(grokVideoModels),
     runwayVideoModels,
-    runwayVideoModel: first(runwayVideoModels),
-    deapiVideoModels,
-    deapiVideoModel: first(deapiVideoModels)
+    runwayVideoModel: first(runwayVideoModels)
   }
 }

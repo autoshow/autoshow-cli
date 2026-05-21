@@ -20,4 +20,6 @@ Write `consensus-evaluation.txt` as plain text. Do not claim to have viewed imag
 bun scripts/run.ts image build-report "$RUN_DIR"
 ```
 
-Fastest and cheapest rankings come from measurable metadata. Highest-quality rankings are unavailable unless an explicit quality metric is already present.
+Reports expose full `price`, `speed`, `automatedQuality`, and `humanQuality` ranking surfaces for local and service groups. `fastest`, `cheapest`, and `highestQuality` remain compatibility aliases for the full `speed`, `price`, and quality arrays.
+
+Price and speed rankings include every provider in the group, with missing values sorted last as `n/a`. Automated quality uses only image judge `qualityScore` evidence when present. Human quality uses only explicit `humanQualityScore` evidence. Do not use dimensions, file size, cost, speed, or generic artifact metadata as quality proxies.

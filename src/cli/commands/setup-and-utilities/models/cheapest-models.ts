@@ -74,12 +74,11 @@ const qualityRank = (selection: { size?: string | undefined, resolution?: string
 }
 
 const isDefaultVideoSelectionModel = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi',
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway',
   model: string
 ): boolean => {
   if (provider === 'minimax') {
     return model === 'MiniMax-Hailuo-2.3'
-      || model === 'MiniMax-Hailuo-02'
       || model === 'T2V-01-Director'
       || model === 'T2V-01'
   }
@@ -100,7 +99,7 @@ export const selectCheapestSttModel = (service: string): string => {
   return selectCheapestRegistryModel(serviceConfig.models, sttHourlyCost)
 }
 
-export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'): string => {
+export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'): string => {
   const serviceConfig = getModelRegistry().extract[service]
   if (!serviceConfig) {
     throw new Error(`Missing extract service config: ${service}`)
@@ -200,7 +199,7 @@ export const selectCheapestMusicModel = (service: string): string => {
 }
 
 export const selectCheapestVideoSelection = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): CheapestVideoSelection => {
   const serviceConfig = getModelRegistry().video[provider]
   if (!serviceConfig) {
@@ -230,7 +229,6 @@ export const selectCheapestVideoSelection = (
               ...(provider === 'glm' ? { glmVideoModel: model } : {}),
               ...(provider === 'grok' ? { grokVideoModel: model } : {}),
               ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
-              ...(provider === 'deapi' ? { deapiVideoModel: model } : {}),
               videoDuration: duration,
               videoResolution: resolution
             })
@@ -283,7 +281,7 @@ export const selectCheapestVideoSelection = (
 }
 
 export const selectCheapestVideoModel = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): string => selectCheapestVideoSelection(provider).model
 
 export const resolveCheapestModelForFlag = (flagName: string): string | undefined => {
@@ -299,8 +297,6 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestSttModel('aws')
     case 'deepinfra-stt':
       return selectCheapestSttModel('deepinfra')
-    case 'deapi-stt':
-      return selectCheapestSttModel('deapi')
     case 'elevenlabs-stt':
       return selectCheapestSttModel('elevenlabs')
     case 'deepgram-stt':
@@ -343,6 +339,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestExtractModel('kimi')
     case 'openai-ocr':
       return selectCheapestExtractModel('openai')
+    case 'grok-ocr':
+      return selectCheapestExtractModel('grok')
     case 'anthropic-ocr':
       return selectCheapestExtractModel('anthropic')
     case 'gemini-ocr':
@@ -362,7 +360,7 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
     case 'minimax':
       return selectCheapestLlmModel('minimax')
     case 'grok':
-      return selectCheapestLlmModel('grok')
+      return 'grok-4.20-non-reasoning'
     case 'glm':
       return selectCheapestLlmModel('glm')
     case 'kimi':
@@ -391,30 +389,20 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('cartesia')
     case 'gcloud-tts':
       return selectCheapestTtsModel('gcloud')
-    case 'deapi-tts':
-      return selectCheapestTtsModel('deapi')
     case 'gemini-image':
       return selectCheapestImageModel('gemini')
     case 'openai-image':
       return selectCheapestImageModel('openai')
-    case 'minimax-image':
-      return selectCheapestImageModel('minimax')
     case 'grok-image':
       return selectCheapestImageModel('grok')
-    case 'runway-image':
-      return selectCheapestImageModel('runway')
     case 'bfl-image':
       return selectCheapestImageModel('bfl')
-    case 'deapi-image':
-      return selectCheapestImageModel('deapi')
     case 'reve-image':
       return selectCheapestImageModel('reve')
     case 'elevenlabs-music':
       return selectCheapestMusicModel('elevenlabs')
     case 'minimax-music':
       return selectCheapestMusicModel('minimax')
-    case 'deapi-music':
-      return selectCheapestMusicModel('deapi')
     case 'gemini-music':
       return selectCheapestMusicModel('gemini')
     case 'gemini-video':
@@ -427,8 +415,6 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestVideoModel('grok')
     case 'runway-video':
       return selectCheapestVideoModel('runway')
-    case 'deapi-video':
-      return selectCheapestVideoModel('deapi')
     default:
       return undefined
   }

@@ -1,0 +1,800 @@
+{
+  "schemaVersion": 1,
+  "kind": "image-quality-report",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/image/2026-05-21_10-33-37-508_image-gen",
+  "runName": "2026-05-21_10-33-37-508_image-gen",
+  "generatedAt": "2026-05-21T22:14:45.044Z",
+  "judge": {
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "endpoint": "responses"
+  },
+  "prompt": "A clean technical infographic of a media processing pipeline on a dark navy background. Seven numbered stages flow top to bottom connected by arrows. Stage 1 Download with a cloud icon, Stage 2 Extract splitting into speech-to-text and OCR paths, Stage 3 Write as a large central AI brain node, then four output arrows fan out to Stage 4 TTS with a speaker icon, Stage 5 Image with a paintbrush, Stage 6 Video with a film reel, Stage 7 Music with a note. Teal for inputs, gold for the AI stage, coral and purple for outputs. Flat design, geometric shapes, minimal text, monospace labels, developer documentation style.",
+  "rubric": {
+    "scale": "1-10",
+    "qualityScore": "average criterion score x 10",
+    "criteria": [
+      "prompt adherence",
+      "visual quality",
+      "artifact control",
+      "composition",
+      "detail/text handling"
+    ]
+  },
+  "providerCount": 10,
+  "imageCount": 10,
+  "providers": [
+    {
+      "rank": 1,
+      "providerKey": "openai/gpt-image-2",
+      "provider": "openai",
+      "model": "gpt-image-2",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-openai-gpt-image-2.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 59035,
+      "costCents": 5.3,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 9,
+        "composition": 9,
+        "detailTextHandling": 9
+      },
+      "averageScore10": 9,
+      "qualityScore": 90,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-openai-gpt-image-2.png: Clean, readable technical infographic closely matching the requested media processing pipeline with correct stages, colors, icons, arrows, and monospace labels.",
+        "strengths": [
+          "All seven numbered stages are present and arranged in a clear top-to-bottom flow.",
+          "Extract correctly branches into Speech-to-Text and OCR paths before merging into the AI Write stage.",
+          "Central AI brain node is prominent and gold, with four output arrows fanning to TTS, Image, Video, and Music.",
+          "Dark navy background, flat geometric style, teal/gold/coral/purple palette, and developer-documentation feel are well executed.",
+          "Text is legible and mostly accurate."
+        ],
+        "issues": [
+          "Stage 3 is more of a large labeled box containing the AI brain rather than the brain as the central node itself.",
+          "The OCR branch redundantly shows 'OCR' twice due to icon text plus label.",
+          "Output arrows are clean but somewhat stylized with a shared trunk rather than distinctly originating from the AI brain node."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-openai-gpt-image-2.png",
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 9,
+            "composition": 9,
+            "detailTextHandling": 9
+          },
+          "averageScore10": 9,
+          "qualityScore": 90,
+          "summary": "Clean, readable technical infographic closely matching the requested media processing pipeline with correct stages, colors, icons, arrows, and monospace labels.",
+          "strengths": [
+            "All seven numbered stages are present and arranged in a clear top-to-bottom flow.",
+            "Extract correctly branches into Speech-to-Text and OCR paths before merging into the AI Write stage.",
+            "Central AI brain node is prominent and gold, with four output arrows fanning to TTS, Image, Video, and Music.",
+            "Dark navy background, flat geometric style, teal/gold/coral/purple palette, and developer-documentation feel are well executed.",
+            "Text is legible and mostly accurate."
+          ],
+          "issues": [
+            "Stage 3 is more of a large labeled box containing the AI brain rather than the brain as the central node itself.",
+            "The OCR branch redundantly shows 'OCR' twice due to icon text plus label.",
+            "Output arrows are clean but somewhat stylized with a shared trunk rather than distinctly originating from the AI brain node."
+          ],
+          "usage": {
+            "input_tokens": 2275,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 232,
+            "output_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "total_tokens": 2507
+          }
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "providerKey": "gemini/gemini-3.1-flash-image-preview",
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-image-preview",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-gemini-gemini-3.1-flash-image-preview.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 16107,
+      "costCents": 6.7,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8.6,
+      "qualityScore": 86,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-gemini-gemini-3.1-flash-image-preview.png: Clean, readable technical infographic matching the requested media pipeline structure, colors, icons, and dark documentation-style aesthetic. Minor issues include Stage 3 labeled “WRITE” instead of requested “Write” placement/name nuance and slight roughness/unevenness in some line/icon rendering.",
+        "strengths": [
+          "Accurately shows seven numbered stages flowing top to bottom with arrows",
+          "Includes cloud, split speech-to-text/OCR paths, central AI brain, and four output icons",
+          "Color coding matches teal inputs, gold AI node, and coral/purple outputs",
+          "Strong dark navy background, flat geometric style, and clear hierarchy",
+          "Text is mostly legible and monospace-like"
+        ],
+        "issues": [
+          "Stage 3 label appears as “3. WRITE” beside the brain rather than clearly central “Write” stage",
+          "Some arrow lines and icons have minor hand-drawn irregularities",
+          "Output fan arrows are slightly asymmetrical but still clear",
+          "Text handling is good but not perfectly crisp at small details"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-gemini-gemini-3.1-flash-image-preview.png",
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8.6,
+          "qualityScore": 86,
+          "summary": "Clean, readable technical infographic matching the requested media pipeline structure, colors, icons, and dark documentation-style aesthetic. Minor issues include Stage 3 labeled “WRITE” instead of requested “Write” placement/name nuance and slight roughness/unevenness in some line/icon rendering.",
+          "strengths": [
+            "Accurately shows seven numbered stages flowing top to bottom with arrows",
+            "Includes cloud, split speech-to-text/OCR paths, central AI brain, and four output icons",
+            "Color coding matches teal inputs, gold AI node, and coral/purple outputs",
+            "Strong dark navy background, flat geometric style, and clear hierarchy",
+            "Text is mostly legible and monospace-like"
+          ],
+          "issues": [
+            "Stage 3 label appears as “3. WRITE” beside the brain rather than clearly central “Write” stage",
+            "Some arrow lines and icons have minor hand-drawn irregularities",
+            "Output fan arrows are slightly asymmetrical but still clear",
+            "Text handling is good but not perfectly crisp at small details"
+          ],
+          "usage": {
+            "input_tokens": 1683,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 233,
+            "output_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "total_tokens": 1916
+          }
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "providerKey": "grok/grok-imagine-image-quality",
+      "provider": "grok",
+      "model": "grok-imagine-image-quality",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-grok-grok-imagine-image-quality.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 4709,
+      "costCents": 5,
+      "criterionScores": {
+        "promptAdherence": 8,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 8,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8.2,
+      "qualityScore": 82,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-grok-grok-imagine-image-quality.jpg: Strong technical infographic matching the requested dark developer-doc style, with all seven stages, numbered nodes, appropriate colors, icons, and mostly readable monospace labels. Minor structure issues include output arrows not perfectly fanning from the AI node and an extra-looking flow between Music and Video.",
+        "strengths": [
+          "Clear dark navy technical infographic style",
+          "All seven stages are present and numbered",
+          "Good use of teal inputs, gold AI core, and coral/purple outputs",
+          "Major labels and icons are readable and recognizable",
+          "Central AI brain node is prominent and well composed"
+        ],
+        "issues": [
+          "Stage flow is not strictly top-to-bottom after the AI stage",
+          "Music and Video appear connected by an extra arrow, which may confuse the intended pipeline",
+          "Some small detail text/icons are faint, decorative, or slightly nonsensical",
+          "Stage 2 split into speech-to-text and OCR is present but not as cleanly diagrammed as requested"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-grok-grok-imagine-image-quality.jpg",
+          "criterionScores": {
+            "promptAdherence": 8,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 8,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8.2,
+          "qualityScore": 82,
+          "summary": "Strong technical infographic matching the requested dark developer-doc style, with all seven stages, numbered nodes, appropriate colors, icons, and mostly readable monospace labels. Minor structure issues include output arrows not perfectly fanning from the AI node and an extra-looking flow between Music and Video.",
+          "strengths": [
+            "Clear dark navy technical infographic style",
+            "All seven stages are present and numbered",
+            "Good use of teal inputs, gold AI core, and coral/purple outputs",
+            "Major labels and icons are readable and recognizable",
+            "Central AI brain node is prominent and well composed"
+          ],
+          "issues": [
+            "Stage flow is not strictly top-to-bottom after the AI stage",
+            "Music and Video appear connected by an extra arrow, which may confuse the intended pipeline",
+            "Some small detail text/icons are faint, decorative, or slightly nonsensical",
+            "Stage 2 split into speech-to-text and OCR is present but not as cleanly diagrammed as requested"
+          ],
+          "usage": {
+            "input_tokens": 1778,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 541,
+            "output_tokens_details": {
+              "reasoning_tokens": 320
+            },
+            "total_tokens": 2319
+          }
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "providerKey": "openai/gpt-image-1.5",
+      "provider": "openai",
+      "model": "gpt-image-1.5",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-openai-gpt-image-1.5.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 40078,
+      "costCents": 8,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 8,
+        "artifactControl": 9,
+        "composition": 7,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 7.8,
+      "qualityScore": 78,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-openai-gpt-image-1.5.png: Clean, readable technical infographic with strong dark navy palette, clear extraction paths, central AI brain, and output icons. It misses some prompt specifics such as the Download label and numbering for stages 4–7, and the lower half has excessive empty space.",
+        "strengths": [
+          "Dark navy flat-design style fits the prompt well",
+          "Stage 2 split into speech-to-text and OCR is clear",
+          "Large central AI brain node for Stage 3 is visually strong",
+          "Output icons and labels are readable and mostly accurate",
+          "Good color separation between inputs, AI stage, and outputs"
+        ],
+        "issues": [
+          "Stage 1 lacks the requested 'Download' label",
+          "Output stages are not numbered 4–7",
+          "Seven-stage top-to-bottom flow is only partially represented because outputs are horizontal and unnumbered",
+          "Composition leaves a large unused empty area at the bottom",
+          "Monospace/developer documentation style is approximated but not fully consistent"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-openai-gpt-image-1.5.png",
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 8,
+            "artifactControl": 9,
+            "composition": 7,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 7.8,
+          "qualityScore": 78,
+          "summary": "Clean, readable technical infographic with strong dark navy palette, clear extraction paths, central AI brain, and output icons. It misses some prompt specifics such as the Download label and numbering for stages 4–7, and the lower half has excessive empty space.",
+          "strengths": [
+            "Dark navy flat-design style fits the prompt well",
+            "Stage 2 split into speech-to-text and OCR is clear",
+            "Large central AI brain node for Stage 3 is visually strong",
+            "Output icons and labels are readable and mostly accurate",
+            "Good color separation between inputs, AI stage, and outputs"
+          ],
+          "issues": [
+            "Stage 1 lacks the requested 'Download' label",
+            "Output stages are not numbered 4–7",
+            "Seven-stage top-to-bottom flow is only partially represented because outputs are horizontal and unnumbered",
+            "Composition leaves a large unused empty area at the bottom",
+            "Monospace/developer documentation style is approximated but not fully consistent"
+          ],
+          "usage": {
+            "input_tokens": 2279,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 584,
+            "output_tokens_details": {
+              "reasoning_tokens": 361
+            },
+            "total_tokens": 2863
+          }
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "providerKey": "bfl/flux-2-flex",
+      "provider": "bfl",
+      "model": "flux-2-flex",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-bfl-flux-2-flex.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 16646,
+      "costCents": 5,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "composition": 7,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 7.6,
+      "qualityScore": 76,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-bfl-flux-2-flex.jpg: Clean, readable dark technical infographic with the main pipeline and color coding mostly correct, but it has a structural numbering error and an extra output node.",
+        "strengths": [
+          "Dark navy background with flat geometric infographic style",
+          "Most labels and icons are clear and readable",
+          "Good color separation: teal inputs, gold AI node, coral/purple outputs",
+          "Central AI brain node and top-to-bottom flow are recognizable"
+        ],
+        "issues": [
+          "Output structure is incorrect: Stage 5 Image appears twice, creating five output arrows instead of four",
+          "The prompt requested Stage 4 TTS, Stage 5 Image, Stage 6 Video, Stage 7 Music only; duplication disrupts numbering and hierarchy",
+          "Some icons do not exactly match the prompt, such as one Image node using a music-like icon instead of paintbrush",
+          "Monospace/developer documentation styling is only approximate"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-bfl-flux-2-flex.jpg",
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "composition": 7,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 7.6,
+          "qualityScore": 76,
+          "summary": "Clean, readable dark technical infographic with the main pipeline and color coding mostly correct, but it has a structural numbering error and an extra output node.",
+          "strengths": [
+            "Dark navy background with flat geometric infographic style",
+            "Most labels and icons are clear and readable",
+            "Good color separation: teal inputs, gold AI node, coral/purple outputs",
+            "Central AI brain node and top-to-bottom flow are recognizable"
+          ],
+          "issues": [
+            "Output structure is incorrect: Stage 5 Image appears twice, creating five output arrows instead of four",
+            "The prompt requested Stage 4 TTS, Stage 5 Image, Stage 6 Video, Stage 7 Music only; duplication disrupts numbering and hierarchy",
+            "Some icons do not exactly match the prompt, such as one Image node using a music-like icon instead of paintbrush",
+            "Monospace/developer documentation styling is only approximate"
+          ],
+          "usage": {
+            "input_tokens": 1660,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 208,
+            "output_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "total_tokens": 1868
+          }
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "providerKey": "bfl/flux-2-pro",
+      "provider": "bfl",
+      "model": "flux-2-pro",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-bfl-flux-2-pro.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 16794,
+      "costCents": 3,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "composition": 8,
+        "detailTextHandling": 7
+      },
+      "averageScore10": 7.6,
+      "qualityScore": 76,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-bfl-flux-2-pro.jpg: Clean, readable technical infographic that matches the overall dark navy, flat developer-documentation style and includes the main pipeline nodes, icons, colors, and fan-out from the AI Write stage. However, the Extract split is structurally confusing and the speech-to-text/OCR side paths are incorrectly numbered, conflicting with the requested seven-stage sequence.",
+        "strengths": [
+          "Clear dark navy background with teal, gold, coral, and purple color coding",
+          "Main stages Download, Extract, central Write AI brain, and four outputs are visually recognizable",
+          "Readable labels and generally clean flat icon style",
+          "Balanced layout with strong hierarchy around the central AI node"
+        ],
+        "issues": [
+          "Speech-to-text and OCR are incorrectly numbered as 5 and 7, duplicating output stage numbers",
+          "Extract path direction is ambiguous; side arrows appear to feed into Extract rather than clearly splitting into speech-to-text and OCR paths",
+          "Seven-stage top-to-bottom flow is not fully consistent due to extra numbered side boxes",
+          "Small stray vertical mark above the Download node"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-bfl-flux-2-pro.jpg",
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "composition": 8,
+            "detailTextHandling": 7
+          },
+          "averageScore10": 7.6,
+          "qualityScore": 76,
+          "summary": "Clean, readable technical infographic that matches the overall dark navy, flat developer-documentation style and includes the main pipeline nodes, icons, colors, and fan-out from the AI Write stage. However, the Extract split is structurally confusing and the speech-to-text/OCR side paths are incorrectly numbered, conflicting with the requested seven-stage sequence.",
+          "strengths": [
+            "Clear dark navy background with teal, gold, coral, and purple color coding",
+            "Main stages Download, Extract, central Write AI brain, and four outputs are visually recognizable",
+            "Readable labels and generally clean flat icon style",
+            "Balanced layout with strong hierarchy around the central AI node"
+          ],
+          "issues": [
+            "Speech-to-text and OCR are incorrectly numbered as 5 and 7, duplicating output stage numbers",
+            "Extract path direction is ambiguous; side arrows appear to feed into Extract rather than clearly splitting into speech-to-text and OCR paths",
+            "Seven-stage top-to-bottom flow is not fully consistent due to extra numbered side boxes",
+            "Small stray vertical mark above the Download node"
+          ],
+          "usage": {
+            "input_tokens": 1660,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 694,
+            "output_tokens_details": {
+              "reasoning_tokens": 453
+            },
+            "total_tokens": 2354
+          }
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "providerKey": "bfl/flux-2-max",
+      "provider": "bfl",
+      "model": "flux-2-max",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-bfl-flux-2-max.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 47130,
+      "costCents": 7.000000000000001,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "composition": 7,
+        "detailTextHandling": 7
+      },
+      "averageScore10": 7.4,
+      "qualityScore": 74,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-bfl-flux-2-max.jpg: Clean, readable dark technical infographic with correct general pipeline, colors, icons, and output fan-out, but the seven-stage top-to-bottom numbering/flow is imperfect and Stage 2/3 structure is somewhat mislabeled/ambiguous.",
+        "strengths": [
+          "Strong flat geometric developer-doc style on dark navy background",
+          "Clear central gold AI node with four output arrows",
+          "Outputs are labeled with appropriate icons and coral/purple color coding",
+          "Most text is legible and clean"
+        ],
+        "issues": [
+          "Stage 3 is represented as an AI hexagon rather than a large central AI brain node",
+          "Seven numbered stages are not consistently top-to-bottom; the left-side number 7 is misplaced and stages 4-7 are grouped at bottom",
+          "Stage 2 Extract is visually confusing, with database/document icons and arrows not clearly splitting from Extract into speech-to-text and OCR paths",
+          "Labels are not monospace and some flow direction around speech-to-text/OCR appears ambiguous"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-bfl-flux-2-max.jpg",
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "composition": 7,
+            "detailTextHandling": 7
+          },
+          "averageScore10": 7.4,
+          "qualityScore": 74,
+          "summary": "Clean, readable dark technical infographic with correct general pipeline, colors, icons, and output fan-out, but the seven-stage top-to-bottom numbering/flow is imperfect and Stage 2/3 structure is somewhat mislabeled/ambiguous.",
+          "strengths": [
+            "Strong flat geometric developer-doc style on dark navy background",
+            "Clear central gold AI node with four output arrows",
+            "Outputs are labeled with appropriate icons and coral/purple color coding",
+            "Most text is legible and clean"
+          ],
+          "issues": [
+            "Stage 3 is represented as an AI hexagon rather than a large central AI brain node",
+            "Seven numbered stages are not consistently top-to-bottom; the left-side number 7 is misplaced and stages 4-7 are grouped at bottom",
+            "Stage 2 Extract is visually confusing, with database/document icons and arrows not clearly splitting from Extract into speech-to-text and OCR paths",
+            "Labels are not monospace and some flow direction around speech-to-text/OCR appears ambiguous"
+          ],
+          "usage": {
+            "input_tokens": 1660,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 228,
+            "output_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "total_tokens": 1888
+          }
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "providerKey": "reve/latest",
+      "provider": "reve",
+      "model": "latest",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-reve-latest.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 6873,
+      "costCents": 2.4,
+      "criterionScores": {
+        "promptAdherence": 6,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "composition": 7,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 7.4,
+      "qualityScore": 74,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-reve-latest.png: Clean, readable dark technical infographic with most requested stages, colors, and icons present, but the pipeline structure and arrow directions do not fully match the prompt.",
+        "strengths": [
+          "Dark navy flat-design style is consistent and visually polished.",
+          "All seven output labels/numbers are visible and mostly readable.",
+          "Requested icons for cloud, speaker, paintbrush, film reel, and music note are present.",
+          "Central gold brain node is clear and visually emphasized."
+        ],
+        "issues": [
+          "Stage 3 is shown as a separate top node while the central AI brain is also labeled Write, creating duplication/confusion.",
+          "Flow is not clearly top-to-bottom; several arrows point upward or inward, conflicting with the requested pipeline direction.",
+          "Extract does not clearly split into speech-to-text and OCR paths in a logical way.",
+          "Text is readable but not strongly monospace/developer-documentation style."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-reve-latest.png",
+          "criterionScores": {
+            "promptAdherence": 6,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "composition": 7,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 7.4,
+          "qualityScore": 74,
+          "summary": "Clean, readable dark technical infographic with most requested stages, colors, and icons present, but the pipeline structure and arrow directions do not fully match the prompt.",
+          "strengths": [
+            "Dark navy flat-design style is consistent and visually polished.",
+            "All seven output labels/numbers are visible and mostly readable.",
+            "Requested icons for cloud, speaker, paintbrush, film reel, and music note are present.",
+            "Central gold brain node is clear and visually emphasized."
+          ],
+          "issues": [
+            "Stage 3 is shown as a separate top node while the central AI brain is also labeled Write, creating duplication/confusion.",
+            "Flow is not clearly top-to-bottom; several arrows point upward or inward, conflicting with the requested pipeline direction.",
+            "Extract does not clearly split into speech-to-text and OCR paths in a logical way.",
+            "Text is readable but not strongly monospace/developer-documentation style."
+          ],
+          "usage": {
+            "input_tokens": 1640,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 542,
+            "output_tokens_details": {
+              "reasoning_tokens": 332
+            },
+            "total_tokens": 2182
+          }
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "providerKey": "grok/grok-imagine-image",
+      "provider": "grok",
+      "model": "grok-imagine-image",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-grok-grok-imagine-image.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 5487,
+      "costCents": 2,
+      "criterionScores": {
+        "promptAdherence": 6,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "composition": 7,
+        "detailTextHandling": 7
+      },
+      "averageScore10": 7.2,
+      "qualityScore": 72,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-grok-grok-imagine-image.jpg: Clean, readable flat infographic with the requested dark navy palette, numbered stages, and many correct labels/icons, but the pipeline structure is not fully faithful: the central AI node is not a brain, arrows are confusing, and there is a duplicated/mislabeled output.",
+        "strengths": [
+          "Dark navy technical infographic style matches well",
+          "Labels are mostly legible and monospace-like",
+          "Color coding broadly follows teal inputs, gold AI, coral/purple outputs",
+          "Key stages like Download, Extract, speech-to-text, OCR, Write, TTS, Image, Video, and Music are visible"
+        ],
+        "issues": [
+          "Central Stage 3 AI brain is rendered as a generic gold circular node, not a brain",
+          "Flow is not clearly top-to-bottom as requested",
+          "Output fan-out is confusing, with some arrows appearing to point inward or duplicate paths",
+          "Bottom-right output is mislabeled as Video, creating an extra/duplicated output instead of a clean Stage 7 Music path",
+          "Some requested icons are missing or not placed with the correct numbered stage"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-grok-grok-imagine-image.jpg",
+          "criterionScores": {
+            "promptAdherence": 6,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "composition": 7,
+            "detailTextHandling": 7
+          },
+          "averageScore10": 7.2,
+          "qualityScore": 72,
+          "summary": "Clean, readable flat infographic with the requested dark navy palette, numbered stages, and many correct labels/icons, but the pipeline structure is not fully faithful: the central AI node is not a brain, arrows are confusing, and there is a duplicated/mislabeled output.",
+          "strengths": [
+            "Dark navy technical infographic style matches well",
+            "Labels are mostly legible and monospace-like",
+            "Color coding broadly follows teal inputs, gold AI, coral/purple outputs",
+            "Key stages like Download, Extract, speech-to-text, OCR, Write, TTS, Image, Video, and Music are visible"
+          ],
+          "issues": [
+            "Central Stage 3 AI brain is rendered as a generic gold circular node, not a brain",
+            "Flow is not clearly top-to-bottom as requested",
+            "Output fan-out is confusing, with some arrows appearing to point inward or duplicate paths",
+            "Bottom-right output is mislabeled as Video, creating an extra/duplicated output instead of a clean Stage 7 Music path",
+            "Some requested icons are missing or not placed with the correct numbered stage"
+          ],
+          "usage": {
+            "input_tokens": 1699,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 709,
+            "output_tokens_details": {
+              "reasoning_tokens": 462
+            },
+            "total_tokens": 2408
+          }
+        }
+      ]
+    },
+    {
+      "rank": 10,
+      "providerKey": "reve/reve-create@20250915",
+      "provider": "reve",
+      "model": "reve-create@20250915",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-reve-reve-create@20250915.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 6339,
+      "costCents": 2.4,
+      "criterionScores": {
+        "promptAdherence": 5,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "composition": 7,
+        "detailTextHandling": 3
+      },
+      "averageScore10": 6,
+      "qualityScore": 60,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-reve-reve-create@20250915.png: Clean flat infographic style with appropriate dark background and color palette, but the requested seven-stage structure is only partially followed and several key labels/numbers are incorrect or missing.",
+        "strengths": [
+          "Dark navy background and flat geometric style match the prompt well.",
+          "Central gold brain node and output fan-out are visually clear.",
+          "Teal, gold, coral, and purple color coding is mostly consistent.",
+          "Icons for cloud, OCR, speaker, film reel, music note, and paintbrush are recognizable."
+        ],
+        "issues": [
+          "Stage numbering and hierarchy are incorrect: the cloud at top is labeled 2, the central AI brain is not clearly Stage 3, and Stage 3 appears off to the side.",
+          "Stage labels contain errors such as “EXTREIT” and duplicated “Write.”",
+          "Stage 5 should be TTS but is labeled Image despite having a speaker icon.",
+          "Speech-to-text path is not clearly labeled, and the Extract stage structure is confusing.",
+          "Bottom labels include small gibberish text and inconsistent typography, hurting documentation-style readability."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-reve-reve-create@20250915.png",
+          "criterionScores": {
+            "promptAdherence": 5,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "composition": 7,
+            "detailTextHandling": 3
+          },
+          "averageScore10": 6,
+          "qualityScore": 60,
+          "summary": "Clean flat infographic style with appropriate dark background and color palette, but the requested seven-stage structure is only partially followed and several key labels/numbers are incorrect or missing.",
+          "strengths": [
+            "Dark navy background and flat geometric style match the prompt well.",
+            "Central gold brain node and output fan-out are visually clear.",
+            "Teal, gold, coral, and purple color coding is mostly consistent.",
+            "Icons for cloud, OCR, speaker, film reel, music note, and paintbrush are recognizable."
+          ],
+          "issues": [
+            "Stage numbering and hierarchy are incorrect: the cloud at top is labeled 2, the central AI brain is not clearly Stage 3, and Stage 3 appears off to the side.",
+            "Stage labels contain errors such as “EXTREIT” and duplicated “Write.”",
+            "Stage 5 should be TTS but is labeled Image despite having a speaker icon.",
+            "Speech-to-text path is not clearly labeled, and the Extract stage structure is confusing.",
+            "Bottom labels include small gibberish text and inconsistent typography, hurting documentation-style readability."
+          ],
+          "usage": {
+            "input_tokens": 1651,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 512,
+            "output_tokens_details": {
+              "reasoning_tokens": 266
+            },
+            "total_tokens": 2163
+          }
+        }
+      ]
+    }
+  ]
+}

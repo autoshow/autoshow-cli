@@ -25,6 +25,10 @@ import {
 } from './ocr-services/gemini-ocr/gemini'
 import { ensureGcloudDocaiSetup } from './ocr-services/gcloud-docai/gcloud-docai'
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
+import {
+  GROK_OCR_LIMIT_SOURCE,
+  ensureGrokOcrSetup
+} from './ocr-services/grok-ocr/grok'
 import { KIMI_OCR_LIMIT_SOURCE, ensureKimiOcrSetup } from './ocr-services/kimi-ocr/kimi'
 import { ensureMistralOcrSetup } from './ocr-services/mistral-ocr/mistral'
 import { ensureOpenAIOcrSetup } from './ocr-services/openai-ocr/openai-ocr'
@@ -35,6 +39,7 @@ import { runDeepinfraOcr } from './ocr-services/deepinfra-ocr/run-deepinfra-ocr'
 import { runGcloudDocai } from './ocr-services/gcloud-docai/run-gcloud-docai'
 import { runGeminiOcr } from './ocr-services/gemini-ocr/run-gemini-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
+import { runGrokOcr } from './ocr-services/grok-ocr/run-grok-ocr'
 import { runKimiOcr } from './ocr-services/kimi-ocr/run-kimi-ocr'
 import { runMistralOcr } from './ocr-services/mistral-ocr/run-mistral-ocr'
 import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
@@ -46,6 +51,7 @@ import {
   hasGcloudDocai,
   hasGeminiOcr,
   hasGlmOcr,
+  hasGrokOcr,
   hasKimiOcr,
   hasMistralOcr,
   hasOpenAIOcr,
@@ -76,6 +82,8 @@ const formatHostedOcrLabel = (service: HostedOcrService): string => {
       return 'Mistral OCR'
     case 'openai':
       return 'OpenAI OCR'
+    case 'grok':
+      return 'Grok OCR'
     case 'anthropic':
       return 'Anthropic OCR'
     case 'gemini':
@@ -95,6 +103,8 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
   switch (service) {
     case 'openai':
       return 'project/links/openai-all-links.md'
+    case 'grok':
+      return GROK_OCR_LIMIT_SOURCE
     case 'anthropic':
       return ANTHROPIC_OCR_LIMIT_SOURCE
     case 'gemini':
@@ -128,6 +138,10 @@ const warnOpenAIOnlyFlags = (opts: ExtractionOptions): void => {
   warnHostedOnlyFlags('openai-ocr', opts)
 }
 
+const warnGrokOnlyFlags = (opts: ExtractionOptions): void => {
+  warnHostedOnlyFlags('grok-ocr', opts)
+}
+
 const warnAnthropicOnlyFlags = (opts: ExtractionOptions): void => {
   warnHostedOnlyFlags('anthropic-ocr', opts)
 }
@@ -154,6 +168,9 @@ export const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine)
   }
   if (engine === 'deepinfra-ocr') {
     return 'The --deepinfra-ocr engine sends PNG/JPG/WEBP images to DeepInfra directly; PDF pages are rendered to PNG. AutoShow normalizes GIF/BMP images locally with Bun.Image. Convert TIF images to PNG/JPG/WebP first, or install ImageMagick so AutoShow can normalize TIF automatically.'
+  }
+  if (engine === 'grok-ocr') {
+    return 'The --grok-ocr engine sends PNG/JPG images to Grok directly; PDF pages are rendered to PNG. Convert WEBP/GIF/BMP/TIF images to PNG/JPG first.'
   }
   if (engine === 'aws-textract') {
     return 'The --aws-textract engine supports PDF and PNG/JPG/TIF images directly. AutoShow normalizes BMP/WEBP/GIF images locally with Bun.Image.'
@@ -190,6 +207,7 @@ const HOSTED_DIRECT_IMAGE_FORMATS: Record<HostedExtractOcrEngine, HostedDirectIm
   'kimi-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
   'mistral-ocr': hostedDirectImageFormats(['png', 'jpg', 'tif']),
   'openai-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
+  'grok-ocr': hostedDirectImageFormats(['png', 'jpg']),
   'anthropic-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
   'gemini-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'bmp'], ['gif'], ['tif']),
   'deepinfra-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp'], ['gif', 'bmp'], ['tif']),
@@ -300,6 +318,10 @@ const resolveHostedOcrSelection = (
 
   if (hasOpenAIOcr(opts)) {
     return { service: 'openai', model: opts.openaiOcrModel as string }
+  }
+
+  if (hasGrokOcr(opts)) {
+    return { service: 'grok', model: opts.grokOcrModel as string }
   }
 
   if (hasAnthropicOcr(opts)) {
@@ -575,6 +597,28 @@ export const runHostedOcr = async (
         ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
       }
     })
+  }
+
+  if (hasGrokOcr(opts)) {
+    await ensureGrokOcrSetup()
+    warnGrokOnlyFlags(opts)
+    const ocrModel = opts.grokOcrModel as string
+    await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
+    const run = await runGrokOcr(filePath, step1Metadata, ocrModel, {
+      dpi: opts.dpi,
+      password: opts.password,
+      rotate: opts.rotate,
+      ocrPreparationCache: opts.ocrPreparationCache
+    })
+    return withHostedUsageDetail({
+      pages: run.pages,
+      extractionMethod: run.extractionMethod,
+      ocrService: 'grok',
+      ocrModel,
+      totalPages: run.totalPages,
+      ...(typeof run.promptTokens === 'number' ? { promptTokens: run.promptTokens } : {}),
+      ...(typeof run.completionTokens === 'number' ? { completionTokens: run.completionTokens } : {})
+    }, { unit: 'document', pages: run.totalPages })
   }
 
   if (hasAnthropicOcr(opts)) {

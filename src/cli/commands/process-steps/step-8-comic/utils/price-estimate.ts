@@ -20,8 +20,12 @@ import {
   getGeminiLlmPricing,
 } from '../models/gemini-models'
 import {
+  GROK_LLM_PRICING,
+} from '../models/grok-models'
+import {
   isGeminiImageModel,
   isGeminiLlmModel,
+  isGrokLlmModel,
   isOpenAiLlmModel,
   DEFAULT_LLM_MODEL,
   DEFAULT_IMAGE_MODEL,
@@ -92,6 +96,14 @@ const estimateLlmCost = (model: DraftScenesCommandOptions['llmModel'], inputToke
 
   if (isGeminiLlmModel(resolvedModel)) {
     const pricing = getGeminiLlmPricing(resolvedModel, inputTokens)
+    return (
+      (inputTokens / 1_000_000) * pricing.input +
+      (outputTokens / 1_000_000) * pricing.output
+    )
+  }
+
+  if (isGrokLlmModel(resolvedModel)) {
+    const pricing = GROK_LLM_PRICING[resolvedModel]
     return (
       (inputTokens / 1_000_000) * pricing.input +
       (outputTokens / 1_000_000) * pricing.output

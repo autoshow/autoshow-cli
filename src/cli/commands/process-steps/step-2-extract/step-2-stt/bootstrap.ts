@@ -17,7 +17,6 @@ const toBootstrapProviderId = (
     case 'gcloud':
     case 'aws':
     case 'deepinfra':
-    case 'deapi':
     case 'elevenlabs':
     case 'deepgram':
     case 'soniox':

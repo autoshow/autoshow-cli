@@ -3,6 +3,17 @@
     "description": "OpenAI language models",
     "type": "api",
     "models": {
+      "gpt-5.5": {
+        "description": "GPT-5.5 — flagship model",
+        "inputCostPer1MUSD": 5,
+        "inputCostPer1MCents": 500,
+        "outputCostPer1MUSD": 30,
+        "outputCostPer1MCents": 3000,
+        "estimation": {
+          "costMultiplier": 0.7927,
+          "msPer1KTokens": 4125
+        }
+      },
       "gpt-5.4": {
         "description": "GPT-5.4 — flagship model",
         "inputCostPer1MUSD": 2.5,
@@ -120,17 +131,6 @@
           "msPer1KTokens": 5363
         }
       },
-      "claude-opus-4-6": {
-        "description": "Claude Opus 4.6 — previous Opus release",
-        "inputCostPer1MUSD": 5,
-        "inputCostPer1MCents": 500,
-        "outputCostPer1MUSD": 25,
-        "outputCostPer1MCents": 2500,
-        "estimation": {
-          "costMultiplier": 0.7957,
-          "msPer1KTokens": 5722
-        }
-      },
       "claude-sonnet-4-6": {
         "description": "Claude Sonnet 4.6 — balanced performance",
         "inputCostPer1MUSD": 3,
@@ -159,26 +159,26 @@
     "description": "MiniMax language models via Anthropic-compatible API",
     "type": "api",
     "models": {
-      "MiniMax-M2.5": {
-        "description": "MiniMax M2.5 — flagship model",
+      "MiniMax-M2.7": {
+        "description": "MiniMax M2.7 — Beginning the journey of recursive self-improvement",
         "inputCostPer1MUSD": 0.3,
         "inputCostPer1MCents": 30,
         "outputCostPer1MUSD": 1.2,
         "outputCostPer1MCents": 120,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 7082
+          "msPer1KTokens": 16667
         }
       },
-      "MiniMax-M2.5-highspeed": {
-        "description": "MiniMax M2.5 Highspeed — faster generation",
+      "MiniMax-M2.7-highspeed": {
+        "description": "MiniMax M2.7 Highspeed — same performance, faster and more agile",
         "inputCostPer1MUSD": 0.6,
         "inputCostPer1MCents": 60,
         "outputCostPer1MUSD": 2.4,
         "outputCostPer1MCents": 240,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 19898
+          "msPer1KTokens": 10000
         }
       }
     }
@@ -187,6 +187,17 @@
     "description": "xAI Grok language models",
     "type": "api",
     "models": {
+      "grok-4.3": {
+        "description": "Grok 4.3 — flagship model",
+        "inputCostPer1MUSD": 1.25,
+        "inputCostPer1MCents": 125,
+        "outputCostPer1MUSD": 2.5,
+        "outputCostPer1MCents": 250,
+        "estimation": {
+          "msPer1KTokens": 11318,
+          "costMultiplier": 1
+        }
+      },
       "grok-4.20-reasoning": {
         "description": "Grok 4.2 — reasoning model",
         "inputCostPer1MUSD": 2,

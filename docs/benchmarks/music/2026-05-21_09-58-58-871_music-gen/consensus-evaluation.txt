@@ -1,0 +1,39 @@
+Music consensus evaluation for run 2026-05-21_09-58-58-871_music-gen
+
+Evidence scope:
+- This evaluation uses packet metadata only: artifact presence, file size, duration metadata, processing time, audio metadata, output format, and recorded cost.
+- No listening-based or subjective musical quality assessment was performed.
+- No explicit qualityScore or humanQualityScore fields were present, so automated and human quality rankings are unavailable from this evidence.
+
+Artifact checks:
+- 5 provider artifacts were recorded and all 5 files exist in the run directory.
+- For every provider, artifact file size matched the metadata file size.
+- The packet reported no warnings.
+
+Provider measurements:
+- elevenlabs/music_v1: cost 14 cents; processing time 10,652 ms; duration 30,000 ms; file size 479,862 bytes; MIME audio/mpeg; sample rate 44,100 Hz; bitrate 128,000 bps; output mp3_44100_128.
+- gemini/lyria-3-clip-preview: cost 4 cents; processing time 19,516 ms; duration 30,000 ms; file size 744,609 bytes; MIME audio/mpeg; output mp3.
+- gemini/lyria-3-pro-preview: cost 8 cents; processing time 22,827 ms; duration 30,000 ms; file size 880,028 bytes; MIME audio/mpeg; output mp3.
+- minimax/music-2.6: cost 16 cents; processing time 108,628 ms; duration 213,106 ms; file size 6,828,265 bytes; MIME audio/mpeg; sample rate 44,100 Hz; 2 channels; bitrate 256,000 bps; output mp3.
+- minimax/music-2.6-free: cost 1 cent; processing time 124,150 ms; duration 232,986 ms; file size 7,465,034 bytes; MIME audio/mpeg; sample rate 44,100 Hz; 2 channels; bitrate 256,000 bps; output mp3.
+
+Cost ranking among service providers, lower is better:
+1. minimax/music-2.6-free - 1 cent
+2. gemini/lyria-3-clip-preview - 4 cents
+3. gemini/lyria-3-pro-preview - 8 cents
+4. elevenlabs/music_v1 - 14 cents
+5. minimax/music-2.6 - 16 cents
+
+Speed ranking among service providers, lower processing time is better:
+1. elevenlabs/music_v1 - 10,652 ms
+2. gemini/lyria-3-clip-preview - 19,516 ms
+3. gemini/lyria-3-pro-preview - 22,827 ms
+4. minimax/music-2.6 - 108,628 ms
+5. minimax/music-2.6-free - 124,150 ms
+
+Duration metadata, longer generated duration first:
+1. minimax/music-2.6-free - 232,986 ms
+2. minimax/music-2.6 - 213,106 ms
+3. elevenlabs/music_v1 - 30,000 ms
+4. gemini/lyria-3-clip-preview - 30,000 ms
+5. gemini/lyria-3-pro-preview - 30,000 ms

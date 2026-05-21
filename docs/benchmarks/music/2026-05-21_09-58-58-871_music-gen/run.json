@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 2,
+  "kind": "music",
+  "metadata": {
+    "music": [
+      {
+        "musicService": "elevenlabs",
+        "musicModel": "music_v1",
+        "processingTime": 10652,
+        "musicFileName": "generated-music-elevenlabs-music_v1.mp3",
+        "musicFileSize": 479862,
+        "musicDurationMs": 30000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioBitrate": 128000,
+        "providerAudioByteSize": 479862,
+        "outputFormat": "mp3_44100_128"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6",
+        "processingTime": 108628,
+        "musicFileName": "generated-music-minimax-music-2.6.mp3",
+        "musicFileSize": 6828265,
+        "musicDurationMs": 213106,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 6828265,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e50b5adbcf9f0f16291e9eb8a60df",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nSunlight streams through the glass panes\nDust motes dance in golden lanes\nFingers trace the polished wood\nWhere melodies are understood\n\n[Pre-Chorus]\nA gentle hum begins to rise\nReflecting skies within my eyes\nA simple chord, a tender sigh\nAs passing moments drift on by\n\n[Chorus]\nOh, the strings begin to sing\nWhat sweet emotions they can bring\nA whispered tale, a gentle art\nFrom deep within my beating heart\n\n[Post-Chorus]\nClassical grace, a timeless sound\nWhere peace and beauty can be found\n\n[Break]\n\n[Verse]\nEach note a pearl, precisely placed\nA delicate and measured haste\nFrom nimble touch, the music flows\nAs summer breeze through garden grows\n\n[Pre-Chorus]\nA quietude, a soft refrain\nTo wash away all earthly pain\nA tapestry of sound so pure\nThat time itself cannot obscure\n\n[Chorus]\nOh, the strings begin to sing\nWhat sweet emotions they can bring\nA whispered tale, a gentle art\nFrom deep within my beating heart\n\n[Bridge]\nThe melody starts to ascend\nA story that will never end\nA moment held, a breath so deep\nSecrets that the wood does keep\n\n[Verse]\nA arpeggio, a sweet cascade\nIn shadowed alcoves, unafraid\nThe resonance, a soft embrace\nLeaving not a single trace\n\n[Chorus]\nOh, the strings begin to sing\nWhat sweet emotions they can bring\nA whispered tale, a gentle art\nFrom deep within my beating heart\n\n[Post-Chorus]\nClassical grace, a timeless sound\nWhere peace and beauty can be found\n\n[Outro]",
+        "generatedSongTitle": "Fingers on the Fretboard",
+        "generatedStyleTags": "classical guitar, instrumental, serene, contemplative, acoustic"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6-free",
+        "processingTime": 124150,
+        "musicFileName": "generated-music-minimax-music-2.6-free.mp3",
+        "musicFileSize": 7465034,
+        "musicDurationMs": 232986,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 7465034,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e50b50678b062a03db33fcea419f8",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nSunlight streams through dusty panes\nFingers dance on nylon strings\nA gentle melody remains\nAs memory softly sings\nEach note a whispered, sweet refrain\nOn wooden heart, the music clings\n\n[Pre-Chorus]\nA quiet space, the world outside\nFades away with every chord\nWhere gentle harmonies reside\nA peaceful, sweet reward\n\n[Chorus]\nOh, the classical guitar's embrace\nA tapestry of sound so pure\nEach delicate and measured pace\nDesigned to long endure\nTime and sorrow it can erase\nA solace that will sure allure\n\n[Post-Chorus]\nFingers on the fretboard glide\nA story in each gentle sigh\nWhere subtle emotions hide\nBeneath a watchful eye\n\n[Break]\n\n[Verse]\nThe rosewood gleams, a polished sheen\nA history in its grain\nA silent, solitary scene\nWhere passion conquers pain\nWhat joy and sorrow have been seen\nWhispered through the falling rain\n\n[Pre-Chorus]\nA quiet space, the world outside\nFades away with every chord\nWhere gentle harmonies reside\nA peaceful, sweet reward\n\n[Chorus]\nOh, the classical guitar's embrace\nA tapestry of sound so pure\nEach delicate and measured pace\nDesigned to long endure\nTime and sorrow it can erase\nA solace that will sure allure\n\n[Bridge]\nA Spanish breeze, a summer night\nA lonely plaza, stars above\nBathed in the moon's ethereal light\nA serenade of love\nPlayed with all of one's might\nA gift sent from the heavens thereof\n\n[Verse]\nThe vibrations hum and softly fade\nA final, lingering tone\nA promise beautifully made\nOn this instrument alone\nNo need for words, no masquerade\nIts quiet beauty is its own\n\n[Chorus]\nOh, the classical guitar's embrace\nA tapestry of sound so pure\nEach delicate and measured pace\nDesigned to long endure\nTime and sorrow it can erase\nA solace that will sure allure\n\n[Post-Chorus]\nFingers on the fretboard glide\nA story in each gentle sigh\nWhere subtle emotions hide\nBeneath a watchful eye\n\n[Outro]",
+        "generatedSongTitle": "Fingers on the Fretboard",
+        "generatedStyleTags": "classical guitar, instrumental, acoustic, melancholic, reflective"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-clip-preview",
+        "processingTime": 19516,
+        "musicFileName": "generated-music-gemini-lyria-3-clip-preview.mp3",
+        "musicFileSize": 744609,
+        "musicDurationMs": 30000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "<instrumental>"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-pro-preview",
+        "processingTime": 22827,
+        "musicFileName": "generated-music-gemini-lyria-3-pro-preview.mp3",
+        "musicFileSize": 880028,
+        "musicDurationMs": 30000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[[A0]]\n[[B1]]\n[[C2]]"
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 43,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 14,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 43,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 14,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 43,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 14,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 30000
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 213106
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 232986
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 30000
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 30000
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 525870,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 54600,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1820,
+            "throughputValue": 0.549,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 187560,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1563,
+            "throughputValue": 0.64,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 241800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 2015,
+            "throughputValue": 0.496,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 14730,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 491,
+            "throughputValue": 2.037,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 27180,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 906,
+            "throughputValue": 1.104,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 285773,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 10652,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 355.067,
+            "throughputValue": 2.816,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 108628,
+            "inputMetric": "durationSeconds",
+            "inputValue": 213.106,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 509.737,
+            "throughputValue": 1.962,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 124150,
+            "inputMetric": "durationSeconds",
+            "inputValue": 232.986,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 532.865,
+            "throughputValue": 1.877,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 19516,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 650.533,
+            "throughputValue": 1.537,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 22827,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 760.9,
+            "throughputValue": 1.314,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "classical guitar",
+    "requestedProviders": [
+      {
+        "service": "elevenlabs",
+        "model": "music_v1"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6-free"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-clip-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-pro-preview"
+      }
+    ]
+  }
+}

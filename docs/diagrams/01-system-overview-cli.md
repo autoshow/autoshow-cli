@@ -32,12 +32,7 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
-   - Step 2: Transcribe (Whisper/Reverb, Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia, Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM, Together) or Extract (MuPDF + Tesseract/OCRmyPDF/PaddleOCR/Mistral OCR/GLM OCR/Kimi OCR/OpenAI OCR/Anthropic OCR/Gemini OCR/DeepInfra OCR/AWS Textract/Google Cloud Document AI/Unstructured/hosted article backends)
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
-   - Step 4: TTS synthesis - optional (Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, Deepgram, Speechify, Hume, Cartesia, Google Cloud, deAPI)
-   - Step 5: Image generation - optional (Gemini, OpenAI, MiniMax, Grok, Runway, BFL, deAPI, Reve)
-   - Step 6: Video generation - optional (Gemini Veo, MiniMax, GLM, Grok, Runway, deAPI)
-   - Step 7: Music generation - optional (ElevenLabs, MiniMax, deAPI, Gemini)
 
 4. **Output** (`output/`)
    - Timestamped directories with audio, transcripts, extractions, prompts, summaries, metadata, and generated media files
@@ -147,7 +142,6 @@ src/cli/flags/
 │  ├── --deepgram-stt / --assemblyai-stt / --gladia-stt     │
 │  ├── --elevenlabs-stt / --soniox-stt / --speechmatics-stt │
 │  ├── --rev-stt / --happyscribe-stt / --supadata-stt       │
-│  ├── --scrapecreators-stt / --deapi-stt                    │
 │  ├── --gcloud-stt / --aws-stt                              │
 │                                                            │
 │  Controls:                                                 │
@@ -159,13 +153,13 @@ src/cli/flags/
 ┌─────────────────────────────────────────────────────────────┐
 │  llmProviderFlags (part of mediaFlags)                     │
 │  ├── --llama MODEL       llama.cpp model ID                │
-│  ├── --openai MODEL      gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
+│  ├── --openai MODEL      gpt-5.5|gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
 │  ├── --groq MODEL        openai/gpt-oss-20b|openai/gpt-oss-120b│
 │  ├── --anthropic MODEL   claude-opus-4-7|claude-sonnet-4-6|  │
-│  │                       claude-haiku-4-5|claude-opus-4-6    │
+│  │                       claude-haiku-4-5|claude-opus-4-7    │
 │  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
-│  ├── --minimax MODEL     MiniMax-M2.5|MiniMax-M2.5-highspeed│
-│  ├── --grok MODEL        grok-4.20-reasoning|grok-4.20-non-reasoning│
+│  ├── --minimax MODEL     MiniMax-M2.7|MiniMax-M2.7-highspeed│
+│  ├── --grok MODEL        grok-4.3|grok-4.20-reasoning|grok-4.20-non-reasoning│
 │  ├── --glm MODEL         glm-5.1                          │
 │  ├── --kimi MODEL        kimi-k2.6                         │
 │  └── --all-llm           Enable every LLM provider/model   │
@@ -185,8 +179,8 @@ src/cli/flags/
 │  ├── --lang LANGS        Tesseract language(s) (default: eng)│
 │                                                            │
 │  Hosted OCR providers (API):                               │
-│  ├── --openai-ocr / --anthropic-ocr / --gemini-ocr        │
-│  ├── --mistral-ocr / --glm-ocr / --kimi-ocr               │
+│  ├── --openai-ocr / --grok-ocr / --anthropic-ocr          │
+│  ├── --gemini-ocr / --mistral-ocr / --glm-ocr / --kimi-ocr│
 │  ├── --deepinfra-ocr / --unstructured-ocr                  │
 │  ├── --aws-textract / --gcloud-docai                       │
 │                                                            │

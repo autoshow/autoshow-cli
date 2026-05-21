@@ -33,6 +33,7 @@ import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-extract/ste
 import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
 import { setupKimiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/kimi-ocr/kimi'
 import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
+import { setupGrokOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/grok-ocr/grok'
 import { setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
 import { setupDeepinfraOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deepinfra-ocr/deepinfra-ocr'
@@ -49,18 +50,13 @@ import { setupSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-s
 import { setupHumeTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/hume-tts'
 import { setupCartesiaTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/cartesia-tts'
 import { setupGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/gcloud-tts'
-import { setupDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
-import { setupDeapiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/deapi/deapi-image-gen'
 import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
-import { setupRunwayImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
 import { setupBflImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/bfl-image-gen'
 import { setupReveImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/reve/reve-image-gen'
-import { setupDeapiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/deapi/deapi-video-gen'
 import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
-import { setupDeapiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
 import { setupGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/gemini-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
@@ -315,6 +311,7 @@ const runFullSetup = async (): Promise<void> => {
     await setupGlmOcr()
     await setupKimiOcr()
     await setupOpenAIOcr()
+    await setupGrokOcr()
     await setupAnthropicOcr()
     await setupGeminiOcr()
     await setupDeepinfraOcr()
@@ -364,21 +361,15 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupGcloudTts)
 
-  await withCompactSetup(setupDeapiTts)
-
   await withCompactSetup(setupGeminiImageGen)
 
   await withCompactSetup(setupOpenAIImageGen)
 
   await withCompactSetup(setupGrokImageGen)
 
-  await withCompactSetup(setupRunwayImageGen)
-
   await withCompactSetup(setupBflImageGen)
 
-  await withCompactSetup(setupDeapiImageGen)
-
-  await withCompactSetup(setupDeapiVideoGen)
+  await withCompactSetup(setupReveImageGen)
 
   await withCompactSetup(setupMinimaxVideoGen)
 
@@ -387,8 +378,6 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupElevenLabsMusicGen)
 
   await withCompactSetup(setupMinimaxMusicGen)
-
-  await withCompactSetup(setupDeapiMusicGen)
 
   await validateBinary('whisper-cli', whisperBinaryPath, ['--help'])
   await validateBinary('llama-server', llamaBinaryPath, ['--version'])
@@ -435,7 +424,6 @@ const runSetupTts = async (): Promise<void> => {
   await setupHumeTts()
   await setupCartesiaTts()
   await setupGcloudTts()
-  await setupDeapiTts()
   l.write('success', 'TTS setup complete')
 }
 
@@ -443,9 +431,7 @@ const runSetupImage = async (): Promise<void> => {
   await setupGeminiImageGen()
   await setupOpenAIImageGen()
   await setupGrokImageGen()
-  await setupRunwayImageGen()
   await setupBflImageGen()
-  await setupDeapiImageGen()
   await setupReveImageGen()
   await setupGlmOcr()
   l.write('success', 'Image setup complete (all image providers are API-based)')
@@ -457,7 +443,6 @@ const runSetupVideo = async (): Promise<void> => {
   await setupGlmVideoGen()
   await setupGrokVideoGen()
   await setupRunwayVideoGen()
-  await setupDeapiVideoGen()
   l.write('success', 'Video setup complete (all video providers are API-based)')
 }
 
@@ -465,8 +450,6 @@ const runSetupMusic = async (): Promise<void> => {
   await setupGeminiMusicGen()
   await setupElevenLabsMusicGen()
   await setupMinimaxMusicGen()
-  await setupDeapiMusicGen()
-
   const requiredTools = ['ffmpeg', 'ffprobe']
   const missing = requiredTools.filter((tool) => !commandExists(tool))
   if (missing.length > 0) {

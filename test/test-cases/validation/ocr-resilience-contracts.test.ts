@@ -24,7 +24,6 @@ import {
   shouldFallbackToOcrPdfChunks,
   stitchHostedOcrChunkRuns
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-chunk-fallback'
-import { isRetryableDeapiOcrJobFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deapi-ocr/run-deapi-ocr'
 import { classifyOcrProviderFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-run-state'
 import {
   OcrStructuredResponseError,
@@ -682,16 +681,4 @@ describe('OCR resilience contracts', () => {
     expect(failure.message).toContain('timeout')
   })
 
-  test('deAPI terminal unknown OCR job failures are retryable at job level', () => {
-    expect(isRetryableDeapiOcrJobFailure(new Error('deAPI job failed: unknown error'))).toBe(true)
-    expect(isRetryableDeapiOcrJobFailure(Object.assign(new Error('deAPI polling failed'), {
-      status: 502,
-      stage: 'poll'
-    }))).toBe(true)
-    expect(isRetryableDeapiOcrJobFailure(Object.assign(new Error('deAPI OCR request failed'), {
-      status: 502,
-      stage: 'create'
-    }))).toBe(false)
-    expect(isRetryableDeapiOcrJobFailure(new Error('DEAPI_API_KEY environment variable is required for deAPI OCR'))).toBe(false)
-  })
 })

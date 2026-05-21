@@ -94,6 +94,9 @@ export const buildOcrOutput = (
   if (typeof input.opts.openaiOcrModel === 'string' && input.extractionMethod.includes('openai-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.openaiOcrModel
   }
+  if (typeof input.opts.grokOcrModel === 'string' && input.extractionMethod.includes('grok-ocr')) {
+    step2MetadataPayload['ocrModel'] = input.opts.grokOcrModel
+  }
   if (typeof input.opts.anthropicOcrModel === 'string' && input.extractionMethod.includes('anthropic-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.anthropicOcrModel
   }

@@ -3,12 +3,15 @@ import { join, resolve, basename } from 'node:path'
 import { exec } from '~/utils/cli-utils'
 import { probeMediaFile } from '~/cli/commands/process-steps/step-1-download/audio/audio-normalize'
 import { sttTarget } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/run-stt'
+import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/utils/logger'
 import { sanitizeLogText } from '~/utils/logger/redaction'
 import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { generateCompressionVariant, generateSpeedVariant } from './audio-variants'
 import { resolveAvailableServices, parseReferenceStt } from './benchmark-services'
+import { runImageBenchmark } from './run-image-benchmark'
 import { runTtsBenchmark } from './run-tts-benchmark'
+import { runVideoBenchmark } from './run-video-benchmark'
 import { computeWER } from './wer'
 import type {
   AudioVariant,
@@ -265,8 +268,23 @@ export const runBenchmark = async (
   input: string | undefined,
   flags: BenchmarkFlags
 ): Promise<void> => {
+  const selectedModes = [flags.image, flags.tts, flags.video].filter((value) => value === true).length
+  if (selectedModes > 1) {
+    throw CLIUsageError('Choose only one benchmark mode: --image, --tts, or --video')
+  }
+
+  if (flags.image === true) {
+    await runImageBenchmark(input, flags)
+    return
+  }
+
   if (flags.tts === true) {
     await runTtsBenchmark(input, flags)
+    return
+  }
+
+  if (flags.video === true) {
+    await runVideoBenchmark(input, flags)
     return
   }
 

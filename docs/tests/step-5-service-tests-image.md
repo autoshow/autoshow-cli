@@ -17,17 +17,13 @@ bun t test/test-cases/e2e/step-5-image-gen-e2e/
 
 ## Current Coverage
 
-- Provider suites cover OpenAI, Gemini, MiniMax, Grok, Runway, BFL, and deAPI image generation. Reve is covered by no-cost validation and mocked REST contract tests until a live e2e suite is added.
 - The shared `defineImageServiceTest` helper covers invalid model rejection, `--price` output, real generation, and metadata checks when the required API key is configured.
 - `openai-image-gen.test.ts` also covers `gpt-image-2` low-quality `1024x1024`, JPEG output options, multi-provider `--price` output, and `write` pipeline integration with `--openai-image`.
-- `gemini-image-gen.test.ts` also covers multi-provider `--price` output and rejects `--image-size` for `imagen-4.0-fast-generate-001`.
-- `minimax-image-gen.test.ts` adds aspect-ratio generation coverage for `image-01`; validation and mocked REST contracts cover `--image-input`, `--image-count`, and `--image-size`.
+- `gemini-image-gen.test.ts` covers native Gemini image generation, shared image options, and multi-provider `--price` output.
 - `bfl-image-gen.test.ts` covers BFL FLUX.2 generation, unsupported flag validation, mocked polling/download metadata, and output extension handling. Validation and mocked REST contracts cover numbered `--image-input` reference fields.
-- `provider-selection-contracts.test.ts` covers provider-specific shared image flag acceptance and rejection, including MiniMax count/size/input, BFL input, and Reve aspect ratio, fit-within size, format, input count, and unsupported flag validation.
-- `image-provider-rest-contracts.test.ts` covers mocked BFL, MiniMax, and Reve request payloads without calling hosted providers.
-- `deapi-image-gen.test.ts` covers all supported deAPI image models and `--image-size`.
+- `provider-selection-contracts.test.ts` covers provider-specific shared image flag acceptance and rejection, including BFL input and Reve aspect ratio, fit-within size, format, input count, and unsupported flag validation.
+- `image-provider-rest-contracts.test.ts` covers mocked BFL and Reve request payloads without calling hosted providers.
 - `grok-image-gen.test.ts` covers Grok `grok-imagine-image` generation with `--image-aspect-ratio` and `--image-size`.
-- `runway-image-gen.test.ts` covers Runway `gen4_image` generation with `--image-aspect-ratio` and `--image-size`.
 
 ## Price Preflight
 

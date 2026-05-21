@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { writeFile, unlink } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
-import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateKimiOcrModel, validateMistralOcrModel, validateOpenAIOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateGrokOcrModel, validateKimiOcrModel, validateMistralOcrModel, validateOpenAIOcrModel, validateUnstructuredOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractEstimation, getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.gif', '.bmp'] as const
@@ -17,12 +17,13 @@ const OPENAI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on 
 export const ANTHROPIC_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Anthropic OCR benchmark usage. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
 export const GEMINI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Gemini OCR benchmark usage. Actual Gemini OCR cost is computed from response usage after execution.'
 export const GLM_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed GLM OCR benchmark usage. Actual GLM OCR cost is computed from response usage after execution.'
+export const GROK_OCR_PRICE_NOTE = 'Provisional heuristic token estimate of 4000 input tokens and 1000 output tokens per page until Grok OCR calibration data is available. Actual Grok OCR cost is computed from response usage after execution.'
 export const DEEPINFRA_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed DeepInfra OCR benchmark usage. Actual DeepInfra OCR cost is computed from response usage after execution.'
 export const KIMI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Kimi OCR benchmark usage. Actual Kimi OCR cost is computed from response usage after execution. AutoShow uses Kimi cache-miss input pricing for conservative estimates.'
 
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
 
-type TokenOcrProvider = 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra'
+type TokenOcrProvider = 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra'
 
 export const estimateOcrTokenUsage = (
   provider: TokenOcrProvider,
@@ -128,6 +129,25 @@ export const estimateAwsTextractCost = async (
   }
 }
 
+export const estimateUnstructuredOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{ provider: 'unstructured', model: string, pageCount: number, costPer1kPagesCents: number, totalCost: number }> => {
+  const model = validateUnstructuredOcrModel(modelRaw)
+  const pricing = getExtractPricing('unstructured', model)
+  const costPer1kPagesCents = pricing.costPer1kPagesCents ?? 3000
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+
+  return {
+    provider: 'unstructured',
+    model,
+    pageCount,
+    costPer1kPagesCents,
+    totalCost: (pageCount / 1000) * costPer1kPagesCents
+  }
+}
+
 export const estimateMistralOcrCost = async (
   modelRaw: string,
   input: string
@@ -218,6 +238,44 @@ export const estimateOpenAIOcrCost = async (
       + (completionTokens / 1_000_000) * outputCostPer1MCents,
     estimateType: 'heuristic',
     note: OPENAI_OCR_PRICE_NOTE
+  }
+}
+
+export const estimateGrokOcrCost = async (
+  modelRaw: string,
+  input: string
+): Promise<{
+  provider: 'grok'
+  model: string
+  pageCount: number
+  promptTokens: number
+  completionTokens: number
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  estimateType: 'heuristic'
+  note: string
+}> => {
+  const model = validateGrokOcrModel(modelRaw)
+  const pricing = getExtractPricing('grok', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 125
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 250
+  const detectedPageCount = await resolveExtractInputPageCount(input)
+  const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
+  const { promptTokens, completionTokens } = estimateOcrTokenUsage('grok', model, pageCount)
+
+  return {
+    provider: 'grok',
+    model,
+    pageCount,
+    promptTokens,
+    completionTokens,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    estimateType: 'heuristic',
+    note: GROK_OCR_PRICE_NOTE
   }
 }
 
@@ -439,6 +497,32 @@ export const computeActualGeminiOcrCost = (
 
   return {
     provider: 'gemini',
+    model,
+    inputCostPer1MCents,
+    outputCostPer1MCents,
+    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
+      + (completionTokens / 1_000_000) * outputCostPer1MCents
+  }
+}
+
+export const computeActualGrokOcrCost = (
+  modelRaw: string,
+  promptTokens: number,
+  completionTokens: number
+): {
+  provider: 'grok'
+  model: string
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+} => {
+  const model = validateGrokOcrModel(modelRaw)
+  const pricing = getExtractPricing('grok', model)
+  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 125
+  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 250
+
+  return {
+    provider: 'grok',
     model,
     inputCostPer1MCents,
     outputCostPer1MCents,

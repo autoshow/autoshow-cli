@@ -191,6 +191,61 @@ const SCRAPECREATORS_URL_LINKS = [
   'blob:https://docs.scrapecreators.com/bdc7fb25-6ba7-4992-8d07-dd5edf4a3d6c'
 ]
 
+const SUPADATA_GENERAL_LINKS = [
+  'https://docs.supadata.ai/.md',
+  'https://docs.supadata.ai/api-reference/endpoint/account/me.md',
+  'https://docs.supadata.ai/errors/list.md',
+  'https://docs.supadata.ai/errors/invalid-request.md',
+  'https://docs.supadata.ai/errors/unauthorized.md',
+  'https://docs.supadata.ai/errors/not-found.md',
+  'https://docs.supadata.ai/errors/limit-exceeded.md',
+  'https://docs.supadata.ai/errors/upgrade-required.md',
+  'https://docs.supadata.ai/errors/transcript-unavailable.md',
+  'https://docs.supadata.ai/errors/internal-error.md'
+]
+
+const SUPADATA_STT_LINKS = [
+  'https://docs.supadata.ai/get-transcript.md',
+  'https://docs.supadata.ai/get-metadata.md',
+  'https://docs.supadata.ai/get-extract.md',
+  'https://docs.supadata.ai/youtube/search.md',
+  'https://docs.supadata.ai/youtube/get-transcript-translation.md',
+  'https://docs.supadata.ai/youtube/channel.md',
+  'https://docs.supadata.ai/youtube/playlist.md',
+  'https://docs.supadata.ai/youtube/channel-videos.md',
+  'https://docs.supadata.ai/youtube/playlist-videos.md',
+  'https://docs.supadata.ai/youtube/batch.md',
+  'https://docs.supadata.ai/youtube/supported-url-formats.md',
+  'https://docs.supadata.ai/youtube/supported-language-codes.md',
+  'https://docs.supadata.ai/api-reference/introduction.md',
+  'https://docs.supadata.ai/api-reference/endpoint/metadata/metadata.md',
+  'https://docs.supadata.ai/api-reference/endpoint/extract/extract.md',
+  'https://docs.supadata.ai/api-reference/endpoint/extract/extract-get.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/search.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/video-get.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/video-batch.md',
+  'https://docs.supadata.ai/api-reference/endpoint/transcript/transcript.md',
+  'https://docs.supadata.ai/api-reference/endpoint/transcript/transcript-get.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/transcript.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/transcript-batch.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/translation.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/channel.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/playlist.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/channel-videos.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/playlist-videos.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/batch-get.md'
+]
+
+const SUPADATA_URL_LINKS = [
+  'https://docs.supadata.ai/web/scrape.md',
+  'https://docs.supadata.ai/web/map.md',
+  'https://docs.supadata.ai/web/crawl.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/scrape.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/map.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/crawl.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/crawl-get.md'
+]
+
 const ZYTE_GENERAL_LINKS = [
   'https://docs.zyte.com/zyte-api/get-started.md',
   'https://docs.zyte.com/zyte-api/usage/http.md',
@@ -1302,7 +1357,15 @@ test('links selector accepts glm provider with separate ocr and url sections', (
   expect(collectLinks(
     globalUrlSelection.serviceSelections,
     globalUrlSelection.globalSections
-  )).toEqual([...GLM_URL_LINKS, ...X_URL_LINKS, ...SCRAPECREATORS_URL_LINKS, ...ZYTE_URL_LINKS, ...FIRECRAWL_URL_LINKS, ...SPIDER_URL_LINKS])
+  )).toEqual([
+    ...GLM_URL_LINKS,
+    ...X_URL_LINKS,
+    ...SUPADATA_URL_LINKS,
+    ...SCRAPECREATORS_URL_LINKS,
+    ...ZYTE_URL_LINKS,
+    ...FIRECRAWL_URL_LINKS,
+    ...SPIDER_URL_LINKS
+  ])
 })
 
 test('links selector accepts x provider with general and url sections', () => {
@@ -1344,6 +1407,72 @@ test('links selector accepts x provider with general and url sections', () => {
     xUrlSelection.serviceSelections,
     xUrlSelection.globalSections
   )).toEqual(X_URL_LINKS)
+})
+
+test('links selector accepts supadata provider with general stt and url sections', async () => {
+  const supadataSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata'
+  ])
+
+  expect(supadataSelection.serviceSelections.get('supadata')).toEqual([])
+  expect(collectLinks(
+    supadataSelection.serviceSelections,
+    supadataSelection.globalSections
+  )).toEqual([
+    ...SUPADATA_GENERAL_LINKS,
+    ...SUPADATA_STT_LINKS,
+    ...SUPADATA_URL_LINKS
+  ])
+
+  const supadataGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'general'
+  ])
+
+  expect(collectLinks(
+    supadataGeneralSelection.serviceSelections,
+    supadataGeneralSelection.globalSections
+  )).toEqual(SUPADATA_GENERAL_LINKS)
+
+  const supadataSttSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'stt'
+  ])
+
+  expect(collectLinks(
+    supadataSttSelection.serviceSelections,
+    supadataSttSelection.globalSections
+  )).toEqual(SUPADATA_STT_LINKS)
+
+  const supadataUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'url'
+  ])
+
+  expect(collectLinks(
+    supadataUrlSelection.serviceSelections,
+    supadataUrlSelection.globalSections
+  )).toEqual(SUPADATA_URL_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --supadata: tts')
 })
 
 test('links selector accepts scrapecreators provider with general stt and url sections', async () => {

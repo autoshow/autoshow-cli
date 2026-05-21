@@ -16,7 +16,6 @@ const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'aws',
   'deepgram',
   'deepinfra',
-  'deapi',
   'elevenlabs',
   'soniox',
   'speechmatics',

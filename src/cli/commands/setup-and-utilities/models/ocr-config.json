@@ -66,9 +66,28 @@
     }
   },
   "openai": {
-    "description": "OpenAI GPT-5.4 OCR via Responses API",
+    "description": "OpenAI GPT OCR via Responses API",
     "type": "api",
     "models": {
+      "gpt-5.5": {
+        "description": "GPT-5.5 OCR",
+        "costPerMInputTokensUSD": 5,
+        "costPerMCachedInputTokensUSD": 0.5,
+        "costPerMOutputTokensUSD": 30,
+        "costPerMInputTokensCents": 500,
+        "costPerMCachedInputTokensCents": 50,
+        "costPerMOutputTokensCents": 3000,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 2986,
+          "completionTokensPerPage": 1903,
+          "costMultiplier": 0.2165,
+          "msPerPage": 4931
+        }
+      },
       "gpt-5.4": {
         "description": "GPT-5.4 OCR",
         "costPerMInputTokensUSD": 2.5,
@@ -122,10 +141,69 @@
       }
     }
   },
+  "grok": {
+    "description": "xAI Grok OCR via vision chat",
+    "type": "api",
+    "models": {
+      "grok-4.3": {
+        "description": "Grok 4.3 OCR via multimodal Chat Completions",
+        "costPerMInputTokensUSD": 1.25,
+        "costPerMCachedInputTokensUSD": 0.2,
+        "costPerMOutputTokensUSD": 2.5,
+        "costPerMInputTokensCents": 125,
+        "costPerMCachedInputTokensCents": 20,
+        "costPerMOutputTokensCents": 250,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "docs.x.ai documents Grok 4.3 image input support for PNG/JPG/JPEG with a 20 MiB maximum image size. AutoShow renders PDF pages to PNG images before calling Grok OCR."
+        },
+        "estimation": {
+          "promptTokensPerPage": 4000,
+          "completionTokensPerPage": 1000,
+          "costMultiplier": 1,
+          "msPerPage": 12000
+        }
+      }
+    }
+  },
   "anthropic": {
     "description": "Anthropic Claude OCR via Messages API",
     "type": "api",
     "models": {
+      "claude-opus-4-7": {
+        "description": "Claude Opus 4.7 OCR",
+        "costPerMInputTokensUSD": 5,
+        "costPerMOutputTokensUSD": 25,
+        "costPerMInputTokensCents": 500,
+        "costPerMOutputTokensCents": 2500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 7000,
+          "promptTokensPerPage": 1657.5,
+          "completionTokensPerPage": 474.5
+        }
+      },
+      "claude-sonnet-4-6": {
+        "description": "Claude Sonnet 4.6 OCR",
+        "costPerMInputTokensUSD": 3,
+        "costPerMOutputTokensUSD": 15,
+        "costPerMInputTokensCents": 300,
+        "costPerMOutputTokensCents": 1500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 7000,
+          "promptTokensPerPage": 1657.5,
+          "completionTokensPerPage": 474.5
+        }
+      },
       "claude-haiku-4-5": {
         "description": "Claude Haiku 4.5 OCR",
         "costPerMInputTokensUSD": 1,
@@ -367,12 +445,17 @@
     "models": {
       "hi_res_and_enrichment": {
         "description": "Unstructured on-demand hi_res_and_enrichment workflow template",
-        "costPer1kPagesUSD": 0,
-        "costPer1kPagesCents": 0,
+        "pricingSourceUrl": "https://unstructured.io/pricing",
+        "pricingCheckedAt": "2026-05-21",
+        "pricingCurrency": "USD",
+        "pricingTier": "Pay-As-You-Go",
+        "pricingNotes": "Pay-As-You-Go flat rate is $0.03/page; free Let's Go allowance may apply before billing, and Business pricing is custom.",
+        "costPer1kPagesUSD": 30,
+        "costPer1kPagesCents": 3000,
         "limits": {
           "effectiveBytes": 10485760,
           "pageCount": 1000,
-          "notes": "Unstructured on-demand jobs support local files up to 10 MB. AutoShow records a zero-cost registry fallback because Unstructured account pricing is plan-specific."
+          "notes": "Unstructured on-demand jobs support local files up to 10 MB. AutoShow estimates Pay-As-You-Go pricing at $0.03/page; free allowance or custom Business pricing may differ."
         },
         "estimation": {
           "costMultiplier": 1,

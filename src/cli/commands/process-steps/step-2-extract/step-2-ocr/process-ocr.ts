@@ -350,6 +350,8 @@ export const processOcr = async (
     ...(rawOpts.kimiOcrModels ? { kimiOcrModels: rawOpts.kimiOcrModels } : {}),
     ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
     ...(rawOpts.openaiOcrModels ? { openaiOcrModels: rawOpts.openaiOcrModels } : {}),
+    ...(rawOpts.grokOcrModel ? { grokOcrModel: rawOpts.grokOcrModel } : {}),
+    ...(rawOpts.grokOcrModels ? { grokOcrModels: rawOpts.grokOcrModels } : {}),
     ...(rawOpts.anthropicOcrModel ? { anthropicOcrModel: rawOpts.anthropicOcrModel } : {}),
     ...(rawOpts.anthropicOcrModels ? { anthropicOcrModels: rawOpts.anthropicOcrModels } : {}),
     ...(rawOpts.geminiOcrModel ? { geminiOcrModel: rawOpts.geminiOcrModel } : {}),

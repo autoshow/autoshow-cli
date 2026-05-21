@@ -27,21 +27,12 @@ import {
   GCLOUD_DEFAULT_TTS_VOICES,
   GROK_DEFAULT_TTS_VOICE,
   SPEECHIFY_DEFAULT_TTS_VOICE,
-  SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
-  DEAPI_DEFAULT_TTS_VOICE,
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 
 const MISTRAL_TTS_MODEL = 'voxtral-mini-tts-2603'
 const MISTRAL_REF_AUDIO_PATH = 'input/examples/audio/anthony-voice.mp3'
-const DEAPI_TTS_CLONE_MODEL = 'Qwen3_TTS_12Hz_1_7B_Base'
-const DEAPI_REF_AUDIO_PATH = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
 const SHORT_TTS_INPUT_PATH = 'input/examples/tts/0-tts-short.txt'
 const SHORT_TTS_INPUT_TITLE = '0-tts-short'
-const resolveDeapiDefaultSpeaker = (model: string): string => {
-  if (model === 'Kokoro') return DEAPI_DEFAULT_TTS_VOICE
-  if (model === 'Chatterbox') return 'default'
-  return 'Vivian'
-}
 
 const isTransientMistralTtsFailure = (output: string): boolean =>
   /Unable to connect|Unexpected HTTP client error|fetch failed|network error|econnreset|econnrefused|etimedout|socket hang up|dns/i.test(output)
@@ -247,17 +238,6 @@ defineTTSServiceTest({
   resolveExpectedSpeaker: async (model) => GCLOUD_DEFAULT_TTS_VOICES[model as 'chirp3-hd' | 'studio'],
 })
 
-defineTTSServiceTest({
-  models: SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
-  cliFlag: '--deapi',
-  ttsService: 'deapi',
-  envVarKey: 'DEAPI_API_KEY',
-  envVarDescription: 'deAPI TTS',
-  inputPath: SHORT_TTS_INPUT_PATH,
-  inputTitle: SHORT_TTS_INPUT_TITLE,
-  resolveExpectedSpeaker: async (model) => resolveDeapiDefaultSpeaker(model),
-})
-
 test('rejects invalid mistral model', async () => {
   const result = await runCommand([
     'src/cli/create-cli.ts',
@@ -414,38 +394,6 @@ budgetedTest('tts-mistral-dialogue-ref-audio', 'mistral dialogue mode generates 
   } finally {
     await cleanupTestOutput('mistral-dialogue')
     await rm(tempRoot, { recursive: true, force: true })
-  }
-}, E2E_TEST_TIMEOUT_MS)
-
-budgetedTest('tts-deapi-qwen3-voice-clone', 'deAPI Qwen3 voice clone generates speech.wav', async () => {
-  await requireConfiguredEnvVar('DEAPI_API_KEY', 'DEAPI_API_KEY is required for deAPI TTS test')
-
-  await cleanupTestOutput(STABLE_TTS_MD_TITLE)
-
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--deapi',
-    DEAPI_TTS_CLONE_MODEL,
-    '--deapi-tts-ref-audio',
-    DEAPI_REF_AUDIO_PATH
-  ])
-
-  expect(result.exitCode).toBe(0)
-
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
-  expect(outputDir).not.toBeNull()
-
-  if (outputDir) {
-    expect(await fileExists(`${outputDir}/speech.wav`)).toBe(true)
-
-    const metadata = await readRunMetadata(outputDir) as {
-      tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string }>
-    }
-    expect(metadata.tts?.[0]?.ttsService).toBe('deapi')
-    expect(metadata.tts?.[0]?.ttsModel).toBe(DEAPI_TTS_CLONE_MODEL)
-    expect(metadata.tts?.[0]?.speaker).toBe('ref_audio:0-audio-short.mp3')
   }
 }, E2E_TEST_TIMEOUT_MS)
 

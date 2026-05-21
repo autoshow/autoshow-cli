@@ -81,18 +81,6 @@
           "msPerSecond": 12000
         }
       },
-      "MiniMax-Hailuo-02": {
-        "description": "MiniMax Hailuo 02 — balanced video model",
-        "blockSizeSec": 6,
-        "blockCost720pUSD": 0.28,
-        "blockCost720pCents": 28,
-        "blockCost1080pUSD": 0.49,
-        "blockCost1080pCents": 49,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 17988
-        }
-      },
       "T2V-01-Director": {
         "description": "T2V-01-Director — camera-control focused video model",
         "blockSizeSec": 6,
@@ -190,16 +178,6 @@
           "msPerSecond": 36089
         }
       },
-      "viduq1-image": {
-        "description": "Vidu Q1 image-to-video model",
-        "baseJobFeeUSD": 0.4,
-        "baseJobFeeCents": 40
-      },
-      "viduq1-start-end": {
-        "description": "Vidu Q1 first-and-last-frame video model",
-        "baseJobFeeUSD": 0.4,
-        "baseJobFeeCents": 40
-      },
       "vidu2-image": {
         "description": "Vidu 2 image-to-video model",
         "baseJobFeeUSD": 0.2,
@@ -274,53 +252,6 @@
         "description": "Runway Gen-4.5 text-to-video model",
         "baseCostPerSecondUSD": 0.12,
         "baseCostPerSecondCents": 12
-      }
-    }
-  },
-  "deapi": {
-    "description": "deAPI video generation",
-    "type": "api",
-    "sizes": [
-      "256x256",
-      "512x512",
-      "768x768",
-      "1024x1024"
-    ],
-    "billedDurations": [
-      1,
-      2.0416666666666665,
-      4,
-      5,
-      8.033333333333333,
-      10.041666666666666
-    ],
-    "models": {
-      "Ltxv_13B_0_9_8_Distilled_FP8": {
-        "description": "LTX-Video 0.9.8 13B text-to-video generation",
-        "baseCostPerSecondUSD": 0.0008685,
-        "baseCostPerSecondCents": 0.08685,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 14990
-        }
-      },
-      "Ltx2_19B_Dist_FP8": {
-        "description": "LTX-2 19B Distilled text-to-video generation",
-        "baseCostPerSecondUSD": 0.0008685,
-        "baseCostPerSecondCents": 0.08685,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 21883
-        }
-      },
-      "Ltx2_3_22B_Dist_INT8": {
-        "description": "LTX-2.3 22B Distilled text-to-video generation",
-        "baseCostPerSecondUSD": 0.0008685,
-        "baseCostPerSecondCents": 0.08685,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 16826
-        }
       }
     }
   }

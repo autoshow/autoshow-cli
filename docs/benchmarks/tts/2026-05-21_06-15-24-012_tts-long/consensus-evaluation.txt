@@ -1,0 +1,7 @@
+This TTS consensus evaluation used existing AutoShow run metadata, local audio probing from the consensus workflow, and the existing voice-quality-report.json evidence.
+
+Human quality scores were supplied externally on 2026-05-21 for each generated WAV file. The supplied 1-10 ratings were mapped to 0-100 humanSpeechScore values for the report's human-quality ranking.
+
+No generated audio was newly listened to or judged during this report rebuild.
+
+Automated quality rankings use the existing roundtrip WER-derived evidence in voice-quality-report.json. Human quality rankings use only the supplied humanSpeechScore values.

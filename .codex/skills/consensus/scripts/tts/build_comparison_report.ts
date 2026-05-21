@@ -171,11 +171,20 @@ function addOverallScores(providers: ProviderData[]): OverallScoredProvider[] {
       : provider.costCents === null
         ? "missing-cloud-cost"
         : "reported-cost";
-    const accuracyScore = provider.roundtripWER !== null ? Math.max(0, 100 * (1 - provider.roundtripWER)) : 50;
+    const accuracyScore = provider.qualityScore !== null
+      ? provider.qualityScore
+      : provider.roundtripWER !== null
+        ? Math.max(0, 100 * (1 - provider.roundtripWER))
+        : 50;
+    const accuracySource: OverallComponents["accuracy"]["source"] = provider.qualityScore !== null
+      ? "voice-quality"
+      : provider.roundtripWER !== null
+        ? "roundtrip-wer"
+        : "missing-roundtrip-accuracy";
     const overallComponents: OverallComponents = {
       accuracy: {
         score: accuracyScore,
-        source: provider.roundtripWER !== null ? "roundtrip-wer" : "missing-roundtrip-accuracy",
+        source: accuracySource,
       },
       processingSpeed: {
         score: normalizeLowerIsBetter(provider.processingTimeMs, timingValues),
@@ -237,6 +246,8 @@ interface RankedProvider {
   ttsModel: string;
   speaker: string | null;
   score: number;
+  qualityScore: number | null;
+  humanSpeechScore: number | null;
   roundtripWER: number | null;
   speakingRateCharsPerSec: number | null;
   durationSeconds: number | null;
@@ -255,7 +266,7 @@ interface RankedProvider {
 interface OverallComponents {
   accuracy: {
     score: number;
-    source: "roundtrip-wer" | "missing-roundtrip-accuracy";
+    source: "voice-quality" | "roundtrip-wer" | "missing-roundtrip-accuracy";
   };
   processingSpeed: {
     score: number;
@@ -338,6 +349,42 @@ interface TierAnnotation {
 type RankedProviderWithoutTier = Omit<RankedProvider, "tierGroup" | "groupOverallRank" | "groupTier">;
 type ProviderData = Omit<RankedProviderWithoutTier, "rank" | "overallRank" | "overallScore" | "overallComponents">;
 type OverallScoredProvider = ProviderData & Pick<RankedProvider, "overallRank" | "overallScore" | "overallComponents">;
+
+interface VoiceQualityProvider {
+  providerKey: string;
+  humanSpeechScore: number | null;
+  metricDetails?: {
+    roundtripStt?: {
+      medianWer: number | null;
+    };
+  };
+}
+
+interface VoiceQualityReport {
+  providers?: VoiceQualityProvider[];
+}
+
+function loadVoiceQualityScores(runDir: string): Map<string, { qualityScore: number | null; medianWer: number | null }> {
+  const scores = new Map<string, { qualityScore: number | null; medianWer: number | null }>();
+  const reportPath = join(runDir, "voice-quality-report.json");
+  if (!existsSync(reportPath)) {
+    return scores;
+  }
+  try {
+    const report = JSON.parse(readFileSync(reportPath, "utf8")) as VoiceQualityReport;
+    for (const provider of report.providers ?? []) {
+      const qualityScore = typeof provider.humanSpeechScore === "number" && Number.isFinite(provider.humanSpeechScore)
+        ? provider.humanSpeechScore
+        : null;
+      const medianWer = typeof provider.metricDetails?.roundtripStt?.medianWer === "number"
+        ? provider.metricDetails.roundtripStt.medianWer
+        : null;
+      scores.set(provider.providerKey, { qualityScore, medianWer });
+    }
+  } catch {
+  }
+  return scores;
+}
 
 // Natural speaking rate for English: ~120-180 chars/sec
 // Deviation from midpoint (150 c/s) is penalized
@@ -502,6 +549,7 @@ export async function buildReport(
 
   const costLookup = buildCostLookup(runJson);
   const timingLookup = buildTimingLookup(runJson);
+  const voiceQualityScores = loadVoiceQualityScores(runDir);
   const hasRoundtrip = roundtripDir !== null;
 
   const providerData: ProviderData[] = [];
@@ -535,19 +583,21 @@ export async function buildReport(
       }
     }
 
+    const vqScores = voiceQualityScores.get(providerKey);
+    const qualityScore = vqScores?.qualityScore ?? null;
+    if (wer === null && vqScores?.medianWer !== null && vqScores?.medianWer !== undefined) {
+      wer = vqScores.medianWer;
+    }
+
     let score: number;
-    if (wer !== null) {
+    if (qualityScore !== null) {
+      score = qualityScore;
+    } else if (wer !== null) {
       score = Math.max(0, 100 * (1 - wer));
     } else {
-      // Composite: 60% speaking rate naturalness, 20% cost efficiency, 20% speed
       const rateComponent = speakingRateScore(speakingRate) * 60;
-
-      // Cost component: lower is better, normalize to 0-1 range per provider set
       const costComponent = costCents !== null && costCents === 0 ? 20 : costCents !== null ? Math.max(0, 20 * (1 - costCents / 20)) : 10;
-
-      // Speed component: faster processing is better
       const speedComponent = processingTimeMs !== null && processingTimeMs > 0 ? Math.max(0, 20 * (1 - processingTimeMs / 60000)) : 10;
-
       score = rateComponent + costComponent + speedComponent;
     }
 
@@ -557,6 +607,8 @@ export async function buildReport(
       ttsModel: entry.ttsModel,
       speaker: entry.speaker ?? null,
       score,
+      qualityScore,
+      humanSpeechScore: qualityScore,
       roundtripWER: wer,
       speakingRateCharsPerSec: speakingRate,
       durationSeconds,
@@ -603,9 +655,12 @@ export async function buildReport(
   const allRanked = [...rankedLocalWithTiers, ...rankedCloudWithTiers];
   const rankedOverall = addTierAnnotations(rankedOverallWithoutTiers, providerAnnotations);
 
-  const scoringMethod = hasRoundtrip && allRanked.some((p) => p.roundtripWER !== null)
-    ? "roundtrip-wer"
-    : "composite";
+  const hasVoiceQuality = allRanked.some((p) => p.qualityScore !== null);
+  const scoringMethod = hasVoiceQuality
+    ? "voice-quality"
+    : hasRoundtrip && allRanked.some((p) => p.roundtripWER !== null)
+      ? "roundtrip-wer"
+      : "composite";
 
   const notes: string[] = [];
 
@@ -663,16 +718,22 @@ export async function buildReport(
     }
   }
 
-  if (scoringMethod === "composite") {
+  if (scoringMethod === "voice-quality") {
+    notes.push(
+      "Voice quality scores from voice-quality-report.json were used as the primary quality metric (human speech quality: 55% naturalness + 45% speech quality).",
+    );
+  } else if (scoringMethod === "composite") {
     notes.push(
       "No roundtrip STT data was available. Existing local/cloud ranking used a composite of speaking rate naturalness (60%), cost (20%), and speed (20%); overall ranking used neutral 50/100 accuracy components for providers without roundtrip data.",
     );
   }
 
   // Build reports
-  const scoreFormula = scoringMethod === "roundtrip-wer"
-    ? "max(0, 100 * (1 - roundtripWER))"
-    : "composite: 60% speaking-rate-naturalness + 20% cost + 20% speed";
+  const scoreFormula = scoringMethod === "voice-quality"
+    ? "humanSpeechScore from voice-quality-report.json (55% naturalness + 45% speech quality)"
+    : scoringMethod === "roundtrip-wer"
+      ? "max(0, 100 * (1 - roundtripWER))"
+      : "composite: 60% speaking-rate-naturalness + 20% cost + 20% speed";
 
   const reportJson = {
     runDir,
@@ -717,6 +778,9 @@ export async function buildReport(
 
   function buildRankingTable(providers: RankedProvider[], includeCost: boolean): string {
     const headerCols = ["Rank", "Provider", "Score / 100"];
+    if (hasQualityColumn) {
+      headerCols.push("Quality / 100");
+    }
     if (hasWerColumn) {
       headerCols.push("Roundtrip WER");
     }
@@ -733,6 +797,9 @@ export async function buildReport(
           `\`${p.providerKey}\``,
           p.score.toFixed(2),
         ];
+        if (hasQualityColumn) {
+          cols.push(p.qualityScore !== null ? p.qualityScore.toFixed(2) : "n/a");
+        }
         if (hasWerColumn) {
           cols.push(p.roundtripWER !== null ? percentage(p.roundtripWER) : "n/a");
         }
@@ -788,9 +855,12 @@ export async function buildReport(
   const notesBlock = notes.map((note) => `- ${note}`).join("\n");
   const inputFileName = basename(inputTextPath);
 
-  const methodDescription = hasWerColumn
-    ? "- Roundtrip WER was computed by transcribing each provider's audio via STT and comparing against the original input text.\n- Ranking primarily uses roundtrip WER (lower is better)."
-    : "- No roundtrip STT transcriptions were available.\n- Existing local/cloud ranking uses a composite score: 60% speaking rate naturalness (120-180 c/s optimal for English), 20% cost efficiency, 20% processing speed.\n- Overall ranking uses neutral 50/100 accuracy components when roundtrip WER is missing.";
+  const hasQualityColumn = allRanked.some((p) => p.qualityScore !== null);
+  const methodDescription = hasQualityColumn
+    ? "- Voice quality scores from voice-quality-report.json were used as the primary quality metric.\n- Human speech quality score combines naturalness (55%) and speech quality (45%) from signal analysis, prosody heuristics, and available external metrics."
+    : hasWerColumn
+      ? "- Roundtrip WER was computed by transcribing each provider's audio via STT and comparing against the original input text.\n- Ranking primarily uses roundtrip WER (lower is better)."
+      : "- No roundtrip STT transcriptions were available.\n- Existing local/cloud ranking uses a composite score: 60% speaking rate naturalness (120-180 c/s optimal for English), 20% cost efficiency, 20% processing speed.\n- Overall ranking uses neutral 50/100 accuracy components when roundtrip WER is missing.";
 
   const localSection = rankedLocalWithTiers.length > 0
     ? `### Local Models (${rankedLocalWithTiers.length})
@@ -816,7 +886,7 @@ ${buildRankingTable(rankedCloudWithTiers, true)}
 
 - Input text: \`${inputFileName}\` (${charCount} characters, ${wordCount} words)
 - Total providers: ${allRanked.length} (${rankedLocalWithTiers.length} local, ${rankedCloudWithTiers.length} cloud)
-- Scoring method: ${scoringMethod === "roundtrip-wer" ? "roundtrip WER (TTS audio -> STT -> compare against original text)" : "composite (speaking rate naturalness + cost + speed)"}
+- Scoring method: ${scoringMethod === "voice-quality" ? "voice quality (human speech quality from voice-quality-report.json)" : scoringMethod === "roundtrip-wer" ? "roundtrip WER (TTS audio -> STT -> compare against original text)" : "composite (speaking rate naturalness + cost + speed)"}
 - Score formula: \`${scoreFormula}\`
 - Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
 

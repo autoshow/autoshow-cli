@@ -8,6 +8,7 @@ const providerToOcrService = (provider: string): OcrTarget['service'] => {
   if (provider === 'glm-ocr') return 'glm'
   if (provider === 'kimi-ocr') return 'kimi'
   if (provider === 'openai-ocr') return 'openai'
+  if (provider === 'grok-ocr') return 'grok'
   if (provider === 'anthropic-ocr') return 'anthropic'
   if (provider === 'gemini-ocr') return 'gemini'
   if (provider === 'deepinfra-ocr') return 'deepinfra'
@@ -16,7 +17,7 @@ const providerToOcrService = (provider: string): OcrTarget['service'] => {
 }
 
 export const collectExplicitOcrTargets = (
-  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel' | 'unstructuredOcrModel'> & {
+  opts: Pick<ExtractionOptions, 'useTesseract' | 'useOcrmypdf' | 'usePaddleOcr' | 'mistralOcrModel' | 'glmOcrModel' | 'kimiOcrModel' | 'openaiOcrModel' | 'grokOcrModel' | 'anthropicOcrModel' | 'geminiOcrModel' | 'deepinfraOcrModel' | 'awsTextractModel' | 'gcloudDocaiModel' | 'unstructuredOcrModel'> & {
     step2SelectionOrigins?: Partial<Record<string, Step2ProviderSelectionOrigin>> | undefined
     provider?: string[] | undefined
   },
@@ -71,6 +72,7 @@ export const buildExtractionOptionsForTarget = (
   glmOcrModel: target.service === 'glm' ? target.model : undefined,
   kimiOcrModel: target.service === 'kimi' ? target.model : undefined,
   openaiOcrModel: target.service === 'openai' ? target.model : undefined,
+  grokOcrModel: target.service === 'grok' ? target.model : undefined,
   anthropicOcrModel: target.service === 'anthropic' ? target.model : undefined,
   geminiOcrModel: target.service === 'gemini' ? target.model : undefined,
   deepinfraOcrModel: target.service === 'deepinfra' ? target.model : undefined,

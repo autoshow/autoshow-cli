@@ -9,29 +9,9 @@ defineImageServiceTest({
   imageExtension: 'jpg',
   models: [
     {
-      model: 'flux-2-pro-preview',
-      prompt: 'A clean product photo of a red enamel camping mug',
-      extraArgs: ['--image-size', '1024x1024']
-    },
-    {
-      model: 'flux-2-klein-4b',
-      prompt: 'A tiny blue square on a white background',
-      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
-    },
-    {
-      model: 'flux-2-klein-9b-preview',
-      prompt: 'A tiny blue square on a white background',
-      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
-    },
-    {
-      model: 'flux-2-klein-9b',
-      prompt: 'A tiny blue square on a white background',
-      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
-    },
-    {
       model: 'flux-2-pro',
-      prompt: 'A tiny blue square on a white background',
-      extraArgs: ['--image-size', '64x64', '--image-format', 'jpeg']
+      prompt: 'A clean product photo of a red enamel camping mug',
+      extraArgs: ['--image-size', '1024x1024', '--image-format', 'jpeg']
     },
     {
       model: 'flux-2-max',
@@ -52,14 +32,14 @@ test('rejects unsupported BFL shared image flags', async () => {
     'image',
     'a sunset',
     '--bfl',
-    'flux-2-pro-preview',
+    'flux-2-pro',
     '--image-aspect-ratio',
     '1:1'
   ])
   const output = `${result.stdout}\n${result.stderr}`
 
   expect(result.exitCode).not.toBe(0)
-  expect(output).toContain('--image-aspect-ratio is not supported by BFL/flux-2-pro-preview')
+  expect(output).toContain('--image-aspect-ratio is not supported by BFL/flux-2-pro')
 })
 
 test('rejects invalid BFL image size values', async () => {
@@ -68,7 +48,7 @@ test('rejects invalid BFL image size values', async () => {
     'image',
     'a sunset',
     '--bfl',
-    'flux-2-pro-preview',
+    'flux-2-pro',
     '--image-size',
     '1024'
   ])

@@ -53,7 +53,6 @@ src/cli/commands/process-steps/process-video.ts
 │  resolveSttEngine() - picks requested STT providers/models:                 │
 │                                                                              │
 │  Local: Whisper.cpp, Reverb ASR                                             │
-│  Cloud: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox,  │
 │         Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia,         │
 │         Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM, Together│
 │                                    │                                         │
@@ -116,22 +115,17 @@ src/cli/commands/process-steps/process-video.ts
                                         │   --speechify-tts,           │
                                         │   --hume-tts,                │
                                         │   --cartesia-tts,            │
-                                        │   --gcloud-tts, --deapi-tts) │
                                         │  Step 5: Image (--gemini-    │
                                         │   image, --openai-image,     │
-                                        │   --minimax-image,           │
                                         │   --grok-image,              │
-                                        │   --runway-image,            │
-                                        │   --bfl-image, --deapi-image,│
+                                        │   --bfl-image,               │
                                         │   --reve-image)              │
                                         │  Step 6: Video (--gemini-    │
                                         │   video, --minimax-video,    │
                                         │   --glm-video, --grok-video, │
-                                        │   --runway-video, --deapi-   │
                                         │   video)                     │
                                         │  Step 7: Music (--elevenlabs-│
                                         │   music, --minimax-music,    │
-                                        │   --deapi-music, --gemini-   │
                                         │   music)                     │
                                         └──────────────────────────────┘
                                                     |

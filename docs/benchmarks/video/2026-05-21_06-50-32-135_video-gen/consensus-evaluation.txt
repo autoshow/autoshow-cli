@@ -1,0 +1,41 @@
+Video consensus evaluation
+
+Run directory: /Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-50-32-135_video-gen
+Category: video
+Evidence source: consensus packet built from run.json and generated video artifact metadata.
+
+This evaluation uses measurable packet evidence only. It does not claim to have watched the videos and does not assess visual quality, prompt adherence, motion quality, narrative coherence, or human preference.
+
+Scope
+
+- Providers: 9 service providers, 0 local providers.
+- Artifacts: all 9 expected MP4 artifacts exist.
+- Packet warnings: none.
+
+Provider evidence
+
+| Provider | Artifact | Duration | Processing time | Reported cost | File size |
+| --- | --- | ---: | ---: | ---: | ---: |
+| gemini/veo-3.1-fast-generate-preview | present | 8s | 72.17s | $0.8000 | 12831956 bytes |
+| gemini/veo-3.1-generate-preview | present | 8s | 72.03s | $3.2000 | 11828507 bytes |
+| gemini/veo-3.1-lite-generate-preview | present | 8s | 62.05s | $0.4000 | 9530560 bytes |
+| minimax/T2V-01 | present | 6s | 165.16s | $0.1900 | 3056400 bytes |
+| minimax/T2V-01-Director | present | 6s | 155.06s | $0.1900 | 2903446 bytes |
+| minimax/MiniMax-Hailuo-2.3 | present | 10s | 123.61s | $0.5600 | 2739757 bytes |
+| glm/cogvideox-3 | present | 10s | 348.39s | $0.2000 | 21478175 bytes |
+| glm/viduq1-text | present | 5s | 196.37s | $0.4000 | 27089418 bytes |
+| grok/grok-imagine-video | present | 8s | 41.60s | $0.4000 | 6872287 bytes |
+
+Measurable comparisons
+
+- Lowest reported cost: minimax/T2V-01 and minimax/T2V-01-Director at $0.1900 each.
+- Next-lowest reported cost: glm/cogvideox-3 at $0.2000.
+- Highest reported cost: gemini/veo-3.1-generate-preview at $3.2000.
+- Fastest processing time: grok/grok-imagine-video at 41.60s.
+- Slowest processing time: glm/cogvideox-3 at 348.39s.
+- Duration metadata range: 5s to 10s.
+- Artifact size range: 2739757 bytes to 27089418 bytes.
+
+Quality evidence boundary
+
+No quality conclusion is inferred from duration, file size, cost, or speed. Automated quality and human quality rankings should only use explicit quality score fields when present in the generated reports.

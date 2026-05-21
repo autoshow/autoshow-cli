@@ -43,9 +43,9 @@ describe('benchmark contracts', () => {
         speedMultiplier: 3
       },
       {
-        service: 'deapi',
-        model: 'WhisperLargeV3',
-        envVar: 'DEAPI_API_KEY'
+        service: 'deepgram',
+        model: 'nova-3',
+        envVar: 'DEEPGRAM_API_KEY'
       },
       'error',
       1250,
@@ -62,8 +62,8 @@ describe('benchmark contracts', () => {
         bitrateKbps: undefined,
         speedMultiplier: 3
       },
-      service: 'deapi',
-      model: 'WhisperLargeV3',
+      service: 'deepgram',
+      model: 'nova-3',
       processingTimeMs: 1250,
       error: 'request failed: https://api.example.test/jobs?api_key=REDACTED'
     })

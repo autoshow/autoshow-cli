@@ -26,11 +26,6 @@
       "https://platform.minimax.io/docs/api-reference/music-generation.md",
       "https://platform.minimax.io/docs/api-reference/lyrics-generation.md"
     ],
-    "Image": [
-      "https://platform.minimax.io/docs/guides/image-generation.md",
-      "https://platform.minimax.io/docs/api-reference/image-generation-t2i.md",
-      "https://platform.minimax.io/docs/api-reference/image-generation-i2i.md"
-    ],
     "Video": [
       "https://platform.minimax.io/docs/guides/video-generation.md",
       "https://platform.minimax.io/docs/guides/video-agent.md",

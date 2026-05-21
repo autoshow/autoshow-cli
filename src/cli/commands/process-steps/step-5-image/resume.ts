@@ -10,22 +10,16 @@ const IMAGE_PROVIDER_FLAGS = [
   'all-image',
   'gemini-image',
   'openai-image',
-  'minimax-image',
   'grok-image',
-  'runway-image',
   'bfl-image',
-  'deapi-image',
   'reve-image'
 ] as const
 
 const IMAGE_MODEL_FIELDS = {
   gemini: ['geminiImageModels', 'geminiImageModel'],
   openai: ['openaiImageModels', 'openaiImageModel'],
-  minimax: ['minimaxImageModels', 'minimaxImageModel'],
   grok: ['grokImageModels', 'grokImageModel'],
-  runway: ['runwayImageModels', 'runwayImageModel'],
   bfl: ['bflImageModels', 'bflImageModel'],
-  deapi: ['deapiImageModels', 'deapiImageModel'],
   reve: ['reveImageModels', 'reveImageModel']
 } as const
 
@@ -35,16 +29,10 @@ const clearImageProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
   geminiImageModel: undefined,
   openaiImageModels: undefined,
   openaiImageModel: undefined,
-  minimaxImageModels: undefined,
-  minimaxImageModel: undefined,
   grokImageModels: undefined,
   grokImageModel: undefined,
-  runwayImageModels: undefined,
-  runwayImageModel: undefined,
   bflImageModels: undefined,
   bflImageModel: undefined,
-  deapiImageModels: undefined,
-  deapiImageModel: undefined,
   reveImageModels: undefined,
   reveImageModel: undefined
 })

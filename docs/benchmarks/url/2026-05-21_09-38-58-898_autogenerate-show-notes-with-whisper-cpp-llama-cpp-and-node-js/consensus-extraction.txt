@@ -1,0 +1,1129 @@
+# Autogenerate Show Notes with Whisper-cpp, Llama-cpp, and Node-js
+
+Published: March 1, 2024
+Updated: August 15, 2024
+
+End-to-end scripting workflow to generate automatic show notes with LLMs from audio and video transcripts using Whisper.cpp, Llama.cpp, and Commander.js
+
+
+> ***All of this project's code can be found on my GitHub at [`ajcwebdev/autoshow`](https://github.com/autoshow/autoshow).***
+
+## Introduction and Overview
+
+Creating podcast show notes is an arduous process. Many podcasters do not have the support of a team or the personal bandwidth required to produce high quality show notes. A few of the necessary ingredients include:
+
+- Accurate transcript with timestamps
+- Chapter headings and descriptions
+- Succinct episode summaries of varying length (sentence, paragraph, a few paragraphs)
+
+Thankfully, through the magic of AI, many of these can now be generated automatically with a combination of open source tooling and affordable large language models (LLMs). In this project, we'll be leveraging OpenAI's open source transcription model, Whisper and their closed source LLM, ChatGPT.
+
+## Project Setup
+
+To begin, create a new project:
+
+- Initialize a `package.json` and set `type` to `module` for ESM syntax.
+- Create a script called `autoshow` that runs the main entry script and includes a `.env` for environment variables.
+- Create the `.env` file, the `autoshow` script will fail if this file doesn't exist but it can be empty if you don't need any environment variables for your workflow.
+- Create a `.gitignore` file which includes the `whisper.cpp` and `content` directories along with common files you don't want to commit like `.env`.
+```bash
+mkdir autoshow && \
+  cd autoshow && \
+  npm init -y && \
+  npm pkg set type="module" && \
+  npm pkg set 'scripts.autoshow=node --env-file=.env src/autoshow.js' && \
+  node -e "process.stdout.write('')" > .env && \
+  node -e "console.log('node_modules\n.DS_Store\npackage-lock.json\nwhisper.cpp\nsrc/llms/models\ncontent\n.env')" > .gitignore && \
+  node -e "console.log('# AutoShow')" > README.md
+```
+
+### Create Directory Structure
+
+Create the directory structure and project files required.
+
+- `content` for audio and transcription files that we'll generate along the way.
+- `src` for all of the project's logic including:
+	- `autoshow.js` for the entry file to the CLI.
+		- `commands` for main project functions that correspond to different CLI options:
+		- `processVideo.js` takes a single YouTube URL with `--video` and runs the entire transcription and show note generation workflow.
+				- `processPlaylist.js` takes a URL for a YouTube playlist with `--playlist` and runs the `processVideo` function on each video (be aware that for long playlists with over 100+ hours of content this could take multiple days to complete).
+				- `processURLs.js` takes a list of arbitrary URLs with `--urls` and runs `processVideo` on each one.
+				- `processFile.js` takes a path to a video or audio file stored locally on your machine.
+				- `processRSS.js` takes a URL to a podcast RRS feed and runs on each episode of the podcast.
+		- `utils` for five common and reusable utility operations that `processVideo` calls out to and are agnostic to different LLM and transcription approaches. The file names should be mostly self explanatory but we'll explain each of these in more detail throughout the article:
+		- Generating frontmatter with `generateMarkdown.js`.
+				- Downloading audio with `downloadAudio.js`.
+				- Running the transcription model with `runTranscription.js`.
+				- Running the large language model with `runLLM.js`.
+				- Cleaning up extra files with `cleanUpFiles.js`.
+		- `llms` for prompts to generate different show notes (`prompt.js`) and utilities related to LLMs:
+		- We'll only create one LLM integration in this article, `llama.js`, but the next article will include options like `chatgpt.js` and `claude.js`.
+		- `transcription` for utilities related to transcription:
+		- Also will only have one option, `whisper.js`, but in the future options will include `deepgram.js` and `assembly.js`.
+```bash
+mkdir src content && \
+  mkdir src/commands src/llms src/llms/models src/transcription src/utils && \
+  node -e "console.log('export async function processVideo() {}')" > src/commands/processVideo.js && \
+  node -e "console.log('export async function processPlaylist() {}')" > src/commands/processPlaylist.js && \
+  node -e "console.log('export async function processURLs() {}')" > src/commands/processURLs.js && \
+  node -e "console.log('export async function processFile() {}')" > src/commands/processFile.js && \
+  node -e "console.log('export async function processRSS() {}')" > src/commands/processRSS.js && \
+  node -e "process.stdout.write('')" > src/autoshow.js && \
+  node -e "process.stdout.write('')" > src/utils/generateMarkdown.js && \
+  node -e "process.stdout.write('')" > src/utils/downloadAudio.js && \
+  node -e "process.stdout.write('')" > src/utils/runTranscription.js && \
+  node -e "process.stdout.write('')" > src/utils/runLLM.js && \
+  node -e "process.stdout.write('')" > src/utils/cleanUpFiles.js && \
+  node -e "process.stdout.write('')" > src/transcription/whisper.js && \
+  node -e "process.stdout.write('')" > src/llms/llama.js && \
+  node -e "process.stdout.write('')" > src/llms/prompt.js && \
+  node -e "process.stdout.write('')" > content/.gitkeep && \
+  node -e "process.stdout.write('')" > src/llms/models/.gitkeep
+```
+
+Install the following NPM dependencies:
+
+- `commander`: A package for creating command-line interfaces with support for subcommands, options, and custom help.
+- `node-llama-cpp@beta`: A Node.js addon for interacting with C++ code, featuring Llama libraries (specifying that we want the experimental v3 beta version for `node-llama-cpp`).
+- `file-type`: A tool for detecting the file type and MIME type of a Buffer/Uint8Array/ArrayBuffer.
+- `ffmpeg-static`: Provides a static FFmpeg binary for Node.js projects, enabling media processing without requiring a separate FFmpeg installation.
+- `fast-xml-parser`: A fast, lightweight XML parser for converting XML to a JSON object, validating, or parsing XML values.
+```bash
+npm i commander node-llama-cpp@beta file-type ffmpeg-static fast-xml-parser
+```
+
+Here's a high level view of the project structure:
+
+```txt
+.
+├── .env
+├── .gitignore
+├── package.json
+├── README.md
+├── content
+└── src
+    ├── autoshow.js
+    ├── commands
+    │   ├── processFile.js
+    │   ├── processPlaylist.js
+    │   ├── processRSS.js
+    │   ├── processURLs.js
+    │   └── processVideo.js
+    ├── llms
+    │   ├── llama.js
+    │   └── prompt.js
+    ├── transcription
+    │   └── whisper.js
+    └── utils
+        ├── cleanUpFiles.js
+        ├── downloadAudio.js
+        ├── generateMarkdown.js
+        ├── runLLM.js
+        └── runTranscription.js
+```
+
+### AutoShow Main Entry Point
+
+[Commander.js](https://github.com/tj/commander.js) is an open source library for building command line interfaces with Node.js. We could use `process.argv` to take an argument with a `--video` option and run the `processVideo` function on a YouTube URL provided as an argument. However, this project will eventually include dozens of different options, and managing all of that through `process.argv` would become unmaintainable very quickly.
+
+`autoshow.js` defines the command-line interface (CLI) for an application called "autoshow" using the Commander.js library. The application is designed to process various types of media content, including YouTube videos, playlists, local files, and podcast RSS feeds. The file imports `Command` from the 'commander' library for creating the CLI and various processing functions from local modules for handling different types of content. A new `Command` instance is created and stored in the `program` variable and the CLI is configured with a `name` and `description`.
+
+```js
+// src/autoshow.js
+
+import { Command } from 'commander'
+import { processVideo } from './commands/processVideo.js'
+import { processPlaylist } from './commands/processPlaylist.js'
+import { processURLs } from './commands/processURLs.js'
+import { processFile } from './commands/processFile.js'
+import { processRSS } from './commands/processRSS.js'
+import { env } from 'node:process'
+
+const program = new Command()
+
+program
+  .name('autoshow')
+  .description('Automated processing of YouTube videos, playlists, podcast RSS feeds, and local audio/video files')
+  .option('-v, --video <url>', 'Process a single YouTube video')
+  .option('-p, --playlist <playlistUrl>', 'Process all videos in a YouTube playlist')
+  .option('-u, --urls <filePath>', 'Process YouTube videos from a list of URLs in a file')
+  .option('-f, --file <filePath>', 'Process a local audio or video file')
+  .option('-r, --rss <rssURL>', 'Process a podcast RSS feed')
+  .option('--order <order>', 'Specify the order for RSS feed processing (newest or oldest)', 'newest')
+  .option('--skip <number>', 'Number of items to skip when processing RSS feed', parseInt, 0)
+  .option('--whisper <modelType>', 'Specify the Whisper model type', 'base')
+  .option('--llama', 'Use Llama for processing')
+
+program.action(async (options) => {
+  const handlers = {
+    video: processVideo,
+    playlist: processPlaylist,
+    urls: processURLs,
+    file: processFile,
+    rss: processRSS,
+  }
+  const llmOption = ['llama'].find(option => options[option])
+  const transcriptionOption = options.whisper
+  for (const [key, handler] of Object.entries(handlers)) {
+    if (options[key]) {
+      if (key === 'rss') {
+        await handler(options[key], llmOption, transcriptionOption, options.order, options.skip)
+      } else {
+        await handler(options[key], llmOption, transcriptionOption)
+      }
+    }
+  }
+})
+
+program.parse(env.argv)
+```
+
+Several options are defined:
+
+- `-v, --video <url>`: Process a single YouTube video
+- `-p, --playlist <playlistUrl>`: Process all videos in a YouTube playlist
+- `-u, --urls <filePath>`: Process YouTube videos from a list of URLs in a file
+- `-f, --file <filePath>`: Process a local audio or video file
+- `-r, --rss <rssURL>`: Process a podcast RSS feed
+- `--order <order>`: Specify the order for RSS feed processing (newest or oldest), default is 'newest'
+- `--skip <number>`: Number of items to skip when processing RSS feed, default is 0
+- `--whisper <modelType>`: Specify the Whisper model type for transcription, default is 'base'
+- `--llama`: Use Llama for processing (likely an AI model option)
+
+The main action of the command is defined using `program.action()`. This function is executed when the CLI is run.
+
+- A `handlers` object is created, mapping option keys to their corresponding processing functions.
+- The `llmOption` is determined by checking if the `llama` option is set.
+- The `transcriptionOption` is set to the value of the `whisper` option.
+- The function then iterates through the `handlers` object:
+	- For each handler, it checks if the corresponding option is set.
+		- If set, it calls the handler function with appropriate arguments.
+		- For the 'rss' option, additional arguments (order and skip) are passed.
+
+## Parsing Arguments
+
+Finally, `program.parse(process.argv)` is called to parse the command-line arguments and execute the appropriate action based on the provided options.
+
+This CLI structure allows for flexible processing of various media types with different AI model options and parameters.
+
+### Utilities for Process Video Command
+
+Import the utility functions in `processVideo.js` and pass the function `url`, `llmOption`, and `transcriptionOption`.
+
+```js
+// src/commands/processVideo.js
+
+import { writeFile } from 'node:fs/promises'
+import { generateMarkdown } from '../utils/generateMarkdown.js'
+import { downloadAudio } from '../utils/downloadAudio.js'
+import { runTranscription } from '../utils/runTranscription.js'
+import { runLLM } from '../utils/runLLM.js'
+import { cleanUpFiles } from '../utils/cleanUpFiles.js'
+
+export async function processVideo(url, llmOption, transcriptionOption) {
+  try {
+    const { frontMatter, finalPath, filename } = await generateMarkdown(url)
+    await writeFile(\`${finalPath}.md\`, frontMatter)
+    await downloadAudio(url, filename)
+    await runTranscription(finalPath, transcriptionOption)
+    await runLLM(finalPath, frontMatter, llmOption)
+    await cleanUpFiles(finalPath)
+  } catch (error) {
+    console.error('Error processing video:', error)
+  }
+}
+```
+
+## Extract and Download Audio File
+
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) is a command-line program for downloading videos from YouTube and other video platforms. It is a fork of `yt-dlc`, which itself is a fork of `youtube-dl`, with additional features and patches integrated from both.
+- [FFmpeg](https://ffmpeg.org/) is a free and open-source software project consisting of a vast software suite of libraries and programs for handling video, audio, and other multimedia files and streams. It's used for recording, converting, and streaming audio or video and supports a wide range of formats.
+
+`yt-dlp` and `ffmpeg` both provide extensive documentation for installing their respective binaries for command line usage (I used `brew install yt-dlp ffmpeg`):
+
+- [Download FFmpeg](https://ffmpeg.org/download.html)
+- [yt-dlp Installation Wiki](https://github.com/yt-dlp/yt-dlp/wiki/Installation) and [README Installation section](https://github.com/yt-dlp/yt-dlp#installation)
+
+For transcriptions of videos, `yt-dlp` can download and extract audio from YouTube URL's. For podcasts, you can input the URL from the podcast's RSS feed that hosts the raw file containing the episode's audio.
+
+### Write Frontmatter with Video Metadata
+
+In this project, we're going to build a CLI that orchestrates executing different commands from `yt-dlp` and `whisper.cpp` all through various Node.js interfaces, scripts, packages, and modules. We'll start with the `generateMarkdown` function in `utils` to create a markdown file with pre-populated frontmatter from a metadata object.
+
+```js
+// src/utils/generateMarkdown.js
+
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import { join } from 'node:path'
+
+const execFilePromise = promisify(execFile)
+
+export async function generateMarkdown(url) {
+  try {
+    const { stdout } = await execFilePromise('yt-dlp', [
+      '--restrict-filenames',
+      '--print', '%(upload_date>%Y-%m-%d)s',
+      '--print', '%(title)s',
+      '--print', '%(thumbnail)s',
+      '--print', '%(webpage_url)s',
+      '--print', '%(channel)s',
+      '--print', '%(uploader_url)s',
+      url
+    ])
+    const [
+      formattedDate, title, thumbnail, webpage_url, channel, uploader_url
+    ] = stdout.trim().split('\n')
+    const sanitizedTitle = title
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .slice(0, 200)
+    const filename = \`${formattedDate}-${sanitizedTitle}\`
+    const finalPath = join('content', filename)
+    const frontMatter = [
+      "---",
+      \`showLink: "${webpage_url}"\`,
+      \`channel: "${channel}"\`,
+      \`channelURL: "${uploader_url}"\`,
+      \`title: "${title}"\`,
+      \`description: ""\`,
+      \`publishDate: "${formattedDate}"\`,
+      \`coverImage: "${thumbnail}"\`,
+      "---\n"
+    ].join('\n')
+    console.log(\`\nInitial markdown file created:\n  - ${finalPath}.md\n\n${frontMatter}\`)
+    return { frontMatter, finalPath, filename }
+  } catch (error) {
+    console.error('Error generating markdown:', error)
+    throw error
+  }
+}
+```
+
+### Prepare Audio for Transcription
+
+Next, we'll create a `downloadAudio` function to extract audio from a YouTube video in the form of a WAV file.
+
+```js
+// src/utils/downloadAudio.js
+
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execFilePromise = promisify(execFile)
+
+export async function downloadAudio(url, filename) {
+  try {
+    const finalPath = \`content/${filename}\`
+    const { stdout, stderr } = await execFilePromise('yt-dlp', [
+      '--restrict-filenames',
+      '--extract-audio',
+      '--audio-format', 'wav',
+      '--postprocessor-args', 'ffmpeg:-ar 16000 -ac 1',
+      '--no-playlist',
+      '-o', \`${finalPath}.%(ext)s\`,
+      url
+    ])
+    console.log('yt-dlp output:\n  -', stdout)
+    if (stderr) console.error('yt-dlp errors:', stderr)
+    const downloadedFile = \`${finalPath}.wav\`
+    console.log(\`WAV file downloaded:\n  - ${downloadedFile}\`)
+    return downloadedFile
+  } catch (error) {
+    console.error('Error during audio download:', error)
+    throw error
+  }
+}
+```
+
+This function wraps a `yt-dlp` command that creates a file called `2023-09-10-teach-jenn-tech-channel-trailer.wav` by performing the following actions:
+
+1. Downloads a YouTube video specified by its URL.
+2. Extracts and downloads the video's audio as a WAV file.
+3. Performs audio post processing to set the correct sample rate.
+4. Saves the audio file in the `content` directory.
+5. Creates a dynamic file name generated by the video's upload date and unique video ID.
+
+Here's a breakdown of each option and flag utilized in the command:
+
+- `--restrict-filenames` restricts filenames to only ASCII characters, avoids "&", and removes spaces in filenames.
+- `--extract-audio` downloads the video from a given URL and extracts its audio.
+- `--audio-format` specifies the format the audio should be converted to for Whisper we'll use `wav` for WAV files.
+- `--postprocessor-args` has the argument `16000` passed to `-ar` so the audio sampling rate is set to 16000 Hz (16 kHz) for Whisper.
+- `--no-playlist` ensures that only the video is downloaded if the URL refers to a video and a playlist.
+- `-o` implements the output template for the downloaded file, in this case `content/%(upload_date>%Y-%m-%d)s-%(title)s.%(ext)s` specifies the following:
+	- Directory to place the output file (`content`).
+		- Upload date of the video (`%(upload_date>%Y-%m-%d)s`).
+		- Video title (`%(title)s`).
+		- Extension name for the file, in this case `wav` (`%(ext)s`).
+- The URL, `https://www.youtube.com/watch?v=jKB0EltG9Jo` is the YouTube video we'll extract the audio from. Each YouTube video has a unique identifier contained in its URL (`jKB0EltG9Jo` in this example).
+Click here to show how to run the `yt-dlp` command in the terminal.
+```bash
+yt-dlp --extract-audio \
+  --restrict-filenames \
+  --audio-format wav \
+  --postprocessor-args "ffmpeg: -ar 16000" \
+  -o "content/%(upload_date>%Y-%m-%d)s-%(title)s.%(ext)s" \
+  "https://www.youtube.com/watch?v=jKB0EltG9Jo"
+```
+
+> Note: Include the `--verbose` command if you're getting weird bugs and don't know why.
+
+## Generate a Formatted Transcription
+
+[`whisper.cpp`](https://github.com/ggml-org/whisper.cpp) is a C++ implementation of OpenAI's [`whisper`](https://github.com/openai/whisper) Python project. This provides the useful feature of making it possible to transcribe episodes in minutes instead of days.
+
+### Setup Whisper Repo and Model
+
+Run the following commands to clone the repo and build the `base` model:
+
+```bash
+git clone https://github.com/ggml-org/whisper.cpp && \
+  bash ./whisper.cpp/models/download-ggml-model.sh base && \
+  make -C whisper.cpp
+```
+
+> Note: This builds the smallest and least capable transcription model. For a more accurate but heavyweight model, replace `base` (150MB) with `medium` (1.5GB) or `large-v2` (3GB).
+
+If you're a simple JS developer like me, you may find the `whisper.cpp` repo a bit intimidating to navigate. Here's a breakdown of some of the most important pieces of the project to help you get oriented. Click any of the following to see a dropdown with further explanation:
+
+`models/ggml-base.bin`
+- Custom binary format (`ggml`) used by the `whisper.cpp` library.
+	- Represents a quantized or optimized version of OpenAI's Whisper model tailored for high-performance inference on various platforms.
+		- The `ggml` format is designed to be lightweight and efficient, allowing the model to be easily integrated into different applications.
+`main`
+- Executable compiled from the `whisper.cpp` repository.
+	- Transcribes or translates audio files using the Whisper model.
+		- Running this executable with an audio file as input transcribes the audio to text.
+`samples`
+- The directory for sample audio files.
+	- Includes a sample file called `jfk.wav` provided for testing and demonstration purposes.
+		- The `main` executable can use it for showcasing the model's transcription capabilities.
+`whisper.cpp` and `whisper.h`
+- These are the core C++ source and header files of the `whisper.cpp` project.
+	- They implement the high-level API for interacting with the Whisper automatic speech recognition (ASR) model.
+		- This includes loading the model, preprocessing audio inputs, and performing inference.
+
+It's possible to run the Whisper model so the transcript just prints to the terminal without writing to an output file. This can be done by changing into the `whisper.cpp` directory and entering the command: `./main -m models/ggml-base.bin -f content/file.wav`.
+
+- `-m` and `-f` are shortened aliases used in place of `--model` and `--file`.
+- For other models, replace `ggml-base.bin` with `ggml-medium.bin` or `ggml-large-v2.bin`.
+
+![01 - whisper-terminal-output](https://ajc.pics/2024%2F03%2F01%2F01-whisper-terminal-output.webp)
+
+This is nice for quick demos or short files. However, what you really want is the transcript saved to a new file. Whisper.cpp provides many different output options including `txt`, `vtt`, `srt`, `lrc`, `csv`, and `json`. These cover a wide range of uses and vary from highly structured to mostly unstructured data.
+
+- Any combination of output files can be specified with `--output-filetype` using any of the previous options in place of `filetype`.
+- For example, to output two files, an [LRC file](https://en.wikipedia.org/wiki/LRC_\(file_format\)) and basic text file, include `--output-lrc` and `--output-txt`.
+
+For this example, we'll only output one file in the `lrc` format:
+
+```bash
+./whisper.cpp/main \
+  -m whisper.cpp/models/ggml-base.bin \
+  -f content/2023-09-10-teach-jenn-tech-channel-trailer.wav \
+  -of content/2023-09-10-teach-jenn-tech-channel-trailer \
+  --output-lrc
+```
+
+> Note:
+> 
+> - `-of` is an alias for `--output-file` and is used to modify the final file name and select the output directory.
+> - Since our command includes `content/2023-09-10-teach-jenn-tech-channel-trailer`, a file is created called `2023-09-10-teach-jenn-tech-channel-trailer.lrc` inside the `content` directory.
+
+### Run Whisper and Transform Output
+
+Despite the various available format options, `whisper.cpp` outputs them all as text files. Based on your personal workflows/experience, you may find it easier to parse and transform a different common data formats like `csv` or `json`. For my purpose, I'm going to use the `lrc` output which looks like this:
+
+```txt
+[by:whisper.cpp]
+[00:00.00] Okay, well, you know, it can be a great question for this episode.
+[00:02.24] What is Fullstack Jamstack?
+```
+
+I'll create a JavaScript regular expression to modify the LRC transcript by performing the following transformation:
+
+```txt
+[00:00] Okay, well, you know, it can be a great question for this episode.
+[00:02] What is Fullstack Jamstack?
+```
+
+Like we did before with `yt-dlp`, we'll create a Node.js function that wraps a terminal command. However, unlike `downloadAudio`, we'll implement an additional wrapper function called `runTranscription.js` that will import a `callWhisper` function. This ensures the top level utility functions remain composable, allowing the ability to switch out Whisper for other transcription services in the future such as Deepgram or Assembly.
+
+`whisper.js` contains a sub-utility, `getWhisperModel`, which implements a switch/case statement for each Whisper model, sets the result to `whisperModel`, and passes `whisper.cpp/models/${whisperModel}` to Whisper's `-m` flag.
+
+```js
+// src/transcription/whisper.js
+
+import { readFile, writeFile } from 'node:fs/promises'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execPromise = promisify(exec)
+
+function getWhisperModel(modelType) {
+  switch (modelType) {
+    case 'tiny':
+      return "ggml-tiny.bin"
+    case 'tiny.en':
+      return "ggml-tiny.en.bin"
+    case 'base':
+      return "ggml-base.bin"
+    case 'base.en':
+      return "ggml-base.en.bin"
+    case 'small':
+      return "ggml-small.bin"
+    case 'small.en':
+      return "ggml-small.en.bin"
+    case 'medium':
+      return "ggml-medium.bin"
+    case 'medium.en':
+      return "ggml-medium.en.bin"
+    case 'large-v1':
+      return "ggml-large-v1.bin"
+    case 'large-v2':
+      return "ggml-large-v2.bin"
+    case 'large':
+      return "ggml-large-v2.bin"
+    default:
+      console.error(\`Unknown model type: ${modelType}\`)
+      process.exit(1)
+  }
+}
+
+export async function callWhisper(finalPath, whisperModelType) {
+  try {
+    const whisperModel = getWhisperModel(whisperModelType)
+    await execPromise(\`./whisper.cpp/main \
+      -m "whisper.cpp/models/${whisperModel}" \
+      -f "${finalPath}.wav" \
+      -of "${finalPath}" \
+      --output-lrc\`
+    )
+    console.log(\`Whisper.cpp Model Selected:\n  - whisper.cpp/models/${whisperModel}\`)
+    console.log(\`Transcript LRC file completed:\n  - ${finalPath}.lrc\`)
+    const lrcContent = await readFile(\`${finalPath}.lrc\`, 'utf8')
+    const txtContent = lrcContent.split('\n')
+      .filter(line => !line.startsWith('[by:whisper.cpp]'))
+      .map(line => line.replace(/\[\d{2}:\d{2}\.\d{2}\]/g, match => match.slice(0, -4) + ']'))
+      .join('\n')
+    await writeFile(\`${finalPath}.txt\`, txtContent)
+    console.log(\`Transcript transformation completed:\n  - ${finalPath}.txt\`)
+    return txtContent
+  } catch (error) {
+    console.error('Error in callWhisper:', error)
+    throw error
+  }
+}
+```
+
+The main `runTranscription` function imports `callWhisper` (which runs the `whisper.cpp` main command under the hood) and handles the coordination of three things which are combined and written to a single file:
+
+- The frontmatter from `${finalPath}.md` at the top of the file.
+- The formatted transcript from `txtContent` at the bottom of the file.
+- The show notes `PROMPT` from `prompt.js` (which we'll write in the next section) is inserted between the two.
+```js
+// src/utils/runTranscription.js
+
+import { readFile, writeFile } from 'node:fs/promises'
+import { callWhisper } from '../transcription/whisper.js'
+import { PROMPT } from '../llms/prompt.js'
+
+export async function runTranscription(finalPath, whisperModelType, frontMatter = '') {
+  try {
+    const txtContent = await callWhisper(finalPath, whisperModelType)
+    let mdContent = frontMatter
+    try {
+      mdContent = await readFile(\`${finalPath}.md\`, 'utf8')
+    } catch (error) {
+      if (error.code !== 'ENOENT') {
+        throw error
+      }
+    }
+    const finalContent = \`${mdContent}\n${PROMPT}\n## Transcript\n\n${txtContent}\`
+    await writeFile(\`${finalPath}-with-prompt.md\`, finalContent)
+    console.log(\`\nMarkdown file with frontmatter, prompt, and transcript:\n  - ${finalPath}-with-prompt.md\`)
+    return finalContent
+  } catch (error) {
+    console.error('Error in runTranscription:', error)
+    if (error.message === 'Transcription process failed' && error.stderr) {
+      console.error('Whisper.cpp stderr output:', error.stderr)
+    }
+    throw error
+  }
+}
+```
+
+In the next section we'll create the prompt to tell the LLM how to write the show notes.
+
+## Generate Show Notes with LLMs
+
+Now that we have a cleaned up transcript, we can use an LLM to create the show notes by giving it the transcript along with a prompt that describes what we want the show notes to contain and instructions for how we want the show notes to be written.
+
+### Create Show Notes Prompt
+
+The output contains three distinct sections which correspond to the full instructions of the prompt. Any of these sections can be removed, changed, or expanded:
+
+- One Sentence Summary
+- One Paragraph Summary
+- Chapters
+
+Include the following prompt in `src/llms/prompt.js`:
+
+```js
+// src/llms/prompt.js
+
+const summary = {
+  prompt: "- Write a one sentence description of the transcript and a one paragraph summary.\n  - The one sentence description shouldn't exceed 180 characters (roughly 30 words).\n  - The one paragraph summary should be approximately 600-1200 characters (roughly 100-200 words).\n",
+  example: "One sentence description of the transcript that encapsulates the content contained in the file but does not exceed roughly 180 characters (or approximately 30 words).\n\n    ## Episode Summary\n\n    A concise summary of a chapter's content, typically ranging from 600 to 1200 characters or approximately 100 to 200 words. It begins by introducing the main topic or theme of the chapter, providing context for the reader. The summary then outlines key points or arguments presented in the chapter, touching on major concepts, theories, or findings discussed. It may briefly mention methodologies used or data analyzed, if applicable. The paragraph also highlights any significant conclusions or implications drawn from the chapter's content. Throughout, it maintains a balance between providing enough detail to give readers a clear understanding of the chapter's scope and keeping the information general enough to apply to various subjects. This summary style efficiently conveys the essence of the chapter's content, allowing readers to quickly grasp its main ideas and decide if they want to delve deeper into the full text.\n",
+}
+
+const chapters = {
+  prompt: "- Create chapters based on the topics discussed throughout.\n  - Include timestamps for when these chapters begin.\n  - Chapters shouldn't be shorter than 1-2 minutes or longer than 5-6 minutes.\n  - Write a one to two paragraph description for each chapter that's at least 75 words or longer.\n  - Note the very last timestamp and make sure the chapters extend to the end of the episode.",
+  example: "## Chapters\n\n    00:00 - Introduction and Overview\n\n    A comprehensive description of the content, serving as an overview for readers. It begins by introducing the main themes and concepts that will be explored throughout the chapter. The author outlines several key points, each of which is examined in detail. These points are discussed in terms of their significance and potential impact on various aspects of the subject matter. The text then delves into how these core ideas are applied in practical contexts, highlighting their relevance to current issues and challenges. Throughout the chapter, connections are drawn between different concepts, demonstrating their interrelationships and broader implications within the field of study.",
+}
+
+export const PROMPT = \`This is a transcript with timestamps.
+
+${summary.prompt}
+${chapters.prompt}
+
+Format the output like so:
+
+    \\`\\`\\`md
+    ${summary.example}
+    ${chapters.example}
+    \\`\\`\\`
+\`
+```
+
+If we were to run the `autoshow` command without `runLLM`, the output will look like so:
+
+```md
+---
+showLink: "https://www.youtube.com/watch?v=jKB0EltG9Jo"
+channel: "Jenn Junod"
+channelURL: "https://www.youtube.com/@jennjunod"
+title: "Teach Jenn Tech Channel Trailer"
+description: ""
+publishDate: "2023-09-10"
+thumbnail: "https://i.ytimg.com/vi_webp/jKB0EltG9Jo/maxresdefault.webp"
+---
+
+This is a transcript with timestamps.
+
+- Write a one sentence description of the transcript and a one paragraph summary.
+  - The one sentence description shouldn't exceed 180 characters (roughly 30 words).
+  - The one paragraph summary should be approximately 600-1200 characters (roughly 100-200 words).
+
+- Create chapters based on the topics discussed throughout.
+  - Include timestamps for when these chapters begin.
+  - Chapters shouldn't be shorter than 1-2 minutes or longer than 5-6 minutes.
+  - Write a one to two paragraph description for each chapter that's at least 75 words or longer.
+  - Note the very last timestamp and make sure the chapters extend to the end of the episode.
+  
+Format the output like so:
+  
+    \`\`\`md
+    One sentence description of the transcript that encapsulates the content contained in the file but does not exceed roughly 180 characters (or approximately 30 words).
+
+    ## Episode Summary
+
+    A concise summary of a chapter's content, typically ranging from 600 to 1200 characters or approximately 100 to 200 words. It begins by introducing the main topic or theme of the chapter, providing context for the reader. The summary then outlines key points or arguments presented in the chapter, touching on major concepts, theories, or findings discussed. It may briefly mention methodologies used or data analyzed, if applicable. The paragraph also highlights any significant conclusions or implications drawn from the chapter's content. Throughout, it maintains a balance between providing enough detail to give readers a clear understanding of the chapter's scope and keeping the information general enough to apply to various subjects. This summary style efficiently conveys the essence of the chapter's content, allowing readers to quickly grasp its main ideas and decide if they want to delve deeper into the full text.
+
+    ## Chapters
+
+    00:00 - Introduction and Overview
+
+    A comprehensive description of the content, serving as an overview for readers. It begins by introducing the main themes and concepts that will be explored throughout the chapter. The author outlines several key points, each of which is examined in detail. These points are discussed in terms of their significance and potential impact on various aspects of the subject matter. The text then delves into how these core ideas are applied in practical contexts, highlighting their relevance to current issues and challenges. Throughout the chapter, connections are drawn between different concepts, demonstrating their interrelationships and broader implications within the field of study.
+    \`\`\`
+
+## Transcript
+
+[00:00] a low beautiful humans, welcome to Teach Gent.
+[00:04] We're on Tuesdays.
+[00:06] We live stream learning together to demolish tech barriers.
+[00:11] We've had some pretty cool people on the show.
+```
+
+At this point, you can copy and paste this entire file's content into your LLM of choice to create the show notes. But, we're going to add another function to perform this step automatically using a local, open source model.
+
+### Run LLM Function with Llama
+
+We need to download a model before we can use `node-llama-cpp`. I'm going to download the Llama3.1-8B instruct model and set the model environment variable in a `.env` file.
+
+```bash
+curl -L https://huggingface.co/mradermacher/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct.Q2_K.gguf \
+  -o ./src/llms/models/Meta-Llama-3.1-8B-Instruct.Q2_K.gguf && \
+  node -e "console.log('LLAMA_MODEL=\"Meta-Llama-3.1-8B-Instruct.Q2_K.gguf\"')" >> .env && \
+  node -e "console.log('HUGGING_FACE_URL=\"mradermacher/Meta-Llama-3.1-8B-Instruct-GGUF\"')" >> .env
+```
+- `-L` follows redirects, which is important for Hugging Face links.
+- `-o` specifies the output file and directory.
+
+Create an export for `callLlama` from `src/llms/llama.js`. The `callLlama` function takes in the `transcriptContent` and an `outputFilePath` for the show notes generated from the transcription content. Similarly to `runTranscription`, in a follow up blog post I'll show how to integrate additional 3rd-party language models like OpenAI's ChatGPT, Anthropic's Claude, and Cohere's Command-R.
+
+```js
+// src/llms/llama.js
+
+import { writeFile } from 'node:fs/promises'
+import { getLlama, LlamaChatSession } from "node-llama-cpp"
+
+const { LLAMA_MODEL } = process.env
+
+export async function callLlama(transcriptContent, outputFilePath) {
+  try {
+    const llama = await getLlama()
+    const llamaModel = await llama.loadModel({
+      modelPath: \`src/llms/models/${LLAMA_MODEL}\`
+    })
+    const context = await llamaModel.createContext()
+    const session = new LlamaChatSession({
+      contextSequence: context.getSequence()
+    })
+    const response = await session.prompt(transcriptContent)
+    console.log(response)
+    await writeFile(outputFilePath, response)
+    console.log(\`Transcript saved to ${outputFilePath}\`)
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+```
+
+The `callLlama` function is imported and called in `runLLM.js`.
+
+- The function passes the final markdown content to an LLM.
+- It rewrites the markdown file to replace the prompt with the resulting show notes generated by the LLM.
+```js
+// src/utils/runLLM.js
+
+import { readFile, writeFile, unlink } from 'node:fs/promises'
+import { callLlama } from '../llms/llama.js'
+import { PROMPT } from '../llms/prompt.js'
+
+export async function runLLM(finalPath, frontMatter, llmOption) {
+  try {
+    const transcriptContent = await readFile(\`${finalPath}.txt\`, 'utf8')
+    const llmFunctions = {
+      llama: callLlama,
+    }
+    if (llmOption && llmFunctions[llmOption]) {
+      await llmFunctions[llmOption](
+        \`${PROMPT}\n${transcriptContent}\`,
+        \`${finalPath}-${llmOption}-shownotes.md\`
+      )
+      const generatedShowNotes = await readFile(\`${finalPath}-${llmOption}-shownotes.md\`, 'utf8')
+      const finalContent = \`${frontMatter}\n${generatedShowNotes}\n\n## Transcript\n\n${transcriptContent}\`
+      await writeFile(\`${finalPath}-${llmOption}-shownotes.md\`, finalContent)
+      console.log(\`Updated markdown file with generated show notes:\n  - ${finalPath}-${llmOption}-shownotes.md\`)
+      try {
+        await unlink(\`${finalPath}.md\`)
+        console.log(\`Temporary file removed:\n  - ${finalPath}.md\`)
+      } catch (error) {
+        if (error.code !== 'ENOENT') {
+          console.error('Error removing temporary file:', error)
+        }
+      }
+    } else {
+      const finalContent = \`${frontMatter}\n${PROMPT}\n## Transcript\n\n${transcriptContent}\`
+      await writeFile(\`${finalPath}-with-prompt.md\`, finalContent)
+      console.log(\`No LLM specified. Created markdown file with original structure:\n  - ${finalPath}-with-prompt.md\`)
+    }
+  } catch (error) {
+    console.error('Error running LLM:', error)
+    throw error
+  }
+}
+```
+
+The last utility function is `cleanUpFiles` which deletes files associated with a given `id`. The intermediary files include `wav`, `lrc`, and `txt` formats.
+
+```js
+// src/utils/cleanUpFiles.js
+
+import { unlink } from 'node:fs/promises'
+
+export async function cleanUpFiles(id) {
+  try {
+    await unlink(\`${id}.wav\`)
+    await unlink(\`${id}.lrc\`)
+    await unlink(\`${id}.txt\`)
+    await unlink(\`${id}.md\`)
+    console.log(\`\nTemporary files removed:\`)
+    console.log(\`  - ${id}.wav\n  - ${id}.lrc\n  - ${id}.txt\n\`)
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.error(\`Error deleting file:\`, error)
+    }
+  }
+}
+```
+
+Run `autoshow -- --video` with the `--llama` and `--whisper` flags to see the complete functionality.
+
+```bash
+npm run autoshow -- --video "https://www.youtube.com/watch?v=jKB0EltG9Jo" --llama --whisper base
+```
+
+Run without `--llama` to get frontmatter, transcript, and prompt to generate the show notes.
+
+```bash
+npm run autoshow -- --video "https://www.youtube.com/watch?v=jKB0EltG9Jo"
+```
+
+At this point, the `autoshow.js` script is designed to run on individual video URLs. However, there's a handful of other use cases I want to implement.
+
+- If you already have a backlog of content to transcribe, you'll want to run this script on a series of video URLs.
+- If you have an archive of stored audio or video files, you'll want to run this script on a collection of files on your local machine.
+- If you have a podcast or RSS feed, you'll want to run this script on each episode in the feed.
+
+## Additional Process Commands
+
+Now that all the functionality for `processVideo` is complete, we'll write four more functions in the `commands` directory. These functions do the following:
+
+- `processPlaylist.js` accepts a playlist URL instead of a video URL with `--playlist`.
+- `processURLs.js` accepts a list of arbitrary YouTube URLs with `--urls`.
+- `processFile.js` accepts a path to a local audio or video file with `--file`.
+- `processRSS.js` accepts an RSS feed URL with `--rss`.
+
+### Add Commands to Process Multiple Videos
+
+The `processPlaylist` function will fetch video URLs from a playlist, save them to a file, and processes each video URL by calling `processVideo`. The `--print "url"` and `--flat-playlist` options from `yt-dlp` can be used to write a list of video URLs to a new file which we'll call `urls.md`.
+
+```js
+// src/commands/processPlaylist.js
+
+import { writeFile } from 'node:fs/promises'
+import { processVideo } from './processVideo.js'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execFilePromise = promisify(execFile)
+
+export async function processPlaylist(playlistUrl, llmOption, whisperModelType) {
+  try {
+    console.log(\`Processing playlist: ${playlistUrl}\`)
+    const { stdout } = await execFilePromise('yt-dlp', [
+      '--flat-playlist',
+      '--print', 'url',
+      '--no-warnings',
+      playlistUrl
+    ])
+    const urls = stdout.trim().split('\n').filter(Boolean)
+    console.log(\`Found ${urls.length} videos in the playlist\`)
+    await writeFile('content/urls.md', urls.join('\n'))
+    for (const [index, url] of urls.entries()) {
+      console.log(\`Processing video ${index + 1}/${urls.length}: ${url}\`)
+      try {
+        await processVideo(url, llmOption, whisperModelType)
+      } catch (error) {
+        console.error(\`Error processing video ${url}:\`, error)
+      }
+    }
+    console.log('Playlist processing completed')
+  } catch (error) {
+    console.error('Error processing playlist:', error)
+    throw error
+  }
+}
+```
+
+Run `npm run autoshow -- --playlist` with a playlist URL passed to `--playlist` to run on multiple YouTube videos contained in the playlist.
+
+```bash
+npm run autoshow -- --playlist "https://www.youtube.com/playlist?list=PLCVnrVv4KhXMh4DQBigyvHSRTf2CSj129" --llama --whisper base
+```
+
+To process a list of arbitrary URLs, we'll want to bypass the `yt-dlp` command that reads a list of videos from a playlist and pass `urls.md` directly to Whisper. `processURLs` will process a list of video URLs and perform the following actions:
+
+- Reads a file containing video URLs.
+- Parses the URLs.
+- Processes each URL by calling the `processVideo` function.
+
+The function checks to see if the file exists so it can log an error message and exit early if the file doesn't exist.
+
+```js
+// src/commands/processURLs.js
+
+import { readFile } from 'node:fs/promises'
+import { processVideo } from './processVideo.js'
+import { resolve } from 'node:path'
+
+export async function processURLs(filePath, llmOption, whisperModelType) {
+  try {
+    console.log(\`Processing URLs from file: ${filePath}\`)
+    const absolutePath = resolve(filePath)
+    const content = await readFile(absolutePath, 'utf8')
+    const urls = content.split('\n')
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith('#'))
+    console.log(\`Found ${urls.length} URLs in the file\`)
+    for (const [index, url] of urls.entries()) {
+      console.log(\`Processing URL ${index + 1}/${urls.length}: ${url}\`)
+      try {
+        await processVideo(url, llmOption, whisperModelType)
+      } catch (error) {
+        console.error(\`Error processing URL ${url}:\`, error)
+      }
+    }
+    console.log('File processing completed')
+  } catch (error) {
+    console.error(\`Error reading or processing file ${filePath}:\`, error)
+    throw error
+  }
+}
+```
+
+Run `npm run autoshow -- --urls` with the path to your `urls.md` file passed to `--urls`.
+
+```bash
+npm run autoshow -- --urls content/urls.md --llama --whisper base
+```
+
+### Add Command to Process Local Files
+
+Add the following to `processFile.js` to allow running `npm run autoshow -- --file` with the path to an audio or video file passed to `--file`.
+
+```js
+// src/commands/processFile.js
+
+import { readFile, access } from 'node:fs/promises'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+import { basename } from 'node:path'
+import { fileTypeFromBuffer } from 'file-type'
+import ffmpeg from 'ffmpeg-static'
+import { runTranscription } from '../utils/runTranscription.js'
+import { runLLM } from '../utils/runLLM.js'
+import { cleanUpFiles } from '../utils/cleanUpFiles.js'
+
+const execPromise = promisify(exec)
+
+async function downloadFileAudio(filePath) {
+  const supportedFormats = new Set(['wav', 'mp3', 'm4a', 'aac', 'ogg', 'flac', 'mp4', 'mkv', 'avi', 'mov', 'webm'])
+  try {
+    await access(filePath)
+    const buffer = await readFile(filePath)
+    console.log(\`File read successfully. Buffer length: ${buffer.length}\nDetermining file type...\`)
+    const fileType = await fileTypeFromBuffer(buffer)
+    if (!fileType || !supportedFormats.has(fileType.ext)) {
+      throw new Error(fileType ? \`Unsupported file type: ${fileType.ext}\` : 'Unable to determine file type')
+    }
+    console.log(\`Detected file type: ${fileType.ext}\`)
+    if (fileType.ext !== 'wav') {
+      await execPromise(\`${ffmpeg} -i "${filePath}" -acodec pcm_s16le -ar 16000 -ac 1 "${filePath}.wav"\`)
+      console.log(\`Converted ${filePath} to ${filePath}.wav\`)
+    } else {
+      await execPromise(\`cp "${filePath}" "${filePath}.wav"\`)
+    }
+    return filePath
+  } catch (error) {
+    console.error('Error in downloadFileAudio:', error.message)
+    throw error
+  }
+}
+
+export async function processFile(filePath, llmOption, whisperModelType) {
+  try {
+    const finalPath = await downloadFileAudio(filePath)
+    const frontMatter = \`---\ntitle: "${basename(filePath)}"\n---\n\`
+    await runTranscription(finalPath, whisperModelType, frontMatter)
+    await runLLM(finalPath, frontMatter, llmOption)
+    await cleanUpFiles(finalPath)
+    console.log('File processing completed')
+  } catch (error) {
+    console.error('Error processing file:', error)
+    throw error
+  }
+}
+```
+
+I've done my best to avoid extra dependencies with this project, but I choice to utilize [`file-type`](https://github.com/sindresorhus/file-type) for this script due to two main reasons:
+
+- I think this area (managing different media file types) has to manage extensive edge cases and permutations or options from one use case to another. This kind of problem is usually well served by a dedicated, well-scoped library that explicitly manages these types of edge cases and inoperabilities.
+- The project is maintained by [Sindre Sorhus](https://github.com/sindresorhus), one of the most prolific and reliable open source JavaScript maintainers. Despite not being necessarily "actively developed," at the least the project can be expected to stay up to date with peer-dependency updates, security patches, and ongoing bug fixes.
+
+If you need a file to test, run the following command to download a one minute MP3 file:
+
+```bash
+curl -L https://ajc.pics/autoshow/fsjam-short.mp3 -o ./content/audio.mp3
+```
+
+Run `npm run autoshow -- --file` with the path to an audio or video file passed to `--file`:
+
+```bash
+npm run autoshow -- --file content/audio.mp3 --llama --whisper base
+```
+
+### Add Command to Process RSS Feeds
+
+Add the following to `processRSS.js` to allow running `npm run autoshow -- --rss` with a URL to a podcast RSS feed:
+
+```js
+// src/commands/processRSS.js
+
+import { writeFile } from 'node:fs/promises'
+import { XMLParser } from 'fast-xml-parser'
+import { downloadAudio } from '../utils/downloadAudio.js'
+import { runTranscription } from '../utils/runTranscription.js'
+import { runLLM } from '../utils/runLLM.js'
+import { cleanUpFiles } from '../utils/cleanUpFiles.js'
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: '',
+  allowBooleanAttributes: true,
+})
+
+function generateRSSMarkdown(item) {
+  const frontMatter = [
+    "---",
+    \`showLink: "${item.showLink}"\`,
+    \`channel: "${item.channel}"\`,
+    \`channelURL: "${item.channelURL}"\`,
+    \`title: "${item.title}"\`,
+    \`publishDate: "${item.publishDate}"\`,
+    \`coverImage: "${item.coverImage}"\`,
+    "---\n"
+  ].join('\n')
+  return frontMatter
+}
+
+export async function processRSS(rssUrl, llmOption, whisperModelType, order = 'newest', skip = 0) {
+  try {
+    console.log(\`Processing RSS feed: ${rssUrl}\`)
+    console.log(\`Skipping first ${skip} items\`)
+    const response = await fetch(rssUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/rss+xml',
+      },
+      timeout: 5000,
+    })
+    if (!response.ok) {
+      throw new Error(\`HTTP error! status: ${response.status}\`)
+    }
+    const buffer = await response.arrayBuffer()
+    const text = Buffer.from(buffer).toString('utf-8')
+    const feed = parser.parse(text)
+    const { 
+      title: channelTitle, 
+      link: channelLink, 
+      image: { url: channelImage }, 
+      item: feedItems 
+    } = feed.rss.channel
+    const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    const items = feedItems.map(item => ({
+      showLink: item.enclosure.url,
+      channel: channelTitle,
+      channelURL: channelLink,
+      title: item.title,
+      publishDate: dateFormatter.format(new Date(item.pubDate)),
+      coverImage: item['itunes:image']?.href || channelImage,
+    }))
+    const sortedItems = order === 'newest' ? items : [...items].reverse()
+    const skippedItems = sortedItems.slice(skip)
+    console.log(\`Found ${sortedItems.length} items in the RSS feed\`)
+    console.log(\`Processing ${skippedItems.length} items after skipping ${skip}\`)
+    for (const [index, item] of skippedItems.entries()) {
+      console.log(\`Processing item ${index + skip + 1}/${sortedItems.length}: ${item.title}\`)
+      try {
+        const filename = \`${item.publishDate}-${item.title.replace(/[^a-zA-Z0-9]/g, '_')}\`
+        const finalPath = \`content/${filename}\`
+        const frontMatter = generateRSSMarkdown(item)
+        await writeFile(\`${finalPath}.md\`, frontMatter)
+        console.log(\`\nInitial markdown file created:\n  - ${finalPath}.md\`)
+        await downloadAudio(item.showLink, filename)
+        await runTranscription(finalPath, whisperModelType, frontMatter)
+        await runLLM(finalPath, frontMatter, llmOption)
+        await cleanUpFiles(finalPath)
+        console.log(\`\nProcess completed successfully for item: ${item.title}\`)
+      } catch (error) {
+        console.error(\`Error processing item: ${item.title}\`, error)
+      }
+    }
+    console.log('RSS feed processing completed')
+  } catch (error) {
+    console.error('Error fetching or parsing feed:', error)
+    throw error
+  }
+}
+```
+
+This file also uses one dependency, this time for XML parsing with `fast-xml-parser`. It chose this because
+
+- Writing my own XML parser from scratch seemed like it would be a poor use of time
+- It's fast, and everyone knows fast things are better than slow things
+
+Run `npm run autoshow -- --rss` with a podcast RSS feed URL passed to `--rss`:
+
+```bash
+npm run autoshow -- --rss "https://feeds.transistor.fm/fsjam-podcast/" --llama --whisper base
+```
+
+## Example Show Notes and Next Steps
+
+Here's what ChatGPT generated for [Episode 0 of the Fullstack Jamstack podcast](https://fsjam.org/0):
+
+```md
+---
+showLink: "https://www.youtube.com/watch?v=QhXc9rVLVUo"
+channel: "FSJam"
+channelURL: "https://www.youtube.com/@fsjamorg"
+title: "Episode 0 - The Fullstack Jamstack Podcast with Anthony Campolo and Christopher Burns"
+publishDate: "2020-12-09"
+thumbnail: "https://i.ytimg.com/vi_webp/QhXc9rVLVUo/maxresdefault.webp"
+---
+
+## Episode Summary
+
+The podcast explores Fullstack Jamstack's principles, from basic Jamstack components to advanced tools like Prisma and meta frameworks, emphasizing community dialogue and development practices.
+
+This episode of the Fullstack Jamstack podcast, hosted by Anthony Campolo and Christopher Burns, dives into the essence and philosophy of Fullstack Jamstack, a modern web development architecture. Starting with a basic introduction to the Jamstack components (JavaScript, APIs, Markup), the hosts expand into discussing the evolution from monolithic architectures to more decoupled, service-oriented approaches that define Fullstack Jamstack. They explore the significance of tools like Prisma for database management, the role of Content Management Systems (CMS), and the transition towards serverless functions. Furthermore, the discussion includes the introduction of meta frameworks like Redwood and Blitz, which aim to streamline the development process by integrating front-end, back-end, and database layers cohesively. The episode emphasizes community building, the exchange of ideas across different frameworks, and invites listeners to participate in the conversation through social media and Discord.
+
+## Chapters
+
+00:00 - Introduction to Fullstack Jamstack and Podcast Goals
+
+Introduction and foundational questions about FSJam, its significance, and the podcast's aim to educate and foster community dialogue.
+
+03:00 - Defining Jamstack: Components and Evolution
+
+Clarification of Jamstack's components, JavaScript, APIs, Markup and its evolution from static sites to dynamic, service-oriented architectures.
+
+08:00 - From Monolithic to Decoupled Architectures
+
+Discussion on the transition from monolithic to decoupled architectures, highlighting the role of CMS and serverless functions in modern web development.
+
+14:00 - Introduction to Prisma and Database Management
+
+Exploration of Prisma's role in FSJam for efficient DB management and the differences between Prisma 1 and 2.
+
+20:00 - Meta Frameworks and the Future of FSJam
+
+Introduction to meta frameworks like Redwood and Blitz, their contribution to simplifying FSJam development, and speculation on future trends.
+
+28:00 - Philosophies of FSJam & Community Engagement
+
+Discussion on the core philosophies of FSJam, the importance of selecting the right tools and frameworks, and encouraging listener engagement through social media and Discord.
+
+## Transcript
+```
+
+In a follow up blog post, I'll show how to integrate additional LLMs from OpenAI, Claude, Cohere, and Mistral plus transcription models from Deepgram and Assembly.
+
+## Discover Related Content
+
+- [Autogen Show Notes with Jenn Junod](https://ajcwebdev.com/videos/autogen-shownotes-jenn-junod/) (Video)
+- [AI transcript generator with ajcwebdev](https://ajcwebdev.com/videos/ai-transcript-generator/) (Video)
+- [Autogenerate Shownotes with Whisper-cpp and yt-dlp](https://ajcwebdev.com/videos/nick-taylor-autogenerate-shownotes/) (Video)
+- [Teach Jenn OpenAI Whisper with Anthony Campolo](https://ajcwebdev.com/videos/teach-jenn-tech-teach-jenn-openai-whisper/) (Video)
+- [AutoShow CLI with Nick Taylor](https://ajcwebdev.com/videos/autoshow-cli-nick-taylor/) (Video)

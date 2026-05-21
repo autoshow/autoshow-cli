@@ -23,6 +23,9 @@ export const hasKimiOcr = (opts: ExtractionOptions): boolean =>
 export const hasOpenAIOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.openaiOcrModel === 'string' && opts.openaiOcrModel.length > 0
 
+export const hasGrokOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.grokOcrModel === 'string' && opts.grokOcrModel.length > 0
+
 export const hasAnthropicOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.anthropicOcrModel === 'string' && opts.anthropicOcrModel.length > 0
 
@@ -46,6 +49,7 @@ export const hasHostedOcr = (opts: ExtractionOptions): boolean =>
   || hasGlmOcr(opts)
   || hasKimiOcr(opts)
   || hasOpenAIOcr(opts)
+  || hasGrokOcr(opts)
   || hasAnthropicOcr(opts)
   || hasGeminiOcr(opts)
   || hasDeepinfraOcr(opts)
@@ -67,6 +71,7 @@ export const countSelectedOcrEngines = (opts: ExtractionOptions): number =>
     hasGlmOcr(opts),
     hasKimiOcr(opts),
     hasOpenAIOcr(opts),
+    hasGrokOcr(opts),
     hasAnthropicOcr(opts),
     hasGeminiOcr(opts),
     hasDeepinfraOcr(opts),
@@ -80,6 +85,7 @@ export const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEng
   if (hasGlmOcr(opts)) return 'glm-ocr'
   if (hasKimiOcr(opts)) return 'kimi-ocr'
   if (hasOpenAIOcr(opts)) return 'openai-ocr'
+  if (hasGrokOcr(opts)) return 'grok-ocr'
   if (hasAnthropicOcr(opts)) return 'anthropic-ocr'
   if (hasGeminiOcr(opts)) return 'gemini-ocr'
   if (hasDeepinfraOcr(opts)) return 'deepinfra-ocr'

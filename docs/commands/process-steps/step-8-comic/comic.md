@@ -39,10 +39,12 @@ bun as comic character-sketch
 ```bash
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
+XAI_API_KEY=...
 ```
 
 - `OPENAI_API_KEY` is required for OpenAI text and image models.
 - `GEMINI_API_KEY` is required for Gemini text and image models.
+- `XAI_API_KEY` is required for Grok text models.
 - `--price` is side-effect-free and does not call image or LLM generation APIs.
 
 ## Runtime Paths
@@ -162,7 +164,7 @@ bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--llm-model <model>` | Use a supported OpenAI or Gemini text model | `gpt-5.4` |
+| `--llm-model <model>` | Use a supported OpenAI, Gemini, or Grok text model | `gpt-5.4` |
 
 ### Examples
 
@@ -311,16 +313,20 @@ Pass multiple models with `--image-model` to generate each panel with every mode
 
 | Model | Provider | Notes |
 |-------|----------|-------|
+| `gpt-5.5` | OpenAI | Latest flagship option. Not the default. |
 | `gpt-5.4` | OpenAI | Default. Used for scene drafting and panel prompts. |
 | `gpt-5.4-pro` | OpenAI | Highest quality, slowest and most expensive. |
 | `gpt-5.4-mini` | OpenAI | Faster and cheaper, slightly lower quality. |
 | `gpt-5.4-nano` | OpenAI | Fastest and cheapest. |
 | `gemini-3.1-pro-preview` | Google | Gemini pro-tier text model. |
 | `gemini-3.1-flash-lite-preview` | Google | Gemini lightweight text model. |
+| `grok-4.3` | xAI | Grok structured JSON text model via chat completions. |
+
+`gpt-5.5-pro` is intentionally not listed because this CLI supports the requested `gpt-5.5` model.
 
 ## Notes
 
-- Real `draft-scenes`, `generate-images`, and source-image `character-sketch` runs can call OpenAI or Gemini APIs.
+- Real `draft-scenes`, `generate-images`, and source-image `character-sketch` runs can call OpenAI, Gemini, or Grok APIs depending on selected models.
 - Use `--price` to estimate hosted cost before running generation.
 - `draft-scenes --only prompt` and `draft-scenes --only panel-prompts` are prompt-building stages and do not generate images.
 

@@ -17,7 +17,6 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 
 ## Current Coverage
 
-- Provider suites in `test/test-cases/e2e/step-4-tts-e2e/tts-services/` cover OpenAI, Gemini, Groq, Grok, Deepgram, Speechify, Google Cloud, ElevenLabs, and MiniMax TTS, plus focused live Mistral and deAPI cases.
 - The shared `defineTTSServiceTest` helper covers invalid model rejection, `--price` output, and real synthesis when the required API key is configured.
 - ElevenLabs Instant Voice Cloning has mocked validation coverage for IVC creation, shared clone reuse across selected ElevenLabs models, verification-required failures, metadata, API error handling, and setup estimates.
 - ElevenLabs PVC has mocked validation coverage for ready-PVC synthesis, create/upload/CAPTCHA setup, verification/train/poll, failed training, setup artifacts, metadata, and price/timing estimates.
@@ -27,7 +26,6 @@ bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
 - MiniMax live coverage is gated by `MINIMAX_API_KEY` and uses hosted/preset voice IDs.
 - Speechify live coverage is gated by `SPEECHIFY_API_KEY`; the expected speaker is `SPEECHIFY_TTS_VOICE` or `george`.
 - Google Cloud live coverage is opt-in with `AUTOSHOW_GCLOUD_TTS_E2E=1` and requires `gcloud` CLI auth, an active billed project, and `texttospeech.googleapis.com`.
-- deAPI Qwen3 voice-clone live coverage is gated by `DEAPI_API_KEY` and uses `https://ajc.pics/autoshow/examples/0-audio-short.mp3`.
 - Hume and Cartesia currently have mocked provider-contract, option/config/help, and side-effect-free price coverage; no live service e2e cases are mapped yet.
 - `test/test-cases/e2e/step-4-tts-e2e/tts-services/kitten-tts-pipeline.test.ts` covers the root `write` pipeline with Groq plus Kitten TTS, `write --price` behavior when multiple LLM providers are selected, and multi-provider speech artifacts when OpenAI TTS is also enabled.
 

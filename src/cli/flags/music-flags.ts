@@ -2,7 +2,6 @@ import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
-  SUPPORTED_DEAPI_MUSIC_MODELS,
   SUPPORTED_GEMINI_MUSIC_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { SUPPORTED_WHISPER_MODELS } from '~/cli/commands/setup-and-utilities/models/stt-models'
@@ -13,7 +12,6 @@ import { renameFlags } from './flag-utils'
 export const MUSIC_COMMAND_SELECTOR_FLAGS = {
   'elevenlabs-music': 'elevenlabs',
   'minimax-music': 'minimax',
-  'deapi-music': 'deapi',
   'gemini-music': 'gemini'
 } as const satisfies Record<string, string>
 
@@ -42,10 +40,6 @@ export const musicGenFlags = {
     description: buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS),
     type: [String] as [StringConstructor]
   },
-  'deapi-music': {
-    description: buildModelDescription('deAPI music model', SUPPORTED_DEAPI_MUSIC_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'gemini-music': {
     description: buildModelDescription('Gemini Lyria music model', SUPPORTED_GEMINI_MUSIC_MODELS),
     type: [String] as [StringConstructor]
@@ -55,7 +49,7 @@ export const musicGenFlags = {
     type: String
   },
   'music-lyrics-file': {
-    description: 'Lyrics file path (.md or .txt) for MiniMax, deAPI, and Gemini music generation',
+    description: 'Lyrics file path (.md or .txt) for MiniMax and Gemini music generation',
     type: String
   },
   'music-instrumental': {

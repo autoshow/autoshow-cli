@@ -12,7 +12,6 @@ Generate music from a text prompt with hosted providers, or render local lyric v
 - [Music Services And Modes](#music-services-and-modes)
   - [ElevenLabs](#elevenlabs)
   - [MiniMax](#minimax)
-  - [deAPI](#deapi)
   - [Gemini](#gemini)
   - [Lyric-Video Rendering](#lyric-video-rendering)
 - [Output](#output)
@@ -23,7 +22,6 @@ Generate music from a text prompt with hosted providers, or render local lyric v
 ```bash
 bun as music <prompt-or-text-file> --elevenlabs <model>
 bun as music <prompt-or-text-file> --minimax <model>
-bun as music <prompt-or-text-file> --deapi <model>
 bun as music <prompt-or-text-file> --gemini <model>
 bun as music --audio input/<file>
 bun as music --audio input/<file> --captions output/<run-dir>/<stem>.vtt
@@ -36,7 +34,6 @@ bun as music --batch
 
 | Mode | Required input | Description |
 |------|----------------|-------------|
-| Hosted music generation | Prompt or `.md` / `.txt` file plus `--elevenlabs`, `--minimax`, `--deapi`, `--gemini`, or `--all-music` | Calls hosted music APIs and writes audio files |
 | Lyric-video rendering | `--audio <file>` or `--batch` | Uses local Whisper captions and ffmpeg rendering to write MP4/VTT/SRT outputs |
 
 Do not mix hosted generation flags with lyric-video flags. `--price` is hosted-generation only.
@@ -48,8 +45,6 @@ There are no local music-generation models in this project.
 ```bash
 ELEVENLABS_API_KEY=...
 MINIMAX_API_KEY=...
-DEAPI_API_KEY=...
-DEAPI_BASE_URL=https://api.deapi.ai
 GEMINI_API_KEY=...
 ```
 
@@ -63,7 +58,6 @@ bun as setup --step music
 
 The music setup step checks hosted music API readiness and local lyric-video prerequisites:
 
-- `GEMINI_API_KEY`, `ELEVENLABS_API_KEY`, `MINIMAX_API_KEY`, and `DEAPI_API_KEY` status
 - `ffmpeg` and `ffprobe`
 - ffmpeg `ass` subtitle filter, or `pango-view` plus ImageMagick `convert` for fallback overlays
 - `whisper-cli`
@@ -78,9 +72,6 @@ Hosted generation flags:
 | `--all-music` | Enable every supported hosted music provider/model |
 | `--music-provider-concurrency <n>` | Hosted music providers/models to run concurrently per item; default `2`, or up to `8` for `--all-music` |
 | `--music-local-concurrency <n>` | Local music providers to run concurrently per item; default `1` |
-| `--music-duration <seconds>` | Requested duration in seconds; effective for ElevenLabs, deAPI, and Gemini Pro; Gemini Clip is fixed at 30 seconds; currently ignored by MiniMax |
-| `--music-lyrics-file <path>` | Lyrics file for MiniMax, deAPI, and Gemini |
-| `--music-instrumental` | Force instrumental generation for ElevenLabs, deAPI, Gemini, and MiniMax `music-2.6` / `music-2.6-free` |
 | `--price` | Show the estimate and exit |
 | `--out <dir>` / `--output-dir <dir>` | Use an exact hosted music run directory instead of `output/<timestamp>_music-gen/` |
 
@@ -100,7 +91,6 @@ One or more hosted provider flags can be specified. Repeating the same provider 
 ```bash
 bun as music "chill lo-fi beat" --elevenlabs music_v1 --minimax music-2.6
 bun as music "chill lo-fi beat" --elevenlabs music_v1 --minimax music-2.6 --price
-bun as music "chill lo-fi beat" --elevenlabs music_v1 --minimax music-2.6 --deapi AceStep_1_5_Turbo --gemini lyria-3-clip-preview
 ```
 
 ## Music Services And Modes
@@ -127,7 +117,7 @@ ElevenLabs returns audio directly. Price estimation uses the explicit `--music-d
 | Option | Value |
 |--------|-------|
 | Selector | `--minimax <model>` |
-| Models | `music-2.5`, `music-2.6`, `music-2.6-free` |
+| Models | `music-2.6`, `music-2.6-free` |
 | Lyrics | `--music-lyrics-file <path>`; lyrics are auto-generated when omitted |
 | Instrumental | `--music-instrumental` for `music-2.6` and `music-2.6-free` |
 
@@ -138,24 +128,18 @@ bun as music "ambient piano instrumental with soft tape saturation" --minimax mu
 bun as music "indie pop, nostalgic summer road trip vibe" --minimax music-2.6 --price
 ```
 
-MiniMax auto-generates lyrics when `--music-lyrics-file` is omitted. Price estimation includes the extra lyrics-generation cost when lyrics are auto-generated; `music-2.6-free` has a 0 cent track estimate but still carries the 1 cent lyrics add-on when lyrics are generated. `music-2.6` and `music-2.6-free` support instrumental mode; `music-2.5` keeps generating with lyrics and warns when `--music-instrumental` is provided. `--music-duration` is currently ignored by MiniMax.
+MiniMax auto-generates lyrics when `--music-lyrics-file` is omitted. Price estimation includes the extra lyrics-generation cost when lyrics are auto-generated; `music-2.6-free` has a 0 cent track estimate but still carries the 1 cent lyrics add-on when lyrics are generated. `music-2.6` and `music-2.6-free` support instrumental mode; when instrumental mode is omitted, they generate with lyrics or auto-generated lyrics. `--music-duration` is currently ignored by MiniMax.
 
-### deAPI
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi <model>` |
 | Models | `AceStep_1_5_Turbo`, `AceStep_1_5_Base`, `AceStep_1_5_XL_Turbo_INT8` |
 | Duration | `--music-duration <seconds>` |
 | Lyrics/instrumental | `--music-lyrics-file <path>` or `--music-instrumental` |
 
 ```bash
-bun as music "uplifting synth pop, bright drums, summer chorus" --deapi AceStep_1_5_Turbo
-bun as music "uplifting synth pop, bright drums, summer chorus" --deapi AceStep_1_5_Turbo --music-duration 20 --music-instrumental
-bun as music "uplifting synth pop, bright drums, summer chorus" --deapi AceStep_1_5_Turbo --price
 ```
 
-deAPI uses async ACE-Step jobs with provider quote pricing. It sends `[Instrumental]` when `--music-instrumental` is set or no lyrics file is provided. Turbo models accept 10-300 seconds, and `AceStep_1_5_Base` accepts 30-300 seconds. deAPI music price estimates use the provider quote endpoint when `DEAPI_API_KEY` is available; otherwise the local registry reports a zero-cost fallback note.
 
 ### Gemini
 
@@ -201,7 +185,6 @@ Lyric-video rendering uses local Whisper captions and ffmpeg rendering. In reren
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax-music music-2.6 --music-lyrics-file input/examples/tts/1-tts.md
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --gemini-music lyria-3-pro-preview --music-duration 120
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --minimax-music music-2.6 --deapi-music AceStep_1_5_Turbo --gemini-music lyria-3-clip-preview
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax-music music-2.6 --price
 ```
 
@@ -221,7 +204,6 @@ Multi-provider runs write one file per provider:
 output/YYYY-MM-DD_HH-mm-ss_music-gen/
   generated-music-elevenlabs-music_v1.mp3
   generated-music-minimax-music-2.6.mp3
-  generated-music-deapi-AceStep_1_5_Turbo.mp3
   generated-music-gemini-lyria-3-clip-preview.mp3
   run.json
 ```

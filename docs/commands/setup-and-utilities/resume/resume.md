@@ -79,8 +79,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --deepgram-stt nova-3
 # Retry missing DeepInfra Whisper outputs, or append DeepInfra
 bun as resume ./output/2026-04-22_12-00-00-000_batch --deepinfra-stt
 
-# Retry missing deAPI outputs, or append deAPI
-bun as resume ./output/2026-04-22_12-00-00-000_batch --deapi-stt WhisperLargeV3
 
 # Retry missing Happy Scribe outputs, or append Happy Scribe
 bun as resume ./output/2026-04-22_12-00-00-000_batch --happyscribe-stt auto --happyscribe-organization-id org_123
@@ -99,10 +97,8 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --hume-tts octave-2 --hume-tt
 bun as resume ./output/2026-04-22_12-00-00-000_run --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
 # Retry missing Gemini image outputs, or append Gemini image
-bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image imagen-4.0-fast-generate-001
+bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-image gemini-3.1-flash-image-preview
 
-# Retry missing deAPI image outputs, or append deAPI image
-bun as resume ./output/2026-04-22_12-00-00-000_run --deapi-image Flux1schnell
 
 # Retry missing Reve image outputs, or append Reve image
 bun as resume ./output/2026-04-22_12-00-00-000_run --reve-image latest
@@ -151,7 +147,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--gemini-stt <model>` | Select one or more Gemini STT models |
 | `--glm-stt <model>` | Select one or more GLM STT models |
 | `--together-stt <model>` | Select one or more Together Whisper STT models |
-| `--deapi-stt <model>` | Select one or more deAPI STT models |
 | `--happyscribe-stt <model>` | Select one or more Happy Scribe STT models |
 | `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |
 | `--supadata-stt auto` | Select Supadata STT auto mode |
@@ -185,6 +180,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 | `--glm-ocr <model>` | Use GLM OCR; omit the value to use the cheapest supported model |
 | `--kimi-ocr <model>` | Use Kimi OCR; omit the value to use `kimi-k2.6` |
 | `--openai-ocr <model>` | Use OpenAI OCR; omit the value to use the cheapest supported model |
+| `--grok-ocr <model>` | Use Grok OCR; omit the value to use `grok-4.3` |
 | `--anthropic-ocr <model>` | Use Anthropic OCR; omit the value to use the cheapest supported model |
 | `--gemini-ocr <model>` | Use Gemini OCR; omit the value to use the cheapest supported model |
 | `--deepinfra-ocr <model>` | Use DeepInfra OCR; omit the value to use the cheapest supported model |
@@ -206,7 +202,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --gemini-music lyria-3-clip-p
 
 ### TTS
 
-Resume supports the full resumable TTS provider/model surface, including Grok, Speechify, Google Cloud, deAPI, voice flags, request-control flags, and `--all-tts`. `--all-tts` is additive during resume: completed stored providers are skipped and newly selected runnable providers are appended.
 
 | Flag | Description |
 |------|-------------|
@@ -224,7 +219,6 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 | `--hume-tts <model>` | Select one or more Hume TTS models |
 | `--cartesia-tts <model>` | Select one or more Cartesia TTS models |
 | `--gcloud-tts <model>` | Select one or more Google Cloud TTS models |
-| `--deapi-tts <model>` | Select one or more deAPI TTS models |
 | `--tts-provider-concurrency <n>` | Max hosted TTS providers/models running in parallel for one item |
 | `--tts-local-concurrency <n>` | Max local TTS providers running in parallel for one item |
 | `--kitten-voice <speaker>` | Kitten TTS speaker override |
@@ -286,14 +280,6 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 | `--gcloud-tts-consent-language <tag>` | Google Cloud instant custom voice consent language |
 | `--gcloud-tts-voice-cloning-key <key>` | Google Cloud instant custom voice cloning key |
 | `--gcloud-tts-voice-cloning-key-out <path>` | Write generated Google Cloud voice cloning key |
-| `--deapi-tts-voice <id>` | deAPI voice override |
-| `--deapi-tts-ref-audio <path>` | deAPI voice clone reference audio |
-| `--deapi-tts-ref-text <text>` | deAPI reference audio transcript |
-| `--deapi-tts-language <language>` | deAPI language override |
-| `--deapi-tts-speed <n>` | deAPI speech speed |
-| `--deapi-tts-format <format>` | deAPI output format |
-| `--deapi-tts-sample-rate <hz>` | deAPI output sample rate |
-| `--deapi-tts-instruction <text>` | deAPI voice-design instruction |
 | `--groq-voice <id>` | Groq TTS voice ID override |
 | `--grok-tts-voice <id>` | Grok TTS voice override |
 | `--grok-tts-language <code>` | Grok TTS language code |
@@ -315,11 +301,8 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 | `--all-image` | Select every supported image provider/model |
 | `--gemini-image <model>` | Select one or more Gemini image models |
 | `--openai-image <model>` | Select one or more OpenAI image models |
-| `--minimax-image <model>` | Select one or more MiniMax image models |
 | `--grok-image <model>` | Select one or more Grok image models |
-| `--runway-image <model>` | Select one or more Runway image models |
 | `--bfl-image <model>` | Select one or more BFL image models |
-| `--deapi-image <model>` | Select one or more deAPI image models |
 | `--reve-image <model>` | Select one or more Reve image models |
 | `--image-aspect-ratio <ratio>` | Image aspect ratio |
 | `--image-size <size>` | Image size/resolution |
@@ -330,7 +313,6 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 | `--image-input <path-or-url>` | Reference/source image for image edits or provider references |
 | `--image-mask <path>` | Mask image for OpenAI image edits |
 | `--image-response-mode <image\|text-image>` | Native Gemini response mode |
-| `--gemini-person-generation <mode>` | Gemini Imagen person generation mode |
 | `--gemini-search-grounding` | Enable Gemini native image search grounding |
 | `--image-compression <0-100>` | OpenAI JPEG/WebP output compression |
 | `--image-provider-concurrency <n>` | Max hosted image providers/models running in parallel for one item |
@@ -346,7 +328,6 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 | `--glm-video <model>` | Select one or more GLM video models |
 | `--grok-video <model>` | Select one or more Grok video models |
 | `--runway-video <model>` | Select one or more Runway video models |
-| `--deapi-video <model>` | Select one or more deAPI video models |
 | `--video-duration <seconds>` | Video duration in seconds |
 | `--video-mode <mode>` | Video generation mode |
 | `--video-size <size>` | Video size |
@@ -368,10 +349,8 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 | `--all-music` | Select every supported hosted music provider/model |
 | `--elevenlabs-music <model>` | Select one or more ElevenLabs music models |
 | `--minimax-music <model>` | Select one or more MiniMax music models |
-| `--deapi-music <model>` | Select one or more deAPI music models |
 | `--gemini-music <model>` | Select one or more Gemini Lyria music models |
 | `--music-duration <seconds>` | Music duration in seconds |
-| `--music-lyrics-file <path>` | Lyrics file path for MiniMax, deAPI, and Gemini |
 | `--music-instrumental` | Force instrumental generation where supported |
 | `--music-provider-concurrency <n>` | Max hosted music providers/models running in parallel for one item |
 | `--music-local-concurrency <n>` | Max local music providers running in parallel for one item |
@@ -383,6 +362,5 @@ Resume supports the full resumable TTS provider/model surface, including Grok, S
 - Extract parent batch resumes update `extract-batch.json` at the parent and the routed child `media/batch.json` and `document/batch.json` manifests underneath it.
 - Generation step resumes (TTS, image, video, music) rewrite `run.json` with merged metadata from existing and newly produced provider outputs.
 - Generation step resumes require `run.json` to contain `requestedProviders` and `input` fields. Manifests created before resume support was added cannot be resumed.
-- Async STT providers with checkpointed remote jobs, including deAPI and Happy Scribe, reuse saved provider state when possible instead of recreating the remote request.
 - `resume` does not define `--price`.
 - `resume` exits with code `2` when items are still incomplete or failed after the backfill attempt.

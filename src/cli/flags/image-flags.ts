@@ -1,11 +1,8 @@
 import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
-  SUPPORTED_DEAPI_IMAGE_MODELS,
   SUPPORTED_GROK_IMAGE_MODELS,
-  SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
-  SUPPORTED_RUNWAY_IMAGE_MODELS,
   SUPPORTED_BFL_IMAGE_MODELS,
   SUPPORTED_REVE_IMAGE_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -16,11 +13,8 @@ import { aliasFlags } from './flag-utils'
 export const IMAGE_COMMAND_SELECTOR_FLAGS = {
   'gemini-image': 'gemini',
   'openai-image': 'openai',
-  'minimax-image': 'minimax',
   'grok-image': 'grok',
-  'runway-image': 'runway',
   'bfl-image': 'bfl',
-  'deapi-image': 'deapi',
   'reve-image': 'reve'
 } as const satisfies Record<string, string>
 
@@ -49,24 +43,12 @@ export const imageGenFlags = {
     description: buildModelDescription('OpenAI image model', SUPPORTED_OPENAI_IMAGE_MODELS),
     type: [String] as [StringConstructor]
   },
-  'minimax-image': {
-    description: buildModelDescription('MiniMax image model', SUPPORTED_MINIMAX_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'grok-image': {
     description: buildModelDescription('xAI Grok image model', SUPPORTED_GROK_IMAGE_MODELS),
     type: [String] as [StringConstructor]
   },
-  'runway-image': {
-    description: buildModelDescription('Runway image model', SUPPORTED_RUNWAY_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'bfl-image': {
     description: buildModelDescription('BFL image model', SUPPORTED_BFL_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'deapi-image': {
-    description: buildModelDescription('deAPI image model', SUPPORTED_DEAPI_IMAGE_MODELS),
     type: [String] as [StringConstructor]
   },
   'reve-image': {
@@ -78,7 +60,7 @@ export const imageGenFlags = {
     type: String
   },
   'image-size': {
-    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, WIDTHxHEIGHT multiples of 8 (MiniMax when no aspect ratio), 1K|2K (Grok), 720p|1080p (Runway), WIDTHxHEIGHT for BFL/Reve fit-within resizing, or WIDTHxHEIGHT within deAPI model limits',
+    description: 'Image size/resolution: 1K|2K|4K (Gemini), auto|1024x1024|1536x1024|1024x1536 or flexible WIDTHxHEIGHT for OpenAI gpt-image-2, 1K|2K (Grok), or WIDTHxHEIGHT for BFL/Reve fit-within resizing',
     type: String
   },
   'image-quality': {
@@ -94,11 +76,11 @@ export const imageGenFlags = {
     type: String
   },
   'image-count': {
-    description: 'Number of images to generate in one provider request where supported (OpenAI/Grok 1-10, MiniMax 1-9, Gemini Imagen 1-4; default: 1)',
+    description: 'Number of images to generate in one provider request where supported (OpenAI/Grok 1-10; default: 1)',
     type: String
   },
   'image-input': {
-    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native, MiniMax, BFL, Reve)',
+    description: 'Reference/source image path or URL for edit/reference workflows (repeatable; OpenAI, Grok, Gemini native, BFL, Reve)',
     type: [String] as [StringConstructor]
   },
   'image-mask': {
@@ -107,10 +89,6 @@ export const imageGenFlags = {
   },
   'image-response-mode': {
     description: 'Gemini native response mode: image|text-image (default: image)',
-    type: String
-  },
-  'gemini-person-generation': {
-    description: 'Gemini Imagen person generation: dont_allow|allow_adult|allow_all',
     type: String
   },
   'gemini-search-grounding': {

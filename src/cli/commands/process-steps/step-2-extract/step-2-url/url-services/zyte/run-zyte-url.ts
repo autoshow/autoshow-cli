@@ -5,13 +5,14 @@ import {
   byteLength,
   cleanString,
   countWords,
+  createUrlProviderHttpError,
   ensureMeaningfulMarkdown,
   fallbackTitleFromSource,
-  HTML_FETCH_TIMEOUT_MS,
+  getUrlRequestTimeoutMs,
   isRecord,
   normalizeMarkdown,
   tryFetchRemoteHtml,
-  withTimeout,
+  withUrlProviderTimeout,
   type UrlArticleRunResult
 } from '../../url-utils'
 import {
@@ -24,6 +25,7 @@ const ZYTE_DEFAULT_API_URL = 'https://api.zyte.com'
 const ZYTE_CAPABILITIES = [
   'remote-html',
   'main-content',
+  'timeout',
   'structured-extraction'
 ] as const
 
@@ -146,7 +148,11 @@ const runZyteExtract = async (
     )
   }
 
-  const response = await withTimeout(HTML_FETCH_TIMEOUT_MS, async (signal) =>
+  const requestOptions = {
+    ...options,
+    timeoutMs: getUrlRequestTimeoutMs(options)
+  }
+  const response = await withUrlProviderTimeout('Zyte', requestOptions, async (signal) =>
     await fetch(`${baseUrl.replace(/\/$/, '')}/v1/extract`, {
       method: 'POST',
       signal,
@@ -172,7 +178,7 @@ const runZyteExtract = async (
     const errorMessage = isRecord(payload)
       ? cleanString(payload['detail']) ?? cleanString(payload['title']) ?? cleanString(payload['error']) ?? cleanString(payload['message'])
       : undefined
-    throw new Error(`Zyte extract failed (${response.status} ${response.statusText})${errorMessage ? `: ${errorMessage}` : ''}`)
+    throw createUrlProviderHttpError('Zyte', 'extract', response, errorMessage)
   }
 
   return parseZyteResponse(payload)

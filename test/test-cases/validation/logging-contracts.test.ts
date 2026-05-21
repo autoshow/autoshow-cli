@@ -39,7 +39,7 @@ import { buildRetryAttemptTable } from '~/utils/retries'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
 import { stripAnsi } from '~/utils/terminal-colors'
-import type { Logger, LogSinkEvent, LogWriteOptions } from '~/types'
+import type { Logger, LogSinkEvent, LogWriteOptions, StepEstimate } from '~/types'
 
 const makeEvent = (level: LogSinkEvent['level']): LogSinkEvent => ({
   timestamp: '2026-01-01T00:00:00.000Z',
@@ -1146,11 +1146,11 @@ describe('logging contracts', () => {
 
     const humanTable = writes[1]?.options?.humanTable
     expect(humanTable).toEqual({
-      columns: ['step', 'provider', 'model', 'details', 'cost'],
+      columns: ['step', 'provider', 'model', 'cost'],
       align: { cost: 'right' },
       rows: [
         { step: 'video', provider: 'gemini', model: 'veo-3.1-lite-generate-preview', cost: '$2.00' },
-        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', details: 'characters 100', cost: '1.25\u00a2' },
+        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', cost: '1.25\u00a2' },
         { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2' }
       ]
     })
@@ -1164,6 +1164,90 @@ describe('logging contracts', () => {
     expect(rendered).toContain('\u2502 <0.01\u00a2 \u2502')
     expect(rendered).not.toContain('[1]')
     expect(rendered).not.toContain('\u2502 key')
+  })
+
+  test('reporter omits human cost details for detail-heavy estimate types', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+    const steps = [
+      {
+        step: 'stt',
+        provider: 'deepgram',
+        model: 'nova-3',
+        durationSeconds: 123,
+        estimateType: 'heuristic',
+        totalCost: 4.1
+      },
+      {
+        step: 'llm',
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        inputCostPer1MCents: 20,
+        outputCostPer1MCents: 125,
+        estimatedInputTokens: 600,
+        estimatedOutputTokens: 400,
+        totalCost: 0.062
+      },
+      {
+        step: 'extract',
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        inputCostPer1MCents: 20,
+        outputCostPer1MCents: 125,
+        pageCount: 2,
+        promptTokens: 5972,
+        completionTokens: 3688,
+        estimateType: 'heuristic',
+        totalCost: 0.58044
+      },
+      {
+        step: 'extract',
+        provider: 'glm-reader',
+        model: 'glm-reader',
+        costPer1kPagesCents: 1000,
+        pageCount: 1,
+        totalCost: 1
+      },
+      {
+        step: 'tts',
+        provider: 'mistral',
+        model: 'voxtral-mini-tts-2603',
+        inputCostPer1MCharactersCents: 0,
+        outputCostPer1MCharactersCents: 1600,
+        characterCount: 1000,
+        setupCostCents: 0,
+        estimateType: 'heuristic',
+        totalCost: 1.6
+      },
+      {
+        step: 'music',
+        provider: 'minimax',
+        model: 'music-2.6',
+        durationSeconds: 180,
+        lyricsSource: 'generated',
+        totalCost: 500
+      }
+    ] satisfies StepEstimate[]
+
+    reporter.estimate({
+      totalEstimatedCost: steps.reduce((total, step) => total + step.totalCost, 0),
+      steps
+    })
+
+    const humanTable = writes[1]?.options?.humanTable
+    if (!humanTable) throw new Error('Expected cost estimate human table')
+
+    expect(humanTable.columns).toEqual(['step', 'provider', 'model', 'cost'])
+    expect(humanTable.details).toBeUndefined()
+    expect(humanTable.rows.every(row => row['details'] === undefined)).toBe(true)
+
+    const rendered = stripAnsi(renderHumanTable(humanTable))
+    expect(rendered).not.toContain('details')
+    expect(rendered).not.toContain('see details')
+    expect(rendered).not.toContain('rate $10.00/1K pages')
+    expect(rendered).not.toContain('lyrics generated')
+    expect(rendered).not.toContain('tokens')
+    expect(rendered).not.toContain('characters')
   })
 
   test('audio normalize table uses vertical key/value display rows', () => {

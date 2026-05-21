@@ -1,17 +1,7 @@
 import type { PriceSelectionEntry } from '~/types'
 import { command, exact } from '../helpers'
-import {
-  SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
-} from '~/cli/commands/setup-and-utilities/models/model-options'
 
 const SHORT_TTS_INPUT_PATH = 'input/examples/tts/0-tts-short.txt'
-
-const deapiRunnableTtsCommands = SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS
-  .map(model => command(
-    `tts-deapi-${model}`,
-    `tts-deapi-${model}`,
-    ['src/cli/create-cli.ts', 'tts', SHORT_TTS_INPUT_PATH, '--deapi', model, '--price']
-  ))
 
 export const ttsRegistry: PriceSelectionEntry[] = [
   ...exact('test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts', [
@@ -35,8 +25,6 @@ export const ttsRegistry: PriceSelectionEntry[] = [
     command('tts-minimax-speech-2.8-turbo', 'tts-minimax-speech-2.8-turbo', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax', 'speech-2.8-turbo', '--price']),
     command('tts-minimax-speech-2.8-hd', 'tts-minimax-speech-2.8-hd', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--minimax', 'speech-2.8-hd', '--price']),
     command('tts-elevenlabs-eleven_v3', 'tts-elevenlabs-eleven_v3', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--elevenlabs', 'eleven_v3', '--price']),
-    ...deapiRunnableTtsCommands,
-    command('tts-deapi-qwen3-voice-clone', 'tts-deapi-qwen3-voice-clone', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--deapi', 'Qwen3_TTS_12Hz_1_7B_Base', '--deapi-tts-ref-audio', 'https://ajc.pics/autoshow/examples/0-audio-short.mp3', '--price']),
   ]),
   ...exact('test/test-cases/e2e/step-4-tts-e2e/tts-local/kitten-tts.test.ts', [
     command('tts-kitten-micro', 'tts-kitten-micro', ['src/cli/create-cli.ts', 'tts', 'input/examples/tts/1-tts.md', '--kitten', 'kitten-tts-micro', '--price']),

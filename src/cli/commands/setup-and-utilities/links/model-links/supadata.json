@@ -1,9 +1,56 @@
 {
   "Supadata": {
+    "General": [
+      "https://docs.supadata.ai/.md",
+      "https://docs.supadata.ai/api-reference/endpoint/account/me.md",
+      "https://docs.supadata.ai/errors/list.md",
+      "https://docs.supadata.ai/errors/invalid-request.md",
+      "https://docs.supadata.ai/errors/unauthorized.md",
+      "https://docs.supadata.ai/errors/not-found.md",
+      "https://docs.supadata.ai/errors/limit-exceeded.md",
+      "https://docs.supadata.ai/errors/upgrade-required.md",
+      "https://docs.supadata.ai/errors/transcript-unavailable.md",
+      "https://docs.supadata.ai/errors/internal-error.md"
+    ],
     "STT": [
       "https://docs.supadata.ai/get-transcript.md",
+      "https://docs.supadata.ai/get-metadata.md",
+      "https://docs.supadata.ai/get-extract.md",
+      "https://docs.supadata.ai/youtube/search.md",
+      "https://docs.supadata.ai/youtube/get-transcript-translation.md",
+      "https://docs.supadata.ai/youtube/channel.md",
+      "https://docs.supadata.ai/youtube/playlist.md",
+      "https://docs.supadata.ai/youtube/channel-videos.md",
+      "https://docs.supadata.ai/youtube/playlist-videos.md",
+      "https://docs.supadata.ai/youtube/batch.md",
+      "https://docs.supadata.ai/youtube/supported-url-formats.md",
+      "https://docs.supadata.ai/youtube/supported-language-codes.md",
+      "https://docs.supadata.ai/api-reference/introduction.md",
+      "https://docs.supadata.ai/api-reference/endpoint/metadata/metadata.md",
+      "https://docs.supadata.ai/api-reference/endpoint/extract/extract.md",
+      "https://docs.supadata.ai/api-reference/endpoint/extract/extract-get.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/search.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/video-get.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/video-batch.md",
       "https://docs.supadata.ai/api-reference/endpoint/transcript/transcript.md",
-      "https://docs.supadata.ai/api-reference/endpoint/transcript/transcript-get.md"
+      "https://docs.supadata.ai/api-reference/endpoint/transcript/transcript-get.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/transcript.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/transcript-batch.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/translation.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/channel.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/playlist.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/channel-videos.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/playlist-videos.md",
+      "https://docs.supadata.ai/api-reference/endpoint/youtube/batch-get.md"
+    ],
+    "URL": [
+      "https://docs.supadata.ai/web/scrape.md",
+      "https://docs.supadata.ai/web/map.md",
+      "https://docs.supadata.ai/web/crawl.md",
+      "https://docs.supadata.ai/api-reference/endpoint/web/scrape.md",
+      "https://docs.supadata.ai/api-reference/endpoint/web/map.md",
+      "https://docs.supadata.ai/api-reference/endpoint/web/crawl.md",
+      "https://docs.supadata.ai/api-reference/endpoint/web/crawl-get.md"
     ]
   }
 }

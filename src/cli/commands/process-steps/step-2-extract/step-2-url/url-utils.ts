@@ -1,11 +1,20 @@
 import { stat } from 'node:fs/promises'
 import { basename, resolve as pathResolve } from 'node:path'
 import type { HtmlArticleBackend, WebArticleMetadata } from '~/types'
+import { isAbortError } from '~/utils/retries'
 
 export const HTML_FETCH_TIMEOUT_MS = 15000
+export const DEFAULT_URL_REQUEST_TIMEOUT_MS = 60000
+export const DEFAULT_URL_REQUEST_ATTEMPTS = 3
 
 const MIN_MEANINGFUL_MARKDOWN_CHARS = 50
 const ARTICLE_FETCH_USER_AGENT = 'Mozilla/5.0 (compatible; autoshow-cli/0.1; +https://github.com/ajcwebdev/autoshow-cli)'
+
+export type UrlRequestOptions = {
+  timeoutMs?: number | undefined
+  requestAttempts?: number | undefined
+  requestSignal?: AbortSignal | undefined
+}
 
 export type UrlArticleRunResult = {
   markdown: string
@@ -96,10 +105,83 @@ export const withTimeout = async <T>(
   }
 }
 
+export const getUrlRequestTimeoutMs = (options: UrlRequestOptions | undefined): number =>
+  typeof options?.timeoutMs === 'number' && Number.isFinite(options.timeoutMs) && options.timeoutMs > 0
+    ? options.timeoutMs
+    : DEFAULT_URL_REQUEST_TIMEOUT_MS
+
+export const getUrlRequestAttempts = (options: UrlRequestOptions | undefined): number =>
+  typeof options?.requestAttempts === 'number' && Number.isFinite(options.requestAttempts) && options.requestAttempts > 0
+    ? Math.floor(options.requestAttempts)
+    : DEFAULT_URL_REQUEST_ATTEMPTS
+
+export const createUrlProviderTimeoutError = (
+  providerLabel: string,
+  timeoutMs: number,
+  cause: unknown
+): Error => {
+  const error = new Error(`${providerLabel} request timed out after ${timeoutMs}ms`, {
+    cause: cause instanceof Error ? cause : undefined
+  })
+  error.name = 'AbortError'
+  Object.assign(error, {
+    timeoutMs,
+    provider: providerLabel,
+    retryable: true
+  })
+  return error
+}
+
+export const createUrlProviderHttpError = (
+  providerLabel: string,
+  action: string,
+  response: Response,
+  message: string | undefined
+): Error => {
+  const error = new Error(
+    `${providerLabel} ${action} failed (${response.status} ${response.statusText})${message ? `: ${message}` : ''}`
+  )
+  Object.assign(error, {
+    status: response.status,
+    headers: response.headers,
+    provider: providerLabel,
+    retryable: response.status === 408 || response.status === 429 || response.status >= 500
+  })
+  return error
+}
+
+export const withUrlProviderTimeout = async <T>(
+  providerLabel: string,
+  options: UrlRequestOptions | undefined,
+  fn: (signal: AbortSignal) => Promise<T>
+): Promise<T> => {
+  const timeoutMs = getUrlRequestTimeoutMs(options)
+
+  try {
+    if (options?.requestSignal) {
+      return await fn(options.requestSignal)
+    }
+    return await withTimeout(timeoutMs, fn)
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw createUrlProviderTimeoutError(providerLabel, timeoutMs, error)
+    }
+    throw error
+  }
+}
+
+type FetchRemoteHtmlOptions = {
+  timeoutMs?: number | undefined
+  signal?: AbortSignal | undefined
+  providerLabel?: string | undefined
+}
+
 export const fetchRemoteHtml = async (
-  source: string
+  source: string,
+  options: FetchRemoteHtmlOptions = {}
 ): Promise<RemoteHtmlFetchResult> => {
-  const response = await withTimeout(HTML_FETCH_TIMEOUT_MS, async (signal) =>
+  const timeoutMs = typeof options.timeoutMs === 'number' ? options.timeoutMs : HTML_FETCH_TIMEOUT_MS
+  const runFetch = async (signal: AbortSignal): Promise<Response> =>
     await fetch(source, {
       signal,
       headers: {
@@ -107,7 +189,18 @@ export const fetchRemoteHtml = async (
         'Accept': 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8'
       }
     })
-  )
+
+  let response: Response
+  try {
+    response = options.signal
+      ? await runFetch(options.signal)
+      : await withTimeout(timeoutMs, runFetch)
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw createUrlProviderTimeoutError(options.providerLabel ?? 'URL article HTML fetch', timeoutMs, error)
+    }
+    throw error
+  }
 
   if (!response.ok) {
     throw new Error(`Failed to fetch article HTML (${response.status} ${response.statusText})`)

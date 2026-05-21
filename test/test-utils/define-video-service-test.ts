@@ -16,7 +16,7 @@ import { readRunMetadata } from './manifest-helpers'
 const VIDEO_GEN_TITLE = 'video-gen'
 const PRICE_PROMPT = 'a cinematic mountain sunrise'
 const DEFAULT_LIVE_PROMPT = 'a static shot of a tiny red dot on white background'
-type VideoTestService = 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
+type VideoTestService = 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 
 export const defineVideoServiceTest = ({
   models,

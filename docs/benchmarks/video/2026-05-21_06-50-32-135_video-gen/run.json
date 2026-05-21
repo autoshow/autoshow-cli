@@ -1,0 +1,731 @@
+{
+  "schemaVersion": 2,
+  "kind": "video",
+  "metadata": {
+    "video": [
+      {
+        "videoGenService": "gemini",
+        "videoGenModel": "veo-3.1-fast-generate-preview",
+        "processingTime": 72172,
+        "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+        "videoFileSize": 12831956,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "720p",
+        "providerVideoUri": "https://generativelanguage.googleapis.com/v1beta/files/5fxtg785xuuq:download?alt=media"
+      },
+      {
+        "videoGenService": "gemini",
+        "videoGenModel": "veo-3.1-generate-preview",
+        "processingTime": 72026,
+        "videoFileName": "generated-video-gemini-veo-3.1-generate-preview.mp4",
+        "videoFileSize": 11828507,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "720p",
+        "providerVideoUri": "https://generativelanguage.googleapis.com/v1beta/files/chf3ok2rf6tp:download?alt=media"
+      },
+      {
+        "videoGenService": "gemini",
+        "videoGenModel": "veo-3.1-lite-generate-preview",
+        "processingTime": 62049,
+        "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+        "videoFileSize": 9530560,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "720p",
+        "providerVideoUri": "https://generativelanguage.googleapis.com/v1beta/files/lq8x6q8b7wyz:download?alt=media"
+      },
+      {
+        "videoGenService": "minimax",
+        "videoGenModel": "T2V-01",
+        "processingTime": 165165,
+        "videoFileName": "generated-video-minimax-T2V-01.mp4",
+        "videoFileSize": 3056400,
+        "videoDuration": 6,
+        "requestMode": "text",
+        "videoResolution": "720P"
+      },
+      {
+        "videoGenService": "minimax",
+        "videoGenModel": "T2V-01-Director",
+        "processingTime": 155057,
+        "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+        "videoFileSize": 2903446,
+        "videoDuration": 6,
+        "requestMode": "text",
+        "videoResolution": "720P"
+      },
+      {
+        "videoGenService": "minimax",
+        "videoGenModel": "MiniMax-Hailuo-2.3",
+        "processingTime": 123608,
+        "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+        "videoFileSize": 2739757,
+        "videoDuration": 10,
+        "requestMode": "text",
+        "videoResolution": "768P"
+      },
+      {
+        "videoGenService": "glm",
+        "videoGenModel": "cogvideox-3",
+        "processingTime": 348386,
+        "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+        "videoFileSize": 21478175,
+        "videoDuration": 10,
+        "requestMode": "text"
+      },
+      {
+        "videoGenService": "glm",
+        "videoGenModel": "viduq1-text",
+        "processingTime": 196374,
+        "videoFileName": "generated-video-glm-viduq1-text.mp4",
+        "videoFileSize": 27089418,
+        "videoDuration": 5,
+        "requestMode": "text"
+      },
+      {
+        "videoGenService": "grok",
+        "videoGenModel": "grok-imagine-video",
+        "processingTime": 41605,
+        "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+        "videoFileSize": 6872287,
+        "videoDuration": 8,
+        "requestMode": "text",
+        "videoResolution": "480p",
+        "videoAspectRatio": "16:9",
+        "providerRequestId": "71ede9dc-5f29-98b5-b0f7-1532b418d338",
+        "providerReturnedModel": "grok-imagine-video",
+        "providerVideoUrl": "https://vidgen.x.ai/xai-vidgen-bucket/xai-video-8da2576d-5431-46b9-b741-4e815dc8f76e.mp4",
+        "providerProgress": 100,
+        "providerModeration": true,
+        "providerCostCents": 40,
+        "providerCostSource": "provider_usage"
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 942,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "cost": 80,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "cost": 320,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01-Director",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "MiniMax-Hailuo-2.3",
+            "cost": 56,
+            "costMultiplier": 1,
+            "durationSeconds": 10
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "MiniMax-Hailuo-2.3-Fast",
+            "cost": 56,
+            "costMultiplier": 1,
+            "durationSeconds": 10
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "I2V-01-Director",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "I2V-01-live",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "I2V-01",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "S2V-01",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "cogvideox-3",
+            "cost": 20,
+            "costMultiplier": 1,
+            "durationSeconds": 10
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "viduq1-text",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 5
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "vidu2-image",
+            "cost": 20,
+            "costMultiplier": 1,
+            "durationSeconds": 4
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "vidu2-start-end",
+            "cost": 20,
+            "costMultiplier": 1,
+            "durationSeconds": 4
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "vidu2-reference",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 4
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "cost": 96,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 730,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "cost": 80,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "cost": 320,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01-Director",
+            "cost": 19,
+            "costMultiplier": 1,
+            "durationSeconds": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "MiniMax-Hailuo-2.3",
+            "cost": 56,
+            "costMultiplier": 1,
+            "durationSeconds": 10
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "cogvideox-3",
+            "cost": 20,
+            "costMultiplier": 1,
+            "durationSeconds": 10
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "viduq1-text",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 5
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "cost": 40,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "cost": 96,
+            "costMultiplier": 1,
+            "durationSeconds": 8
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 634,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "cost": 80,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "cost": 320,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "cost": 40,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01",
+            "cost": 19,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01-Director",
+            "cost": 19,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 6
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "MiniMax-Hailuo-2.3",
+            "cost": 56,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 10
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "cogvideox-3",
+            "cost": 20,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 10
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "viduq1-text",
+            "cost": 40,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationSeconds",
+            "inputValue": 5
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "cost": 40,
+            "costSource": "provider_usage",
+            "inputMetric": "durationSeconds",
+            "inputValue": 8
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 1429373,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "processingTimeMs": 80000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 10000,
+            "throughputValue": 0.1,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "processingTimeMs": 84344,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 10543,
+            "throughputValue": 0.095,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "processingTimeMs": 64000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 8000,
+            "throughputValue": 0.125,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01",
+            "processingTimeMs": 187254,
+            "inputMetric": "durationSeconds",
+            "inputValue": 6,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 31209,
+            "throughputValue": 0.032,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01-Director",
+            "processingTimeMs": 198816,
+            "inputMetric": "durationSeconds",
+            "inputValue": 6,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 33136,
+            "throughputValue": 0.03,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "MiniMax-Hailuo-2.3",
+            "processingTimeMs": 155160,
+            "inputMetric": "durationSeconds",
+            "inputValue": 10,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 15516,
+            "throughputValue": 0.064,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "cogvideox-3",
+            "processingTimeMs": 296690,
+            "inputMetric": "durationSeconds",
+            "inputValue": 10,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 29669,
+            "throughputValue": 0.034,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "viduq1-text",
+            "processingTimeMs": 180445,
+            "inputMetric": "durationSeconds",
+            "inputValue": 5,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 36089,
+            "throughputValue": 0.028,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "processingTimeMs": 86664,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 10833,
+            "throughputValue": 0.092,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "video",
+            "provider": "runway",
+            "model": "gen4.5",
+            "processingTimeMs": 96000,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 12000,
+            "throughputValue": 0.083,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 1236442,
+        "steps": [
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-fast-generate-preview",
+            "processingTimeMs": 72172,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 9021.5,
+            "throughputValue": 0.111,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-generate-preview",
+            "processingTimeMs": 72026,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 9003.25,
+            "throughputValue": 0.111,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "gemini",
+            "model": "veo-3.1-lite-generate-preview",
+            "processingTimeMs": 62049,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 7756.125,
+            "throughputValue": 0.129,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01",
+            "processingTimeMs": 165165,
+            "inputMetric": "durationSeconds",
+            "inputValue": 6,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 27527.5,
+            "throughputValue": 0.036,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "T2V-01-Director",
+            "processingTimeMs": 155057,
+            "inputMetric": "durationSeconds",
+            "inputValue": 6,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 25842.833,
+            "throughputValue": 0.039,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "minimax",
+            "model": "MiniMax-Hailuo-2.3",
+            "processingTimeMs": 123608,
+            "inputMetric": "durationSeconds",
+            "inputValue": 10,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 12360.8,
+            "throughputValue": 0.081,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "cogvideox-3",
+            "processingTimeMs": 348386,
+            "inputMetric": "durationSeconds",
+            "inputValue": 10,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 34838.6,
+            "throughputValue": 0.029,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "glm",
+            "model": "viduq1-text",
+            "processingTimeMs": 196374,
+            "inputMetric": "durationSeconds",
+            "inputValue": 5,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 39274.8,
+            "throughputValue": 0.025,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "video",
+            "provider": "grok",
+            "model": "grok-imagine-video",
+            "processingTimeMs": 41605,
+            "inputMetric": "durationSeconds",
+            "inputValue": 8,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 5200.625,
+            "throughputValue": 0.192,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "a rainy neon city street, slow camera pan",
+    "requestedProviders": [
+      {
+        "service": "gemini",
+        "model": "veo-3.1-fast-generate-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "veo-3.1-generate-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "veo-3.1-lite-generate-preview"
+      },
+      {
+        "service": "minimax",
+        "model": "T2V-01"
+      },
+      {
+        "service": "minimax",
+        "model": "T2V-01-Director"
+      },
+      {
+        "service": "minimax",
+        "model": "MiniMax-Hailuo-2.3"
+      },
+      {
+        "service": "glm",
+        "model": "cogvideox-3"
+      },
+      {
+        "service": "glm",
+        "model": "viduq1-text"
+      },
+      {
+        "service": "grok",
+        "model": "grok-imagine-video"
+      },
+      {
+        "service": "runway",
+        "model": "gen4.5"
+      }
+    ]
+  }
+}

@@ -99,6 +99,8 @@ const resumeOcrFlags = omitFlags(ocrCommandFlags, [
   'all-url',
   'url-backend',
   'url-provider-concurrency',
+  'url-request-timeout-ms',
+  'url-request-attempts',
   'primary-ocr',
   'price'
 ])

@@ -33,13 +33,13 @@ defineMusicServiceTest({
   envVarKey: 'MINIMAX_API_KEY',
 })
 
-budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and lyrics file', async () => {
+budgetedTest('music-pipeline-minimax-music-2.6', 'write with minimax music and lyrics file', async () => {
   await requireConfiguredEnvVar('MINIMAX_API_KEY', 'MINIMAX_API_KEY required')
 
   await cleanupTestOutput('1-audio')
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--minimax-music', 'music-2.5', '--music-lyrics-file', 'input/examples/tts/1-tts.md'],
+    ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--minimax-music', 'music-2.6', '--music-lyrics-file', 'input/examples/tts/1-tts.md'],
   )
   expect(result.exitCode).toBe(0)
 
@@ -54,12 +54,12 @@ budgetedTest('music-pipeline-minimax-music-2.5', 'write with minimax music and l
     step7?: { musicService?: string; musicModel?: string; lyricsSource?: string; musicFileName?: string }
   }
   expect(metadata.step7?.musicService).toBe('minimax')
-  expect(metadata.step7?.musicModel).toBe('music-2.5')
+  expect(metadata.step7?.musicModel).toBe('music-2.6')
   expect(metadata.step7?.lyricsSource).toBe('provided')
   expect(metadata.step7?.musicFileName).toBe('generated-music.mp3')
 })
 
-budgetedTest('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview', 'multi-provider run produces per-provider filenames and array metadata', async () => {
+budgetedTest('music-multi-minimax-music-2.6-gemini-lyria-3-clip-preview', 'multi-provider run produces per-provider filenames and array metadata', async () => {
   await requireConfiguredEnvVars(['MINIMAX_API_KEY', 'GEMINI_API_KEY'], 'MINIMAX_API_KEY and GEMINI_API_KEY both required')
 
   await cleanupTestOutput(MUSIC_GEN_TITLE)
@@ -69,7 +69,7 @@ budgetedTest('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview', 'multi
       'src/cli/create-cli.ts',
       'music',
       'bright acoustic pop with handclaps and a catchy chorus',
-      '--minimax', 'music-2.5',
+      '--minimax', 'music-2.6',
       '--gemini', 'lyria-3-clip-preview',
       '--music-lyrics-file', 'input/examples/tts/1-tts.md',
     ],
@@ -82,7 +82,7 @@ budgetedTest('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview', 'multi
     throw new Error(`Expected output directory for ${MUSIC_GEN_TITLE}`)
   }
 
-  expect(await fileExists(`${outputDir}/generated-music-minimax-music-2.5.mp3`)).toBe(true)
+  expect(await fileExists(`${outputDir}/generated-music-minimax-music-2.6.mp3`)).toBe(true)
   expect(await fileExists(`${outputDir}/generated-music-gemini-lyria-3-clip-preview.mp3`)).toBe(true)
 
   const metadata = await readRunMetadata(outputDir) as {
@@ -91,7 +91,7 @@ budgetedTest('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview', 'multi
   const musicArr = metadata.music ?? []
   expect(musicArr.some(m =>
     m.musicService === 'minimax'
-    && m.musicModel === 'music-2.5'
+    && m.musicModel === 'music-2.6'
     && m.lyricsSource === 'provided'
   )).toBe(true)
   expect(musicArr.some(m =>

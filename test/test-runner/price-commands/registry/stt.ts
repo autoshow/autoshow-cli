@@ -22,7 +22,6 @@ export const sttRegistry: PriceSelectionEntry[] = [
   ]),
   ...exact('test/test-cases/e2e/step-2-stt-e2e/stt-services/service-models.test.ts', [
     command('transcribe-assemblyai-universal-3-pro', 'transcribe-assemblyai-universal-3-pro', ['src/cli/create-cli.ts', 'extract', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--assemblyai', 'universal-3-pro', '--price']),
-    command('transcribe-deapi-WhisperLargeV3', 'transcribe-deapi-WhisperLargeV3', ['src/cli/create-cli.ts', 'extract', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--deapi', 'WhisperLargeV3', '--price']),
     command('transcribe-gladia-default', 'transcribe-gladia-default', ['src/cli/create-cli.ts', 'extract', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--gladia', 'default', '--price']),
     command('transcribe-happyscribe-auto', 'transcribe-happyscribe-auto', ['src/cli/create-cli.ts', 'extract', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--happyscribe', 'auto', '--price']),
     command('transcribe-deepgram-nova-3', 'transcribe-deepgram-nova-3', ['src/cli/create-cli.ts', 'extract', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--deepgram', 'nova-3', '--price']),

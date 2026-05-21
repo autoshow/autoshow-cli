@@ -3,6 +3,7 @@ import {
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_KIMI_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS,
+  SUPPORTED_GROK_OCR_MODELS,
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_DEEPINFRA_OCR_MODELS,
@@ -13,6 +14,7 @@ import {
   validateGlmOcrModel,
   validateKimiOcrModel,
   validateOpenAIOcrModel,
+  validateGrokOcrModel,
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
   validateDeepinfraOcrModel,
@@ -123,6 +125,21 @@ export const STEP2_OCR_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_OPENAI_OCR_MODELS,
     validateModel: validateOpenAIOcrModel,
     description: buildModelDescription('OpenAI OCR model', SUPPORTED_OPENAI_OCR_MODELS)
+  }),
+  modelProvider({
+    step: 'ocr',
+    modality: 'document',
+    flagName: 'grok-ocr',
+    targetService: 'grok',
+    providerSpecProvider: 'grok-ocr',
+    bootstrapProviderId: 'grok-ocr',
+    configKey: 'grokOcr',
+    allShortcut: 'all-ocr',
+    runtimeModelsKey: 'grokOcrModels',
+    runtimeModelKey: 'grokOcrModel',
+    supportedModels: SUPPORTED_GROK_OCR_MODELS,
+    validateModel: validateGrokOcrModel,
+    description: buildModelDescription('Grok OCR model', SUPPORTED_GROK_OCR_MODELS)
   }),
   modelProvider({
     step: 'ocr',

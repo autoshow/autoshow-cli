@@ -16,6 +16,7 @@ import {
   FIRECRAWL_PRICE_NOTE,
   GEMINI_OCR_PRICE_NOTE,
   GLM_OCR_PRICE_NOTE,
+  GROK_OCR_PRICE_NOTE,
   KIMI_OCR_PRICE_NOTE,
   OPENAI_OCR_PRICE_NOTE
 } from './ocr-utils/extract-pricing'
@@ -27,6 +28,7 @@ type OcrModelFallbackOptions = {
   glmOcrModel?: string | undefined
   kimiOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
@@ -38,12 +40,13 @@ type CollectEstimatedExtractTargetsOptions = OcrModelFallbackOptions & {
   useObservedUsage?: boolean | undefined
 }
 
-const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra'])
+const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'grok', 'anthropic', 'gemini', 'deepinfra'])
 const OCR_DIAGNOSTIC_PROVIDERS = new Set([
   'mistral',
   'glm',
   'kimi',
   'openai',
+  'grok',
   'anthropic',
   'gemini',
   'deepinfra',
@@ -90,7 +93,7 @@ export const resolveExtractionProviderModel = (
 }
 
 const buildTokenTarget = (
-  provider: Extract<'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra', ExtractEstimateProvider>,
+  provider: Extract<'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra', ExtractEstimateProvider>,
   model: string,
   pageCount: number,
   note?: string
@@ -181,6 +184,11 @@ export const collectEstimatedExtractTargets = (
 
     if (provider === 'openai') {
       targets.push(withObservedTokenUsage(buildTokenTarget('openai', model || opts.openaiOcrModel || 'openai-ocr', pageCount, OPENAI_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
+      continue
+    }
+
+    if (provider === 'grok') {
+      targets.push(withObservedTokenUsage(buildTokenTarget('grok', model || opts.grokOcrModel || 'grok-4.3', pageCount, GROK_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
       continue
     }
 

@@ -142,16 +142,6 @@ type TtsRuntimeOptionKey =
   | 'gcloudTtsConsentLanguage'
   | 'gcloudTtsVoiceCloningKey'
   | 'gcloudTtsVoiceCloningKeyOut'
-  | 'deapiTtsModels'
-  | 'deapiTtsModel'
-  | 'deapiTtsVoice'
-  | 'deapiTtsRefAudio'
-  | 'deapiTtsRefText'
-  | 'deapiTtsLanguage'
-  | 'deapiTtsSpeed'
-  | 'deapiTtsFormat'
-  | 'deapiTtsSampleRate'
-  | 'deapiTtsInstruction'
 
 type TtsRuntimeOptions = Pick<RuntimeOptions, TtsRuntimeOptionKey>
 
@@ -187,8 +177,6 @@ export const buildTtsOptions = (
     cartesiaTtsModel,
     gcloudTtsModels,
     gcloudTtsModel,
-    deapiTtsModels,
-    deapiTtsModel,
   } = modelOptions
 
   return {
@@ -285,16 +273,6 @@ export const buildTtsOptions = (
     gcloudTtsConsentLanguage: readOptionalStringFlag(flags, 'gcloud-tts-consent-language'),
     gcloudTtsVoiceCloningKey: readOptionalStringFlag(flags, 'gcloud-tts-voice-cloning-key'),
     gcloudTtsVoiceCloningKeyOut: readOptionalStringFlag(flags, 'gcloud-tts-voice-cloning-key-out'),
-    deapiTtsModels,
-    deapiTtsModel,
-    deapiTtsVoice: readOptionalStringFlag(flags, 'deapi-tts-voice'),
-    deapiTtsRefAudio: readOptionalStringFlag(flags, 'deapi-tts-ref-audio'),
-    deapiTtsRefText: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-ref-text') ?? readOptionalStringFlag(flags, 'deapi-tts-ref-text'),
-    deapiTtsLanguage: readOptionalStringFlag(flags, 'deapi-tts-language'),
-    deapiTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(flags, 'deapi-tts-speed'), 'deapi-tts-speed', { min: 0.5, max: 2 }),
-    deapiTtsFormat: readOptionalStringFlag(flags, 'deapi-tts-format'),
-    deapiTtsSampleRate: parseOptionalNumberFlag(readOptionalStringFlag(flags, 'deapi-tts-sample-rate'), 'deapi-tts-sample-rate', { min: 1, max: 192000, integer: true }),
-    deapiTtsInstruction: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-instruction') ?? readOptionalStringFlag(flags, 'deapi-tts-instruction'),
     groqVoiceId: (() => {
       const value = readOptionalStringFlag(flags, 'groq-voice')
       if (value === undefined) return undefined

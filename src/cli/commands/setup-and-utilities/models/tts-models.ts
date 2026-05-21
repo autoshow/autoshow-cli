@@ -18,7 +18,6 @@ import type {
   DeepgramTtsModel,
   SpeechifyTtsModel,
   GcloudTtsModel,
-  DeapiTtsModel,
   HumeTtsModel,
   CartesiaTtsModel
 } from '~/types'
@@ -447,24 +446,6 @@ export const validateGcloudTtsVoice = (voice: string): string => {
   }
   return normalized
 }
-
-export const SUPPORTED_DEAPI_TTS_MODELS = [
-  'Kokoro',
-  'Chatterbox',
-  'Qwen3_TTS_12Hz_1_7B_CustomVoice',
-  'Qwen3_TTS_12Hz_1_7B_Base',
-  'Qwen3_TTS_12Hz_1_7B_VoiceDesign'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS = [
-  'Kokoro',
-  'Chatterbox',
-  'Qwen3_TTS_12Hz_1_7B_CustomVoice'
-] as const satisfies readonly string[]
-
-export const DEAPI_DEFAULT_TTS_VOICE = 'af_heart'
-
-export const validateDeapiTtsModel = createModelValidator<DeapiTtsModel>(SUPPORTED_DEAPI_TTS_MODELS, 'deapi-tts')
 
 export const SUPPORTED_HUME_TTS_MODELS = [
   'octave-2'

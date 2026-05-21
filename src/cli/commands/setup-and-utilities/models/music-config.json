@@ -18,17 +18,6 @@
     "description": "MiniMax music generation",
     "type": "api",
     "models": {
-      "music-2.5": {
-        "description": "music-2.5 — full song generation from prompt and lyrics",
-        "costPerTrackUSD": 0.15,
-        "costPerTrackCents": 15,
-        "lyricsCostPerTrackUSD": 0.01,
-        "lyricsCostPerTrackCents": 1,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 2762
-        }
-      },
       "music-2.6": {
         "description": "music-2.6 — full song generation from prompt and lyrics with instrumental mode",
         "costPerTrackUSD": 0.15,
@@ -49,39 +38,6 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerSecond": 2015
-        }
-      }
-    }
-  },
-  "deapi": {
-    "description": "deAPI music generation (ACE-Step)",
-    "type": "api",
-    "models": {
-      "AceStep_1_5_Turbo": {
-        "description": "ACE-Step 1.5 Turbo — fast music, fixed 8 steps, 10-300s",
-        "costPerTrackCents": 0,
-        "providerPricing": "quote",
-        "estimation": {
-          "msPerSecond": 713,
-          "costMultiplier": 1
-        }
-      },
-      "AceStep_1_5_Base": {
-        "description": "ACE-Step 1.5 Base — high quality, 5-100 steps, 30-300s",
-        "costPerTrackCents": 0,
-        "providerPricing": "quote",
-        "estimation": {
-          "msPerSecond": 1473,
-          "costMultiplier": 1
-        }
-      },
-      "AceStep_1_5_XL_Turbo_INT8": {
-        "description": "ACE-Step 1.5 XL Turbo INT8 — fast XL model, fixed 8 steps, 10-300s",
-        "costPerTrackCents": 0,
-        "providerPricing": "quote",
-        "estimation": {
-          "msPerSecond": 881,
-          "costMultiplier": 1
         }
       }
     }

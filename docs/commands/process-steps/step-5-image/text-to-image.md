@@ -12,11 +12,8 @@ Generate images from a text prompt with the hosted image providers.
 - [Image Services](#image-services)
   - [Gemini](#gemini)
   - [OpenAI](#openai)
-  - [MiniMax](#minimax)
   - [Grok](#grok)
-  - [Runway](#runway)
   - [BFL](#bfl)
-  - [deAPI](#deapi)
   - [Reve](#reve)
 - [Output](#output)
 - [Notes](#notes)
@@ -30,20 +27,15 @@ There are no local image-generation models in this project.
 bun as setup --step image
 ```
 
-`setup --step image` checks API-key readiness for Gemini, OpenAI, Grok, Runway, BFL, deAPI, and Reve image providers. MiniMax image generation uses `MINIMAX_API_KEY` at runtime, but the image setup step does not have a dedicated MiniMax image hook today.
 
 ### Environment
 
 ```bash
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
-MINIMAX_API_KEY=...
 XAI_API_KEY=...
-RUNWAYML_API_SECRET=...
 BFL_API_KEY=...
 BFL_BASE_URL=... # optional
-DEAPI_API_KEY=...
-DEAPI_BASE_URL=... # optional
 REVE_API_KEY=...
 REVE_BASE_URL=... # optional
 ```
@@ -68,12 +60,11 @@ Provider flags accept an omitted model value and then resolve to the cheapest su
 | `--image-quality <q>` | OpenAI quality: `low`, `medium`, `high`, or `auto` |
 | `--image-format <fmt>` | OpenAI/BFL/Reve output format: `png`, `jpeg`, or `webp` |
 | `--image-background <bg>` | OpenAI background mode: `transparent`, `opaque`, or `auto` |
-| `--image-count <n>` | Number of images in one request for OpenAI/Grok `1-10`, MiniMax `1-9`, or Gemini Imagen `1-4` |
-| `--image-input <path-or-url>` | Repeatable source/reference image for OpenAI, Grok, native Gemini, MiniMax, BFL, or Reve edits/references |
+| `--image-count <n>` | Number of images in one request for OpenAI/Grok `1-10` |
+| `--image-input <path-or-url>` | Repeatable source/reference image for OpenAI, Grok, native Gemini, BFL, or Reve edits/references |
 | `--image-mask <path>` | OpenAI mask image for inpainting/edit workflows |
 | `--image-compression <0-100>` | OpenAI JPEG/WebP output compression |
 | `--image-response-mode <image\|text-image>` | Native Gemini response mode |
-| `--gemini-person-generation <mode>` | Imagen `dont_allow`, `allow_adult`, or `allow_all` person generation |
 | `--gemini-search-grounding` | Enable native Gemini search grounding metadata |
 | `--price` | Show the aggregated estimate and exit |
 | `--out <dir>` / `--output-dir <dir>` | Use an exact run directory instead of `output/<timestamp>_image-gen/` |
@@ -95,13 +86,12 @@ bun as image "a clean studio product photo of a red enamel camping mug on white 
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
 ```
 
-The same generated file can also be used as a reference input for native Gemini, MiniMax, Grok, BFL, or Reve workflows:
+The same generated file can also be used as a reference input for native Gemini, Grok, BFL, or Reve workflows:
 
 ```bash
 bun as image "restyle this product image as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
-bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --out output/mug-minimax
 bun as image "turn this into a glossy magazine ad on a warm kitchen counter" --grok grok-imagine-image-quality --image-input output/mug-base/generated-image.png --image-size 1K --out output/mug-grok
-bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
 bun as image "place the same mug in a minimalist editorial product scene" --reve latest --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-reve
 ```
 
@@ -114,14 +104,14 @@ Examples using `output/mug-base/generated-image.png` assume you ran the generate
 | Option | Value |
 |--------|-------|
 | Selector | `--gemini <model>` |
-| Models | `gemini-3.1-flash-image-preview`, `imagen-4.0-generate-001`, `imagen-4.0-ultra-generate-001`, `imagen-4.0-fast-generate-001` |
-| Size | `--image-size 1K\|2K\|4K` (Imagen models); rejected for `imagen-4.0-fast-generate-001` |
+| Models | `gemini-3.1-flash-image-preview` |
+| Size | `--image-size 1K\|2K\|4K` |
 | Aspect ratio | `--image-aspect-ratio <ratio>` |
-| Count | `--image-count <n>` for Imagen 4 models |
-| References | `--image-input` for native Gemini models only |
+| Count | Native Gemini returns one image per request |
+| References | `--image-input` |
 
 ```bash
-bun as image "a serene mountain lake at dawn" --gemini imagen-4.0-generate-001 --image-count 4 --image-aspect-ratio 16:9
+bun as image "a serene mountain lake at dawn" --gemini gemini-3.1-flash-image-preview --image-size 1K --image-aspect-ratio 16:9
 bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png
 ```
 
@@ -145,23 +135,6 @@ bun as image "a product sketch of the same travel mug concept" --openai gpt-imag
 
 `gpt-image-2` accepts `auto` or `WIDTHxHEIGHT` when max edge is 3840 or less, both edges are multiples of 16, aspect ratio is at most 3:1, and total pixels are 655,360 through 8,294,400. It rejects `--image-background transparent`.
 
-### MiniMax
-
-| Option | Value |
-|--------|-------|
-| Selector | `--minimax <model>` |
-| Models | `image-01` |
-| Aspect ratio | `--image-aspect-ratio <ratio>` |
-| Size | `--image-size WIDTHxHEIGHT`, 512x512 through 2048x2048, multiples of 8; ignored when `--image-aspect-ratio` is provided |
-| Count | `--image-count 1-9` |
-| References | Repeatable `--image-input`; local files are sent as data URLs and HTTP(S) URLs pass through |
-
-```bash
-bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-aspect-ratio 16:9
-bun as image "a dramatic fox portrait in snow" --minimax image-01 --image-size 1024x768 --image-count 3
-bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
-```
-
 ### Grok
 
 | Option | Value |
@@ -180,51 +153,22 @@ bun as image "a futuristic observatory at sunset" --grok grok-imagine-image-qual
 
 Grok responses include provider-reported billed cost when available, and that actual value is used in `run.json`.
 
-### Runway
-
-| Option | Value |
-|--------|-------|
-| Selector | `--runway <model>` |
-| Models | `gen4_image` |
-| Size | `--image-size 720p\|1080p` |
-| Aspect ratio | `1:1`, `16:9`, `9:16`, `4:3`, `3:4`, or `21:9` |
-
-```bash
-bun as image "a cinematic product photo of a red enamel camping mug" --runway gen4_image --image-aspect-ratio 1:1 --image-size 720p
-```
-
-Runway rejects OpenAI-only flags, edit inputs, and `--image-count`; it is single-image-only for this command.
-
 ### BFL
 
 | Option | Value |
 |--------|-------|
 | Selector | `--bfl <model>` |
-| Models | `flux-2-klein-4b`, `flux-2-klein-9b-preview`, `flux-2-klein-9b`, `flux-2-pro-preview`, `flux-2-pro`, `flux-2-max`, `flux-2-flex` |
+| Models | `flux-2-pro`, `flux-2-max`, `flux-2-flex` |
 | Size | `--image-size WIDTHxHEIGHT` |
 | Format | `--image-format jpeg\|png\|webp` |
-| References | Repeatable `--image-input`; up to four images for Klein models and up to eight for Pro/Max/Flex models |
+| References | Repeatable `--image-input`; up to eight images |
 
 ```bash
-bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-size 1024x1024 --image-format jpeg
-bun as image "place the same mug in a cozy cabin kitchen" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro --image-size 1024x1024 --image-format jpeg
+bun as image "place the same mug in a cozy cabin kitchen" --bfl flux-2-pro --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
 ```
 
 BFL rejects `--image-aspect-ratio`, `--image-quality`, `--image-background`, `--image-mask`, and `--image-count`.
-
-### deAPI
-
-| Option | Value |
-|--------|-------|
-| Selector | `--deapi <model>` |
-| Models | `Flux1schnell`, `ZImageTurbo_INT8`, `Flux_2_Klein_4B_BF16` |
-| Size | `--image-size WIDTHxHEIGHT` |
-
-```bash
-bun as image "a cozy cabin at dusk" --deapi Flux1schnell --image-size 768x768
-```
-
-deAPI rejects `--image-aspect-ratio`, `--image-quality`, `--image-format`, `--image-background`, edit inputs, and `--image-count`.
 
 ### Reve
 
@@ -243,18 +187,15 @@ bun as image "make the mug matte black and keep the same camera angle" --reve la
 bun as image "combine the mug shape with the lighting and surface from these references" --reve latest --image-input output/mug-base/generated-image.png --image-input input/examples/document/1-document.png --image-size 1024x1024 --out output/mug-reve-remix
 ```
 
-`--reve` with no model resolves to `latest`. `reve-create@20250915` is create-only in this command and rejects `--image-input`; use `latest` for edit or remix workflows. Reve rejects `--image-count`, `--image-quality`, `--image-background`, `--image-mask`, `--image-compression`, `--image-response-mode`, `--gemini-person-generation`, and `--gemini-search-grounding`. When Reve returns usage headers, AutoShow records provider-reported credits as cost at `$10 / 7500 credits`.
+`--reve` with no model resolves to `latest`. `reve-create@20250915` is create-only in this command and rejects `--image-input`; use `latest` for edit or remix workflows. Reve rejects `--image-count`, `--image-quality`, `--image-background`, `--image-mask`, `--image-compression`, `--image-response-mode`, and `--gemini-search-grounding`. When Reve returns usage headers, AutoShow records provider-reported credits as cost at `$10 / 7500 credits`.
 
 ## Output
 
 - Standalone `image` runs always write `run.json`.
-- Gemini writes `generated-image.png`, plus numbered variants when multiple Imagen images are returned.
+- Gemini writes `generated-image.png`.
 - OpenAI writes `generated-image.<format>`, plus numbered variants for `--image-count`.
-- MiniMax writes `generated-image.jpeg`, plus numbered variants for `--image-count`.
 - Grok writes `generated-image.<format>`, plus numbered variants for `--image-count`.
-- Runway writes `generated-image.<format>`, based on the downloaded asset content type when available.
 - BFL writes `generated-image.jpg`, `generated-image.png`, or `generated-image.webp`.
-- deAPI writes `generated-image.png`.
 - Reve writes `generated-image.png`, `generated-image.jpg`, or `generated-image.webp`.
 - Multi-provider runs rename outputs to include the provider and model, such as `generated-image-openai-gpt-image-1.5.png`.
 - `--out` / `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.

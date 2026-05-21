@@ -70,6 +70,8 @@ describe('resume provider flag surface', () => {
       'all-url',
       'url-backend',
       'url-provider-concurrency',
+      'url-request-timeout-ms',
+      'url-request-attempts',
       'primary-ocr',
       'price'
     ]))
@@ -78,7 +80,7 @@ describe('resume provider flag surface', () => {
     expectResumeHasFlags(without(videoGenFlags, ['price']))
     expectResumeHasFlags(without(musicGenFlags, ['price']))
 
-    for (const excluded of ['price', 'batch-limit', 'batch-all', 'batch-order', 'all-url', 'url-backend', 'url-provider-concurrency', 'output-dir']) {
+    for (const excluded of ['price', 'batch-limit', 'batch-all', 'batch-order', 'all-url', 'url-backend', 'url-provider-concurrency', 'url-request-timeout-ms', 'url-request-attempts', 'output-dir']) {
       expect(resumeFlags, `resumeFlags should not include --${excluded}`).not.toHaveProperty(excluded)
     }
   })
@@ -98,11 +100,7 @@ describe('resume provider flag surface', () => {
       'gcloud-tts-language',
       'gcloud-tts-ref-audio',
       'gcloud-tts-consent-audio',
-      'gcloud-tts-voice-cloning-key',
-      'deapi-tts',
-      'deapi-tts-voice',
-      'deapi-tts-ref-audio',
-      'deapi-tts-instruction'
+      'gcloud-tts-voice-cloning-key'
     ])
   })
 
@@ -221,10 +219,10 @@ describe('resume all-shortcut additive selection', () => {
           kind: 'image' as const,
           flag: 'all-image',
           metadataKey: 'image',
-          requestedProvider: { service: 'gemini', model: 'imagen-4.0-fast-generate-001' },
+          requestedProvider: { service: 'gemini', model: 'gemini-3.1-flash-image-preview' },
           metadata: {
             imageService: 'gemini',
-            imageModel: 'imagen-4.0-fast-generate-001',
+            imageModel: 'gemini-3.1-flash-image-preview',
             processingTime: 1,
             imageFileNames: ['generated-image.png'],
             imageCount: 1,

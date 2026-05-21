@@ -1,0 +1,514 @@
+--- Page 1 ---
+Amazon Textract
+Developer Guide
+
+Processing Documents Synchronously
+
+Amazon Textract can detect and analyze text in single-page documents that are provided as
+images in JPEG, PNG, PDF, and TIFF format. The operations are synchronous and return results in
+near real time. For more information about documents, see Text Detection and Document Analysis
+Response Objects.
+
+This section covers how you can use Amazon Textract to detect and analyze text in a single-page
+document synchronously. To detect and analyze text in multipage documents, or to detect JPEG
+and PNG documents asynchronously, see Processing Documents Asynchronously.
+
+You can use Amazon Textract synchronous operations for the following purposes:
+
+• Text detection – You can detect lines and words on a single-page document image by using the
+DetectDocumentText operation. For more information, see Detecting Text.
+
+• Text analysis – You can identify relationships between detected text on a single-page document
+by using the AnalyzeDocument operation. For more information, see Analyzing Documents.
+
+• Invoice and receipt analysis – You can identify financial relationships between detected text on
+a single-page invoice or receipt using the AnalyzeExpense operation. For more information, see
+Analyzing Invoices and Receipts
+
+• Identity document analysis – You can analyze identity documents issued by the US Government
+and extract information along with common types of information found on identity documents.
+For more information, see Analyzing Identity Documents.
+
+Topics
+
+• Calling Amazon Textract Synchronous Operations
+
+• Detecting Document Text with Amazon Textract
+
+• Analyzing Document Text with Amazon Textract
+
+• Analyzing Invoices and Receipts with Amazon Textract
+
+• Analyzing Identity Documentation with Amazon Textract
+
+Calling Amazon Textract Synchronous Operations
+
+Amazon Textract operations process document images that are stored on a local file system, or
+document images stored in an Amazon S3 bucket. You specify where the input document is located
+
+Calling Amazon Textract Synchronous Operations
+88
+
+--- Page 2 ---
+Amazon Textract
+Developer Guide
+
+by using the Document input parameter. The document image can be in either PNG, JPEG, PDF, or
+TIFF format. Results for synchronous operations are returned immediately and are not stored for
+retrieval.
+
+For a complete example, see Detecting Document Text with Amazon Textract.
+
+Request
+
+The following describes how requests work in Amazon Textract.
+
+Documents Passed as Image Bytes
+
+You can pass a document image to an Amazon Textract operation by passing the image as a
+base64-encoded byte array. An example is a document image loaded from a local file system. Your
+code might not need to encode document file bytes if you're using an AWS SDK to call Amazon
+Textract API operations.
+
+The image bytes are specified in the Bytes field of the Document input parameter. The following
+example shows the input JSON for an Amazon Textract operation that passes the image bytes in
+
+the Bytes input parameter.
+
+{
+    "Document": {
+        "Bytes": "/9j/4AAQSk....."
+    }
+}
+
+Note
+
+If you're using the AWS CLI, you can't pass image bytes to Amazon Textract operations.
+Instead, you must reference an image stored in an Amazon S3 bucket.
+
+The following Java code shows how to load an image from a local file system and call an Amazon
+Textract operation.
+
+String document="input.png";
+
+ByteBuffer imageBytes;
+try (InputStream inputStream = new FileInputStream(new File(document))) {
+    imageBytes = ByteBuffer.wrap(IOUtils.toByteArray(inputStream));
+
+Request
+89
+
+--- Page 3 ---
+Amazon Textract
+Developer Guide
+
+}
+AmazonTextract client = AmazonTextractClientBuilder.defaultClient();
+
+DetectDocumentTextRequest request = new DetectDocumentTextRequest()
+        .withDocument(new Document()
+                .withBytes(imageBytes));
+
+DetectDocumentTextResult result = client.detectDocumentText(request);
+
+Documents Stored in an Amazon S3 Bucket
+
+Amazon Textract can analyze document images that are stored in an Amazon S3 bucket. You
+
+specify the bucket and file name by using the S3Object field of the Document input parameter.
+The following example shows the input JSON for an Amazon Textract operation that processes a
+document stored in an Amazon S3 bucket.
+
+{
+    "Document": {
+        "S3Object": {
+            "Bucket": "bucket",
+            "Name": "input.png"
+        }
+    }
+}
+
+The following example shows how to call an Amazon Textract operation using an image stored in
+an Amazon S3 bucket.
+
+String document="input.png";
+String bucket="bucket";
+
+AmazonTextract client = AmazonTextractClientBuilder.defaultClient();
+
+DetectDocumentTextRequest request = new DetectDocumentTextRequest()
+        .withDocument(new Document()
+                .withS3Object(new S3Object()
+                        .withName(document)
+                        .withBucket(bucket)));
+
+DetectDocumentTextResult result = client.detectDocumentText(request);
+
+Request
+90
+
+--- Page 4 ---
+Amazon Textract
+Developer Guide
+
+Using an adapter
+
+With Amazon Textract, you can customize the output or response of a call to AnalyzeDocument by
+using an AdapterId and adapter version. To use an adapter, you must first have created and trained
+an adapter using the Amazon Textract Console or the API. To apply your adapter, provide its ID
+when calling the AnalyzeDocument API. This enhances predictions on your documents. Note that
+when calling the Document, you can only use one adapter per page.
+
+"AdaptersConfig": {
+      "Adapters": [
+         {
+            "AdapterId": "2e9bf1c4aa31",
+            "Version": "1"
+         }
+      ]
+   }
+
+The following Java example shows how to create Queries and a list of adapters, then provide these
+to AnalyzeDocument, using the AWS SDK for Java.
+
+String document="input.png";
+
+        ByteBuffer imageBytes;
+        try (InputStream inputStream = new FileInputStream(new File(document))) {
+            imageBytes = ByteBuffer.wrap(IOUtils.toByteArray(inputStream));
+
+        }
+        AmazonTextract client = AmazonTextractClientBuilder.defaultClient();
+
+        List<Query> queries = new ArrayList<Query>();
+        queries.add(new Query().withText("What is the employee name?")
+                .withAlias("CUST_NAME")
+                .withPages(Arrays.asList("*")));
+
+        List<Adapter> adapters = new ArrayList<Adapter>();
+        adapters.add(new Adapter()
+                .withAdapterId("1111111111")
+                .withVersion("1")
+                .withPages(Arrays.asList("*")));
+
+Using an adapter
+91
+
+--- Page 5 ---
+Amazon Textract
+Developer Guide
+
+        AnalyzeDocumentRequest request = new AnalyzeDocumentRequest()
+                .withFeatureTypes("QUERIES", "SIGNATURES")
+                .withDocument(new Document()
+                        .withBytes(imageBytes))
+                .withAdaptersConfig(new AdaptersConfig()
+                        .withAdapters(adapters));
+
+        AnalyzeDocumentResult result = client.analyzeDocument(request);
+
+Response
+
+The following sample is the JSON response from a call to DetectDocumentText. For more
+information, see Detecting Text.
+
+{
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "Blocks": [
+    {
+      "BlockType": "PAGE",
+      "Geometry": {
+        "BoundingBox": {
+          "Width": 0.9995205998420715,
+          "Height": 1.0,
+          "Left": 0.0,
+
+          "Top": 0.0
+        },
+        "Polygon": [
+          {
+            "X": 0.0,
+            "Y": 0.0
+          },
+          {
+            "X": 0.9995205998420715,
+            "Y": 2.297314024515845E-16
+          },
+          {
+            "X": 0.9995205998420715,
+            "Y": 1.0
+
+Response
+92
+
+--- Page 6 ---
+Amazon Textract
+Developer Guide
+
+      "BlockType": "LINE",
+      "Confidence": 99.93761444091797,
+      "Text": "Employment Application",
+      "Geometry": {
+        "BoundingBox": {
+          "Width": 0.3391372561454773,
+          "Height": 0.06906412541866302,
+          "Left": 0.29548385739326477,
+          "Top": 0.027493247762322426
+        },
+        "Polygon": [
+          {
+            "X": 0.29548385739326477,
+            "Y": 0.027493247762322426
+          },
+          {
+            "X": 0.6346210837364197,
+
+            "Y": 0.027493247762322426
+          },
+          {
+            "X": 0.6346210837364197,
+            "Y": 0.0965573713183403
+          },
+          {
+            "X": 0.29548385739326477,
+            "Y": 0.0965573713183403
+          }
+        ]
+      },
+      "Id": "26085884-d005-4144-b4c2-4d83dc50739b",
+      "Relationships": [
+
+        {
+          "Type": "CHILD",
+          "Ids": [
+            "ed48dacc-d089-498f-8e93-1cee1e5f39f3",
+            "ac7370f3-cbb7-4cd9-a8f9-bdcb2252caaf"
+          ]
+        }
+      ]
+    },
+    {
+      "BlockType": "LINE",
+      "Confidence": 99.91246795654297,
+      "Text": "Application Information",
+
+Response
+94
+
+--- Page 7 ---
+Amazon Textract
+Developer Guide
+
+        },
+        "Polygon": [
+          {
+            "X": 0.8387037515640259,
+            "Y": 0.8843405842781067
+          },
+          {
+            "X": 0.9666182994842529,
+            "Y": 0.8843405842781067
+          },
+          {
+            "X": 0.9666182994842529,
+            "Y": 0.9320254921913147
+          },
+          {
+            "X": 0.8387037515640259,
+            "Y": 0.9320254921913147
+
+          }
+        ]
+      },
+      "Id": "549ef3f9-3a13-4b77-bc25-fb2e0996839a"
+    }
+  ],
+  "DetectDocumentTextModelVersion": "1.0",
+  "ResponseMetadata": {
+    "RequestId": "337129e6-3af7-4014-842b-f6484e82cbf6",
+    "HTTPStatusCode": 200,
+    "HTTPHeaders": {
+      "x-amzn-requestid": "337129e6-3af7-4014-842b-f6484e82cbf6",
+      "content-type": "application/x-amz-json-1.1",
+      "content-length": "45675",
+
+      "date": "Mon, 09 Nov 2020 23:54:38 GMT"
+    },
+    "RetryAttempts": 0
+  }
+}
+}
+
+Detecting Document Text with Amazon Textract
+
+To detect text in a document, you use the DetectDocumentText operation, and pass a document
+
+file as input. DetectDocumentText returns a JSON structure that contains lines and words of
+
+Detecting Document Text
+163
+
+--- Page 8 ---
+Amazon Textract
+Developer Guide
+
+detected text, the location of the text in the document, and the relationships between detected
+text. For more information, see Detecting Text.
+
+You can provide an input document as an image byte array (base64-encoded image bytes), or as
+an Amazon S3 object. In this procedure, you upload an image file to your S3 bucket and specify the
+file name.
+
+To detect text in a document (API)
+
+1.
+If you haven't already:
+
+a.
+Give a user the AmazonTextractFullAccess and AmazonS3ReadOnlyAccess
+permissions. For more information, see Step 1: Set Up an AWS Account and Create a User.
+
+b.
+Install and configure the AWS CLI and the AWS SDKs. For more information, see Step 2:
+Set Up the AWS CLI and AWS SDKs.
+
+2.
+Upload a document to your S3 bucket.
+
+For instructions, see Uploading Objects into Amazon S3 in the Amazon Simple Storage Service
+User Guide.
+
+3.
+Use the following examples to call the DetectDocumentText operation.
+
+Java
+
+The following example code displays the document and boxes around lines of detected
+text.
+
+In the function main, replace the values of bucket and document with the names
+of the Amazon S3 bucket and document that you used in step 2. Replace the value of
+
+credentialsProvider with the name of your developer profile.
+
+//Calls DetectDocumentText.
+//Loads document from S3 bucket. Displays the document and bounding boxes around
+ detected lines/words of text.
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.List;
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+Detecting Document Text
+164
+
+--- Page 9 ---
+Amazon Textract
+Developer Guide
+
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.services.textract.AmazonTextract;
+import com.amazonaws.services.textract.AmazonTextractClientBuilder;
+import com.amazonaws.services.textract.model.Block;
+import com.amazonaws.services.textract.model.BoundingBox;
+import com.amazonaws.services.textract.model.DetectDocumentTextRequest;
+import com.amazonaws.services.textract.model.DetectDocumentTextResult;
+import com.amazonaws.services.textract.model.Document;
+import com.amazonaws.services.textract.model.S3Object;
+import com.amazonaws.services.textract.model.Point;
+import com.amazonaws.services.textract.model.Relationship;
+
+public class DocumentText extends JPanel {
+
+    private static final long serialVersionUID = 1L;
+
+    BufferedImage image;
+    DetectDocumentTextResult result;
+
+    public DocumentText(DetectDocumentTextResult documentResult, BufferedImage
+ bufImage) throws Exception {
+        super();
+
+        result = documentResult; // Results of text detection.
+        image = bufImage; // The image containing the document.
+
+    }
+
+    // Draws the image and text bounding box.
+
+    public void paintComponent(Graphics g) {
+
+        int height = image.getHeight(this);
+        int width = image.getWidth(this);
+
+        Graphics2D g2d = (Graphics2D) g; // Create a Java2D version of g.
+
+        // Draw the image.
+        g2d.drawImage(image, 0, 0, image.getWidth(this) , image.getHeight(this),
+ this);
+
+        // Iterate through blocks and display polygons around lines of detected
+ text.
+
+Detecting Document Text
+165
+
+--- Page 10 ---
+Amazon Textract
+Developer Guide
+
+        List<Block> blocks = result.getBlocks();
+        for (Block block : blocks) {
+            DisplayBlockInfo(block);
+            if ((block.getBlockType()).equals("LINE")) {
+                ShowPolygon(height, width, block.getGeometry().getPolygon(),
+ g2d);
+                /*
+                  ShowBoundingBox(height, width,
+ block.getGeometry().getBoundingBox(), g2d);
+                 */
+            } else { // its a word, so just show vertical lines.
+                ShowPolygonVerticals(height, width,
+ block.getGeometry().getPolygon(), g2d);
+            }
+        }
+    }
+
+    // Show bounding box at supplied location.
+    private void ShowBoundingBox(int imageHeight, int imageWidth, BoundingBox
+ box, Graphics2D g2d) {
+
+        float left = imageWidth * box.getLeft();
+        float top = imageHeight * box.getTop();
+
+        // Display bounding box.
+        g2d.setColor(new Color(0, 212, 0));
+        g2d.drawRect(Math.round(left), Math.round(top),
+                Math.round(imageWidth * box.getWidth()), Math.round(imageHeight
+ * box.getHeight()));
+
+    }
+
+    // Shows polygon at supplied location
+    private void ShowPolygon(int imageHeight, int imageWidth, List<Point>
+ points, Graphics2D g2d) {
+
+        g2d.setColor(new Color(0, 0, 0));
+        Polygon polygon = new Polygon();
+
+        // Construct polygon and display
+        for (Point point : points) {
+            polygon.addPoint((Math.round(point.getX() * imageWidth)),
+                    Math.round(point.getY() * imageHeight));
+        }
+
+Detecting Document Text
+166

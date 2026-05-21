@@ -35,11 +35,14 @@ describe('config contracts', () => {
   test('buildConfigPatchFromFlags maps explicit provider, OCR, batch, and pricing defaults', () => {
     expect(buildConfigPatchFromFlags({
       openai: 'gpt-5.4-mini',
+      grok: 'grok-4.3',
       glm: 'glm-5.1',
       kimi: 'kimi-k2.6',
       'llm-provider-concurrency': '3',
       'llm-local-concurrency': '1',
       'tesseract-ocr': true,
+      'openai-ocr': ['gpt-5.5'],
+      'grok-ocr': ['grok-4.3'],
       'deepinfra-ocr': ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
       'kimi-ocr': ['kimi-k2.6'],
       dpi: '450',
@@ -47,10 +50,11 @@ describe('config contracts', () => {
       'ocr-local-concurrency': '2',
       'batch-limit': '7',
       'max-cents': '25'
-    }, new Set(['openai', 'glm', 'kimi', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'deepinfra-ocr', 'kimi-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
+    }, new Set(['openai', 'grok', 'glm', 'kimi', 'llm-provider-concurrency', 'llm-local-concurrency', 'tesseract-ocr', 'openai-ocr', 'grok-ocr', 'deepinfra-ocr', 'kimi-ocr', 'dpi', 'ocr-provider-concurrency', 'ocr-local-concurrency', 'batch-limit', 'max-cents']))).toEqual({
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
+          grok: ['grok-4.3'],
           glm: ['glm-5.1'],
           kimi: ['kimi-k2.6'],
           providerConcurrency: 3,
@@ -59,6 +63,8 @@ describe('config contracts', () => {
         extract: {
           ocr: {
             tesseract: true,
+            openaiOcr: ['gpt-5.5'],
+            grokOcr: ['grok-4.3'],
             deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
             kimiOcr: ['kimi-k2.6'],
             dpi: 450,
@@ -180,7 +186,7 @@ describe('config contracts', () => {
 
   test('buildConfigPatchFromFlags saves BFL image defaults', () => {
     expect(buildConfigPatchFromFlags({
-      'bfl-image': ['flux-2-pro-preview'],
+      'bfl-image': ['flux-2-pro'],
       'reve-image': ['latest'],
       'image-size': '1024x1024',
       'image-format': 'webp'
@@ -188,7 +194,7 @@ describe('config contracts', () => {
       defaults: {
         post: {
           image: {
-            bflImage: ['flux-2-pro-preview'],
+            bflImage: ['flux-2-pro'],
             reveImage: ['latest'],
             imageSize: '1024x1024',
             imageFormat: 'webp'
@@ -353,11 +359,6 @@ describe('config contracts', () => {
       'deepgram-tts-bit-rate': '128000',
       'deepgram-tts-sample-rate': '24000',
       'deepgram-tts-speed': '1.1',
-      'deapi-tts-language': 'English',
-      'deapi-tts-speed': '1.2',
-      'deapi-tts-format': 'mp3',
-      'deapi-tts-sample-rate': '24000',
-      'deapi-tts-instruction': 'A calm narrator.',
       'elevenlabs-tts-output-format': 'mp3_22050_32',
       'elevenlabs-tts-language-code': 'en',
       'elevenlabs-tts-stability': '0.4',
@@ -387,11 +388,6 @@ describe('config contracts', () => {
       'deepgram-tts-bit-rate',
       'deepgram-tts-sample-rate',
       'deepgram-tts-speed',
-      'deapi-tts-language',
-      'deapi-tts-speed',
-      'deapi-tts-format',
-      'deapi-tts-sample-rate',
-      'deapi-tts-instruction',
       'elevenlabs-tts-output-format',
       'elevenlabs-tts-language-code',
       'elevenlabs-tts-stability',
@@ -426,11 +422,6 @@ describe('config contracts', () => {
             deepgramTtsBitRate: 128000,
             deepgramTtsSampleRate: 24000,
             deepgramTtsSpeed: 1.1,
-            deapiTtsLanguage: 'English',
-            deapiTtsSpeed: 1.2,
-            deapiTtsFormat: 'mp3',
-            deapiTtsSampleRate: 24000,
-            deapiTtsInstruction: 'A calm narrator.',
             elevenlabsTtsOutputFormat: 'mp3_22050_32',
             elevenlabsTtsLanguageCode: 'en',
             elevenlabsTtsStability: 0.4,
@@ -465,11 +456,6 @@ describe('config contracts', () => {
       'deepgram-tts-bit-rate': '128000',
       'deepgram-tts-sample-rate': '24000',
       'deepgram-tts-speed': '1.1',
-      'deapi-tts-language': 'English',
-      'deapi-tts-speed': '1.2',
-      'deapi-tts-format': 'mp3',
-      'deapi-tts-sample-rate': '24000',
-      'deapi-tts-instruction': 'A calm narrator.',
       'elevenlabs-tts-output-format': 'mp3_22050_32',
       'elevenlabs-tts-language-code': 'en',
       'elevenlabs-tts-stability': '0.4',
@@ -591,37 +577,12 @@ describe('config contracts', () => {
     })
   })
 
-  test('buildConfigPatchFromFlags saves and merges deAPI TTS clone defaults', () => {
-    const patch = buildConfigPatchFromFlags({
-      'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
-      'deapi-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'deapi-tts-ref-text': 'Reference transcript.'
-    }, new Set(['deapi-tts', 'deapi-tts-ref-audio', 'deapi-tts-ref-text']))
-
-    expect(patch).toEqual({
-      defaults: {
-        post: {
-          tts: {
-            deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
-            deapiTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            deapiTtsRefText: 'Reference transcript.'
-          }
-        }
-      }
-    })
-
-    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
-      'deapi-tts': ['Qwen3_TTS_12Hz_1_7B_Base'],
-      'deapi-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'deapi-tts-ref-text': 'Reference transcript.'
-    })
-  })
-
   test('loadConfig accepts current array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
+          grok: ['grok-4.3'],
           glm: ['glm-5.1'],
           kimi: ['kimi-k2.6'],
           providerConcurrency: 3,
@@ -634,6 +595,8 @@ describe('config contracts', () => {
           ocr: {
             providerConcurrency: 3,
             localConcurrency: 1,
+            openaiOcr: ['gpt-5.5'],
+            grokOcr: ['grok-4.3'],
             deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
             kimiOcr: ['kimi-k2.6'],
             gcloudDocai: ['ocr'],
@@ -689,18 +652,10 @@ describe('config contracts', () => {
             elevenlabsTtsOptimizeStreamingLatency: 2,
             elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
-            minimaxTtsVoice: 'AutoShowTestVoice',
-            deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
-            deapiTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            deapiTtsRefText: 'Reference transcript.',
-            deapiTtsLanguage: 'English',
-            deapiTtsSpeed: 1.2,
-            deapiTtsFormat: 'mp3',
-            deapiTtsSampleRate: 24000,
-            deapiTtsInstruction: 'A calm narrator.'
+            minimaxTtsVoice: 'AutoShowTestVoice'
           },
           image: {
-            bflImage: ['flux-2-pro-preview'],
+            bflImage: ['flux-2-pro'],
             imageFormat: 'jpeg'
           }
         }
@@ -711,6 +666,7 @@ describe('config contracts', () => {
       defaults: {
         llm: {
           openai: ['gpt-5.4-mini'],
+          grok: ['grok-4.3'],
           glm: ['glm-5.1'],
           kimi: ['kimi-k2.6'],
           providerConcurrency: 3,
@@ -723,6 +679,8 @@ describe('config contracts', () => {
           ocr: {
             providerConcurrency: 3,
             localConcurrency: 1,
+            openaiOcr: ['gpt-5.5'],
+            grokOcr: ['grok-4.3'],
             deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
             kimiOcr: ['kimi-k2.6'],
             gcloudDocai: ['ocr'],
@@ -778,18 +736,10 @@ describe('config contracts', () => {
             elevenlabsTtsOptimizeStreamingLatency: 2,
             elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
-            minimaxTtsVoice: 'AutoShowTestVoice',
-            deapiTts: ['Qwen3_TTS_12Hz_1_7B_Base'],
-            deapiTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            deapiTtsRefText: 'Reference transcript.',
-            deapiTtsLanguage: 'English',
-            deapiTtsSpeed: 1.2,
-            deapiTtsFormat: 'mp3',
-            deapiTtsSampleRate: 24000,
-            deapiTtsInstruction: 'A calm narrator.'
+            minimaxTtsVoice: 'AutoShowTestVoice'
           },
           image: {
-            bflImage: ['flux-2-pro-preview'],
+            bflImage: ['flux-2-pro'],
             imageFormat: 'jpeg'
           }
         }

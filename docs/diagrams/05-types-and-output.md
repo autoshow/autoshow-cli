@@ -128,11 +128,7 @@ src/types/
 │                                                                              │
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|'grok'|             │
 │                  'mistral'|'openai'|'gemini'|'deepgram'|'speechify'|        │
-│                  'gcloud'|'deapi'|'hume'|'cartesia'                         │
-│  ImageProvider = 'gemini'|'openai'|'minimax'|'grok'|'runway'|'bfl'|'deapi'   │
 │                |'reve'                                                       │
-│  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'|'deapi'            │
-│  MusicProvider = 'elevenlabs'|'minimax'|'deapi'|'gemini'                     │
 │                                                                              │
 │  OcrProvider   = 'tesseract'|'ocrmypdf'|'paddle-ocr'|'mistral'|'glm'|       │
 │                  'kimi'|'openai'|'anthropic'|'gemini'|'deepinfra'|           │

@@ -1,0 +1,374 @@
+{
+  "schemaVersion": 2,
+  "kind": "extract",
+  "metadata": {
+    "step1": {
+      "title": "Autogenerate Show Notes with Whisper-cpp, Llama-cpp, and Node-js",
+      "slug": "ajcwebdevcom-autogen-shownotes",
+      "author": "Anthony Campolo",
+      "pageCount": 1,
+      "format": "html",
+      "fileSize": 228823
+    },
+    "step2": [
+      {
+        "extractionMethod": "html+defuddle",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 849,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 6912,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+firecrawl",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 1812,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 6913,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+glm-reader",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 5771,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 7154,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+spider",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 1961,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 7047,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      }
+    ],
+    "resolvedStep2": {
+      "route": "article",
+      "sourceKind": "article",
+      "backend": "defuddle",
+      "backends": [
+        "defuddle",
+        "firecrawl",
+        "glm-reader",
+        "spider",
+        "zyte"
+      ]
+    },
+    "completionStatus": "incomplete",
+    "requestedProviders": [
+      {
+        "service": "defuddle",
+        "model": "defuddle"
+      },
+      {
+        "service": "firecrawl",
+        "model": "firecrawl"
+      },
+      {
+        "service": "glm-reader",
+        "model": "glm-reader"
+      },
+      {
+        "service": "spider",
+        "model": "spider"
+      },
+      {
+        "service": "zyte",
+        "model": "zyte"
+      }
+    ],
+    "providerStates": [
+      {
+        "service": "defuddle",
+        "model": "defuddle",
+        "artifactDir": "providers/defuddle",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "firecrawl",
+        "model": "firecrawl",
+        "artifactDir": "providers/firecrawl",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "glm-reader",
+        "model": "glm-reader",
+        "artifactDir": "providers/glm-reader",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "spider",
+        "model": "spider",
+        "artifactDir": "providers/spider",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "zyte",
+        "model": "zyte",
+        "artifactDir": "providers/zyte",
+        "status": "failed",
+        "attempts": 1,
+        "lastError": {
+          "message": "The operation was aborted."
+        }
+      }
+    ],
+    "missingProviders": [
+      {
+        "service": "zyte",
+        "model": "zyte"
+      }
+    ],
+    "web": {
+      "sourceUrl": "https://ajcwebdev.com/autogen-shownotes/",
+      "finalUrl": "https://ajcwebdev.com/autogen-shownotes/",
+      "title": "Autogenerate Show Notes with Whisper-cpp, Llama-cpp, and Node-js",
+      "author": "Anthony Campolo",
+      "site": "ajcwebdev",
+      "published": "2024-03-01T00:00:00.000Z, 2024-03-01T00:00:00.000Z",
+      "language": "en-US",
+      "wordCount": 6773,
+      "description": "End-to-end scripting workflow to generate automatic show notes with LLMs from audio and video transcripts using Whisper.cpp, Llama.cpp, and Commander.js"
+    },
+    "source": {
+      "url": "https://ajcwebdev.com/autogen-shownotes/"
+    },
+    "cost": {
+      "estimated": {
+        "totalCost": 1.2029999999999998,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "cost": 0,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 0,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "cost": 0.083,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 83,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "cost": 1,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 1000,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "cost": 0.12,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 120,
+            "pageCount": 1,
+            "estimateType": "exact"
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 1.2029999999999998,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "cost": 0,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "cost": 0.083,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "cost": 1,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "cost": 0.12,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 6876,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "processingTimeMs": 626,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 626,
+            "throughputValue": 95.847,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "processingTimeMs": 210,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 210,
+            "throughputValue": 285.714,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "processingTimeMs": 2540,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 2540,
+            "throughputValue": 23.622,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "processingTimeMs": 3500,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 3500,
+            "throughputValue": 17.143,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 10393,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "processingTimeMs": 849,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 849,
+            "throughputValue": 70.671,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "processingTimeMs": 1812,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 1812,
+            "throughputValue": 33.113,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "processingTimeMs": 5771,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 5771,
+            "throughputValue": 10.397,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "processingTimeMs": 1961,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 1961,
+            "throughputValue": 30.597,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "errors": [
+      {
+        "service": "zyte",
+        "model": "zyte",
+        "message": "The operation was aborted."
+      }
+    ]
+  }
+}

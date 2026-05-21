@@ -16,6 +16,9 @@ export type VoiceQualityRankable = {
   humanSpeechScore: number | null
   naturalnessScore: number | null
   speechQualityScore: number | null
+  scoreCoverage?: {
+    humanSpeech?: { availableWeight: number; totalWeight: number }
+  }
 }
 
 export type VoiceQualityRanked<T extends VoiceQualityRankable> = T & {
@@ -60,6 +63,12 @@ export const aggregateWeightedScore = (
   }
 }
 
+const coverageRatio = (provider: VoiceQualityRankable): number => {
+  const cov = provider.scoreCoverage?.humanSpeech
+  if (!cov || cov.totalWeight === 0) return 0
+  return cov.availableWeight / cov.totalWeight
+}
+
 export const rankVoiceQualityProviders = <T extends VoiceQualityRankable>(
   providers: T[]
 ): Array<VoiceQualityRanked<T>> =>
@@ -81,6 +90,12 @@ export const rankVoiceQualityProviders = <T extends VoiceQualityRankable>(
       const rightQuality = right.speechQualityScore ?? Number.NEGATIVE_INFINITY
       if (leftQuality !== rightQuality) {
         return rightQuality - leftQuality
+      }
+
+      const leftCoverage = coverageRatio(left)
+      const rightCoverage = coverageRatio(right)
+      if (leftCoverage !== rightCoverage) {
+        return rightCoverage - leftCoverage
       }
 
       return left.providerKey.localeCompare(right.providerKey)

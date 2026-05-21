@@ -22,7 +22,6 @@ Generate speech audio from a local `.md` or `.txt` file with local or hosted TTS
   - [Hume](#hume)
   - [Cartesia](#cartesia)
   - [Google Cloud](#google-cloud)
-  - [deAPI](#deapi)
 - [Pricing Notes](#pricing-notes)
 - [Output](#output)
 
@@ -57,8 +56,6 @@ MISTRAL_API_KEY=...
 SPEECHIFY_API_KEY=...
 HUME_API_KEY=...
 CARTESIA_API_KEY=...
-DEAPI_API_KEY=...
-DEAPI_BASE_URL=https://api.deapi.ai
 # Google Cloud TTS uses gcloud CLI auth and an active billed project
 bun as setup --gcloud
 # optional for Mistral TTS; set exactly one
@@ -99,7 +96,6 @@ bun as tts <input> [flags]
 
 You can combine multiple TTS targets in one run. Each successful target writes its own output file. Model-selecting flags are repeatable, including repeated flags from the same provider. Shared voice flags apply to every selected model for that provider.
 
-`--all-tts` expands to the self-contained TTS target set, including Kitten, ElevenLabs, MiniMax, Groq, Grok, Mistral, OpenAI, Gemini, the default Deepgram model, Speechify, Hume, Cartesia, Google Cloud prebuilt models, and runnable deAPI models. It excludes special modes that require extra inputs, including Google Cloud `instant-custom-voice`, deAPI voice clone/design models, and dialogue-only flows.
 
 ```bash
 bun as tts input/examples/tts/1-tts.md \
@@ -355,23 +351,14 @@ Google Cloud prebuilt TTS uses `gcloud` CLI auth to call `v1/text:synthesize` wi
 
 Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice cloning key. Provide an existing key with `--gcloud-tts-voice-cloning-key`, or generate one in the run with both `--gcloud-tts-ref-audio` and `--gcloud-tts-consent-audio`. Optional `--gcloud-tts-voice-cloning-key-out <path>` writes the generated key; AutoShow does not save raw cloning keys to config. Reference and consent audio must be non-empty `wav`, `mp3`, `m4a`, or `pcm`, provided as local paths or HTTP(S) URLs; when `ffprobe` can detect duration and channels, files must be at most 10 seconds and single-channel. `--gcloud-tts-consent-language` currently supports `en-US`.
 
-### deAPI
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi <model>` |
 | Models | `Kokoro`, `Chatterbox`, `Qwen3_TTS_12Hz_1_7B_CustomVoice`, `Qwen3_TTS_12Hz_1_7B_Base`, `Qwen3_TTS_12Hz_1_7B_VoiceDesign` |
-| Preset voice | `--deapi-tts-voice <id>` |
-| Voice cloning | `--deapi-tts-ref-audio <path>`, `--deapi-tts-ref-text <text>` |
 
 ```bash
-bun as tts input/examples/tts/1-tts.md --deapi Kokoro
-bun as tts input/examples/tts/1-tts.md --deapi Kokoro --deapi-tts-voice af_heart --price
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/anthony-voice-8-seconds.mp3
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3 --deapi-tts-ref-text "Reference transcript"
 ```
 
-deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts-voice`. deAPI voice cloning uses `Qwen3_TTS_12Hz_1_7B_Base` plus `--deapi-tts-ref-audio`; optional `--deapi-tts-ref-text` is sent as `ref_text`. Reference audio must be a local `mp3`, `wav`, `flac`, `ogg`, or `m4a` file, at most 10 MB, and 3-10 seconds long. `--deapi-tts-voice` and `--deapi-tts-ref-audio` are mutually exclusive. `Qwen3_TTS_12Hz_1_7B_VoiceDesign` requires `--deapi-tts-instruction`. `--all-tts` selects only preset/runnable deAPI models and does not include clone or voice-design modes.
 
 ## Pricing Notes
 
@@ -384,7 +371,6 @@ deAPI preset voice models keep using `mode=custom_voice` and accept `--deapi-tts
 - Hume `octave-2` estimates use the conservative public overage rate of 15 cents / 1K characters.
 - Cartesia Sonic estimates use 3.7375 cents / 1K characters for `sonic-3` and `sonic-3.5`, with a 3000 ms / 1K characters timing heuristic.
 - Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Chirp 3 HD 3 cents / 1K characters, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics are 9000 ms / 1K characters for Chirp 3 HD, 10000 ms / 1K for Studio, and 12000 ms / 1K for Instant Custom Voice.
-- deAPI TTS price preflight calls `/api/v2/audio/speech/price` when `DEAPI_API_KEY` is available. Voice clone quotes send `mode: "voice_clone"` with `count_text`, `model`, `lang`, `speed`, `format`, and `sample_rate`; `voice` is not sent. Without a key, AutoShow falls back to the local registry rate of `$0.00077 / 1K characters` (`0.077¢ / 1K`, `$0.77 / 1M`). `Qwen3_TTS_12Hz_1_7B_Base` uses a 10000 ms / 1K characters processing-time estimate.
 
 ## Output
 

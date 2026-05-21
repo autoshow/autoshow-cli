@@ -1,5 +1,4 @@
 import type { TtsOptions, TtsTarget } from '~/types'
-import { collectDeapiTtsTargets } from './providers/deapi'
 import { collectDeepgramTtsTargets } from './providers/deepgram'
 import { collectElevenLabsTtsTargets } from './providers/elevenlabs'
 import { collectCartesiaTtsTargets } from './providers/cartesia'
@@ -33,7 +32,6 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     ...collectSpeechifyTtsTargets(selection),
     ...collectHumeTtsTargets(selection),
     ...collectCartesiaTtsTargets(selection),
-    ...collectGcloudTtsTargets(selection),
-    ...collectDeapiTtsTargets(selection)
+    ...collectGcloudTtsTargets(selection)
   ]
 }

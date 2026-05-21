@@ -79,11 +79,33 @@ defineOCRServiceTest({
 })
 
 defineOCRServiceTest({
-  models: ['gpt-5.4', 'gpt-5.4-mini'],
+  models: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini'],
   cliFlag: '--openai',
   extractionMethod: 'openai-ocr',
   imageExtractionMethod: 'image+openai-ocr',
   envVarKey: 'OPENAI_API_KEY',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  assertProviderMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['grok-4.3'],
+  cliFlag: '--grok',
+  extractionMethod: 'grok-ocr',
+  imageExtractionMethod: 'image+grok-ocr',
+  envVarKey: 'XAI_API_KEY',
+  inputMode: 'image-only',
+  imageInput: HOSTED_OCR_IMAGE_INPUT,
+  assertProviderMetadata: true,
+})
+
+defineOCRServiceTest({
+  models: ['claude-opus-4-7', 'claude-sonnet-4-6'],
+  cliFlag: '--anthropic',
+  extractionMethod: 'anthropic-ocr',
+  imageExtractionMethod: 'image+anthropic-ocr',
+  envVarKey: 'ANTHROPIC_API_KEY',
   inputMode: 'image-only',
   imageInput: HOSTED_OCR_IMAGE_INPUT,
   assertProviderMetadata: true,

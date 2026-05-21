@@ -10,14 +10,12 @@ const MUSIC_PROVIDER_FLAGS = [
   'all-music',
   'elevenlabs-music',
   'minimax-music',
-  'deapi-music',
   'gemini-music'
 ] as const
 
 const MUSIC_MODEL_FIELDS = {
   elevenlabs: ['elevenlabsMusicModels', 'elevenlabsMusicModel'],
   minimax: ['minimaxMusicModels', 'minimaxMusicModel'],
-  deapi: ['deapiMusicModels', 'deapiMusicModel'],
   gemini: ['geminiMusicModels', 'geminiMusicModel']
 } as const
 
@@ -27,8 +25,6 @@ const clearMusicProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
   elevenlabsMusicModel: undefined,
   minimaxMusicModels: undefined,
   minimaxMusicModel: undefined,
-  deapiMusicModels: undefined,
-  deapiMusicModel: undefined,
   geminiMusicModels: undefined,
   geminiMusicModel: undefined
 })

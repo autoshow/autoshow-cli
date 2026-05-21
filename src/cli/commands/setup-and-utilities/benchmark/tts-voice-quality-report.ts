@@ -25,6 +25,8 @@ export type VoiceQualityReportMode = "local" | "full";
 type ProviderGroup = "local" | "cloud";
 type ComponentStatus = "scored" | "missing" | "warning";
 
+export type ContentType = "narration" | "news" | "conversational" | "technical" | "default";
+
 export interface VoiceQualityReportOptions {
   runDir: string;
   inputTextPath?: string;
@@ -38,6 +40,7 @@ export interface VoiceQualityReportOptions {
   jsonOut: string | null;
   keepTemp: boolean;
   audioJudgeModel: string;
+  contentType?: ContentType;
 }
 
 interface ComponentScore {
@@ -519,11 +522,43 @@ function edgeSilenceSeconds(samples: Float64Array, sampleRate: number, threshold
   return count / sampleRate;
 }
 
+interface SpeakingRateParams {
+  ideal: number;
+  goodDeviation: number;
+  hardDeviation: number;
+}
+
+const SPEAKING_RATE_BY_CONTENT_TYPE: Record<ContentType, SpeakingRateParams> = {
+  narration: { ideal: 150, goodDeviation: 20, hardDeviation: 70 },
+  news: { ideal: 162, goodDeviation: 25, hardDeviation: 75 },
+  conversational: { ideal: 150, goodDeviation: 40, hardDeviation: 100 },
+  technical: { ideal: 140, goodDeviation: 20, hardDeviation: 65 },
+  default: { ideal: 155, goodDeviation: 30, hardDeviation: 95 },
+};
+
+function computeAdaptiveSilenceThreshold(samples: Float64Array): number {
+  const absoluteValues = new Float64Array(samples.length);
+  for (let i = 0; i < samples.length; i++) {
+    absoluteValues[i] = Math.abs(samples[i] ?? 0);
+  }
+  absoluteValues.sort();
+  const p5Index = Math.floor(samples.length * 0.05);
+  const noiseFloor = absoluteValues[p5Index] ?? 0;
+  const computed = noiseFloor * 3;
+  const minThreshold = 10 ** (-60 / 20);
+  const maxThreshold = 10 ** (-25 / 20);
+  if (computed < minThreshold || computed > maxThreshold) {
+    return 10 ** (-45 / 20);
+  }
+  return computed;
+}
+
 function computeHeuristics(
   wav: Pcm16Wav,
   inputText: string,
   inputWordCount: number,
   inputCharCount: number,
+  contentType: ContentType = "default",
 ): HeuristicResult {
   const { samples, sampleRate } = wav;
   const warnings: string[] = [];
@@ -538,7 +573,7 @@ function computeHeuristics(
   let clipping = 0;
   let silenceSamples = 0;
   let abruptDiscontinuities = 0;
-  const silenceThreshold = 10 ** (-45 / 20);
+  const silenceThreshold = computeAdaptiveSilenceThreshold(samples);
   let previous = samples[0] ?? 0;
 
   for (const sample of samples) {
@@ -611,7 +646,8 @@ function computeHeuristics(
     discontinuityScore * 0.15 +
     dcScore * 0.05;
 
-  const rateScore = scoreCentered(speechWpm, 155, 30, 95);
+  const rateParams = SPEAKING_RATE_BY_CONTENT_TYPE[contentType];
+  const rateScore = scoreCentered(speechWpm, rateParams.ideal, rateParams.goodDeviation, rateParams.hardDeviation);
   const pauseRatioScore = scoreNearRange(silenceRatio, 0.06, 0.28, 0, 0.55);
   const pauseCountScore = scoreNearRange(pauseCountRatio, 0.5, 1.8, 0, 3.2);
   const prosodyRangeScore = scoreNearRange(loudnessRangeDb, 5, 22, 0, 34);
@@ -945,6 +981,9 @@ export function buildOpenAiAudioJudgeRequestBody(input: {
   model: string;
   audioBase64: string;
   inputText: string;
+  jsonMode?: boolean;
+  audioOutput?: boolean;
+  toolMode?: boolean;
 }): Record<string, unknown> {
   const prompt = [
     "Evaluate this text-to-speech sample against the supplied reference text.",
@@ -960,8 +999,44 @@ export function buildOpenAiAudioJudgeRequestBody(input: {
   return {
     model: input.model,
     store: false,
-    modalities: ["text", "audio"],
-    audio: { voice: "alloy", format: "wav" },
+    modalities: input.audioOutput ? ["text", "audio"] : ["text"],
+    ...(input.audioOutput ? { audio: { voice: "alloy", format: "wav" } } : {}),
+    ...(input.jsonMode === false ? {} : { response_format: { type: "json_object" } }),
+    ...(input.toolMode ? {
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "record_tts_voice_quality",
+            description: "Record the voice-quality rubric scores for this text-to-speech audio sample.",
+            parameters: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                naturalnessScore: { type: ["number", "null"] },
+                pronunciationScore: { type: ["number", "null"] },
+                prosodyScore: { type: ["number", "null"] },
+                artifactScore: { type: ["number", "null"] },
+                confidence: { type: "number" },
+                notes: { type: "string" },
+              },
+              required: [
+                "naturalnessScore",
+                "pronunciationScore",
+                "prosodyScore",
+                "artifactScore",
+                "confidence",
+                "notes",
+              ],
+            },
+          },
+        },
+      ],
+      tool_choice: {
+        type: "function",
+        function: { name: "record_tts_voice_quality" },
+      },
+    } : {}),
     messages: [
       {
         role: "system",
@@ -1000,13 +1075,21 @@ function stripJsonFence(text: string): string {
   return (match?.[1] ?? trimmed).trim();
 }
 
-function firstParsableJsonObject(text: string): Record<string, unknown> | null {
+function firstParsableJsonObject(text: string): {
+  parsed: Record<string, unknown> | null;
+  malformedSnippet: string | null;
+  truncatedSnippet: string | null;
+} {
+  let malformedSnippet: string | null = null;
+  let truncatedSnippet: string | null = null;
+
   for (let start = 0; start < text.length; start += 1) {
     if (text.charAt(start) !== "{") continue;
 
     let depth = 0;
     let inString = false;
     let escaped = false;
+    let closed = false;
 
     for (let index = start; index < text.length; index += 1) {
       const char = text.charAt(index);
@@ -1037,17 +1120,24 @@ function firstParsableJsonObject(text: string): Record<string, unknown> | null {
       if (char === "}") {
         depth -= 1;
         if (depth === 0) {
-          const parsed = tryParseJsonObject(text.slice(start, index + 1));
+          closed = true;
+          const candidate = text.slice(start, index + 1);
+          const parsed = tryParseJsonObject(candidate);
           if (parsed) {
-            return parsed;
+            return { parsed, malformedSnippet: null, truncatedSnippet: null };
           }
+          malformedSnippet ??= candidate;
           break;
         }
       }
     }
+
+    if (!closed && depth > 0) {
+      truncatedSnippet ??= text.slice(start);
+    }
   }
 
-  return null;
+  return { parsed: null, malformedSnippet, truncatedSnippet };
 }
 
 function previewText(text: string): string {
@@ -1067,8 +1157,18 @@ export function parseOpenAiAudioJudgeResponseContent(text: string): Record<strin
   }
 
   const embedded = firstParsableJsonObject(unfenced);
-  if (embedded) {
-    return embedded;
+  if (embedded.parsed) {
+    return embedded.parsed;
+  }
+
+  if (embedded.truncatedSnippet) {
+    const preview = previewText(embedded.truncatedSnippet);
+    throw new Error(`OpenAI audio judge returned truncated JSON object${preview ? `: ${preview}` : ""}`);
+  }
+
+  if (embedded.malformedSnippet) {
+    const preview = previewText(embedded.malformedSnippet);
+    throw new Error(`OpenAI audio judge returned malformed JSON object${preview ? `: ${preview}` : ""}`);
   }
 
   const preview = previewText(trimmed);
@@ -1086,6 +1186,14 @@ function extractOpenAiAudioJudgeResponseText(payload: unknown): string {
   }
 
   const message = payload["choices"][0]["message"];
+  const toolCalls = message["tool_calls"];
+  if (Array.isArray(toolCalls) && isRecord(toolCalls[0])) {
+    const functionCall = toolCalls[0]["function"];
+    if (isRecord(functionCall) && typeof functionCall["arguments"] === "string") {
+      return functionCall["arguments"];
+    }
+  }
+
   const content = message["content"];
   if (typeof content === "string" && content.trim().length > 0) {
     return content;
@@ -1099,6 +1207,55 @@ function extractOpenAiAudioJudgeResponseText(payload: unknown): string {
   return typeof content === "string" ? content : "";
 }
 
+function isOpenAiAudioJudgeResponseFormatUnsupported(status: number, rawText: string): boolean {
+  if (status !== 400 && status !== 422) return false;
+  const lowered = rawText.toLowerCase();
+
+  try {
+    const payload = JSON.parse(rawText) as unknown;
+    if (isRecord(payload)) {
+      const error = payload["error"];
+      if (isRecord(error) && error["param"] === "response_format") {
+        return true;
+      }
+    }
+  } catch {
+  }
+
+  return lowered.includes("response_format") && (
+    lowered.includes("not supported") ||
+    lowered.includes("unsupported") ||
+    lowered.includes("invalid parameter")
+  );
+}
+
+function isOpenAiAudioJudgeToolUnsupported(status: number, rawText: string): boolean {
+  if (status !== 400 && status !== 422) return false;
+  const lowered = rawText.toLowerCase();
+  return (
+    lowered.includes("tool_choice") ||
+    lowered.includes("tool_calls") ||
+    lowered.includes("tools") ||
+    lowered.includes("function")
+  ) && (
+    lowered.includes("not supported") ||
+    lowered.includes("unsupported") ||
+    lowered.includes("invalid parameter")
+  );
+}
+
+function isOpenAiAudioJudgeMissingAudioText(text: string): boolean {
+  const lowered = text.toLowerCase();
+  return lowered.includes("audio") && (
+    lowered.includes("don't have") ||
+    lowered.includes("do not have") ||
+    lowered.includes("no audio") ||
+    lowered.includes("provide the audio") ||
+    lowered.includes("provide an audio") ||
+    lowered.includes("without an audio")
+  );
+}
+
 async function runPaidAudioJudge(
   normalizedAudioPath: string,
   inputText: string,
@@ -1108,25 +1265,84 @@ async function runPaidAudioJudge(
   if (!apiKey) throw new Error("OPENAI_API_KEY is required for paid audio judging");
   const baseURL = (process.env["OPENAI_BASE_URL"] ?? "https://api.openai.com/v1").replace(/\/+$/, "");
   const audioBase64 = readFileSync(normalizedAudioPath).toString("base64");
-  const response = await fetch(`${baseURL}/chat/completions`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(buildOpenAiAudioJudgeRequestBody({
-      model,
-      audioBase64,
-      inputText,
-    })),
-  });
-  const rawText = await response.text();
-  if (!response.ok) {
-    throw new Error(`OpenAI audio judge failed (${response.status}): ${rawText.slice(0, 500)}`);
+  const executeJudgeRequest = async (request: { jsonMode: boolean; audioOutput: boolean; toolMode?: boolean }): Promise<{
+    ok: boolean;
+    status: number;
+    rawText: string;
+    audioOutput: boolean;
+    toolMode: boolean;
+  }> => {
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(buildOpenAiAudioJudgeRequestBody({
+        model,
+        audioBase64,
+        inputText,
+        jsonMode: request.jsonMode,
+        audioOutput: request.audioOutput,
+        ...(request.toolMode === undefined ? {} : { toolMode: request.toolMode }),
+      })),
+    });
+    return {
+      ok: response.ok,
+      status: response.status,
+      rawText: await response.text(),
+      audioOutput: request.audioOutput,
+      toolMode: request.toolMode === true,
+    };
+  };
+
+  let result = await executeJudgeRequest({ jsonMode: true, audioOutput: false });
+  if (!result.ok && isOpenAiAudioJudgeResponseFormatUnsupported(result.status, result.rawText)) {
+    result = await executeJudgeRequest({ jsonMode: false, audioOutput: true, toolMode: true });
+    if (!result.ok && isOpenAiAudioJudgeToolUnsupported(result.status, result.rawText)) {
+      result = await executeJudgeRequest({ jsonMode: false, audioOutput: true });
+    }
   }
-  const payload = JSON.parse(rawText) as unknown;
-  const content = extractOpenAiAudioJudgeResponseText(payload);
-  const parsed = parseOpenAiAudioJudgeResponseContent(content);
+
+  const parseResult = (rawText: string): {
+    parsed: Record<string, unknown>;
+    content: string;
+  } => {
+    const payload = JSON.parse(rawText) as unknown;
+    const content = extractOpenAiAudioJudgeResponseText(payload);
+    return {
+      parsed: parseOpenAiAudioJudgeResponseContent(content),
+      content,
+    };
+  };
+
+  if (!result.ok) {
+    throw new Error(`OpenAI audio judge failed (${result.status}): ${result.rawText.slice(0, 500)}`);
+  }
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = parseResult(result.rawText).parsed;
+  } catch (error) {
+    let content = "";
+    try {
+      const payload = JSON.parse(result.rawText) as unknown;
+      content = extractOpenAiAudioJudgeResponseText(payload);
+    } catch {
+    }
+    if (result.audioOutput || !isOpenAiAudioJudgeMissingAudioText(content)) {
+      throw error;
+    }
+    result = await executeJudgeRequest({ jsonMode: false, audioOutput: true, toolMode: true });
+    if (!result.ok && isOpenAiAudioJudgeToolUnsupported(result.status, result.rawText)) {
+      result = await executeJudgeRequest({ jsonMode: false, audioOutput: true });
+    }
+    if (!result.ok) {
+      throw new Error(`OpenAI audio judge failed (${result.status}): ${result.rawText.slice(0, 500)}`);
+    }
+    parsed = parseResult(result.rawText).parsed;
+  }
+
   const score = finiteNumber(parsed["naturalnessScore"]);
   if (score === null) {
     throw new Error("OpenAI audio judge response missing naturalnessScore");
@@ -1200,6 +1416,7 @@ async function evaluateProvider(options: {
   allowPaid: boolean;
   audioJudgeModel: string;
   tempDir: string;
+  contentType?: ContentType;
 }): Promise<Omit<ProviderVoiceQualityEntry, "rank">> {
   const providerKey = makeProviderKey(options.entry.ttsService, options.entry.ttsModel);
   const warnings: string[] = [];
@@ -1224,7 +1441,7 @@ async function evaluateProvider(options: {
       normalizedAudioPath = join(options.tempDir, `${options.entry.audioFileName.replace(/[^a-zA-Z0-9._-]/g, "_")}.16k-mono.wav`);
       await normalizeAudio(options.audioPath, normalizedAudioPath);
       const wav = readPcm16MonoWav(normalizedAudioPath);
-      heuristics = computeHeuristics(wav, options.inputText, options.inputWordCount, options.inputCharCount);
+      heuristics = computeHeuristics(wav, options.inputText, options.inputWordCount, options.inputCharCount, options.contentType);
       warnings.push(...heuristics.warnings);
     } catch (error) {
       warnings.push(`audio heuristics failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -1389,11 +1606,161 @@ function formatCoverage(coverage: ScoreCoverage): string {
   return `${Math.round((coverage.availableWeight / coverage.totalWeight) * 100)}%`;
 }
 
+function humanSpeechConfidence(provider: ProviderVoiceQualityEntry): string {
+  const natPct = provider.scoreCoverage.naturalness.availableWeight / provider.scoreCoverage.naturalness.totalWeight;
+  const qualPct = provider.scoreCoverage.speechQuality.availableWeight / provider.scoreCoverage.speechQuality.totalWeight;
+  const combined = (natPct + qualPct) / 2;
+  if (combined > 0.8) return "High";
+  if (combined >= 0.4) return "Medium";
+  return "Low";
+}
+
+function buildProviderDetails(providers: ProviderVoiceQualityEntry[]): string {
+  return providers.map((provider) => {
+    const lines: string[] = [];
+    lines.push(`### ${provider.rank}. \`${provider.providerKey}\` (${provider.group})`);
+    lines.push("");
+    lines.push(`| Metric | Score |`);
+    lines.push(`| --- | ---: |`);
+    lines.push(`| Human Speech | ${formatScore(provider.humanSpeechScore)} |`);
+    lines.push(`| Naturalness | ${formatScore(provider.naturalnessScore)} |`);
+    lines.push(`| Speech Quality | ${formatScore(provider.speechQualityScore)} |`);
+    lines.push(`| Confidence | ${humanSpeechConfidence(provider)} |`);
+    lines.push("");
+
+    lines.push("**Naturalness Components**");
+    lines.push("");
+    lines.push("| Component | Score | Weight | Source |");
+    lines.push("| --- | ---: | ---: | --- |");
+    for (const [key, comp] of Object.entries(provider.componentScores.naturalness)) {
+      lines.push(`| ${key} | ${formatScore(comp.score)} | ${(comp.weight * 100).toFixed(0)}% | ${comp.source} |`);
+    }
+    lines.push("");
+
+    lines.push("**Speech Quality Components**");
+    lines.push("");
+    lines.push("| Component | Score | Weight | Source |");
+    lines.push("| --- | ---: | ---: | --- |");
+    for (const [key, comp] of Object.entries(provider.componentScores.speechQuality)) {
+      lines.push(`| ${key} | ${formatScore(comp.score)} | ${(comp.weight * 100).toFixed(0)}% | ${comp.source} |`);
+    }
+    lines.push("");
+
+    if (provider.metricDetails.signalMetrics) {
+      const sm = provider.metricDetails.signalMetrics;
+      lines.push("**Signal Metrics**");
+      lines.push("");
+      lines.push(`- Duration: ${sm.durationSeconds.toFixed(2)}s`);
+      lines.push(`- Peak: ${sm.peakDbfs.toFixed(1)} dBFS, RMS: ${sm.rmsDbfs.toFixed(1)} dBFS`);
+      lines.push(`- Clipping: ${(sm.clippingRatio * 100).toFixed(3)}%, Silence: ${(sm.silenceRatio * 100).toFixed(1)}%`);
+      lines.push(`- Loudness range: ${sm.loudnessRangeDb.toFixed(1)} dB`);
+      lines.push(`- Pauses: ${sm.pauseCount}${sm.medianPauseSeconds !== null ? ` (median ${sm.medianPauseSeconds.toFixed(2)}s)` : ""}`);
+      lines.push("");
+    }
+
+    if (provider.metricDetails.prosodyMetrics) {
+      const pm = provider.metricDetails.prosodyMetrics;
+      lines.push("**Prosody Metrics**");
+      lines.push("");
+      if (pm["speechWordsPerMinute"] !== null) lines.push(`- Speaking rate: ${(pm["speechWordsPerMinute"] as number).toFixed(0)} WPM`);
+      if (pm["speakingRateCharsPerSecond"] !== null) lines.push(`- Characters/sec: ${(pm["speakingRateCharsPerSecond"] as number).toFixed(1)}`);
+      if (pm["detectedPauseCount"] !== null) lines.push(`- Detected pauses: ${pm["detectedPauseCount"]} (expected ~${pm["expectedPauseCount"]})`);
+      lines.push("");
+    }
+
+    if (provider.metricDetails.roundtripStt.engines.length > 0) {
+      lines.push("**Roundtrip STT**");
+      lines.push("");
+      lines.push("| Engine | WER |");
+      lines.push("| --- | ---: |");
+      for (const engine of provider.metricDetails.roundtripStt.engines) {
+        lines.push(`| ${engine.engine} | ${(engine.wer * 100).toFixed(2)}% |`);
+      }
+      if (provider.metricDetails.roundtripStt.medianWer !== null) {
+        lines.push(`| **Median** | **${(provider.metricDetails.roundtripStt.medianWer * 100).toFixed(2)}%** |`);
+      }
+      lines.push("");
+    }
+
+    if (provider.warnings.length > 0) {
+      lines.push("**Warnings**");
+      lines.push("");
+      for (const warning of provider.warnings) {
+        lines.push(`- ${warning}`);
+      }
+      lines.push("");
+    }
+
+    return lines.join("\n");
+  }).join("\n---\n\n");
+}
+
+function buildRecommendations(
+  providers: ProviderVoiceQualityEntry[],
+  mode: VoiceQualityReportMode,
+): string {
+  const lines: string[] = [];
+  const bestLocal = providers.find((p) => p.group === "local");
+  const bestCloud = providers.find((p) => p.group === "cloud");
+  const best = providers[0];
+
+  if (best) {
+    lines.push(`- **Best overall**: \`${best.providerKey}\` (${formatScore(best.humanSpeechScore)}/100)`);
+  }
+  if (bestLocal) {
+    lines.push(`- **Best local**: \`${bestLocal.providerKey}\` (${formatScore(bestLocal.humanSpeechScore)}/100)`);
+  }
+  if (bestCloud) {
+    lines.push(`- **Best cloud**: \`${bestCloud.providerKey}\` (${formatScore(bestCloud.humanSpeechScore)}/100)`);
+  }
+
+  if (best && providers.length > 1) {
+    const second = providers[1];
+    if (second && best.humanSpeechScore !== null && second.humanSpeechScore !== null) {
+      const gap = best.humanSpeechScore - second.humanSpeechScore;
+      if (gap > 5) {
+        lines.push(`- \`${best.providerKey}\` leads by ${gap.toFixed(1)} points over \`${second.providerKey}\``);
+      }
+    }
+  }
+
+  const poorSignal = providers.filter((p) => {
+    const sh = p.componentScores.speechQuality["signalHygiene"];
+    return sh && sh.score !== null && sh.score < 50;
+  });
+  if (poorSignal.length > 0) {
+    lines.push(`- **Signal hygiene concerns**: ${poorSignal.map((p) => `\`${p.providerKey}\``).join(", ")}`);
+  }
+
+  const lowCoverage = providers.filter((p) => humanSpeechConfidence(p) === "Low");
+  if (lowCoverage.length > 0) {
+    const prefix = `- ${lowCoverage.length} provider(s) have low score coverage.`;
+    if (mode === "local") {
+      lines.push(`${prefix} Run with \`--tts-mode full\` or supply \`--tts-metric-fixtures\` for higher confidence.`);
+    } else {
+      const externalMetrics = [
+        "`utmosv2Mos`",
+        "`nisqaTtsNaturalnessMos`",
+        "`nisqaQualityMos`",
+        "`dnsmosMos`",
+      ].join(", ");
+      lines.push(
+        `${prefix} Full mode already ran; remaining low coverage usually means ` +
+        `external MOS/DNS metrics are missing (${externalMetrics}). Supply ` +
+        "`--tts-metric-fixtures` from external scorers for higher confidence.",
+      );
+    }
+  }
+
+  return lines.join("\n");
+}
+
 function buildMarkdown(report: {
   inputTextPath: string;
   inputTextCharCount: number;
   inputTextWordCount: number;
   mode: VoiceQualityReportMode;
+  contentType: ContentType;
   providerCount: number;
   localCount: number;
   cloudCount: number;
@@ -1402,7 +1769,8 @@ function buildMarkdown(report: {
 }): string {
   const rankingRows = report.providers.map((provider) => {
     const missing = provider.missingMetrics.length === 0 ? "none" : provider.missingMetrics.join(", ");
-    return `| ${provider.rank} | \`${provider.providerKey}\` | ${provider.group} | ${formatScore(provider.humanSpeechScore)} | ${formatScore(provider.naturalnessScore)} | ${formatScore(provider.speechQualityScore)} | ${formatCoverage(provider.scoreCoverage.naturalness)} / ${formatCoverage(provider.scoreCoverage.speechQuality)} | ${missing} |`;
+    const confidence = humanSpeechConfidence(provider);
+    return `| ${provider.rank} | \`${provider.providerKey}\` | ${provider.group} | ${formatScore(provider.humanSpeechScore)} | ${formatScore(provider.naturalnessScore)} | ${formatScore(provider.speechQualityScore)} | ${confidence} | ${formatCoverage(provider.scoreCoverage.naturalness)} / ${formatCoverage(provider.scoreCoverage.speechQuality)} | ${missing} |`;
   }).join("\n");
 
   const bestLocal = report.providers.find((provider) => provider.group === "local");
@@ -1411,13 +1779,17 @@ function buildMarkdown(report: {
     ? report.warnings.map((warning) => `- ${warning}`).join("\n")
     : "- None";
 
+  const contentTypeNote = report.contentType !== "default"
+    ? `\n- Content type: ${report.contentType} (speaking rate tuned for this content type)`
+    : "";
+
   return `# TTS Voice Quality Report
 
 ## Summary
 
 - Input text: \`${basename(report.inputTextPath)}\` (${report.inputTextCharCount} characters, ${report.inputTextWordCount} words)
 - Total providers: ${report.providerCount} (${report.localCount} local, ${report.cloudCount} cloud)
-- Mode: ${report.mode}
+- Mode: ${report.mode}${contentTypeNote}
 - Human speech score: 55% naturalnessScore + 45% speechQualityScore
 - Naturalness score target weights: 45% UTMOSv2 MOS, 25% NISQA-TTS naturalness MOS, 20% paid audio-judge rubric, 10% prosody heuristics
 - Speech quality score target weights: 35% NISQA quality MOS, 25% DNSMOS, 25% roundtrip STT intelligibility, 15% signal hygiene
@@ -1425,22 +1797,32 @@ function buildMarkdown(report: {
 ## Method
 
 - Audio files are normalized to temporary 16 kHz mono WAV for scoring. Original files are not modified.
+- Silence threshold is computed adaptively from the audio noise floor.
 - MOS-style 1-5 metrics are converted with \`(mos - 1) / 4 * 100\`.
 - Missing components are omitted from that score's denominator and listed per provider.
 - Cost, provider processing speed, and provider latency are not included in human-speech scoring.
 - Full mode treats attempted paid scoring failures as fatal when credentials are configured.
 - Local mode never starts paid STT or audio-judge calls.
+- Confidence: High (>80% coverage), Medium (40-80%), Low (<40%). Low-coverage scores are preliminary.
 
 ## Overall Ranking
 
-| Rank | Provider | Group | Human / 100 | Naturalness | Speech Quality | Nat/Qual Coverage | Missing Metrics |
-| ---: | --- | --- | ---: | ---: | ---: | --- | --- |
+| Rank | Provider | Group | Human / 100 | Naturalness | Speech Quality | Confidence | Nat/Qual Coverage | Missing Metrics |
+| ---: | --- | --- | ---: | ---: | ---: | --- | --- | --- |
 ${rankingRows}
 
 ## Best By Group
 
 - Best local model: ${bestLocal ? `\`${bestLocal.providerKey}\` (${formatScore(bestLocal.humanSpeechScore)}/100)` : "n/a"}
 - Best cloud service: ${bestCloud ? `\`${bestCloud.providerKey}\` (${formatScore(bestCloud.humanSpeechScore)}/100)` : "n/a"}
+
+## Recommendations
+
+${buildRecommendations(report.providers, report.mode)}
+
+## Provider Details
+
+${buildProviderDetails(report.providers)}
 
 ## Warnings
 
@@ -1482,6 +1864,7 @@ export async function buildVoiceQualityReport(args: VoiceQualityReportOptions) {
         allowPaid: args.allowPaid,
         audioJudgeModel: args.audioJudgeModel,
         tempDir,
+        ...(args.contentType ? { contentType: args.contentType } : {}),
       });
       warnings.push(...evaluated.warnings.map((warning) => `${providerKey}: ${warning}`));
       providerEntries.push(evaluated);
@@ -1504,6 +1887,7 @@ export async function buildVoiceQualityReport(args: VoiceQualityReportOptions) {
       inputTextCharCount,
       inputTextWordCount,
       mode: args.mode,
+      contentType: args.contentType ?? "default",
       paidCallsAllowed: args.allowPaid,
       weights: {
         naturalnessScore: NATURALNESS_WEIGHTS,
@@ -1538,6 +1922,7 @@ export async function buildVoiceQualityReport(args: VoiceQualityReportOptions) {
       inputTextCharCount,
       inputTextWordCount,
       mode: args.mode,
+      contentType: args.contentType ?? "default",
       providerCount: providers.length,
       localCount,
       cloudCount,

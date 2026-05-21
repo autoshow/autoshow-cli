@@ -21,7 +21,6 @@ defineLLMWriteTest({
     'claude-opus-4-7',
     'claude-sonnet-4-6',
     'claude-haiku-4-5',
-    'claude-opus-4-6',
   ],
   cliFlag: '--anthropic',
   llmService: 'anthropic',
@@ -29,7 +28,7 @@ defineLLMWriteTest({
   promptProfiles: {
     'claude-opus-4-7': 'shortSummary',
     'claude-sonnet-4-6': 'shortSummary',
-    'claude-opus-4-6': 'shortSummary',
+    'claude-haiku-4-5': 'shortSummary',
   },
 })
 
@@ -61,14 +60,14 @@ defineLLMWriteTest({
 
 defineLLMWriteTest({
   models: [
-    'MiniMax-M2.5',
-    'MiniMax-M2.5-highspeed',
+    'MiniMax-M2.7',
+    'MiniMax-M2.7-highspeed',
   ],
   cliFlag: '--minimax',
   llmService: 'minimax',
   requiresEnvVar: { key: 'MINIMAX_API_KEY', description: 'MiniMax models' },
   promptProfiles: {
-    'MiniMax-M2.5-highspeed': 'shortSummary',
+    'MiniMax-M2.7-highspeed': 'shortSummary',
   },
 })
 

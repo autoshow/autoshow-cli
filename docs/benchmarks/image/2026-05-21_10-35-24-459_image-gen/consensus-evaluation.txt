@@ -1,0 +1,30 @@
+# Image Consensus Evaluation
+
+Run directory: docs/benchmarks/image/2026-05-21_10-35-24-459_image-gen
+Category: image
+
+This evaluation uses only metadata from the generated artifacts and run metadata. It does not make visual image-quality claims.
+
+All 9 provider entries had their expected image artifact present. The evaluation packet reported no warnings.
+
+Provider metadata:
+
+| Provider | Artifact present | Packet dimensions | Format | File size | Processing time | Cost |
+| --- | --- | ---: | --- | ---: | ---: | ---: |
+| gemini/gemini-3.1-flash-image-preview | yes | 0x0 | jpeg | 1188601 bytes | 25019 ms | 6.7 cents |
+| openai/gpt-image-1.5 | yes | 1024x1536 | png | 4699638 bytes | 22099 ms | 8 cents |
+| openai/gpt-image-2 | yes | 1024x1536 | png | 3678722 bytes | 152338 ms | 5.3 cents |
+| grok/grok-imagine-image-quality | yes | 896x1280 | jpeg | 573293 bytes | 5048 ms | 5 cents |
+| grok/grok-imagine-image | yes | 1408x768 | jpeg | 543130 bytes | 6010 ms | 2 cents |
+| bfl/flux-2-pro | yes | 0x0 | jpeg | 531524 bytes | 11518 ms | 3 cents |
+| bfl/flux-2-max | yes | 0x0 | jpeg | 548863 bytes | 41685 ms | 7 cents |
+| bfl/flux-2-flex | yes | 0x0 | jpeg | 459193 bytes | 16181 ms | 5 cents |
+| reve/latest | yes | 1248x832 | png | 1722392 bytes | 6119 ms | 2.4 cents |
+
+Metadata observations:
+
+- Fastest measured processing time: grok/grok-imagine-image-quality at 5048 ms.
+- Lowest measured cost: grok/grok-imagine-image at 2 cents.
+- Largest artifact by file size: openai/gpt-image-1.5 at 4699638 bytes.
+- Smallest artifact by file size: bfl/flux-2-flex at 459193 bytes.
+- The packet returned unresolved 0x0 dimensions for gemini/gemini-3.1-flash-image-preview, bfl/flux-2-pro, bfl/flux-2-max, and bfl/flux-2-flex.

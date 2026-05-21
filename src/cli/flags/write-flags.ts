@@ -261,7 +261,7 @@ const writeMusicModelFlags = {
     type: String
   },
   'music-lyrics-file': {
-    description: 'Lyrics file path (.md or .txt) for MiniMax, deAPI, and Gemini music generation',
+    description: 'Lyrics file path (.md or .txt) for MiniMax and Gemini music generation',
     type: String
   },
   'music-instrumental': {

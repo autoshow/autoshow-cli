@@ -20,6 +20,7 @@ Documents and images route through local OCR, hosted OCR, or native text extract
   - [GLM OCR](#glm-ocr)
   - [Kimi OCR](#kimi-ocr)
   - [OpenAI OCR](#openai-ocr)
+  - [Grok OCR](#grok-ocr)
   - [Anthropic OCR](#anthropic-ocr)
   - [Gemini OCR](#gemini-ocr)
   - [DeepInfra OCR](#deepinfra-ocr)
@@ -56,6 +57,8 @@ Use these only when you select the matching hosted OCR engine:
 MISTRAL_API_KEY=...
 OPENAI_API_KEY=...
 OPENAI_BASE_URL=https://api.openai.com/v1
+XAI_API_KEY=...
+XAI_BASE_URL=https://api.x.ai/v1
 ANTHROPIC_API_KEY=...
 ANTHROPIC_BASE_URL=https://api.anthropic.com
 GEMINI_API_KEY=...
@@ -77,7 +80,7 @@ bun as setup --gcloud
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle`, `--mistral`, `--glm`, `--kimi`, `--openai`, `--anthropic`, `--gemini`, `--deepinfra`, `--aws`, `--gcloud`, `--unstructured` |
+| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle`, `--mistral`, `--glm`, `--kimi`, `--openai`, `--grok`, `--anthropic`, `--gemini`, `--deepinfra`, `--aws`, `--gcloud`, `--unstructured` |
 | EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
@@ -116,6 +119,8 @@ bun as extract input/examples/document/1-document.pdf --all-ocr --price
 ```
 
 For token-priced hosted OCR providers, `--price` uses model-specific input/output token heuristics from recent benchmark usage. Actual runs write provider usage to `run.json` when available, and post-run cost diagnostics use those actual token counts.
+
+The human price table shows only `step`, `provider`, `model`, and `cost`. Run with `--json` when you need the structured estimate fields behind the total, including page counts, prompt/completion tokens, input/output rates, and `estimateType`.
 
 ## EPUB Options
 
@@ -259,29 +264,49 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 
 | Option | Value |
 |--------|-------|
-| Selector | `--openai <model>` |
-| Models | `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` |
+| Selector | `--openai-ocr <model>` |
+| Models | `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --openai gpt-5.4-nano
+bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.5
+bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
 ```
 
 OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. OpenAI OCR currently enforces the bundled PDF size cap from `project/links/openai-all-links.md`: PDFs up to 50 MB.
+
+Passing `--openai-ocr` without a model keeps the existing cheapest OpenAI OCR default. `gpt-5.5` is used only when selected explicitly or through `--all-ocr`; `gpt-5.4-pro` is intentionally not listed for OCR.
+
+### Grok OCR
+
+| Option | Value |
+|--------|-------|
+| Selector | `--grok-ocr <model>` |
+| Models | `grok-4.3` |
+| Direct input support | `PNG` and `JPG/JPEG`; rendered PDF/EPUB pages as `PNG` |
+
+```bash
+bun as extract input/examples/document/1-document.pdf --grok-ocr grok-4.3
+bun as extract input/examples/document/1-document.jpg --grok-ocr grok-4.3 --price
+```
+
+Grok OCR uses xAI's OpenAI-compatible chat endpoint with image input. Direct images and rendered PDF pages are capped at 20 MiB each. `--price` uses a provisional estimate of 4,000 input tokens and 1,000 output tokens per page until calibrated usage data is available; actual runs record returned token usage when xAI includes it.
 
 ### Anthropic OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--anthropic <model>` |
-| Models | `claude-haiku-4-5` |
+| Selector | `--anthropic-ocr <model>` |
+| Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` |
 | Direct input support | Standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --anthropic claude-haiku-4-5
+bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-opus-4-7
+bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-sonnet-4-6
+bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
 ```
 
-Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run.
+Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run. Passing `--anthropic-ocr` without a model keeps the cheapest Anthropic OCR default, `claude-haiku-4-5`; Opus and Sonnet run only when selected explicitly or through `--all-ocr`.
 
 ### Gemini OCR
 
@@ -366,7 +391,7 @@ Google Cloud Document AI uses the OCR processor and GCS staging bucket from envi
 bun as extract input/examples/document/1-document.pdf --unstructured hi_res_and_enrichment
 ```
 
-Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create-job to return `input_file_ids`, polls `/jobs/{id}/details` for processing status and node counters, downloads JSON elements, and groups element text by `metadata.page_number`. `GIF` and `WEBP` inputs are normalized to `PNG` locally before upload. AutoShow cancels the remote job if polling reaches `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, if the details status/node counters make no observable progress for `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS` (default 10 minutes), if an `IN_PROGRESS` job has no files in any workflow node for `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` (default 2 minutes), or if the local process receives `SIGINT`/`SIGTERM`. Unstructured documents each on-demand job as limited to 10 files / 10 MB per file, and says at most 5 on-demand jobs can run at once; interrupted jobs can keep occupying those remote slots until cancelled. The bundled price fallback is zero because Unstructured account pricing is plan-specific; price mode still records page counts and processing-time estimates.
+Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create-job to return `input_file_ids`, polls `/jobs/{id}/details` for processing status and node counters, downloads JSON elements, and groups element text by `metadata.page_number`. `GIF` and `WEBP` inputs are normalized to `PNG` locally before upload. AutoShow cancels the remote job if polling reaches `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, if the details status/node counters make no observable progress for `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS` (default 10 minutes), if an `IN_PROGRESS` job has no files in any workflow node for `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` (default 2 minutes), or if the local process receives `SIGINT`/`SIGTERM`. Unstructured documents each on-demand job as limited to 10 files / 10 MB per file, and says at most 5 on-demand jobs can run at once; interrupted jobs can keep occupying those remote slots until cancelled. Price mode estimates the published Pay-As-You-Go rate of `$0.03/page`; free allowance or custom Business pricing may differ.
 
 ## OCR Notes
 
@@ -377,3 +402,5 @@ Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
 - Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
 - Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
+- Grok OCR refers to xAI `grok-4.3`. Groq `openai/gpt-oss-20b` and `openai/gpt-oss-120b` are LLM text models in this project and are not OCR benchmark targets.
+- MiniMax `MiniMax-M2.7` / `MiniMax-M2.7-highspeed` and GLM `glm-5.1` are LLM text models here. Use `glm-ocr` for GLM OCR coverage.

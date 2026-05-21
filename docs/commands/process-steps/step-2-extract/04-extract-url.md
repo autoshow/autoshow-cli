@@ -71,6 +71,8 @@ Do not combine `AUTOSHOW_URL_BACKEND` with `--all-url`; `--all-url` selects the 
 | `--url-backend <backend>` | Article backend for remote article URLs: `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` |
 | `--all-url` | For `extract`, run every current URL article backend: `defuddle`, `firecrawl`, `glm-reader`, `spider`, and `zyte` |
 | `--url-provider-concurrency <n>` | Hosted URL backends to run concurrently per item; default `2`, or up to `4` by default with `--all-url` |
+| `--url-request-timeout-ms <ms>` | Per-provider URL request timeout; default `60000`. Env fallback: `AUTOSHOW_URL_REQUEST_TIMEOUT_MS` |
+| `--url-request-attempts <n>` | Total provider request attempts, including the first try; default `3`. Env fallback: `AUTOSHOW_URL_REQUEST_ATTEMPTS` |
 | `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--price` | Show the aggregated URL extraction estimate and exit |
 | `--batch-limit <n>` | Limit batch size |
@@ -83,6 +85,7 @@ bun as extract input/examples/batch/2-urls.md --batch-all
 bun as extract input/article.html --out json
 bun as extract https://example.com/article --all-url --price
 bun as extract https://example.com/article --all-url --url-provider-concurrency 2
+bun as extract https://example.com/article --all-url --url-request-timeout-ms 90000 --url-request-attempts 2
 ```
 
 ## All URL Backends
@@ -103,6 +106,7 @@ Rules:
 - `write --all-url` is rejected for this release because there is no primary URL extraction artifact for the LLM step.
 - Remote `--all-url` runs do not use the single-backend Defuddle-to-Firecrawl fallback path.
 - Local `.html` / `.htm --all-url` runs `defuddle` only and records hosted backends as skipped.
+- URL request retries repeat hosted provider requests after timeout, network, `408`, `429`, and `5xx` failures. Increasing `--url-request-attempts` can increase hosted provider usage, quota consumption, or cost.
 
 ## Article Services
 

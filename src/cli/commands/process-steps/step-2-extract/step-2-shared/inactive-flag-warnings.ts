@@ -24,6 +24,7 @@ export const hasConfiguredOcrProviderSelection = (
   || hasSelectedModel(opts.glmOcrModels, opts.glmOcrModel)
   || hasSelectedModel(opts.kimiOcrModels, opts.kimiOcrModel)
   || hasSelectedModel(opts.openaiOcrModels, opts.openaiOcrModel)
+  || hasSelectedModel(opts.grokOcrModels, opts.grokOcrModel)
   || hasSelectedModel(opts.anthropicOcrModels, opts.anthropicOcrModel)
   || hasSelectedModel(opts.geminiOcrModels, opts.geminiOcrModel)
   || hasSelectedModel(opts.deepinfraOcrModels, opts.deepinfraOcrModel)

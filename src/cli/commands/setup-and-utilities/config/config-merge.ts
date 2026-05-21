@@ -14,10 +14,10 @@ import {
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
-const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'hume-tts', 'cartesia-tts', 'gcloud-tts', 'deapi-tts'] as const
-const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'minimax-image', 'grok-image', 'runway-image', 'bfl-image', 'deapi-image', 'reve-image'] as const
-const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video', 'glm-video', 'grok-video', 'runway-video', 'deapi-video'] as const
-const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music', 'deapi-music', 'gemini-music'] as const
+const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'hume-tts', 'cartesia-tts', 'gcloud-tts'] as const
+const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'grok-image', 'bfl-image', 'reve-image'] as const
+const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video', 'glm-video', 'grok-video', 'runway-video'] as const
+const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music', 'gemini-music'] as const
 const REPEATABLE_CONFIG_MODEL_FLAG_SET = new Set<string>(REPEATABLE_MODEL_FLAGS)
 const CONFIG_INJECTED_FLAGS_KEY = '__autoshowConfigInjectedFlags'
 const STEP2_PROVIDER_CONFIG_PATHS = Object.fromEntries(
@@ -128,7 +128,6 @@ export const mergeConfigIntoRawFlags = (
       ['speechify-tts', d.post.tts.speechifyTts],
       ['hume-tts', d.post.tts.humeTts], ['cartesia-tts', d.post.tts.cartesiaTts],
       ['gcloud-tts', d.post.tts.gcloudTts],
-      ['deapi-tts', d.post.tts.deapiTts],
     ])
     inject('kitten-voice', d.post.tts.ttsSpeaker)
     inject('groq-voice', d.post.tts.groqVoice)
@@ -197,14 +196,6 @@ export const mergeConfigIntoRawFlags = (
     inject('gcloud-tts-ref-audio', d.post.tts.gcloudTtsRefAudio)
     inject('gcloud-tts-consent-audio', d.post.tts.gcloudTtsConsentAudio)
     inject('gcloud-tts-consent-language', d.post.tts.gcloudTtsConsentLanguage)
-    inject('deapi-tts-voice', d.post.tts.deapiTtsVoice)
-    inject('deapi-tts-ref-audio', d.post.tts.deapiTtsRefAudio)
-    inject('deapi-tts-ref-text', d.post.tts.deapiTtsRefText)
-    inject('deapi-tts-language', d.post.tts.deapiTtsLanguage)
-    inject('deapi-tts-speed', d.post.tts.deapiTtsSpeed)
-    inject('deapi-tts-format', d.post.tts.deapiTtsFormat)
-    inject('deapi-tts-sample-rate', d.post.tts.deapiTtsSampleRate)
-    inject('deapi-tts-instruction', d.post.tts.deapiTtsInstruction)
     inject('tts-provider-concurrency', d.post.tts.providerConcurrency)
     inject('tts-local-concurrency', d.post.tts.localConcurrency)
   }
@@ -212,9 +203,8 @@ export const mergeConfigIntoRawFlags = (
   if (d.post?.image) {
     injectProviderGroup(IMAGE_PROVIDER_FLAGS, [
       ['gemini-image', d.post.image.geminiImage], ['openai-image', d.post.image.openaiImage],
-      ['minimax-image', d.post.image.minimaxImage],
-      ['grok-image', d.post.image.grokImage], ['runway-image', d.post.image.runwayImage],
-      ['bfl-image', d.post.image.bflImage], ['deapi-image', d.post.image.deapiImage],
+      ['grok-image', d.post.image.grokImage],
+      ['bfl-image', d.post.image.bflImage],
       ['reve-image', d.post.image.reveImage],
     ])
     inject('image-aspect-ratio', d.post.image.imageAspectRatio)
@@ -231,7 +221,7 @@ export const mergeConfigIntoRawFlags = (
     injectProviderGroup(VIDEO_PROVIDER_FLAGS, [
       ['gemini-video', d.post.video.geminiVideo], ['minimax-video', d.post.video.minimaxVideo],
       ['glm-video', d.post.video.glmVideo], ['grok-video', d.post.video.grokVideo],
-      ['runway-video', d.post.video.runwayVideo], ['deapi-video', d.post.video.deapiVideo],
+      ['runway-video', d.post.video.runwayVideo],
     ])
     inject('video-duration', d.post.video.videoDuration)
     inject('video-size', d.post.video.videoSize)
@@ -251,7 +241,7 @@ export const mergeConfigIntoRawFlags = (
   if (d.post?.music) {
     injectProviderGroup(MUSIC_PROVIDER_FLAGS, [
       ['elevenlabs-music', d.post.music.elevenlabsMusic], ['minimax-music', d.post.music.minimaxMusic],
-      ['deapi-music', d.post.music.deapiMusic], ['gemini-music', d.post.music.geminiMusic],
+      ['gemini-music', d.post.music.geminiMusic],
     ])
     inject('music-duration', d.post.music.musicDuration)
     inject('music-provider-concurrency', d.post.music.providerConcurrency)
@@ -334,7 +324,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'hume-tts':          ['defaults', 'post', 'tts', 'humeTts'],
   'cartesia-tts':      ['defaults', 'post', 'tts', 'cartesiaTts'],
   'gcloud-tts':        ['defaults', 'post', 'tts', 'gcloudTts'],
-  'deapi-tts':         ['defaults', 'post', 'tts', 'deapiTts'],
   'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
   'grok-tts-voice':    ['defaults', 'post', 'tts', 'grokTtsVoice'],
@@ -407,23 +396,12 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gcloud-tts-ref-audio': ['defaults', 'post', 'tts', 'gcloudTtsRefAudio'],
   'gcloud-tts-consent-audio': ['defaults', 'post', 'tts', 'gcloudTtsConsentAudio'],
   'gcloud-tts-consent-language': ['defaults', 'post', 'tts', 'gcloudTtsConsentLanguage'],
-  'deapi-tts-voice':   ['defaults', 'post', 'tts', 'deapiTtsVoice'],
-  'deapi-tts-ref-audio': ['defaults', 'post', 'tts', 'deapiTtsRefAudio'],
-  'deapi-tts-ref-text': ['defaults', 'post', 'tts', 'deapiTtsRefText'],
-  'deapi-tts-language': ['defaults', 'post', 'tts', 'deapiTtsLanguage'],
-  'deapi-tts-speed': ['defaults', 'post', 'tts', 'deapiTtsSpeed'],
-  'deapi-tts-format': ['defaults', 'post', 'tts', 'deapiTtsFormat'],
-  'deapi-tts-sample-rate': ['defaults', 'post', 'tts', 'deapiTtsSampleRate'],
-  'deapi-tts-instruction': ['defaults', 'post', 'tts', 'deapiTtsInstruction'],
   'tts-provider-concurrency': ['defaults', 'post', 'tts', 'providerConcurrency'],
   'tts-local-concurrency': ['defaults', 'post', 'tts', 'localConcurrency'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
   'openai-image':      ['defaults', 'post', 'image', 'openaiImage'],
-  'minimax-image':     ['defaults', 'post', 'image', 'minimaxImage'],
   'grok-image':        ['defaults', 'post', 'image', 'grokImage'],
-  'runway-image':      ['defaults', 'post', 'image', 'runwayImage'],
   'bfl-image':         ['defaults', 'post', 'image', 'bflImage'],
-  'deapi-image':       ['defaults', 'post', 'image', 'deapiImage'],
   'reve-image':        ['defaults', 'post', 'image', 'reveImage'],
   'image-aspect-ratio': ['defaults', 'post', 'image', 'imageAspectRatio'],
   'image-size':        ['defaults', 'post', 'image', 'imageSize'],
@@ -438,7 +416,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'glm-video':         ['defaults', 'post', 'video', 'glmVideo'],
   'grok-video':        ['defaults', 'post', 'video', 'grokVideo'],
   'runway-video':      ['defaults', 'post', 'video', 'runwayVideo'],
-  'deapi-video':       ['defaults', 'post', 'video', 'deapiVideo'],
   'video-duration':    ['defaults', 'post', 'video', 'videoDuration'],
   'video-size':        ['defaults', 'post', 'video', 'videoSize'],
   'video-aspect-ratio': ['defaults', 'post', 'video', 'videoAspectRatio'],
@@ -454,7 +431,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'video-local-concurrency': ['defaults', 'post', 'video', 'localConcurrency'],
   'elevenlabs-music':  ['defaults', 'post', 'music', 'elevenlabsMusic'],
   'minimax-music':     ['defaults', 'post', 'music', 'minimaxMusic'],
-  'deapi-music':       ['defaults', 'post', 'music', 'deapiMusic'],
   'gemini-music':      ['defaults', 'post', 'music', 'geminiMusic'],
   'music-duration':    ['defaults', 'post', 'music', 'musicDuration'],
   'music-provider-concurrency': ['defaults', 'post', 'music', 'providerConcurrency'],
@@ -540,7 +516,6 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
     'music-provider-concurrency', 'music-local-concurrency',
     'openai-tts-speed', 'minimax-tts-speed', 'minimax-tts-volume', 'minimax-tts-pitch',
     'deepgram-tts-bit-rate', 'deepgram-tts-sample-rate', 'deepgram-tts-speed',
-    'deapi-tts-speed', 'deapi-tts-sample-rate',
     'elevenlabs-tts-stability', 'elevenlabs-tts-similarity-boost', 'elevenlabs-tts-style',
     'elevenlabs-tts-speed', 'elevenlabs-tts-seed', 'elevenlabs-tts-optimize-streaming-latency'
   ])

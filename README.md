@@ -58,7 +58,10 @@ bun as extract https://example.com/article --all-url
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 
 # Full write pipeline: download/extract/transcribe + summary output
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.4
+bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.5
+
+# Full write pipeline with xAI Grok 4.3
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --grok grok-4.3
 
 # Full write pipeline with Z.AI GLM 5.1
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --glm glm-5.1
@@ -71,6 +74,9 @@ bun as extract input/examples/document/1-document.pdf --out json
 
 # Hosted Kimi OCR for a document
 bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+
+# Hosted Grok OCR for a document
+bun as extract input/examples/document/1-document.pdf --grok-ocr grok-4.3
 
 # Standalone text-to-speech from local text
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts
@@ -99,14 +105,12 @@ bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male En
 # Cartesia Sonic text-to-speech
 bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
-# deAPI Qwen3 voice cloning
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3
 
 # Prompt-driven generation, then edit/reference the generated image; run this block in order
 bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
 bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
-bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
-bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+bun as image "restyle this product image as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
+bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
 bun as image "place the same mug in a minimalist editorial product scene" --reve latest --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-reve
 
 # Video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
@@ -115,7 +119,7 @@ bun as video "continue the turntable move as the mug rotates toward a warm kitch
 bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
 
 bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
-bun as music "an ambient piano instrumental" --minimax music-2.5
+bun as music "an ambient piano instrumental" --minimax music-2.6
 bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
 bun as extract output/<extract-run-dir> --transcript-video
@@ -194,13 +198,12 @@ Persistent defaults live in `config/autoshow.json`. You can save provider choice
 
 ```bash
 bun as config --show
-bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
+bun as config --openai gpt-5.5 --batch-limit 20 --max-cents 50
 bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
 bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
 bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
 bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
-bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3
 bun as config --reset
 ```
 

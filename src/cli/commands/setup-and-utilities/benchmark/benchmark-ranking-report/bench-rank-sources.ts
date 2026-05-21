@@ -1,4 +1,5 @@
 import { dirname, join, relative } from 'node:path'
+import { getModelRegistry } from '../../models/model-loader'
 import {
   DASHBOARD_STEP_BY_CATEGORY,
   EXCLUDED_SERVICES,
@@ -24,6 +25,7 @@ import {
   readJson,
   relativeToProject
 } from './bench-rank-io'
+import type { ModelRegistry } from '~/types'
 import type {
   DashboardFile,
   JsonObject,
@@ -90,6 +92,43 @@ const dashboardProviderKey = (test: JsonObject): string => {
   const serviceName = getString(test, 'serviceName') ?? 'unknown'
   const modelName = getString(test, 'modelName') ?? 'unknown'
   return `${serviceName}/${modelName}`
+}
+
+const REGISTRY_STEP_BY_RANKING_STEP = new Map<StepKey, keyof ModelRegistry>([
+  ['documentOcr', 'extract'],
+  ['transcription', 'stt'],
+  ['llm', 'llm'],
+  ['tts', 'tts'],
+  ['image', 'image'],
+  ['video', 'video'],
+  ['music', 'music']
+])
+
+const splitProviderModelKey = (key: string): { service: string, model: string } | undefined => {
+  const normalizedKey = key.split('#')[0] ?? key
+  const [service, ...modelParts] = normalizedKey.split('/')
+  if (!service || modelParts.length === 0) {
+    return undefined
+  }
+
+  return {
+    service,
+    model: modelParts.join('/')
+  }
+}
+
+const isCurrentRegistryModel = (step: StepKey, key: string): boolean => {
+  const registryStep = REGISTRY_STEP_BY_RANKING_STEP.get(step)
+  if (!registryStep) {
+    return true
+  }
+
+  const providerModel = splitProviderModelKey(key)
+  if (!providerModel) {
+    return true
+  }
+
+  return getModelRegistry()[registryStep][providerModel.service]?.models[providerModel.model] !== undefined
 }
 
 export const buildEstimatedCostCentsByProviderModel = (runJson: unknown): Map<string, number> => {
@@ -173,8 +212,21 @@ const rawQualityScore = (provider: JsonObject, rawType: string): number | undefi
   }
 
   if (rawType === 'tts') {
+    const metrics = getObject(provider, 'metrics')
+    const qualityScore = getNumber(provider, 'qualityScore')
+      ?? getNumber(provider, 'humanSpeechScore')
+      ?? getNestedNumber(metrics, 'qualityScore')
+      ?? getNestedNumber(metrics, 'humanSpeechScore')
+    if (qualityScore !== undefined) {
+      return qualityScore
+    }
     const roundtripWer = getNumber(provider, 'roundtripWER')
     return roundtripWer === undefined ? undefined : Math.max(0, 100 * (1 - roundtripWer))
+  }
+
+  if (rawType === 'image' || rawType === 'video') {
+    const metrics = getObject(provider, 'metrics')
+    return getNumber(provider, 'qualityScore') ?? getNumber(provider, 'qualityValue') ?? getNestedNumber(metrics, 'qualityScore')
   }
 
   if (rawType === 'ocr' || rawType === 'stt') {
@@ -185,9 +237,6 @@ const rawQualityScore = (provider: JsonObject, rawType: string): number | undefi
 }
 
 const rawQualityMetric = (rawType: string): string | undefined => {
-  if (rawType === 'tts') {
-    return 'roundtrip WER accuracy score'
-  }
   return QUALITY_METRIC_BY_RAW_TYPE.get(rawType)
 }
 
@@ -370,6 +419,11 @@ export const processRawReport = async (
       continue
     }
 
+    if (!isCurrentRegistryModel(step, key)) {
+      stats.unsupportedCategoryRows++
+      continue
+    }
+
     const sample: SourceSample = {
       step,
       key,
@@ -439,6 +493,11 @@ export const processDashboardReport = async (
     const category = getString(test, 'category') ?? 'unknown'
     const step = DASHBOARD_STEP_BY_CATEGORY.get(category)
     if (!step) {
+      stats.unsupportedCategoryRows++
+      continue
+    }
+
+    if (!isCurrentRegistryModel(step, key)) {
       stats.unsupportedCategoryRows++
       continue
     }

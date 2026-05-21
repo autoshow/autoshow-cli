@@ -77,7 +77,7 @@ Accepted provider selectors are the lowercase names below.
 | `--x` | `general`, `url` |
 | `--kimi` | `general`, `text`, `ocr` |
 | `--mistral` | `general`, `stt`, `ocr`, `tts` |
-| `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
+| `--minimax` | `general`, `text`, `tts`, `music`, `video` |
 | `--claude` | `general`, `text`, `ocr` |
 | `--assembly` | `stt` |
 | `--aws` | `stt`, `ocr` |
@@ -95,8 +95,7 @@ Accepted provider selectors are the lowercase names below.
 | `--resend` | `general` |
 | `--happyscribe` | `stt` |
 | `--hume` | `general`, `tts` |
-| `--deapi` | `general`, `image`, `ocr`, `video`, `tts`, `music`, `stt` |
-| `--supadata` | `stt` |
+| `--supadata` | `general`, `stt`, `url` |
 | `--unstructured` | `ocr` |
 | `--scrapecreators` | `general`, `stt`, `url` |
 | `--zyte` | `general`, `url` |

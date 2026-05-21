@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AwsSttModel, DeapiSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, ScrapecreatorsSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
+import type { AwsSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, ScrapecreatorsSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -28,10 +28,6 @@ export const SUPPORTED_DEEPGRAM_STT_MODELS = [
 export const SUPPORTED_DEEPINFRA_STT_MODELS = [
   'openai/whisper-large-v3-turbo',
   'openai/whisper-large-v3'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_DEAPI_STT_MODELS = [
-  'WhisperLargeV3'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_SONIOX_STT_MODELS = [
@@ -104,7 +100,6 @@ export const validateAwsSttModel = createModelValidator<AwsSttModel>(SUPPORTED_A
 export const validateElevenlabsSttModel = createModelValidator<ElevenlabsSttModel>(SUPPORTED_ELEVENLABS_STT_MODELS, 'elevenlabs-stt')
 export const validateDeepgramSttModel = createModelValidator<DeepgramSttModel>(SUPPORTED_DEEPGRAM_STT_MODELS, 'deepgram-stt')
 export const validateDeepinfraSttModel = createModelValidator<DeepinfraSttModel>(SUPPORTED_DEEPINFRA_STT_MODELS, 'deepinfra-stt', 'This flag only accepts DeepInfra OpenAI-compatible Whisper models.')
-export const validateDeapiSttModel = createModelValidator<DeapiSttModel>(SUPPORTED_DEAPI_STT_MODELS, 'deapi-stt')
 export const validateSonioxSttModel = createModelValidator<SonioxSttModel>(SUPPORTED_SONIOX_STT_MODELS, 'soniox-stt')
 export const validateSpeechmaticsSttModel = createModelValidator<SpeechmaticsSttModel>(SUPPORTED_SPEECHMATICS_STT_MODELS, 'speechmatics-stt')
 export const validateRevSttModel = createModelValidator<RevSttModel>(SUPPORTED_REV_STT_MODELS, 'rev-stt')

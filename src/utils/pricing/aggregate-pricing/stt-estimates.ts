@@ -2,11 +2,6 @@ import type { RuntimeOptions, SttStepEstimate } from '~/types'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/elevenlabs-stt-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-duration'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
-import { isDeapiSupportedSourceUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi'
-import {
-  logDeapiPricingFallbackWarning,
-  resolveDeapiTranscriptionPrice
-} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi-pricing'
 import {
   buildHappyScribeRegistryEstimate,
   resolveHappyScribePriceNotes
@@ -62,30 +57,6 @@ const buildScrapeCreatorsSttEstimate = (
     totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
     costMultiplier: estimation.costMultiplier,
     note: cost.note
-  }
-}
-
-const buildDeapiSttEstimate = async (
-  model: string,
-  resolvedTarget: string,
-  durationSeconds: number
-): Promise<SttStepEstimate> => {
-  const price = await resolveDeapiTranscriptionPrice({
-    model,
-    ...(isDeapiSupportedSourceUrl(resolvedTarget) ? { sourceUrl: resolvedTarget } : {}),
-    durationSeconds
-  })
-  logDeapiPricingFallbackWarning(price.warning)
-
-  return {
-    step: 'stt',
-    provider: 'deapi',
-    model,
-    durationSeconds,
-    totalCost: price.totalCost,
-    costMultiplier: price.source === 'provider_quote' ? 1 : getSttEstimation('deapi', model).costMultiplier,
-    estimateType: price.estimateType,
-    ...(price.warning ? { note: price.warning } : {})
   }
 }
 
@@ -172,11 +143,6 @@ export const buildSttEstimates = async (
 
     if (target.service === 'scrapecreators') {
       estimates.push(buildScrapeCreatorsSttEstimate(target.model))
-      continue
-    }
-
-    if (target.service === 'deapi') {
-      estimates.push(await buildDeapiSttEstimate(target.model, resolvedTarget, durationSeconds))
       continue
     }
 

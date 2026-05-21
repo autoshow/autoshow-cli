@@ -9,6 +9,7 @@ import {
   computeActualAnthropicOcrCost,
   computeActualDeepinfraOcrCost,
   computeActualGeminiOcrCost,
+  computeActualGrokOcrCost,
   computeActualKimiOcrCost
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
@@ -93,7 +94,7 @@ const mapBillingCostSource = (source: unknown): CostSource => {
   }
 }
 
-const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'anthropic', 'gemini', 'deepinfra'])
+const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'grok', 'anthropic', 'gemini', 'deepinfra'])
 const LOCAL_ZERO_PROVIDERS = new Set([
   'reverb',
   'whisper',
@@ -381,6 +382,21 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
+    } else if (provider === 'grok' && input.step2.ocrModel) {
+      const promptTokens = input.step2.promptTokens ?? 0
+      const completionTokens = input.step2.completionTokens ?? 0
+      const cost = computeActualGrokOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      steps.push({
+        step: 'extract',
+        provider: 'grok',
+        model: input.step2.ocrModel,
+        cost,
+        costSource: tokenUsageCostSource(input.step2),
+        inputMetric: 'tokens',
+        inputValue: promptTokens + completionTokens,
+        promptTokens,
+        completionTokens
+      })
     } else if (provider === 'anthropic' && input.step2.ocrModel) {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
@@ -523,6 +539,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         : provider === 'openai' && step2Entry.ocrModel
           ? (promptTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
             + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
+        : provider === 'grok' && step2Entry.ocrModel
+          ? computeActualGrokOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
         : provider === 'anthropic' && step2Entry.ocrModel
           ? computeActualAnthropicOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
         : provider === 'gemini' && step2Entry.ocrModel
@@ -538,9 +556,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         costSource: TOKEN_PRICED_OCR_PROVIDERS.has(provider)
           ? tokenUsageCostSource(step2Entry)
           : zeroCostSource(provider, cost, 'registry_fallback'),
-        inputMetric: provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? 'tokens' : 'pages',
-        inputValue: provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(provider === 'glm' || provider === 'kimi' || provider === 'openai' || provider === 'anthropic' || provider === 'gemini' || provider === 'deepinfra' ? { promptTokens, completionTokens } : {})
+        inputMetric: TOKEN_PRICED_OCR_PROVIDERS.has(provider) ? 'tokens' : 'pages',
+        inputValue: TOKEN_PRICED_OCR_PROVIDERS.has(provider) ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(TOKEN_PRICED_OCR_PROVIDERS.has(provider) ? { promptTokens, completionTokens } : {})
       })
     }
   }

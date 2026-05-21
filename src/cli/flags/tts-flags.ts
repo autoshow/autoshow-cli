@@ -11,7 +11,6 @@ import {
   SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS,
   SUPPORTED_GCLOUD_TTS_MODELS,
-  SUPPORTED_DEAPI_TTS_MODELS,
   SUPPORTED_HUME_TTS_MODELS,
   SUPPORTED_CARTESIA_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
@@ -29,7 +28,6 @@ export const TTS_COMMAND_SELECTOR_FLAGS = {
   'openai-tts': 'openai',
   'gemini-tts': 'gemini',
   'deepgram-tts': 'deepgram',
-  'deapi-tts': 'deapi',
   'speechify-tts': 'speechify',
   'hume-tts': 'hume',
   'cartesia-tts': 'cartesia',
@@ -92,10 +90,6 @@ export const ttsFlags = {
   },
   'deepgram-tts': {
     description: buildModelDescription('Deepgram TTS model', SUPPORTED_DEEPGRAM_TTS_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'deapi-tts': {
-    description: buildModelDescription('deAPI TTS model', SUPPORTED_DEAPI_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'speechify-tts': {
@@ -210,38 +204,6 @@ export const ttsFlags = {
   },
   'deepgram-tts-speed': {
     description: 'Deepgram TTS voice speed from 0.5 to 2.0',
-    type: String
-  },
-  'deapi-tts-voice': {
-    description: 'deAPI TTS voice override (default: af_heart for Kokoro)',
-    type: String
-  },
-  'deapi-tts-ref-audio': {
-    description: 'deAPI TTS reference audio path for Qwen3 voice cloning',
-    type: String
-  },
-  'deapi-tts-ref-text': {
-    description: 'Optional transcript for the deAPI TTS reference audio',
-    type: String
-  },
-  'deapi-tts-language': {
-    description: 'deAPI TTS language override, e.g. en-us|English|Spanish',
-    type: String
-  },
-  'deapi-tts-speed': {
-    description: 'deAPI TTS speech speed from 0.5 to 2.0',
-    type: String
-  },
-  'deapi-tts-format': {
-    description: 'deAPI TTS output format, e.g. mp3|wav',
-    type: String
-  },
-  'deapi-tts-sample-rate': {
-    description: 'deAPI TTS output sample rate in Hz',
-    type: String
-  },
-  'deapi-tts-instruction': {
-    description: 'deAPI Qwen3 VoiceDesign voice description/instruction',
     type: String
   },
   'speechify-voice': {

@@ -35,17 +35,17 @@ export const STEP_DEFINITIONS: readonly StepDefinition[] = [
   {
     key: 'tts',
     title: 'Step 4 TTS',
-    noQualityNote: 'No TTS quality ranking is shown because roundtrip WER is null in the current raw TTS comparison and dashboard rows do not contain a pure TTS quality metric.'
+    noQualityNote: 'Quality uses human speech quality scores from voice-quality-report.json when available, falling back to roundtrip WER accuracy.'
   },
   {
     key: 'image',
     title: 'Step 5 Image',
-    noQualityNote: 'No pure image quality metric is present in these benchmark files.'
+    noQualityNote: 'Quality uses explicit OpenAI vision judge scores from raw image comparison reports.'
   },
   {
     key: 'video',
     title: 'Step 6 Video',
-    noQualityNote: 'No pure video quality metric is present in these benchmark files.'
+    noQualityNote: 'Quality uses explicit OpenAI vision judge scores from raw video comparison reports.'
   },
   {
     key: 'music',
@@ -58,7 +58,9 @@ export const RAW_STEP_BY_TYPE = new Map<string, StepKey>([
   ['ocr', 'documentOcr'],
   ['url', 'urlExtraction'],
   ['stt', 'transcription'],
-  ['tts', 'tts']
+  ['tts', 'tts'],
+  ['image', 'image'],
+  ['video', 'video']
 ])
 
 export const DASHBOARD_STEP_BY_CATEGORY = new Map<string, StepKey>([
@@ -76,7 +78,10 @@ export const DASHBOARD_STEP_BY_CATEGORY = new Map<string, StepKey>([
 export const QUALITY_METRIC_BY_RAW_TYPE = new Map<string, string>([
   ['ocr', 'WER accuracy score'],
   ['url', 'URL extraction accuracy score'],
-  ['stt', 'speaker-aware WER score']
+  ['stt', 'speaker-aware WER score'],
+  ['tts', 'human speech quality score'],
+  ['image', 'image quality score'],
+  ['video', 'video quality score']
 ])
 
 export const EXCLUDED_SERVICES = new Set([
@@ -106,7 +111,6 @@ export const STT_DIARIZATION_GROUP_BY_SERVICE = new Map<string, SttDiarizationGr
   ['reverb', 'diarization'],
   ['soniox', 'diarization'],
   ['speechmatics', 'diarization'],
-  ['deapi', 'nonDiarization'],
   ['deepinfra', 'nonDiarization'],
   ['gemini-stt', 'nonDiarization'],
   ['glm-stt', 'nonDiarization'],
@@ -119,7 +123,7 @@ export const STT_DIARIZATION_GROUP_BY_SERVICE = new Map<string, SttDiarizationGr
   ['youtube-captions', 'nonDiarization']
 ] as const)
 
-export const QUALITY_STEPS = new Set<StepKey>(['documentOcr', 'urlExtraction', 'transcription'])
+export const QUALITY_STEPS = new Set<StepKey>(['documentOcr', 'urlExtraction', 'transcription', 'tts', 'image', 'video'])
 
 export const TOP_PICK_LIMIT_PER_BUCKET = 2
 export const TOP_PICK_TARGET_COUNT = 6

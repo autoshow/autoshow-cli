@@ -1,5 +1,5 @@
-import type { DeapiVideoModel, GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
-import { validateDeapiVideoModel, validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, VideoCostEstimate, EstimateVideoCostOptions } from '~/types'
+import { validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getVideoModelMeta } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import {
   normalizeGeminiDuration,
@@ -10,8 +10,6 @@ import {
   normalizeGrokVideoResolution,
   normalizeMinimaxDuration,
   normalizeMinimaxResolution,
-  normalizeDeapiVideoDuration,
-  normalizeDeapiVideoFrames,
   normalizeRunwayDuration,
   isMinimaxHailuoModel
 } from './video-normalization'
@@ -144,29 +142,12 @@ const estimateRunwayCost = (model: RunwayVideoModel, options: EstimateVideoCostO
   }
 }
 
-const estimateDeapiCost = (model: DeapiVideoModel, options: EstimateVideoCostOptions): VideoCostEstimate => {
-  const meta = getVideoModelMeta('deapi', model)
-  const durationSeconds = normalizeDeapiVideoDuration(model, options.videoDuration)
-  const frames = normalizeDeapiVideoFrames(model, options.videoDuration)
-  const costPerSecond = meta?.baseCostPerSecondCents ?? 0.08685
-  return {
-    provider: 'deapi',
-    model,
-    durationSeconds,
-    billedDurationSeconds: durationSeconds,
-    costPerSecond,
-    totalCost: durationSeconds * costPerSecond,
-    note: `Approximate estimate normalized to ${frames} generated frames; deAPI pricing may vary by model and resolution`
-  }
-}
-
 export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCostEstimate[] => {
   const geminiModels = options.geminiVideoModels ?? (options.geminiVideoModel ? [options.geminiVideoModel] : [])
   const minimaxModels = options.minimaxVideoModels ?? (options.minimaxVideoModel ? [options.minimaxVideoModel] : [])
   const glmModels = options.glmVideoModels ?? (options.glmVideoModel ? [options.glmVideoModel] : [])
   const grokModels = options.grokVideoModels ?? (options.grokVideoModel ? [options.grokVideoModel] : [])
   const runwayModels = options.runwayVideoModels ?? (options.runwayVideoModel ? [options.runwayVideoModel] : [])
-  const deapiModels = options.deapiVideoModels ?? (options.deapiVideoModel ? [options.deapiVideoModel] : [])
 
   const estimates: VideoCostEstimate[] = []
 
@@ -195,11 +176,6 @@ export const estimateVideoCosts = (options: EstimateVideoCostOptions): VideoCost
     estimates.push(estimateRunwayCost(model, options))
   }
 
-  for (const rawModel of deapiModels) {
-    const model = validateDeapiVideoModel(rawModel)
-    estimates.push(estimateDeapiCost(model, options))
-  }
-
   if (estimates.length === 0) {
     estimates.push(estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution, options.videoMode))
   }
@@ -213,7 +189,6 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
   const glmModelRaw = options.glmVideoModels?.[0] ?? options.glmVideoModel
   const grokModelRaw = options.grokVideoModels?.[0] ?? options.grokVideoModel
   const runwayModelRaw = options.runwayVideoModels?.[0] ?? options.runwayVideoModel
-  const deapiModelRaw = options.deapiVideoModels?.[0] ?? options.deapiVideoModel
 
   if (typeof geminiModelRaw === 'string' && geminiModelRaw.length > 0) {
     const model = validateGeminiVideoModel(geminiModelRaw)
@@ -238,11 +213,6 @@ export const estimateVideoCost = (options: EstimateVideoCostOptions): VideoCostE
   if (typeof runwayModelRaw === 'string' && runwayModelRaw.length > 0) {
     const model = validateRunwayVideoModel(runwayModelRaw)
     return estimateRunwayCost(model, options)
-  }
-
-  if (typeof deapiModelRaw === 'string' && deapiModelRaw.length > 0) {
-    const model = validateDeapiVideoModel(deapiModelRaw)
-    return estimateDeapiCost(model, options)
   }
 
   return estimateGeminiModelCost('veo-3.1-fast-generate-preview', options.videoDuration, options.videoResolution, options.videoMode)

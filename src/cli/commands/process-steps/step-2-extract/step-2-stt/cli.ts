@@ -6,7 +6,6 @@ export const STT_ENGINE_CAPABILITIES = {
   gcloud: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   aws: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   deepinfra: { diarizationByDefault: false, supportsSpeakerCountHint: false },
-  deapi: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false },
@@ -67,8 +66,6 @@ export const collectSttProviderSpecs = (
     | 'awsSttModels'
     | 'deepinfraSttModel'
     | 'deepinfraSttModels'
-    | 'deapiSttModel'
-    | 'deapiSttModels'
     | 'elevenlabsSttModel'
     | 'elevenlabsSttModels'
     | 'deepgramSttModel'

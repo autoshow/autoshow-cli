@@ -10,7 +10,6 @@ import { runReverbTranscribe } from '../stt-local/reverb/run-reverb'
 import { runGroqTranscribe } from '../stt-services/groq/run-whisper-groq'
 import { runGrokStt } from '../stt-services/grok/run-grok-stt'
 import { runDeepinfraTranscribe } from '../stt-services/deepinfra/run-deepinfra-stt'
-import { runDeapiStt } from '../stt-services/deapi/run-deapi-stt'
 import { runElevenLabsTranscribe } from '../stt-services/elevenlabs/run-elevenlabs-stt'
 import { runDeepgramTranscribe } from '../stt-services/deepgram/run-deepgram-stt'
 import { runSonioxStt } from '../stt-services/soniox/run-soniox-stt'
@@ -91,19 +90,6 @@ export const dispatchStt = async (
       segmentNumber,
       totalSegments,
       audioDurationSeconds: options.audioDurationSeconds
-    })
-  }
-
-  if (target.service === 'deapi') {
-    return await runDeapiStt(audioPath, outputDir, {
-      model: target.model,
-      sourceUrl: options.sourceUrl,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      audioDurationSeconds: options.audioDurationSeconds,
-      runMode: options.runMode,
-      lifecycle: options.asyncLifecycle
     })
   }
 

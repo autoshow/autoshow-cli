@@ -93,9 +93,8 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  Multi-step Provider API Keys                                                │
 │  ├── MISTRAL_API_KEY                 Mistral STT/OCR/TTS                     │
 │  ├── GLM_API_KEY                     GLM STT/OCR/LLM/Video                   │
-│  ├── XAI_API_KEY                     Grok STT/LLM/TTS/Image/Video            │
+│  ├── XAI_API_KEY                     Grok STT/OCR/LLM/TTS/Image/Video        │
 │  ├── ELEVENLABS_API_KEY              ElevenLabs STT/TTS/Music                │
-│  └── DEAPI_API_KEY                   deAPI STT/TTS/Image/Video/Music         │
 │                                                                              │
 │  Step 4-7 — Generation-Only API Keys                                         │
 │  ├── SPEECHIFY_API_KEY               Speechify TTS                           │
@@ -118,7 +117,6 @@ Complete trace of a real CLI command from input to output, plus environment vari
 │  ├── XAI_BASE_URL, ZAI_BASE_URL (GLM), MINIMAX_BASE_URL                     │
 │                                                                              │
 │  Base URL Overrides — Steps 4-7 (TTS/Image/Video/Music)                      │
-│  ├── ELEVENLABS_BASE_URL, DEAPI_BASE_URL                                     │
 │  ├── SPEECHIFY_BASE_URL, HUME_BASE_URL, CARTESIA_BASE_URL                    │
 │  └── RUNWAY_BASE_URL, BFL_BASE_URL, REVE_BASE_URL                            │
 │                                                                              │

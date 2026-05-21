@@ -1,7 +1,6 @@
 import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_GEMINI_VIDEO_MODELS,
-  SUPPORTED_DEAPI_VIDEO_MODELS,
   SUPPORTED_GLM_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
@@ -17,7 +16,6 @@ export const VIDEO_COMMAND_SELECTOR_FLAGS = {
   'glm-video': 'glm',
   'grok-video': 'grok',
   'runway-video': 'runway',
-  'deapi-video': 'deapi'
 } as const satisfies Record<string, string>
 
 export const videoGenFlags = {
@@ -61,16 +59,12 @@ export const videoGenFlags = {
     description: buildModelDescription('Runway video model', SUPPORTED_RUNWAY_VIDEO_MODELS),
     type: [String] as [StringConstructor]
   },
-  'deapi-video': {
-    description: buildModelDescription('deAPI video model', SUPPORTED_DEAPI_VIDEO_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'video-duration': {
     description: 'Video duration in seconds',
     type: String
   },
   'video-size': {
-    description: 'Video size, provider dependent; deAPI expects WIDTHxHEIGHT within model limits',
+    description: 'Video size, provider dependent',
     type: String
   },
   'video-aspect-ratio': {

@@ -7,7 +7,6 @@ import {
   parseSpeakerRefAudioMappings,
   resolveDialogueFormat
 } from '../dialogue-normalizer'
-import { DEAPI_TTS_VOICE_CLONE_MODEL, DEAPI_TTS_VOICE_DESIGN_MODEL } from '../tts-services/deapi/run-deapi-tts'
 import { validateSpeechifyTtsCustomVoiceGender } from '../tts-services/speechify/speechify-custom-voices'
 import type { TtsTargetSelection } from './selection'
 
@@ -36,8 +35,7 @@ export const validateTtsTargetSelection = (
       selection.speechifyModels,
       selection.humeModels,
       selection.cartesiaModels,
-      selection.gcloudModels,
-      selection.deapiModels
+      selection.gcloudModels
     ].reduce((sum, models) => sum + (models?.length ?? 0), 0)
     if (nonMistralModelCount > 0) {
       throw new Error('Dialogue TTS v1 supports exactly one Mistral TTS model and cannot be combined with other TTS providers.')
@@ -218,34 +216,5 @@ export const validateTtsTargetSelection = (
   }
   if (selection.elevenLabsPvcWait && selection.hasElevenLabsPvcActionFlags && selection.elevenlabsModels.length > 1) {
     throw new Error('ElevenLabs TTS PVC setup with --elevenlabs-tts-pvc-wait supports one ElevenLabs model per run.')
-  }
-
-  const hasDeapiRequestControlFlags = Boolean(
-    selection.deapiLanguage
-    || typeof selection.deapiSpeed === 'number'
-    || selection.deapiFormat
-    || typeof selection.deapiSampleRate === 'number'
-    || selection.deapiInstruction
-  )
-  if (hasDeapiRequestControlFlags && selection.deapiModels.length === 0) {
-    throw new Error('deAPI TTS request control flags require --deapi-tts <model> or --all-tts.')
-  }
-  if (selection.deapiRefText && !selection.deapiRefAudioPath) {
-    throw new Error('deAPI TTS --deapi-tts-ref-text requires --deapi-tts-ref-audio.')
-  }
-  if (selection.deapiRefAudioPath && !selection.deapiModels.includes(DEAPI_TTS_VOICE_CLONE_MODEL)) {
-    throw new Error(`deAPI TTS --deapi-tts-ref-audio requires --deapi-tts ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
-  }
-  if (selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL) && !selection.deapiInstruction) {
-    throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_DESIGN_MODEL} requires --deapi-tts-instruction.`)
-  }
-  if (selection.deapiInstruction && selection.deapiModels.length > 0 && !selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL)) {
-    throw new Error(`deAPI TTS --deapi-tts-instruction requires --deapi-tts ${DEAPI_TTS_VOICE_DESIGN_MODEL}.`)
-  }
-  if (selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL) && (selection.deapiRefAudioPath || selection.deapiVoiceId)) {
-    throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_DESIGN_MODEL} uses --deapi-tts-instruction and cannot be combined with --deapi-tts-ref-audio or --deapi-tts-voice.`)
-  }
-  if (selection.deapiRefAudioPath && selection.deapiModels.some((model) => model !== DEAPI_TTS_VOICE_CLONE_MODEL)) {
-    throw new Error(`deAPI TTS voice cloning is only supported for ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
   }
 }

@@ -232,7 +232,6 @@ const LEGACY_ERROR_HINTS: ReadonlyArray<[needle: string, hint: string]> = [
   ['GLM_API_KEY', 'Set GLM_API_KEY environment variable to use GLM models'],
   ['DEEPINFRA_API_KEY', 'Set DEEPINFRA_API_KEY environment variable to use DeepInfra transcription'],
   ['UNSTRUCTURED_API_KEY', 'Set UNSTRUCTURED_API_KEY environment variable to use Unstructured OCR'],
-  ['DEAPI_API_KEY', 'Set DEAPI_API_KEY environment variable to use deAPI transcription and exact STT pricing'],
   ['ANTHROPIC_API_KEY', 'Set ANTHROPIC_API_KEY environment variable to use Anthropic Claude models'],
   ['MINIMAX_API_KEY', 'Set MINIMAX_API_KEY environment variable to use MiniMax models'],
   ['ELEVENLABS_API_KEY', 'Set ELEVENLABS_API_KEY environment variable to use ElevenLabs transcription/TTS/music'],

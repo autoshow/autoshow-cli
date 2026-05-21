@@ -12,6 +12,7 @@ import {
   ensureMeaningfulMarkdown,
   fallbackTitleFromSource,
   fetchRemoteHtml,
+  getUrlRequestTimeoutMs,
   isRecord,
   isRemoteSource,
   normalizeMarkdown,
@@ -32,7 +33,8 @@ import {
 const DEFUDDLE_CAPABILITIES = [
   'local-html',
   'remote-html',
-  'main-content'
+  'main-content',
+  'timeout'
 ] as const
 
 export const extractHtmlToMarkdown = async (
@@ -125,7 +127,11 @@ export const runDefuddleUrl = async (
   }, options)
 
   if (isRemoteSource(source)) {
-    const htmlInput = await fetchRemoteHtml(source)
+    const htmlInput = await fetchRemoteHtml(source, {
+      timeoutMs: getUrlRequestTimeoutMs(options),
+      signal: options?.requestSignal,
+      providerLabel: 'Defuddle'
+    })
     const extracted = await extractHtmlToMarkdown({
       html: htmlInput.html,
       documentUrl: htmlInput.finalUrl,

@@ -3,9 +3,8 @@ import { basename } from 'node:path'
 import * as l from '~/utils/logger'
 import type { GeminiImageModel, Step5Metadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
-import { isNativeGeminiImageModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
-import { geminiGenerateContent, geminiGenerateImages } from '~/utils/gemini/gemini-rest'
+import { geminiGenerateContent } from '~/utils/gemini/gemini-rest'
 import { withRetry } from '~/utils/retries'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import { imageReferenceToInlineDataPart } from '../../image-utils/image-inputs'
@@ -20,9 +19,7 @@ export const runGeminiImageGen = async (
     inputs?: string[] | undefined
     aspectRatio?: string | undefined
     imageSize?: string | undefined
-    imageCount?: number | undefined
     responseMode?: 'image' | 'text-image' | undefined
-    personGeneration?: string | undefined
     searchGrounding?: boolean | undefined
   }
 ): Promise<{ imagePaths: string[], metadata: Step5Metadata }> => {
@@ -39,99 +36,58 @@ export const runGeminiImageGen = async (
 
   await mkdir(outputDir, { recursive: true })
 
-  if (isNativeGeminiImageModel(options.model)) {
-    logMediaGenerationStatus(l, {
-      mediaType: 'image',
-      provider: 'gemini',
+  logMediaGenerationStatus(l, {
+    mediaType: 'image',
+    provider: 'gemini',
+    model: options.model,
+    status: 'started',
+    detail: mode === 'edit' ? 'native image edit' : 'native image'
+  })
+  const inputParts = await Promise.all((options.inputs ?? []).map(imageReferenceToInlineDataPart))
+  const responseModalities = options.responseMode === 'text-image' ? ['TEXT', 'IMAGE'] : ['IMAGE']
+
+  const response = await withRetry(
+    {
+      retryClass: 'runtime_http_create_conservative',
+      operationName: 'gemini-image-generate',
+      policy: { maxAttempts: 3 }
+    },
+    async (signal) => await geminiGenerateContent(apiKey, {
       model: options.model,
-      status: 'started',
-      detail: mode === 'edit' ? 'native image edit' : 'native image'
-    })
-    const inputParts = await Promise.all((options.inputs ?? []).map(imageReferenceToInlineDataPart))
-    const responseModalities = options.responseMode === 'text-image' ? ['TEXT', 'IMAGE'] : ['IMAGE']
-
-    const response = await withRetry(
-      {
-        retryClass: 'runtime_http_create_conservative',
-        operationName: 'gemini-image-generate',
-        policy: { maxAttempts: 3 }
+      contents: [{ text: prompt }, ...inputParts],
+      generationConfig: {
+        responseModalities,
+        ...(options.aspectRatio || options.imageSize ? {
+          imageConfig: {
+            ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
+            ...(options.imageSize ? { imageSize: options.imageSize } : {})
+          }
+        } : {})
       },
-      async (signal) => await geminiGenerateContent(apiKey, {
-        model: options.model,
-        contents: [{ text: prompt }, ...inputParts],
-        generationConfig: {
-          responseModalities,
-          ...(options.aspectRatio || options.imageSize ? {
-            imageConfig: {
-              ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-              ...(options.imageSize ? { imageSize: options.imageSize } : {})
-            }
-          } : {})
-        },
-        ...(options.searchGrounding ? { tools: [{ googleSearch: {} }] } : {}),
-        ...(signal ? { abortSignal: signal } : {})
-      }),
-      classifyGeminiRetry
-    )
-    providerReturnedModel = getProviderReturnedModel(options.model, response)
-    groundingMetadata = response.candidates?.find((candidate) => candidate.groundingMetadata !== undefined)?.groundingMetadata
+      ...(options.searchGrounding ? { tools: [{ googleSearch: {} }] } : {}),
+      ...(signal ? { abortSignal: signal } : {})
+    }),
+    classifyGeminiRetry
+  )
+  providerReturnedModel = getProviderReturnedModel(options.model, response)
+  groundingMetadata = response.candidates?.find((candidate) => candidate.groundingMetadata !== undefined)?.groundingMetadata
 
-    const candidates = response.candidates ?? []
-    if (candidates.length === 0 || !candidates[0]?.content?.parts) {
-      throw new Error('No image content in Gemini response')
-    }
+  const candidates = response.candidates ?? []
+  if (candidates.length === 0 || !candidates[0]?.content?.parts) {
+    throw new Error('No image content in Gemini response')
+  }
 
-    let imageIndex = 0
-    for (const part of candidates[0].content.parts) {
-      if (part.inlineData && part.thought !== true) {
-        const imageData = part.inlineData.data
-        if (!imageData) continue
-        const outputPath = imageIndex === 0
-          ? `${outputDir}/generated-image.png`
-          : `${outputDir}/generated-image-${imageIndex + 1}.png`
-        await Bun.write(outputPath, Buffer.from(imageData, 'base64'))
-        imagePaths.push(outputPath)
-        imageIndex++
-      }
-    }
-  } else {
-    logMediaGenerationStatus(l, {
-      mediaType: 'image',
-      provider: 'gemini',
-      model: options.model,
-      status: 'started',
-      detail: 'imagen'
-    })
-    const numberOfImages = options.imageCount ?? 1
-
-    const response = await withRetry(
-      {
-        retryClass: 'runtime_http_create_conservative',
-        operationName: 'gemini-image-generate',
-        policy: { maxAttempts: 3 }
-      },
-      async (signal) => await geminiGenerateImages(apiKey, {
-        model: options.model,
-        prompt,
-        numberOfImages,
-        ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
-        ...(options.imageSize ? { imageSize: options.imageSize } : {}),
-        ...(options.personGeneration ? { personGeneration: options.personGeneration } : {}),
-        ...(signal ? { abortSignal: signal } : {})
-      }),
-      classifyGeminiRetry
-    )
-
-    const generatedImages = response.generatedImages ?? []
-    for (let i = 0; i < generatedImages.length; i++) {
-      const generated = generatedImages[i]
-      const imageBytes = generated?.image?.imageBytes
-      if (!imageBytes) continue
-      const outputPath = i === 0
+  let imageIndex = 0
+  for (const part of candidates[0].content.parts) {
+    if (part.inlineData && part.thought !== true) {
+      const imageData = part.inlineData.data
+      if (!imageData) continue
+      const outputPath = imageIndex === 0
         ? `${outputDir}/generated-image.png`
-        : `${outputDir}/generated-image-${i + 1}.png`
-      await Bun.write(outputPath, Buffer.from(imageBytes, 'base64'))
+        : `${outputDir}/generated-image-${imageIndex + 1}.png`
+      await Bun.write(outputPath, Buffer.from(imageData, 'base64'))
       imagePaths.push(outputPath)
+      imageIndex++
     }
   }
 

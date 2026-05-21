@@ -3,7 +3,6 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runBflImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/run-bfl-image-gen'
-import { runMinimaxImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/minimax/run-minimax-image-gen'
 import { runReveImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/reve/run-reve-image-gen'
 
 type FetchCall = {
@@ -19,8 +18,6 @@ const previousEnv: Record<string, string | undefined> = {}
 const envKeys = [
   'BFL_API_KEY',
   'BFL_BASE_URL',
-  'MINIMAX_API_KEY',
-  'MINIMAX_BASE_URL',
   'REVE_API_KEY',
   'REVE_BASE_URL'
 ]
@@ -254,7 +251,7 @@ describe('image provider REST contracts', () => {
       await writeFile(refPath, new Uint8Array([1, 2, 3]))
 
       const result = await runBflImageGen('Edit with references', dir, {
-        model: 'flux-2-pro-preview',
+        model: 'flux-2-pro',
         outputFormat: 'png',
         inputs: [refPath, 'https://cdn.example.com/reference.webp']
       })
@@ -264,7 +261,7 @@ describe('image provider REST contracts', () => {
     })
 
     expect(calls[0]).toMatchObject({
-      url: 'https://mock.bfl.local/v1/flux-2-pro-preview',
+      url: 'https://mock.bfl.local/v1/flux-2-pro',
       method: 'POST'
     })
     expect(calls[0]?.bodyJson).toMatchObject({
@@ -322,61 +319,4 @@ describe('image provider REST contracts', () => {
     expect(downloadCalls[0]?.headers.get('accept')).toBe('image/jpeg,image/*;q=0.9,*/*;q=0.8')
   })
 
-  test('MiniMax image generation sends references, count, and dimensions', async () => {
-    process.env['MINIMAX_API_KEY'] = 'minimax-key'
-    process.env['MINIMAX_BASE_URL'] = 'https://mock.minimax.local'
-    const firstImage = new Uint8Array([1, 2, 3])
-    const secondImage = new Uint8Array([4, 5, 6])
-    const calls = installFetch(() => jsonResponse({
-      data: {
-        image_base64: [
-          Buffer.from(firstImage).toString('base64'),
-          Buffer.from(secondImage).toString('base64')
-        ]
-      },
-      base_resp: { status_code: 0, status_msg: 'success' }
-    }))
-
-    await withTempDir(async (dir) => {
-      const refPath = join(dir, 'subject.png')
-      await writeFile(refPath, new Uint8Array([7, 8, 9]))
-
-      const result = await runMinimaxImageGen('Keep the subject consistent', dir, {
-        model: 'image-01',
-        count: 2,
-        imageSize: '1024x768',
-        inputs: [refPath, 'https://cdn.example.com/subject.jpg']
-      })
-
-      expect(result.imagePaths).toHaveLength(2)
-      expect(result.metadata).toMatchObject({
-        imageService: 'minimax',
-        imageModel: 'image-01',
-        imageCount: 2,
-        imageFileNames: ['generated-image.jpeg', 'generated-image-2.jpeg'],
-        imageWidth: 1024,
-        imageHeight: 768,
-        imageSize: '1024x768',
-        requestMode: 'edit'
-      })
-    })
-
-    expect(calls[0]?.url).toBe('https://mock.minimax.local/v1/image_generation')
-    expect(calls[0]?.bodyJson).toMatchObject({
-      model: 'image-01',
-      prompt: 'Keep the subject consistent',
-      response_format: 'base64',
-      n: 2,
-      width: 1024,
-      height: 768
-    })
-    const references = calls[0]?.bodyJson?.['subject_reference'] as Array<Record<string, string>>
-    expect(references).toHaveLength(2)
-    expect(references[0]?.['type']).toBe('character')
-    expect(references[0]?.['image_file']).toBe(`data:image/png;base64,${Buffer.from(new Uint8Array([7, 8, 9])).toString('base64')}`)
-    expect(references[1]).toEqual({
-      type: 'character',
-      image_file: 'https://cdn.example.com/subject.jpg'
-    })
-  })
 })

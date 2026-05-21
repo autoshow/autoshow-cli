@@ -77,6 +77,8 @@ const ExtractModelSchema = v.object({
   costPer1kOutputCharsCents: v.optional(v.number(), undefined),
   costPerMInputTokensUSD: v.optional(v.number(), undefined),
   costPerMInputTokensCents: v.optional(v.number(), undefined),
+  costPerMCachedInputTokensUSD: v.optional(v.number(), undefined),
+  costPerMCachedInputTokensCents: v.optional(v.number(), undefined),
   costPerMOutputTokensUSD: v.optional(v.number(), undefined),
   costPerMOutputTokensCents: v.optional(v.number(), undefined),
   limits: v.optional(ExtractLimitsSchema, undefined),
@@ -430,6 +432,7 @@ export const getExtractPricing = (
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
   inputCostPer1MCents?: number
+  cachedInputCostPer1MCents?: number
   outputCostPer1MCents?: number
 } => {
   const extractModel = getModelRegistry().extract[service]?.models[model]
@@ -449,6 +452,11 @@ export const getExtractPricing = (
       ? { inputCostPer1MCents: extractModel.costPerMInputTokensCents }
       : extractModel.costPerMInputTokensUSD !== undefined
         ? { inputCostPer1MCents: extractModel.costPerMInputTokensUSD * 100 }
+        : {}),
+    ...(extractModel.costPerMCachedInputTokensCents !== undefined
+      ? { cachedInputCostPer1MCents: extractModel.costPerMCachedInputTokensCents }
+      : extractModel.costPerMCachedInputTokensUSD !== undefined
+        ? { cachedInputCostPer1MCents: extractModel.costPerMCachedInputTokensUSD * 100 }
         : {}),
     ...(extractModel.costPerMOutputTokensCents !== undefined
       ? { outputCostPer1MCents: extractModel.costPerMOutputTokensCents }

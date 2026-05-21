@@ -8,7 +8,6 @@ Media inputs are downloaded and transcribed with local or hosted speech-to-text 
 - [STT Environment](#stt-environment)
 - [Shared STT Options](#shared-stt-options)
 - [URL/streaming/source-URL STT](#urlstreamingsource-url-stt)
-  - [deAPI](#deapi)
   - [Happy Scribe](#happy-scribe)
   - [Supadata](#supadata)
   - [ScrapeCreators](#scrapecreators)
@@ -89,7 +88,6 @@ bun as setup --step reverb
 | Grok STT | `XAI_API_KEY` | `XAI_BASE_URL` |
 | DeepInfra | `DEEPINFRA_API_KEY` | `DEEPINFRA_BASE_URL` |
 | Together | `TOGETHER_API_KEY` | `TOGETHER_BASE_URL` |
-| deAPI | `DEAPI_API_KEY` | `DEAPI_BASE_URL` |
 | Happy Scribe | `HAPPYSCRIBE_API_KEY` | `HAPPYSCRIBE_BASE_URL`, `HAPPYSCRIBE_ORGANIZATION_ID` |
 | Supadata | `SUPADATA_API_KEY` | `SUPADATA_BASE_URL` |
 | ScrapeCreators | `SCRAPECREATORS_API_KEY` | `SCRAPECREATORS_BASE_URL` |
@@ -140,7 +138,6 @@ bun as extract https://ajc.pics/autoshow/examples/2-video.mp4 --whisper large-v3
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all
 ```
 
-`--speaker-count` is currently honored by Google Cloud, AWS, ElevenLabs, AssemblyAI, and Gladia. It is ignored by single-speaker Whisper providers such as Groq and DeepInfra, and by deAPI, Happy Scribe, Supadata, ScrapeCreators, Soniox, Speechmatics, Rev, and Mistral. Google Cloud and Gladia use exact min/max speaker hints. AWS always enables diarization and treats the value as `MaxSpeakerLabels`, defaulting to 30 when omitted.
 
 ## Transcript Videos
 
@@ -166,21 +163,16 @@ The output directory contains `<label>.mp4`, `<label>.vtt`, `<label>.srt`, and `
 
 These services either work best with provider-side URLs or have source-URL-specific behavior.
 
-### deAPI
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi <model>` |
 | Models | `WhisperLargeV3` |
 | Diarization | Not enabled by default; `--speaker-count` is ignored |
 | Pricing | Exact provider quote support when the quote endpoint succeeds |
 
 ```bash
-bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --deapi WhisperLargeV3
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi WhisperLargeV3 --price
 ```
 
-Supported passthrough URLs use remote URL mode, while local files and unsupported URLs use prepared-media multipart upload mode. If deAPI rejects an upload as too large, AutoShow falls back to the normal split-and-merge path, re-quotes each segment, and records the summed billed amount with `step2.billing.mode: 'segment_sum'`.
 
 ### Happy Scribe
 
@@ -230,12 +222,10 @@ Supadata requires a public source URL and cannot transcribe local file inputs th
 ```bash
 bun as extract "https://www.youtube.com/watch?v=MORMZXEaONk" --scrapecreators youtube-transcript
 bun as extract https://youtu.be/dQw4w9WgXcQ --scrapecreators youtube-transcript --scrapecreators-lang es
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --scrapecreators youtube-transcript --deapi WhisperLargeV3
 ```
 
 ScrapeCreators is transcript retrieval, not general audio transcription. AutoShow calls `GET /v1/youtube/video/transcript` with the source URL and requested language, then normalizes returned timed transcript entries into `transcription.txt` and structured STT artifacts. It does not replace `--youtube-captions`; use ScrapeCreators when you want it as an explicit paid provider in the same target set as other STT providers.
 
-ScrapeCreators skips local files, direct media URLs, and non-YouTube URLs as non-retryable provider skips so multi-provider runs can fall back. A `transcript: null` response means the requested language is unavailable and is also treated as a skipped, non-retryable provider result. Pair it with a generating provider such as `--deapi WhisperLargeV3` or `--happyscribe auto` when a missing YouTube transcript should still produce an STT result. `--split` has no effect because ScrapeCreators uses the source URL directly.
 
 ### Gladia
 
@@ -476,12 +466,7 @@ bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --assemblyai
 
 ## STT Pricing And Manifests
 
-deAPI uses live provider pricing when its quote endpoint succeeds.
 
-- `--price` and budget preflight call deAPI pricing before execution. When the original source URL is a recognized deAPI passthrough host such as YouTube, X/Twitter, Twitch, Kick, or TikTok, AutoShow quotes with `source_url`. Otherwise it quotes by prepared-media `duration_seconds`. Both quote modes request timestamps.
-- Successful deAPI preflight quotes are recorded as `estimateType: exact`. If the pricing endpoint fails or returns `429`, AutoShow retries normally, warns on fallback, and uses local registry pricing instead.
-- During execution, AutoShow captures the deAPI quote before each remote job submission and writes it into `run.json` under `step2.billing` with `totalCost`, `source`, and `mode`. Actual STT cost prefers this stored provider quote over duration-based registry math.
-- deAPI runs stay on the existing async checkpoint flow. `providers/<service>-<model>/checkpoint.json` keeps the remote request id so `resume` can continue polling without recreating the job.
 
 Happy Scribe price preflight is intentionally side-effect free.
 
@@ -505,7 +490,6 @@ ScrapeCreators price estimates use one fixed transcript-request credit.
 - `--price` uses the published Freelance reference rate of `$47 / 25,000 credits`, or `0.188` cents per YouTube transcript request.
 - Business pricing is lower at `$497 / 500,000 credits`, or `0.0994` cents per request, but AutoShow does not use that as the default estimator.
 - Estimates and actual fallback billing ignore media duration because ScrapeCreators charges the retrieval request, not transcription minutes.
-- This makes ScrapeCreators cheaper than duration-priced STT providers for YouTube URLs when the requested transcript exists. Gladia, Happy Scribe, deAPI, and Supadata generation can still be the right fallback when YouTube has no transcript in the requested language.
 
 ## STT Notes
 

@@ -20,8 +20,7 @@ const TTS_PROVIDER_FLAGS = [
   'speechify-tts',
   'hume-tts',
   'cartesia-tts',
-  'gcloud-tts',
-  'deapi-tts'
+  'gcloud-tts'
 ] as const
 
 const TTS_MODEL_FIELDS = {
@@ -37,8 +36,7 @@ const TTS_MODEL_FIELDS = {
   speechify: ['speechifyTtsModels', 'speechifyTtsModel'],
   hume: ['humeTtsModels', 'humeTtsModel'],
   cartesia: ['cartesiaTtsModels', 'cartesiaTtsModel'],
-  gcloud: ['gcloudTtsModels', 'gcloudTtsModel'],
-  deapi: ['deapiTtsModels', 'deapiTtsModel']
+  gcloud: ['gcloudTtsModels', 'gcloudTtsModel']
 } as const
 
 const clearTtsProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
@@ -68,9 +66,7 @@ const clearTtsProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
   cartesiaTtsModels: undefined,
   cartesiaTtsModel: undefined,
   gcloudTtsModels: undefined,
-  gcloudTtsModel: undefined,
-  deapiTtsModels: undefined,
-  deapiTtsModel: undefined
+  gcloudTtsModel: undefined
 })
 
 const collectTtsTargetsForProviders = (

@@ -8,6 +8,7 @@ import type { OpenAIOcrInputContent } from '~/types'
 import { createOpenAIResponse, extractOpenAIResponseText } from '~/utils/openai/client'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
+  'gpt-5.5',
   'gpt-5.4',
   'gpt-5.4-mini',
   'gpt-5.4-nano'

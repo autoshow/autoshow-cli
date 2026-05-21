@@ -136,7 +136,7 @@ describe('Anthropic REST contracts', () => {
       })
     }) as typeof fetch
 
-    const result = await runMinimaxModel('Draft this.', 'MiniMax-M2.5', structuredOpts)
+    const result = await runMinimaxModel('Draft this.', 'MiniMax-M2.7', structuredOpts)
 
     expect(result.result).toBe('MiniMax response.')
     expect(calls).toHaveLength(1)
@@ -145,7 +145,7 @@ describe('Anthropic REST contracts', () => {
       method: 'POST',
       apiKey: 'minimax-key',
       body: {
-        model: 'MiniMax-M2.5',
+        model: 'MiniMax-M2.7',
         max_tokens: 16000,
         messages: [{ role: 'user', content: 'Draft this.' }]
       }

@@ -12,8 +12,7 @@ const VIDEO_PROVIDER_FLAGS = [
   'minimax-video',
   'glm-video',
   'grok-video',
-  'runway-video',
-  'deapi-video'
+  'runway-video'
 ] as const
 
 const VIDEO_MODEL_FIELDS = {
@@ -21,8 +20,7 @@ const VIDEO_MODEL_FIELDS = {
   minimax: ['minimaxVideoModels', 'minimaxVideoModel'],
   glm: ['glmVideoModels', 'glmVideoModel'],
   grok: ['grokVideoModels', 'grokVideoModel'],
-  runway: ['runwayVideoModels', 'runwayVideoModel'],
-  deapi: ['deapiVideoModels', 'deapiVideoModel']
+  runway: ['runwayVideoModels', 'runwayVideoModel']
 } as const
 
 const clearVideoProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
@@ -36,9 +34,7 @@ const clearVideoProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
   grokVideoModels: undefined,
   grokVideoModel: undefined,
   runwayVideoModels: undefined,
-  runwayVideoModel: undefined,
-  deapiVideoModels: undefined,
-  deapiVideoModel: undefined
+  runwayVideoModel: undefined
 })
 
 const collectVideoTargetsForProviders = (

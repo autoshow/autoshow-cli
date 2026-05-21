@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { runDeapiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/run-deepgram-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
 import { runGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/run-gcloud-tts'
@@ -49,8 +48,6 @@ const envKeys = [
   'MINIMAX_BASE_URL',
   'DEEPGRAM_API_KEY',
   'DEEPGRAM_BASE_URL',
-  'DEAPI_API_KEY',
-  'DEAPI_BASE_URL',
   'AUTOSHOW_GCLOUD_BIN',
   'GCLOUD_TTS_BASE_URL',
   'GCLOUD_TTS_LANGUAGE',
@@ -576,100 +573,6 @@ describe('TTS provider service contracts', () => {
       model: 'sonic-3'
     })).rejects.toThrow('Cartesia TTS failed (400): bad cartesia')
   })
-
-  test('deAPI TTS sends language, speed, format controls and enables VoiceDesign with instruction', async () => {
-    const firstDir = await makeTempDir('autoshow-deapi-tts-controls-')
-    const secondDir = await makeTempDir('autoshow-deapi-tts-voice-design-')
-    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
-    const calls: Array<{ url: string, method: string, form?: Record<string, unknown> }> = []
-    let requestIndex = 0
-
-    process.env['DEAPI_API_KEY'] = 'deapi-key'
-    process.env['DEAPI_BASE_URL'] = 'https://mock.deapi.local'
-
-    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-      const url = String(input)
-      const method = init?.method ?? 'GET'
-      if (url.endsWith('/api/v2/audio/speech') && init?.body instanceof FormData) {
-        requestIndex += 1
-        const form = init.body
-        calls.push({
-          url,
-          method,
-          form: {
-            text: form.get('text'),
-            model: form.get('model'),
-            mode: form.get('mode'),
-            voice: form.get('voice'),
-            instruct: form.get('instruct'),
-            lang: form.get('lang'),
-            speed: form.get('speed'),
-            format: form.get('format'),
-            sampleRate: form.get('sample_rate')
-          }
-        })
-        return Response.json({ request_id: `tts-${requestIndex}` })
-      }
-      if (url.includes('/api/v2/jobs/')) {
-        calls.push({ url, method })
-        return Response.json({
-          data: {
-            status: 'done',
-            result_url: `https://mock.deapi.local/result/${url.endsWith('tts-1') ? 'one' : 'two'}.mp3`
-          }
-        })
-      }
-      if (url.includes('/result/')) {
-        calls.push({ url, method })
-        return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
-      }
-      throw new Error(`Unexpected deAPI TTS mock fetch: ${method} ${url}`)
-    }) as typeof fetch
-
-    const customVoiceResult = await runDeapiTts('deAPI custom voice synthesis text.', firstDir, {
-      model: 'Kokoro',
-      voiceId: 'af_bella',
-      language: 'en-gb',
-      speed: 1.3,
-      format: 'mp3',
-      sampleRate: 44100
-    })
-    const voiceDesignResult = await runDeapiTts('deAPI voice design synthesis text.', secondDir, {
-      model: 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
-      instruction: 'Design a calm documentary narrator.',
-      language: 'English',
-      speed: 0.9,
-      format: 'mp3',
-      sampleRate: 24000
-    })
-
-    expect(await Bun.file(customVoiceResult.audioPath).exists()).toBe(true)
-    expect(await Bun.file(voiceDesignResult.audioPath).exists()).toBe(true)
-    expect(calls.filter((call) => call.url.endsWith('/api/v2/audio/speech')).map((call) => call.form)).toEqual([
-      {
-        text: 'deAPI custom voice synthesis text.',
-        model: 'Kokoro',
-        mode: 'custom_voice',
-        voice: 'af_bella',
-        instruct: null,
-        lang: 'en-gb',
-        speed: '1.3',
-        format: 'mp3',
-        sampleRate: '44100'
-      },
-      {
-        text: 'deAPI voice design synthesis text.',
-        model: 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
-        mode: 'voice_design',
-        voice: null,
-        instruct: 'Design a calm documentary narrator.',
-        lang: 'English',
-        speed: '0.9',
-        format: 'mp3',
-        sampleRate: '24000'
-      }
-    ])
-  }, 10_000)
 
   test('Speechify posts authenticated JSON chunks, retries once, decodes audio, and finalizes metadata', async () => {
     const dir = await makeTempDir('autoshow-speechify-tts-')

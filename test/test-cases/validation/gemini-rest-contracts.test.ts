@@ -7,7 +7,6 @@ import { runGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2
 import { runGeminiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/run-gemini-stt'
 import { runGeminiModel } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/run-gemini'
 import { runGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/run-gemini-tts'
-import { runGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/run-gemini-image-gen'
 import { runGeminiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/gemini/run-gemini-video-gen'
 import { runGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/run-gemini-music-gen'
 import { createImageGemini } from '~/cli/commands/process-steps/step-8-comic/image-services/gemini/gemini-image-service'
@@ -444,74 +443,6 @@ describe('Gemini REST contracts', () => {
       }
     })
   }, 20_000)
-
-  test('Gemini image generation supports Imagen predict bodies', async () => {
-    process.env['GEMINI_API_KEY'] = 'gemini-key'
-    const calls = installFetch((call) => {
-      if (call.url.endsWith('/models/imagen-4.0-generate-001:predict')) {
-        return jsonResponse({
-          predictions: [{ bytesBase64Encoded: imageBase64, mimeType: 'image/png' }]
-        })
-      }
-      throw new Error(`Unexpected Gemini image fetch: ${call.method} ${call.url}`)
-    })
-
-    await withTempDir(async (dir) => {
-      const result = await runGeminiImageGen('a blue kite', dir, {
-        model: 'imagen-4.0-generate-001',
-        aspectRatio: '1:1',
-        imageSize: '2K',
-        imageCount: 2
-      })
-      expect(await Bun.file(result.imagePaths[0] as string).exists()).toBe(true)
-    })
-
-    expect(calls[0]?.bodyJson).toEqual({
-      instances: [{ prompt: 'a blue kite' }],
-      parameters: {
-        sampleCount: 2,
-        aspectRatio: '1:1',
-        sampleImageSize: '2K'
-      }
-    })
-  })
-
-  test('Gemini image generation retries transient Imagen availability errors', async () => {
-    process.env['GEMINI_API_KEY'] = 'gemini-key'
-    let predictAttempts = 0
-    const calls = installFetch((call) => {
-      if (call.url.endsWith('/models/imagen-4.0-generate-001:predict')) {
-        predictAttempts += 1
-        if (predictAttempts === 1) {
-          return jsonResponse({
-            error: {
-              code: 503,
-              status: 'UNAVAILABLE',
-              message: 'service unavailable'
-            }
-          }, {
-            status: 503,
-            headers: { 'retry-after': '0.001' }
-          })
-        }
-        return jsonResponse({
-          predictions: [{ bytesBase64Encoded: imageBase64, mimeType: 'image/png' }]
-        })
-      }
-      throw new Error(`Unexpected Gemini image fetch: ${call.method} ${call.url}`)
-    })
-
-    await withTempDir(async (dir) => {
-      const result = await runGeminiImageGen('a blue kite', dir, {
-        model: 'imagen-4.0-generate-001'
-      })
-
-      expect(result.imagePaths).toHaveLength(1)
-      expect(await Bun.file(result.imagePaths[0] as string).exists()).toBe(true)
-    })
-
-    expect(calls.filter((call) => call.url.endsWith('/models/imagen-4.0-generate-001:predict'))).toHaveLength(2)
-  })
 
   test('Gemini comic image generation sends inline references and image modalities', async () => {
     process.env['GEMINI_API_KEY'] = 'gemini-key'

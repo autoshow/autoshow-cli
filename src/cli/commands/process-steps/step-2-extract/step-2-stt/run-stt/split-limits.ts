@@ -10,7 +10,6 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
   'elevenlabs',
   'deepgram',
   'deepinfra',
-  'deapi',
   'speechmatics',
   'rev',
   'groq',

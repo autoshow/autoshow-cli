@@ -5,13 +5,14 @@ import {
   byteLength,
   cleanString,
   countWords,
+  createUrlProviderHttpError,
   ensureMeaningfulMarkdown,
   fallbackTitleFromSource,
-  HTML_FETCH_TIMEOUT_MS,
+  getUrlRequestTimeoutMs,
   isRecord,
   normalizeMarkdown,
   tryFetchRemoteHtml,
-  withTimeout,
+  withUrlProviderTimeout,
   type UrlArticleRunResult
 } from '../../url-utils'
 import {
@@ -161,7 +162,11 @@ const runSpiderScrape = async (
     )
   }
 
-  const response = await withTimeout(HTML_FETCH_TIMEOUT_MS, async (signal) =>
+  const requestOptions = {
+    ...options,
+    timeoutMs: getUrlRequestTimeoutMs(options)
+  }
+  const response = await withUrlProviderTimeout('Spider', requestOptions, async (signal) =>
     await fetch(`${baseUrl.replace(/\/$/, '')}/scrape`, {
       method: 'POST',
       signal,
@@ -169,7 +174,7 @@ const runSpiderScrape = async (
         'Content-Type': 'application/json',
         ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
       },
-      body: JSON.stringify(buildSpiderScrapeRequest(source, options))
+      body: JSON.stringify(buildSpiderScrapeRequest(source, requestOptions))
     })
   )
 
@@ -184,7 +189,7 @@ const runSpiderScrape = async (
     const errorMessage = isRecord(payload)
       ? cleanString(payload['error']) ?? cleanString(payload['message']) ?? cleanString(payload['detail'])
       : undefined
-    throw new Error(`Spider scrape failed (${response.status} ${response.statusText})${errorMessage ? `: ${errorMessage}` : ''}`)
+    throw createUrlProviderHttpError('Spider', 'scrape', response, errorMessage)
   }
 
   return parseSpiderResponse(payload)

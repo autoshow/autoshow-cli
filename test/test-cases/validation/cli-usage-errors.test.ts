@@ -56,7 +56,7 @@ test('unknown command exits 2', async () => {
 
 test('image command rejects removed imagen-count flag', async () => {
   await expectUsageExit(
-    ['image', 'a sunset', '--gemini', 'imagen-4.0-generate-001', '--imagen-count', '2', '--price'],
+    ['image', 'a sunset', '--gemini', 'gemini-3.1-flash-image-preview', '--imagen-count', '2', '--price'],
     'Unexpected flag: imagenCount'
   )
 })
@@ -105,6 +105,109 @@ test('benchmark --tts rejects missing source text without override', async () =>
   await expectUsageExit(
     ['benchmark', runDir, '--tts'],
     'TTS benchmark source text is missing'
+  )
+})
+
+test('benchmark --image rejects missing image run directory', async () => {
+  const root = await makeTempRoot('autoshow-image-benchmark-missing-')
+
+  await expectUsageExit(
+    ['benchmark', join(root, 'missing-run'), '--image'],
+    'Image run directory not found'
+  )
+})
+
+test('benchmark --image rejects non-image run manifests', async () => {
+  const runDir = await makeTempRoot('autoshow-image-benchmark-kind-')
+  await writeJson(join(runDir, 'run.json'), {
+    schemaVersion: 2,
+    kind: 'tts',
+    metadata: {}
+  })
+
+  await expectUsageExit(
+    ['benchmark', runDir, '--image'],
+    'run.json kind is "tts", expected "image"'
+  )
+})
+
+test('benchmark --image rejects invalid image run metadata', async () => {
+  const runDir = await makeTempRoot('autoshow-image-benchmark-metadata-')
+  await writeJson(join(runDir, 'run.json'), {
+    schemaVersion: 2,
+    kind: 'image',
+    metadata: {
+      image: []
+    }
+  })
+
+  await expectUsageExit(
+    ['benchmark', runDir, '--image'],
+    'Image benchmark source prompt is missing'
+  )
+})
+
+test('benchmark --video rejects missing video run directory', async () => {
+  const root = await makeTempRoot('autoshow-video-benchmark-missing-')
+
+  await expectUsageExit(
+    ['benchmark', join(root, 'missing-run'), '--video'],
+    'Video run directory not found'
+  )
+})
+
+test('benchmark --video rejects non-video run manifests', async () => {
+  const runDir = await makeTempRoot('autoshow-video-benchmark-kind-')
+  await writeJson(join(runDir, 'run.json'), {
+    schemaVersion: 2,
+    kind: 'image',
+    metadata: {}
+  })
+
+  await expectUsageExit(
+    ['benchmark', runDir, '--video'],
+    'run.json kind is "image", expected "video"'
+  )
+})
+
+test('benchmark --video rejects missing source prompt', async () => {
+  const runDir = await makeTempRoot('autoshow-video-benchmark-prompt-')
+  await writeJson(join(runDir, 'run.json'), {
+    schemaVersion: 2,
+    kind: 'video',
+    metadata: {
+      video: []
+    }
+  })
+
+  await expectUsageExit(
+    ['benchmark', runDir, '--video'],
+    'Video benchmark source prompt is missing'
+  )
+})
+
+test('benchmark --video rejects missing video metadata', async () => {
+  const runDir = await makeTempRoot('autoshow-video-benchmark-metadata-')
+  await writeJson(join(runDir, 'run.json'), {
+    schemaVersion: 2,
+    kind: 'video',
+    metadata: {
+      input: 'A cinematic mountain sunrise.'
+    }
+  })
+
+  await expectUsageExit(
+    ['benchmark', runDir, '--video'],
+    'Video benchmark run.json must contain metadata.video[].'
+  )
+})
+
+test('benchmark rejects mutually exclusive scoring modes', async () => {
+  const runDir = await makeTempRoot('autoshow-benchmark-mode-conflict-')
+
+  await expectUsageExit(
+    ['benchmark', runDir, '--image', '--video'],
+    'Choose only one benchmark mode: --image, --tts, or --video'
   )
 })
 
@@ -173,11 +276,16 @@ test('extract accepts route-aware GLM STT model in price mode', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('glm-asr-2512')
 })
 
-test('extract rejects removed Anthropic Opus OCR model', async () => {
-  await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-opus-4-7', '--price'],
-    'Invalid --anthropic-ocr model "claude-opus-4-7". Allowed values: claude-haiku-4-5'
-  )
+test('extract accepts expanded Anthropic OCR models in price mode', async () => {
+  for (const model of ['claude-opus-4-7', 'claude-sonnet-4-6'] as const) {
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--anthropic', model, '--price'],
+      { env: { NO_COLOR: '1' } }
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(`${result.stdout}\n${result.stderr}`).toContain(model)
+  }
 })
 
 test('extract rejects removed Google Document AI layout parser model', async () => {
@@ -209,13 +317,6 @@ test('extract rejects old suffixed provider selector flags', async () => {
   await expectUsageExit(
     ['extract', STABLE_EXAMPLE_AUDIO_URL, '--glm-stt', 'glm-asr-2512', '--price'],
     'Unexpected flag: glmStt'
-  )
-})
-
-test('extract rejects removed deAPI OCR flag', async () => {
-  await expectUsageExit(
-    ['extract', 'input/examples/document/1-document.pdf', '--deapi-ocr', 'Nanonets_Ocr_S_F16', '--price'],
-    'Unexpected flag: deapiOcr'
   )
 })
 
@@ -268,7 +369,7 @@ test('music lyric-video mode rejects missing audio or batch', async () => {
 
 test('music rejects mixed hosted generation and lyric-video modes', async () => {
   await expectUsageExit(
-    ['music', '--audio', STABLE_EXAMPLE_AUDIO_URL, '--minimax', 'music-2.5'],
+    ['music', '--audio', STABLE_EXAMPLE_AUDIO_URL, '--minimax', 'music-2.6'],
     'Do not combine hosted music flags'
   )
   await expectUsageExit(

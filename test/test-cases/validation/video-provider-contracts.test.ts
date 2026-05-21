@@ -252,7 +252,7 @@ describe('video provider REST contracts', () => {
     })
   })
 
-  test('MiniMax sends text, image, interpolation, and subject-reference request bodies', async () => {
+  test('MiniMax sends text, image, and subject-reference request bodies', async () => {
     process.env['MINIMAX_API_KEY'] = 'minimax-key'
     process.env['MINIMAX_BASE_URL'] = 'https://mock.minimax.io'
     let requestIndex = 0
@@ -278,7 +278,7 @@ describe('video provider REST contracts', () => {
     })
 
     await withTempDir(async (dir) => {
-      const { imagePath, lastFramePath } = await writeMediaFixtures(dir)
+      const { imagePath } = await writeMediaFixtures(dir)
       await runMinimaxVideoGen('plain prompt', dir, {
         model: 'MiniMax-Hailuo-2.3'
       })
@@ -286,12 +286,6 @@ describe('video provider REST contracts', () => {
         model: 'I2V-01',
         mode: 'image-to-video',
         inputImage: imagePath
-      })
-      await runMinimaxVideoGen('transition frames', dir, {
-        model: 'MiniMax-Hailuo-02',
-        mode: 'interpolate',
-        inputImage: imagePath,
-        lastFrameImage: lastFramePath
       })
       await runMinimaxVideoGen('keep character', dir, {
         model: 'S2V-01',
@@ -315,14 +309,6 @@ describe('video provider REST contracts', () => {
       first_frame_image: `data:image/png;base64,${Buffer.from(new Uint8Array([1, 2, 3])).toString('base64')}`
     })
     expect(postBodies[2]).toEqual({
-      model: 'MiniMax-Hailuo-02',
-      prompt: 'transition frames',
-      duration: 6,
-      resolution: '768P',
-      first_frame_image: `data:image/png;base64,${Buffer.from(new Uint8Array([1, 2, 3])).toString('base64')}`,
-      last_frame_image: `data:image/webp;base64,${Buffer.from(new Uint8Array([4, 5, 6])).toString('base64')}`
-    })
-    expect(postBodies[3]).toEqual({
       model: 'S2V-01',
       prompt: 'keep character',
       subject_reference: [{

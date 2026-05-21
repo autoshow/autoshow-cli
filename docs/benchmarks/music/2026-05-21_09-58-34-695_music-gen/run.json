@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 2,
+  "kind": "music",
+  "metadata": {
+    "music": [
+      {
+        "musicService": "elevenlabs",
+        "musicModel": "music_v1",
+        "processingTime": 23015,
+        "musicFileName": "generated-music-elevenlabs-music_v1.mp3",
+        "musicFileSize": 1920567,
+        "musicDurationMs": 120000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioBitrate": 128000,
+        "providerAudioByteSize": 1920567,
+        "outputFormat": "mp3_44100_128"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6",
+        "processingTime": 105286,
+        "musicFileName": "generated-music-minimax-music-2.6.mp3",
+        "musicFileSize": 5968081,
+        "musicDurationMs": 186253,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 5968081,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e509ee0075793093863fa78be74ed",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nGreen hat tipped, a wink and a nod\nWhispers in the bog, where the ancient spirits trod\nGot a rhythm in my soul, syncopated and deep\nWhile the city sleeps, secrets I keep\nFour-leaf clover luck, a gilded cage I roam\nFrom a hidden home, where the wild winds comb\nMy beard of moss, my eyes like amber bright\nSteppin' into the night, with an avant-garde light\n\n[Pre-Chorus]\nSaxophone wails a curious tune\nBeneath the pale moon, I'm coming soon\nGot a pocket full of rhymes, a trickster's decree\nListen closely, can you hear me?\n\n[Chorus]\nLeprechaun flow, a jazz-rap decree\nUnlocking the emerald cipher, wild and free\nWith a beat so complex, a spirit so bold\nA story untold, in shades of gold\nWe break the mold, we can't be controlled\nThis is our tale, bravely sold\n\n[Verse]\nMy cadence is a solo, a trumpet's call\nBouncing off the walls, standing tall\nIn this concrete jungle, I find my grove\nWith every move, a mystical shove\nFrom the old country, a magic I bring\nOn the wind's wing, watch the pot of gold sing\nBut it ain't about the bling, it's the rhythm and the rhyme\nStealin' all your time, with a mischievous chime\n\n[Pre-Chorus]\nBass line groovin', a curious sound\nOn sacred ground, I'm spinning around\nGot a pocket full of dreams, a mischievous plea\nListen closely, can you feel me?\n\n[Chorus]\nLeprechaun flow, a jazz-rap decree\nUnlocking the emerald cipher, wild and free\nWith a beat so complex, a spirit so bold\nA story untold, in shades of gold\nWe break the mold, we can't be controlled\nThis is our tale, bravely sold\n\n[Bridge]\nThey say we're folklore, a myth of the past\nBut our magic is vast, built to forever last\nThrough the abstract beats, and the dissonant chords\nWe play our own boards, with invisible swords\nMy laughter rings out, a percussive delight\nShining ever so bright, in the fading light\n\n[Instrumental Break]\n(Avant-garde jazz solo with hip hop beat)\n\n[Chorus]\nLeprechaun flow, a jazz-rap decree\nUnlocking the emerald cipher, wild and free\nWith a beat so complex, a spirit so bold\nA story untold, in shades of gold\nWe break the mold, we can't be controlled\nThis is our tale, bravely sold\n\n[Outro]",
+        "generatedSongTitle": "Emerald Cipher",
+        "generatedStyleTags": "avant-garde jazz, hip hop, rap, leprechauns, mystical, experimental"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6-free",
+        "processingTime": 99556,
+        "musicFileName": "generated-music-minimax-music-2.6-free.mp3",
+        "musicFileSize": 5937122,
+        "musicDurationMs": 185286,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 5937122,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e509d3d0f108f8d97ef88ddf56ac8",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nShimmer in the mist, a fleeting gleam\nFour-leaf clover in a waking dream\nCobblestone whispers, a hidden stream\nLeprechaun logic, a peculiar scheme\n\n[Pre-Chorus]\nFiddle starts to play, a syncopated beat\nSaxophone wails, bittersweet\nBoots tap a rhythm on the street\nWhere the mundane and magic meet\n\n[Chorus]\nGold in the shadows, a pot of conceit\nJigs and jazz notes, can't be beat\nAn avant-garde hustle, oh so neat\nLeprechaun's rhythm, can't be complete\n\n[Verse]\nPot o' gold gleamin', a fractal design\nAlgorithms twistin' on the vine\nBanjos strummin' a dissonant line\nThis ain't your grandpappy's fairy tale time\n\n[Pre-Chorus]\nTrumpet solo screams, a wild cascade\nDouble bass groans, unafraid\nRhymes like a labyrinth, carefully laid\nIn this sonic masquerade\n\n[Chorus]\nGold in the shadows, a pot of conceit\nJigs and jazz notes, can't be beat\nAn avant-garde hustle, oh so neat\nLeprechaun's rhythm, can't be complete\n\n[Bridge]\nNo pot of gold, just a philosophical quest\nIn the rhythm's unrest, puttin' minds to the test\nFrom the greenest of lands to the urban crest\nThis is the sound of the leprechaun's best\n\n[Instrumental]\n\n[Verse]\nWhispers of luck, a probabilistic art\nDeconstructed melodies tearin' worlds apart\nA mischievous grin, a brand new start\nPlayin' the odds right from the heart\n\n[Chorus]\nGold in the shadows, a pot of conceit\nJigs and jazz notes, can't be beat\nAn avant-garde hustle, oh so neat\nLeprechaun's rhythm, can't be complete\n\n[Outro]",
+        "generatedSongTitle": "Emerald Echoes",
+        "generatedStyleTags": "avant-garde jazz, hip hop, rap, leprechaun folklore, experimental"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-clip-preview",
+        "processingTime": 20464,
+        "musicFileName": "generated-music-gemini-lyria-3-clip-preview.mp3",
+        "musicFileSize": 743983,
+        "musicDurationMs": 30000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[0.0:] Chromatic mists on the bog, a folkloric fog.\n[2.5:] The fiddle-leaf collage, an emerald green mirage.\n[5.0:] He's got a jacket full of jargon, a whimsical artisan.\n[7.5:] His tiny tap shoes clickin' complex syncopation.\n[10.0:] That's the avant-garde jig, a mythological blip.\n[12.5:] A pot of molten sunbeams at his fingertip.\n[15.0:] Gold coins clatter in a modal cascade,\n[17.5:] a shimmering glissando in the mossy glade.\n[20.0:] He's spittin' limericks with complex polyrhythms,\n[22.5:] a trickster's catechism beyond all known algorithms.\n[25.0:] Yeah, a metaphysical sprite with a mischievous smile,\n[27.5:29.9] defyin' all logic in his own unique style."
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-pro-preview",
+        "processingTime": 46400,
+        "musicFileName": "generated-music-gemini-lyria-3-pro-preview.mp3",
+        "musicFileSize": 2860528,
+        "musicDurationMs": 120000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[[A0]]\n[[B1]]\n[12.0:] Way below the dew line, where the roots get tangled,\n[:] (Where the roots get tangled)\n[:] Ancient gold in the cold, truth is left dismantled,\n[:] (Truth is left dismantled)\n[:] We ain't dancing in the sun for your tourism,\n[:] Deep in the turf, avoid the prism, avoid the schism,\n[:] Stitch the leather, watch the weather turn to copper,\n[:] No whistle for the hunter, no help for the stopper.\n[[C2]]\n[42.0:] It's the emerald friction, the hidden conviction!\n[:] The magic is real, it ain't fiction or diction!\n[:] Yeah the magic is real, it ain't fiction or diction!\n[[B3]]\n[62.0:] He's a thief of the leaf, findin' relief in the grief,\n[:] He's a ghost in the roast, doin' the most on the coast,\n[:] He's a shadow in the meadow, light as a lead-load,\n[:] He's a king in the ring, with a sting in his wing,\n[:] Calculating the weight of the silver in the silt,\n[:] Calculating the fate of the palace that he built,\n[:] Calculating the state of the copper in the pan,\n[:] Calculating the gait of the miserable man.\n[[D4]]\n[[E5]]\n[106.0:] The pot is empty now.\n[:] Just the mud left.\n[:] (Humming dissonant notes)\n[:] Get gone."
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 85,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 56,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 85,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 56,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 85,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 56,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 120000
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 186253
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 185286
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 30000
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 120000
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 771210,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 218400,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1820,
+            "throughputValue": 0.549,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 187560,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1563,
+            "throughputValue": 0.64,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 241800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 2015,
+            "throughputValue": 0.496,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 14730,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 491,
+            "throughputValue": 2.037,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 108720,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 906,
+            "throughputValue": 1.104,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 294721,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 23015,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 191.792,
+            "throughputValue": 5.214,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 105286,
+            "inputMetric": "durationSeconds",
+            "inputValue": 186.253,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 565.285,
+            "throughputValue": 1.769,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 99556,
+            "inputMetric": "durationSeconds",
+            "inputValue": 185.286,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 537.31,
+            "throughputValue": 1.861,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 20464,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 682.133,
+            "throughputValue": 1.466,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 46400,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 386.667,
+            "throughputValue": 2.586,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "Avant-garde jazz influenced hip hop rap song about leprechauns",
+    "requestedProviders": [
+      {
+        "service": "elevenlabs",
+        "model": "music_v1"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6-free"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-clip-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-pro-preview"
+      }
+    ]
+  }
+}

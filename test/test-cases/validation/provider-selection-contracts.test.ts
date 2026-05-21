@@ -24,13 +24,29 @@ import { TTS_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/tts-flags'
 import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 
 describe('provider selection contracts', () => {
+  test('retired model flag values are rejected', () => {
+    const cases: Array<[string, string]> = [
+      ['anthropic', 'claude-opus-4-' + '6'],
+      ['minimax-music', 'music-2' + '.5'],
+      ['minimax-video', 'MiniMax-Hailuo-' + '02'],
+      ['glm-video', 'viduq1-' + 'image'],
+      ['glm-video', 'viduq1-' + 'start-end'],
+      ['gemini-image', 'imagen-4.0-generate-001'],
+      ['bfl-image', 'flux-2-pro-preview'],
+      ['bfl-image', 'flux-2-klein-4b']
+    ]
+
+    for (const [flag, model] of cases) {
+      expect(() => buildOptsFromFlags(false, { [flag]: model })).toThrow(`Invalid --${flag} model`)
+    }
+  })
+
   test('STT provider canonical ordering is stable', () => {
     expect(getStep2ProviderSelectionFlagNames('stt')).toEqual([
       'reverb-stt',
       'gcloud-stt',
       'aws-stt',
       'deepinfra-stt',
-      'deapi-stt',
       'elevenlabs-stt',
       'deepgram-stt',
       'soniox-stt',
@@ -61,6 +77,7 @@ describe('provider selection contracts', () => {
       'glm-ocr',
       'kimi-ocr',
       'openai-ocr',
+      'grok-ocr',
       'anthropic-ocr',
       'gemini-ocr',
       'deepinfra-ocr',
@@ -78,11 +95,13 @@ describe('provider selection contracts', () => {
     const ocrSpecs = collectStep2ProviderSpecs('ocr', {
       useTesseract: true,
       openaiOcrModels: ['gpt-5.4-nano', 'gpt-5.4-nano', 'gpt-5.4'],
+      grokOcrModels: ['grok-4.3'],
       unstructuredOcrModels: ['hi_res_and_enrichment']
     })
     const ocrOpts = buildOptsFromFlags(false, {
       'tesseract-ocr': true,
       'openai-ocr': ['gpt-5.4-nano', 'gpt-5.4-nano', 'gpt-5.4'],
+      'grok-ocr': ['grok-4.3'],
       'unstructured-ocr': ['hi_res_and_enrichment']
     })
 
@@ -94,12 +113,14 @@ describe('provider selection contracts', () => {
       { provider: 'tesseract', model: 'tesseract' },
       { provider: 'openai-ocr', model: 'gpt-5.4-nano' },
       { provider: 'openai-ocr', model: 'gpt-5.4' },
+      { provider: 'grok-ocr', model: 'grok-4.3' },
       { provider: 'unstructured-ocr', model: 'hi_res_and_enrichment' }
     ])
     expect(collectExplicitOcrTargets(ocrOpts)).toEqual([
       { service: 'tesseract', model: 'tesseract' },
       { service: 'openai', model: 'gpt-5.4-nano' },
       { service: 'openai', model: 'gpt-5.4' },
+      { service: 'grok', model: 'grok-4.3' },
       { service: 'unstructured', model: 'hi_res_and_enrichment' }
     ])
   })
@@ -126,25 +147,22 @@ describe('provider selection contracts', () => {
     }])
   })
 
-  test('BFL/deAPI/Reve image and deAPI video flags select targets and participate in all-provider shortcuts', () => {
+  test('BFL/Reve image and remaining video flags select targets and participate in all-provider shortcuts', () => {
     const explicitOpts = buildOptsFromFlags(false, {
-      'bfl-image': ['flux-2-pro-preview'],
-      'deapi-image': ['Flux1schnell'],
+      'bfl-image': ['flux-2-pro'],
       'reve-image': ['latest'],
-      'deapi-video': ['Ltxv_13B_0_9_8_Distilled_FP8']
+      'runway-video': ['gen4.5']
     })
 
-    expect(explicitOpts.bflImageModels).toEqual(['flux-2-pro-preview'])
-    expect(explicitOpts.deapiImageModels).toEqual(['Flux1schnell'])
+    expect(explicitOpts.bflImageModels).toEqual(['flux-2-pro'])
     expect(explicitOpts.reveImageModels).toEqual(['latest'])
-    expect(explicitOpts.deapiVideoModels).toEqual(['Ltxv_13B_0_9_8_Distilled_FP8'])
+    expect(explicitOpts.runwayVideoModels).toEqual(['gen4.5'])
     expect(collectImageTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-      'bfl:flux-2-pro-preview',
-      'deapi:Flux1schnell',
+      'bfl:flux-2-pro',
       'reve:latest'
     ])
     expect(collectVideoTargets(explicitOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-      'deapi:Ltxv_13B_0_9_8_Distilled_FP8'
+      'runway:gen4.5'
     ])
 
     const allOpts = buildOptsFromFlags(false, {
@@ -158,38 +176,22 @@ describe('provider selection contracts', () => {
       'veo-3.1-lite-generate-preview'
     ])
     expect(allOpts.geminiImageModels).toEqual([
-      'gemini-3.1-flash-image-preview',
-      'imagen-4.0-fast-generate-001',
-      'imagen-4.0-generate-001',
-      'imagen-4.0-ultra-generate-001'
+      'gemini-3.1-flash-image-preview'
     ])
     expect(allOpts.openaiImageModels).toEqual([
       'gpt-image-1.5',
       'gpt-image-2'
     ])
     expect(allOpts.bflImageModels).toEqual([
-      'flux-2-klein-4b',
-      'flux-2-klein-9b-preview',
-      'flux-2-klein-9b',
-      'flux-2-pro-preview',
       'flux-2-pro',
       'flux-2-max',
       'flux-2-flex'
-    ])
-    expect(allOpts.deapiImageModels).toEqual([
-      'Flux1schnell',
-      'ZImageTurbo_INT8',
-      'Flux_2_Klein_4B_BF16'
     ])
     expect(allOpts.reveImageModels).toEqual([
       'latest',
       'reve-create@20250915'
     ])
-    expect(allOpts.deapiVideoModels).toEqual([
-      'Ltxv_13B_0_9_8_Distilled_FP8',
-      'Ltx2_19B_Dist_FP8',
-      'Ltx2_3_22B_Dist_INT8'
-    ])
+    expect(allOpts.runwayVideoModels).toEqual(['gen4.5'])
   })
 
   test('Gemini music flag selects targets and participates in all-music shortcut', () => {
@@ -216,12 +218,8 @@ describe('provider selection contracts', () => {
     ])
     expect(collectMusicTargets(allOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
       'elevenlabs:music_v1',
-      'minimax:music-2.5',
       'minimax:music-2.6',
       'minimax:music-2.6-free',
-      'deapi:AceStep_1_5_Turbo',
-      'deapi:AceStep_1_5_Base',
-      'deapi:AceStep_1_5_XL_Turbo_INT8',
       'gemini:lyria-3-clip-preview',
       'gemini:lyria-3-pro-preview'
     ])
@@ -233,16 +231,16 @@ describe('provider selection contracts', () => {
       elevenlabs: ['eleven_v3']
     }, new Set(['openai', 'elevenlabs']), TTS_COMMAND_SELECTOR_FLAGS)
     const imageNormalized = normalizeCommandSelectorFlags({
-      minimax: ['image-01'],
+      openai: ['gpt-image-1.5'],
       grok: ['grok-imagine-image'],
       reve: ['latest']
-    }, new Set(['minimax', 'grok', 'reve']), IMAGE_COMMAND_SELECTOR_FLAGS)
+    }, new Set(['openai', 'grok', 'reve']), IMAGE_COMMAND_SELECTOR_FLAGS)
     const videoNormalized = normalizeCommandSelectorFlags({
       gemini: ['veo-3.1-lite-generate-preview'],
       runway: ['gen4.5']
     }, new Set(['gemini', 'runway']), VIDEO_COMMAND_SELECTOR_FLAGS)
     const musicNormalized = normalizeCommandSelectorFlags({
-      minimax: ['music-2.5'],
+      minimax: ['music-2.6'],
       gemini: ['lyria-3-clip-preview']
     }, new Set(['minimax', 'gemini']), MUSIC_COMMAND_SELECTOR_FLAGS)
 
@@ -254,7 +252,7 @@ describe('provider selection contracts', () => {
     expect(ttsOpts.openaiTtsModels).toEqual(['gpt-4o-mini-tts'])
     expect(ttsOpts.elevenlabsTtsModels).toEqual(['eleven_v3'])
     expect(collectImageTargets(imageOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-      'minimax:image-01',
+      'openai:gpt-image-1.5',
       'grok:grok-imagine-image',
       'reve:latest'
     ])
@@ -263,7 +261,7 @@ describe('provider selection contracts', () => {
       'runway:gen4.5'
     ])
     expect(collectMusicTargets(musicOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-      'minimax:music-2.5',
+      'minimax:music-2.6',
       'gemini:lyria-3-clip-preview'
     ])
 
@@ -272,7 +270,7 @@ describe('provider selection contracts', () => {
       'a sunset',
       '--openai',
       'gpt-image-1.5',
-      '--gemini=imagen-4.0-generate-001',
+      '--gemini=gemini-3.1-flash-image-preview',
       '--reve',
       'latest'
     ], IMAGE_COMMAND_SELECTOR_FLAGS)).toEqual([
@@ -280,7 +278,7 @@ describe('provider selection contracts', () => {
       'a sunset',
       '--openai-image',
       'gpt-image-1.5',
-      '--gemini-image=imagen-4.0-generate-001',
+      '--gemini-image=gemini-3.1-flash-image-preview',
       '--reve-image',
       'latest'
     ])
@@ -293,19 +291,29 @@ describe('provider selection contracts', () => {
     const documentNormalized = normalizeExtractPublicSelectorFlags({
       glm: ['glm-ocr']
     }, new Set(['glm']), { media: false, document: true })
+    const grokDocumentNormalized = normalizeExtractPublicSelectorFlags({
+      grok: ['grok-4.3']
+    }, new Set(['grok']), { media: false, document: true })
     const unstructuredDocumentNormalized = normalizeExtractPublicSelectorFlags({
       unstructured: ['hi_res_and_enrichment']
     }, new Set(['unstructured']), { media: false, document: true })
     const mixedDefaultNormalized = normalizeExtractPublicSelectorFlags({
       glm: [true]
     }, new Set(['glm']), { media: true, document: true })
+    const grokMixedDefaultNormalized = normalizeExtractPublicSelectorFlags({
+      grok: [true]
+    }, new Set(['grok']), { media: true, document: true })
 
     expect(buildOptsFromFlags(false, mediaNormalized.flags, [], {}, mediaNormalized.explicitFlags).glmSttModels).toEqual(['glm-asr-2512'])
     expect(buildOptsFromFlags(false, documentNormalized.flags, [], {}, documentNormalized.explicitFlags).glmOcrModels).toEqual(['glm-ocr'])
+    expect(buildOptsFromFlags(false, grokDocumentNormalized.flags, [], {}, grokDocumentNormalized.explicitFlags).grokOcrModels).toEqual(['grok-4.3'])
     expect(buildOptsFromFlags(false, unstructuredDocumentNormalized.flags, [], {}, unstructuredDocumentNormalized.explicitFlags).unstructuredOcrModels).toEqual(['hi_res_and_enrichment'])
     const mixedDefaultOpts = buildOptsFromFlags(false, mixedDefaultNormalized.flags, [], {}, mixedDefaultNormalized.explicitFlags)
     expect(mixedDefaultOpts.glmSttModels).toEqual(['glm-asr-2512'])
     expect(mixedDefaultOpts.glmOcrModels).toEqual(['glm-ocr'])
+    const grokMixedDefaultOpts = buildOptsFromFlags(false, grokMixedDefaultNormalized.flags, [], {}, grokMixedDefaultNormalized.explicitFlags)
+    expect(grokMixedDefaultOpts.grokSttModels).toEqual(['speech-to-text'])
+    expect(grokMixedDefaultOpts.grokOcrModels).toEqual(['grok-4.3'])
     const routeAwareDocumentArgs = normalizeExtractPublicSelectorArgs([
       'extract',
       'input/examples/document/1-document.pdf',
@@ -318,6 +326,19 @@ describe('provider selection contracts', () => {
       'input/examples/document/1-document.pdf',
       '--glm-ocr',
       'glm-ocr',
+      '--price'
+    ])
+    expect(normalizeExtractPublicSelectorArgs([
+      'extract',
+      'input/examples/document/1-document.pdf',
+      '--grok',
+      'grok-4.3',
+      '--price'
+    ], { media: false, document: true })).toEqual([
+      'extract',
+      'input/examples/document/1-document.pdf',
+      '--grok-ocr',
+      'grok-4.3',
       '--price'
     ])
     expect(normalizeExtractPublicSelectorArgs([
@@ -340,6 +361,16 @@ describe('provider selection contracts', () => {
       'input/examples/batch/2-urls.md',
       '--glm-stt',
       '--glm-ocr'
+    ])
+    expect(normalizeExtractPublicSelectorArgs([
+      'extract',
+      'input/examples/batch/2-urls.md',
+      '--grok'
+    ], { media: true, document: true })).toEqual([
+      'extract',
+      'input/examples/batch/2-urls.md',
+      '--grok-stt',
+      '--grok-ocr'
     ])
 
     const routeAwareDocumentOpts = buildOptsFromFlags(false, documentNormalized.flags, [], {}, documentNormalized.explicitFlags, routeAwareDocumentArgs)
@@ -390,23 +421,19 @@ describe('provider selection contracts', () => {
   test('image-count maps only to providers with native multi-image request support', () => {
     const multiOpts = buildOptsFromFlags(false, {
       'openai-image': ['gpt-image-1.5'],
-      'gemini-image': ['imagen-4.0-generate-001'],
-      'minimax-image': ['image-01'],
       'grok-image': ['grok-imagine-image-quality'],
       'image-count': '3'
     })
     const targets = collectImageTargets(multiOpts)
     expect(targets.map((target) => `${target.service}:${target.model}`)).toEqual([
-      'gemini:imagen-4.0-generate-001',
       'openai:gpt-image-1.5',
-      'minimax:image-01',
       'grok:grok-imagine-image-quality'
     ])
 
     for (const [flag, model, providerName] of [
-      ['runway-image', 'gen4_image', 'Runway'],
-      ['bfl-image', 'flux-2-pro-preview', 'BFL'],
-      ['deapi-image', 'Flux1schnell', 'deAPI']
+      ['gemini-image', 'gemini-3.1-flash-image-preview', 'Gemini'],
+      ['bfl-image', 'flux-2-pro', 'BFL'],
+      ['reve-image', 'latest', 'Reve']
     ] as const) {
       const opts = buildOptsFromFlags(false, {
         [flag]: [model],
@@ -436,20 +463,12 @@ describe('provider selection contracts', () => {
       })
       expect(() => collectImageTargets(openaiUnsupportedModel)).toThrow('OpenAI/gpt-image-2')
 
-      const minimaxEditOpts = buildOptsFromFlags(false, {
-        'minimax-image': ['image-01'],
-        'image-input': [imagePath]
-      })
-      expect(collectImageTargets(minimaxEditOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-        'minimax:image-01'
-      ])
-
       const bflEditOpts = buildOptsFromFlags(false, {
-        'bfl-image': ['flux-2-pro-preview'],
+        'bfl-image': ['flux-2-pro'],
         'image-input': [imagePath]
       })
       expect(collectImageTargets(bflEditOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-        'bfl:flux-2-pro-preview'
+        'bfl:flux-2-pro'
       ])
 
       const missingPath = join(tempDir, 'missing.png')
@@ -463,39 +482,22 @@ describe('provider selection contracts', () => {
     }
   })
 
-  test('MiniMax and BFL accept newly mapped shared image options', () => {
+  test('BFL accepts newly mapped shared image options', () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'autoshow-image-provider-flags-'))
     const imagePath = join(tempDir, 'reference.png')
     writeFileSync(imagePath, new Uint8Array([1, 2, 3]))
 
     try {
-      const minimaxOpts = buildOptsFromFlags(false, {
-        'minimax-image': ['image-01'],
-        'image-input': [imagePath],
-        'image-count': '9',
-        'image-size': '1024x768'
-      })
-      const minimaxTargets = collectImageTargets(minimaxOpts)
-      expect(minimaxTargets.map((target) => `${target.service}:${target.model}`)).toEqual([
-        'minimax:image-01'
-      ])
-      expect(getExpectedImageCount(minimaxTargets[0]!, minimaxOpts)).toBe(9)
-      const minimaxFiles = getExpectedImageArtifactFileNames(minimaxTargets[0]!, minimaxOpts, true)
-      expect(minimaxFiles).toHaveLength(9)
-      expect(minimaxFiles.slice(0, 3)).toEqual([
-        'generated-image.jpeg',
-        'generated-image-2.jpeg',
-        'generated-image-3.jpeg'
-      ])
-      expect(minimaxFiles[8]).toBe('generated-image-9.jpeg')
-
       const bflOpts = buildOptsFromFlags(false, {
-        'bfl-image': ['flux-2-pro-preview'],
+        'bfl-image': ['flux-2-pro'],
         'image-input': [imagePath]
       })
-      expect(collectImageTargets(bflOpts).map((target) => `${target.service}:${target.model}`)).toEqual([
-        'bfl:flux-2-pro-preview'
+      const bflTargets = collectImageTargets(bflOpts)
+      expect(bflTargets.map((target) => `${target.service}:${target.model}`)).toEqual([
+        'bfl:flux-2-pro'
       ])
+      expect(getExpectedImageCount(bflTargets[0]!, bflOpts)).toBe(1)
+      expect(getExpectedImageArtifactFileNames(bflTargets[0]!, bflOpts, true)).toEqual(['generated-image.jpg'])
     } finally {
       rmSync(tempDir, { recursive: true, force: true })
     }
@@ -545,7 +547,6 @@ describe('provider selection contracts', () => {
         ['image-background', 'transparent'],
         ['image-compression', '80'],
         ['image-response-mode', 'text-image'],
-        ['gemini-person-generation', 'allow_all'],
         ['gemini-search-grounding', true]
       ] as const) {
         const opts = buildOptsFromFlags(false, {

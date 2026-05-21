@@ -28,7 +28,6 @@ const GEMINI_CLIP_MUSIC_DURATION_SECONDS = 30
 const GEMINI_PRO_DEFAULT_MUSIC_DURATION_SECONDS = 120
 const ELEVENLABS_DEFAULT_MUSIC_DURATION_SECONDS = 180
 const MINIMAX_DEFAULT_MUSIC_DURATION_SECONDS = 120
-const DEAPI_DEFAULT_MUSIC_DURATION_SECONDS = 30
 
 const roundMs = (value: number): number => Math.max(0, Math.round(value))
 const roundTimingMetric = (value: number): number => {
@@ -216,10 +215,6 @@ const resolveMusicTimingDurationSeconds = (
     return MINIMAX_DEFAULT_MUSIC_DURATION_SECONDS
   }
 
-  if (target.service === 'deapi') {
-    return target.durationSeconds ?? DEAPI_DEFAULT_MUSIC_DURATION_SECONDS
-  }
-
   if (target.service === 'gemini') {
     if (target.model === 'lyria-3-clip-preview') {
       return GEMINI_CLIP_MUSIC_DURATION_SECONDS
@@ -242,7 +237,6 @@ const resolveVideoTimingDurationSeconds = (
     ...(target.service === 'glm' ? { glmVideoModels: [target.model] } : {}),
     ...(target.service === 'grok' ? { grokVideoModels: [target.model] } : {}),
     ...(target.service === 'runway' ? { runwayVideoModels: [target.model] } : {}),
-    ...(target.service === 'deapi' ? { deapiVideoModels: [target.model] } : {}),
     videoDuration: target.durationSeconds,
     videoResolution: input.videoResolution,
     videoMode: input.videoMode,
@@ -390,6 +384,9 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'openai' as const, model: input.openaiOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.grokOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'grok' as const, model: input.grokOcrModel, pageCount: input.extractPageCount }]
           : []),
         ...(input.anthropicOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'anthropic' as const, model: input.anthropicOcrModel, pageCount: input.extractPageCount }]

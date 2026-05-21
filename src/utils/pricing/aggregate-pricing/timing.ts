@@ -26,6 +26,7 @@ const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
   'glm',
   'kimi',
   'openai',
+  'grok',
   'anthropic',
   'gemini',
   'deepinfra',

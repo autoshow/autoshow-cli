@@ -23,7 +23,6 @@ const HOSTED_MUSIC_FLAGS = [
   'all-music',
   'elevenlabs',
   'minimax',
-  'deapi',
   'gemini',
   'music-duration',
   'music-lyrics-file',
@@ -76,7 +75,7 @@ const runHostedMusicGeneration = async (
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {
-    throw CLIUsageError('Specify a music generation provider: --elevenlabs <model>, --minimax <model>, --deapi <model>, or --gemini <model>')
+    throw CLIUsageError('Specify a music generation provider: --elevenlabs <model>, --minimax <model>, or --gemini <model>')
   }
 
   const { estimate: preflightEstimate, shouldExit: musicShouldExit } = await runPreflight('music', prompt, musicOpts, musicMaxCents)
@@ -156,7 +155,6 @@ export const musicCommand = defineCliCommand({
     examples: [
       ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs music_v1', 'Generate music with ElevenLabs'],
       ['bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental', 'Generate instrumental music with MiniMax'],
-      ['bun as music "upbeat electronic dance music" --deapi AceStep_1_5_Turbo --music-duration 30', 'Generate music with deAPI'],
       ['bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
       ['bun as music input/examples/tts/1-tts.md --minimax music-2.6', 'Use a local markdown file as the prompt body'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
@@ -188,7 +186,7 @@ export const musicCommand = defineCliCommand({
     throw CLIUsageError(
       hostedFlags.length > 0
         ? 'Missing hosted music prompt input'
-        : 'Missing music mode: provide a prompt with --elevenlabs/--minimax/--deapi/--gemini, or use --audio/--batch for lyric-video rendering'
+        : 'Missing music mode: provide a prompt with --elevenlabs/--minimax/--gemini, or use --audio/--batch for lyric-video rendering'
     )
   }
 

@@ -53,10 +53,11 @@ test('extract help exposes shared batch and all-provider flags', async () => {
   expect(result.stdout).toContain('--ocr-provider-concurrency')
   expect(result.stdout).toContain('--ocr-local-concurrency')
   expect(result.stdout).toContain('--url-provider-concurrency')
+  expect(result.stdout).toContain('--url-request-timeout-ms')
+  expect(result.stdout).toContain('--url-request-attempts')
   expect(result.stdout).toContain('--transcript-video')
   expect(result.stdout).toContain('--transcript-result')
   expect(result.stdout).toContain('--transcript-text')
-  expect(result.stdout).not.toContain('--deapi-ocr')
 })
 
 test('download help exposes media preservation flags', async () => {
@@ -89,6 +90,24 @@ test('benchmark help exposes TTS voice-quality scoring flags', async () => {
   expect(result.stdout).toContain('--tts-audio-judge-model')
   expect(result.stdout).toContain('gpt-audio')
   expect(result.stdout).toContain('--tts-keep-temp')
+})
+
+test('benchmark help exposes image quality scoring flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'benchmark', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--image')
+  expect(result.stdout).toContain('--image-judge-model')
+  expect(result.stdout).toContain('gpt-5.5')
+})
+
+test('benchmark help exposes video quality scoring flags', async () => {
+  const result = await runCommand(['src/cli/create-cli.ts', 'benchmark', '--help'], { env: helpEnv })
+
+  expect(result.exitCode).toBe(0)
+  expect(result.stdout).toContain('--video')
+  expect(result.stdout).toContain('--video-judge-model')
+  expect(result.stdout).toContain('gpt-5.5')
 })
 
 test('tts help exposes hosted TTS provider flags', async () => {
@@ -133,15 +152,6 @@ test('tts help exposes hosted TTS provider flags', async () => {
   expect(result.stdout).toContain('--openai-tts-consent-language')
   expect(result.stdout).toContain('--openai-tts-consent-name')
   expect(result.stdout).toContain('--openai-tts-voice-name')
-  expect(result.stdout).toContain('--deapi')
-  expect(result.stdout).not.toContain('--deapi-tts  ')
-  expect(result.stdout).toContain('--deapi-tts-ref-audio')
-  expect(result.stdout).toContain('--deapi-tts-ref-text')
-  expect(result.stdout).toContain('--deapi-tts-language')
-  expect(result.stdout).toContain('--deapi-tts-speed')
-  expect(result.stdout).toContain('--deapi-tts-format')
-  expect(result.stdout).toContain('--deapi-tts-sample-rate')
-  expect(result.stdout).toContain('--deapi-tts-instruction')
   expect(result.stdout).not.toContain('--runway-tts')
   expect(result.stdout).not.toContain('--runway-tts-voice')
   expect(result.stdout).toContain('--speechify')
@@ -195,9 +205,17 @@ test('write and config help expose LLM concurrency flags', async () => {
   expect(writeResult.stdout).toContain('--llm-provider-concurrency')
   expect(writeResult.stdout).toContain('--llm-local-concurrency')
   expect(writeResult.stdout).toContain('--glm')
+  expect(writeResult.stdout).toContain('gpt-5.5')
+  expect(writeResult.stdout).toContain('MiniMax-M2.7|MiniMax-M2.7-highspeed')
+  expect(writeResult.stdout).toContain('grok-4.3')
   expect(configResult.stdout).toContain('--llm-provider-concurrency')
   expect(configResult.stdout).toContain('--llm-local-concurrency')
   expect(configResult.stdout).toContain('--glm')
+  expect(configResult.stdout).toContain('gpt-5.5')
+  expect(configResult.stdout).toContain('MiniMax-M2.7|MiniMax-M2.7-highspeed')
+  expect(configResult.stdout).toContain('grok-4.3')
+  expect(writeResult.stdout).not.toContain(['MiniMax-M2', '5'].join('.'))
+  expect(configResult.stdout).not.toContain(['MiniMax-M2', '5'].join('.'))
 })
 
 test('music help includes hosted generation and lyric-video flags', async () => {
@@ -227,7 +245,7 @@ test('music help includes hosted generation and lyric-video flags', async () => 
   expect(result.stdout).not.toContain('--track-list')
 })
 
-test('image and video help expose BFL/deAPI/Reve provider flags', async () => {
+test('image and video help expose BFL/Reve and remaining video provider flags', async () => {
   const imageResult = await runCommand(['src/cli/create-cli.ts', 'image', '--help'], { env: helpEnv })
   const videoResult = await runCommand(['src/cli/create-cli.ts', 'video', '--help'], { env: helpEnv })
 
@@ -237,11 +255,13 @@ test('image and video help expose BFL/deAPI/Reve provider flags', async () => {
   expect(imageResult.stdout).toContain('--image-provider-concurrency')
   expect(imageResult.stdout).toContain('--image-local-concurrency')
   expect(imageResult.stdout).toContain('--bfl')
-  expect(imageResult.stdout).toContain('--deapi')
   expect(imageResult.stdout).toContain('--reve')
+  expect(imageResult.stdout).not.toContain('--minimax')
+  expect(imageResult.stdout).not.toContain('--runway')
+  expect(imageResult.stdout).not.toContain('--gemini-person-generation')
+  expect(imageResult.stdout).not.toContain('imagen-4.0')
   expect(imageResult.stdout).not.toContain('--glm')
   expect(imageResult.stdout).not.toContain('--bfl-image')
-  expect(imageResult.stdout).not.toContain('--deapi-image')
   expect(imageResult.stdout).not.toContain('--reve-image')
   expect(videoResult.stdout).toContain('--video-provider-concurrency')
   expect(videoResult.stdout).toContain('--video-local-concurrency')
@@ -251,8 +271,6 @@ test('image and video help expose BFL/deAPI/Reve provider flags', async () => {
   expect(videoResult.stdout).toContain('--video-reference-image')
   expect(videoResult.stdout).toContain('--video-input-video')
   expect(videoResult.stdout).toContain('--grok-video-storage-filename')
-  expect(videoResult.stdout).toContain('--deapi')
-  expect(videoResult.stdout).not.toContain('--deapi-video')
 })
 
 test('standalone generation help exposes deterministic output directory flags', async () => {

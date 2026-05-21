@@ -9,6 +9,7 @@ import {
 } from './tts-eval-lib'
 import {
   writeVoiceQualityReport,
+  type ContentType,
   type VoiceQualityReportMode,
   type VoiceQualityReportOptions,
 } from './tts-voice-quality-report'
@@ -75,6 +76,16 @@ const resolveTtsMode = (value: string | undefined): VoiceQualityReportMode => {
   return mode
 }
 
+const VALID_CONTENT_TYPES = new Set<ContentType>(['narration', 'news', 'conversational', 'technical', 'default'])
+
+const resolveTtsContentType = (value: string | undefined): ContentType => {
+  if (!value) return 'default'
+  if (!VALID_CONTENT_TYPES.has(value as ContentType)) {
+    throw CLIUsageError(`Invalid --tts-content-type value "${value}". Expected one of: ${[...VALID_CONTENT_TYPES].join(', ')}.`)
+  }
+  return value as ContentType
+}
+
 const loadBenchmarkTtsRunJson = async (runDir: string): Promise<TtsRunJson> => {
   try {
     const dirStat = await stat(runDir)
@@ -113,6 +124,7 @@ export const runTtsBenchmark = async (
   const runDir = resolve(input)
   const runJson = await loadBenchmarkTtsRunJson(runDir)
   const mode = resolveTtsMode(flags['tts-mode'])
+  const contentType = resolveTtsContentType(flags['tts-content-type'])
   const inputTextSource = await resolveTtsInputText(runJson, flags)
 
   const options: VoiceQualityReportOptions = {
@@ -128,6 +140,7 @@ export const runTtsBenchmark = async (
     jsonOut: null,
     keepTemp: flags['tts-keep-temp'] === true,
     audioJudgeModel: flags['tts-audio-judge-model'] ?? DEFAULT_AUDIO_JUDGE_MODEL,
+    contentType,
   }
 
   const { jsonOut, markdownOut, warnings } = await writeVoiceQualityReport(options)

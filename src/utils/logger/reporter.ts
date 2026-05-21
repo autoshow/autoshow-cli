@@ -211,90 +211,22 @@ const buildHumanCompletionTables = (
   }
 }
 
-const formatRate = (amount: number, unit: string): string =>
-  `${formatEstimatedCost(amount)}/${unit}`
-
-const buildEstimateDetails = (estimate: StepEstimate): string => {
-  const details: string[] = []
-
-  switch (estimate.step) {
-    case 'stt':
-      details.push(`duration ${estimate.durationSeconds}s`)
-      if (typeof estimate.estimateType === 'string') details.push(`type ${estimate.estimateType}`)
-      break
-    case 'llm':
-      details.push(`input ${formatRate(estimate.inputCostPer1MCents, '1M')}`)
-      details.push(`output ${formatRate(estimate.outputCostPer1MCents, '1M')}`)
-      if (typeof estimate.estimatedInputTokens === 'number') details.push(`est input ${estimate.estimatedInputTokens} tokens`)
-      if (typeof estimate.estimatedOutputTokens === 'number') details.push(`est output ${estimate.estimatedOutputTokens} tokens`)
-      break
-    case 'extract':
-      if (typeof estimate.costPer1kPagesCents === 'number') {
-        details.push(`rate ${formatRate(estimate.costPer1kPagesCents, '1K pages')}`)
-      } else if (typeof estimate.costPer1kOutputCharsCents === 'number') {
-        details.push(`rate ${formatRate(estimate.costPer1kOutputCharsCents, '1K output chars')}`)
-      } else if (typeof estimate.inputCostPer1MCents === 'number' && typeof estimate.outputCostPer1MCents === 'number') {
-        details.push(`input ${formatRate(estimate.inputCostPer1MCents, '1M')}`)
-        details.push(`output ${formatRate(estimate.outputCostPer1MCents, '1M')}`)
-      }
-      if (typeof estimate.pageCount === 'number') details.push(`pages ${estimate.pageCount}`)
-      if (typeof estimate.estimatedOutputChars === 'number') details.push(`est output ${estimate.estimatedOutputChars} chars`)
-      if (typeof estimate.promptTokens === 'number') details.push(`prompt ${estimate.promptTokens} tokens`)
-      if (typeof estimate.completionTokens === 'number') details.push(`completion ${estimate.completionTokens} tokens`)
-      if (typeof estimate.estimateType === 'string') details.push(`type ${estimate.estimateType}`)
-      break
-    case 'tts':
-      if (typeof estimate.inputCostPer1MCharactersCents === 'number' && typeof estimate.outputCostPer1MCharactersCents === 'number') {
-        details.push(`input ${formatRate(estimate.inputCostPer1MCharactersCents, '1M chars')}`)
-        details.push(`output ${formatRate(estimate.outputCostPer1MCharactersCents, '1M chars')}`)
-      } else if (typeof estimate.costPer1kCharactersCents === 'number') {
-        details.push(`rate ${formatRate(estimate.costPer1kCharactersCents, '1K chars')}`)
-      }
-      if (typeof estimate.characterCount === 'number') details.push(`characters ${estimate.characterCount}`)
-      if (typeof estimate.setupCostCents === 'number') details.push(`setup ${formatEstimatedCost(estimate.setupCostCents)}`)
-      if (typeof estimate.estimateType === 'string') details.push(`type ${estimate.estimateType}`)
-      break
-    case 'image':
-    case 'video':
-      break
-    case 'music':
-      details.push(`lyrics ${estimate.lyricsSource}`)
-      break
-    default:
-      assertNever(estimate)
-  }
-
-  return details.join(', ')
-}
-
 const buildHumanEstimateRows = (
   estimate: AggregatedPriceEstimate
 ): HumanLogTableRow[] =>
-  estimate.steps.map((step) => {
-    const details = buildEstimateDetails(step)
-    return {
-      step: step.step,
-      provider: step.step === 'stt' ? formatSttProvider(step.provider) : step.provider,
-      model: step.step === 'stt' && step.provider === 'reverb'
-        ? resolveReverbModelLabel(step.model)
-        : step.model,
-      ...(details.length > 0 ? { details } : {}),
-      cost: formatEstimatedCost(step.totalCost)
-    }
-  })
+  estimate.steps.map((step) => ({
+    step: step.step,
+    provider: step.step === 'stt' ? formatSttProvider(step.provider) : step.provider,
+    model: step.step === 'stt' && step.provider === 'reverb'
+      ? resolveReverbModelLabel(step.model)
+      : step.model,
+    cost: formatEstimatedCost(step.totalCost)
+  }))
 
 const buildHumanEstimateTable = (
   rows: readonly HumanLogTableRow[]
 ) => {
-  const columns = [
-    'step',
-    'provider',
-    'model',
-    ...(rows.some(row => row['details'] !== undefined) ? ['details'] : []),
-    'cost'
-  ]
-
-  return createHumanTable(rows, columns, { align: { cost: 'right' } })
+  return createHumanTable(rows, ['step', 'provider', 'model', 'cost'], { align: { cost: 'right' } })
 }
 
 const buildCompleteResultData = (

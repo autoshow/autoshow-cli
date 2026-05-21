@@ -94,6 +94,8 @@ bun as write ./output/demo/text --prompt rockSong
 bun as write ./output/demo/text --price
 ```
 
+Write price preflight uses the model registry's input/output token rates and local token-count heuristics for the selected prompt/source text. The human `Cost Estimate` table stays to `step`, `provider`, `model`, and `cost`; use `--json` to inspect the structured token estimates and rates.
+
 ## Write Services
 
 Provider flags accept an omitted value and then resolve to the cheapest supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
@@ -118,21 +120,24 @@ bun as write input/examples/document/1-epub.epub --epub-bun --llama --out json
 | Option | Value |
 |--------|-------|
 | Selector | `--openai <model>` |
-| Models | `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
+| Models | `gpt-5.5`, `gpt-5.4`, `gpt-5.4-pro`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 
 ```bash
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.5
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4-nano
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --gcloud-stt --openai gpt-5.4
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --openai gpt-5.4-mini
 bun as write ./output/demo/text/01-track-one.md --openai gpt-5.4 --prompt folkSong
 ```
 
+Passing `--openai` without a model keeps the existing cheapest-model default; `gpt-5.5` is used only when selected explicitly or through `--all-llm`. `gpt-5.5-pro` is not listed because this CLI change adds the requested `gpt-5.5` model.
+
 ### Anthropic
 
 | Option | Value |
 |--------|-------|
 | Selector | `--anthropic <model>` |
-| Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-6` |
+| Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-7` |
 
 ```bash
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --anthropic claude-opus-4-7
@@ -165,10 +170,10 @@ bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --groq openai/gpt-os
 | Option | Value |
 |--------|-------|
 | Selector | `--minimax <model>` |
-| Models | `MiniMax-M2.5`, `MiniMax-M2.5-highspeed` |
+| Models | `MiniMax-M2.7`, `MiniMax-M2.7-highspeed` |
 
 ```bash
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax MiniMax-M2.5
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax MiniMax-M2.7
 ```
 
 ### Grok
@@ -176,11 +181,14 @@ bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax MiniMax-M2
 | Option | Value |
 |--------|-------|
 | Selector | `--grok <model>` |
-| Models | `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
+| Models | `grok-4.3`, `grok-4.20-reasoning`, `grok-4.20-non-reasoning` |
 
 ```bash
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --grok grok-4.3
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --grok grok-4.20-non-reasoning
 ```
+
+Passing `--grok` without a model preserves the previous Grok default, `grok-4.20-non-reasoning`. `grok-4.3` is used only when selected explicitly or through `--all-llm`.
 
 ### Z.AI GLM
 
@@ -212,7 +220,7 @@ Kimi K2.6 estimates are based on `project/links/kimi-general-ocr-text-links.md`:
 
 ```bash
 # Multi-provider run
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --groq openai/gpt-oss-20b --glm glm-5.1 --kimi kimi-k2.6
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.5 --grok grok-4.3 --groq openai/gpt-oss-20b --glm glm-5.1 --kimi kimi-k2.6
 ```
 
 ## Prompts

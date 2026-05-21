@@ -40,7 +40,6 @@ import {
   resolveComicScriptReference
 } from '~/cli/commands/process-steps/step-8-comic/utils/project-paths'
 import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
-import { validateDeapiTtsReferenceAudio } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/run-deapi-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
 import {
   createElevenLabsTtsIvcContext,
@@ -64,6 +63,10 @@ import {
   SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { URL_ARTICLE_BACKENDS } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
+import {
+  DEFAULT_URL_REQUEST_ATTEMPTS,
+  DEFAULT_URL_REQUEST_TIMEOUT_MS
+} from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-utils'
 import { getStep2AllShortcutModelExpansions } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import {
@@ -71,7 +74,6 @@ import {
   getGroqDefaultTtsVoiceForModel,
   DEEPGRAM_DEFAULT_VOICE,
   GROK_DEFAULT_TTS_VOICE,
-  SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
@@ -83,6 +85,7 @@ import {
   SUPPORTED_MISTRAL_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_CARTESIA_TTS_MODELS,
+  validateMinimaxModel,
   SUPPORTED_SPEECHIFY_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
@@ -94,6 +97,17 @@ const REMOVED_GROQ_TTS_MODEL = ['canopylabs/orpheus', 'arabic-saudi'].join('-')
 const REMOVED_GROQ_TTS_VOICE = ['no', 'ura'].join('')
 
 describe('option resolution contracts', () => {
+  test('MiniMax write model validator accepts M2.7 and rejects removed predecessor names', () => {
+    const removedStandard = ['MiniMax-M2', '5'].join('.')
+    const removedHighspeed = `${removedStandard}-highspeed`
+    const expectedAllowed = 'Allowed values: MiniMax-M2.7, MiniMax-M2.7-highspeed'
+
+    expect(validateMinimaxModel('MiniMax-M2.7')).toBe('MiniMax-M2.7')
+    expect(validateMinimaxModel('MiniMax-M2.7-highspeed')).toBe('MiniMax-M2.7-highspeed')
+    expect(() => validateMinimaxModel(removedStandard)).toThrow(`Invalid --minimax model "${removedStandard}". ${expectedAllowed}`)
+    expect(() => validateMinimaxModel(removedHighspeed)).toThrow(`Invalid --minimax model "${removedHighspeed}". ${expectedAllowed}`)
+  })
+
   test('comic generate-images args parse page image options', () => {
     const opts = parseGenerateImagesArgs([
       'input/episode-scripts/02-script/01-co-work-smarter.md',
@@ -158,10 +172,17 @@ describe('option resolution contracts', () => {
       '--llm-model', LLM_MODELS[0],
       '--only', 'panel-prompts',
     ])
+    const grokOpts = parseDraftScenesArgs([
+      'input/episode-scripts/05-script/01-paddy-goes-on-vacation.md',
+      '--llm-model', 'grok-4.3'
+    ])
 
+    expect(LLM_MODELS).toContain('gpt-5.5')
+    expect(LLM_MODELS).toContain('grok-4.3')
     expect(opts.scriptPath).toBe('input/episode-scripts/05-script/01-paddy-goes-on-vacation.md')
     expect(opts.llmModel).toBe(LLM_MODELS[0])
     expect(opts.only).toBe('panel-prompts')
+    expect(grokOpts.llmModel).toBe('grok-4.3')
   })
 
   test('comic generate-images args parse target', () => {
@@ -494,6 +515,7 @@ describe('option resolution contracts', () => {
   test('buildOptsFromFlags maps representative CLI flags to runtime options', () => {
     const opts = buildOptsFromFlags(false, {
       openai: 'gpt-5.4-mini',
+      grok: 'grok-4.3',
       glm: 'glm-5.1',
       kimi: 'kimi-k2.6',
       'openai-stt': 'gpt-4o-mini-transcribe',
@@ -513,14 +535,6 @@ describe('option resolution contracts', () => {
       'deepgram-tts-bit-rate': '128000',
       'deepgram-tts-sample-rate': '24000',
       'deepgram-tts-speed': '1.1',
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
-      'deapi-tts-ref-audio': SHORT_AUDIO_URL,
-      'deapi-tts-ref-text': 'Reference transcript.',
-      'deapi-tts-language': 'English',
-      'deapi-tts-speed': '1.25',
-      'deapi-tts-format': 'mp3',
-      'deapi-tts-sample-rate': '24000',
-      'deapi-tts-instruction': 'A documentary narrator.',
       'speechify-tts': 'simba-english',
       'speechify-voice': 'narrator_voice',
       'speechify-tts-audio-format': 'wav',
@@ -547,6 +561,8 @@ describe('option resolution contracts', () => {
       'gcloud-tts': 'chirp3-hd',
       'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
       'gcloud-tts-language': 'en-US',
+      'openai-ocr': 'gpt-5.5',
+      'grok-ocr': 'grok-4.3',
       'deepinfra-ocr': 'Qwen/Qwen3-VL-30B-A3B-Instruct',
       'kimi-ocr': 'kimi-k2.6',
       'unstructured-ocr': 'hi_res_and_enrichment',
@@ -568,6 +584,7 @@ describe('option resolution contracts', () => {
     })
 
     expect(opts.openaiModel).toBe('gpt-5.4-mini')
+    expect(opts.grokModel).toBe('grok-4.3')
     expect(opts.glmModel).toBe('glm-5.1')
     expect(opts.kimiModel).toBe('kimi-k2.6')
     expect(opts.openaiSttModel).toBe('gpt-4o-mini-transcribe')
@@ -587,14 +604,6 @@ describe('option resolution contracts', () => {
     expect(opts.deepgramTtsBitRate).toBe(128000)
     expect(opts.deepgramTtsSampleRate).toBe(24000)
     expect(opts.deepgramTtsSpeed).toBe(1.1)
-    expect(opts.deapiTtsModel).toBe('Qwen3_TTS_12Hz_1_7B_Base')
-    expect(opts.deapiTtsRefAudio).toBe(SHORT_AUDIO_URL)
-    expect(opts.deapiTtsRefText).toBe('Reference transcript.')
-    expect(opts.deapiTtsLanguage).toBe('English')
-    expect(opts.deapiTtsSpeed).toBe(1.25)
-    expect(opts.deapiTtsFormat).toBe('mp3')
-    expect(opts.deapiTtsSampleRate).toBe(24000)
-    expect(opts.deapiTtsInstruction).toBe('A documentary narrator.')
     expect(opts.speechifyTtsModel).toBe('simba-english')
     expect(opts.speechifyVoice).toBe('narrator_voice')
     expect(opts.speechifyTtsAudioFormat).toBe('wav')
@@ -621,6 +630,8 @@ describe('option resolution contracts', () => {
     expect(opts.gcloudTtsModel).toBe('chirp3-hd')
     expect(opts.gcloudTtsVoice).toBe('en-US-Chirp3-HD-Charon')
     expect(opts.gcloudTtsLanguage).toBe('en-US')
+    expect(opts.openaiOcrModel).toBe('gpt-5.5')
+    expect(opts.grokOcrModel).toBe('grok-4.3')
     expect(opts.deepinfraOcrModel).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(opts.kimiOcrModel).toBe('kimi-k2.6')
     expect(opts.unstructuredOcrModel).toBe('hi_res_and_enrichment')
@@ -705,6 +716,69 @@ describe('option resolution contracts', () => {
     expect(opts.urlProviderConcurrency).toBe(4)
     expect(explicitConcurrency.urlBackends).toEqual([...URL_ARTICLE_BACKENDS])
     expect(explicitConcurrency.urlProviderConcurrency).toBe(3)
+  })
+
+  test('URL request timeout and attempts resolve defaults, CLI overrides, and env fallbacks', () => {
+    const previousTimeout = process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
+    const previousAttempts = process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
+
+    try {
+      delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
+      delete process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
+      const defaults = buildOptsFromFlags(false, {})
+      const cliOverrides = buildOptsFromFlags(false, {
+        'url-request-timeout-ms': '45000',
+        'url-request-attempts': '4'
+      })
+
+      process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = '30000'
+      process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = '2'
+      const envFallbacks = buildOptsFromFlags(false, {})
+      const cliWins = buildOptsFromFlags(false, {
+        'url-request-timeout-ms': '50000',
+        'url-request-attempts': '5'
+      })
+
+      expect(defaults.urlRequestTimeoutMs).toBe(DEFAULT_URL_REQUEST_TIMEOUT_MS)
+      expect(defaults.urlRequestAttempts).toBe(DEFAULT_URL_REQUEST_ATTEMPTS)
+      expect(cliOverrides.urlRequestTimeoutMs).toBe(45000)
+      expect(cliOverrides.urlRequestAttempts).toBe(4)
+      expect(envFallbacks.urlRequestTimeoutMs).toBe(30000)
+      expect(envFallbacks.urlRequestAttempts).toBe(2)
+      expect(cliWins.urlRequestTimeoutMs).toBe(50000)
+      expect(cliWins.urlRequestAttempts).toBe(5)
+    } finally {
+      if (previousTimeout === undefined) delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
+      else process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = previousTimeout
+      if (previousAttempts === undefined) delete process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
+      else process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = previousAttempts
+    }
+  })
+
+  test('URL request timeout and attempts reject invalid CLI and env values', () => {
+    const previousTimeout = process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
+    const previousAttempts = process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
+
+    try {
+      expect(() => buildOptsFromFlags(false, {
+        'url-request-timeout-ms': '0'
+      })).toThrow('Invalid --url-request-timeout-ms value "0". Expected a positive integer.')
+      expect(() => buildOptsFromFlags(false, {
+        'url-request-attempts': 'nope'
+      })).toThrow('Invalid --url-request-attempts value "nope". Expected a positive integer.')
+
+      process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = '-1'
+      expect(() => buildOptsFromFlags(false, {})).toThrow('Invalid AUTOSHOW_URL_REQUEST_TIMEOUT_MS value "-1". Expected a positive integer.')
+
+      delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
+      process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = '0'
+      expect(() => buildOptsFromFlags(false, {})).toThrow('Invalid AUTOSHOW_URL_REQUEST_ATTEMPTS value "0". Expected a positive integer.')
+    } finally {
+      if (previousTimeout === undefined) delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
+      else process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = previousTimeout
+      if (previousAttempts === undefined) delete process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
+      else process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = previousAttempts
+    }
   })
 
   test('--all-url conflicts with single URL backend selection', () => {
@@ -802,13 +876,7 @@ describe('option resolution contracts', () => {
       'elevenlabs-tts-text-normalization': 'AUTO',
       'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2'],
       'elevenlabs-tts-optimize-streaming-latency': '2',
-      'elevenlabs-tts-pvc-as-ivc': true,
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
-      'deapi-tts-language': 'English',
-      'deapi-tts-speed': '1.2',
-      'deapi-tts-format': 'mp3',
-      'deapi-tts-sample-rate': '24000',
-      'deapi-tts-instruction': 'A calm narrator.'
+      'elevenlabs-tts-pvc-as-ivc': true
     })
 
     expect(opts.grokTtsVoice).toBe('ab12cd34')
@@ -843,11 +911,6 @@ describe('option resolution contracts', () => {
     expect(opts.elevenlabsTtsPronunciationDictionaryLocators).toEqual(['dict_1:version_2'])
     expect(opts.elevenlabsTtsOptimizeStreamingLatency).toBe(2)
     expect(opts.elevenlabsTtsPvcAsIvc).toBe(true)
-    expect(opts.deapiTtsLanguage).toBe('English')
-    expect(opts.deapiTtsSpeed).toBe(1.2)
-    expect(opts.deapiTtsFormat).toBe('mp3')
-    expect(opts.deapiTtsSampleRate).toBe(24000)
-    expect(opts.deapiTtsInstruction).toBe('A calm narrator.')
 
     expect(() => buildOptsFromFlags(false, { 'grok-tts-language': 'xx' })).toThrow('Invalid --grok-tts-language "xx"')
     expect(() => buildOptsFromFlags(false, { 'openai-tts-speed': '0.1' })).toThrow('Invalid --openai-tts-speed value "0.1"')
@@ -861,7 +924,6 @@ describe('option resolution contracts', () => {
     expect(() => buildOptsFromFlags(false, { 'hume-tts-voice-provider': 'PRIVATE' })).toThrow('Invalid --hume-tts-voice-provider "PRIVATE"')
     expect(() => buildOptsFromFlags(false, { 'cartesia-tts': 'sonic-2' })).toThrow('Invalid --cartesia-tts model "sonic-2"')
     expect(() => buildOptsFromFlags(false, { 'deepgram-tts-sample-rate': '1.5' })).toThrow('Invalid --deepgram-tts-sample-rate value "1.5"')
-    expect(() => buildOptsFromFlags(false, { 'deapi-tts-speed': '0.4' })).toThrow('Invalid --deapi-tts-speed value "0.4"')
     expect(() => buildOptsFromFlags(false, { 'elevenlabs-tts-text-normalization': 'always' })).toThrow('Invalid --elevenlabs-tts-text-normalization "always"')
     expect(() => buildOptsFromFlags(false, { 'elevenlabs-tts-optimize-streaming-latency': '5' })).toThrow('Invalid --elevenlabs-tts-optimize-streaming-latency value "5"')
   })
@@ -899,9 +961,6 @@ describe('option resolution contracts', () => {
       'cartesia-tts-language': 'en'
     }))).toThrow('Cartesia TTS request control flags require --cartesia-tts <model> or --all-tts')
 
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'deapi-tts-language': 'English'
-    }))).toThrow('deAPI TTS request control flags require --deapi-tts <model> or --all-tts')
   })
 
   test('Hume and Cartesia TTS target collection preserves model and voice controls', () => {
@@ -998,10 +1057,13 @@ describe('option resolution contracts', () => {
 
   test('bare provider flags resolve to cheapest defaults', () => {
     const openaiDefault = resolveCheapestModelForFlag('openai')
+    const grokDefault = resolveCheapestModelForFlag('grok')
     const glmDefault = resolveCheapestModelForFlag('glm')
     const kimiDefault = resolveCheapestModelForFlag('kimi')
     const deepgramDefault = resolveCheapestModelForFlag('deepgram-stt')
     const scrapeCreatorsDefault = resolveCheapestModelForFlag('scrapecreators-stt')
+    const openaiOcrDefault = resolveCheapestModelForFlag('openai-ocr')
+    const grokOcrDefault = resolveCheapestModelForFlag('grok-ocr')
     const deepinfraOcrDefault = resolveCheapestModelForFlag('deepinfra-ocr')
     const kimiOcrDefault = resolveCheapestModelForFlag('kimi-ocr')
     const unstructuredOcrDefault = resolveCheapestModelForFlag('unstructured-ocr')
@@ -1011,10 +1073,13 @@ describe('option resolution contracts', () => {
     const gcloudTtsDefault = resolveCheapestModelForFlag('gcloud-tts')
     const opts = buildOptsFromFlags(false, {
       openai: true,
+      grok: true,
       glm: true,
       kimi: true,
       'deepgram-stt': true,
       'scrapecreators-stt': true,
+      'openai-ocr': true,
+      'grok-ocr': true,
       'deepinfra-ocr': true,
       'kimi-ocr': true,
       'unstructured-ocr': true,
@@ -1025,10 +1090,13 @@ describe('option resolution contracts', () => {
     })
 
     expect(openaiDefault).toBeDefined()
+    expect(grokDefault).toBe('grok-4.20-non-reasoning')
     expect(glmDefault).toBeDefined()
     expect(kimiDefault).toBe('kimi-k2.6')
     expect(deepgramDefault).toBeDefined()
     expect(scrapeCreatorsDefault).toBe('youtube-transcript')
+    expect(openaiOcrDefault).toBe('gpt-5.4-nano')
+    expect(grokOcrDefault).toBe('grok-4.3')
     expect(deepinfraOcrDefault).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(kimiOcrDefault).toBe('kimi-k2.6')
     expect(unstructuredOcrDefault).toBe('hi_res_and_enrichment')
@@ -1037,10 +1105,13 @@ describe('option resolution contracts', () => {
     expect(cartesiaTtsDefault).toBe('sonic-3')
     expect(gcloudTtsDefault).toBe('chirp3-hd')
     expect(opts.openaiModel).toBe(openaiDefault)
+    expect(opts.grokModel).toBe(grokDefault)
     expect(opts.glmModel).toBe(glmDefault)
     expect(opts.kimiModel).toBe(kimiDefault)
     expect(opts.deepgramSttModel).toBe(deepgramDefault)
     expect(opts.scrapecreatorsSttModel).toBe(scrapeCreatorsDefault)
+    expect(opts.openaiOcrModel).toBe(openaiOcrDefault)
+    expect(opts.grokOcrModel).toBe(grokOcrDefault)
     expect(opts.deepinfraOcrModel).toBe(deepinfraOcrDefault)
     expect(opts.kimiOcrModel).toBe(kimiOcrDefault)
     expect(opts.unstructuredOcrModel).toBe(unstructuredOcrDefault)
@@ -1050,9 +1121,11 @@ describe('option resolution contracts', () => {
     expect(opts.gcloudTtsModel).toBe(gcloudTtsDefault)
   })
 
-  test('--all-llm expands GLM and Kimi to their supported models', () => {
+  test('--all-llm expands OpenAI, Grok, GLM, and Kimi to their supported models', () => {
     const opts = buildOptsFromFlags(false, { 'all-llm': true })
 
+    expect(opts.openaiModels).toContain('gpt-5.5')
+    expect(opts.grokModels).toContain('grok-4.3')
     expect(opts.glmModels).toEqual(['glm-5.1'])
     expect(opts.kimiModels).toEqual(['kimi-k2.6'])
   })
@@ -1091,12 +1164,13 @@ describe('option resolution contracts', () => {
     expect(expansions['scrapecreators-stt']).toBeUndefined()
     expect(expansions['cloudflare-stt']).toBeUndefined()
     expect(expansions['openai-ocr']?.shortcut).toBe('all-ocr')
+    expect(expansions['grok-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['kimi-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['deepinfra-ocr']?.shortcut).toBe('all-ocr')
     expect(expansions['unstructured-ocr']?.shortcut).toBe('all-ocr')
-    expect(expansions['deapi-ocr']).toBeUndefined()
-    expect(ocrOpts.openaiOcrModels).toEqual(['gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'])
-    expect(ocrOpts.anthropicOcrModels).toEqual(['claude-haiku-4-5'])
+    expect(ocrOpts.openaiOcrModels).toEqual(['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'])
+    expect(ocrOpts.grokOcrModels).toEqual(['grok-4.3'])
+    expect(ocrOpts.anthropicOcrModels).toEqual(['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'])
     expect(ocrOpts.deepinfraOcrModels).toEqual(['Qwen/Qwen3-VL-235B-A22B-Instruct', 'Qwen/Qwen3-VL-30B-A3B-Instruct'])
     expect(ocrOpts.awsTextractModels).toEqual(['detect-text'])
     expect(ocrOpts.gcloudDocaiModels).toEqual(['ocr'])
@@ -1110,33 +1184,45 @@ describe('option resolution contracts', () => {
     const ocrTargets = collectExplicitOcrTargets(ocrOpts)
     expect(ocrTargets.map((target) => target.service)).toContain('tesseract')
     expect(ocrTargets.map((target) => target.service)).toContain('openai')
+    expect(ocrTargets.map((target) => target.service)).toContain('grok')
     expect(ocrTargets.map((target) => target.service)).toContain('kimi')
     expect(ocrTargets.map((target) => target.service)).toContain('deepinfra')
     expect(ocrTargets.map((target) => target.service)).toContain('unstructured')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('openai:gpt-5.5')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('openai:gpt-5.4-mini')
-    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('anthropic:claude-opus-4-7')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('grok:grok-4.3')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('anthropic:claude-opus-4-7')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('anthropic:claude-sonnet-4-6')
+    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('anthropic:claude-haiku-4-5')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('gcloud-docai:layout-parser')
-    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('anthropic:claude-sonnet-4-6')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('deepinfra:PaddlePaddle/PaddleOCR-VL-0.9B')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('aws-textract:analyze-document')
-    expect(ocrTargets.map((target) => target.service)).not.toContain('deapi')
   })
 
-  test('OpenAI Mini OCR is available while removed provider OCR models stay rejected', () => {
+  test('GPT-5.5, Grok 4.3, and expanded Anthropic OCR models are available while removed provider OCR models stay rejected', () => {
     const openaiWriteOpts = buildOptsFromFlags(false, { openai: 'gpt-5.4-mini' })
+    const openaiGpt55WriteOpts = buildOptsFromFlags(false, { openai: 'gpt-5.5' })
     const openaiOcrOpts = buildOptsFromFlags(false, { 'openai-ocr': 'gpt-5.4-mini' })
+    const openaiGpt55OcrOpts = buildOptsFromFlags(false, { 'openai-ocr': 'gpt-5.5' })
+    const grokWriteOpts = buildOptsFromFlags(false, { grok: 'grok-4.3' })
+    const grokOcrOpts = buildOptsFromFlags(false, { 'grok-ocr': 'grok-4.3' })
     const writeOpts = buildOptsFromFlags(false, { anthropic: 'claude-sonnet-4-6' })
+    const anthropicOpusOcrOpts = buildOptsFromFlags(false, { 'anthropic-ocr': 'claude-opus-4-7' })
+    const anthropicSonnetOcrOpts = buildOptsFromFlags(false, { 'anthropic-ocr': 'claude-sonnet-4-6' })
 
     expect(openaiWriteOpts.openaiModel).toBe('gpt-5.4-mini')
+    expect(openaiGpt55WriteOpts.openaiModel).toBe('gpt-5.5')
     expect(openaiOcrOpts.openaiOcrModel).toBe('gpt-5.4-mini')
     expect(openaiOcrOpts.openaiOcrModels).toEqual(['gpt-5.4-mini'])
+    expect(openaiGpt55OcrOpts.openaiOcrModel).toBe('gpt-5.5')
+    expect(grokWriteOpts.grokModel).toBe('grok-4.3')
+    expect(grokOcrOpts.grokOcrModel).toBe('grok-4.3')
+    expect(grokOcrOpts.grokOcrModels).toEqual(['grok-4.3'])
     expect(writeOpts.anthropicModel).toBe('claude-sonnet-4-6')
-    expect(() => buildOptsFromFlags(false, { 'anthropic-ocr': 'claude-opus-4-7' })).toThrow(
-      'Invalid --anthropic-ocr model "claude-opus-4-7". Allowed values: claude-haiku-4-5'
-    )
-    expect(() => buildOptsFromFlags(false, { 'anthropic-ocr': 'claude-sonnet-4-6' })).toThrow(
-      'Invalid --anthropic-ocr model "claude-sonnet-4-6". Allowed values: claude-haiku-4-5'
-    )
+    expect(anthropicOpusOcrOpts.anthropicOcrModel).toBe('claude-opus-4-7')
+    expect(anthropicOpusOcrOpts.anthropicOcrModels).toEqual(['claude-opus-4-7'])
+    expect(anthropicSonnetOcrOpts.anthropicOcrModel).toBe('claude-sonnet-4-6')
+    expect(anthropicSonnetOcrOpts.anthropicOcrModels).toEqual(['claude-sonnet-4-6'])
     expect(() => buildOptsFromFlags(false, { 'gcloud-docai': 'layout-parser' })).toThrow(
       'Invalid --gcloud-docai model "layout-parser". Allowed values: ocr'
     )
@@ -1190,10 +1276,6 @@ describe('option resolution contracts', () => {
       SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS.map((model) => GCLOUD_DEFAULT_TTS_VOICES[model])
     )
     expect(gcloudTargets.map((target) => target.model)).not.toContain('instant-custom-voice')
-    expect(opts.deapiTtsModels).toEqual([...SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS])
-    expect(targetModelsFor('deapi')).toEqual([...SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS])
-    expect(targetModelsFor('deapi')).not.toContain('Qwen3_TTS_12Hz_1_7B_Base')
-    expect(targetModelsFor('deapi')).not.toContain('Qwen3_TTS_12Hz_1_7B_VoiceDesign')
   })
 
   test('--all-tts rejects special-input modes that need an explicit model', () => {
@@ -1202,16 +1284,6 @@ describe('option resolution contracts', () => {
       'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
       'gcloud-tts-consent-audio': SHORT_AUDIO_URL
     }))).toThrow('require --gcloud-tts instant-custom-voice')
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'all-tts': true,
-      'deapi-tts-ref-audio': SHORT_AUDIO_URL
-    }))).toThrow('requires --deapi-tts Qwen3_TTS_12Hz_1_7B_Base')
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'all-tts': true,
-      'deapi-tts-instruction': 'Design a calm documentary voice.'
-    }))).toThrow('requires --deapi-tts Qwen3_TTS_12Hz_1_7B_VoiceDesign')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'all-tts': true,
@@ -2056,39 +2128,6 @@ describe('option resolution contracts', () => {
     }))).toThrow('requires --mistral-tts-ref-audio')
   })
 
-  test('deapi voice clone target records reference audio speaker', () => {
-    const opts = buildOptsFromFlags(false, {
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
-      'deapi-tts-ref-audio': SHORT_AUDIO_URL
-    })
-    const targets = collectTtsTargets(opts).filter((target) => target.service === 'deapi')
-
-    expect(targets.map((target) => ({
-      model: target.model,
-      voice: target.voice
-    }))).toEqual([{
-      model: 'Qwen3_TTS_12Hz_1_7B_Base',
-      voice: 'ref_audio:0-audio-short.mp3'
-    }])
-  })
-
-  test('deapi VoiceDesign target requires and records an instruction', () => {
-    const opts = buildOptsFromFlags(false, {
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
-      'deapi-tts-instruction': 'A calm documentary narrator.'
-    })
-    const targets = collectTtsTargets(opts).filter((target) => target.service === 'deapi')
-
-    expect(opts.deapiTtsInstruction).toBe('A calm documentary narrator.')
-    expect(targets.map((target) => ({
-      model: target.model,
-      voice: target.voice
-    }))).toEqual([{
-      model: 'Qwen3_TTS_12Hz_1_7B_VoiceDesign',
-      voice: 'voice_design'
-    }])
-  })
-
   test('openai custom voice target records reference audio speaker and setup estimate', () => {
     const opts = buildOptsFromFlags(false, {
       'openai-tts': 'gpt-4o-mini-tts',
@@ -2299,59 +2338,6 @@ describe('option resolution contracts', () => {
     }
   })
 
-  test('deapi tts voice and reference audio are mutually exclusive at target collection', () => {
-    const opts = buildOptsFromFlags(false, {
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base',
-      'deapi-tts-voice': 'Vivian',
-      'deapi-tts-ref-audio': SHORT_AUDIO_URL
-    })
-
-    expect(() => collectTtsTargets(opts)).toThrow('Use either --deapi-tts-voice or --deapi-tts-ref-audio, not both')
-  })
-
-  test('deapi tts rejects unsupported clone model combinations', () => {
-    const cloneWithPresetModel = buildOptsFromFlags(false, {
-      'deapi-tts': 'Kokoro',
-      'deapi-tts-ref-audio': SHORT_AUDIO_URL
-    })
-    const cloneWithoutAudio = buildOptsFromFlags(false, {
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_Base'
-    })
-    const voiceDesign = buildOptsFromFlags(false, {
-      'deapi-tts': 'Qwen3_TTS_12Hz_1_7B_VoiceDesign'
-    })
-
-    expect(() => collectTtsTargets(cloneWithPresetModel)).toThrow('requires --deapi-tts Qwen3_TTS_12Hz_1_7B_Base')
-    expect(() => collectTtsTargets(cloneWithoutAudio)).toThrow('requires --deapi-tts-ref-audio')
-    expect(() => collectTtsTargets(voiceDesign)).toThrow('requires --deapi-tts-instruction')
-  })
-
-  test('deapi tts reference audio validation enforces file, extension, size, and duration', async () => {
-    const valid = await validateDeapiTtsReferenceAudio(LOCAL_SHORT_AUDIO_PATH)
-    expect(valid.basename).toBe('0-audio-short.mp3')
-    expect(valid.durationSeconds).toBeGreaterThanOrEqual(3)
-    expect(valid.durationSeconds).toBeLessThanOrEqual(10)
-
-    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-deapi-ref-audio-'))
-    const emptyPath = join(tempDir, 'empty.mp3')
-    const textPath = join(tempDir, 'not-audio.txt')
-    const largePath = join(tempDir, 'large.mp3')
-    await writeFile(emptyPath, '')
-    await writeFile(textPath, 'hello')
-    await writeFile(largePath, '')
-    await truncate(largePath, 11 * 1024 * 1024)
-
-    try {
-      await expect(validateDeapiTtsReferenceAudio('input/examples/audio/missing.mp3')).rejects.toThrow('not found')
-      await expect(validateDeapiTtsReferenceAudio(textPath)).rejects.toThrow('mp3, wav, flac, ogg, or m4a')
-      await expect(validateDeapiTtsReferenceAudio(emptyPath)).rejects.toThrow('is empty')
-      await expect(validateDeapiTtsReferenceAudio(largePath)).rejects.toThrow('exceeds 10 MB')
-      await expect(validateDeapiTtsReferenceAudio('input/examples/audio/anthony-voice.mp3')).rejects.toThrow('must be 3-10 seconds long')
-    } finally {
-      await rm(tempDir, { recursive: true, force: true })
-    }
-  })
-
   test('grok tts voice validation normalizes case', () => {
     const opts = buildOptsFromFlags(false, {
       'grok-tts': ['grok-tts'],
@@ -2465,8 +2451,8 @@ describe('option resolution contracts', () => {
     }))).toThrow('--video-mode image-to-video is not supported by glm/vidu2-reference')
 
     expect(() => collectVideoTargets(buildOptsFromFlags(false, {
-      'glm-video': 'viduq1-start-end'
-    }))).toThrow('--video-mode text is not supported by glm/viduq1-start-end')
+      'glm-video': 'vidu2-start-end'
+    }))).toThrow('--video-mode text is not supported by glm/vidu2-start-end')
 
     expect(collectVideoTargets(buildOptsFromFlags(false, {
       'glm-video': 'vidu2-reference',

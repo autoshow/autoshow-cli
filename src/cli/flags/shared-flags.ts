@@ -1,6 +1,7 @@
 import type { CliFlagsDefinition } from '~/cli/native'
 import {
   SUPPORTED_LLAMA_MODELS,
+  SUPPORTED_OPENAI_MODELS,
   SUPPORTED_ANTHROPIC_MODELS,
   SUPPORTED_MINIMAX_MODELS,
   SUPPORTED_GROQ_MODELS,
@@ -140,7 +141,7 @@ export const llmProviderFlags = {
     type: [String] as [StringConstructor]
   },
   openai: {
-    description: 'OpenAI model (omit value for cheapest supported model): gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano',
+    description: buildModelDescription('OpenAI model', SUPPORTED_OPENAI_MODELS),
     type: [String] as [StringConstructor]
   },
   groq: {
@@ -263,6 +264,14 @@ export const allArticleFlags = {
     description: 'URL article extraction: max hosted URL backends running in parallel (default 2; --all-url defaults to up to 4)',
     type: String,
     default: '2'
+  },
+  'url-request-timeout-ms': {
+    description: 'URL article extraction: per-provider request timeout in milliseconds (default 60000; env AUTOSHOW_URL_REQUEST_TIMEOUT_MS)',
+    type: String
+  },
+  'url-request-attempts': {
+    description: 'URL article extraction: total provider request attempts including retries (default 3; env AUTOSHOW_URL_REQUEST_ATTEMPTS)',
+    type: String
   }
 } as const satisfies CliFlagsDefinition
 

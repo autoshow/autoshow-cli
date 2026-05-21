@@ -138,6 +138,14 @@ export type GeminiLlmUsageLike = {
   output_tokens: number
 }
 
+export type GrokLlmModel = (typeof import('../models/grok-models').GROK_LLM_MODELS)[number]
+
+export type GrokLlmUsageLike = {
+  input_tokens: number
+  input_tokens_details?: { cached_tokens?: number } | null
+  output_tokens: number
+}
+
 export type GeminiImageUsageLike = {
   input_tokens: number
   output_tokens: number
@@ -151,7 +159,7 @@ export type GeminiImageConfig = {
 
 export type CliImageSize = '1536x1024' | '1024x1024' | '1024x1536' | 'auto'
 
-export type LlmModel = OpenAiLlmModel | GeminiLlmModel
+export type LlmModel = OpenAiLlmModel | GeminiLlmModel | GrokLlmModel
 
 export type ImageGenerationModel = OpenAiImageGenerationModel | GeminiImageGenerationModel
 

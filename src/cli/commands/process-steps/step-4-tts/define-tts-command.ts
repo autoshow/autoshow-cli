@@ -56,8 +56,7 @@ export const ttsCommand = defineCliCommand({
       ['bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Clone a voice with ElevenLabs IVC'],
       ['bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123', 'Generate speech with an ElevenLabs PVC voice'],
       ['bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator', 'Use a MiniMax voice ID'],
-      ['bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Generate speech with Mistral Voxtral'],
-      ['bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3', 'Clone a voice with deAPI']
+      ['bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3', 'Generate speech with Mistral Voxtral']
     ]
   }
 }, async (ctx) => {

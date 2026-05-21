@@ -67,7 +67,7 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
 
 export type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
 
-export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
@@ -122,7 +122,6 @@ export type ComputeEstimatedCostsInput = {
   gcloudSttModel?: string | undefined
   awsSttModel?: string | undefined
   deepinfraSttModel?: string | undefined
-  deapiSttModel?: string | undefined
   groqSttModel?: string | undefined
   grokSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
@@ -144,12 +143,13 @@ export type ComputeEstimatedCostsInput = {
   glmOcrModel?: string | undefined
   kimiOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
   unstructuredOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'
+    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -179,11 +179,8 @@ export type ComputeEstimatedCostsInput = {
   imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number, imageSize?: string, imageQuality?: string }> | undefined
   geminiImageModel?: string | undefined
   openaiImageModel?: string | undefined
-  minimaxImageModel?: string | undefined
   grokImageModel?: string | undefined
-  runwayImageModel?: string | undefined
   bflImageModel?: string | undefined
-  deapiImageModel?: string | undefined
   imageSize?: string | undefined
   imageQuality?: string | undefined
   imageCount?: number | undefined
@@ -192,7 +189,6 @@ export type ComputeEstimatedCostsInput = {
   glmVideoModel?: string | undefined
   grokVideoModel?: string | undefined
   runwayVideoModel?: string | undefined
-  deapiVideoModel?: string | undefined
   videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined
@@ -201,7 +197,6 @@ export type ComputeEstimatedCostsInput = {
   videoMode?: string | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
-  deapiMusicModel?: string | undefined
   geminiMusicModel?: string | undefined
   musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicDuration?: number | undefined
@@ -218,11 +213,12 @@ export type ComputeEstimatedProcessingTimesInput = {
   glmOcrModel?: string | undefined
   kimiOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
   unstructuredOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured', model: string, pageCount?: number }> | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']

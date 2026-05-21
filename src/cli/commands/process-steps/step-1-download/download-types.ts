@@ -213,7 +213,6 @@ export type RepeatableModelFlag =
   | 'gcloud-stt'
   | 'aws-stt'
   | 'deepinfra-stt'
-  | 'deapi-stt'
   | 'groq-stt'
   | 'grok-stt'
   | 'elevenlabs-stt'
@@ -235,6 +234,7 @@ export type RepeatableModelFlag =
   | 'glm-ocr'
   | 'kimi-ocr'
   | 'openai-ocr'
+  | 'grok-ocr'
   | 'anthropic-ocr'
   | 'gemini-ocr'
   | 'deepinfra-ocr'
@@ -263,25 +263,19 @@ export type RepeatableModelFlag =
   | 'hume-tts'
   | 'cartesia-tts'
   | 'gcloud-tts'
-  | 'deapi-tts'
   | 'gemini-image'
   | 'openai-image'
-  | 'minimax-image'
   | 'grok-image'
-  | 'runway-image'
   | 'bfl-image'
-  | 'deapi-image'
   | 'reve-image'
   | 'elevenlabs-music'
   | 'minimax-music'
-  | 'deapi-music'
   | 'gemini-music'
   | 'gemini-video'
   | 'minimax-video'
   | 'glm-video'
   | 'grok-video'
   | 'runway-video'
-  | 'deapi-video'
 
 export type FlagOccurrenceValue = string | boolean
 
@@ -345,6 +339,7 @@ export type WriteDocumentOutputMetadataOptions = {
   glmOcrModel: string | undefined
   kimiOcrModel: string | undefined
   openaiOcrModel: string | undefined
+  grokOcrModel: string | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined
   deepinfraOcrModel: string | undefined

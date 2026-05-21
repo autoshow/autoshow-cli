@@ -20,8 +20,6 @@ bun t test/test-cases/e2e/step-7-music-gen-e2e/
 - `test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts`, `minimax-music-gen.test.ts`, and `gemini-music-gen.test.ts` use `defineMusicServiceTest` for invalid model rejection, `--price`, and real provider generation when the required API key is configured.
 - Step 7 also covers provider-selection validation, multi-provider `--price` output, and multi-provider runs that emit per-provider filenames plus array metadata.
 - `minimax-music-gen.test.ts` adds write-pipeline coverage for `write --price` with MiniMax music, `write` with ElevenLabs music enabled, and `write` with MiniMax music plus a lyrics file.
-- `test/test-cases/validation/music-provider-contracts.test.ts` has mocked provider-contract coverage for MiniMax `music-2.6` / `music-2.6-free`, MiniMax instrumental and generated-lyrics metadata, Gemini inline audio/text metadata, and deAPI request/metadata handling.
-- deAPI music is supported by the command surface and mocked validation coverage, but there is no dedicated `deapi-music-gen.test.ts` live e2e case or mapped price command in the current step-7 service suite.
 
 ## Price Preflight
 
@@ -31,7 +29,6 @@ bun t test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts --test-p
 bun t test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts --budget 2500
 ```
 
-The ElevenLabs, MiniMax, and Gemini provider suites resolve mapped price commands, and the MiniMax suite also carries the current write-pipeline price mappings. deAPI music uses quote-based command pricing at runtime, but it does not currently have a mapped live e2e price command.
 
 ## Related Docs
 

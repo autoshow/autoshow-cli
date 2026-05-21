@@ -9,7 +9,7 @@ bun scripts/run.ts <category> build-packet <run_dir> [--input-text <path>] [--ou
 bun scripts/run.ts <category> build-report <run_dir> [--input-text <path>] [--roundtrip-dir <path>]
 ```
 
-The dispatcher calls category-specific scripts and then normalizes reports into the consolidated ranking contract. OCR and STT keep their category-specific combined overall reports and are augmented with the same JSON ranking surfaces.
+The dispatcher calls category-specific scripts and then normalizes reports into the consolidated ranking contract. OCR and STT use category-specific grouped full `metricRankings` instead of `rankingSurfaces`.
 
 ## Local And Service Separation
 
@@ -22,45 +22,85 @@ Use two report groups:
 
 Local cheapest rankings treat each local provider as zero monetary cost and only compare local providers with each other.
 
-OCR and STT are combined-overall exceptions: their markdown and JSON preserve balanced-overall leaderboards across all providers, with component scores and group tier annotations, while the JSON still exposes the local/service ranking surfaces.
+OCR and STT are metric-ranking exceptions: they do not emit combined balanced-overall leaderboards, tiering, or ranking surfaces. They expose full rankings by price, speed, and quality score within category-specific provider groups.
 
 ## Required Ranking Surfaces
 
-JSON reports must expose all six paths:
+Image, music, TTS, URL, and video JSON reports must expose complete rankings under both `rankingSurfaces.local` and `rankingSurfaces.service`:
 
 ```text
-rankingSurfaces.local.fastest
-rankingSurfaces.local.cheapest
-rankingSurfaces.local.highestQuality
-rankingSurfaces.service.fastest
-rankingSurfaces.service.cheapest
-rankingSurfaces.service.highestQuality
+price
+speed
+automatedQuality
+humanQuality
 ```
 
-Each surface contains up to three providers. If unavailable, it is an empty array and the adjacent unavailable reason field explains why.
+Each surface has a matching `*UnavailableReason` field. Price and speed rankings include every provider in the relevant group, with missing values sorted last as `value: null` and `label: "n/a"`. Automated and human quality rankings use only explicit evidence for that metric. If unavailable, the array is empty and the adjacent unavailable reason explains why.
+
+Compatibility aliases are also required and must point at full-length arrays:
+
+```text
+fastest = speed
+cheapest = price
+highestQuality = humanQuality when humanQuality is present, otherwise automatedQuality
+```
+
+OCR JSON reports must expose full metric rankings at:
+
+```text
+metricRankings.local.price
+metricRankings.local.speed
+metricRankings.local.qualityScore
+metricRankings.thirdPartyService.price
+metricRankings.thirdPartyService.speed
+metricRankings.thirdPartyService.qualityScore
+```
+
+STT JSON reports must expose full metric rankings at:
+
+```text
+metricRankings.local.price
+metricRankings.local.speed
+metricRankings.local.qualityScore
+metricRankings.thirdPartyServiceNonDiarization.price
+metricRankings.thirdPartyServiceNonDiarization.speed
+metricRankings.thirdPartyServiceNonDiarization.qualityScore
+metricRankings.thirdPartyServiceDiarization.price
+metricRankings.thirdPartyServiceDiarization.speed
+metricRankings.thirdPartyServiceDiarization.qualityScore
+```
+
+OCR/STT metric ranking arrays include every provider in the relevant group. Price sorts lower cost first, with local providers at zero and missing service price last. Speed sorts lower processing time first, with missing timing last. Quality Score sorts the existing score higher first. OCR/STT JSON must not emit `rankingSurfaces`, `overall`, `overallMetric`, `overallWeights`, or `tiering`.
 
 Markdown reports normally expose matching sections:
 
-1. Local Providers / Top 3 Fastest
-2. Local Providers / Top 3 Cheapest
-3. Local Providers / Top 3 Highest Quality
-4. Service Providers / Top 3 Fastest
-5. Service Providers / Top 3 Cheapest
-6. Service Providers / Top 3 Highest Quality
+1. Local Providers / Price
+2. Local Providers / Speed
+3. Local Providers / Automated Quality
+4. Local Providers / Human Quality
+5. Service Providers / Price
+6. Service Providers / Speed
+7. Service Providers / Automated Quality
+8. Service Providers / Human Quality
 
-OCR and STT markdown follow the combined report structure: Summary, Method, Overall Ranking, Tier Breakdown, Ranking, Error Breakdown, and Notes. Use their JSON `rankingSurfaces` for local/service top-three surfaces.
+OCR and STT markdown use `## Metric Rankings` with group-specific full Price, Speed, and Quality Score tables. They must not include `## Overall Ranking`, `## Tier Breakdown`, combined `## Ranking`, or “Top 3” ranking sections.
+
+TTS markdown uses Local Models and Third-Party Service Models sections with full Price, Speed, Automated Quality, and Human Quality tables. Do not label any non-OCR/STT ranking sections as “Top 3”.
 
 ## Quality Evidence Rules
 
-Highest-quality rankings must be evidence-only:
+Automated and human quality rankings must be evidence-only:
 
 1. OCR: WER/CER-derived extraction accuracy.
-2. STT: speaker-aware WER-derived transcript accuracy.
+2. STT: speaker-aware WER-derived transcript accuracy, split into local, third-party non-diarization, and third-party diarization groups.
 3. URL: extraction accuracy using WER, CER, and content coverage.
-4. TTS: roundtrip WER, or explicit voice-quality report data if already present.
-5. Image, music, and video: unavailable unless an explicit quality metric exists.
+4. TTS automated quality: roundtrip WER-derived accuracy, including median roundtrip WER from `voice-quality-report.json`.
+5. TTS human quality: `humanSpeechScore` from `voice-quality-report.json`.
+6. Image: image judge `qualityScore`.
+7. Music and video: explicit `qualityScore` fields when present.
+8. Human quality: explicit `humanQualityScore`, or TTS `humanSpeechScore`.
 
-Do not use file size, dimensions, bitrate, duration, or subjective judgment as quality proxies.
+Do not use file size, dimensions, bitrate, duration, cost, speed, generic qualityScore as human quality, or subjective judgment as quality proxies.
 
 ## No-Cost Verification
 

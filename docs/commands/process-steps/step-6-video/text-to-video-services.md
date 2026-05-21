@@ -13,7 +13,6 @@ Generate a video from a text prompt with one or more hosted video providers and 
   - [Z.AI GLM](#zai-glm)
   - [Grok](#grok)
   - [Runway](#runway)
-  - [deAPI](#deapi)
 - [Output](#output)
 - [Notes](#notes)
 
@@ -35,7 +34,6 @@ MINIMAX_API_KEY=...
 GLM_API_KEY=...
 XAI_API_KEY=...
 RUNWAYML_API_SECRET=...
-DEAPI_API_KEY=...
 ```
 
 Optional provider base URL overrides:
@@ -43,7 +41,6 @@ Optional provider base URL overrides:
 ```bash
 ZAI_BASE_URL=...
 XAI_BASE_URL=...
-DEAPI_BASE_URL=...
 ```
 
 ## Shared Video Options
@@ -79,7 +76,7 @@ Media-input modes are explicit. Passing media flags without `--video-mode` is re
 | `text` | All video providers | none | Default mode |
 | `image-to-video` | Gemini, GLM, MiniMax, Grok | `--video-input-image` | Animates the input image |
 | `reference-to-video` | Gemini standard/Fast, GLM Vidu 2 reference, MiniMax S2V, Grok | `--video-reference-image` | Up to 3 references; MiniMax S2V accepts one |
-| `interpolate` | Gemini, GLM, MiniMax Hailuo 02 | `--video-input-image`, `--video-last-frame` | First/last-frame transition |
+| `interpolate` | Gemini, GLM | `--video-input-image`, `--video-last-frame` | First/last-frame transition |
 | `extend` | Gemini standard/Fast, Grok | `--video-input-video` | Gemini extension requests force `720p` |
 | `edit` | Grok | `--video-input-video` | Rejects duration, aspect, and resolution overrides |
 
@@ -144,26 +141,25 @@ The timing values are CLI planning heuristics, not provider SLAs. Google documen
 | Option | Value |
 |--------|-------|
 | Selector | `--minimax <model>` |
-| Models | `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-2.3-Fast`, `MiniMax-Hailuo-02`, `T2V-01-Director`, `T2V-01`, `I2V-01-Director`, `I2V-01-live`, `I2V-01`, `S2V-01` |
+| Models | `MiniMax-Hailuo-2.3`, `MiniMax-Hailuo-2.3-Fast`, `T2V-01-Director`, `T2V-01`, `I2V-01-Director`, `I2V-01-live`, `I2V-01`, `S2V-01` |
 | Duration/resolution | `--video-duration <seconds>`, `--video-resolution 720p\|1080p` where supported |
 
 ```bash
 bun as video "a rainy neon city street, slow camera pan" --minimax MiniMax-Hailuo-2.3 --video-duration 10 --video-resolution 720p
 bun as video "a rainy neon city street, slow camera pan" --minimax T2V-01
 bun as video "animate the product photo with a slow dolly move" --minimax I2V-01 --video-mode image-to-video --video-input-image output/video-demo-product/generated-image.png
-bun as video "transition between the two product frames" --minimax MiniMax-Hailuo-02 --video-mode interpolate --video-input-image output/video-demo-product/generated-image.png --video-last-frame output/video-demo-product-night/generated-image.png
 bun as video "a person in this reference walks through a softly lit studio" --minimax S2V-01 --video-mode reference-to-video --video-reference-image output/video-demo-jacket/generated-image.png
 bun as video "a sunset timelapse" --minimax MiniMax-Hailuo-2.3 --video-duration 10 --price
 ```
 
-MiniMax text models use the existing text-to-video request body. Image-to-video models send `first_frame_image`, interpolation sends `first_frame_image` and `last_frame_image`, and `S2V-01` maps one reference image to `subject_reference` with `type: "character"`. MiniMax durations are normalized to the provider-supported values for the selected model and resolution.
+MiniMax text models use the existing text-to-video request body. Image-to-video models send `first_frame_image`, and `S2V-01` maps one reference image to `subject_reference` with `type: "character"`. MiniMax durations are normalized to the provider-supported values for the selected model and resolution.
 
 ### Z.AI GLM
 
 | Option | Value |
 |--------|-------|
 | Selector | `--glm <model>` |
-| Models | `cogvideox-3`, `viduq1-text`, `viduq1-image`, `viduq1-start-end`, `vidu2-image`, `vidu2-start-end`, `vidu2-reference` |
+| Models | `cogvideox-3`, `viduq1-text`, `vidu2-image`, `vidu2-start-end`, `vidu2-reference` |
 | Size/aspect ratio | `--video-size 1920x1080`, `1280x720`, `720x1280`, or `--video-aspect-ratio <ratio>` depending on model |
 
 ```bash
@@ -175,7 +171,7 @@ bun as video "keep these references consistent in the generated shot" --glm vidu
 bun as video "a sunset timelapse" --glm cogvideox-3 --price
 ```
 
-GLM `cogvideox-3` supports text, image-to-video, and interpolation with `image_url`. Vidu Q1 models are fixed at `5` seconds. Vidu 2 media models default to 4-second 720p requests. GLM prompts are capped at 512 characters.
+GLM `cogvideox-3` supports text, image-to-video, and interpolation with `image_url`. Vidu Q1 text requests are fixed at `5` seconds. Vidu 2 media models default to 4-second 720p requests. GLM prompts are capped at 512 characters.
 
 ### Grok
 
@@ -212,20 +208,15 @@ bun as video "a sunset timelapse" --runway gen4.5 --video-duration 5 --price
 
 Runway `gen4.5` durations are clamped to `2` through `10` seconds and default to `5`; prompts are capped at 1000 UTF-16 code units.
 
-### deAPI
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deapi <model>` |
-| Models | `Ltxv_13B_0_9_8_Distilled_FP8`, `Ltx2_19B_Dist_FP8`, `Ltx2_3_22B_Dist_INT8` |
+| Models | `Ltx2_3_22B_Dist_INT8` |
 | Size/duration | `--video-size WIDTHxHEIGHT`, `--video-duration <seconds>` |
 
 ```bash
-bun as video "a cat playing" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-size 512x512 --video-duration 2
-bun as video "a sunset timelapse" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
 ```
 
-deAPI uses `--video-size WIDTHxHEIGHT`; `--video-aspect-ratio` and `--video-resolution` are rejected. Durations are converted to model frames and clamped to the model frame range, then metadata records the normalized duration.
 
 ```bash
 # Same provider, multiple models
@@ -255,7 +246,6 @@ output/YYYY-MM-DD_HH-mm-ss_video-gen/
   generated-video-glm-cogvideox-3.mp4
   generated-video-grok-grok-imagine-video.mp4
   generated-video-runway-gen4.5.mp4
-  generated-video-deapi-Ltxv_13B_0_9_8_Distilled_FP8.mp4
   run.json
 ```
 

@@ -4,7 +4,6 @@ import betterAuthLinks from './model-links/better-auth.json'
 import bflLinks from './model-links/bfl.json'
 import cartesiaLinks from './model-links/cartesia.json'
 import claudeLinks from './model-links/claude.json'
-import deapiLinks from './model-links/deapi.json'
 import deepgramLinks from './model-links/deepgram.json'
 import deepinfraLinks from './model-links/deepinfra.json'
 import driveLinks from './model-links/drive.json'
@@ -68,7 +67,6 @@ const providerLinks = [
   resendLinks,
   happyscribeLinks,
   humeLinks,
-  deapiLinks,
   supadataLinks,
   unstructuredLinks,
   scrapecreatorsLinks,

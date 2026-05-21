@@ -27,7 +27,6 @@ const STT_SERVICES = new Set<SttTarget['service']>([
   'aws',
   'deepgram',
   'deepinfra',
-  'deapi',
   'elevenlabs',
   'soniox',
   'speechmatics',

@@ -1,0 +1,694 @@
+{
+  "schemaVersion": 1,
+  "kind": "image-quality-report",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/image/2026-05-21_10-35-24-459_image-gen",
+  "runName": "2026-05-21_10-35-24-459_image-gen",
+  "generatedAt": "2026-05-21T22:13:24.164Z",
+  "judge": {
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "endpoint": "responses"
+  },
+  "prompt": "An extremely detailed pencil drawing of a person doing a pencil drawing of a person doing a pencil drawing of a person doing a pencil drawing.",
+  "rubric": {
+    "scale": "1-10",
+    "qualityScore": "average criterion score x 10",
+    "criteria": [
+      "prompt adherence",
+      "visual quality",
+      "artifact control",
+      "composition",
+      "detail/text handling"
+    ]
+  },
+  "providerCount": 9,
+  "imageCount": 9,
+  "providers": [
+    {
+      "rank": 1,
+      "providerKey": "bfl/flux-2-flex",
+      "provider": "bfl",
+      "model": "flux-2-flex",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-bfl-flux-2-flex.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 16181,
+      "costCents": 5,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-bfl-flux-2-flex.jpg: Highly effective pencil-style recursive drawing scene with clear nested figures and strong draftsmanship. It closely follows the prompt, though the deepest recursion is only lightly suggested rather than fully legible.",
+        "strengths": [
+          "Convincing graphite pencil drawing style with detailed shading and paper texture",
+          "Clear depiction of a person drawing a person drawing another person",
+          "Strong composition and readable visual hierarchy",
+          "Good anatomy, facial detail, and object construction overall"
+        ],
+        "issues": [
+          "The fourth-level nested drawing is very small and not fully distinct",
+          "Some minor hand/pencil geometry awkwardness",
+          "Recursive concept could be pushed slightly further for exact prompt completeness"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-bfl-flux-2-flex.jpg",
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "Highly effective pencil-style recursive drawing scene with clear nested figures and strong draftsmanship. It closely follows the prompt, though the deepest recursion is only lightly suggested rather than fully legible.",
+          "strengths": [
+            "Convincing graphite pencil drawing style with detailed shading and paper texture",
+            "Clear depiction of a person drawing a person drawing another person",
+            "Strong composition and readable visual hierarchy",
+            "Good anatomy, facial detail, and object construction overall"
+          ],
+          "issues": [
+            "The fourth-level nested drawing is very small and not fully distinct",
+            "Some minor hand/pencil geometry awkwardness",
+            "Recursive concept could be pushed slightly further for exact prompt completeness"
+          ],
+          "usage": {
+            "input_tokens": 1550,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 160,
+            "output_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "total_tokens": 1710
+          }
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "providerKey": "openai/gpt-image-1.5",
+      "provider": "openai",
+      "model": "gpt-image-1.5",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-openai-gpt-image-1.5.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 22099,
+      "costCents": 8,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-openai-gpt-image-1.5.png: Strong recursive pencil-drawing image that closely matches the prompt, with convincing graphite texture and multiple nested drawings. Minor anatomical/hand ambiguities and slight recursive clutter keep it from perfect.",
+        "strengths": [
+          "Clearly depicts a person drawing a person drawing a person drawing, with visible recursion.",
+          "Pencil sketch style is highly consistent and detailed.",
+          "Good use of perspective, framing, and tonal contrast to guide the eye inward.",
+          "Fine hatching and studio details enhance the handmade drawing feel."
+        ],
+        "issues": [
+          "Some hand and pencil geometry appears slightly awkward or over-complex.",
+          "The recursive structure becomes a bit visually cluttered in the smallest nested areas.",
+          "A few objects and edges are somewhat distorted, though not severely."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-openai-gpt-image-1.5.png",
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "Strong recursive pencil-drawing image that closely matches the prompt, with convincing graphite texture and multiple nested drawings. Minor anatomical/hand ambiguities and slight recursive clutter keep it from perfect.",
+          "strengths": [
+            "Clearly depicts a person drawing a person drawing a person drawing, with visible recursion.",
+            "Pencil sketch style is highly consistent and detailed.",
+            "Good use of perspective, framing, and tonal contrast to guide the eye inward.",
+            "Fine hatching and studio details enhance the handmade drawing feel."
+          ],
+          "issues": [
+            "Some hand and pencil geometry appears slightly awkward or over-complex.",
+            "The recursive structure becomes a bit visually cluttered in the smallest nested areas.",
+            "A few objects and edges are somewhat distorted, though not severely."
+          ],
+          "usage": {
+            "input_tokens": 2169,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 216,
+            "output_tokens_details": {
+              "reasoning_tokens": 36
+            },
+            "total_tokens": 2385
+          }
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "providerKey": "openai/gpt-image-2",
+      "provider": "openai",
+      "model": "gpt-image-2",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-openai-gpt-image-2.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 152338,
+      "costCents": 5.3,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8.6,
+      "qualityScore": 86,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-openai-gpt-image-2.png: The image strongly matches the prompt: a highly detailed graphite-style drawing showing a recursive scene of a person drawing a person drawing, repeated several levels deep. It has excellent pencil texture, shading, and clear visual hierarchy.",
+        "strengths": [
+          "Very strong pencil-drawing aesthetic with rich graphite shading and fine crosshatching.",
+          "Recursive drawing-within-drawing concept is immediately readable and repeated multiple times.",
+          "High level of detail in hair, clothing folds, desk objects, books, and background.",
+          "Composition leads the eye naturally into the nested drawings."
+        ],
+        "issues": [
+          "Some hand and pencil anatomy/details are slightly awkward on close inspection.",
+          "The deepest recursive levels become less distinct, though still understandable.",
+          "Minor pseudo-text in the background is present but not meaningful, though text was not required."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-openai-gpt-image-2.png",
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8.6,
+          "qualityScore": 86,
+          "summary": "The image strongly matches the prompt: a highly detailed graphite-style drawing showing a recursive scene of a person drawing a person drawing, repeated several levels deep. It has excellent pencil texture, shading, and clear visual hierarchy.",
+          "strengths": [
+            "Very strong pencil-drawing aesthetic with rich graphite shading and fine crosshatching.",
+            "Recursive drawing-within-drawing concept is immediately readable and repeated multiple times.",
+            "High level of detail in hair, clothing folds, desk objects, books, and background.",
+            "Composition leads the eye naturally into the nested drawings."
+          ],
+          "issues": [
+            "Some hand and pencil anatomy/details are slightly awkward on close inspection.",
+            "The deepest recursive levels become less distinct, though still understandable.",
+            "Minor pseudo-text in the background is present but not meaningful, though text was not required."
+          ],
+          "usage": {
+            "input_tokens": 2165,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 192,
+            "output_tokens_details": {
+              "reasoning_tokens": 0
+            },
+            "total_tokens": 2357
+          }
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "providerKey": "bfl/flux-2-max",
+      "provider": "bfl",
+      "model": "flux-2-max",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-bfl-flux-2-max.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 41685,
+      "costCents": 7.000000000000001,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8.4,
+      "qualityScore": 84,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-bfl-flux-2-max.jpg: Strong pencil-style recursive drawing scene that closely matches the prompt, with clear nested figures and detailed graphite shading. Minor anatomical and fine-detail imperfections are present but not very distracting.",
+        "strengths": [
+          "Clearly depicts a person drawing a person drawing another person, with visible recursive structure.",
+          "Convincing monochrome pencil drawing aesthetic with detailed shading and texture.",
+          "Well-framed over-the-shoulder composition makes the concept readable."
+        ],
+        "issues": [
+          "Small nested levels become less distinct and somewhat simplified.",
+          "Some hand and pencil details look slightly unnatural.",
+          "The recursion is implied well but not perfectly crisp at the deepest level."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-bfl-flux-2-max.jpg",
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8.4,
+          "qualityScore": 84,
+          "summary": "Strong pencil-style recursive drawing scene that closely matches the prompt, with clear nested figures and detailed graphite shading. Minor anatomical and fine-detail imperfections are present but not very distracting.",
+          "strengths": [
+            "Clearly depicts a person drawing a person drawing another person, with visible recursive structure.",
+            "Convincing monochrome pencil drawing aesthetic with detailed shading and texture.",
+            "Well-framed over-the-shoulder composition makes the concept readable."
+          ],
+          "issues": [
+            "Small nested levels become less distinct and somewhat simplified.",
+            "Some hand and pencil details look slightly unnatural.",
+            "The recursion is implied well but not perfectly crisp at the deepest level."
+          ],
+          "usage": {
+            "input_tokens": 1550,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 377,
+            "output_tokens_details": {
+              "reasoning_tokens": 217
+            },
+            "total_tokens": 1927
+          }
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "providerKey": "grok/grok-imagine-image",
+      "provider": "grok",
+      "model": "grok-imagine-image",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-grok-grok-imagine-image.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 6010,
+      "costCents": 2,
+      "criterionScores": {
+        "promptAdherence": 8,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8.4,
+      "qualityScore": 84,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-grok-grok-imagine-image.jpg: Highly detailed pencil-style image with a convincing recursive drawing theme, though it depicts multiple artists rather than a single clear chain of one person drawing another person drawing another.",
+        "strengths": [
+          "Excellent pencil shading, texture, and tonal control",
+          "Clear art-making scene with visible drawings within drawings",
+          "Strong depth, framing, and visual hierarchy",
+          "Fine linework and facial detail are well rendered"
+        ],
+        "issues": [
+          "Recursive structure is somewhat ambiguous and not perfectly aligned with the exact prompt",
+          "Includes several people drawing rather than one person drawing a nested sequence",
+          "Some hands and small-scale figures show minor generation distortions"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-grok-grok-imagine-image.jpg",
+          "criterionScores": {
+            "promptAdherence": 8,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8.4,
+          "qualityScore": 84,
+          "summary": "Highly detailed pencil-style image with a convincing recursive drawing theme, though it depicts multiple artists rather than a single clear chain of one person drawing another person drawing another.",
+          "strengths": [
+            "Excellent pencil shading, texture, and tonal control",
+            "Clear art-making scene with visible drawings within drawings",
+            "Strong depth, framing, and visual hierarchy",
+            "Fine linework and facial detail are well rendered"
+          ],
+          "issues": [
+            "Recursive structure is somewhat ambiguous and not perfectly aligned with the exact prompt",
+            "Includes several people drawing rather than one person drawing a nested sequence",
+            "Some hands and small-scale figures show minor generation distortions"
+          ],
+          "usage": {
+            "input_tokens": 1589,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 304,
+            "output_tokens_details": {
+              "reasoning_tokens": 146
+            },
+            "total_tokens": 1893
+          }
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "providerKey": "gemini/gemini-3.1-flash-image-preview",
+      "provider": "gemini",
+      "model": "gemini-3.1-flash-image-preview",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-gemini-gemini-3.1-flash-image-preview.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 25019,
+      "costCents": 6.7,
+      "criterionScores": {
+        "promptAdherence": 8,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 8,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8.2,
+      "qualityScore": 82,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-gemini-gemini-3.1-flash-image-preview.png: Highly detailed pencil-style image with strong recursive drawing theme, especially in the right panel. It mostly matches the prompt, though the split-panel layout and extra scene make the recursion less clean than requested.",
+        "strengths": [
+          "Convincing graphite pencil drawing style with rich shading and texture",
+          "Clearly depicts people drawing people who are also drawing",
+          "Good fine detail in faces, hands, desks, lamps, and paper surfaces",
+          "Readable visual hierarchy and strong studio atmosphere"
+        ],
+        "issues": [
+          "The image is split into two separate scenes rather than one clean recursive composition",
+          "The left panel does not clearly continue the full nested recursion",
+          "Some hands and small nested figures are slightly distorted or simplified",
+          "Minor pseudo-text/label marks on pencils are not meaningful"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-gemini-gemini-3.1-flash-image-preview.png",
+          "criterionScores": {
+            "promptAdherence": 8,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 8,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8.2,
+          "qualityScore": 82,
+          "summary": "Highly detailed pencil-style image with strong recursive drawing theme, especially in the right panel. It mostly matches the prompt, though the split-panel layout and extra scene make the recursion less clean than requested.",
+          "strengths": [
+            "Convincing graphite pencil drawing style with rich shading and texture",
+            "Clearly depicts people drawing people who are also drawing",
+            "Good fine detail in faces, hands, desks, lamps, and paper surfaces",
+            "Readable visual hierarchy and strong studio atmosphere"
+          ],
+          "issues": [
+            "The image is split into two separate scenes rather than one clean recursive composition",
+            "The left panel does not clearly continue the full nested recursion",
+            "Some hands and small nested figures are slightly distorted or simplified",
+            "Minor pseudo-text/label marks on pencils are not meaningful"
+          ],
+          "usage": {
+            "input_tokens": 1602,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 409,
+            "output_tokens_details": {
+              "reasoning_tokens": 224
+            },
+            "total_tokens": 2011
+          }
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "providerKey": "grok/grok-imagine-image-quality",
+      "provider": "grok",
+      "model": "grok-imagine-image-quality",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-grok-grok-imagine-image-quality.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 5048,
+      "costCents": 5,
+      "criterionScores": {
+        "promptAdherence": 8,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 9,
+        "detailTextHandling": 7
+      },
+      "averageScore10": 8.2,
+      "qualityScore": 82,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-grok-grok-imagine-image-quality.jpg: A highly detailed graphite-style recursive drawing that strongly matches the requested pencil-drawing-within-a-drawing concept, though it adds extra people and some incidental text not asked for.",
+        "strengths": [
+          "Convincing pencil sketch style with rich shading and texture",
+          "Strong recursive composition with multiple nested drawings",
+          "Clear depiction of an artist actively drawing the scene",
+          "Good overall clarity and visual hierarchy"
+        ],
+        "issues": [
+          "Prompt asked for a person drawing a person, but the image includes multiple figures and a broader studio scene",
+          "Small nested details become less coherent at deeper recursion levels",
+          "Some incidental text is present and slightly awkward",
+          "Minor AI distortions in tiny faces, tools, and repeated elements"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-grok-grok-imagine-image-quality.jpg",
+          "criterionScores": {
+            "promptAdherence": 8,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 9,
+            "detailTextHandling": 7
+          },
+          "averageScore10": 8.2,
+          "qualityScore": 82,
+          "summary": "A highly detailed graphite-style recursive drawing that strongly matches the requested pencil-drawing-within-a-drawing concept, though it adds extra people and some incidental text not asked for.",
+          "strengths": [
+            "Convincing pencil sketch style with rich shading and texture",
+            "Strong recursive composition with multiple nested drawings",
+            "Clear depiction of an artist actively drawing the scene",
+            "Good overall clarity and visual hierarchy"
+          ],
+          "issues": [
+            "Prompt asked for a person drawing a person, but the image includes multiple figures and a broader studio scene",
+            "Small nested details become less coherent at deeper recursion levels",
+            "Some incidental text is present and slightly awkward",
+            "Minor AI distortions in tiny faces, tools, and repeated elements"
+          ],
+          "usage": {
+            "input_tokens": 1668,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 388,
+            "output_tokens_details": {
+              "reasoning_tokens": 213
+            },
+            "total_tokens": 2056
+          }
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "providerKey": "bfl/flux-2-pro",
+      "provider": "bfl",
+      "model": "flux-2-pro",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-bfl-flux-2-pro.jpg"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 11518,
+      "costCents": 3,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "composition": 8,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 8,
+      "qualityScore": 80,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-bfl-flux-2-pro.jpg: High-quality monochrome pencil-style image of an artist drawing a nested scene, but the full recursive chain requested is only partially legible.",
+        "strengths": [
+          "Strong pencil-drawing aesthetic with detailed shading and texture",
+          "Clear primary subject of a person drawing",
+          "Good studio/workspace context and balanced framing",
+          "Nested drawing concept is visible at least one level deep"
+        ],
+        "issues": [
+          "Prompt asks for multiple recursive levels; only the first nested person-drawing scene is clearly readable",
+          "Further recursion inside the smaller drawing is not distinct",
+          "Some minor hand/object simplifications and soft fine details"
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-bfl-flux-2-pro.jpg",
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "composition": 8,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 8,
+          "qualityScore": 80,
+          "summary": "High-quality monochrome pencil-style image of an artist drawing a nested scene, but the full recursive chain requested is only partially legible.",
+          "strengths": [
+            "Strong pencil-drawing aesthetic with detailed shading and texture",
+            "Clear primary subject of a person drawing",
+            "Good studio/workspace context and balanced framing",
+            "Nested drawing concept is visible at least one level deep"
+          ],
+          "issues": [
+            "Prompt asks for multiple recursive levels; only the first nested person-drawing scene is clearly readable",
+            "Further recursion inside the smaller drawing is not distinct",
+            "Some minor hand/object simplifications and soft fine details"
+          ],
+          "usage": {
+            "input_tokens": 1550,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 352,
+            "output_tokens_details": {
+              "reasoning_tokens": 198
+            },
+            "total_tokens": 1902
+          }
+        }
+      ]
+    },
+    {
+      "rank": 9,
+      "providerKey": "reve/latest",
+      "provider": "reve",
+      "model": "latest",
+      "group": "service",
+      "imageFiles": [
+        "generated-image-reve-latest.png"
+      ],
+      "imageCount": 1,
+      "processingTimeMs": 6119,
+      "costCents": 2.4,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "composition": 8,
+        "detailTextHandling": 8
+      },
+      "averageScore10": 7.6,
+      "qualityScore": 76,
+      "qualityMetric": "image quality score",
+      "evidence": {
+        "summary": "generated-image-reve-latest.png: A strong pencil-sketch style image with a clear recursive drawing setup, but the nested drawings do not consistently show full people drawing; they shift into hands, canvases, and small figures, so the exact prompt structure is only partially fulfilled.",
+        "strengths": [
+          "Convincing pencil drawing aesthetic with visible graphite shading and paper texture.",
+          "Readable recursive composition with multiple easels and nested drawing scenes.",
+          "Good overall clarity, framing, and visual hierarchy."
+        ],
+        "issues": [
+          "The prompt asks for a person drawing a person drawing a person drawing a person, but several nested levels show only hands or partial figures rather than full people drawing.",
+          "Some anatomical and perspective details, especially hands and small figures, appear slightly awkward.",
+          "The recursion becomes less coherent at the smallest scale."
+        ]
+      },
+      "images": [
+        {
+          "fileName": "generated-image-reve-latest.png",
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "composition": 8,
+            "detailTextHandling": 8
+          },
+          "averageScore10": 7.6,
+          "qualityScore": 76,
+          "summary": "A strong pencil-sketch style image with a clear recursive drawing setup, but the nested drawings do not consistently show full people drawing; they shift into hands, canvases, and small figures, so the exact prompt structure is only partially fulfilled.",
+          "strengths": [
+            "Convincing pencil drawing aesthetic with visible graphite shading and paper texture.",
+            "Readable recursive composition with multiple easels and nested drawing scenes.",
+            "Good overall clarity, framing, and visual hierarchy."
+          ],
+          "issues": [
+            "The prompt asks for a person drawing a person drawing a person drawing a person, but several nested levels show only hands or partial figures rather than full people drawing.",
+            "Some anatomical and perspective details, especially hands and small figures, appear slightly awkward.",
+            "The recursion becomes less coherent at the smallest scale."
+          ],
+          "usage": {
+            "input_tokens": 1530,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 421,
+            "output_tokens_details": {
+              "reasoning_tokens": 230
+            },
+            "total_tokens": 1951
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -63,8 +63,7 @@ const GEMINI_IMAGE_TEMP_STATUS_PATTERN = '\\b(?:429|500|502|503|504)\\b'
 const hasGeminiImageSignal = (output: string): boolean =>
   /\bgemini\b/i.test(output)
   && (
-    /\bimagen-\d/i.test(output)
-    || /\bgemini-image(?:-generate)?\b/i.test(output)
+    /\bgemini-image(?:-generate)?\b/i.test(output)
     || /\bGemini image\b/i.test(output)
   )
 

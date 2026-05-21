@@ -1,7 +1,0 @@
-This TTS consensus evaluation used only the existing AutoShow run metadata and local audio probing performed by the TTS consensus workflow.
-
-No generated audio was listened to or judged subjectively.
-
-No roundtrip STT transcripts were generated or used, so this report has no roundtrip WER evidence.
-
-No explicit voice-quality report was present, so this report has no explicit voice-quality evidence and does not rank highest-quality voices.

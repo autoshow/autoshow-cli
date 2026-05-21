@@ -109,6 +109,12 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
   if (opts.openaiOcrModels) {
     extractionOpts.openaiOcrModels = opts.openaiOcrModels
   }
+  if (opts.grokOcrModel) {
+    extractionOpts.grokOcrModel = opts.grokOcrModel
+  }
+  if (opts.grokOcrModels) {
+    extractionOpts.grokOcrModels = opts.grokOcrModels
+  }
   if (opts.anthropicOcrModel) {
     extractionOpts.anthropicOcrModel = opts.anthropicOcrModel
   }
@@ -175,6 +181,7 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -193,6 +200,7 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -204,6 +212,7 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -214,6 +223,7 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -410,6 +420,7 @@ export const runDocumentWrite = async (
     glmOcrModel: opts.glmOcrModel,
     kimiOcrModel: opts.kimiOcrModel,
     openaiOcrModel: opts.openaiOcrModel,
+    grokOcrModel: opts.grokOcrModel,
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
     deepinfraOcrModel: opts.deepinfraOcrModel,

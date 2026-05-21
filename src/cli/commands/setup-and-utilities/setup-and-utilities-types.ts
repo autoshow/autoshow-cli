@@ -10,7 +10,6 @@ import {
 } from './models/llm-models'
 import {
   SUPPORTED_AWS_STT_MODELS,
-  SUPPORTED_DEAPI_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_DEEPINFRA_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
@@ -38,13 +37,13 @@ import {
   SUPPORTED_GCLOUD_DOCAI_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
+  SUPPORTED_GROK_OCR_MODELS,
   SUPPORTED_KIMI_OCR_MODELS,
   SUPPORTED_MISTRAL_OCR_MODELS,
   SUPPORTED_OPENAI_OCR_MODELS,
   SUPPORTED_UNSTRUCTURED_OCR_MODELS
 } from './models/ocr-models'
 import {
-  SUPPORTED_DEAPI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
@@ -61,23 +60,18 @@ import {
 } from './models/tts-models'
 import {
   SUPPORTED_GEMINI_IMAGE_MODELS,
-  SUPPORTED_DEAPI_IMAGE_MODELS,
   SUPPORTED_GROK_IMAGE_MODELS,
-  SUPPORTED_MINIMAX_IMAGE_MODELS,
   SUPPORTED_OPENAI_IMAGE_MODELS,
-  SUPPORTED_RUNWAY_IMAGE_MODELS,
   SUPPORTED_BFL_IMAGE_MODELS,
   SUPPORTED_REVE_IMAGE_MODELS
 } from './models/image-models'
 import {
   SUPPORTED_ELEVENLABS_MUSIC_MODELS,
   SUPPORTED_MINIMAX_MUSIC_MODELS,
-  SUPPORTED_DEAPI_MUSIC_MODELS,
   SUPPORTED_GEMINI_MUSIC_MODELS
 } from './models/music-models'
 import {
   SUPPORTED_GLM_VIDEO_MODELS,
-  SUPPORTED_DEAPI_VIDEO_MODELS,
   SUPPORTED_GROK_VIDEO_MODELS,
   SUPPORTED_GEMINI_VIDEO_MODELS,
   SUPPORTED_MINIMAX_VIDEO_MODELS,
@@ -123,9 +117,6 @@ export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
 export type GlmModel = typeof SUPPORTED_GLM_MODELS[number]
 export type KimiModel = typeof SUPPORTED_KIMI_MODELS[number]
 export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
-export type DeapiSttModel = typeof SUPPORTED_DEAPI_STT_MODELS[number]
-export type DeapiTtsModel = typeof SUPPORTED_DEAPI_TTS_MODELS[number]
-export type DeapiMusicModel = typeof SUPPORTED_DEAPI_MUSIC_MODELS[number]
 export type GcloudSttModel = typeof SUPPORTED_GCLOUD_STT_MODELS[number]
 export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
 export type DeepinfraSttModel = typeof SUPPORTED_DEEPINFRA_STT_MODELS[number]
@@ -149,6 +140,7 @@ export type MistralOcrModel = typeof SUPPORTED_MISTRAL_OCR_MODELS[number]
 export type GlmOcrModel = typeof SUPPORTED_GLM_OCR_MODELS[number]
 export type KimiOcrModel = typeof SUPPORTED_KIMI_OCR_MODELS[number]
 export type OpenAIOcrModel = typeof SUPPORTED_OPENAI_OCR_MODELS[number]
+export type GrokOcrModel = typeof SUPPORTED_GROK_OCR_MODELS[number]
 export type AnthropicOcrModel = typeof SUPPORTED_ANTHROPIC_OCR_MODELS[number]
 export type GeminiOcrModel = typeof SUPPORTED_GEMINI_OCR_MODELS[number]
 export type DeepinfraOcrModel = typeof SUPPORTED_DEEPINFRA_OCR_MODELS[number]
@@ -173,18 +165,14 @@ export type MinimaxMusicModel = typeof SUPPORTED_MINIMAX_MUSIC_MODELS[number]
 export type GeminiMusicModel = typeof SUPPORTED_GEMINI_MUSIC_MODELS[number]
 export type GeminiImageModel = typeof SUPPORTED_GEMINI_IMAGE_MODELS[number]
 export type OpenAIImageModel = typeof SUPPORTED_OPENAI_IMAGE_MODELS[number]
-export type MinimaxImageModel = typeof SUPPORTED_MINIMAX_IMAGE_MODELS[number]
 export type GrokImageModel = typeof SUPPORTED_GROK_IMAGE_MODELS[number]
-export type RunwayImageModel = typeof SUPPORTED_RUNWAY_IMAGE_MODELS[number]
 export type BflImageModel = typeof SUPPORTED_BFL_IMAGE_MODELS[number]
-export type DeapiImageModel = typeof SUPPORTED_DEAPI_IMAGE_MODELS[number]
 export type ReveImageModel = typeof SUPPORTED_REVE_IMAGE_MODELS[number]
 export type GeminiVideoModel = typeof SUPPORTED_GEMINI_VIDEO_MODELS[number]
 export type MinimaxVideoModel = typeof SUPPORTED_MINIMAX_VIDEO_MODELS[number]
 export type GlmVideoModel = typeof SUPPORTED_GLM_VIDEO_MODELS[number]
 export type GrokVideoModel = typeof SUPPORTED_GROK_VIDEO_MODELS[number]
 export type RunwayVideoModel = typeof SUPPORTED_RUNWAY_VIDEO_MODELS[number]
-export type DeapiVideoModel = typeof SUPPORTED_DEAPI_VIDEO_MODELS[number]
 
 export type CostEstimation = {
   costMultiplier: number
@@ -229,7 +217,7 @@ export type VideoEstimation = CostEstimation & {
 }
 
 export type CheapestVideoSelection = {
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
   model: string
   duration: number
   size?: string | undefined

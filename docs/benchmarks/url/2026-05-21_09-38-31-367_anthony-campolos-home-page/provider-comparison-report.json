@@ -1,0 +1,523 @@
+{
+  "schemaVersion": 2,
+  "kind": "url-provider-comparison",
+  "category": "url",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/url/2026-05-21_09-38-31-367_anthony-campolos-home-page",
+  "runName": "2026-05-21_09-38-31-367_anthony-campolos-home-page",
+  "generatedAt": "2026-05-21T15:12:47.440Z",
+  "metric": null,
+  "scoreFormula": null,
+  "duplicateGroups": [],
+  "normalization": null,
+  "providerCount": 5,
+  "providerGroups": {
+    "local": {
+      "count": 1,
+      "providers": [
+        {
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "processingTimeMs": 576,
+          "costCents": 0,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.02830188679245283,
+          "qualityLabel": "2.83% WER, 2.50% CER, 96.83% coverage",
+          "metrics": {
+            "wer": 0.02830188679245283,
+            "cer": 0.02497398543184183,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.9683098591549296,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 1
+        }
+      ]
+    },
+    "service": {
+      "count": 4,
+      "providers": [
+        {
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "processingTimeMs": 948,
+          "costCents": 0.083,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.035849056603773584,
+          "qualityLabel": "3.58% WER, 2.01% CER, 98.59% coverage",
+          "metrics": {
+            "wer": 0.035849056603773584,
+            "cer": 0.020117932708983696,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.9859154929577465,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "processingTimeMs": 3875,
+          "costCents": 1,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.6660377358490566,
+          "qualityLabel": "66.60% WER, 64.07% CER, 61.62% coverage",
+          "metrics": {
+            "wer": 0.6660377358490566,
+            "cer": 0.6406520985084981,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.6161971830985915,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 2
+        },
+        {
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "processingTimeMs": 2037,
+          "costCents": 0.12,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.07358490566037736,
+          "qualityLabel": "7.36% WER, 4.37% CER, 97.89% coverage",
+          "metrics": {
+            "wer": 0.07358490566037736,
+            "cer": 0.043704474505723206,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.9788732394366197,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "processingTimeMs": 13344,
+          "costCents": 0.16,
+          "qualityMetric": "WER/CER/coverage",
+          "qualityValue": 0.4830188679245283,
+          "qualityLabel": "48.30% WER, 47.90% CER, 59.15% coverage",
+          "metrics": {
+            "wer": 0.4830188679245283,
+            "cer": 0.47901491501907734,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": 0.5915492957746479,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": 2
+        }
+      ]
+    }
+  },
+  "rankingSurfaces": {
+    "local": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 576,
+          "label": "0.58s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        }
+      ],
+      "highestQuality": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 97.16830250345456,
+          "label": "97.17 accuracy (2.83% WER, 2.50% CER, 96.83% coverage)"
+        }
+      ],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": null,
+      "price": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        }
+      ],
+      "speed": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 576,
+          "label": "0.58s"
+        }
+      ],
+      "automatedQuality": [
+        {
+          "rank": 1,
+          "providerKey": "defuddle",
+          "provider": "defuddle",
+          "model": "defuddle",
+          "group": "local",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 97.16830250345456,
+          "label": "97.17 accuracy (2.83% WER, 2.50% CER, 96.83% coverage)"
+        }
+      ],
+      "humanQuality": [],
+      "priceUnavailableReason": null,
+      "speedUnavailableReason": null,
+      "automatedQualityUnavailableReason": null,
+      "humanQualityUnavailableReason": "No explicit humanQualityScore was available for local providers. Generic quality scores, cost, speed, and artifact metadata are not used as human quality proxies."
+    },
+    "service": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 948,
+          "label": "0.95s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 2037,
+          "label": "2.04s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 3875,
+          "label": "3.88s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 13344,
+          "label": "13.34s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.083,
+          "label": "$0.0008"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.12,
+          "label": "$0.0012"
+        },
+        {
+          "rank": 3,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.16,
+          "label": "$0.0016"
+        },
+        {
+          "rank": 4,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1,
+          "label": "$0.0100"
+        }
+      ],
+      "highestQuality": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 97.3524861760304,
+          "label": "97.35 accuracy (3.58% WER, 2.01% CER, 98.59% coverage)"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 94.69997384025355,
+          "label": "94.70 accuracy (7.36% WER, 4.37% CER, 97.89% coverage)"
+        },
+        {
+          "rank": 3,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 53.66241612266285,
+          "label": "53.66 accuracy (48.30% WER, 47.90% CER, 59.15% coverage)"
+        },
+        {
+          "rank": 4,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 41.086740322299505,
+          "label": "41.09 accuracy (66.60% WER, 64.07% CER, 61.62% coverage)"
+        }
+      ],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": null,
+      "price": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.083,
+          "label": "$0.0008"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.12,
+          "label": "$0.0012"
+        },
+        {
+          "rank": 3,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.16,
+          "label": "$0.0016"
+        },
+        {
+          "rank": 4,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1,
+          "label": "$0.0100"
+        }
+      ],
+      "speed": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 948,
+          "label": "0.95s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 2037,
+          "label": "2.04s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 3875,
+          "label": "3.88s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 13344,
+          "label": "13.34s"
+        }
+      ],
+      "automatedQuality": [
+        {
+          "rank": 1,
+          "providerKey": "firecrawl",
+          "provider": "firecrawl",
+          "model": "firecrawl",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 97.3524861760304,
+          "label": "97.35 accuracy (3.58% WER, 2.01% CER, 98.59% coverage)"
+        },
+        {
+          "rank": 2,
+          "providerKey": "spider",
+          "provider": "spider",
+          "model": "spider",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 94.69997384025355,
+          "label": "94.70 accuracy (7.36% WER, 4.37% CER, 97.89% coverage)"
+        },
+        {
+          "rank": 3,
+          "providerKey": "zyte",
+          "provider": "zyte",
+          "model": "zyte",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 53.66241612266285,
+          "label": "53.66 accuracy (48.30% WER, 47.90% CER, 59.15% coverage)"
+        },
+        {
+          "rank": 4,
+          "providerKey": "glm-reader",
+          "provider": "glm-reader",
+          "model": "glm-reader",
+          "group": "service",
+          "metric": "WER/CER/coverage accuracy",
+          "value": 41.086740322299505,
+          "label": "41.09 accuracy (66.60% WER, 64.07% CER, 61.62% coverage)"
+        }
+      ],
+      "humanQuality": [],
+      "priceUnavailableReason": null,
+      "speedUnavailableReason": null,
+      "automatedQualityUnavailableReason": null,
+      "humanQualityUnavailableReason": "No explicit humanQualityScore was available for service providers. Generic quality scores, cost, speed, and artifact metadata are not used as human quality proxies."
+    }
+  },
+  "combinedLeaderboardPolicy": "omitted: local and service providers are not ranked against each other",
+  "notes": []
+}

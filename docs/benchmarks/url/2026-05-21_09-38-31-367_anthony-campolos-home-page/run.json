@@ -1,0 +1,417 @@
+{
+  "schemaVersion": 2,
+  "kind": "extract",
+  "metadata": {
+    "step1": {
+      "title": "Anthony Campolo's Home Page",
+      "slug": "ajcwebdevcom",
+      "author": "Anthony Campolo",
+      "pageCount": 1,
+      "format": "html",
+      "fileSize": 18561
+    },
+    "step2": [
+      {
+        "extractionMethod": "html+defuddle",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 576,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 576,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+firecrawl",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 948,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 607,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+glm-reader",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 3875,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 432,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+spider",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 2037,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 602,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      },
+      {
+        "extractionMethod": "html+zyte",
+        "totalPages": 1,
+        "ocrPages": 0,
+        "textPages": 1,
+        "processingTime": 13344,
+        "dpi": 300,
+        "languages": "eng",
+        "tokenEstimate": 276,
+        "inputFamily": "html",
+        "outputFormat": "text",
+        "outputFidelity": "markdown"
+      }
+    ],
+    "resolvedStep2": {
+      "route": "article",
+      "sourceKind": "article",
+      "backend": "defuddle",
+      "backends": [
+        "defuddle",
+        "firecrawl",
+        "glm-reader",
+        "spider",
+        "zyte"
+      ]
+    },
+    "completionStatus": "full",
+    "requestedProviders": [
+      {
+        "service": "defuddle",
+        "model": "defuddle"
+      },
+      {
+        "service": "firecrawl",
+        "model": "firecrawl"
+      },
+      {
+        "service": "glm-reader",
+        "model": "glm-reader"
+      },
+      {
+        "service": "spider",
+        "model": "spider"
+      },
+      {
+        "service": "zyte",
+        "model": "zyte"
+      }
+    ],
+    "providerStates": [
+      {
+        "service": "defuddle",
+        "model": "defuddle",
+        "artifactDir": "providers/defuddle",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "firecrawl",
+        "model": "firecrawl",
+        "artifactDir": "providers/firecrawl",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "glm-reader",
+        "model": "glm-reader",
+        "artifactDir": "providers/glm-reader",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "spider",
+        "model": "spider",
+        "artifactDir": "providers/spider",
+        "status": "succeeded",
+        "attempts": 1
+      },
+      {
+        "service": "zyte",
+        "model": "zyte",
+        "artifactDir": "providers/zyte",
+        "status": "succeeded",
+        "attempts": 1
+      }
+    ],
+    "missingProviders": [],
+    "web": {
+      "sourceUrl": "https://ajcwebdev.com/",
+      "finalUrl": "https://ajcwebdev.com/",
+      "title": "Anthony Campolo's Home Page",
+      "author": "Anthony Campolo",
+      "site": "ajcwebdev",
+      "published": "2024-08-01T00:00:00.000Z",
+      "language": "en-US",
+      "wordCount": 526,
+      "description": "Home page for Anthony Campolo, web developer, writer, speaker, host of the FSJam Podcast, and Collaborative Engineer at Atmosera."
+    },
+    "source": {
+      "url": "https://ajcwebdev.com/"
+    },
+    "cost": {
+      "estimated": {
+        "totalCost": 1.3629999999999998,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "cost": 0,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 0,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "cost": 0.083,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 83,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "cost": 1,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 1000,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "cost": 0.12,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 120,
+            "pageCount": 1,
+            "estimateType": "exact"
+          },
+          {
+            "step": "extract",
+            "provider": "zyte",
+            "model": "zyte",
+            "cost": 0.16,
+            "costMultiplier": 1,
+            "costPer1kPagesCents": 160,
+            "pageCount": 1,
+            "estimateType": "exact"
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 1.3629999999999998,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "cost": 0,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "cost": 0.083,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "cost": 1,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "cost": 0.12,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          },
+          {
+            "step": "extract",
+            "provider": "zyte",
+            "model": "zyte",
+            "cost": 0.16,
+            "costSource": "registry_fallback",
+            "inputMetric": "pages",
+            "inputValue": 1
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 10376,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "processingTimeMs": 626,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 626,
+            "throughputValue": 95.847,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "processingTimeMs": 210,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 210,
+            "throughputValue": 285.714,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "processingTimeMs": 2540,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 2540,
+            "throughputValue": 23.622,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "processingTimeMs": 3500,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 3500,
+            "throughputValue": 17.143,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "extract",
+            "provider": "zyte",
+            "model": "zyte",
+            "processingTimeMs": 3500,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 3500,
+            "throughputValue": 17.143,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 20780,
+        "steps": [
+          {
+            "step": "extract",
+            "provider": "defuddle",
+            "model": "defuddle",
+            "processingTimeMs": 576,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 576,
+            "throughputValue": 104.167,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "firecrawl",
+            "model": "firecrawl",
+            "processingTimeMs": 948,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 948,
+            "throughputValue": 63.291,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "glm-reader",
+            "model": "glm-reader",
+            "processingTimeMs": 3875,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 3875,
+            "throughputValue": 15.484,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "spider",
+            "model": "spider",
+            "processingTimeMs": 2037,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 2037,
+            "throughputValue": 29.455,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "extract",
+            "provider": "zyte",
+            "model": "zyte",
+            "processingTimeMs": 13344,
+            "inputMetric": "pages",
+            "inputValue": 1,
+            "rateBasis": "page",
+            "msPerUnit": 13344,
+            "throughputValue": 4.496,
+            "throughputUnit": "pagesPerMinute",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    }
+  }
+}

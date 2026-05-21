@@ -6,10 +6,7 @@ import {
   selectCheapestTtsModel,
   selectCheapestVideoSelection
 } from '../../src/cli/commands/setup-and-utilities/models/cheapest-models'
-import type { ApiCheapPriceCommand, CheapestVideoSelection, GeminiImageModel, VideoSelection } from '~/types'
-import {
-  supportsGeminiImageSize
-} from '../../src/cli/commands/setup-and-utilities/models/model-options'
+import type { ApiCheapPriceCommand, CheapestVideoSelection, VideoSelection } from '~/types'
 
 const toVideoSelection = (selection: CheapestVideoSelection): VideoSelection => ({
   provider: selection.provider,
@@ -28,11 +25,8 @@ export const appendApiCheapImageArgs = (
     args.push('--image-size', '1024x1024', '--image-quality', 'low', '--image-format', 'jpeg')
   }
 
-  if (selection.service === 'gemini' && selection.model.startsWith('imagen-')) {
-    args.push('--image-count', '1', '--image-aspect-ratio', '1:1')
-    if (supportsGeminiImageSize(selection.model as GeminiImageModel)) {
-      args.push('--image-size', '1K')
-    }
+  if (selection.service === 'gemini') {
+    args.push('--image-aspect-ratio', '1:1', '--image-size', '1K')
   }
 
   return args

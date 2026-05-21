@@ -13,7 +13,6 @@ import {
 import { estimateOcrTokenUsage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts, resolveExtractionProviderModel } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
-import { resolveDeapiTtsPrice } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts-pricing'
 import { buildStep3Metadata, runWithLLMInstrumentation } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { getExtractEstimation, getMusicEstimation, getTtsEstimation, getVideoEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -46,6 +45,26 @@ const priceCases: Array<{ label: string; args: string[]; expected: string | stri
     expected: 'Total estimated cost'
   },
   {
+    label: 'Grok OCR',
+    args: ['extract', 'input/examples/document/1-document.pdf', '--grok', 'grok-4.3', '--price'],
+    expected: 'Total estimated cost'
+  },
+  {
+    label: 'OpenAI GPT-5.5 OCR',
+    args: ['extract', 'input/examples/document/1-document.pdf', '--openai', 'gpt-5.5', '--price'],
+    expected: ['Total estimated cost', 'gpt-5.5']
+  },
+  {
+    label: 'Anthropic Opus OCR',
+    args: ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-opus-4-7', '--price'],
+    expected: ['Total estimated cost', 'claude-opus-4-7']
+  },
+  {
+    label: 'Anthropic Sonnet OCR',
+    args: ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-sonnet-4-6', '--price'],
+    expected: ['Total estimated cost', 'claude-sonnet-4-6']
+  },
+  {
     label: 'all URL article extraction',
     args: ['extract', 'https://example.com/articles/story.html', '--all-url', '--price'],
     expected: 'providers/<backend>/result.json'
@@ -53,7 +72,7 @@ const priceCases: Array<{ label: string; args: string[]; expected: string | stri
   {
     label: 'GLM Reader URL article extraction',
     args: ['extract', 'https://ajcwebdev.com', '--url-backend', 'glm-reader', '--price'],
-    expected: ['Total estimated cost', 'glm-reader', 'rate $10.00/1K pages']
+    expected: ['Total estimated cost', 'glm-reader']
   },
   {
     label: 'tts',
@@ -109,24 +128,13 @@ const priceCases: Array<{ label: string; args: string[]; expected: string | stri
     env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
   {
-    label: 'deAPI voice clone TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--deapi', 'Qwen3_TTS_12Hz_1_7B_Base', '--deapi-tts-ref-audio', 'https://ajc.pics/autoshow/examples/0-audio-short.mp3', '--price'],
-    expected: 'speech',
-    env: { DEAPI_API_KEY: '', DEAPI_BASE_URL: '' }
-  },
-  {
     label: 'image',
     args: ['image', 'a sunset over a lake', '--openai', 'gpt-image-1.5', '--price'],
     expected: 'generated-image'
   },
   {
-    label: 'deAPI image',
-    args: ['image', 'a sunset over a lake', '--deapi', 'Flux1schnell', '--price'],
-    expected: 'generated-image'
-  },
-  {
     label: 'BFL image',
-    args: ['image', 'a sunset over a lake', '--bfl', 'flux-2-pro-preview', '--price'],
+    args: ['image', 'a sunset over a lake', '--bfl', 'flux-2-pro', '--price'],
     expected: 'generated-image'
   },
   {
@@ -135,13 +143,8 @@ const priceCases: Array<{ label: string; args: string[]; expected: string | stri
     expected: 'video'
   },
   {
-    label: 'deAPI video',
-    args: ['video', 'a sunset over a lake', '--deapi', 'Ltxv_13B_0_9_8_Distilled_FP8', '--price'],
-    expected: 'video'
-  },
-  {
     label: 'music',
-    args: ['music', 'an ambient piano song', '--minimax', 'music-2.5', '--price'],
+    args: ['music', 'an ambient piano song', '--minimax', 'music-2.6', '--price'],
     expected: 'music'
   },
   {
@@ -415,8 +418,7 @@ describe('price mode contracts', () => {
   test('video timing estimates use normalized provider defaults when duration is omitted', () => {
     const timing = computeEstimatedProcessingTimes({
       videoTargets: [
-        { service: 'gemini', model: 'veo-3.1-lite-generate-preview' },
-        { service: 'deapi', model: 'Ltxv_13B_0_9_8_Distilled_FP8' }
+        { service: 'gemini', model: 'veo-3.1-lite-generate-preview' }
       ]
     })
 
@@ -431,12 +433,6 @@ describe('price mode contracts', () => {
         model: 'veo-3.1-lite-generate-preview',
         inputValue: 4,
         msPerUnit: getVideoEstimation('gemini', 'veo-3.1-lite-generate-preview').msPerSecond
-      },
-      {
-        provider: 'deapi',
-        model: 'Ltxv_13B_0_9_8_Distilled_FP8',
-        inputValue: 4,
-        msPerUnit: getVideoEstimation('deapi', 'Ltxv_13B_0_9_8_Distilled_FP8').msPerSecond
       }
     ])
   })
@@ -457,13 +453,12 @@ describe('price mode contracts', () => {
 
   test('cheapest-model helpers return stable model selections', () => {
     expect(resolveCheapestModelForFlag('openai')).toBe('gpt-5.4-nano')
+    expect(resolveCheapestModelForFlag('grok')).toBe('grok-4.20-non-reasoning')
     expect(resolveCheapestModelForFlag('glm')).toBe('glm-5.1')
     expect(resolveCheapestModelForFlag('kimi')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-2')
-    expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-klein-4b')
-    expect(resolveCheapestModelForFlag('deapi-image')).toBe('Flux1schnell')
+    expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-pro')
     expect(resolveCheapestModelForFlag('reve-image')).toBe('latest')
-    expect(resolveCheapestModelForFlag('deapi-video')).toBe('Ltxv_13B_0_9_8_Distilled_FP8')
     expect(resolveCheapestModelForFlag('gemini-music')).toBe('lyria-3-clip-preview')
     expect(resolveCheapestModelForFlag('deepgram-stt')).toBe('nova-3')
     expect(resolveCheapestModelForFlag('grok-stt')).toBe('speech-to-text')
@@ -476,6 +471,9 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
     expect(resolveCheapestModelForFlag('supadata-stt')).toBe('auto')
     expect(resolveCheapestModelForFlag('scrapecreators-stt')).toBe('youtube-transcript')
+    expect(resolveCheapestModelForFlag('openai-ocr')).toBe('gpt-5.4-nano')
+    expect(resolveCheapestModelForFlag('grok-ocr')).toBe('grok-4.3')
+    expect(resolveCheapestModelForFlag('anthropic-ocr')).toBe('claude-haiku-4-5')
     expect(resolveCheapestModelForFlag('deepinfra-ocr')).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
     expect(resolveCheapestModelForFlag('kimi-ocr')).toBe('kimi-k2.6')
     expect(resolveCheapestModelForFlag('unstructured-ocr')).toBe('hi_res_and_enrichment')
@@ -493,10 +491,6 @@ describe('price mode contracts', () => {
     expect(selectCheapestVideoSelection('glm')).toMatchObject({
       provider: 'glm',
       model: 'cogvideox-3'
-    })
-    expect(selectCheapestVideoSelection('deapi')).toMatchObject({
-      provider: 'deapi',
-      model: 'Ltxv_13B_0_9_8_Distilled_FP8'
     })
   })
 
@@ -696,81 +690,6 @@ describe('price mode contracts', () => {
     ])
   })
 
-  test('deAPI voice clone TTS falls back to registry pricing without an API key', async () => {
-    const previousKey = process.env['DEAPI_API_KEY']
-    const previousBaseUrl = process.env['DEAPI_BASE_URL']
-    delete process.env['DEAPI_API_KEY']
-    delete process.env['DEAPI_BASE_URL']
-
-    try {
-      const price = await resolveDeapiTtsPrice({
-        model: 'Qwen3_TTS_12Hz_1_7B_Base',
-        characterCount: 1000,
-        mode: 'voice_clone'
-      })
-
-      expect(price).toMatchObject({
-        source: 'registry_fallback',
-        estimateType: 'heuristic',
-        totalCost: 0.077
-      })
-    } finally {
-      if (previousKey === undefined) delete process.env['DEAPI_API_KEY']
-      else process.env['DEAPI_API_KEY'] = previousKey
-      if (previousBaseUrl === undefined) delete process.env['DEAPI_BASE_URL']
-      else process.env['DEAPI_BASE_URL'] = previousBaseUrl
-    }
-  })
-
-  test('deAPI voice clone TTS price request sends voice_clone without voice', async () => {
-    const previousKey = process.env['DEAPI_API_KEY']
-    const previousBaseUrl = process.env['DEAPI_BASE_URL']
-    const previousFetch = globalThis.fetch
-    const bodies: unknown[] = []
-    const urls: string[] = []
-
-    try {
-      process.env['DEAPI_API_KEY'] = 'test-key'
-      process.env['DEAPI_BASE_URL'] = 'https://mock.deapi.local'
-      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        urls.push(String(input))
-        bodies.push(JSON.parse(String(init?.body ?? '{}')) as unknown)
-        return new Response(JSON.stringify({ data: { price: 0.00123 } }), {
-          status: 200,
-          headers: { 'content-type': 'application/json' }
-        })
-      }) as typeof fetch
-
-      const price = await resolveDeapiTtsPrice({
-        model: 'Qwen3_TTS_12Hz_1_7B_Base',
-        characterCount: 5000,
-        mode: 'voice_clone'
-      })
-
-      expect(price).toMatchObject({
-        source: 'provider_quote',
-        estimateType: 'exact',
-        totalCost: 0.123
-      })
-      expect(urls).toEqual(['https://mock.deapi.local/api/v2/audio/speech/price'])
-      expect(bodies).toEqual([{
-        model: 'Qwen3_TTS_12Hz_1_7B_Base',
-        mode: 'voice_clone',
-        count_text: 5000,
-        lang: 'English',
-        speed: 1,
-        format: 'mp3',
-        sample_rate: 24000
-      }])
-    } finally {
-      globalThis.fetch = previousFetch
-      if (previousKey === undefined) delete process.env['DEAPI_API_KEY']
-      else process.env['DEAPI_API_KEY'] = previousKey
-      if (previousBaseUrl === undefined) delete process.env['DEAPI_BASE_URL']
-      else process.env['DEAPI_BASE_URL'] = previousBaseUrl
-    }
-  })
-
   test('gpt-image-2 image estimates use size and quality', () => {
     expect(estimateImageCosts({
       openaiImageModel: 'gpt-image-2',
@@ -846,8 +765,8 @@ describe('price mode contracts', () => {
     const actual = computeActualCosts({
       step1: buildHostedStep1(),
       step2: buildSttMetadata({
-        transcriptionService: 'deapi',
-        transcriptionModel: 'WhisperLargeV3',
+        transcriptionService: 'deepgram',
+        transcriptionModel: 'nova-3',
         billing: {
           totalCost: providerCostCents,
           source: 'provider_quote',
@@ -858,11 +777,11 @@ describe('price mode contracts', () => {
     })
     const sttStep = actual.steps[0]
 
-    expect(computeSttCost('deapi', 'WhisperLargeV3', audioDurationSeconds)).toBeGreaterThan(providerCostCents)
+    expect(computeSttCost('deepgram', 'nova-3', audioDurationSeconds)).toBeGreaterThan(providerCostCents)
     expect(sttStep).toMatchObject({
       step: 'stt',
-      provider: 'deapi',
-      model: 'WhisperLargeV3',
+      provider: 'deepgram',
+      model: 'nova-3',
       cost: providerCostCents,
       inputMetric: 'durationSeconds',
       inputValue: audioDurationSeconds
@@ -1014,8 +933,8 @@ describe('price mode contracts', () => {
   test('MiniMax music timing estimates use the provider default duration', () => {
     const timing = computeEstimatedProcessingTimes({
       musicTargets: [
-        { service: 'minimax', model: 'music-2.5' },
-        { service: 'minimax', model: 'music-2.5', durationSeconds: 15 }
+        { service: 'minimax', model: 'music-2.6' },
+        { service: 'minimax', model: 'music-2.6', durationSeconds: 15 }
       ]
     })
 
@@ -1028,14 +947,14 @@ describe('price mode contracts', () => {
     expect(rows).toEqual([
       {
         provider: 'minimax',
-        model: 'music-2.5',
-        processingTimeMs: Math.round((rows[0]?.inputValue ?? 0) * getMusicEstimation('minimax', 'music-2.5').msPerSecond),
+        model: 'music-2.6',
+        processingTimeMs: Math.round((rows[0]?.inputValue ?? 0) * getMusicEstimation('minimax', 'music-2.6').msPerSecond),
         inputValue: rows[0]?.inputValue
       },
       {
         provider: 'minimax',
-        model: 'music-2.5',
-        processingTimeMs: Math.round((rows[1]?.inputValue ?? 0) * getMusicEstimation('minimax', 'music-2.5').msPerSecond),
+        model: 'music-2.6',
+        processingTimeMs: Math.round((rows[1]?.inputValue ?? 0) * getMusicEstimation('minimax', 'music-2.6').msPerSecond),
         inputValue: rows[1]?.inputValue
       }
     ])
@@ -1140,7 +1059,7 @@ describe('price mode contracts', () => {
     expect(timing.steps[0]).toMatchObject({
       provider: 'deepinfra',
       model: 'Qwen/Qwen3-VL-30B-A3B-Instruct',
-      processingTimeMs: 25_840
+      processingTimeMs: Math.round(2 * getExtractEstimation('deepinfra', 'Qwen/Qwen3-VL-30B-A3B-Instruct').msPerPage)
     })
 
     const actualMetadata: ExtractionMetadata = {
@@ -1204,6 +1123,62 @@ describe('price mode contracts', () => {
       model: 'kimi-k2.6',
       processingTimeMs: Math.round(pageCount * getExtractEstimation('kimi', 'kimi-k2.6').msPerPage)
     })
+  })
+
+  test('Grok OCR estimates and actuals use provisional token pricing', () => {
+    const extractTargets = [{
+      provider: 'grok' as const,
+      model: 'grok-4.3',
+      pageCount: 2,
+      estimateType: 'heuristic' as const
+    }]
+    const cost = computeEstimatedCosts({ applyCostMultipliers: false, extractTargets })
+    const timing = computeEstimatedProcessingTimes({ extractTargets })
+
+    expect(cost.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'grok',
+      model: 'grok-4.3',
+      pageCount: 2,
+      promptTokens: 8000,
+      completionTokens: 2000,
+      inputCostPer1MCents: 125,
+      outputCostPer1MCents: 250,
+      estimateType: 'heuristic'
+    })
+    expect(cost.totalCost).toBe(1.5)
+    expect(timing.steps[0]).toMatchObject({
+      provider: 'grok',
+      model: 'grok-4.3',
+      processingTimeMs: Math.round(2 * getExtractEstimation('grok', 'grok-4.3').msPerPage)
+    })
+
+    const actualMetadata: ExtractionMetadata = {
+      extractionMethod: 'pdf+grok-ocr',
+      totalPages: 1,
+      ocrPages: 1,
+      textPages: 0,
+      processingTime: 1234,
+      dpi: 300,
+      languages: 'eng',
+      tokenEstimate: 5000,
+      ocrService: 'grok',
+      ocrModel: 'grok-4.3',
+      promptTokens: 4000,
+      completionTokens: 1000
+    }
+    const actual = computeActualCosts({ step2: actualMetadata })
+
+    expect(actual.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'grok',
+      model: 'grok-4.3',
+      cost: 0.75,
+      promptTokens: 4000,
+      completionTokens: 1000,
+      costSource: 'provider_usage'
+    })
+    expect(actual.totalCost).toBe(0.75)
   })
 
   test('hosted token OCR estimates include output tokens when usage is not exact', () => {
@@ -1447,6 +1422,11 @@ describe('price mode contracts', () => {
 
     for (const target of [
       { provider: 'kimi' as const, model: 'kimi-k2.6', pageCount: 1, estimateType: 'heuristic' as const },
+      { provider: 'grok' as const, model: 'grok-4.3', pageCount: 1, estimateType: 'heuristic' as const },
+      { provider: 'anthropic' as const, model: 'claude-opus-4-7', pageCount: 1, estimateType: 'heuristic' as const },
+      { provider: 'anthropic' as const, model: 'claude-sonnet-4-6', pageCount: 1, estimateType: 'heuristic' as const },
+      { provider: 'anthropic' as const, model: 'claude-haiku-4-5', pageCount: 1, estimateType: 'heuristic' as const },
+      { provider: 'openai' as const, model: 'gpt-5.5', pageCount: 1, estimateType: 'heuristic' as const },
       { provider: 'openai' as const, model: 'gpt-5.4', pageCount: 1, estimateType: 'heuristic' as const },
       { provider: 'openai' as const, model: 'gpt-5.4-mini', pageCount: 1, estimateType: 'heuristic' as const },
       { provider: 'openai' as const, model: 'gpt-5.4-nano', pageCount: 1, estimateType: 'heuristic' as const },

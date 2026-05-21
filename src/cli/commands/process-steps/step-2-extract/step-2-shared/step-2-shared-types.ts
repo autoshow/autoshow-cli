@@ -13,6 +13,8 @@ export type OcrSelectionState = {
   kimiOcrModel?: string | undefined
   openaiOcrModels?: string[] | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModels?: string[] | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModels?: string[] | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModels?: string[] | undefined
@@ -116,8 +118,6 @@ export type SttStep2ResolutionOptions = Pick<
   | 'awsSttModels'
   | 'deepinfraSttModel'
   | 'deepinfraSttModels'
-  | 'deapiSttModel'
-  | 'deapiSttModels'
   | 'elevenlabsSttModel'
   | 'elevenlabsSttModels'
   | 'deepgramSttModel'
@@ -160,6 +160,8 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'kimiOcrModels'
   | 'openaiOcrModel'
   | 'openaiOcrModels'
+  | 'grokOcrModel'
+  | 'grokOcrModels'
   | 'anthropicOcrModel'
   | 'anthropicOcrModels'
   | 'geminiOcrModel'

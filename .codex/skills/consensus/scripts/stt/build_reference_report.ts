@@ -661,6 +661,275 @@ function formatDiarizationSupport(support: DiarizationSupport): string {
   return support === "supported" ? "supported" : "not supported";
 }
 
+type SttMetricGroupName = "local" | "thirdPartyServiceNonDiarization" | "thirdPartyServiceDiarization";
+type MetricName = "price" | "speed" | "qualityScore";
+
+interface SttMetricProvider {
+  provider: string;
+  providerKey: string;
+  group: ProviderGroup;
+  supportsDiarization: boolean;
+  diarizationSupport: DiarizationSupport;
+  tokenCount: number | null;
+  transcriptTextHash: string;
+  segmentStats: ReturnType<typeof computeProviderSegmentStats>;
+  score: number;
+  speakerAwareWER: number;
+  textOnlyWER: number;
+  textOnlyBreakdown: {
+    substitutions: number;
+    deletions: number;
+    insertions: number;
+    referenceWordCount: number;
+  };
+  speakerAwareBreakdown: {
+    substitutions: number;
+    deletions: number;
+    insertions: number;
+    referenceWordCount: number;
+  };
+  actualProcessingTimeMs: number | null;
+  actualCostCents: number | null;
+  speakerPenalty: number;
+  speakerMap: Map<string, string>;
+  qualityWarnings: string[];
+  duplicateGroupId?: string;
+}
+
+interface MetricRankingEntry {
+  rank: number;
+  providerKey: string;
+  provider: string;
+  model: string | null;
+  group: SttMetricGroupName;
+  metric: MetricName;
+  value: number | null;
+  label: string;
+  actualCostCents: number | null;
+  processingTimeMs: number | null;
+  score: number;
+  speakerAwareWER: number;
+  textOnlyWER: number;
+  supportsDiarization: boolean;
+  diarizationSupport: DiarizationSupport;
+}
+
+type SttMetricRankings = Record<SttMetricGroupName, Record<MetricName, MetricRankingEntry[]>>;
+
+function modelFromProviderKey(providerKey: string): string | null {
+  const parts = providerKey.split("/");
+  return parts.length > 1 ? parts.slice(1).join("/") : null;
+}
+
+function metricGroupForProvider(provider: { group: ProviderGroup; supportsDiarization: boolean }): SttMetricGroupName {
+  if (provider.group === "local") {
+    return "local";
+  }
+  return provider.supportsDiarization ? "thirdPartyServiceDiarization" : "thirdPartyServiceNonDiarization";
+}
+
+function compareNullableAscending(left: number | null, right: number | null): number {
+  if (left === null && right === null) {
+    return 0;
+  }
+  if (left === null) {
+    return 1;
+  }
+  if (right === null) {
+    return -1;
+  }
+  return left - right;
+}
+
+function metricRankingEntry(
+  provider: SttMetricProvider,
+  rank: number,
+  metric: MetricName,
+  value: number | null,
+  label: string,
+): MetricRankingEntry {
+  return {
+    rank,
+    providerKey: provider.providerKey,
+    provider: provider.provider,
+    model: modelFromProviderKey(provider.providerKey),
+    group: metricGroupForProvider(provider),
+    metric,
+    value,
+    label,
+    actualCostCents: provider.group === "local" ? 0 : provider.actualCostCents,
+    processingTimeMs: provider.actualProcessingTimeMs,
+    score: provider.score,
+    speakerAwareWER: provider.speakerAwareWER,
+    textOnlyWER: provider.textOnlyWER,
+    supportsDiarization: provider.supportsDiarization,
+    diarizationSupport: provider.diarizationSupport,
+  };
+}
+
+function buildMetricGroupRankings(providers: SttMetricProvider[]): Record<MetricName, MetricRankingEntry[]> {
+  const price = [...providers]
+    .sort((left, right) => {
+      const leftCost = left.group === "local" ? 0 : left.actualCostCents;
+      const rightCost = right.group === "local" ? 0 : right.actualCostCents;
+      return compareNullableAscending(leftCost, rightCost) || left.providerKey.localeCompare(right.providerKey);
+    })
+    .map((provider, index) => {
+      const value = provider.group === "local" ? 0 : provider.actualCostCents;
+      const label = provider.group === "local" ? "$0.00 local monetary cost" : formatCents(value);
+      return metricRankingEntry(provider, index + 1, "price", value, label);
+    });
+
+  const speed = [...providers]
+    .sort((left, right) => compareNullableAscending(left.actualProcessingTimeMs, right.actualProcessingTimeMs) || left.providerKey.localeCompare(right.providerKey))
+    .map((provider, index) =>
+      metricRankingEntry(provider, index + 1, "speed", provider.actualProcessingTimeMs, formatProcessingSeconds(provider.actualProcessingTimeMs))
+    );
+
+  const qualityScore = [...providers]
+    .sort((left, right) => {
+      if (left.score !== right.score) {
+        return right.score - left.score;
+      }
+      if (left.speakerAwareWER !== right.speakerAwareWER) {
+        return left.speakerAwareWER - right.speakerAwareWER;
+      }
+      if (left.textOnlyWER !== right.textOnlyWER) {
+        return left.textOnlyWER - right.textOnlyWER;
+      }
+      return left.providerKey.localeCompare(right.providerKey);
+    })
+    .map((provider, index) =>
+      metricRankingEntry(provider, index + 1, "qualityScore", provider.score, `${provider.score.toFixed(2)}/100 quality score`)
+    );
+
+  return { price, speed, qualityScore };
+}
+
+function buildMetricRankings(providers: SttMetricProvider[]): SttMetricRankings {
+  return {
+    local: buildMetricGroupRankings(providers.filter((provider) => metricGroupForProvider(provider) === "local")),
+    thirdPartyServiceNonDiarization: buildMetricGroupRankings(
+      providers.filter((provider) => metricGroupForProvider(provider) === "thirdPartyServiceNonDiarization"),
+    ),
+    thirdPartyServiceDiarization: buildMetricGroupRankings(
+      providers.filter((provider) => metricGroupForProvider(provider) === "thirdPartyServiceDiarization"),
+    ),
+  };
+}
+
+function metricRankingTable(entries: MetricRankingEntry[]): string {
+  if (entries.length === 0) {
+    return "| Rank | Provider | Value | Evidence |\n| ---: | --- | ---: | --- |\n| n/a | n/a | n/a | No providers in this group. |";
+  }
+  return [
+    "| Rank | Provider | Value | Evidence |",
+    "| ---: | --- | ---: | --- |",
+    ...entries.map((entry) =>
+      `| ${entry.rank} | \`${entry.providerKey}\` | ${entry.label} | score ${entry.score.toFixed(2)}<br>speaker-aware WER ${percentage(entry.speakerAwareWER)}<br>text-only WER ${percentage(entry.textOnlyWER)}<br>diarization ${entry.diarizationSupport}<br>time ${formatProcessingSeconds(entry.processingTimeMs)}<br>cost ${formatCents(entry.actualCostCents)} |`
+    ),
+  ].join("\n");
+}
+
+function metricRankingsBlock(metricRankings: SttMetricRankings): string {
+  return [
+    "## Metric Rankings",
+    "",
+    "### Local",
+    "",
+    "#### Price",
+    "",
+    metricRankingTable(metricRankings.local.price),
+    "",
+    "#### Speed",
+    "",
+    metricRankingTable(metricRankings.local.speed),
+    "",
+    "#### Quality Score",
+    "",
+    metricRankingTable(metricRankings.local.qualityScore),
+    "",
+    "### Third-Party Service Non-Diarization",
+    "",
+    "#### Price",
+    "",
+    metricRankingTable(metricRankings.thirdPartyServiceNonDiarization.price),
+    "",
+    "#### Speed",
+    "",
+    metricRankingTable(metricRankings.thirdPartyServiceNonDiarization.speed),
+    "",
+    "#### Quality Score",
+    "",
+    metricRankingTable(metricRankings.thirdPartyServiceNonDiarization.qualityScore),
+    "",
+    "### Third-Party Service Diarization",
+    "",
+    "#### Price",
+    "",
+    metricRankingTable(metricRankings.thirdPartyServiceDiarization.price),
+    "",
+    "#### Speed",
+    "",
+    metricRankingTable(metricRankings.thirdPartyServiceDiarization.speed),
+    "",
+    "#### Quality Score",
+    "",
+    metricRankingTable(metricRankings.thirdPartyServiceDiarization.qualityScore),
+  ].join("\n");
+}
+
+function providerDetail(provider: SttMetricProvider): Record<string, unknown> {
+  return {
+    providerKey: provider.providerKey,
+    provider: provider.provider,
+    model: modelFromProviderKey(provider.providerKey),
+    group: metricGroupForProvider(provider),
+    supportsDiarization: provider.supportsDiarization,
+    diarizationSupport: provider.diarizationSupport,
+    tokenCount: provider.tokenCount,
+    transcriptTextHash: provider.transcriptTextHash,
+    segmentStats: provider.segmentStats,
+    score: provider.score,
+    speakerAwareWER: provider.speakerAwareWER,
+    textOnlyWER: provider.textOnlyWER,
+    textOnlyBreakdown: provider.textOnlyBreakdown,
+    speakerAwareBreakdown: provider.speakerAwareBreakdown,
+    actualProcessingTimeMs: provider.actualProcessingTimeMs,
+    actualCostCents: provider.group === "local" ? 0 : provider.actualCostCents,
+    speakerPenalty: provider.speakerPenalty,
+    speakerMap: provider.speakerMap,
+    qualityWarnings: provider.qualityWarnings,
+    ...(provider.duplicateGroupId ? { duplicateGroupId: provider.duplicateGroupId } : {}),
+    metrics: {
+      score: provider.score,
+      speakerAwareWER: provider.speakerAwareWER,
+      textOnlyWER: provider.textOnlyWER,
+    },
+  };
+}
+
+function buildProviderGroups(providers: SttMetricProvider[]) {
+  const local = providers.filter((provider) => metricGroupForProvider(provider) === "local");
+  const thirdPartyServiceNonDiarization = providers.filter(
+    (provider) => metricGroupForProvider(provider) === "thirdPartyServiceNonDiarization",
+  );
+  const thirdPartyServiceDiarization = providers.filter(
+    (provider) => metricGroupForProvider(provider) === "thirdPartyServiceDiarization",
+  );
+  return {
+    local: { count: local.length, providers: local.map(providerDetail) },
+    thirdPartyServiceNonDiarization: {
+      count: thirdPartyServiceNonDiarization.length,
+      providers: thirdPartyServiceNonDiarization.map(providerDetail),
+    },
+    thirdPartyServiceDiarization: {
+      count: thirdPartyServiceDiarization.length,
+      providers: thirdPartyServiceDiarization.map(providerDetail),
+    },
+  };
+}
+
 export function buildReport(runDir: string, referencePath: string) {
   const runJson = loadRunJson(runDir);
   const { providers, warnings } = loadProviderRuns(runDir);
@@ -732,7 +1001,8 @@ export function buildReport(runDir: string, referencePath: string) {
     };
   });
 
-  const rankedProvidersWithoutTiers = addOverallScores(providersWithQuality)
+  const reportProviders = providersWithQuality as SttMetricProvider[];
+  const rankedProviders = [...reportProviders]
     .sort((left, right) => {
       if (left.speakerAwareWER !== right.speakerAwareWER) {
         return left.speakerAwareWER - right.speakerAwareWER;
@@ -746,29 +1016,8 @@ export function buildReport(runDir: string, referencePath: string) {
       ...provider,
       rank: index + 1,
     }));
-  const rankedOverallWithoutTiers = [...rankedProvidersWithoutTiers].sort((left, right) => {
-    if (left.overallRank !== right.overallRank) {
-      return left.overallRank - right.overallRank;
-    }
-    return left.providerKey.localeCompare(right.providerKey);
-  });
-  const { tiering, providerAnnotations } = buildTiering(rankedOverallWithoutTiers);
-  const rankedProviders = rankedProvidersWithoutTiers.map((provider) => ({
-    ...provider,
-    ...(providerAnnotations.get(provider.providerKey) ?? {
-      tierGroup: tierGroupForProvider(provider),
-      groupOverallRank: 0,
-      groupTier: 3,
-    }),
-  }));
-  const rankedOverall = rankedOverallWithoutTiers.map((provider) => ({
-    ...provider,
-    ...(providerAnnotations.get(provider.providerKey) ?? {
-      tierGroup: tierGroupForProvider(provider),
-      groupOverallRank: 0,
-      groupTier: 3,
-    }),
-  }));
+  const metricRankings = buildMetricRankings(reportProviders);
+  const providerGroups = buildProviderGroups(reportProviders);
 
   const bestProvider = rankedProviders[0];
   if (!bestProvider) {
@@ -783,22 +1032,9 @@ export function buildReport(runDir: string, referencePath: string) {
     throw new Error("Could not compute speaker penalty notes");
   }
 
-  const bestOverall = rankedOverall[0];
-  const worstOverall = rankedOverall.at(-1);
   const notes = [
     `\`${bestProvider.provider}\` was the most accurate provider on strict speaker-aware WER, scoring ${bestProvider.score.toFixed(2)}/100.`,
   ];
-
-  if (bestOverall) {
-    notes.push(
-      `Best overall provider: \`${bestOverall.provider}\` scored ${bestOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
-    );
-  }
-  if (worstOverall) {
-    notes.push(
-      `Worst overall provider: \`${worstOverall.provider}\` scored ${worstOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
-    );
-  }
 
   if (providersWithCost.length > 0) {
     const cheapestCost = Math.min(...providersWithCost.map((provider) => provider.actualCostCents as number));
@@ -837,60 +1073,22 @@ export function buildReport(runDir: string, referencePath: string) {
     referenceTranscriptPath: referencePath,
     metric: "speaker-aware-wer",
     scoreFormula: "max(0, 100 * (1 - speakerAwareWER))",
-    normalization: {
-      lowercase: true,
-      contractionsExpanded: true,
-      abbreviationsExpanded: true,
-      currencySymbolsExpanded: true,
-      punctuationStripped: true,
-      fillerWordsRemoved: true,
-    },
-    overallMetric: "balanced-overall",
-    overallWeights: OVERALL_WEIGHTS,
-    tiering,
-    overall: { count: rankedOverall.length, providers: rankedOverall },
-    duplicateGroups,
-    providers: rankedProviders,
-    notes,
+	    normalization: {
+	      lowercase: true,
+	      contractionsExpanded: true,
+	      abbreviationsExpanded: true,
+	      currencySymbolsExpanded: true,
+	      punctuationStripped: true,
+	      fillerWordsRemoved: true,
+	    },
+	    duplicateGroups,
+	    providerCount: reportProviders.length,
+	    providerGroups,
+	    metricRankings,
+	    notes,
   };
 
   const providerList = rankedProviders.map((provider) => `  - \`${provider.provider}\``).join("\n");
-  const overallRankingRows = rankedOverall
-    .map(
-      (provider) =>
-        `| ${provider.overallRank} | \`${provider.provider}\` | ${provider.tierGroup} | ${provider.groupOverallRank} | ${provider.groupTier} | ${formatDiarizationSupport(provider.diarizationSupport)} | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
-    )
-    .join("\n");
-  const tierBreakdownBlock = [
-    "Tiers split local providers, diarization-capable third-party providers, and non-diarization third-party providers separately. When a group count is not divisible by three, the remainder is assigned to Tier 3 for that group.",
-    "",
-    ...(["local", "thirdPartyDiarization", "thirdPartyNonDiarization"] as const).flatMap((groupName) => {
-      const group = tiering.groups[groupName];
-      return [
-        `### ${formatTierGroupName(groupName)} Group (${group.count})`,
-        "",
-        ...group.tiers.flatMap((tier) => {
-          const providerRows = tier.providers
-            .map(
-              (provider) =>
-                `| ${provider.groupOverallRank} | ${provider.overallRank} | \`${provider.provider}\` | ${provider.overallScore.toFixed(2)} | ${provider.overallComponents.accuracy.score.toFixed(2)} | ${provider.overallComponents.processingSpeed.score.toFixed(2)} | ${provider.overallComponents.costEfficiency.score.toFixed(2)} |`,
-            )
-            .join("\n");
-          return [
-            `#### ${tier.label} (${formatRankRange(tier.rankRange)})`,
-            "",
-            tier.description,
-            "",
-            "| Group Rank | Overall Rank | Provider | Overall / 100 | Accuracy | Speed | Cost |",
-            "| ---: | ---: | --- | ---: | ---: | ---: | ---: |",
-            providerRows || "| n/a | n/a | n/a | n/a | n/a | n/a | n/a |",
-            "",
-          ];
-        }),
-        "",
-      ];
-    }),
-  ].join("\n");
   const rankingRows = rankedProviders
     .map(
       (provider) =>
@@ -922,7 +1120,6 @@ export function buildReport(runDir: string, referencePath: string) {
 ${providerList}
 - Ranking metric: strict speaker-aware word error rate (WER)
 - Score formula: \`max(0, 100 * (1 - speakerAwareWER))\`
-- Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
 - WER formula: \`(Substitutions + Deletions + Insertions) / Reference Word Count\`
 - Cost and processing time source: actual per-provider billing and timing data from \`run.json\` when available
 
@@ -936,21 +1133,14 @@ ${providerList}
 - Tokenization used a word/number regex, so punctuation-only tokens were ignored.
 - Text-only WER compares the provider's full ordered word stream against the gold transcript word stream.
 - Speaker-aware WER compares those same ordered word streams after inserting synthetic speaker-change tokens and mapping provider speaker IDs onto canonical gold speakers by overlap.
-- Ranking uses exact unrounded speaker-aware WER, with text-only WER included for context.
-- Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score; whisper and reverb are treated as local zero-cost providers.
-- Tier breakdown assigns local providers, diarization-capable third-party providers, and non-diarization third-party providers independently using balanced overall group rank.
+- Metric rankings keep local, third-party non-diarization, and third-party diarization providers separate.
+- Price rankings sort lower monetary cost first; local providers use zero monetary cost, and missing service price stays at the end.
+- Speed rankings sort lower processing time first, with missing timing retained at the end.
+- Quality Score rankings sort the existing speaker-aware WER-derived provider score highest first, with text-only WER and diarization support included as evidence.
 
-## Overall Ranking
+${metricRankingsBlock(metricRankings)}
 
-| Rank | Provider | Tier Group | Group Rank | Group Tier | Diarization | Overall / 100 | Accuracy | Speed | Cost |
-| --- | --- | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: |
-${overallRankingRows}
-
-## Tier Breakdown
-
-${tierBreakdownBlock}
-
-## Ranking
+## Provider Detail
 
 | Rank | Provider | Score / 100 | Speaker-aware WER | Text-only WER | Processing Time | Actual Cost |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |

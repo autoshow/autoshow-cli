@@ -526,16 +526,6 @@ export type DeepgramHttpError = Error & {
   retryClass?: RetryClass
 }
 
-export type DeapiHttpError = Error & {
-  status?: number
-  headers?: Headers
-  stage?: 'create' | 'poll' | 'result' | 'price'
-  retryClass?: RetryClass
-  retryable?: boolean
-  body?: unknown
-  rawResponse?: unknown
-}
-
 export type DeepgramAlternative = NonNullable<DeepgramResponse['results']['channels'][number]['alternatives']>[number]
 export type DeepgramWords = DeepgramAlternative['words']
 
@@ -653,31 +643,6 @@ export type AwsTranscribeOutput = v.InferOutput<typeof AwsTranscribeOutputSchema
 export type AwsTranscriptionStatus = v.InferOutput<typeof AwsTranscriptionStatusSchema>
 
 export type AwsCliStage = NonNullable<AwsCliError['stage']>
-
-export type DeapiQuoteMode = 'url' | 'duration'
-
-export type DeapiResolvedPrice = {
-  totalCost: number
-  source: 'provider_quote' | 'registry_fallback'
-  mode: DeapiQuoteMode
-  estimateType: 'heuristic' | 'exact'
-  warning?: string | undefined
-}
-
-export type DeapiQuoteError = Error & {
-  status?: number
-  headers?: Headers
-  stage?: 'price'
-  retryClass?: 'runtime_http_read'
-  rawResponse?: unknown
-}
-
-export type DeapiStatusPayload = {
-  status: string
-  result?: unknown
-  resultUrl?: string | undefined
-  raw: unknown
-}
 
 export type GcloudSttRuntimeConfig = {
   accessToken: string
