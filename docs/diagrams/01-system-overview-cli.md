@@ -16,12 +16,12 @@ bun as <command> <input> [flags]
             v
     ┌───────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
     │   CLI Layer   │────>│ Target Layer │────>│  Processing  │────>│    Output     │
-    │  (Clerc CLI)  │     │ (Routing)    │     │  Pipeline    │     │  (Files)      │
+    │ (native CLI)  │     │ (Routing)    │     │  Pipeline    │     │  (Files)      │
     └───────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
 ```
 
 1. **CLI Layer** (`src/cli/create-cli.ts`, `src/cli/flags/`)
-   - Parses `Bun.argv` via the Clerc framework
+   - Parses `Bun.argv` with the native dispatcher/parser and help renderer
    - Defines named commands: `metadata`, `download`, `extract`, `resume`, `write`, `tts`, `image`, `video`, `music`, `comic`, `config`, `cache`, `setup`, `sock`, `links`, `benchmark`
    - Validates flag combinations and argument ordering
 
@@ -32,7 +32,9 @@ bun as <command> <input> [flags]
 
 3. **Processing Pipeline** (`src/cli/commands/process-steps/`)
    - Step 1: Download/detect (audio via yt-dlp/ffmpeg, documents via mutool)
+   - Step 2: STT, OCR, URL article extraction, or X/Twitter Space metadata
    - Step 3: LLM summary (llama.cpp, OpenAI, Groq, Anthropic, Gemini, MiniMax, Grok, GLM, Kimi)
+   - Steps 4-7: Optional TTS, image, video, and music generation
 
 4. **Output** (`output/`)
    - Timestamped directories with audio, transcripts, extractions, prompts, summaries, metadata, and generated media files
@@ -45,8 +47,8 @@ src/cli/create-cli.ts
          |  Bun.argv
          v
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│  createCli()  (Clerc)                                                        │
-│  - Registers global flags, help/version plugins, and command definitions     │
+│  createCli()  (native dispatcher)                                            │
+│  - Registers global flags, native help/version, and command definitions       │
 │  - PRE interceptor rejects unknown flags, except manual `links` selectors    │
 │  - PRE interceptor configures logging and records startedAtMs                │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -112,8 +114,8 @@ src/cli/create-cli.ts
 │  ┌──────────────────┐                                                        │
 │  │      sock        │                                                        │
 │  │                  │                                                        │
-│  │ Socket server    │                                                        │
-│  │ interface        │                                                        │
+│  │ Read-only Socket │                                                        │
+│  │ dependency report│                                                        │
 │  └──────────────────┘                                                        │
 │                                                                              │
 │  Most process commands → handleProcessTarget(command, target, flags)         │
@@ -122,6 +124,8 @@ src/cli/create-cli.ts
 ```
 
 ## Flag System
+
+`extract` displays route-aware public aliases such as `--whisper`, `--openai`, `--grok`, `--aws`, and `--gcloud` based on the routed input. Larger command surfaces (`write`, `resume`, and `config`) use suffixed flags such as `--whisper-stt`, `--openai-ocr`, `--aws-textract`, and `--gcloud-docai` to avoid collisions between STT, OCR, LLM, and post-generation providers.
 
 ```
 src/cli/flags/
@@ -142,6 +146,7 @@ src/cli/flags/
 │  ├── --deepgram-stt / --assemblyai-stt / --gladia-stt     │
 │  ├── --elevenlabs-stt / --soniox-stt / --speechmatics-stt │
 │  ├── --rev-stt / --happyscribe-stt / --supadata-stt       │
+│  ├── --scrapecreators-stt                                  │
 │  ├── --gcloud-stt / --aws-stt                              │
 │                                                            │
 │  Controls:                                                 │
@@ -156,7 +161,7 @@ src/cli/flags/
 │  ├── --openai MODEL      gpt-5.5|gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
 │  ├── --groq MODEL        openai/gpt-oss-20b|openai/gpt-oss-120b│
 │  ├── --anthropic MODEL   claude-opus-4-7|claude-sonnet-4-6|  │
-│  │                       claude-haiku-4-5|claude-opus-4-7    │
+│  │                       claude-haiku-4-5                    │
 │  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
 │  ├── --minimax MODEL     MiniMax-M2.7|MiniMax-M2.7-highspeed│
 │  ├── --grok MODEL        grok-4.3|grok-4.20-reasoning|grok-4.20-non-reasoning│
@@ -172,17 +177,17 @@ src/cli/flags/
 │  ├── --out FORMAT        text|json|tsv|hocr                │
 │  ├── --password VALUE    Encrypted PDF password            │
 │                                                            │
-│  Local OCR engines:                                        │
-│  ├── --tesseract-ocr     Tesseract OCR (default engine)    │
+│  Local OCR engines on `extract`:                           │
+│  ├── --tesseract         Tesseract OCR (default engine)    │
 │  ├── --ocrmypdf          OCRmyPDF engine (PDF only)        │
-│  ├── --paddle-ocr        PaddleOCR engine                  │
+│  ├── --paddle            PaddleOCR engine                  │
 │  ├── --lang LANGS        Tesseract language(s) (default: eng)│
 │                                                            │
-│  Hosted OCR providers (API):                               │
-│  ├── --openai-ocr / --grok-ocr / --anthropic-ocr          │
-│  ├── --gemini-ocr / --mistral-ocr / --glm-ocr / --kimi-ocr│
-│  ├── --deepinfra-ocr / --unstructured-ocr                  │
-│  ├── --aws-textract / --gcloud-docai                       │
+│  Hosted OCR provider aliases on `extract`:                 │
+│  ├── --openai / --grok / --anthropic                       │
+│  ├── --gemini / --mistral / --glm / --kimi                 │
+│  ├── --deepinfra / --unstructured                          │
+│  ├── --aws / --gcloud                                      │
 │                                                            │
 │  URL article backends:                                     │
 │  ├── --url-backend NAME  defuddle|firecrawl|glm-reader|spider|zyte │

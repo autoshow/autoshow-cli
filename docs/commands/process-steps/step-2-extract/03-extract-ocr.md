@@ -31,6 +31,8 @@ Documents and images route through local OCR, hosted OCR, or native text extract
 
 See the [`extract` overview](./01-extract.md) for input routing across STT, OCR, article HTML, and X/Twitter inputs. Remote article URLs and local HTML are documented separately in [URL and X extraction](./04-extract-url.md).
 
+The standalone `extract` command exposes route-aware public aliases such as `--openai`, `--grok`, `--anthropic`, `--gemini`, `--aws`, and `--gcloud` for document/OCR inputs. The `write`, `resume`, and `config` commands use suffixed OCR flags such as `--openai-ocr`, `--grok-ocr`, `--anthropic-ocr`, `--aws-textract`, and `--gcloud-docai` when OCR selection is combined with other command families.
+
 ## OCR Setup
 
 ```bash
@@ -264,30 +266,30 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 
 | Option | Value |
 |--------|-------|
-| Selector | `--openai-ocr <model>` |
+| Selector | `--openai <model>` |
 | Models | `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.5
-bun as extract input/examples/document/1-document.pdf --openai-ocr gpt-5.4-nano
+bun as extract input/examples/document/1-document.pdf --openai gpt-5.5
+bun as extract input/examples/document/1-document.pdf --openai gpt-5.4-nano
 ```
 
 OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. OpenAI OCR currently enforces the bundled PDF size cap from `project/links/openai-all-links.md`: PDFs up to 50 MB.
 
-Passing `--openai-ocr` without a model keeps the existing cheapest OpenAI OCR default. `gpt-5.5` is used only when selected explicitly or through `--all-ocr`; `gpt-5.4-pro` is intentionally not listed for OCR.
+Passing `--openai` without a model on an OCR-routed `extract` run keeps the existing cheapest OpenAI OCR default. `gpt-5.5` is used only when selected explicitly or through `--all-ocr`; `gpt-5.4-pro` is intentionally not listed for OCR.
 
 ### Grok OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--grok-ocr <model>` |
+| Selector | `--grok <model>` |
 | Models | `grok-4.3` |
 | Direct input support | `PNG` and `JPG/JPEG`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --grok-ocr grok-4.3
-bun as extract input/examples/document/1-document.jpg --grok-ocr grok-4.3 --price
+bun as extract input/examples/document/1-document.pdf --grok grok-4.3
+bun as extract input/examples/document/1-document.jpg --grok grok-4.3 --price
 ```
 
 Grok OCR uses xAI's OpenAI-compatible chat endpoint with image input. Direct images and rendered PDF pages are capped at 20 MiB each. `--price` uses a provisional estimate of 4,000 input tokens and 1,000 output tokens per page until calibrated usage data is available; actual runs record returned token usage when xAI includes it.
@@ -296,17 +298,17 @@ Grok OCR uses xAI's OpenAI-compatible chat endpoint with image input. Direct ima
 
 | Option | Value |
 |--------|-------|
-| Selector | `--anthropic-ocr <model>` |
+| Selector | `--anthropic <model>` |
 | Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` |
 | Direct input support | Standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-opus-4-7
-bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-sonnet-4-6
-bun as extract input/examples/document/1-document.pdf --anthropic-ocr claude-haiku-4-5
+bun as extract input/examples/document/1-document.pdf --anthropic claude-opus-4-7
+bun as extract input/examples/document/1-document.pdf --anthropic claude-sonnet-4-6
+bun as extract input/examples/document/1-document.pdf --anthropic claude-haiku-4-5
 ```
 
-Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run. Passing `--anthropic-ocr` without a model keeps the cheapest Anthropic OCR default, `claude-haiku-4-5`; Opus and Sonnet run only when selected explicitly or through `--all-ocr`.
+Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run. Passing `--anthropic` without a model on an OCR-routed `extract` run keeps the cheapest Anthropic OCR default, `claude-haiku-4-5`; Opus and Sonnet run only when selected explicitly or through `--all-ocr`.
 
 ### Gemini OCR
 

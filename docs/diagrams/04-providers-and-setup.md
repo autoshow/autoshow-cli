@@ -40,8 +40,7 @@ collectTargets() checks all flags - multiple providers can run sequentially. Hos
   │  Anthropic:                                                  │
   │  ├── claude-opus-4-7                                         │
   │  ├── claude-sonnet-4-6                                       │
-  │  ├── claude-haiku-4-5                                        │
-  │  └── claude-opus-4-7                                         │
+  │  └── claude-haiku-4-5                                        │
   │  Requires: ANTHROPIC_API_KEY                                 │
   │                                                              │
   │  OpenAI:                                                     │
@@ -120,27 +119,30 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
     setupKittenTts() + default Kitten model
 
   Step 2 — Hosted STT readiness
-    ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Grok, Mistral,
-    OpenAI, Gemini, GLM, Together, AssemblyAI, Gladia,
-    Supadata, ScrapeCreators, AWS
+    Groq, Grok, DeepInfra, Together, ElevenLabs, Deepgram, Soniox,
+    Speechmatics, Rev, Mistral, OpenAI, Gemini, GLM,
+    AssemblyAI, Gladia, Happy Scribe, Supadata, ScrapeCreators,
+    AWS, Google Cloud
 
   Step 2 — Hosted OCR readiness
-    Mistral, GLM, Kimi, OpenAI, Anthropic, Gemini, DeepInfra, Unstructured
+    Mistral, GLM, Kimi, OpenAI, Grok, Anthropic, Gemini, DeepInfra,
+    AWS Textract, Google Document AI, Unstructured
 
   Step 2 — URL article backend readiness
     Firecrawl, GLM Reader, Spider, Zyte
 
   Step 4 — Hosted TTS readiness
     ElevenLabs, Groq, Grok, OpenAI, Gemini, Deepgram,
-    MiniMax TTS uses MINIMAX_API_KEY but has no dedicated TTS setup hook
-    Mistral TTS is only in `setup --step tts`, not full setup
+    MiniMax, Mistral, Speechify, Hume, Cartesia, Google Cloud
 
   Step 5 — Hosted image generation readiness
     Gemini, OpenAI, Grok, BFL, and Reve
 
   Step 6 — Hosted video generation readiness
+    Gemini, MiniMax, GLM, Grok, Runway
 
   Step 7 — Hosted music generation readiness
+    ElevenLabs, MiniMax, Gemini; local lyric-video prerequisites
 
   Validate
     whisper-cli --help
@@ -154,26 +156,26 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 | Command | Required Dependencies |
 |---------|----------------------|
 | `extract` media route | FFmpeg, yt-dlp, Whisper.cpp (or selected hosted STT provider) |
-| `extract --reverb-stt` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
-| `extract --aws-stt` | AWS CLI auth, region, and S3 staging bucket |
-| `extract --gcloud-stt` | Google Cloud CLI auth and STT API readiness |
+| `extract --reverb` / `write`/`resume`/`config --reverb-stt` | FFmpeg, yt-dlp, Reverb ASR (Python venv + models) |
+| `extract --aws` / `write`/`resume`/`config --aws-stt` | AWS CLI auth, region, and S3 staging bucket |
+| `extract --gcloud` / `write`/`resume`/`config --gcloud-stt` | Google Cloud CLI auth and STT API readiness |
 
 ### Step 2 — OCR (extract/write document route)
 
 | Command | Required Dependencies |
 |---------|----------------------|
-| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle-ocr`/hosted OCR provider) |
-| `extract --anthropic-ocr` | `ANTHROPIC_API_KEY` |
-| `extract --gemini-ocr` | `GEMINI_API_KEY` |
-| `extract --openai-ocr` | `OPENAI_API_KEY` |
-| `extract --grok-ocr` | `XAI_API_KEY` |
-| `extract --mistral-ocr` | `MISTRAL_API_KEY` |
-| `extract --kimi-ocr` | `KIMI_API_KEY` |
-| `extract --glm-ocr` | `GLM_API_KEY` |
-| `extract --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
-| `extract --unstructured-ocr` | `UNSTRUCTURED_API_KEY` |
-| `extract --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
-| `extract --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
+| `extract` document/OCR route | MuPDF (mutool), Tesseract OCR (or `--ocrmypdf`/`--paddle`/hosted OCR provider) |
+| `extract --anthropic` / `write`/`resume`/`config --anthropic-ocr` | `ANTHROPIC_API_KEY` |
+| `extract --gemini` / `write`/`resume`/`config --gemini-ocr` | `GEMINI_API_KEY` |
+| `extract --openai` / `write`/`resume`/`config --openai-ocr` | `OPENAI_API_KEY` |
+| `extract --grok` / `write`/`resume`/`config --grok-ocr` | `XAI_API_KEY` |
+| `extract --mistral` / `write`/`resume`/`config --mistral-ocr` | `MISTRAL_API_KEY` |
+| `extract --kimi` / `write`/`resume`/`config --kimi-ocr` | `KIMI_API_KEY` |
+| `extract --glm` / `write`/`resume`/`config --glm-ocr` | `GLM_API_KEY` |
+| `extract --deepinfra` / `write`/`resume`/`config --deepinfra-ocr` | `DEEPINFRA_API_KEY` |
+| `extract --unstructured` / `write`/`resume`/`config --unstructured-ocr` | `UNSTRUCTURED_API_KEY` |
+| `extract --aws` / `write`/`resume`/`config --aws-textract` | AWS CLI auth, region, and S3 staging bucket for async jobs |
+| `extract --gcloud` / `write`/`resume`/`config --gcloud-docai` | Google Cloud CLI auth, Document AI processor settings, and GCS staging bucket |
 
 ### Step 2 — URL article backends
 

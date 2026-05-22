@@ -352,14 +352,6 @@ Google Cloud prebuilt TTS uses `gcloud` CLI auth to call `v1/text:synthesize` wi
 Google Cloud `instant-custom-voice` uses `v1beta1/text:synthesize` with a voice cloning key. Provide an existing key with `--gcloud-tts-voice-cloning-key`, or generate one in the run with both `--gcloud-tts-ref-audio` and `--gcloud-tts-consent-audio`. Optional `--gcloud-tts-voice-cloning-key-out <path>` writes the generated key; AutoShow does not save raw cloning keys to config. Reference and consent audio must be non-empty `wav`, `mp3`, `m4a`, or `pcm`, provided as local paths or HTTP(S) URLs; when `ffprobe` can detect duration and channels, files must be at most 10 seconds and single-channel. `--gcloud-tts-consent-language` currently supports `en-US`.
 
 
-| Option | Value |
-|--------|-------|
-| Models | `Kokoro`, `Chatterbox`, `Qwen3_TTS_12Hz_1_7B_CustomVoice`, `Qwen3_TTS_12Hz_1_7B_Base`, `Qwen3_TTS_12Hz_1_7B_VoiceDesign` |
-
-```bash
-```
-
-
 ## Pricing Notes
 
 - ElevenLabs API pricing is 10 cents / 1K characters for `eleven_v3`. IVC setup adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate. PVC setup adds a 0 cent setup estimate; training time estimates are 3 hours for English and 6 hours for non-English/multilingual setup when `--elevenlabs-tts-pvc-wait` is used.

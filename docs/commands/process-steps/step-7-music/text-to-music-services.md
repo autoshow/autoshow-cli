@@ -130,17 +130,6 @@ bun as music "indie pop, nostalgic summer road trip vibe" --minimax music-2.6 --
 
 MiniMax auto-generates lyrics when `--music-lyrics-file` is omitted. Price estimation includes the extra lyrics-generation cost when lyrics are auto-generated; `music-2.6-free` has a 0 cent track estimate but still carries the 1 cent lyrics add-on when lyrics are generated. `music-2.6` and `music-2.6-free` support instrumental mode; when instrumental mode is omitted, they generate with lyrics or auto-generated lyrics. `--music-duration` is currently ignored by MiniMax.
 
-
-| Option | Value |
-|--------|-------|
-| Models | `AceStep_1_5_Turbo`, `AceStep_1_5_Base`, `AceStep_1_5_XL_Turbo_INT8` |
-| Duration | `--music-duration <seconds>` |
-| Lyrics/instrumental | `--music-lyrics-file <path>` or `--music-instrumental` |
-
-```bash
-```
-
-
 ### Gemini
 
 | Option | Value |

@@ -4,6 +4,8 @@ Service-backed, networked, and setup-adjacent test coverage for provider integra
 
 Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are documented in [Local Tests](local-tests.md).
 
+These commands are documented for humans. Service, e2e, and full-runner commands may call paid or quota-limited providers and must not be used as agent verification without explicit approval for that exact run. Agents should use `bun run check` plus the targeted no-cost smoke tests listed in [Local Tests](local-tests.md).
+
 
 ## Outline
 

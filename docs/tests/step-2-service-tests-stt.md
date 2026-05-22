@@ -1,5 +1,6 @@
 # Step 2 Service Tests: STT
 
+Safety: these `bun t` commands document human service/e2e coverage and may call paid or quota-limited providers. Do not run them for agent verification without explicit approval for that exact run.
 
 ## Outline
 

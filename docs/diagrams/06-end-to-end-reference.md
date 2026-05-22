@@ -67,77 +67,41 @@ Complete trace of a real CLI command from input to output, plus environment vari
 
 ## Environment Variables
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  Step 2 — STT API Keys                                                       │
-│  ├── DEEPGRAM_API_KEY                Deepgram STT (also TTS)                 │
-│  ├── SONIOX_API_KEY                  Soniox STT                              │
-│  ├── SPEECHMATICS_API_KEY            Speechmatics STT                        │
-│  ├── ASSEMBLYAI_API_KEY              AssemblyAI STT                          │
-│  ├── GLADIA_API_KEY                  Gladia STT                              │
-│  ├── TOGETHER_API_KEY                Together STT                            │
-│  └── DEEPINFRA_API_KEY               DeepInfra STT (also OCR)               │
-│                                                                              │
-│  Step 2 — OCR & URL Backend API Keys                                         │
-│  ├── UNSTRUCTURED_API_KEY            Unstructured OCR                        │
-│  ├── FIRECRAWL_API_KEY               Firecrawl URL backend                   │
-│  └── KIMI_API_KEY                    Kimi OCR (also LLM)                     │
-│                                                                              │
-│  Step 3 — LLM API Keys                                                       │
-│  ├── OPENAI_API_KEY                  OpenAI LLM/STT/OCR/TTS/Image            │
-│  ├── ANTHROPIC_API_KEY               Anthropic LLM/OCR                       │
-│  ├── GEMINI_API_KEY                  Gemini LLM/STT/OCR/TTS/Image/Video/Music│
-│  ├── GROQ_API_KEY                    Groq LLM/STT/TTS                        │
-│  └── MINIMAX_API_KEY                 MiniMax LLM/TTS/Image/Video/Music       │
-│                                                                              │
-│  Multi-step Provider API Keys                                                │
-│  ├── MISTRAL_API_KEY                 Mistral STT/OCR/TTS                     │
-│  ├── GLM_API_KEY                     GLM STT/OCR/LLM/Video                   │
-│  ├── XAI_API_KEY                     Grok STT/OCR/LLM/TTS/Image/Video        │
-│  ├── ELEVENLABS_API_KEY              ElevenLabs STT/TTS/Music                │
-│                                                                              │
-│  Step 4-7 — Generation-Only API Keys                                         │
-│  ├── SPEECHIFY_API_KEY               Speechify TTS                           │
-│  ├── HUME_API_KEY                    Hume TTS                                │
-│  ├── CARTESIA_API_KEY                Cartesia TTS                            │
-│  ├── RUNWAYML_API_SECRET             Runway Image/Video                      │
-│  ├── BFL_API_KEY                     BFL Image                               │
-│  └── REVE_API_KEY                    Reve Image                              │
-│                                                                              │
-│  Other                                                                       │
-│  └── HF_TOKEN                        HuggingFace private model access        │
-│                                                                              │
-│  Base URL Overrides — Step 2 (STT/OCR)                                       │
-│  ├── DEEPGRAM_BASE_URL, SONIOX_BASE_URL, SPEECHMATICS_BASE_URL               │
-│  ├── ASSEMBLYAI_BASE_URL, GLADIA_BASE_URL, TOGETHER_BASE_URL                 │
-│  ├── DEEPINFRA_BASE_URL, UNSTRUCTURED_API_URL, FIRECRAWL_API_URL             │
-│                                                                              │
-│  Base URL Overrides — Step 3 (LLM)                                           │
-│  ├── OPENAI_BASE_URL, GROQ_BASE_URL, MISTRAL_BASE_URL                        │
-│  ├── XAI_BASE_URL, ZAI_BASE_URL (GLM), MINIMAX_BASE_URL                     │
-│                                                                              │
-│  Base URL Overrides — Steps 4-7 (TTS/Image/Video/Music)                      │
-│  ├── SPEECHIFY_BASE_URL, HUME_BASE_URL, CARTESIA_BASE_URL                    │
-│  └── RUNWAY_BASE_URL, BFL_BASE_URL, REVE_BASE_URL                            │
-│                                                                              │
-│  Logging                                                                     │
-│  ├── AUTOSHOW_LOG_FORMAT             human|json|both|auto (default: auto)    │
-│  └── AUTOSHOW_LOG_LEVEL              debug|info|success|warn|error           │
-│                                                                              │
-│  Timeout Overrides (milliseconds)                                            │
-│  ├── AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS  Media generation timeout          │
-│  ├── AUTOSHOW_LLM_REQUEST_TIMEOUT_MS       LLM request timeout              │
-│  ├── AUTOSHOW_OCR_REQUEST_TIMEOUT_MS       OCR request timeout               │
-│  └── AUTOSHOW_UNSTRUCTURED_OCR_*           Poll/stall/deadline timeouts      │
-│                                                                              │
-│  llama.cpp Overrides                                                         │
-│  ├── LLAMA_MODEL_PATH                Skip auto-download, use local path      │
-│  ├── LLAMA_MODEL_REPO                Override HuggingFace repo               │
-│  └── LLAMA_SERVER_START_TIMEOUT_MS   Server startup timeout (default: 30m)   │
-│                                                                              │
-│  yt-dlp Configuration                                                        │
-│  ├── YTDLP_COOKIES_FROM_BROWSER      Import browser cookies for yt-dlp       │
-│  ├── YTDLP_COOKIES                   Path to exported yt-dlp cookies.txt     │
-│  └── YTDLP_EXTRACTOR_ARGS            Raw yt-dlp extractor args override      │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
+### Provider API Keys
+
+| Area | Variables |
+|------|-----------|
+| Step 2 STT | `GROQ_API_KEY`, `XAI_API_KEY`, `DEEPINFRA_API_KEY`, `TOGETHER_API_KEY`, `HAPPYSCRIBE_API_KEY`, `SUPADATA_API_KEY`, `SCRAPECREATORS_API_KEY`, `ELEVENLABS_API_KEY`, `DEEPGRAM_API_KEY`, `SONIOX_API_KEY`, `SPEECHMATICS_API_KEY`, `REVAI_ACCESS_TOKEN`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `GLM_API_KEY`, `MISTRAL_API_KEY`, `ASSEMBLYAI_API_KEY`, `GLADIA_API_KEY` |
+| Step 2 OCR | `MISTRAL_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GLM_API_KEY`, `KIMI_API_KEY`, `DEEPINFRA_API_KEY`, `UNSTRUCTURED_API_KEY` |
+| Step 2 URL and X | `FIRECRAWL_API_KEY`, `GLM_API_KEY`, `SPIDER_API_KEY`, `ZYTE_API_KEY`, `X_BEARER_TOKEN` |
+| Step 3 LLM | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `MINIMAX_API_KEY`, `XAI_API_KEY`, `GLM_API_KEY`, `KIMI_API_KEY` |
+| Step 4 TTS | `ELEVENLABS_API_KEY`, `MINIMAX_API_KEY`, `GROQ_API_KEY`, `XAI_API_KEY`, `MISTRAL_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `DEEPGRAM_API_KEY`, `SPEECHIFY_API_KEY`, `HUME_API_KEY`, `CARTESIA_API_KEY` |
+| Step 5 image | `GEMINI_API_KEY`, `OPENAI_API_KEY`, `XAI_API_KEY`, `BFL_API_KEY`, `REVE_API_KEY` |
+| Step 6 video | `GEMINI_API_KEY`, `MINIMAX_API_KEY`, `GLM_API_KEY`, `XAI_API_KEY`, `RUNWAYML_API_SECRET` |
+| Step 7 music | `ELEVENLABS_API_KEY`, `MINIMAX_API_KEY`, `GEMINI_API_KEY` |
+
+AWS Transcribe and Textract use AWS CLI credentials plus `AWS_REGION` or `AWS_DEFAULT_REGION`. Google Cloud STT, Document AI, and TTS use gcloud CLI auth plus an active billed project.
+
+### Base URL Overrides
+
+| Area | Variables |
+|------|-----------|
+| OpenAI-compatible and LLM APIs | `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, `GROQ_BASE_URL`, `MISTRAL_BASE_URL`, `XAI_BASE_URL`, `GLM_BASE_URL`, `ZAI_BASE_URL`, `KIMI_BASE_URL`, `MINIMAX_BASE_URL` |
+| STT providers | `DEEPINFRA_BASE_URL`, `TOGETHER_BASE_URL`, `HAPPYSCRIBE_BASE_URL`, `SUPADATA_BASE_URL`, `SCRAPECREATORS_BASE_URL`, `ELEVENLABS_BASE_URL`, `DEEPGRAM_BASE_URL`, `SONIOX_BASE_URL`, `SPEECHMATICS_BASE_URL`, `REVAI_BASE_URL`, `ASSEMBLYAI_BASE_URL`, `GLADIA_BASE_URL` |
+| OCR and URL providers | `UNSTRUCTURED_API_URL`, `FIRECRAWL_API_URL`, `SPIDER_API_URL`, `ZYTE_API_URL` |
+| TTS, image, and music providers | `GCLOUD_TTS_BASE_URL`, `SPEECHIFY_BASE_URL`, `HUME_BASE_URL`, `CARTESIA_BASE_URL`, `BFL_BASE_URL`, `REVE_BASE_URL`, `ELEVENLABS_BASE_URL`, `MINIMAX_BASE_URL` |
+
+Runway video generation currently uses the fixed Runway API base URL and `RUNWAYML_API_SECRET`.
+
+### Provider Defaults
+
+| Area | Variables |
+|------|-----------|
+| Local and model downloads | `HUGGINGFACE_TOKEN`, `LLAMA_MODEL_PATH`, `LLAMA_MODEL_REPO` |
+| AWS and Google Cloud helpers | `AUTOSHOW_AWS_BIN`, `AUTOSHOW_GCLOUD_BIN`, `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, `AUTOSHOW_GCLOUD_BUCKET` |
+| TTS voices and output controls | `ELEVENLABS_VOICE_ID`, `OPENAI_TTS_VOICE`, `GEMINI_TTS_VOICE`, `GROQ_TTS_VOICE`, `XAI_TTS_VOICE`, `MISTRAL_TTS_VOICE`, `MISTRAL_TTS_REF_AUDIO`, `DEEPGRAM_TTS_VOICE`, `SPEECHIFY_TTS_VOICE`, `HUME_TTS_VOICE`, `HUME_TTS_VOICE_PROVIDER`, `CARTESIA_TTS_VOICE`, `CARTESIA_VERSION`, `GCLOUD_TTS_LANGUAGE`, `GCLOUD_TTS_VOICE` |
+| URL backend defaults | `AUTOSHOW_URL_BACKEND`, `AUTOSHOW_DEFUDDLE_BIN` |
+| Logging | `AUTOSHOW_LOG_FORMAT`, `AUTOSHOW_LOG_LEVEL`, `NO_COLOR`, `FORCE_COLOR` |
+| Timeouts | `AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS`, `AUTOSHOW_LLM_REQUEST_TIMEOUT_MS`, `AUTOSHOW_OCR_REQUEST_TIMEOUT_MS`, `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS`, `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` |
+| llama.cpp | `LLAMA_SERVER_START_TIMEOUT_MS` |
+| yt-dlp | `YTDLP_COOKIES_FROM_BROWSER`, `YTDLP_COOKIES`, `YTDLP_EXTRACTOR_ARGS` |

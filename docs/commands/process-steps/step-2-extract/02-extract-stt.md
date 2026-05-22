@@ -40,6 +40,8 @@ See the [`extract` overview](./01-extract.md) for input routing across STT, OCR,
 
 If no engine flag is provided, `extract` defaults to local Whisper.cpp with the `tiny` model for media inputs. Provider flags accept an omitted model value and then resolve to the cheapest or default supported model. Model-selecting flags are repeatable, including repeated flags from the same provider.
 
+The standalone `extract` command exposes route-aware public aliases such as `--whisper`, `--groq`, `--gcloud`, and `--aws`. The `write`, `resume`, and `config` commands use suffixed STT flags such as `--whisper-stt`, `--groq-stt`, `--gcloud-stt`, and `--aws-stt` when the same provider selection is part of a larger command surface.
+
 ## STT Setup
 
 ```bash
@@ -162,17 +164,6 @@ The output directory contains `<label>.mp4`, `<label>.vtt`, `<label>.srt`, and `
 ## URL/streaming/source-URL STT
 
 These services either work best with provider-side URLs or have source-URL-specific behavior.
-
-
-| Option | Value |
-|--------|-------|
-| Models | `WhisperLargeV3` |
-| Diarization | Not enabled by default; `--speaker-count` is ignored |
-| Pricing | Exact provider quote support when the quote endpoint succeeds |
-
-```bash
-```
-
 
 ### Happy Scribe
 

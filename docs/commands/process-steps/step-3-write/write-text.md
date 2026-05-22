@@ -137,7 +137,7 @@ Passing `--openai` without a model keeps the existing cheapest-model default; `g
 | Option | Value |
 |--------|-------|
 | Selector | `--anthropic <model>` |
-| Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-7` |
+| Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` |
 
 ```bash
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --anthropic claude-opus-4-7

@@ -68,7 +68,7 @@ bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-
 bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
 
 # document OCR with Grok
-bun as extract input/examples/document/1-document.pdf --grok-ocr grok-4.3
+bun as extract input/examples/document/1-document.pdf --grok grok-4.3
 
 # URL article extraction with every backend
 bun as extract https://example.com/article --all-url
@@ -152,6 +152,7 @@ bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-prev
 bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview
 
 # video generation with multiple providers
+bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
 ```
 
 ## Command Map

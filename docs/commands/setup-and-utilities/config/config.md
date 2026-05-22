@@ -65,7 +65,7 @@ bun as config --speechmatics-stt standard --speechmatics-stt enhanced
 bun as config --openai gpt-5.4 --openai gpt-5.4-mini
 ```
 
-Setup commands do not write `config/autoshow.json`. Use `bun as config ...` when you want AWS, Google Cloud, or provider defaults to persist.
+Cloud setup commands may save reusable AWS or Google Cloud runtime settings to `config/autoshow.json` when they provision shared resources. Use `bun as config ...` for intentional provider and model defaults.
 
 ## Config Schema
 
@@ -80,11 +80,24 @@ Representative JSON shape:
         "gcloudStt": ["chirp_3"],
         "awsStt": ["standard"],
         "deepinfraStt": ["openai/whisper-large-v3-turbo"],
-        "deapiStt": ["WhisperLargeV3"],
         "groqStt": ["whisper-large-v3-turbo"],
+        "grokStt": ["speech-to-text"],
+        "elevenlabsStt": ["scribe_v2"],
+        "deepgramStt": ["nova-3"],
+        "sonioxStt": ["stt-async-v4"],
+        "speechmaticsStt": ["standard"],
+        "revStt": ["machine"],
+        "mistralStt": ["voxtral-mini-2602"],
+        "assemblyaiStt": ["universal-3-pro"],
+        "gladiaStt": ["default"],
+        "happyscribeStt": ["auto"],
+        "supadataStt": ["auto"],
+        "scrapecreatorsStt": ["youtube-transcript"],
         "openaiStt": ["gpt-4o-mini-transcribe"],
         "geminiStt": ["gemini-3-flash-preview"],
         "glmStt": ["glm-asr-2512"],
+        "awsRegion": "us-east-1",
+        "awsBucket": "autoshow-transcribe",
         "speakerCount": 2,
         "providerConcurrency": 2,
         "localConcurrency": 1
@@ -94,10 +107,19 @@ Representative JSON shape:
         "out": "text",
         "dpi": 300,
         "mistralOcr": ["mistral-ocr-2512"],
+        "glmOcr": ["glm-ocr"],
+        "kimiOcr": ["kimi-k2.6"],
         "openaiOcr": ["gpt-5.4-nano"],
+        "grokOcr": ["grok-4.3"],
+        "anthropicOcr": ["claude-haiku-4-5"],
+        "geminiOcr": ["gemini-3.1-flash-lite-preview"],
         "deepinfraOcr": ["Qwen/Qwen3-VL-30B-A3B-Instruct"],
         "awsTextract": ["detect-text"],
-        "gcloudDocai": ["ocr"]
+        "gcloudDocai": ["ocr"],
+        "unstructuredOcr": ["hi_res_and_enrichment"],
+        "chapters": true,
+        "length": 50,
+        "pdfChapterMode": "auto"
       }
     },
     "llm": {
@@ -129,15 +151,27 @@ Representative JSON shape:
         "cartesiaTtsVoice": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
         "cartesiaTtsLanguage": "en",
         "gcloudTts": ["chirp3-hd"],
-        "deapiTts": ["Qwen3_TTS_12Hz_1_7B_Base"],
+        "gcloudTtsVoice": "en-US-Chirp3-HD-Achernar",
         "providerConcurrency": 2,
         "localConcurrency": 1
       },
       "image": {
-        "geminiImage": ["imagen-4.0-generate-001"],
-        "bflImage": ["flux-2-pro-preview"],
-        "deapiImage": ["Flux1schnell"],
+        "geminiImage": ["gemini-3.1-flash-image-preview"],
+        "openaiImage": ["gpt-image-2"],
+        "grokImage": ["grok-imagine-image"],
+        "bflImage": ["flux-2-pro"],
+        "reveImage": ["latest"],
+        "imageAspectRatio": "16:9",
         "imageSize": "1024x1024",
+        "imageQuality": "low",
+        "imageFormat": "png",
+        "imageBackground": "auto",
+        "imageCount": 1,
+        "imageInputs": ["input/reference.png"],
+        "imageMask": "input/mask.png",
+        "imageResponseMode": "image",
+        "geminiSearchGrounding": true,
+        "imageCompression": 80,
         "providerConcurrency": 2,
         "localConcurrency": 1
       },
@@ -147,15 +181,23 @@ Representative JSON shape:
         "glmVideo": ["cogvideox-3"],
         "grokVideo": ["grok-imagine-video"],
         "runwayVideo": ["gen4.5"],
-        "deapiVideo": ["Ltxv_13B_0_9_8_Distilled_FP8"],
         "videoDuration": 8,
+        "videoSize": "1280x720",
+        "videoAspectRatio": "16:9",
+        "videoResolution": "720p",
+        "videoMode": "text",
+        "videoInputImage": "input/reference.png",
+        "videoLastFrame": "input/last-frame.png",
+        "videoReferenceImages": ["input/reference-1.png"],
+        "videoInputVideo": "input/source.mp4",
+        "grokVideoStorageFilename": "autoshow-source.mp4",
+        "grokVideoStorageExpiresAfter": 86400,
         "providerConcurrency": 2,
         "localConcurrency": 1
       },
       "music": {
         "elevenlabsMusic": ["music_v1"],
         "minimaxMusic": ["music-2.6"],
-        "deapiMusic": ["AceStep_1_5_Turbo"],
         "geminiMusic": ["lyria-3-clip-preview"],
         "musicDuration": 30,
         "providerConcurrency": 2,
@@ -186,12 +228,12 @@ Model-selecting fields are arrays of models, not single strings.
 | `whisper` | `--whisper-stt` |
 | `reverb` | `--reverb-stt` |
 | `youtubeCaptions` | `--youtube-captions` |
-| `gcloudStt`, `awsStt`, `deepinfraStt`, `deapiStt` | `--gcloud-stt`, `--aws-stt`, `--deepinfra-stt`, `--deapi-stt` |
+| `gcloudStt`, `awsStt`, `deepinfraStt` | `--gcloud-stt`, `--aws-stt`, `--deepinfra-stt` |
 | `groqStt`, `grokStt`, `elevenlabsStt`, `deepgramStt` | `--groq-stt`, `--grok-stt`, `--elevenlabs-stt`, `--deepgram-stt` |
 | `sonioxStt`, `speechmaticsStt`, `revStt`, `mistralStt` | `--soniox-stt`, `--speechmatics-stt`, `--rev-stt`, `--mistral-stt` |
-| `assemblyaiStt`, `gladiaStt`, `happyscribeStt`, `supadataStt` | `--assemblyai-stt`, `--gladia-stt`, `--happyscribe-stt`, `--supadata-stt` |
+| `assemblyaiStt`, `gladiaStt`, `happyscribeStt`, `supadataStt`, `scrapecreatorsStt` | `--assemblyai-stt`, `--gladia-stt`, `--happyscribe-stt`, `--supadata-stt`, `--scrapecreators-stt` |
 | `openaiStt`, `geminiStt`, `glmStt` | matching provider flags |
-| `awsRegion`, `awsBucket`, `happyscribeOrganizationId`, `supadataLang` | matching provider option flags |
+| `awsRegion`, `awsBucket`, `happyscribeOrganizationId`, `supadataLang`, `scrapecreatorsLang` | matching provider option flags |
 | `speakerCount`, `split`, `reverbVerbatimicity` | `--speaker-count`, `--split`, `--reverb-verbatimicity` |
 | `providerConcurrency`, `localConcurrency`, `segmentConcurrency`, `preflightConcurrency` | STT concurrency flags |
 | `refreshCache`, `noCache` | `--refresh-cache`, `--no-cache` |
@@ -203,12 +245,12 @@ Model-selecting fields are arrays of models, not single strings.
 | Field | Flag |
 |-------|------|
 | `tesseract`, `ocrmypdf`, `paddleOcr` | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr` |
-| `mistralOcr`, `glmOcr`, `kimiOcr`, `openaiOcr`, `anthropicOcr`, `geminiOcr`, `deepinfraOcr`, `awsTextract`, `gcloudDocai` | matching OCR provider flags |
+| `mistralOcr`, `glmOcr`, `kimiOcr`, `openaiOcr`, `grokOcr`, `anthropicOcr`, `geminiOcr`, `deepinfraOcr`, `awsTextract`, `gcloudDocai`, `unstructuredOcr` | matching OCR provider flags |
 | `lang`, `out`, `dpi`, `psm`, `oem`, `rotate`, `pageSeparator`, `preserveSpaces` | matching OCR tuning flags |
 | `providerConcurrency`, `localConcurrency` | `--ocr-provider-concurrency`, `--ocr-local-concurrency` |
 | `chapters`, `length`, `pdfChapterMode` | `--chapters`, `--length`, `--pdf-chapter-mode` |
 
-Google Cloud Document AI runtime fields such as processor IDs, location, and bucket are accepted by the schema, but `bun as setup --gcloud` prints those values instead of saving them. Persist model defaults with `bun as config --gcloud-docai ocr`; set the printed runtime values with environment variables or by editing the config intentionally.
+Google Cloud Document AI runtime fields such as processor IDs, location, and bucket are accepted by the schema. Persist model defaults with `bun as config --gcloud-docai ocr`; use `bun as setup --gcloud --gcloud-project ...` or environment variables to provision or override the shared runtime values.
 
 ### defaults.llm
 
@@ -221,15 +263,14 @@ Google Cloud Document AI runtime fields such as processor IDs, location, and buc
 
 | Field | Flag |
 |-------|------|
-| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `runwayTts`, `speechifyTts`, `humeTts`, `cartesiaTts`, `gcloudTts`, `deapiTts` | matching TTS provider flags |
+| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `speechifyTts`, `humeTts`, `cartesiaTts`, `gcloudTts` | matching TTS provider flags |
 | `ttsSpeaker`, `groqVoice`, `grokTtsVoice`, `grokTtsLanguage`, `grokTtsTextNormalization`, `mistralTtsVoice`, `mistralTtsRefAudio` | matching voice/reference flags |
 | `ttsDialogueFormat`, `ttsSpeakerRefAudio` | dialogue TTS flags |
 | `openaiVoice`, `openaiTtsInstructions`, `openaiTtsSpeed`, `openaiTtsRefAudio`, `openaiTtsConsentId`, `openaiTtsConsentAudio`, `openaiTtsConsentLanguage`, `openaiTtsConsentName`, `openaiTtsVoiceName` | OpenAI voice and synthesis flags |
 | `geminiVoice`, `geminiSpeaker1Name`, `geminiSpeaker1Voice`, `geminiSpeaker2Name`, `geminiSpeaker2Voice` | Gemini voice and multispeaker flags |
-| `elevenlabsVoice`, `elevenlabsTtsPvcVoice`, `elevenlabsTtsRefAudio`, `elevenlabsTtsVoiceName`, `elevenlabsTtsCloneRemoveBackgroundNoise` | ElevenLabs reusable voice/clone flags |
-| `minimaxTtsVoice`, `minimaxTtsRefAudio`, `minimaxTtsPromptAudio`, `minimaxTtsPromptText`, `minimaxTtsCloneNoiseReduction`, `minimaxTtsCloneVolumeNormalization` | MiniMax voice/clone flags |
-| `minimaxTtsLanguageBoost`, `minimaxTtsSpeed`, `minimaxTtsVolume`, `minimaxTtsPitch`, `minimaxTtsEmotion`, `minimaxTtsEnglishNormalization`, `minimaxTtsPronunciations` | MiniMax synthesis control flags |
-| `deepgramVoice`, `runwayTtsVoice`, `speechifyVoice`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage`, `deapiTtsVoice`, `deapiTtsRefAudio`, `deapiTtsRefText` | provider voice/reference flags |
+| `elevenlabsVoice`, `elevenlabsTtsPvcVoice`, `elevenlabsTtsRefAudio`, `elevenlabsTtsVoiceName`, `elevenlabsTtsCloneRemoveBackgroundNoise`, `elevenlabsTtsOutputFormat`, `elevenlabsTtsLanguageCode`, `elevenlabsTtsStability`, `elevenlabsTtsSimilarityBoost`, `elevenlabsTtsStyle`, `elevenlabsTtsUseSpeakerBoost`, `elevenlabsTtsSpeed`, `elevenlabsTtsSeed`, `elevenlabsTtsTextNormalization`, `elevenlabsTtsPronunciationDictionaryLocators`, `elevenlabsTtsOptimizeStreamingLatency`, `elevenlabsTtsPvcAsIvc` | ElevenLabs reusable voice/clone and synthesis flags |
+| `minimaxTtsVoice`, `minimaxTtsLanguageBoost`, `minimaxTtsSpeed`, `minimaxTtsVolume`, `minimaxTtsPitch`, `minimaxTtsEmotion`, `minimaxTtsEnglishNormalization`, `minimaxTtsPronunciations` | MiniMax voice and synthesis control flags |
+| `deepgramVoice`, `deepgramTtsEncoding`, `deepgramTtsContainer`, `deepgramTtsBitRate`, `deepgramTtsSampleRate`, `deepgramTtsSpeed`, `speechifyVoice`, `speechifyTtsAudioFormat`, `speechifyTtsLanguage`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage` | provider voice/reference and output flags |
 | `providerConcurrency`, `localConcurrency` | `--tts-provider-concurrency`, `--tts-local-concurrency` |
 
 PVC training samples, CAPTCHA output, Speechify custom-voice consent fields, and Google Cloud voice-cloning key output flags are runtime-only and are not persisted.
@@ -238,23 +279,23 @@ PVC training samples, CAPTCHA output, Speechify custom-voice consent fields, and
 
 | Field | Flag |
 |-------|------|
-| `geminiImage`, `openaiImage`, `minimaxImage`, `glmImage`, `grokImage`, `runwayImage`, `bflImage`, `deapiImage` | matching image provider flags |
-| `imageAspectRatio`, `imageSize`, `imageQuality`, `imageFormat`, `imageBackground`, `imagenCount` | matching image option flags |
+| `geminiImage`, `openaiImage`, `grokImage`, `bflImage`, `reveImage` | matching image provider flags |
+| `imageAspectRatio`, `imageSize`, `imageQuality`, `imageFormat`, `imageBackground`, `imageCount`, `imageInputs`, `imageMask`, `imageResponseMode`, `geminiSearchGrounding`, `imageCompression` | matching image option flags |
 | `providerConcurrency`, `localConcurrency` | `--image-provider-concurrency`, `--image-local-concurrency` |
 
 ### defaults.post.video
 
 | Field | Flag |
 |-------|------|
-| `geminiVideo`, `minimaxVideo`, `glmVideo`, `grokVideo`, `runwayVideo`, `deapiVideo` | matching video provider flags |
-| `videoDuration`, `videoSize`, `videoAspectRatio`, `videoResolution` | matching video option flags |
+| `geminiVideo`, `minimaxVideo`, `glmVideo`, `grokVideo`, `runwayVideo` | matching video provider flags |
+| `videoDuration`, `videoSize`, `videoAspectRatio`, `videoResolution`, `videoMode`, `videoInputImage`, `videoLastFrame`, `videoReferenceImages`, `videoInputVideo`, `grokVideoStorageFilename`, `grokVideoStorageExpiresAfter` | matching video option flags |
 | `providerConcurrency`, `localConcurrency` | `--video-provider-concurrency`, `--video-local-concurrency` |
 
 ### defaults.post.music
 
 | Field | Flag |
 |-------|------|
-| `elevenlabsMusic`, `minimaxMusic`, `deapiMusic`, `geminiMusic` | matching music provider flags |
+| `elevenlabsMusic`, `minimaxMusic`, `geminiMusic` | matching music provider flags |
 | `musicDuration` | `--music-duration` |
 | `providerConcurrency`, `localConcurrency` | `--music-provider-concurrency`, `--music-local-concurrency` |
 
@@ -273,10 +314,10 @@ PVC training samples, CAPTCHA output, Speechify custom-voice consent fields, and
 ## Precedence
 
 ```text
-Explicit CLI flags > config file defaults > Clerc framework defaults
+Explicit CLI flags > config file defaults > native CLI defaults
 ```
 
-Only flags explicitly typed on the command line override config values. Flags populated by Clerc defaults do not overwrite saved config defaults.
+Only flags explicitly typed on the command line override config values. Native CLI defaults do not overwrite saved config defaults.
 
 If you type any provider/model flag for a step family at runtime, configured provider selections for that family are replaced instead of merged. For example, passing `--openai ...` on `write` suppresses configured `defaults.llm.gemini` and `defaults.llm.groq` entries for that run.
 
@@ -318,7 +359,7 @@ bun as config \
   --groq-stt whisper-large-v3-turbo \
   --groq openai/gpt-oss-20b \
   --minimax-tts speech-2.8-turbo \
-  --minimax-image image-01 \
+  --openai-image gpt-image-2 --image-quality low \
   --minimax-video MiniMax-Hailuo-2.3 \
   --minimax-music music-2.6
 ```

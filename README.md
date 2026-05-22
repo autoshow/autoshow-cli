@@ -76,7 +76,7 @@ bun as extract input/examples/document/1-document.pdf --out json
 bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
 
 # Hosted Grok OCR for a document
-bun as extract input/examples/document/1-document.pdf --grok-ocr grok-4.3
+bun as extract input/examples/document/1-document.pdf --grok grok-4.3
 
 # Standalone text-to-speech from local text
 bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts
@@ -145,8 +145,8 @@ bun as links urls.md
 | Area | Commands |
 |------|----------|
 | Inspect and process | `metadata`, `download`, `extract`, `write` |
-| Generate | `tts`, `image`, `video`, `music` |
-| Setup & Utilities | `config`, `cache`, `setup`, `links`, `resume`, `benchmark` |
+| Generate | `tts`, `image`, `video`, `music`, `comic` |
+| Setup & Utilities | `config`, `cache`, `setup`, `sock`, `links`, `resume`, `benchmark` |
 
 High-value notes:
 
@@ -262,7 +262,11 @@ Notable exceptions:
 
 ```bash
 bun run check
-bun t
+bun test test/test-cases/validation/cli-help-contracts.test.ts
+bun test test/test-cases/validation/cli-usage-errors.test.ts
+bun test test/test-cases/validation/option-resolution-contracts.test.ts
 ```
 
-- `bun t` uses the repo's custom test runner, so run `bun as setup` first if local dependencies are missing.
+- `bun run check` is the default verification pass for docs and code changes.
+- The three targeted `bun test` commands above are the no-cost smoke set for CLI help, usage errors, and option resolution.
+- `bun t`, `bun run t`, and `AGENT=1 bun test/test-runner.ts` are full-runner commands for human service/e2e coverage. They may call paid or quota-limited providers and should only be run when that exact run is explicitly approved.

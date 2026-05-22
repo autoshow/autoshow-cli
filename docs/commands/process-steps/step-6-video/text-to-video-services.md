@@ -208,16 +208,6 @@ bun as video "a sunset timelapse" --runway gen4.5 --video-duration 5 --price
 
 Runway `gen4.5` durations are clamped to `2` through `10` seconds and default to `5`; prompts are capped at 1000 UTF-16 code units.
 
-
-| Option | Value |
-|--------|-------|
-| Models | `Ltx2_3_22B_Dist_INT8` |
-| Size/duration | `--video-size WIDTHxHEIGHT`, `--video-duration <seconds>` |
-
-```bash
-```
-
-
 ```bash
 # Same provider, multiple models
 bun as video "a rainy neon city street, slow camera pan" --gemini veo-3.1-fast-generate-preview --gemini veo-3.1-generate-preview --gemini veo-3.1-lite-generate-preview
