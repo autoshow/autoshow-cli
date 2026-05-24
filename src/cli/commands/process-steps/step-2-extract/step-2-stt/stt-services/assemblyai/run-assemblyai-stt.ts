@@ -21,6 +21,7 @@ import {
   readPersistedAsyncSttRuntime,
   writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { ASSEMBLYAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
@@ -156,7 +157,7 @@ export const runAssemblyAiTranscribe = async (
   let rateLimitCount = 0
   const backfillCount = runMode === 'backfill' ? 1 : 0
 
-  const baseURL = readEnv('ASSEMBLYAI_BASE_URL') ?? 'https://api.assemblyai.com'
+  const baseURL = ASSEMBLYAI_DEFAULT_BASE_URL
   const headers = {
     'authorization': apiKey,
     'content-type': 'application/json'
@@ -367,7 +368,6 @@ export const runAssemblyAiTranscribe = async (
     initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
     maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
     audioDurationSeconds,
-    envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_ASSEMBLYAI',
     pollMode: resumedExistingTranscript ? 'resume-probe' : 'fresh',
     buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
     buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),

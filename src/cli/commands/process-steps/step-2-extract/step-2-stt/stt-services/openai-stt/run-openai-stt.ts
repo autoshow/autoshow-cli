@@ -1,4 +1,5 @@
 import type { Step2Metadata, TranscriptionResult } from '~/types'
+import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import {
   buildTranscriptionOutputBase,
@@ -95,7 +96,7 @@ export const runOpenaiStt = async (
     throw new Error('OPENAI_API_KEY environment variable is required for OpenAI transcription')
   }
 
-  const baseURL = readEnv('OPENAI_BASE_URL') ?? 'https://api.openai.com/v1'
+  const baseURL = OPENAI_DEFAULT_BASE_URL
   return await runJsonOpenaiStt(audioPath, outputDir, {
     apiKey,
     baseURL,

@@ -2,7 +2,6 @@ import type { TtsOptions, TtsTarget } from '~/types'
 import { collectDeepgramTtsTargets } from './providers/deepgram'
 import { collectElevenLabsTtsTargets } from './providers/elevenlabs'
 import { collectCartesiaTtsTargets } from './providers/cartesia'
-import { collectGcloudTtsTargets } from './providers/gcloud'
 import { collectGeminiTtsTargets } from './providers/gemini'
 import { collectGrokTtsTargets } from './providers/grok'
 import { collectGroqTtsTargets } from './providers/groq'
@@ -14,12 +13,13 @@ import { collectOpenAITtsTargets } from './providers/openai'
 import { collectSpeechifyTtsTargets } from './providers/speechify'
 import { createTtsTargetSelection } from './selection'
 import { validateTtsTargetSelection } from './target-validation'
+import { getMultiSpeakerStrategy } from './multi-speaker-capability'
 
 export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
   const selection = createTtsTargetSelection(options)
   validateTtsTargetSelection(options, selection)
 
-  return [
+  const targets: TtsTarget[] = [
     ...collectKittenTtsTargets(options, selection),
     ...collectElevenLabsTtsTargets(selection),
     ...collectMinimaxTtsTargets(selection),
@@ -31,7 +31,17 @@ export const collectTtsTargets = (options: TtsOptions): TtsTarget[] => {
     ...collectDeepgramTtsTargets(selection),
     ...collectSpeechifyTtsTargets(selection),
     ...collectHumeTtsTargets(selection),
-    ...collectCartesiaTtsTargets(selection),
-    ...collectGcloudTtsTargets(selection)
+    ...collectCartesiaTtsTargets(selection)
   ]
+
+  if (selection.multiSpeakerRequested) {
+    for (const target of targets) {
+      const strategy = getMultiSpeakerStrategy(target.service)
+      if (strategy) {
+        target.multiSpeakerStrategy = strategy
+      }
+    }
+  }
+
+  return targets
 }

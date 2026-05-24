@@ -3,7 +3,7 @@ import * as v from 'valibot'
 import * as l from '~/utils/logger'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { validateData } from '~/utils/validate/validation'
-import { OCR_POLL_DEADLINE_MS, readPositiveIntegerEnv } from '~/utils/timeouts'
+import { OCR_POLL_DEADLINE_MS } from '~/utils/timeouts'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import { AppError } from '~/utils/error-handler'
 import { withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
@@ -16,25 +16,19 @@ const DEFAULT_UNSTRUCTURED_EMPTY_WORKFLOW_DEADLINE_MS = 2 * 60_000
 const DEFAULT_UNSTRUCTURED_POLL_REQUEST_TIMEOUT_MS = 60_000
 
 const resolveUnstructuredPollIntervalMs = (): number =>
-  readPositiveIntegerEnv('AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS', DEFAULT_UNSTRUCTURED_POLL_INTERVAL_MS)
+  DEFAULT_UNSTRUCTURED_POLL_INTERVAL_MS
 
 const resolveUnstructuredPollDeadlineMs = (): number =>
-  readPositiveIntegerEnv('AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS', OCR_POLL_DEADLINE_MS)
+  OCR_POLL_DEADLINE_MS
 
 const resolveUnstructuredStallDeadlineMs = (pollDeadlineMs: number): number =>
-  Math.min(
-    pollDeadlineMs,
-    readPositiveIntegerEnv('AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS', DEFAULT_UNSTRUCTURED_STALL_DEADLINE_MS)
-  )
+  Math.min(pollDeadlineMs, DEFAULT_UNSTRUCTURED_STALL_DEADLINE_MS)
 
 const resolveUnstructuredEmptyWorkflowDeadlineMs = (pollDeadlineMs: number): number =>
-  Math.min(
-    pollDeadlineMs,
-    readPositiveIntegerEnv('AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS', DEFAULT_UNSTRUCTURED_EMPTY_WORKFLOW_DEADLINE_MS)
-  )
+  Math.min(pollDeadlineMs, DEFAULT_UNSTRUCTURED_EMPTY_WORKFLOW_DEADLINE_MS)
 
 const resolveUnstructuredPollRequestTimeoutMs = (): number =>
-  readPositiveIntegerEnv('AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS', DEFAULT_UNSTRUCTURED_POLL_REQUEST_TIMEOUT_MS)
+  DEFAULT_UNSTRUCTURED_POLL_REQUEST_TIMEOUT_MS
 
 const isTimeoutError = (error: unknown): boolean => {
   if (error instanceof DOMException && error.name === 'TimeoutError') {

@@ -11,12 +11,11 @@ import {
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { videoMediaReferenceToGrokUrlObject } from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
-
-const DEFAULT_XAI_BASE_URL = 'https://api.x.ai/v1'
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
@@ -72,7 +71,7 @@ export const runGrokVideoGen = async (
     throw new Error('XAI_API_KEY environment variable is required for Grok video generation')
   }
 
-  const baseURL = (readEnv('XAI_BASE_URL') ?? DEFAULT_XAI_BASE_URL).replace(/\/+$/, '')
+  const baseURL = XAI_DEFAULT_BASE_URL
   const mode = options.mode ?? 'text'
   const duration = mode === 'extend'
     ? normalizeGrokVideoExtensionDuration(options.durationSeconds)

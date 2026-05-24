@@ -23,7 +23,7 @@ import {
 import { resolvePriceSelection } from './price-commands'
 import { buildDashboardReportData, buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
-import { applyModelConfigCalibrations } from './model-calibration'
+import { buildModelCalibrationReport } from './model-calibration'
 import { resolveSelectedFiles } from './path-selection'
 import { withEmptyPriceConfig } from './price-command-config'
 import { E2E_TEST_TIMEOUT_MS } from '../test-utils/timeouts'
@@ -550,11 +550,11 @@ const runStandardTestMode = async (
   const dashboardReport = await buildDashboardReportData(junitCases, metrics, artifacts, endedAtIso, endedAtMs, argv.slice(2))
   const dashboardPaths = await writeDashboardReportFiles(artifacts, dashboardReport)
   console.log(`Dashboard report JSON: ${normalizeRepoPath(dashboardPaths.resultsReportPath)}`)
-  const calibrationReport = await applyModelConfigCalibrations(artifacts.rootDir)
+  const calibrationReport = await buildModelCalibrationReport(artifacts.rootDir)
   await writeJsonFile(artifacts.calibrationReportJsonPath, calibrationReport as unknown as Record<string, unknown>)
   console.log(`Model calibration report: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
-  if (calibrationReport.updatedModels > 0) {
-    console.log(`Auto-calibration updated ${calibrationReport.updatedModels} model entr${calibrationReport.updatedModels === 1 ? 'y' : 'ies'}`)
+  if (calibrationReport.recommendedModels > 0) {
+    console.log(`Model calibration recommendations found for ${calibrationReport.recommendedModels} model entr${calibrationReport.recommendedModels === 1 ? 'y' : 'ies'}`)
   }
 
   return exitCode

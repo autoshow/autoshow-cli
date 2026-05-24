@@ -3,6 +3,7 @@ import type { MinimaxVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
+import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import * as l from '~/utils/logger'
 import { normalizeMinimaxDurationForApi, normalizeMinimaxResolutionForApi } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
@@ -16,8 +17,6 @@ import {
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 import { videoMediaReferenceToUrlOrDataUrl } from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
-
-const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
@@ -69,7 +68,7 @@ export const runMinimaxVideoGen = async (
     throw new Error('MINIMAX_API_KEY environment variable is required')
   }
 
-  const baseURL = readEnv('MINIMAX_BASE_URL') ?? MINIMAX_DEFAULT_BASE_URL
+  const baseURL = MINIMAX_DEFAULT_BASE_URL
   const mode = options.mode ?? 'text'
   const resolutionForApi = normalizeMinimaxResolutionForApi(options.model, options.resolution)
   const durationForApi = normalizeMinimaxDurationForApi(options.model, resolutionForApi, options.durationSeconds)

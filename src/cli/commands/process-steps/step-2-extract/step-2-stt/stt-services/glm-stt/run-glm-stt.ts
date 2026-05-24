@@ -1,4 +1,5 @@
 import type { Step2Metadata, TranscriptionResult } from '~/types'
+import { GLM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import {
   buildTranscriptionOutputBase,
@@ -101,7 +102,7 @@ export const runGlmStt = async (
     throw new Error('GLM_API_KEY environment variable is required for GLM transcription')
   }
 
-  const baseURL = readEnv('GLM_BASE_URL') ?? 'https://api.z.ai/api/paas/v4'
+  const baseURL = GLM_DEFAULT_BASE_URL
   try {
     return await runOpenAICompatibleSingleSpeakerStt(audioPath, outputDir, {
       service: 'glm-stt',

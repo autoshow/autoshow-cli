@@ -66,7 +66,6 @@ Accepted provider selectors are the lowercase names below.
 | Provider selector | Sections |
 |-------------------|----------|
 | `--assembly` | `stt` |
-| `--aws` | `stt`, `ocr` |
 | `--better-auth` | `general` |
 | `--bfl` | `image` |
 | `--cartesia` | `general`, `tts` |
@@ -76,7 +75,6 @@ Accepted provider selectors are the lowercase names below.
 | `--drive` | `general` |
 | `--elevenlabs` | `general`, `music`, `stt`, `tts` |
 | `--firecrawl` | `general`, `url` |
-| `--gcloud` | `ocr`, `stt`, `tts` |
 | `--gemini` | `general`, `image`, `music`, `ocr`, `stt`, `text`, `tts`, `video` |
 | `--gladia` | `general`, `stt` |
 | `--glm` | `general`, `ocr`, `stt`, `text`, `url`, `video` |

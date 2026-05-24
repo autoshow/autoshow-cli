@@ -40,8 +40,8 @@ const logLyricsBatchSummary = (total: number, succeeded: number, failed: number)
 }
 const AUDIO_EXTENSIONS = new Set(['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac'])
 
-const resolveInputRoot = (): string => {
-  const override = process.env['AUTOSHOW_MUSIC_LYRIC_VIDEO_INPUT_DIR']
+const resolveInputRoot = (flags?: Record<string, unknown>): string => {
+  const override = typeof flags?.['input-dir'] === 'string' ? flags['input-dir'] : undefined
   return override ? resolve(PROJECT_ROOT, override) : DEFAULT_INPUT_ROOT
 }
 
@@ -300,7 +300,7 @@ const failWithExitCode = (message: string, exitCode: number): never => {
 }
 
 export const runMusicLyricVideo = async (flags: Record<string, unknown>): Promise<void> => {
-  const inputRoot = resolveInputRoot()
+  const inputRoot = resolveInputRoot(flags)
   const outputRoot = OUTPUT_ROOT
   const batch = flags['batch'] === true
   const audioFlag = typeof flags['audio'] === 'string' ? flags['audio'] : undefined

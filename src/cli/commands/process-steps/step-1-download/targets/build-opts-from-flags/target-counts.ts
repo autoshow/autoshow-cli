@@ -26,8 +26,6 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.anthropicOcrModels, modelOptions.anthropicOcrModel)
     + countSelectedTargets(modelOptions.geminiOcrModels, modelOptions.geminiOcrModel)
     + countSelectedTargets(modelOptions.deepinfraOcrModels, modelOptions.deepinfraOcrModel)
-    + countSelectedTargets(modelOptions.awsTextractModels, modelOptions.awsTextractModel)
-    + countSelectedTargets(modelOptions.gcloudDocaiModels, modelOptions.gcloudDocaiModel)
     + countSelectedTargets(modelOptions.unstructuredOcrModels, modelOptions.unstructuredOcrModel)
   const hostedLlmTargetCount =
     countSelectedTargets(modelOptions.openaiModels, modelOptions.openaiModel)
@@ -50,7 +48,6 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.speechifyTtsModels, modelOptions.speechifyTtsModel)
     + countSelectedTargets(modelOptions.humeTtsModels, modelOptions.humeTtsModel)
     + countSelectedTargets(modelOptions.cartesiaTtsModels, modelOptions.cartesiaTtsModel)
-    + countSelectedTargets(modelOptions.gcloudTtsModels, modelOptions.gcloudTtsModel)
   const hostedImageTargetCount =
     countSelectedTargets(modelOptions.geminiImageModels, modelOptions.geminiImageModel)
     + countSelectedTargets(modelOptions.openaiImageModels, modelOptions.openaiImageModel)

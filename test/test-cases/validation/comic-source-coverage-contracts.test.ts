@@ -36,8 +36,8 @@ import type {
   StructuredScriptSourceSegment,
 } from '~/cli/commands/process-steps/step-8-comic/types'
 
-const episode5ScriptPath = 'input/episode-scripts/05-script/01-paddy-goes-on-vacation.md'
-const episode4RecapScriptPath = 'input/episode-scripts/04-script/01-previously-on-uss-acampo.md'
+const episode5ScriptPath = 'input/uss/episode-scripts/05-script/01-paddy-goes-on-vacation.md'
+const episode4RecapScriptPath = 'input/uss/episode-scripts/04-script/01-previously-on-uss-acampo.md'
 const comicSourceRoot = 'src/cli/commands/process-steps/step-8-comic'
 const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const redDotPng = new Uint8Array([
@@ -408,7 +408,7 @@ describe('comic source coverage contracts', () => {
 
   test('recap montage resolver maps Episode 4 scripts to Episode 3 scripts', () => {
     expect(resolvePreviousEpisodeScriptsDirectory(episode4RecapScriptPath))
-      .toBe(join('input', 'episode-scripts', '03-script'))
+      .toBe(join('input', 'uss', 'episode-scripts', '03-script'))
   })
 
   test('recap montage cue detection requires both episode and montage in the same beat', () => {
@@ -683,7 +683,7 @@ describe('comic source coverage contracts', () => {
 
       expect(existsSync(`${panelDir}/12-chat.webp`)).toBe(true)
       expect(prompt).toContain('"name": "HR Hologram"')
-      expect(prompt).toContain('"image": "input/characters/12-chat.webp"')
+      expect(prompt).toContain('"image": "input/uss/characters/12-chat.webp"')
     } finally {
       await rm(sceneOutputDirectory, { recursive: true, force: true })
     }

@@ -27,8 +27,6 @@ const SERVICE_DEFINITIONS: {
   { service: 'rev', models: ['machine', 'low_cost'], envVar: 'REVAI_ACCESS_TOKEN' },
   { service: 'gladia', models: ['default'], envVar: 'GLADIA_API_KEY' },
   { service: 'happyscribe', models: ['auto'], envVar: 'HAPPYSCRIBE_API_KEY' },
-  { service: 'gcloud', models: ['chirp_3'], envVar: undefined, checkAvailable: () => commandExists('gcloud') },
-  { service: 'aws', models: ['standard'], envVar: undefined, checkAvailable: () => commandExists('aws') },
 ]
 
 const isServiceAvailable = (def: typeof SERVICE_DEFINITIONS[number]): boolean => {

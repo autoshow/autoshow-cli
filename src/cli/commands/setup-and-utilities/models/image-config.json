@@ -10,7 +10,7 @@
         "nativeGeminiImage": true,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 14895
+          "msPerImage": 19416
         }
       }
     }
@@ -49,7 +49,7 @@
         "costPerImageCents": 5,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 7713
+          "msPerImage": 6080
         }
       },
       "grok-imagine-image": {
@@ -73,7 +73,7 @@
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 19394
+          "msPerImage": 16645
         }
       },
       "flux-2-max": {
@@ -82,7 +82,7 @@
         "costPerImageCents": 7,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 23533
         }
       },
       "flux-2-flex": {
@@ -91,7 +91,7 @@
         "costPerImageCents": 6,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 23549
         }
       }
     }

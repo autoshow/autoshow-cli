@@ -14,7 +14,7 @@ import {
 const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
 const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
 const LLM_PROVIDER_FLAGS = ['llama', 'openai', 'groq', 'gemini', 'anthropic', 'minimax', 'grok', 'glm', 'kimi'] as const
-const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'hume-tts', 'cartesia-tts', 'gcloud-tts'] as const
+const TTS_PROVIDER_FLAGS = ['kitten-tts', 'elevenlabs-tts', 'minimax-tts', 'groq-tts', 'grok-tts', 'mistral-tts', 'openai-tts', 'gemini-tts', 'deepgram-tts', 'speechify-tts', 'hume-tts', 'cartesia-tts'] as const
 const IMAGE_PROVIDER_FLAGS = ['gemini-image', 'openai-image', 'grok-image', 'bfl-image', 'reve-image'] as const
 const VIDEO_PROVIDER_FLAGS = ['gemini-video', 'minimax-video', 'glm-video', 'grok-video', 'runway-video'] as const
 const MUSIC_PROVIDER_FLAGS = ['elevenlabs-music', 'minimax-music', 'gemini-music'] as const
@@ -92,14 +92,12 @@ export const mergeConfigIntoRawFlags = (
   if (d.extract?.stt) {
     inject('youtube-captions', d.extract.stt.youtubeCaptions)
     injectProviderGroup(STT_PROVIDER_FLAGS, resolveStep2ProviderDefaults(config, 'stt'))
-    inject('happyscribe-organization-id', d.extract.stt.happyscribeOrganizationId)
-    inject('supadata-lang', d.extract.stt.supadataLang)
-    inject('scrapecreators-lang', d.extract.stt.scrapecreatorsLang)
-    inject('aws-region', d.extract.stt.awsRegion)
-    inject('aws-bucket', d.extract.stt.awsBucket)
+    inject('stt-happyscribe-organization-id', d.extract.stt.happyscribeOrganizationId)
+    inject('stt-supadata-lang', d.extract.stt.supadataLang)
+    inject('stt-scrapecreators-lang', d.extract.stt.scrapecreatorsLang)
     inject('speaker-count', d.extract.stt.speakerCount)
     inject('split', d.extract.stt.split)
-    inject('reverb-verbatimicity', d.extract.stt.reverbVerbatimicity)
+    inject('stt-reverb-verbatimicity', d.extract.stt.reverbVerbatimicity)
     inject('stt-provider-concurrency', d.extract.stt.providerConcurrency)
     inject('stt-local-concurrency', d.extract.stt.localConcurrency)
     inject('stt-segment-concurrency', d.extract.stt.segmentConcurrency)
@@ -127,7 +125,6 @@ export const mergeConfigIntoRawFlags = (
       ['deepgram-tts', d.post.tts.deepgramTts],
       ['speechify-tts', d.post.tts.speechifyTts],
       ['hume-tts', d.post.tts.humeTts], ['cartesia-tts', d.post.tts.cartesiaTts],
-      ['gcloud-tts', d.post.tts.gcloudTts],
     ])
     inject('kitten-voice', d.post.tts.ttsSpeaker)
     inject('groq-voice', d.post.tts.groqVoice)
@@ -139,6 +136,7 @@ export const mergeConfigIntoRawFlags = (
     inject('mistral-tts-voice-name', d.post.tts.mistralTtsVoiceName)
     inject('tts-dialogue-format', d.post.tts.ttsDialogueFormat)
     inject('tts-speaker-ref-audio', d.post.tts.ttsSpeakerRefAudio)
+    inject('tts-speaker', d.post.tts.ttsSpeakers)
     inject('openai-voice', d.post.tts.openaiVoice)
     inject('openai-tts-instructions', d.post.tts.openaiTtsInstructions)
     inject('openai-tts-speed', d.post.tts.openaiTtsSpeed)
@@ -159,7 +157,6 @@ export const mergeConfigIntoRawFlags = (
     inject('gemini-speaker-2-name', d.post.tts.geminiSpeaker2Name)
     inject('gemini-speaker-2-voice', d.post.tts.geminiSpeaker2Voice)
     inject('elevenlabs-voice', d.post.tts.elevenlabsVoice)
-    inject('elevenlabs-tts-pvc-voice', d.post.tts.elevenlabsTtsPvcVoice)
     inject('elevenlabs-tts-ref-audio', d.post.tts.elevenlabsTtsRefAudio)
     inject('elevenlabs-tts-voice-name', d.post.tts.elevenlabsTtsVoiceName)
     inject('elevenlabs-tts-clone-remove-background-noise', d.post.tts.elevenlabsTtsCloneRemoveBackgroundNoise)
@@ -174,7 +171,6 @@ export const mergeConfigIntoRawFlags = (
     inject('elevenlabs-tts-text-normalization', d.post.tts.elevenlabsTtsTextNormalization)
     inject('elevenlabs-tts-pronunciation-dictionary-locator', d.post.tts.elevenlabsTtsPronunciationDictionaryLocators)
     inject('elevenlabs-tts-optimize-streaming-latency', d.post.tts.elevenlabsTtsOptimizeStreamingLatency)
-    inject('elevenlabs-tts-pvc-as-ivc', d.post.tts.elevenlabsTtsPvcAsIvc)
     inject('minimax-tts-voice', d.post.tts.minimaxTtsVoice)
     inject('minimax-tts-language-boost', d.post.tts.minimaxTtsLanguageBoost)
     inject('minimax-tts-speed', d.post.tts.minimaxTtsSpeed)
@@ -191,11 +187,6 @@ export const mergeConfigIntoRawFlags = (
     inject('hume-tts-voice-provider', d.post.tts.humeTtsVoiceProvider)
     inject('cartesia-tts-voice', d.post.tts.cartesiaTtsVoice)
     inject('cartesia-tts-language', d.post.tts.cartesiaTtsLanguage)
-    inject('gcloud-tts-voice', d.post.tts.gcloudTtsVoice)
-    inject('gcloud-tts-language', d.post.tts.gcloudTtsLanguage)
-    inject('gcloud-tts-ref-audio', d.post.tts.gcloudTtsRefAudio)
-    inject('gcloud-tts-consent-audio', d.post.tts.gcloudTtsConsentAudio)
-    inject('gcloud-tts-consent-language', d.post.tts.gcloudTtsConsentLanguage)
     inject('tts-provider-concurrency', d.post.tts.providerConcurrency)
     inject('tts-local-concurrency', d.post.tts.localConcurrency)
   }
@@ -253,11 +244,6 @@ export const mergeConfigIntoRawFlags = (
     inject('out', d.extract.ocr.out)
     injectProviderGroup(OCR_PROVIDER_FLAGS, resolveStep2ProviderDefaults(config, 'ocr'))
     inject('dpi', d.extract.ocr.dpi)
-    inject('psm', d.extract.ocr.psm)
-    inject('oem', d.extract.ocr.oem)
-    inject('rotate', d.extract.ocr.rotate)
-    inject('page-separator', d.extract.ocr.pageSeparator)
-    inject('preserve-spaces', d.extract.ocr.preserveSpaces)
     inject('ocr-provider-concurrency', d.extract.ocr.providerConcurrency)
     inject('ocr-local-concurrency', d.extract.ocr.localConcurrency)
     inject('chapters', d.extract.ocr.chapters)
@@ -286,14 +272,12 @@ export const mergeConfigIntoRawFlags = (
 const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   ...STEP2_PROVIDER_CONFIG_PATHS,
   'youtube-captions':  ['defaults', 'extract', 'stt', 'youtubeCaptions'],
-  'happyscribe-organization-id': ['defaults', 'extract', 'stt', 'happyscribeOrganizationId'],
-  'supadata-lang':     ['defaults', 'extract', 'stt', 'supadataLang'],
-  'scrapecreators-lang': ['defaults', 'extract', 'stt', 'scrapecreatorsLang'],
-  'aws-region':        ['defaults', 'extract', 'stt', 'awsRegion'],
-  'aws-bucket':        ['defaults', 'extract', 'stt', 'awsBucket'],
+  'stt-happyscribe-organization-id': ['defaults', 'extract', 'stt', 'happyscribeOrganizationId'],
+  'stt-supadata-lang':     ['defaults', 'extract', 'stt', 'supadataLang'],
+  'stt-scrapecreators-lang': ['defaults', 'extract', 'stt', 'scrapecreatorsLang'],
   'speaker-count':     ['defaults', 'extract', 'stt', 'speakerCount'],
   'split':             ['defaults', 'extract', 'stt', 'split'],
-  'reverb-verbatimicity': ['defaults', 'extract', 'stt', 'reverbVerbatimicity'],
+  'stt-reverb-verbatimicity': ['defaults', 'extract', 'stt', 'reverbVerbatimicity'],
   'stt-provider-concurrency': ['defaults', 'extract', 'stt', 'providerConcurrency'],
   'stt-local-concurrency': ['defaults', 'extract', 'stt', 'localConcurrency'],
   'stt-segment-concurrency': ['defaults', 'extract', 'stt', 'segmentConcurrency'],
@@ -323,7 +307,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'speechify-tts':     ['defaults', 'post', 'tts', 'speechifyTts'],
   'hume-tts':          ['defaults', 'post', 'tts', 'humeTts'],
   'cartesia-tts':      ['defaults', 'post', 'tts', 'cartesiaTts'],
-  'gcloud-tts':        ['defaults', 'post', 'tts', 'gcloudTts'],
   'kitten-voice':      ['defaults', 'post', 'tts', 'ttsSpeaker'],
   'groq-voice':        ['defaults', 'post', 'tts', 'groqVoice'],
   'grok-tts-voice':    ['defaults', 'post', 'tts', 'grokTtsVoice'],
@@ -334,6 +317,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'mistral-tts-voice-name': ['defaults', 'post', 'tts', 'mistralTtsVoiceName'],
   'tts-dialogue-format': ['defaults', 'post', 'tts', 'ttsDialogueFormat'],
   'tts-speaker-ref-audio': ['defaults', 'post', 'tts', 'ttsSpeakerRefAudio'],
+  'tts-speaker': ['defaults', 'post', 'tts', 'ttsSpeakers'],
   'openai-voice':      ['defaults', 'post', 'tts', 'openaiVoice'],
   'openai-tts-instructions': ['defaults', 'post', 'tts', 'openaiTtsInstructions'],
   'openai-tts-speed': ['defaults', 'post', 'tts', 'openaiTtsSpeed'],
@@ -354,7 +338,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'gemini-speaker-2-name': ['defaults', 'post', 'tts', 'geminiSpeaker2Name'],
   'gemini-speaker-2-voice': ['defaults', 'post', 'tts', 'geminiSpeaker2Voice'],
   'elevenlabs-voice':  ['defaults', 'post', 'tts', 'elevenlabsVoice'],
-  'elevenlabs-tts-pvc-voice': ['defaults', 'post', 'tts', 'elevenlabsTtsPvcVoice'],
   'elevenlabs-tts-ref-audio': ['defaults', 'post', 'tts', 'elevenlabsTtsRefAudio'],
   'elevenlabs-tts-voice-name': ['defaults', 'post', 'tts', 'elevenlabsTtsVoiceName'],
   'elevenlabs-tts-clone-remove-background-noise': ['defaults', 'post', 'tts', 'elevenlabsTtsCloneRemoveBackgroundNoise'],
@@ -369,7 +352,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'elevenlabs-tts-text-normalization': ['defaults', 'post', 'tts', 'elevenlabsTtsTextNormalization'],
   'elevenlabs-tts-pronunciation-dictionary-locator': ['defaults', 'post', 'tts', 'elevenlabsTtsPronunciationDictionaryLocators'],
   'elevenlabs-tts-optimize-streaming-latency': ['defaults', 'post', 'tts', 'elevenlabsTtsOptimizeStreamingLatency'],
-  'elevenlabs-tts-pvc-as-ivc': ['defaults', 'post', 'tts', 'elevenlabsTtsPvcAsIvc'],
   'minimax-tts-voice': ['defaults', 'post', 'tts', 'minimaxTtsVoice'],
   'minimax-tts-ref-audio': ['defaults', 'post', 'tts', 'minimaxTtsRefAudio'],
   'minimax-tts-prompt-audio': ['defaults', 'post', 'tts', 'minimaxTtsPromptAudio'],
@@ -391,11 +373,6 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'hume-tts-voice-provider': ['defaults', 'post', 'tts', 'humeTtsVoiceProvider'],
   'cartesia-tts-voice': ['defaults', 'post', 'tts', 'cartesiaTtsVoice'],
   'cartesia-tts-language': ['defaults', 'post', 'tts', 'cartesiaTtsLanguage'],
-  'gcloud-tts-voice':  ['defaults', 'post', 'tts', 'gcloudTtsVoice'],
-  'gcloud-tts-language': ['defaults', 'post', 'tts', 'gcloudTtsLanguage'],
-  'gcloud-tts-ref-audio': ['defaults', 'post', 'tts', 'gcloudTtsRefAudio'],
-  'gcloud-tts-consent-audio': ['defaults', 'post', 'tts', 'gcloudTtsConsentAudio'],
-  'gcloud-tts-consent-language': ['defaults', 'post', 'tts', 'gcloudTtsConsentLanguage'],
   'tts-provider-concurrency': ['defaults', 'post', 'tts', 'providerConcurrency'],
   'tts-local-concurrency': ['defaults', 'post', 'tts', 'localConcurrency'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
@@ -435,14 +412,12 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'music-duration':    ['defaults', 'post', 'music', 'musicDuration'],
   'music-provider-concurrency': ['defaults', 'post', 'music', 'providerConcurrency'],
   'music-local-concurrency': ['defaults', 'post', 'music', 'localConcurrency'],
+  'ocr-language':       ['defaults', 'extract', 'ocr', 'lang'],
+  'format':             ['defaults', 'extract', 'ocr', 'out'],
+  'ocr-dpi':            ['defaults', 'extract', 'ocr', 'dpi'],
   'lang':              ['defaults', 'extract', 'ocr', 'lang'],
   'out':               ['defaults', 'extract', 'ocr', 'out'],
   'dpi':               ['defaults', 'extract', 'ocr', 'dpi'],
-  'psm':               ['defaults', 'extract', 'ocr', 'psm'],
-  'oem':               ['defaults', 'extract', 'ocr', 'oem'],
-  'rotate':            ['defaults', 'extract', 'ocr', 'rotate'],
-  'page-separator':    ['defaults', 'extract', 'ocr', 'pageSeparator'],
-  'preserve-spaces':   ['defaults', 'extract', 'ocr', 'preserveSpaces'],
   'ocr-provider-concurrency': ['defaults', 'extract', 'ocr', 'providerConcurrency'],
   'ocr-local-concurrency': ['defaults', 'extract', 'ocr', 'localConcurrency'],
   'chapters':          ['defaults', 'extract', 'ocr', 'chapters'],
@@ -461,21 +436,12 @@ const RUNTIME_ONLY_FLAGS = new Set([
   'reset',
   'config-path',
   'password',
-  'elevenlabs-tts-pvc-sample',
-  'elevenlabs-tts-pvc-sample-dir',
-  'elevenlabs-tts-pvc-language',
-  'elevenlabs-tts-pvc-description',
-  'elevenlabs-tts-pvc-captcha-out',
-  'elevenlabs-tts-pvc-verify-audio',
-  'elevenlabs-tts-pvc-wait',
   'speechify-tts-ref-audio',
   'speechify-tts-voice-name',
   'speechify-tts-consent-name',
   'speechify-tts-consent-email',
   'speechify-tts-voice-locale',
-  'speechify-tts-voice-gender',
-  'gcloud-tts-voice-cloning-key',
-  'gcloud-tts-voice-cloning-key-out'
+  'speechify-tts-voice-gender'
 ])
 
 const setNestedValue = (obj: Record<string, unknown>, path: string[], value: unknown): void => {
@@ -504,9 +470,10 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
   }
   if (typeof rawValue !== 'string') return rawValue
   const numericFlags = new Set([
-    'speaker-count', 'reverb-verbatimicity', 'image-count', 'video-duration',
-    'music-duration', 'dpi', 'psm', 'oem', 'rotate', 'length', 'batch-limit', 'batch-concurrency',
+    'speaker-count', 'stt-reverb-verbatimicity', 'reverb-verbatimicity', 'image-count', 'video-duration',
+    'music-duration', 'dpi', 'ocr-dpi', 'length', 'batch-limit', 'batch-concurrency',
     'max-cents',
+    'provider-concurrency', 'local-concurrency',
     'llm-provider-concurrency', 'llm-local-concurrency',
     'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency',
     'ocr-provider-concurrency', 'ocr-local-concurrency',
@@ -563,6 +530,36 @@ export const buildConfigPatchFromFlags = (
     }
 
     setNestedValue(patch, configPath, value)
+  }
+
+  if (explicitFlags.has('provider-concurrency')) {
+    const value = resolveConfigFlagValue('provider-concurrency', flags['provider-concurrency'])
+    for (const path of [
+      ['defaults', 'extract', 'stt', 'providerConcurrency'],
+      ['defaults', 'extract', 'ocr', 'providerConcurrency'],
+      ['defaults', 'llm', 'providerConcurrency'],
+      ['defaults', 'post', 'tts', 'providerConcurrency'],
+      ['defaults', 'post', 'image', 'providerConcurrency'],
+      ['defaults', 'post', 'video', 'providerConcurrency'],
+      ['defaults', 'post', 'music', 'providerConcurrency']
+    ]) {
+      setNestedValue(patch, path, value)
+    }
+  }
+
+  if (explicitFlags.has('local-concurrency')) {
+    const value = resolveConfigFlagValue('local-concurrency', flags['local-concurrency'])
+    for (const path of [
+      ['defaults', 'extract', 'stt', 'localConcurrency'],
+      ['defaults', 'extract', 'ocr', 'localConcurrency'],
+      ['defaults', 'llm', 'localConcurrency'],
+      ['defaults', 'post', 'tts', 'localConcurrency'],
+      ['defaults', 'post', 'image', 'localConcurrency'],
+      ['defaults', 'post', 'video', 'localConcurrency'],
+      ['defaults', 'post', 'music', 'localConcurrency']
+    ]) {
+      setNestedValue(patch, path, value)
+    }
   }
 
   if (explicitFlags.has('prompt') && !RUNTIME_ONLY_FLAGS.has('prompt')) {

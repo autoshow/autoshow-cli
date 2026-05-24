@@ -75,7 +75,70 @@ describe('resume provider flag surface', () => {
       'primary-ocr',
       'price'
     ]))
-    expectResumeHasFlags(without(ttsFlags, ['price']))
+    expectResumeHasFlags(without(ttsFlags, [
+      'price',
+      'all-tts',
+      'tts-provider-concurrency',
+      'tts-local-concurrency',
+      'kitten-tts',
+      'elevenlabs-tts',
+      'minimax-tts',
+      'groq-tts',
+      'grok-tts',
+      'mistral-tts',
+      'openai-tts',
+      'gemini-tts',
+      'deepgram-tts',
+      'speechify-tts',
+      'hume-tts',
+      'cartesia-tts',
+      'kitten-voice',
+      'minimax-tts-voice',
+      'minimax-tts-speed',
+      'openai-voice',
+      'openai-tts-instructions',
+      'openai-tts-speed',
+      'openai-tts-ref-audio',
+      'openai-tts-consent-audio',
+      'openai-tts-consent-language',
+      'openai-tts-consent-name',
+      'openai-tts-voice-name',
+      'gemini-voice',
+      'deepgram-voice',
+      'deepgram-tts-speed',
+      'speechify-voice',
+      'speechify-tts-language',
+      'speechify-tts-ref-audio',
+      'speechify-tts-voice-name',
+      'speechify-tts-consent-name',
+      'speechify-tts-consent-email',
+      'hume-tts-voice',
+      'cartesia-tts-voice',
+      'cartesia-tts-language',
+      'grok-tts-voice',
+      'grok-tts-language',
+      'grok-tts-text-normalization',
+      'groq-voice',
+      'mistral-tts-voice',
+      'mistral-tts-ref-audio',
+      'mistral-tts-voice-name',
+      'elevenlabs-voice',
+      'elevenlabs-tts-ref-audio',
+      'elevenlabs-tts-voice-name',
+      'elevenlabs-tts-language-code',
+      'elevenlabs-tts-speed',
+      'elevenlabs-tts-text-normalization',
+      'minimax-tts-english-normalization',
+      'elevenlabs-tts-output-format',
+      'speechify-tts-audio-format',
+      'deepgram-tts-encoding',
+    ]))
+    expectResumeHasFlags([
+      'tts-voice', 'tts-speed', 'tts-language', 'tts-ref-audio',
+      'tts-voice-name', 'tts-consent-audio', 'tts-consent-language',
+      'tts-consent-name', 'tts-consent-email', 'tts-text-normalization',
+      'tts-instructions', 'tts-output-format'
+    ])
     expectResumeHasFlags(without(imageGenFlags, ['price']))
     expectResumeHasFlags(without(videoGenFlags, ['price']))
     expectResumeHasFlags(without(musicGenFlags, ['price']))
@@ -85,22 +148,15 @@ describe('resume provider flag surface', () => {
     }
   })
 
-  test('resume accepts newer TTS provider and control flags', () => {
+  test('resume accepts generic TTS flags and provider-specific flags without generic equivalents', () => {
     expectResumeHasFlags([
-      'grok-tts',
-      'grok-tts-voice',
-      'grok-tts-language',
-      'grok-tts-text-normalization',
-      'speechify-tts',
-      'speechify-voice',
-      'speechify-tts-audio-format',
-      'speechify-tts-ref-audio',
-      'gcloud-tts',
-      'gcloud-tts-voice',
-      'gcloud-tts-language',
-      'gcloud-tts-ref-audio',
-      'gcloud-tts-consent-audio',
-      'gcloud-tts-voice-cloning-key'
+      'tts-voice', 'tts-speed', 'tts-language', 'tts-ref-audio',
+      'tts-voice-name', 'tts-consent-audio', 'tts-consent-language',
+      'tts-consent-name', 'tts-consent-email', 'tts-text-normalization',
+      'tts-instructions', 'tts-output-format',
+      'elevenlabs-tts-stability', 'elevenlabs-tts-similarity-boost',
+      'openai-tts-consent-id', 'hume-tts-voice-provider',
+      'minimax-tts-language-boost', 'minimax-tts-emotion',
     ])
   })
 
@@ -117,82 +173,101 @@ describe('resume provider flag surface', () => {
   })
 })
 
-describe('resume target-aware public selector aliases', () => {
-  test('normalizes public aliases for generation resume targets', () => {
+describe('resume target-aware provider selectors', () => {
+  test('normalizes --provider and generic TTS options for TTS resume targets', () => {
     const tts = normalizeResumeSelectorFlagsForTarget(
       target('tts'),
-      { gcloud: 'chirp3-hd' },
-      new Set(['gcloud']),
-      ['resume', 'out', '--gcloud', 'chirp3-hd']
+      { provider: ['kitten=kitten-tts-nano'], 'tts-voice': ['Luna'] },
+      new Set(['provider', 'tts-voice']),
+      ['resume', 'out', '--provider', 'kitten=kitten-tts-nano', '--tts-voice', 'Luna']
     )
-    expect(tts.flags['gcloud-tts']).toBe('chirp3-hd')
-    expect(tts.explicitFlags.has('gcloud-tts')).toBe(true)
-    expect(buildOpts(tts.flags, tts.explicitFlags, tts.rawArgs).gcloudTtsModels).toEqual(['chirp3-hd'])
+    expect(tts.flags['kitten-tts']).toBe('kitten-tts-nano')
+    expect(tts.flags['kitten-voice']).toBe('Luna')
+    expect(tts.explicitFlags.has('kitten-tts')).toBe(true)
+    expect(tts.explicitFlags.has('kitten-voice')).toBe(true)
+  })
 
+  test('normalizes --provider for generation resume targets', () => {
     const image = normalizeResumeSelectorFlagsForTarget(
       target('image'),
-      { openai: 'gpt-image-2' },
-      new Set(['openai']),
-      ['resume', 'out', '--openai', 'gpt-image-2']
+      { provider: ['openai=gpt-image-2'] },
+      new Set(['provider']),
+      ['resume', 'out', '--provider', 'openai=gpt-image-2']
     )
     expect(image.flags['openai-image']).toBe('gpt-image-2')
     expect(buildOpts(image.flags, image.explicitFlags, image.rawArgs).openaiImageModels).toEqual(['gpt-image-2'])
 
     const video = normalizeResumeSelectorFlagsForTarget(
       target('video'),
-      { runway: 'gen4.5' },
-      new Set(['runway']),
-      ['resume', 'out', '--runway', 'gen4.5']
+      { provider: ['runway=gen4.5'] },
+      new Set(['provider']),
+      ['resume', 'out', '--provider', 'runway=gen4.5']
     )
     expect(video.flags['runway-video']).toBe('gen4.5')
     expect(buildOpts(video.flags, video.explicitFlags, video.rawArgs).runwayVideoModels).toEqual(['gen4.5'])
 
     const music = normalizeResumeSelectorFlagsForTarget(
       target('music'),
-      { elevenlabs: 'music_v1' },
-      new Set(['elevenlabs']),
-      ['resume', 'out', '--elevenlabs', 'music_v1']
+      { provider: ['elevenlabs=music_v1'] },
+      new Set(['provider']),
+      ['resume', 'out', '--provider', 'elevenlabs=music_v1']
     )
     expect(music.flags['elevenlabs-music']).toBe('music_v1')
     expect(buildOpts(music.flags, music.explicitFlags, music.rawArgs).elevenlabsMusicModels).toEqual(['music_v1'])
   })
 
-  test('normalizes extract public aliases by route', () => {
+  test('normalizes extract --provider selectors by route', () => {
     const stt = normalizeResumeSelectorFlagsForTarget(
       target('extract', '/tmp/autoshow-resume-media', 'media'),
-      { gcloud: 'chirp_3' },
-      new Set(['gcloud']),
-      ['resume', 'out', '--gcloud', 'chirp_3']
+      { provider: ['deepgram=nova-3'] },
+      new Set(['provider']),
+      ['resume', 'out', '--provider', 'deepgram=nova-3']
     )
-    expect(stt.flags['gcloud-stt']).toBe('chirp_3')
-    expect(stt.flags['gcloud-docai']).toBeUndefined()
-    expect(buildOpts(stt.flags, stt.explicitFlags, stt.rawArgs).gcloudSttModels).toEqual(['chirp_3'])
+    expect(stt.flags['deepgram-stt']).toBe('nova-3')
+    expect(stt.flags['deepinfra-ocr']).toBeUndefined()
+    expect(buildOpts(stt.flags, stt.explicitFlags, stt.rawArgs).deepgramSttModels).toEqual(['nova-3'])
 
     const ocr = normalizeResumeSelectorFlagsForTarget(
       target('extract', '/tmp/autoshow-resume-document', 'document'),
-      { gcloud: 'ocr' },
-      new Set(['gcloud']),
-      ['resume', 'out', '--gcloud', 'ocr']
+      { provider: ['deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct'] },
+      new Set(['provider']),
+      ['resume', 'out', '--provider', 'deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct']
     )
-    expect(ocr.flags['gcloud-docai']).toBe('ocr')
-    expect(ocr.flags['gcloud-stt']).toBeUndefined()
-    expect(buildOpts(ocr.flags, ocr.explicitFlags, ocr.rawArgs).gcloudDocaiModels).toEqual(['ocr'])
+    expect(ocr.flags['deepinfra-ocr']).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
+    expect(ocr.flags['deepgram-stt']).toBeUndefined()
+    expect(buildOpts(ocr.flags, ocr.explicitFlags, ocr.rawArgs).deepinfraOcrModels).toEqual(['Qwen/Qwen3-VL-30B-A3B-Instruct'])
   })
 
-  test('rejects selectors that do not apply to the resolved target', () => {
+  test('rejects providers that do not apply to the resolved target', () => {
     expect(() => normalizeResumeSelectorFlagsForTarget(
       target('video'),
-      { openai: 'gpt-image-2' },
-      new Set(['openai']),
-      ['resume', 'out', '--openai', 'gpt-image-2']
-    )).toThrow('--openai does not apply to video resume targets')
+      { provider: ['openai=gpt-image-2'] },
+      new Set(['provider']),
+      ['resume', 'out', '--provider', 'openai=gpt-image-2']
+    )).toThrow('Unknown provider "openai" for --provider')
+  })
 
+  test('rejects legacy resume selector aliases', () => {
     expect(() => normalizeResumeSelectorFlagsForTarget(
       target('tts'),
       { 'all-image': true },
       new Set(['all-image']),
       ['resume', 'out', '--all-image']
-    )).toThrow('--all-image does not apply to TTS resume targets')
+    )).toThrow('--all-image is no longer supported for resume')
+
+    expect(() => normalizeResumeSelectorFlagsForTarget(
+      target('image'),
+      { 'gemini-image': 'gemini-3.1-flash-image-preview' },
+      new Set(['gemini-image']),
+      ['resume', 'out', '--gemini-image', 'gemini-3.1-flash-image-preview']
+    )).toThrow('--gemini-image is no longer supported for resume')
+
+    expect(() => normalizeResumeSelectorFlagsForTarget(
+      target('extract', '/tmp/autoshow-resume-document', 'document'),
+      { openai: 'gpt-5.4-mini' },
+      new Set(['openai']),
+      ['resume', 'out', '--openai', 'gpt-5.4-mini']
+    )).toThrow('--openai is no longer supported for resume')
   })
 })
 
@@ -202,7 +277,6 @@ describe('resume all-shortcut additive selection', () => {
       const cases = [
         {
           kind: 'tts' as const,
-          flag: 'all-tts',
           metadataKey: 'tts',
           requestedProvider: { service: 'kitten', model: 'kitten-tts-mini' },
           metadata: {
@@ -217,7 +291,6 @@ describe('resume all-shortcut additive selection', () => {
         },
         {
           kind: 'image' as const,
-          flag: 'all-image',
           metadataKey: 'image',
           requestedProvider: { service: 'gemini', model: 'gemini-3.1-flash-image-preview' },
           metadata: {
@@ -235,7 +308,6 @@ describe('resume all-shortcut additive selection', () => {
         },
         {
           kind: 'video' as const,
-          flag: 'all-video',
           metadataKey: 'video',
           requestedProvider: { service: 'gemini', model: 'veo-3.1-fast-generate-preview' },
           metadata: {
@@ -250,7 +322,6 @@ describe('resume all-shortcut additive selection', () => {
         },
         {
           kind: 'music' as const,
-          flag: 'all-music',
           metadataKey: 'music',
           requestedProvider: { service: 'elevenlabs', model: 'music_v1' },
           metadata: {
@@ -274,9 +345,15 @@ describe('resume all-shortcut additive selection', () => {
           requestedProviders: [entry.requestedProvider],
           [entry.metadataKey]: [entry.metadata]
         })
-        const explicit = new Set([entry.flag])
-        const opts = buildOpts({ [entry.flag]: true }, explicit, ['resume', runDir, `--${entry.flag}`])
-        await expect(entry.hasWork(target(entry.kind, runDir), opts, explicit)).resolves.toBe(true)
+        const explicit = new Set(['all-providers'])
+        const normalized = normalizeResumeSelectorFlagsForTarget(
+          target(entry.kind, runDir),
+          { 'all-providers': true },
+          explicit,
+          ['resume', runDir, '--all-providers']
+        )
+        const opts = buildOpts(normalized.flags, normalized.explicitFlags, normalized.rawArgs)
+        await expect(entry.hasWork(target(entry.kind, runDir), opts, normalized.explicitFlags)).resolves.toBe(true)
       }
     })
   })

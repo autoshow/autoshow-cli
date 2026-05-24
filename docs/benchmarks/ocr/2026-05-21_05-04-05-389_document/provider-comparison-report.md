@@ -48,8 +48,6 @@
 | Rank | Provider | Value | Score / 100 | WER | CER | Processing Time | Actual Cost |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | <code>glm/glm-ocr</code> | $0.0003 | 82.79 | 17.21% | 26.10% | 9.32s | $0.0003 |
-| 2 | <code>aws-textract/detect-text</code> | $0.0015 | 4.66 | 95.34% | 88.02% | 87.56s | $0.0015 |
-| 3 | <code>gcloud-docai/ocr</code> | $0.0015 | 5.64 | 94.36% | 86.37% | 75.55s | $0.0015 |
 | 4 | <code>openai/gpt-5.4-nano</code> | $0.0016 | 4.71 | 95.29% | 95.62% | 23.43s | $0.0016 |
 | 5 | <code>gemini/gemini-3.1-flash-lite-preview</code> | $0.0018 | 4.71 | 95.29% | 97.14% | 8.13s | $0.0018 |
 | 6 | <code>mistral/mistral-ocr-2512</code> | $0.0020 | 29.72 | 70.28% | 74.82% | 10.18s | $0.0020 |
@@ -77,10 +75,8 @@
 | 5 | <code>openai/gpt-5.4-nano</code> | 23.43s | 4.71 | 95.29% | 95.62% | 23.43s | $0.0016 |
 | 6 | <code>grok/grok-4.3</code> | 52.20s | 96.06 | 3.94% | 2.78% | 52.20s | $0.0102 |
 | 7 | <code>openai/gpt-5.5</code> | 66.22s | 15.52 | 84.48% | 84.92% | 66.22s | $0.1190 |
-| 8 | <code>gcloud-docai/ocr</code> | 75.55s | 5.64 | 94.36% | 86.37% | 75.55s | $0.0015 |
 | 9 | <code>kimi/kimi-k2.6</code> | 79.63s | 93.60 | 6.40% | 1.51% | 79.63s | $0.0171 |
 | 10 | <code>anthropic/claude-sonnet-4-6</code> | 82.37s | 63.08 | 36.92% | 38.25% | 82.37s | $0.0521 |
-| 11 | <code>aws-textract/detect-text</code> | 87.56s | 4.66 | 95.34% | 88.02% | 87.56s | $0.0015 |
 | 12 | <code>openai/gpt-5.4</code> | 87.96s | 38.66 | 61.34% | 54.20% | 87.96s | $0.0592 |
 | 13 | <code>unstructured/hi_res_and_enrichment</code> | 92.67s | 6.87 | 93.13% | 84.76% | 92.67s | $0.0300 |
 | 14 | <code>anthropic/claude-opus-4-7</code> | 97.91s | 95.04 | 4.96% | 3.26% | 97.91s | $0.1333 |
@@ -107,10 +103,8 @@
 | 12 | <code>openai/gpt-5.5</code> | 15.52/100 quality score | 15.52 | 84.48% | 84.92% | 66.22s | $0.1190 |
 | 13 | <code>openai/gpt-5.4-mini</code> | 12.04/100 quality score | 12.04 | 87.96% | 87.35% | 17.76s | $0.0036 |
 | 14 | <code>unstructured/hi_res_and_enrichment</code> | 6.87/100 quality score | 6.87 | 93.13% | 84.76% | 92.67s | $0.0300 |
-| 15 | <code>gcloud-docai/ocr</code> | 5.64/100 quality score | 5.64 | 94.36% | 86.37% | 75.55s | $0.0015 |
 | 16 | <code>openai/gpt-5.4-nano</code> | 4.71/100 quality score | 4.71 | 95.29% | 95.62% | 23.43s | $0.0016 |
 | 17 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 4.71/100 quality score | 4.71 | 95.29% | 97.14% | 8.13s | $0.0018 |
-| 18 | <code>aws-textract/detect-text</code> | 4.66/100 quality score | 4.66 | 95.34% | 88.02% | 87.56s | $0.0015 |
 
 
 ## Provider Detail
@@ -123,10 +117,8 @@
 | <code>anthropic/claude-haiku-4-5</code> | Third-Party Service | 29.16 | 70.84% | 78.84% | 157.44s | $0.0128 |
 | <code>anthropic/claude-opus-4-7</code> | Third-Party Service | 95.04 | 4.96% | 3.26% | 97.91s | $0.1333 |
 | <code>anthropic/claude-sonnet-4-6</code> | Third-Party Service | 63.08 | 36.92% | 38.25% | 82.37s | $0.0521 |
-| <code>aws-textract/detect-text</code> | Third-Party Service | 4.66 | 95.34% | 88.02% | 87.56s | $0.0015 |
 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | Third-Party Service | 96.48 | 3.52% | 2.29% | 115.12s | $0.0052 |
 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | Third-Party Service | 55.74 | 44.26% | 41.64% | 178.08s | $0.0037 |
-| <code>gcloud-docai/ocr</code> | Third-Party Service | 5.64 | 94.36% | 86.37% | 75.55s | $0.0015 |
 | <code>gemini/gemini-3.1-flash-lite-preview</code> | Third-Party Service | 4.71 | 95.29% | 97.14% | 8.13s | $0.0018 |
 | <code>gemini/gemini-3.1-pro-preview</code> | Third-Party Service | 98.01 | 1.99% | 1.06% | 101.24s | $0.0387 |
 | <code>glm/glm-ocr</code> | Third-Party Service | 82.79 | 17.21% | 26.10% | 9.32s | $0.0003 |
@@ -149,10 +141,8 @@
 | <code>anthropic/claude-haiku-4-5</code> | 501 | 1124 | 46 | 2359 |
 | <code>anthropic/claude-opus-4-7</code> | 77 | 14 | 26 | 2359 |
 | <code>anthropic/claude-sonnet-4-6</code> | 171 | 551 | 149 | 2359 |
-| <code>aws-textract/detect-text</code> | 2158 | 43 | 48 | 2359 |
 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | 30 | 39 | 14 | 2359 |
 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | 659 | 232 | 153 | 2359 |
-| <code>gcloud-docai/ocr</code> | 1820 | 97 | 309 | 2359 |
 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 534 | 1712 | 2 | 2359 |
 | <code>gemini/gemini-3.1-pro-preview</code> | 38 | 5 | 4 | 2359 |
 | <code>glm/glm-ocr</code> | 67 | 157 | 182 | 2359 |

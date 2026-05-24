@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AnthropicOcrModel, AwsTextractModel, DeepinfraOcrModel, GcloudDocaiModel, GeminiOcrModel, GlmOcrModel, GrokOcrModel, KimiOcrModel, MistralOcrModel, OpenAIOcrModel, UnstructuredOcrModel } from '~/types'
+import type { AnthropicOcrModel, DeepinfraOcrModel, GeminiOcrModel, GlmOcrModel, GrokOcrModel, KimiOcrModel, MistralOcrModel, OpenAIOcrModel, UnstructuredOcrModel } from '~/types'
 
 export const SUPPORTED_MISTRAL_OCR_MODELS = [
   'mistral-ocr-2512'
@@ -57,18 +57,6 @@ export const SUPPORTED_DEEPINFRA_OCR_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateDeepinfraOcrModel = createModelValidator<DeepinfraOcrModel>(SUPPORTED_DEEPINFRA_OCR_MODELS, 'deepinfra-ocr')
-
-export const SUPPORTED_AWS_TEXTRACT_MODELS = [
-  'detect-text'
-] as const satisfies readonly string[]
-
-export const validateAwsTextractModel = createModelValidator<AwsTextractModel>(SUPPORTED_AWS_TEXTRACT_MODELS, 'aws-textract')
-
-export const SUPPORTED_GCLOUD_DOCAI_MODELS = [
-  'ocr'
-] as const satisfies readonly string[]
-
-export const validateGcloudDocaiModel = createModelValidator<GcloudDocaiModel>(SUPPORTED_GCLOUD_DOCAI_MODELS, 'gcloud-docai')
 
 export const SUPPORTED_UNSTRUCTURED_OCR_MODELS = [
   'hi_res_and_enrichment'

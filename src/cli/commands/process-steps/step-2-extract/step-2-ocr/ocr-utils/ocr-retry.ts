@@ -1,18 +1,10 @@
 import type { RetryClassifier, RetryDecision, RetryPolicy } from '~/types'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
-import { OCR_REQUEST_TIMEOUT_MS, readPositiveIntegerEnv } from '~/utils/timeouts'
+import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 
 export const OCR_SCHEMA_RETRY_ATTEMPTS = 3
-export const DEFAULT_OCR_PAGE_REQUEST_ATTEMPTS = 2
-export const OCR_PAGE_REQUEST_ATTEMPTS = readPositiveIntegerEnv(
-  'AUTOSHOW_OCR_PAGE_REQUEST_ATTEMPTS',
-  DEFAULT_OCR_PAGE_REQUEST_ATTEMPTS
-)
-export const DEFAULT_OCR_PAGE_REQUEST_TIMEOUT_MS = 5 * 60_000
-export const OCR_PAGE_REQUEST_TIMEOUT_MS = readPositiveIntegerEnv(
-  'AUTOSHOW_OCR_PAGE_REQUEST_TIMEOUT_MS',
-  DEFAULT_OCR_PAGE_REQUEST_TIMEOUT_MS
-)
+export const OCR_PAGE_REQUEST_ATTEMPTS = 2
+export const OCR_PAGE_REQUEST_TIMEOUT_MS = 5 * 60_000
 
 export const OCR_CREATE_RETRY_POLICY: Partial<RetryPolicy> = {
   maxAttempts: 4,

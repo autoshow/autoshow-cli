@@ -1,8 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
-  GCLOUD_DEFAULT_TTS_VOICES,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
-  SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
   SUPPORTED_GROK_TTS_VOICES,
   SUPPORTED_GROQ_ENGLISH_TTS_VOICES,
   SUPPORTED_HUME_TTS_MODELS,
@@ -20,43 +18,20 @@ const REMOVED_GROQ_TTS_VOICE = ['no', 'ura'].join('')
 
 const NO_PAID_TTS_ENV = {
   ANTHROPIC_API_KEY: '',
-  AUTOSHOW_GCLOUD_BIN: '/usr/bin/false',
-  AUTOSHOW_GCLOUD_PROJECT: '',
-  AWS_ACCESS_KEY_ID: '',
-  AWS_SECRET_ACCESS_KEY: '',
-  AWS_SESSION_TOKEN: '',
   DEEPGRAM_API_KEY: '',
-  DEEPGRAM_TTS_VOICE: '',
   ELEVENLABS_API_KEY: '',
-  ELEVENLABS_VOICE_ID: '',
-  GCLOUD_TTS_LANGUAGE: '',
-  GCLOUD_TTS_VOICE: '',
   GEMINI_API_KEY: '',
-  GEMINI_TTS_VOICE: '',
   GOOGLE_APPLICATION_CREDENTIALS: '',
   GOOGLE_CLOUD_PROJECT: '',
   GROK_API_KEY: '',
   HUME_API_KEY: '',
-  HUME_BASE_URL: '',
-  HUME_TTS_VOICE: '',
-  HUME_TTS_VOICE_PROVIDER: '',
   GROQ_API_KEY: '',
-  GROQ_TTS_VOICE: '',
   MISTRAL_API_KEY: '',
-  MISTRAL_TTS_REF_AUDIO: '',
-  MISTRAL_TTS_VOICE: '',
   MINIMAX_API_KEY: '',
   OPENAI_API_KEY: '',
-  OPENAI_BASE_URL: '',
-  OPENAI_TTS_VOICE: '',
   CARTESIA_API_KEY: '',
-  CARTESIA_BASE_URL: '',
-  CARTESIA_VERSION: '',
-  CARTESIA_TTS_VOICE: '',
   SPEECHIFY_API_KEY: '',
-  SPEECHIFY_TTS_VOICE: '',
-  XAI_API_KEY: '',
-  XAI_TTS_VOICE: ''
+  XAI_API_KEY: ''
 } as const
 
 const runTtsPriceCommand = async (
@@ -82,11 +57,11 @@ const expectPriceEstimateForModel = (
 
 const defineTTSServicePriceTests = ({
   models,
-  cliFlag,
+  provider,
   ttsService,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   ttsService: string
 }): void => {
   for (const model of models) {
@@ -95,8 +70,8 @@ const defineTTSServicePriceTests = ({
         'src/cli/create-cli.ts',
         'tts',
         STABLE_TTS_MD_PATH,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         '--price'
       ])
 
@@ -107,26 +82,22 @@ const defineTTSServicePriceTests = ({
 
 const defineTTSVoicePriceTests = ({
   provider,
-  modelFlag,
   model,
-  voiceFlag,
   voices,
 }: {
   provider: string
-  modelFlag: string
   model: string
-  voiceFlag: string
   voices: readonly string[]
 }): void => {
   for (const voice of voices) {
-    test(`${provider} ${model} ${voiceFlag} ${voice} --price prints estimate`, async () => {
+    test(`${provider} ${model} --tts-voice ${voice} --price prints estimate`, async () => {
       const result = await runTtsPriceCommand([
         'src/cli/create-cli.ts',
         'tts',
         STABLE_TTS_MD_PATH,
-        modelFlag,
-        model,
-        voiceFlag,
+        '--provider',
+        `${provider}=${model}`,
+        '--tts-voice',
         voice,
         '--price'
       ])
@@ -138,136 +109,97 @@ const defineTTSVoicePriceTests = ({
 
 defineTTSServicePriceTests({
   models: ['gpt-4o-mini-tts'],
-  cliFlag: '--openai',
+  provider: 'openai',
   ttsService: 'openai',
 })
 
 defineTTSServicePriceTests({
   models: ['gemini-3.1-flash-tts-preview'],
-  cliFlag: '--gemini',
+  provider: 'gemini',
   ttsService: 'gemini',
 })
 
 defineTTSServicePriceTests({
   models: ['speech-2.8-turbo', 'speech-2.8-hd'],
-  cliFlag: '--minimax',
+  provider: 'minimax',
   ttsService: 'minimax',
 })
 
 defineTTSServicePriceTests({
   models: ['eleven_v3'],
-  cliFlag: '--elevenlabs',
+  provider: 'elevenlabs',
   ttsService: 'elevenlabs',
 })
 
 defineTTSServicePriceTests({
   models: ['canopylabs/orpheus-v1-english'],
-  cliFlag: '--groq',
+  provider: 'groq',
   ttsService: 'groq',
 })
 
 defineTTSServicePriceTests({
   models: ['grok-tts'],
-  cliFlag: '--grok',
+  provider: 'grok',
   ttsService: 'grok',
 })
 
 defineTTSServicePriceTests({
   models: SUPPORTED_DEEPGRAM_TTS_MODELS,
-  cliFlag: '--deepgram',
+  provider: 'deepgram',
   ttsService: 'deepgram',
 })
 
 defineTTSServicePriceTests({
   models: ['simba-english', 'simba-multilingual'],
-  cliFlag: '--speechify',
+  provider: 'speechify',
   ttsService: 'speechify',
 })
 
 defineTTSServicePriceTests({
   models: SUPPORTED_HUME_TTS_MODELS,
-  cliFlag: '--hume',
+  provider: 'hume',
   ttsService: 'hume',
 })
 
 defineTTSServicePriceTests({
   models: SUPPORTED_CARTESIA_TTS_MODELS,
-  cliFlag: '--cartesia',
+  provider: 'cartesia',
   ttsService: 'cartesia',
-})
-
-defineTTSServicePriceTests({
-  models: ['studio', 'chirp3-hd'],
-  cliFlag: '--gcloud',
-  ttsService: 'gcloud',
 })
 
 defineTTSVoicePriceTests({
   provider: 'kitten',
-  modelFlag: '--kitten',
   model: 'kitten-tts-mini',
-  voiceFlag: '--kitten-voice',
   voices: SUPPORTED_KITTEN_TTS_VOICES,
 })
 
 defineTTSVoicePriceTests({
   provider: 'groq',
-  modelFlag: '--groq',
   model: 'canopylabs/orpheus-v1-english',
-  voiceFlag: '--groq-voice',
   voices: SUPPORTED_GROQ_ENGLISH_TTS_VOICES,
 })
 
 defineTTSVoicePriceTests({
   provider: 'grok',
-  modelFlag: '--grok',
   model: 'grok-tts',
-  voiceFlag: '--grok-tts-voice',
   voices: SUPPORTED_GROK_TTS_VOICES,
 })
 
 for (const model of SUPPORTED_DEEPGRAM_TTS_MODELS) {
   defineTTSVoicePriceTests({
     provider: 'deepgram',
-    modelFlag: '--deepgram',
     model,
-    voiceFlag: '--deepgram-voice',
     voices: [model],
   })
 }
-
-for (const model of SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS) {
-  defineTTSVoicePriceTests({
-    provider: 'gcloud',
-    modelFlag: '--gcloud',
-    model,
-    voiceFlag: '--gcloud-tts-voice',
-    voices: [GCLOUD_DEFAULT_TTS_VOICES[model]],
-  })
-}
-
-test('gcloud instant custom voice --price works with an existing voice cloning key', async () => {
-  const result = await runTtsPriceCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    STABLE_TTS_MD_PATH,
-    '--gcloud',
-    'instant-custom-voice',
-    '--gcloud-tts-voice-cloning-key',
-    'test-key',
-    '--price'
-  ])
-
-  expectPriceEstimateForModel(result, 'instant-custom-voice')
-})
 
 test('mistral --price works without a voice source', async () => {
   const result = await runTtsPriceCommand([
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral',
-    MISTRAL_TTS_MODEL,
+    '--provider',
+    `mistral=${MISTRAL_TTS_MODEL}`,
     '--price'
   ])
 
@@ -280,11 +212,11 @@ test('mistral rejects voice and reference audio together before API request in p
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--mistral',
-    MISTRAL_TTS_MODEL,
-    '--mistral-tts-voice',
+    '--provider',
+    `mistral=${MISTRAL_TTS_MODEL}`,
+    '--tts-voice',
     'voice_abc123',
-    '--mistral-tts-ref-audio',
+    '--tts-ref-audio',
     MISTRAL_REF_AUDIO_PATH,
     '--price'
   ])
@@ -298,9 +230,9 @@ test('openai custom voice --price includes setup estimate without an API key', a
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--openai',
-    'gpt-4o-mini-tts',
-    '--openai-tts-ref-audio',
+    '--provider',
+    'openai=gpt-4o-mini-tts',
+    '--tts-ref-audio',
     OPENAI_REF_AUDIO_PATH,
     '--openai-tts-consent-id',
     'cons_123',
@@ -321,9 +253,9 @@ test('openai custom voice rejects missing consent source before API request in p
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--openai',
-    'gpt-4o-mini-tts',
-    '--openai-tts-ref-audio',
+    '--provider',
+    'openai=gpt-4o-mini-tts',
+    '--tts-ref-audio',
     OPENAI_REF_AUDIO_PATH,
     '--price'
   ])
@@ -337,9 +269,9 @@ test('rejects invalid deepgram voice override before API request in price mode',
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--deepgram',
-    'aura-2-thalia-en',
-    '--deepgram-voice',
+    '--provider',
+    'deepgram=aura-2-thalia-en',
+    '--tts-voice',
     'invalid-model',
     '--price'
   ])
@@ -353,9 +285,9 @@ test('rejects removed Groq voice before API request in price mode', async () => 
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--groq',
-    'canopylabs/orpheus-v1-english',
-    '--groq-voice',
+    '--provider',
+    'groq=canopylabs/orpheus-v1-english',
+    '--tts-voice',
     REMOVED_GROQ_TTS_VOICE,
     '--price'
   ])
@@ -370,8 +302,8 @@ test('rejects removed Groq model before API request in price mode', async () => 
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--groq',
-    REMOVED_GROQ_TTS_MODEL,
+    '--provider',
+    `groq=${REMOVED_GROQ_TTS_MODEL}`,
     '--price'
   ])
 
@@ -385,9 +317,9 @@ test('rejects invalid grok voice override before API request in price mode', asy
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--grok',
-    'grok-tts',
-    '--grok-tts-voice',
+    '--provider',
+    'grok=grok-tts',
+    '--tts-voice',
     'invalid-voice',
     '--price'
   ])
@@ -401,10 +333,10 @@ test('multi-provider --price prints both TTS targets and renamed output files', 
     'src/cli/create-cli.ts',
     'tts',
     STABLE_TTS_MD_PATH,
-    '--kitten',
-    'kitten-tts-mini',
-    '--openai',
-    'gpt-4o-mini-tts',
+    '--provider',
+    'kitten=kitten-tts-mini',
+    '--provider',
+    'openai=gpt-4o-mini-tts',
     '--price'
   ])
 
@@ -425,14 +357,14 @@ test('write --price omits TTS estimates when multiple LLM providers are selected
     'src/cli/create-cli.ts',
     'write',
     STABLE_EXAMPLE_AUDIO_URL,
-    '--openai',
-    'gpt-5.4',
-    '--groq',
-    'openai/gpt-oss-20b',
-    '--kitten-tts',
-    'kitten-tts-mini',
-    '--openai-tts',
-    'gpt-4o-mini-tts',
+    '--llm',
+    'openai=gpt-5.4',
+    '--llm',
+    'groq=openai/gpt-oss-20b',
+    '--tts',
+    'kitten=kitten-tts-mini',
+    '--tts',
+    'openai=gpt-4o-mini-tts',
     '--price'
   ])
   const output = `${result.stdout}\n${result.stderr}`

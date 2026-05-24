@@ -5,6 +5,7 @@ import * as l from '~/utils/logger'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
+import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import {
   MinimaxBaseRespSchema,
@@ -12,8 +13,6 @@ import {
   parseMinimaxJsonResponse,
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
-
-const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const INCOMPLETE_RESPONSE_RETRY_DELAY_MS = 3_000
 const MINIMAX_MUSIC_PROMPT_MAX_CHARS = 2000
@@ -240,7 +239,7 @@ export const runMinimaxMusicGen = async (
     throw new Error('MINIMAX_API_KEY environment variable is required for MiniMax music generation')
   }
 
-  const baseURL = readEnv('MINIMAX_BASE_URL') ?? MINIMAX_DEFAULT_BASE_URL
+  const baseURL = MINIMAX_DEFAULT_BASE_URL
   const musicPath = `${outputDir}/generated-music.mp3`
 
   if (options.durationSeconds !== undefined) {

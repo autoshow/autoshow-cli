@@ -99,10 +99,8 @@ export const EXCLUDED_SERVICES = new Set([
 
 export const STT_DIARIZATION_GROUP_BY_SERVICE = new Map<string, SttDiarizationGroup>([
   ['assemblyai', 'diarization'],
-  ['aws', 'diarization'],
   ['deepgram', 'diarization'],
   ['elevenlabs', 'diarization'],
-  ['gcloud', 'diarization'],
   ['gladia', 'diarization'],
   ['grok', 'diarization'],
   ['happyscribe', 'diarization'],

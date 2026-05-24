@@ -3,6 +3,7 @@ import { defuddleArticleAdapter } from './url-local/defuddle/run-defuddle-url'
 import { firecrawlArticleAdapter } from './url-services/firecrawl/run-firecrawl-url'
 import { glmReaderArticleAdapter } from './url-services/glm-reader/run-glm-reader-url'
 import { spiderArticleAdapter } from './url-services/spider/run-spider-url'
+import { supadataArticleAdapter } from './url-services/supadata/run-supadata-url'
 import { zyteArticleAdapter } from './url-services/zyte/run-zyte-url'
 import type { UrlArticleProviderAdapter, UrlArticleRunOptions } from './url-provider-adapter'
 import {
@@ -18,6 +19,7 @@ export const URL_ARTICLE_BACKENDS = [
   'firecrawl',
   'glm-reader',
   'spider',
+  'supadata',
   'zyte'
 ] as const satisfies readonly HtmlArticleBackend[]
 
@@ -30,6 +32,7 @@ export const URL_ARTICLE_PROVIDER_ADAPTERS: Record<HtmlArticleBackend, UrlArticl
   firecrawl: firecrawlArticleAdapter,
   'glm-reader': glmReaderArticleAdapter,
   spider: spiderArticleAdapter,
+  supadata: supadataArticleAdapter,
   zyte: zyteArticleAdapter
 }
 

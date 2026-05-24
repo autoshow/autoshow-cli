@@ -7,9 +7,9 @@ import { runCommand } from '../../test-utils/test-helpers'
 defineImageServicePriceTests({
   models: [
     { model: 'gpt-image-1.5', prompt: 'a watercolor landscape with a lighthouse' },
-    { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--image-size', '1024x1024', '--image-quality', 'low'] },
+    { model: 'gpt-image-2', prompt: 'a simple green triangle on white background', extraArgs: ['--size', '1024x1024', '--quality', 'low'] },
   ],
-  cliFlag: '--openai',
+  provider: 'openai',
   imageService: 'openai',
 })
 
@@ -17,37 +17,37 @@ defineImageServicePriceTests({
   models: [
     { model: 'gemini-3.1-flash-image-preview', prompt: 'a simple green square on white background' },
   ],
-  cliFlag: '--gemini',
+  provider: 'gemini',
   imageService: 'gemini',
 })
 
 defineImageServicePriceTests({
   imageService: 'grok',
-  cliFlag: '--grok',
+  provider: 'grok',
   models: [
     {
       model: 'grok-imagine-image',
       prompt: 'A clean product photo of a red enamel camping mug',
-      extraArgs: ['--image-aspect-ratio', '1:1', '--image-size', '1K']
+      extraArgs: ['--aspect-ratio', '1:1', '--size', '1K']
     }
   ]
 })
 
 defineImageServicePriceTests({
   imageService: 'bfl',
-  cliFlag: '--bfl',
+  provider: 'bfl',
   models: [
     {
       model: 'flux-2-pro',
       prompt: 'A clean product photo of a red enamel camping mug',
-      extraArgs: ['--image-size', '1024x1024']
+      extraArgs: ['--size', '1024x1024']
     }
   ]
 })
 
 test('--price allows multiple image providers and reports each image step', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--openai', 'gpt-image-1.5', '--grok', 'grok-imagine-image', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--provider', 'openai=gpt-image-1.5', '--provider', 'grok=grok-imagine-image', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
@@ -60,7 +60,7 @@ test('--price allows multiple image providers and reports each image step', asyn
 
 test('--price allows Gemini with another image provider', async () => {
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'image', 'a sunset', '--gemini', 'gemini-3.1-flash-image-preview', '--openai', 'gpt-image-1.5', '--price'],
+    ['src/cli/create-cli.ts', 'image', 'a sunset', '--provider', 'gemini=gemini-3.1-flash-image-preview', '--provider', 'openai=gpt-image-1.5', '--price'],
   )
   const output = `${result.stdout}\n${result.stderr}`
   expect(result.exitCode).toBe(0)
@@ -79,7 +79,7 @@ test('image --out in price mode reports explicit output directory without creati
     expect(existedBefore).toBe(false)
 
     const result = await runCommand(
-      ['src/cli/create-cli.ts', 'image', 'a sunset over a lake', '--openai', 'gpt-image-1.5', '--out', outputDir, '--price'],
+      ['src/cli/create-cli.ts', 'image', 'a sunset over a lake', '--provider', 'openai=gpt-image-1.5', '--output-dir', outputDir, '--price'],
     )
     const output = `${result.stdout}\n${result.stderr}`
 

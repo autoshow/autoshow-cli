@@ -1,7 +1,5 @@
 import {
   SUPPORTED_WHISPER_MODELS,
-  SUPPORTED_GCLOUD_STT_MODELS,
-  SUPPORTED_AWS_STT_MODELS,
   SUPPORTED_DEEPINFRA_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
@@ -21,8 +19,6 @@ import {
   SUPPORTED_GLM_STT_MODELS,
   SUPPORTED_TOGETHER_STT_MODELS,
   validateWhisperModel,
-  validateGcloudSttModel,
-  validateAwsSttModel,
   validateDeepinfraSttModel,
   validateElevenlabsSttModel,
   validateDeepgramSttModel,
@@ -59,36 +55,6 @@ export const STEP2_STT_PROVIDER_REGISTRY = [
     runtimeKey: 'useReverb',
     model: 'reverb',
     description: 'Use Reverb ASR for transcription'
-  }),
-  modelProvider({
-    step: 'stt',
-    modality: 'media',
-    flagName: 'gcloud-stt',
-    targetService: 'gcloud',
-    providerSpecProvider: 'gcloud',
-    bootstrapProviderId: 'gcloud-stt',
-    configKey: 'gcloudStt',
-    allShortcut: 'all-stt',
-    runtimeModelsKey: 'gcloudSttModels',
-    runtimeModelKey: 'gcloudSttModel',
-    supportedModels: SUPPORTED_GCLOUD_STT_MODELS,
-    validateModel: validateGcloudSttModel,
-    description: buildModelDescription('Google Cloud STT model', SUPPORTED_GCLOUD_STT_MODELS)
-  }),
-  modelProvider({
-    step: 'stt',
-    modality: 'media',
-    flagName: 'aws-stt',
-    targetService: 'aws',
-    providerSpecProvider: 'aws',
-    bootstrapProviderId: 'aws-stt',
-    configKey: 'awsStt',
-    allShortcut: 'all-stt',
-    runtimeModelsKey: 'awsSttModels',
-    runtimeModelKey: 'awsSttModel',
-    supportedModels: SUPPORTED_AWS_STT_MODELS,
-    validateModel: validateAwsSttModel,
-    description: buildModelDescription('AWS Transcribe STT model', SUPPORTED_AWS_STT_MODELS)
   }),
   modelProvider({
     step: 'stt',

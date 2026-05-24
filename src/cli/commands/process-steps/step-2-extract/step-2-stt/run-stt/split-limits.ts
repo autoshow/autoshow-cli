@@ -5,8 +5,6 @@ import {
 } from '../stt-split-policy'
 
 const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
-  'gcloud',
-  'aws',
   'elevenlabs',
   'deepgram',
   'deepinfra',

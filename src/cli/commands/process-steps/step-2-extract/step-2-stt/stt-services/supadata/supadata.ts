@@ -1,5 +1,6 @@
 import * as l from '~/utils/logger'
 import { isDirectMediaUrl } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
+import { SUPADATA_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { logProviderReadiness } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
@@ -14,8 +15,7 @@ const SUPADATA_SUPPORTED_HOST_PATTERNS = [
   /(^|\.)fb\.watch$/i
 ]
 
-export const getSupadataBaseUrl = (): string =>
-  readEnv('SUPADATA_BASE_URL') ?? 'https://api.supadata.ai/v1'
+export const getSupadataBaseUrl = (): string => SUPADATA_DEFAULT_BASE_URL
 
 export const isSupadataSupportedSourceUrl = (
   sourceUrl: string | undefined

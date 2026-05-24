@@ -1,4 +1,5 @@
 import * as l from '~/utils/logger'
+import { SCRAPECREATORS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { logProviderReadiness } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
@@ -7,8 +8,7 @@ const YOUTUBE_HOST_PATTERNS = [
   /(^|\.)youtu\.be$/i
 ]
 
-export const getScrapeCreatorsBaseUrl = (): string =>
-  readEnv('SCRAPECREATORS_BASE_URL') ?? 'https://api.scrapecreators.com'
+export const getScrapeCreatorsBaseUrl = (): string => SCRAPECREATORS_DEFAULT_BASE_URL
 
 export const isScrapeCreatorsSupportedSourceUrl = (
   sourceUrl: string | undefined

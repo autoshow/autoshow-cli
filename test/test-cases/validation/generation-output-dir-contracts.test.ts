@@ -29,7 +29,7 @@ test('explicit generation output directories are exact and reusable', async () =
   const existingDir = join(root, 'existing-run')
   await mkdir(existingDir)
 
-  await expect(createGenerationOutputDir('image-gen', { out: existingDir })).resolves.toBe(existingDir)
+  await expect(createGenerationOutputDir('image-gen', { 'output-dir': existingDir })).resolves.toBe(existingDir)
 
   const filePath = join(root, 'not-a-directory')
   await writeFile(filePath, 'not a directory')

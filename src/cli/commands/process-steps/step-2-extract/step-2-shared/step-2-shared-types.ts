@@ -21,10 +21,6 @@ export type OcrSelectionState = {
   geminiOcrModel?: string | undefined
   deepinfraOcrModels?: string[] | undefined
   deepinfraOcrModel?: string | undefined
-  awsTextractModels?: string[] | undefined
-  awsTextractModel?: string | undefined
-  gcloudDocaiModels?: string[] | undefined
-  gcloudDocaiModel?: string | undefined
   unstructuredOcrModels?: string[] | undefined
   unstructuredOcrModel?: string | undefined
 }
@@ -112,10 +108,6 @@ export type SttStep2ResolutionOptions = Pick<
   | 'step2SelectionOrigins'
   | 'whisperModel'
   | 'whisperModels'
-  | 'gcloudSttModel'
-  | 'gcloudSttModels'
-  | 'awsSttModel'
-  | 'awsSttModels'
   | 'deepinfraSttModel'
   | 'deepinfraSttModels'
   | 'elevenlabsSttModel'
@@ -168,10 +160,6 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'geminiOcrModels'
   | 'deepinfraOcrModel'
   | 'deepinfraOcrModels'
-  | 'awsTextractModel'
-  | 'awsTextractModels'
-  | 'gcloudDocaiModel'
-  | 'gcloudDocaiModels'
   | 'unstructuredOcrModel'
   | 'unstructuredOcrModels'
   | 'useEpubBun'

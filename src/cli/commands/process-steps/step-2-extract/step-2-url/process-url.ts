@@ -502,11 +502,11 @@ export const processUrlArticle = async (
     : [remote ? opts.urlBackend : 'defuddle']
 
   if (!remote && opts.urlBackend !== 'defuddle' && !allUrlMode) {
-    l.warn(`Ignoring --url-backend ${opts.urlBackend} for local HTML inputs; using defuddle instead`)
+    l.warn(`Ignoring --url-provider ${opts.urlBackend} for local HTML inputs; using defuddle instead`)
   }
 
   if (allUrlMode && !remote) {
-    l.warn('--all-url with a local HTML input runs defuddle only; hosted URL backends are skipped for local inputs')
+    l.warn('--all-providers with a local HTML input runs defuddle only; hosted URL backends are skipped for local inputs')
   }
 
   const outcomes = allUrlMode

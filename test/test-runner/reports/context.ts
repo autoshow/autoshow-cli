@@ -19,8 +19,6 @@ const ARG_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
   '--whisper-stt': { service: 'whisper', kind: 'transcribe' },
   '--reverb-stt': { service: 'reverb', kind: 'transcribe' },
   '--tesseract-ocr': { service: 'tesseract', kind: 'extract' },
-  '--gcloud-stt': { service: 'gcloud', kind: 'transcribe' },
-  '--aws-stt': { service: 'aws', kind: 'transcribe' },
   '--deepinfra-stt': { service: 'deepinfra', kind: 'transcribe' },
   '--elevenlabs-stt': { service: 'elevenlabs', kind: 'transcribe' },
   '--deepgram-stt': { service: 'deepgram', kind: 'transcribe' },
@@ -70,8 +68,6 @@ const ARG_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
   '--elevenlabs-music': { service: 'elevenlabs', kind: 'music' },
   '--minimax-music': { service: 'minimax', kind: 'music' },
   '--gemini-music': { service: 'gemini', kind: 'music' },
-  '--aws-textract': { service: 'aws', kind: 'extract' },
-  '--gcloud-docai': { service: 'gcloud', kind: 'extract' },
   '--ocrmypdf': { service: 'ocrmypdf', kind: 'extract' },
 }
 
@@ -89,7 +85,6 @@ const COMMAND_PUBLIC_SERVICE_FLAGS: Record<string, Record<string, ArgServiceFlag
     '--speechify': { service: 'speechify', kind: 'tts' },
     '--hume': { service: 'hume', kind: 'tts' },
     '--cartesia': { service: 'cartesia', kind: 'tts' },
-    '--gcloud': { service: 'gcloud', kind: 'tts' },
   },
   image: {
     '--gemini': { service: 'gemini', kind: 'image' },
@@ -116,8 +111,6 @@ const COMMAND_PUBLIC_SERVICE_FLAGS: Record<string, Record<string, ArgServiceFlag
 const EXTRACT_PUBLIC_STT_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
   '--whisper': { service: 'whisper', kind: 'transcribe' },
   '--reverb': { service: 'reverb', kind: 'transcribe' },
-  '--gcloud': { service: 'gcloud', kind: 'transcribe' },
-  '--aws': { service: 'aws', kind: 'transcribe' },
   '--deepinfra': { service: 'deepinfra', kind: 'transcribe' },
   '--elevenlabs': { service: 'elevenlabs', kind: 'transcribe' },
   '--deepgram': { service: 'deepgram', kind: 'transcribe' },
@@ -149,8 +142,6 @@ const EXTRACT_PUBLIC_OCR_SERVICE_FLAGS: Record<string, ArgServiceFlag> = {
   '--anthropic': { service: 'anthropic', kind: 'extract' },
   '--gemini': { service: 'gemini', kind: 'extract' },
   '--deepinfra': { service: 'deepinfra', kind: 'extract' },
-  '--aws': { service: 'aws', kind: 'extract' },
-  '--gcloud': { service: 'gcloud', kind: 'extract' },
 }
 
 const MEDIA_INPUT_PATTERN = /\.(?:mp3|m4a|aac|wav|flac|ogg|opus|webm|mp4|mov|mkv|avi|m4v)(?:[?#]|$)/i
@@ -164,9 +155,6 @@ const KNOWN_SERVICE_HINTS: Array<{ pattern: RegExp, service: string }> = [
   { pattern: /\bgrok\b/i, service: 'grok' },
   { pattern: /\bminimax\b/i, service: 'minimax' },
   { pattern: /\belevenlabs\b/i, service: 'elevenlabs' },
-  { pattern: /\bgcloud\b/i, service: 'gcloud' },
-  { pattern: /\bgoogle cloud\b/i, service: 'gcloud' },
-  { pattern: /\baws\b/i, service: 'aws' },
   { pattern: /\bdeepgram\b/i, service: 'deepgram' },
   { pattern: /\bhume\b/i, service: 'hume' },
   { pattern: /\bcartesia\b/i, service: 'cartesia' },

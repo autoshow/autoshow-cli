@@ -16,6 +16,7 @@ import { runOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/r
 import { runFirecrawlUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/firecrawl/run-firecrawl-url'
 import { runGlmReaderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/glm-reader/run-glm-reader-url'
 import { runSpiderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/spider/run-spider-url'
+import { runSupadataUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/supadata/run-supadata-url'
 import { runZyteUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/zyte/run-zyte-url'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import type { DocumentMetadata, ExtractionOptions, HtmlArticleBackend } from '~/types'
@@ -31,6 +32,8 @@ const envKeys = [
   'ZAI_BASE_URL',
   'SPIDER_API_URL',
   'SPIDER_API_KEY',
+  'SUPADATA_API_KEY',
+  'SUPADATA_BASE_URL',
   'ZYTE_API_URL',
   'ZYTE_API_KEY',
   'AUTOSHOW_DEFUDDLE_BIN',
@@ -225,14 +228,9 @@ test('prepared article markdown carries backend duration into extraction metadat
     outputDir: '/tmp/autoshow-html-duration-test',
     dpi: 300,
     languages: 'eng',
-    oem: 1,
-    psm: 3,
     outputFormat: 'text',
-    pageSeparator: '\n\n',
     ocrProviderConcurrency: 2,
     ocrLocalConcurrency: 1,
-    preserveInterwordSpaces: false,
-    rotate: 0,
     pdfChapterMode: 'local',
     preparedMarkdown: longMarkdown,
     htmlArticleProcessingTimeMs: 4321,
@@ -557,6 +555,92 @@ test('Spider URL backend posts scrape request and normalizes article metadata', 
   expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
 })
 
+test('Supadata URL backend sends scrape request and normalizes article metadata', async () => {
+  process.env['SUPADATA_API_KEY'] = 'supadata-test-key'
+  process.env['SUPADATA_BASE_URL'] = 'https://supadata.local/v1'
+
+  const requests: Array<{ url: string, method: string, headers?: Record<string, string> }> = []
+  globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+    const url = String(input)
+    const headers: Record<string, string> = {}
+    if (init?.headers && typeof init.headers === 'object') {
+      for (const [key, value] of Object.entries(init.headers as Record<string, string>)) {
+        headers[key] = value
+      }
+    }
+    requests.push({
+      url,
+      method: init?.method ?? 'GET',
+      headers
+    })
+
+    if (url.startsWith('https://supadata.local/v1/web/scrape')) {
+      return Response.json({
+        url: 'https://article.test/supadata-final',
+        content: longMarkdown,
+        name: 'Supadata Title',
+        description: 'Supadata description',
+        ogUrl: 'https://article.test/og-image.png',
+        countCharacters: longMarkdown.length,
+        urls: ['https://article.test/link-1']
+      })
+    }
+
+    if (url === 'https://article.test/supadata') {
+      return new Response(htmlDocument, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' }
+      })
+    }
+
+    throw new Error(`Unexpected Supadata mock fetch: ${url}`)
+  }) as typeof fetch
+
+  const result = await runSupadataUrl('https://article.test/supadata', 'https://article.test/supadata')
+
+  expect(requests[0]).toMatchObject({
+    url: 'https://supadata.local/v1/web/scrape?url=https%3A%2F%2Farticle.test%2Fsupadata',
+    method: 'GET',
+    headers: { 'x-api-key': 'supadata-test-key' }
+  })
+  expect(result).toMatchObject({
+    markdown: longMarkdown,
+    title: 'Supadata Title',
+    web: {
+      sourceUrl: 'https://article.test/supadata',
+      finalUrl: 'https://article.test/supadata-final',
+      description: 'Supadata description'
+    }
+  })
+  expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
+})
+
+test('Supadata URL backend rejects missing API key', async () => {
+  delete process.env['SUPADATA_API_KEY']
+  delete process.env['SUPADATA_BASE_URL']
+
+  await expect(
+    runSupadataUrl('https://article.test/no-key', 'https://article.test/no-key')
+  ).rejects.toThrow('SUPADATA_API_KEY is required')
+})
+
+test('Supadata URL backend reports provider HTTP errors with message/details', async () => {
+  process.env['SUPADATA_API_KEY'] = 'supadata-test-key'
+  process.env['SUPADATA_BASE_URL'] = 'https://supadata.local/v1'
+
+  globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], _init?: Parameters<typeof fetch>[1]): Promise<Response> =>
+    new Response(JSON.stringify({
+      error: 'unauthorized',
+      message: 'Unauthorized',
+      details: 'The request is unauthorized. Please check your API key.'
+    }), { status: 401, statusText: 'Unauthorized' })
+  ) as typeof fetch
+
+  await expect(
+    runSupadataUrl('https://article.test/error', 'https://article.test/error')
+  ).rejects.toThrow('Supadata scrape failed (401 Unauthorized): Unauthorized')
+})
+
 test('Zyte URL backend posts article extract request and normalizes article metadata', async () => {
   process.env['ZYTE_API_URL'] = 'https://zyte.local'
   delete process.env['ZYTE_API_KEY']
@@ -621,7 +705,7 @@ test('Zyte URL backend posts article extract request and normalizes article meta
   expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
 })
 
-test('--all-url orchestrator writes provider artifacts and a multi-provider run manifest', async () => {
+test('--all-providers URL orchestrator writes provider artifacts and a multi-provider run manifest', async () => {
   const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-all-url-'))
 
   try {
@@ -681,6 +765,7 @@ test('--all-url orchestrator writes provider artifacts and a multi-provider run 
       'succeeded',
       'succeeded',
       'succeeded',
+      'succeeded',
       'succeeded'
     ])
     expect(manifest.metadata.step2).toHaveLength(URL_ARTICLE_BACKENDS.length)
@@ -696,7 +781,7 @@ test('--all-url orchestrator writes provider artifacts and a multi-provider run 
   }
 })
 
-test('--all-url manifest records one exhausted failed URL provider without an actual-cost artifact', async () => {
+test('--all-providers URL manifest records one exhausted failed URL provider without an actual-cost artifact', async () => {
   const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-all-url-failed-provider-'))
   const originalSleep = Bun.sleep
 
@@ -754,7 +839,7 @@ test('--all-url manifest records one exhausted failed URL provider without an ac
   }
 })
 
-test('--all-url with local HTML runs defuddle and marks hosted backends skipped', async () => {
+test('--all-providers URL with local HTML runs defuddle and marks hosted backends skipped', async () => {
   const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-local-all-url-'))
 
   try {
@@ -765,7 +850,7 @@ test('--all-url with local HTML runs defuddle and marks hosted backends skipped'
       buildMockArticle('defuddle', source, sourceUrl)
     for (const backend of HOSTED_URL_ARTICLE_BACKENDS) {
       URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async () => {
-        throw new Error(`${backend} should not run for local HTML --all-url`)
+        throw new Error(`${backend} should not run for local HTML --all-providers`)
       }
     }
 
@@ -792,6 +877,7 @@ test('--all-url with local HTML runs defuddle and marks hosted backends skipped'
       expect.objectContaining({ service: 'firecrawl', status: 'skipped' }),
       expect.objectContaining({ service: 'glm-reader', status: 'skipped' }),
       expect.objectContaining({ service: 'spider', status: 'skipped' }),
+      expect.objectContaining({ service: 'supadata', status: 'skipped' }),
       expect.objectContaining({ service: 'zyte', status: 'skipped' })
     ])
   } finally {

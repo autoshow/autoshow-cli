@@ -20,6 +20,7 @@ import {
   readPersistedAsyncSttRuntime,
   writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { SONIOX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import {
   createTranscription,
@@ -74,7 +75,7 @@ export const runSonioxStt = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const baseURL = readEnv('SONIOX_BASE_URL') ?? 'https://api.soniox.com'
+  const baseURL = SONIOX_DEFAULT_BASE_URL
   let uploadMs = 0
   let createMs = 0
   let pollMs = 0
@@ -190,7 +191,6 @@ export const runSonioxStt = async (
       initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
       maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
       audioDurationSeconds,
-      envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_SONIOX',
       pollMode: resumedExistingTranscription ? 'resume-probe' : 'fresh',
       buildDeadlineError: (jobId, pollDeadlineMs) => buildSonioxPollingDeadlineError(jobId, pollDeadlineMs),
       buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildSonioxResumeProbeError(jobId, probeCount, totalWaitMs),

@@ -1,31 +1,13 @@
 import type { CliFlagsDefinition } from '~/cli/native'
-import { withHelpGroup } from './flag-utils'
-import {
-  SUPPORTED_KITTEN_TTS_MODELS,
-  SUPPORTED_ELEVENLABS_TTS_MODELS,
-  SUPPORTED_MINIMAX_TTS_MODELS,
-  SUPPORTED_GROQ_TTS_MODELS,
-  SUPPORTED_MISTRAL_TTS_MODELS,
-  SUPPORTED_OPENAI_TTS_MODELS,
-  SUPPORTED_GEMINI_TTS_MODELS,
-  SUPPORTED_HUME_TTS_MODELS,
-  SUPPORTED_CARTESIA_TTS_MODELS,
-  SUPPORTED_GEMINI_VIDEO_MODELS,
-  SUPPORTED_GLM_VIDEO_MODELS,
-  SUPPORTED_GROK_VIDEO_MODELS,
-  SUPPORTED_MINIMAX_VIDEO_MODELS,
-  SUPPORTED_RUNWAY_VIDEO_MODELS,
-  SUPPORTED_ELEVENLABS_MUSIC_MODELS,
-  SUPPORTED_MINIMAX_MUSIC_MODELS,
-  SUPPORTED_GEMINI_MUSIC_MODELS
-} from '~/cli/commands/setup-and-utilities/models/model-options'
-import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
+import { omitFlags, withHelpGroup } from './flag-utils'
 import {
   transcriptionFlags,
-  llmProviderFlags,
   ocrInputFlags,
   ocrTuningFlags,
   allArticleFlags,
+  sharedConcurrencyFlags,
+  stepProviderSelectorFlags,
+  writeAllProvidersFlag,
   // Shared separately because write should still expose batch and EPUB inspect flags without resume-only surface area.
   batchFlags,
   promptFlag,
@@ -34,243 +16,8 @@ import {
 import { epubInspectFlags } from './ocr-flags'
 import { imageGenFlags } from './image-flags'
 import { musicGenFlags } from './music-flags'
+import { ttsCommandFlags } from './tts-flags'
 import { videoGenFlags } from './video-flags'
-
-const writeTtsFlags = {
-  'kitten-voice': {
-    description: 'Kitten TTS speaker: Bella|Jasper|Luna|Bruno|Rosie|Hugo|Kiki|Leo',
-    type: String,
-    default: 'Jasper'
-  },
-  'kitten-tts': {
-    description: `Enable Kitten TTS on LLM output. ${buildModelDescription('Kitten TTS model', SUPPORTED_KITTEN_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'elevenlabs-tts': {
-    description: `Enable ElevenLabs TTS on LLM output. ${buildModelDescription('ElevenLabs TTS model', SUPPORTED_ELEVENLABS_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'minimax-tts': {
-    description: `Enable MiniMax TTS on LLM output. ${buildModelDescription('MiniMax TTS model', SUPPORTED_MINIMAX_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'groq-tts': {
-    description: `Enable Groq TTS on LLM output. ${buildModelDescription('Groq TTS model', SUPPORTED_GROQ_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'mistral-tts': {
-    description: `Enable Mistral Voxtral TTS on LLM output. ${buildModelDescription('Mistral Voxtral TTS model', SUPPORTED_MISTRAL_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'openai-tts': {
-    description: `Enable OpenAI TTS on LLM output. ${buildModelDescription('OpenAI TTS model', SUPPORTED_OPENAI_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'gemini-tts': {
-    description: `Enable Gemini TTS on LLM output. ${buildModelDescription('Gemini TTS model', SUPPORTED_GEMINI_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'hume-tts': {
-    description: `Enable Hume TTS on LLM output. ${buildModelDescription('Hume TTS model', SUPPORTED_HUME_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'cartesia-tts': {
-    description: `Enable Cartesia TTS on LLM output. ${buildModelDescription('Cartesia TTS model', SUPPORTED_CARTESIA_TTS_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'minimax-tts-voice': {
-    description: 'MiniMax TTS voice ID override (default: English_expressive_narrator)',
-    type: String
-  },
-  'minimax-tts-language-boost': {
-    description: 'MiniMax TTS language boost: auto|English|Chinese|Chinese,Yue|Arabic|Spanish|French|German|Japanese|Korean|...',
-    type: String
-  },
-  'minimax-tts-speed': {
-    description: 'MiniMax TTS speech speed from 0.5 to 2.0',
-    type: String
-  },
-  'minimax-tts-volume': {
-    description: 'MiniMax TTS speech volume greater than 0 and up to 10',
-    type: String
-  },
-  'minimax-tts-pitch': {
-    description: 'MiniMax TTS pitch adjustment from -12 to 12',
-    type: String
-  },
-  'minimax-tts-emotion': {
-    description: 'MiniMax TTS emotion: happy|sad|angry|fearful|disgusted|surprised|calm|fluent|whisper',
-    type: String
-  },
-  'minimax-tts-english-normalization': {
-    description: 'Enable MiniMax English text normalization',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'minimax-tts-pronunciation': {
-    description: 'MiniMax pronunciation rule for pronunciation_dict.tone; repeatable, e.g. "omg/oh my god"',
-    type: [String] as [StringConstructor]
-  },
-  'openai-voice': {
-    description: 'OpenAI TTS voice ID override, including existing custom voice_ IDs (default: alloy)',
-    type: String
-  },
-  'openai-tts-instructions': {
-    description: 'OpenAI TTS voice/style instructions',
-    type: String
-  },
-  'openai-tts-speed': {
-    description: 'OpenAI TTS speed from 0.25 to 4.0',
-    type: String
-  },
-  'openai-tts-ref-audio': {
-    description: 'OpenAI TTS sample audio path used to create a custom voice',
-    type: String
-  },
-  'openai-tts-consent-id': {
-    description: 'Existing OpenAI voice consent recording ID for custom voice creation',
-    type: String
-  },
-  'openai-tts-consent-audio': {
-    description: 'OpenAI TTS consent recording audio path to upload for custom voice creation',
-    type: String
-  },
-  'openai-tts-consent-language': {
-    description: 'OpenAI TTS consent recording BCP 47 language tag (default: en-US)',
-    type: String
-  },
-  'openai-tts-consent-name': {
-    description: 'OpenAI TTS consent recording label; defaults to the consent file name',
-    type: String
-  },
-  'openai-tts-voice-name': {
-    description: 'OpenAI TTS custom voice label; defaults to AutoShow_<timestamp>',
-    type: String
-  },
-  'gemini-voice': {
-    description: 'Gemini TTS voice name override (default: Kore)',
-    type: String
-  },
-  'hume-tts-voice': {
-    description: 'Hume TTS voice name or voice ID override (default: Male English Actor)',
-    type: String
-  },
-  'hume-tts-voice-provider': {
-    description: 'Hume named voice provider: HUME_AI|CUSTOM_VOICE (default: HUME_AI)',
-    type: String
-  },
-  'cartesia-tts-voice': {
-    description: 'Cartesia TTS voice ID override (default: f786b574-daa5-4673-aa0c-cbe3e8534c02)',
-    type: String
-  },
-  'cartesia-tts-language': {
-    description: 'Cartesia TTS language code override',
-    type: String
-  },
-  'gemini-speaker-1-name': {
-    description: 'Gemini multispeaker speaker 1 name override (requires all Gemini speaker flags)',
-    type: String
-  },
-  'gemini-speaker-1-voice': {
-    description: 'Gemini multispeaker speaker 1 voice name override (requires all Gemini speaker flags)',
-    type: String
-  },
-  'gemini-speaker-2-name': {
-    description: 'Gemini multispeaker speaker 2 name override (requires all Gemini speaker flags)',
-    type: String
-  },
-  'gemini-speaker-2-voice': {
-    description: 'Gemini multispeaker speaker 2 voice name override (requires all Gemini speaker flags)',
-    type: String
-  },
-  'groq-voice': {
-    description: 'Groq TTS voice ID override (default depends on --groq-tts model)',
-    type: String
-  },
-  'mistral-tts-voice': {
-    description: 'Mistral TTS saved/custom voice ID',
-    type: String
-  },
-  'mistral-tts-ref-audio': {
-    description: 'Mistral TTS reference audio path for one-off voice cloning',
-    type: String
-  },
-  'elevenlabs-voice': {
-    description: 'ElevenLabs voice ID override (default: hpp4J3VqNfWAUOO0d1Us)',
-    type: String
-  },
-  'elevenlabs-tts-pvc-voice': {
-    description: 'ElevenLabs trained Professional Voice Clone voice ID for synthesis',
-    type: String
-  },
-  'elevenlabs-tts-ref-audio': {
-    description: 'ElevenLabs TTS source audio path for Instant Voice Cloning',
-    type: String
-  },
-  'elevenlabs-tts-voice-name': {
-    description: 'ElevenLabs TTS cloned voice label; defaults to AutoShow_<timestamp>',
-    type: String
-  },
-  'elevenlabs-tts-clone-remove-background-noise': {
-    description: 'Enable ElevenLabs IVC background noise removal for the reference audio',
-    type: Boolean,
-    default: false,
-    negatable: false
-  }
-} as const satisfies CliFlagsDefinition
-
-const writeVideoModelFlags = {
-  'gemini-video': {
-    description: `Enable video generation on LLM output. ${buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'minimax-video': {
-    description: `Enable video generation on LLM output. ${buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'glm-video': {
-    description: `Enable video generation on LLM output. ${buildModelDescription('GLM video model', SUPPORTED_GLM_VIDEO_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'grok-video': {
-    description: `Enable video generation on LLM output. ${buildModelDescription('Grok video model', SUPPORTED_GROK_VIDEO_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'runway-video': {
-    description: `Enable video generation on LLM output. ${buildModelDescription('Runway video model', SUPPORTED_RUNWAY_VIDEO_MODELS)}`,
-    type: [String] as [StringConstructor]
-  }
-} as const satisfies CliFlagsDefinition
-
-const writeMusicModelFlags = {
-  'elevenlabs-music': {
-    description: `Enable music generation on LLM output. ${buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'minimax-music': {
-    description: `Enable music generation on LLM output. ${buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'gemini-music': {
-    description: `Enable music generation on LLM output. ${buildModelDescription('Gemini Lyria music model', SUPPORTED_GEMINI_MUSIC_MODELS)}`,
-    type: [String] as [StringConstructor]
-  },
-  'music-duration': {
-    description: 'Music duration in seconds',
-    type: String
-  },
-  'music-lyrics-file': {
-    description: 'Lyrics file path (.md or .txt) for MiniMax and Gemini music generation',
-    type: String
-  },
-  'music-instrumental': {
-    description: 'Force instrumental generation for providers that support prompt/instrumental mode',
-    type: Boolean,
-    default: false,
-    negatable: false
-  }
-} as const satisfies CliFlagsDefinition
 
 const writeTextInputFlags = {
   'text-input': {
@@ -299,31 +46,34 @@ const writeTextInputFlags = {
   }
 } as const satisfies CliFlagsDefinition
 
-const writeLlmShortcutFlags = {
-  'all-llm': {
-    description: 'Enable every supported LLM provider/model for this command',
-    type: Boolean,
-    default: false,
-    negatable: false
-  }
+const writeTtsOptionFlags = omitFlags(ttsCommandFlags, [
+  'provider',
+  'all-providers',
+  'provider-concurrency',
+  'local-concurrency',
+  'output-dir',
+  'price'
+])
+
+const writePipelineFlags = {
+  ...sharedConcurrencyFlags,
+  ...stepProviderSelectorFlags,
+  ...writeAllProvidersFlag
 } as const satisfies CliFlagsDefinition
 
 export const writeFlags = {
-  ...withHelpGroup(batchFlags, 'step-1-download'),
-  ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
-  ...withHelpGroup(ocrInputFlags, 'step-2-ocr'),
-  ...withHelpGroup(ocrTuningFlags, 'step-2-ocr'),
-  ...withHelpGroup(allArticleFlags, 'step-2-ocr'),
-  ...withHelpGroup(epubInspectFlags, 'step-2-ocr'),
-  ...withHelpGroup(writeLlmShortcutFlags, 'step-3-write'),
-  ...withHelpGroup(llmProviderFlags, 'step-3-write'),
-  ...withHelpGroup(promptFlag, 'step-3-write'),
-  ...withHelpGroup(writeTextInputFlags, 'step-3-write'),
-  ...withHelpGroup(writeTtsFlags, 'step-4-tts'),
+  ...withHelpGroup(priceFlag, 'pricing'),
+  ...withHelpGroup(writePipelineFlags, 'pipeline'),
+  ...withHelpGroup(batchFlags, 'batch-download'),
+  ...withHelpGroup(transcriptionFlags, 'extraction'),
+  ...withHelpGroup(ocrInputFlags, 'extraction'),
+  ...withHelpGroup(ocrTuningFlags, 'extraction'),
+  ...withHelpGroup(allArticleFlags, 'extraction'),
+  ...withHelpGroup(epubInspectFlags, 'extraction'),
+  ...withHelpGroup(promptFlag, 'writing'),
+  ...withHelpGroup(writeTextInputFlags, 'writing'),
+  ...writeTtsOptionFlags,
   ...withHelpGroup(imageGenFlags, 'step-5-image'),
   ...withHelpGroup(videoGenFlags, 'step-6-video'),
-  ...withHelpGroup(writeVideoModelFlags, 'step-6-video'),
-  ...withHelpGroup(musicGenFlags, 'step-7-music'),
-  ...withHelpGroup(writeMusicModelFlags, 'step-7-music'),
-  ...withHelpGroup(priceFlag, 'pricing')
+  ...withHelpGroup(musicGenFlags, 'step-7-music')
 } as const satisfies CliFlagsDefinition

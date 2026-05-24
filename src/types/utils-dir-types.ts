@@ -4,8 +4,6 @@ export type {
   MinimaxModel,
   GlmModel,
   KimiModel,
-  AwsSttModel,
-  GcloudSttModel,
   DeepgramSttModel,
   DeepinfraSttModel,
   ElevenlabsSttModel,

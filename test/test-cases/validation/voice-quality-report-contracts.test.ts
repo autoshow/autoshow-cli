@@ -94,18 +94,18 @@ const makeSingleProviderTtsRun = async (): Promise<{
       input: inputText,
       tts: [
         {
-          ttsService: 'gcloud',
-          ttsModel: 'chirp3-hd',
-          speaker: 'en-US-Chirp3-HD-Charon',
+          ttsService: 'openai',
+          ttsModel: 'gpt-4o-mini-tts',
+          speaker: 'alloy',
           processingTime: 1000,
-          audioFileName: 'speech-gcloud-chirp3-hd.wav',
+          audioFileName: 'speech-openai-gpt-4o-mini-tts.wav',
           audioFileSize: 100,
           chunkCount: 1
         }
       ]
     }
   })
-  await writeSyntheticWav(join(runDir, 'speech-gcloud-chirp3-hd.wav'), {
+  await writeSyntheticWav(join(runDir, 'speech-openai-gpt-4o-mini-tts.wav'), {
     durationSeconds: 4.5,
     amplitude: 0.35,
     frequencyHz: 220
@@ -252,7 +252,7 @@ describe('voice quality scoring contracts', () => {
     const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
     await writeJson(fixturesPath, {
       providers: {
-        'gcloud/chirp3-hd': {
+        'openai/gpt-4o-mini-tts': {
           stt: {
             'openai-stt/gpt-4o-transcribe': inputText
           }
@@ -306,7 +306,7 @@ describe('voice quality scoring contracts', () => {
     const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
     await writeJson(fixturesPath, {
       providers: {
-        'gcloud/chirp3-hd': {
+        'openai/gpt-4o-mini-tts': {
           stt: {
             'openai-stt/gpt-4o-transcribe': inputText
           }
@@ -378,7 +378,7 @@ describe('voice quality scoring contracts', () => {
     const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
     await writeJson(fixturesPath, {
       providers: {
-        'gcloud/chirp3-hd': {
+        'openai/gpt-4o-mini-tts': {
           stt: {
             'openai-stt/gpt-4o-transcribe': inputText
           }
@@ -466,7 +466,7 @@ describe('voice quality scoring contracts', () => {
     }))
 
     await expect(buildSingleProviderReport(runDir, inputText)).rejects.toThrow(
-      'gcloud/chirp3-hd: OpenAI audio judge failed: OpenAI audio judge returned text without a JSON object'
+      'openai/gpt-4o-mini-tts: OpenAI audio judge failed: OpenAI audio judge returned text without a JSON object'
     )
   })
 
@@ -481,7 +481,7 @@ describe('voice quality scoring contracts', () => {
     })
 
     await expect(buildSingleProviderReport(runDir, inputText)).rejects.toThrow(
-      'gcloud/chirp3-hd: AssemblyAI roundtrip STT failed: AssemblyAI upload failed (503): upload unavailable'
+      'openai/gpt-4o-mini-tts: AssemblyAI roundtrip STT failed: AssemblyAI upload failed (503): upload unavailable'
     )
   })
 
@@ -580,7 +580,7 @@ describe('voice quality scoring contracts', () => {
     const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
     await writeJson(fixturesPath, {
       providers: {
-        'gcloud/chirp3-hd': {
+        'openai/gpt-4o-mini-tts': {
           utmosv2Mos: 4.7,
           nisqaTtsNaturalnessMos: 4.6,
           nisqaQualityMos: 4.5,

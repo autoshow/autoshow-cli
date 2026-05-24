@@ -148,7 +148,7 @@ const sockFlags = {
     negatable: false
   },
   'token-help': {
-    description: 'Print Socket API token scope guidance and exit',
+    description: 'Print minimal Socket API token scope guidance and exit',
     type: Boolean,
     default: false,
     negatable: false

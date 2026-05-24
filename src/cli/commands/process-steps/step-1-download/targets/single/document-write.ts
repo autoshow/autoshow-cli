@@ -48,17 +48,11 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
     outputDir: baseDir || opts.outputRootDir,
     dpi: opts.dpi,
     languages: opts.lang,
-    oem: opts.oem,
-    psm: opts.psm,
     outputFormat: opts.out,
     pdfChapterMode: opts.pdfChapterMode,
     ocrProviderConcurrency: opts.ocrProviderConcurrency,
     ocrLocalConcurrency: opts.ocrLocalConcurrency,
     primaryOcr: opts.primaryOcr,
-    preserveInterwordSpaces: opts.preserveSpaces,
-    rotate: opts.rotate,
-    awsRegion: opts.awsRegion,
-    awsBucket: opts.awsBucket,
     configPath: opts.configPath
   }
 
@@ -72,9 +66,6 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
 
   if (opts.password) {
     extractionOpts.password = opts.password
-  }
-  if (opts.pageSeparator) {
-    extractionOpts.pageSeparator = opts.pageSeparator
   }
   if (opts.useTesseract) {
     extractionOpts.useTesseract = true
@@ -132,18 +123,6 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
   }
   if (opts.deepinfraOcrModels) {
     extractionOpts.deepinfraOcrModels = opts.deepinfraOcrModels
-  }
-  if (opts.awsTextractModel) {
-    extractionOpts.awsTextractModel = opts.awsTextractModel
-  }
-  if (opts.awsTextractModels) {
-    extractionOpts.awsTextractModels = opts.awsTextractModels
-  }
-  if (opts.gcloudDocaiModel) {
-    extractionOpts.gcloudDocaiModel = opts.gcloudDocaiModel
-  }
-  if (opts.gcloudDocaiModels) {
-    extractionOpts.gcloudDocaiModels = opts.gcloudDocaiModels
   }
   if (opts.unstructuredOcrModel) {
     extractionOpts.unstructuredOcrModel = opts.unstructuredOcrModel

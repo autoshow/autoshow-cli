@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/run-deepgram-tts'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
-import { runGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/run-gcloud-tts'
 import { runCartesiaTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/run-cartesia-tts'
 import { runGrokTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/run-grok-tts'
 import { runGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/run-groq-tts'
@@ -24,34 +23,14 @@ const originalFetch = globalThis.fetch
 const previousEnv: Record<string, string | undefined> = {}
 const envKeys = [
   'SPEECHIFY_API_KEY',
-  'SPEECHIFY_BASE_URL',
-  'SPEECHIFY_TTS_VOICE',
   'HUME_API_KEY',
-  'HUME_BASE_URL',
-  'HUME_TTS_VOICE',
-  'HUME_TTS_VOICE_PROVIDER',
   'CARTESIA_API_KEY',
-  'CARTESIA_BASE_URL',
-  'CARTESIA_VERSION',
-  'CARTESIA_TTS_VOICE',
   'MISTRAL_API_KEY',
-  'MISTRAL_BASE_URL',
   'OPENAI_API_KEY',
-  'OPENAI_BASE_URL',
   'GROQ_API_KEY',
-  'GROQ_BASE_URL',
-  'GROQ_TTS_VOICE',
   'XAI_API_KEY',
-  'XAI_BASE_URL',
-  'XAI_TTS_VOICE',
   'MINIMAX_API_KEY',
-  'MINIMAX_BASE_URL',
-  'DEEPGRAM_API_KEY',
-  'DEEPGRAM_BASE_URL',
-  'AUTOSHOW_GCLOUD_BIN',
-  'GCLOUD_TTS_BASE_URL',
-  'GCLOUD_TTS_LANGUAGE',
-  'GCLOUD_TTS_VOICE'
+  'DEEPGRAM_API_KEY'
 ]
 
 const restoreEnv = (): void => {
@@ -98,35 +77,6 @@ const createMockWavBase64 = (): string => {
   return buffer.toString('base64')
 }
 
-const writeFakeReadyGcloud = async (dir: string): Promise<string> => {
-  const bin = join(dir, 'gcloud')
-  await writeFile(bin, `#!/bin/sh
-if [ "$1 $2 $3" = "auth print-access-token --quiet" ]; then
-  echo "gcloud-token"
-  exit 0
-fi
-if [ "$1 $2 $3" = "config get-value project" ]; then
-  echo "test-project"
-  exit 0
-fi
-if [ "$1 $2 $3" = "billing projects describe" ]; then
-  echo '{"billingAccountName":"billingAccounts/000000-000000-000000","billingEnabled":true}'
-  exit 0
-fi
-if [ "$1 $2" = "services list" ]; then
-  for arg in "$@"; do
-    case "$arg" in
-      --filter=config.name=*) echo "\${arg#--filter=config.name=}" ;;
-    esac
-  done
-  exit 0
-fi
-exit 1
-`)
-  await chmod(bin, 0o755)
-  return bin
-}
-
 beforeEach(() => {
   for (const key of envKeys) {
     previousEnv[key] = process.env[key]
@@ -147,7 +97,6 @@ describe('TTS provider service contracts', () => {
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['OPENAI_API_KEY'] = 'openai-key'
-    process.env['OPENAI_BASE_URL'] = 'https://mock.openai.local/v1'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const request = input instanceof Request ? input : undefined
@@ -176,7 +125,7 @@ describe('TTS provider service contracts', () => {
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(calls).toHaveLength(1)
     expect(calls[0]).toMatchObject({
-      url: 'https://mock.openai.local/v1/audio/speech',
+      url: 'https://api.openai.com/v1/audio/speech',
       method: 'POST',
       authorization: 'Bearer openai-key',
       body: {
@@ -196,7 +145,6 @@ describe('TTS provider service contracts', () => {
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['XAI_API_KEY'] = 'xai-key'
-    process.env['XAI_BASE_URL'] = 'https://mock.xai.local/v1/'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       calls.push({
@@ -222,7 +170,7 @@ describe('TTS provider service contracts', () => {
       speaker: 'ab12cd34'
     })
     expect(calls).toEqual([{
-      url: 'https://mock.xai.local/v1/tts',
+      url: 'https://api.x.ai/v1/tts',
       method: 'POST',
       authorization: 'Bearer xai-key',
       body: {
@@ -244,7 +192,6 @@ describe('TTS provider service contracts', () => {
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['GROQ_API_KEY'] = 'groq-key'
-    process.env['GROQ_BASE_URL'] = 'https://mock.groq.local/openai/v1'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       calls.push({
@@ -267,7 +214,7 @@ describe('TTS provider service contracts', () => {
       speaker: 'troy'
     })
     expect(calls).toEqual([{
-      url: 'https://mock.groq.local/openai/v1/audio/speech',
+      url: 'https://api.groq.com/openai/v1/audio/speech',
       method: 'POST',
       authorization: 'Bearer groq-key',
       body: {
@@ -285,7 +232,6 @@ describe('TTS provider service contracts', () => {
     const calls: Array<{ url: string, method: string, body?: Record<string, unknown> }> = []
 
     process.env['MINIMAX_API_KEY'] = 'minimax-key'
-    process.env['MINIMAX_BASE_URL'] = 'https://mock.minimax.local'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const url = String(input)
@@ -330,7 +276,7 @@ describe('TTS provider service contracts', () => {
 
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(calls[0]).toEqual({
-      url: 'https://mock.minimax.local/v1/t2a_async_v2',
+      url: 'https://api.minimax.io/v1/t2a_async_v2',
       method: 'POST',
       body: {
         model: 'speech-2.8-hd',
@@ -363,7 +309,6 @@ describe('TTS provider service contracts', () => {
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['DEEPGRAM_API_KEY'] = 'deepgram-key'
-    process.env['DEEPGRAM_BASE_URL'] = 'https://mock.deepgram.local'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       calls.push({
@@ -387,7 +332,7 @@ describe('TTS provider service contracts', () => {
 
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(calls).toEqual([{
-      url: 'https://mock.deepgram.local/v1/speak?model=aura-2-andromeda-en&encoding=linear16&container=wav&bit_rate=128000&sample_rate=24000&speed=1.1',
+      url: 'https://api.deepgram.com/v1/speak?model=aura-2-andromeda-en&encoding=linear16&container=wav&bit_rate=128000&sample_rate=24000&speed=1.1',
       method: 'POST',
       authorization: 'Token deepgram-key',
       body: { text: 'Deepgram control synthesis.' }
@@ -406,7 +351,6 @@ describe('TTS provider service contracts', () => {
     }> = []
 
     process.env['HUME_API_KEY'] = 'hume-key'
-    process.env['HUME_BASE_URL'] = 'https://mock.hume.local/'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const headers = new Headers(init?.headers)
@@ -432,7 +376,7 @@ describe('TTS provider service contracts', () => {
       chunkCount: 2
     })
     expect(calls).toHaveLength(2)
-    expect(calls.every((call) => call.url === 'https://mock.hume.local/v0/tts/file')).toBe(true)
+    expect(calls.every((call) => call.url === 'https://api.hume.ai/v0/tts/file')).toBe(true)
     expect(calls.every((call) => call.method === 'POST')).toBe(true)
     expect(calls.every((call) => call.apiKey === 'hume-key')).toBe(true)
     expect(calls.every((call) => call.accept === 'application/octet-stream')).toBe(true)
@@ -458,7 +402,6 @@ describe('TTS provider service contracts', () => {
     const bodies: Record<string, unknown>[] = []
 
     process.env['HUME_API_KEY'] = 'hume-key'
-    process.env['HUME_BASE_URL'] = 'https://mock.hume.local'
 
     globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       bodies.push(JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>)
@@ -510,7 +453,6 @@ describe('TTS provider service contracts', () => {
     }> = []
 
     process.env['CARTESIA_API_KEY'] = 'cartesia-key'
-    process.env['CARTESIA_BASE_URL'] = 'https://mock.cartesia.local/'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const headers = new Headers(init?.headers)
@@ -539,7 +481,7 @@ describe('TTS provider service contracts', () => {
       chunkCount: 2
     })
     expect(calls).toHaveLength(2)
-    expect(calls.every((call) => call.url === 'https://mock.cartesia.local/tts/bytes')).toBe(true)
+    expect(calls.every((call) => call.url === 'https://api.cartesia.ai/tts/bytes')).toBe(true)
     expect(calls.every((call) => call.method === 'POST')).toBe(true)
     expect(calls.every((call) => call.authorization === 'Bearer cartesia-key')).toBe(true)
     expect(calls.every((call) => call.version === '2026-03-01')).toBe(true)
@@ -581,7 +523,6 @@ describe('TTS provider service contracts', () => {
     let attempt = 0
 
     process.env['SPEECHIFY_API_KEY'] = 'speechify-key'
-    process.env['SPEECHIFY_BASE_URL'] = 'https://mock.speechify.local'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
@@ -625,7 +566,7 @@ describe('TTS provider service contracts', () => {
       inputLength: String(call.body['input']).length
     }))).toEqual([
       {
-        url: 'https://mock.speechify.local/v1/audio/speech',
+        url: 'https://api.speechify.ai/v1/audio/speech',
         method: 'POST',
         authorization: 'Bearer speechify-key',
         voice: 'narrator_voice',
@@ -635,7 +576,7 @@ describe('TTS provider service contracts', () => {
         inputLength: 2000
       },
       {
-        url: 'https://mock.speechify.local/v1/audio/speech',
+        url: 'https://api.speechify.ai/v1/audio/speech',
         method: 'POST',
         authorization: 'Bearer speechify-key',
         voice: 'narrator_voice',
@@ -645,7 +586,7 @@ describe('TTS provider service contracts', () => {
         inputLength: 2000
       },
       {
-        url: 'https://mock.speechify.local/v1/audio/speech',
+        url: 'https://api.speechify.ai/v1/audio/speech',
         method: 'POST',
         authorization: 'Bearer speechify-key',
         voice: 'narrator_voice',
@@ -665,7 +606,6 @@ describe('TTS provider service contracts', () => {
     await Bun.$`ffmpeg -v error -y -i ${LOCAL_SHORT_AUDIO_PATH} -t 1 -c:a aac ${sourcePath}`.quiet()
 
     process.env['MISTRAL_API_KEY'] = 'mistral-key'
-    process.env['MISTRAL_BASE_URL'] = 'https://mock.mistral.local/v1'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const request = input instanceof Request ? input : undefined
@@ -692,7 +632,7 @@ describe('TTS provider service contracts', () => {
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(calls).toHaveLength(1)
     expect(calls[0]).toMatchObject({
-      url: 'https://mock.mistral.local/v1/audio/speech',
+      url: 'https://api.mistral.ai/v1/audio/speech',
       method: 'POST',
       authorization: 'Bearer mistral-key'
     })
@@ -723,7 +663,6 @@ describe('TTS provider service contracts', () => {
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['MISTRAL_API_KEY'] = 'mistral-key'
-    process.env['MISTRAL_BASE_URL'] = 'https://mock.mistral.local/v1'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const request = input instanceof Request ? input : undefined
@@ -765,7 +704,7 @@ describe('TTS provider service contracts', () => {
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(calls).toHaveLength(2)
     expect(calls[0]).toMatchObject({
-      url: 'https://mock.mistral.local/v1/audio/voices',
+      url: 'https://api.mistral.ai/v1/audio/voices',
       method: 'POST',
       authorization: 'Bearer mistral-key',
       body: {
@@ -777,7 +716,7 @@ describe('TTS provider service contracts', () => {
     expect(typeof calls[0]?.body['sample_audio']).toBe('string')
     expect(String(calls[0]?.body['sample_audio']).length).toBeGreaterThan(0)
     expect(calls[1]).toMatchObject({
-      url: 'https://mock.mistral.local/v1/audio/speech',
+      url: 'https://api.mistral.ai/v1/audio/speech',
       method: 'POST',
       authorization: 'Bearer mistral-key',
       body: {
@@ -797,13 +736,12 @@ describe('TTS provider service contracts', () => {
     })
   }, 10_000)
 
-  test('ElevenLabs TTS sends output format, voice settings, seed, text normalization, pronunciation dictionaries, and PVC-as-IVC controls', async () => {
+  test('ElevenLabs TTS sends output format, voice settings, seed, text normalization, and pronunciation dictionaries controls', async () => {
     const dir = await makeTempDir('autoshow-elevenlabs-tts-controls-')
     const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
     const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
 
     process.env['ELEVENLABS_API_KEY'] = 'elevenlabs-key'
-    process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       calls.push({
@@ -831,14 +769,13 @@ describe('TTS provider service contracts', () => {
         seed: 12345,
         textNormalization: 'on',
         pronunciationDictionaryLocators: ['dict_1:version_2', 'dict_3'],
-        optimizeStreamingLatency: 2,
-        pvcAsIvc: true
+        optimizeStreamingLatency: 2
       }
     })
 
     expect(await Bun.file(result.audioPath).exists()).toBe(true)
     expect(calls).toEqual([{
-      url: 'https://mock.elevenlabs.local/v1/text-to-speech/voice_existing123?output_format=mp3_22050_32&optimize_streaming_latency=2',
+      url: 'https://api.elevenlabs.io/v1/text-to-speech/voice_existing123?output_format=mp3_22050_32&optimize_streaming_latency=2',
       method: 'POST',
       authorization: 'elevenlabs-key',
       body: {
@@ -862,8 +799,7 @@ describe('TTS provider service contracts', () => {
           {
             pronunciation_dictionary_id: 'dict_3'
           }
-        ],
-        use_pvc_as_ivc: true
+        ]
       }
     }])
   }, 10_000)
@@ -887,7 +823,6 @@ describe('TTS provider service contracts', () => {
     }> = []
 
     process.env['SPEECHIFY_API_KEY'] = 'speechify-key'
-    process.env['SPEECHIFY_BASE_URL'] = 'https://mock.speechify.local'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
       const url = String(input)
@@ -945,7 +880,7 @@ describe('TTS provider service contracts', () => {
     })
     expect(calls).toHaveLength(2)
     expect(calls[0]).toEqual({
-      url: 'https://mock.speechify.local/v1/voices',
+      url: 'https://api.speechify.ai/v1/voices',
       method: 'POST',
       authorization: 'Bearer speechify-key',
       form: {
@@ -956,7 +891,7 @@ describe('TTS provider service contracts', () => {
       }
     })
     expect(calls[1]).toMatchObject({
-      url: 'https://mock.speechify.local/v1/audio/speech',
+      url: 'https://api.speechify.ai/v1/audio/speech',
       method: 'POST',
       authorization: 'Bearer speechify-key',
       body: {
@@ -975,7 +910,6 @@ describe('TTS provider service contracts', () => {
     const calls: string[] = []
 
     process.env['SPEECHIFY_API_KEY'] = 'speechify-key'
-    process.env['SPEECHIFY_BASE_URL'] = 'https://mock.speechify.local'
 
     globalThis.fetch = (async (input: Parameters<typeof fetch>[0]): Promise<Response> => {
       calls.push(String(input))
@@ -990,173 +924,6 @@ describe('TTS provider service contracts', () => {
         consentEmail: 'anthony@example.com'
       }
     })).rejects.toThrow('reference audio is empty')
-    expect(calls).toHaveLength(0)
-  })
-
-  test('Google Cloud prebuilt synthesis sends REST bodies with byte-aware chunks and decoded audio', async () => {
-    const dir = await makeTempDir('autoshow-gcloud-tts-')
-    process.env['AUTOSHOW_GCLOUD_BIN'] = await writeFakeReadyGcloud(dir)
-    process.env['GCLOUD_TTS_BASE_URL'] = 'https://mock.gcloud.local'
-    const audioBase64 = createMockWavBase64()
-    const calls: Array<{ url: string, headers: Headers, body: Record<string, unknown> }> = []
-
-    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-      calls.push({
-        url: String(input),
-        headers: new Headers(init?.headers),
-        body: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
-      })
-      return Response.json({ audioContent: audioBase64 })
-    }) as typeof fetch
-
-    const result = await runGcloudTts('x'.repeat(4900), dir, {
-      model: 'chirp3-hd',
-      voice: 'en-US-Chirp3-HD-Charon',
-      language: 'en-US'
-    })
-
-    expect(await Bun.file(result.audioPath).exists()).toBe(true)
-    expect(result.metadata).toMatchObject({
-      ttsService: 'gcloud',
-      ttsModel: 'chirp3-hd',
-      speaker: 'en-US-Chirp3-HD-Charon',
-      chunkCount: 2
-    })
-    expect(calls).toHaveLength(2)
-    expect(calls.every((call) => call.url === 'https://mock.gcloud.local/v1/text:synthesize')).toBe(true)
-    expect(calls.every((call) => call.headers.get('authorization') === 'Bearer gcloud-token')).toBe(true)
-    expect(calls.every((call) => call.headers.get('x-goog-user-project') === 'test-project')).toBe(true)
-    expect(calls.map((call) => Buffer.byteLength((call.body['input'] as { text: string }).text, 'utf8'))).toEqual([4800, 100])
-    expect(calls[0]?.body).toMatchObject({
-      voice: {
-        languageCode: 'en-US',
-        name: 'en-US-Chirp3-HD-Charon'
-      },
-      audioConfig: {
-        audioEncoding: 'LINEAR16',
-        sampleRateHertz: 24000
-      }
-    })
-  })
-
-  test('Google Cloud instant custom voice generates an optional key file and synthesizes with the generated key', async () => {
-    const dir = await makeTempDir('autoshow-gcloud-icv-')
-    const keyOut = join(dir, 'voice-key.txt')
-    process.env['AUTOSHOW_GCLOUD_BIN'] = await writeFakeReadyGcloud(dir)
-    process.env['GCLOUD_TTS_BASE_URL'] = 'https://mock.gcloud.local'
-    const audioBase64 = createMockWavBase64()
-    const mediaBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
-    const calls: Array<{ url: string, body: Record<string, unknown> }> = []
-
-    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-      const url = String(input)
-      if (url === SHORT_AUDIO_URL) {
-        return new Response(mediaBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
-      }
-      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
-      calls.push({ url, body })
-      if (url.endsWith('/v1beta1/voices:generateVoiceCloningKey')) {
-        return Response.json({ voiceCloningKey: 'generated-key' })
-      }
-      if (url.endsWith('/v1beta1/text:synthesize')) {
-        return Response.json({ audioContent: audioBase64 })
-      }
-      throw new Error(`Unexpected Google Cloud TTS mock fetch: ${url}`)
-    }) as typeof fetch
-
-    const result = await runGcloudTts('Hello from instant custom voice.', dir, {
-      model: 'instant-custom-voice',
-      refAudioPath: SHORT_AUDIO_URL,
-      consentAudioPath: SHORT_AUDIO_URL,
-      consentLanguage: 'en-US',
-      voiceCloningKeyOut: keyOut
-    })
-
-    expect(await readFile(keyOut, 'utf8')).toBe('generated-key\n')
-    expect(result.metadata).toMatchObject({
-      ttsService: 'gcloud',
-      ttsModel: 'instant-custom-voice',
-      speaker: 'instant-custom-voice',
-      chunkCount: 1
-    })
-    expect(calls.map((call) => call.url)).toEqual([
-      'https://mock.gcloud.local/v1beta1/voices:generateVoiceCloningKey',
-      'https://mock.gcloud.local/v1beta1/text:synthesize'
-    ])
-    expect(calls[0]?.body).toMatchObject({
-      reference_audio: {
-        audio_config: { audio_encoding: 'MP3' }
-      },
-      voice_talent_consent: {
-        audio_config: { audio_encoding: 'MP3' }
-      },
-      language_code: 'en-US'
-    })
-    expect(calls[1]?.body).toMatchObject({
-      input: { text: 'Hello from instant custom voice.' },
-      voice: {
-        language_code: 'en-US',
-        voice_clone: {
-          voice_cloning_key: 'generated-key'
-        }
-      },
-      audioConfig: {
-        audioEncoding: 'LINEAR16',
-        sampleRateHertz: 24000
-      }
-    })
-  })
-
-  test('Google Cloud instant custom voice accepts an existing key without generating or writing a key', async () => {
-    const dir = await makeTempDir('autoshow-gcloud-icv-existing-')
-    process.env['AUTOSHOW_GCLOUD_BIN'] = await writeFakeReadyGcloud(dir)
-    process.env['GCLOUD_TTS_BASE_URL'] = 'https://mock.gcloud.local'
-    const audioBase64 = createMockWavBase64()
-    const calls: Array<{ url: string, body: Record<string, unknown> }> = []
-
-    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-      const url = String(input)
-      calls.push({
-        url,
-        body: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
-      })
-      return Response.json({ audioContent: audioBase64 })
-    }) as typeof fetch
-
-    await runGcloudTts('Existing key synthesis.', dir, {
-      model: 'instant-custom-voice',
-      language: 'en-US',
-      voiceCloningKey: 'existing-key'
-    })
-
-    expect(calls.map((call) => call.url)).toEqual(['https://mock.gcloud.local/v1beta1/text:synthesize'])
-    expect(calls[0]?.body).toMatchObject({
-      voice: {
-        voice_clone: {
-          voice_cloning_key: 'existing-key'
-        }
-      }
-    })
-  })
-
-  test('Google Cloud instant custom voice validates audio files before key generation', async () => {
-    const dir = await makeTempDir('autoshow-gcloud-icv-invalid-')
-    const emptyAudio = join(dir, 'empty.mp3')
-    await writeFile(emptyAudio, '')
-    process.env['AUTOSHOW_GCLOUD_BIN'] = await writeFakeReadyGcloud(dir)
-    process.env['GCLOUD_TTS_BASE_URL'] = 'https://mock.gcloud.local'
-    const calls: string[] = []
-    globalThis.fetch = (async (input: Parameters<typeof fetch>[0]): Promise<Response> => {
-      calls.push(String(input))
-      return Response.json({ voiceCloningKey: 'unexpected' })
-    }) as typeof fetch
-
-    await expect(runGcloudTts('Invalid audio.', dir, {
-      model: 'instant-custom-voice',
-      refAudioPath: emptyAudio,
-      consentAudioPath: LOCAL_SHORT_AUDIO_PATH,
-      consentLanguage: 'en-US'
-    })).rejects.toThrow('reference audio file is empty')
     expect(calls).toHaveLength(0)
   })
 

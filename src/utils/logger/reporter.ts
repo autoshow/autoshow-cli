@@ -220,13 +220,20 @@ const buildHumanEstimateRows = (
     model: step.step === 'stt' && step.provider === 'reverb'
       ? resolveReverbModelLabel(step.model)
       : step.model,
+    ...(step.step === 'tts' && typeof step.setupCostCents === 'number'
+      ? { setup: formatEstimatedCost(step.setupCostCents) }
+      : {}),
     cost: formatEstimatedCost(step.totalCost)
   }))
 
 const buildHumanEstimateTable = (
   rows: readonly HumanLogTableRow[]
 ) => {
-  return createHumanTable(rows, ['step', 'provider', 'model', 'cost'], { align: { cost: 'right' } })
+  const hasSetup = rows.some((row) => 'setup' in row)
+  const columns = hasSetup
+    ? ['step', 'provider', 'model', 'setup', 'cost']
+    : ['step', 'provider', 'model', 'cost']
+  return createHumanTable(rows, columns, { align: { cost: 'right', ...(hasSetup ? { setup: 'right' } : {}) } })
 }
 
 const buildCompleteResultData = (

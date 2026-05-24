@@ -282,8 +282,6 @@ const providerFromExtractionMethod = (method: string): string | null => {
   if (method.includes('openai-ocr')) return 'openai'
   if (method.includes('anthropic-ocr')) return 'anthropic'
   if (method.includes('gemini-ocr')) return 'gemini'
-  if (method.includes('aws-textract')) return 'aws-textract'
-  if (method.includes('gcloud-docai')) return 'gcloud-docai'
   return null
 }
 

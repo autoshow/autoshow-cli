@@ -1,5 +1,5 @@
 import { createModelValidator } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import type { AwsSttModel, DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, GcloudSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, ScrapecreatorsSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
+import type { DeepgramSttModel, DeepinfraSttModel, ElevenlabsSttModel, HappyscribeSttModel, SonioxSttModel, SpeechmaticsSttModel, RevSttModel, GroqSttModel, GrokSttModel, MistralSttModel, AssemblyaiSttModel, GladiaSttModel, SupadataSttModel, ScrapecreatorsSttModel, OpenaiSttModel, GeminiSttModel, GlmSttModel, TogetherSttModel } from '~/types'
 
 export const SUPPORTED_WHISPER_MODELS = [
   'tiny',
@@ -11,14 +11,6 @@ export const SUPPORTED_WHISPER_MODELS = [
 
 export const SUPPORTED_ELEVENLABS_STT_MODELS = [
   'scribe_v2'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_GCLOUD_STT_MODELS = [
-  'chirp_3'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_AWS_STT_MODELS = [
-  'standard'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_DEEPGRAM_STT_MODELS = [
@@ -95,8 +87,6 @@ export const SUPPORTED_TOGETHER_STT_MODELS = [
 ] as const satisfies readonly string[]
 
 export const validateWhisperModel = createModelValidator(SUPPORTED_WHISPER_MODELS, 'whisper', 'This flag uses local whisper.cpp models.')
-export const validateGcloudSttModel = createModelValidator<GcloudSttModel>(SUPPORTED_GCLOUD_STT_MODELS, 'gcloud-stt')
-export const validateAwsSttModel = createModelValidator<AwsSttModel>(SUPPORTED_AWS_STT_MODELS, 'aws-stt')
 export const validateElevenlabsSttModel = createModelValidator<ElevenlabsSttModel>(SUPPORTED_ELEVENLABS_STT_MODELS, 'elevenlabs-stt')
 export const validateDeepgramSttModel = createModelValidator<DeepgramSttModel>(SUPPORTED_DEEPGRAM_STT_MODELS, 'deepgram-stt')
 export const validateDeepinfraSttModel = createModelValidator<DeepinfraSttModel>(SUPPORTED_DEEPINFRA_STT_MODELS, 'deepinfra-stt', 'This flag only accepts DeepInfra OpenAI-compatible Whisper models.')

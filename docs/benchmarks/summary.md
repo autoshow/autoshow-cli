@@ -150,8 +150,6 @@ _Unavailable: no humanQuality entries are present for `ocr/local` in the current
 | 1 | glm (glm-ocr) | 6/6 runs | $0.000609 |
 | 2 | openai (gpt-5.4-nano) | 6/6 runs | $0.004092 |
 | 3 | gemini (gemini-3.1-flash-lite-preview) | 6/6 runs | $0.004465 |
-| 4 | aws-textract (detect-text) | 6/6 runs | $0.007750 |
-| 5 | gcloud-docai (ocr) | 6/6 runs | $0.007750 |
 | 6 | deepinfra (Qwen/Qwen3-VL-30B-A3B-Instruct) | 6/6 runs | $0.007979 |
 | 7 | mistral (mistral-ocr-2512) | 6/6 runs | $0.010333 |
 | 8 | deepinfra (Qwen/Qwen3-VL-235B-A22B-Instruct) | 6/6 runs | $0.010795 |
@@ -173,13 +171,11 @@ _Unavailable: no humanQuality entries are present for `ocr/local` in the current
 | 1 | mistral (mistral-ocr-2512) | 6/6 runs | 6.595s |
 | 2 | gemini (gemini-3.1-flash-lite-preview) | 6/6 runs | 9.679s |
 | 3 | glm (glm-ocr) | 6/6 runs | 15.702s |
-| 4 | aws-textract (detect-text) | 6/6 runs | 25.196s |
 | 5 | openai (gpt-5.4-nano) | 6/6 runs | 29.051s |
 | 6 | openai (gpt-5.4-mini) | 6/6 runs | 33.235s |
 | 7 | openai (gpt-5.4) | 6/6 runs | 39.651s |
 | 8 | openai (gpt-5.5) | 6/6 runs | 48.156s |
 | 9 | anthropic (claude-haiku-4-5) | 5/6 runs | 62.211s |
-| 10 | gcloud-docai (ocr) | 6/6 runs | 63.543s |
 | 11 | unstructured (hi_res_and_enrichment) | 6/6 runs | 66.108s |
 | 12 | gemini (gemini-3.1-pro-preview) | 6/6 runs | 70.100s |
 | 13 | anthropic (claude-opus-4-7) | 5/6 runs | 70.952s |
@@ -206,8 +202,6 @@ _Unavailable: no humanQuality entries are present for `ocr/local` in the current
 | 11 | gemini (gemini-3.1-flash-lite-preview) | 6/6 runs | 82.28/100 |
 | 12 | openai (gpt-5.5) | 6/6 runs | 78.69/100 |
 | 13 | anthropic (claude-haiku-4-5) | 5/6 runs | 77.85/100 |
-| 14 | gcloud-docai (ocr) | 6/6 runs | 75.09/100 |
-| 15 | aws-textract (detect-text) | 6/6 runs | 73.94/100 |
 | 16 | openai (gpt-5.4-mini) | 6/6 runs | 72.74/100 |
 | 17 | openai (gpt-5.4-nano) | 6/6 runs | 69.86/100 |
 | 18 | unstructured (hi_res_and_enrichment) | 6/6 runs | 34.79/100 |
@@ -326,8 +320,6 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceNonD
 | 10 | deepgram-nova-3 | 3/3 runs | $0.166119 |
 | 11 | gladia-default | 3/3 runs | $0.174111 |
 | 12 | speechmatics-enhanced | 3/3 runs | $0.214071 |
-| 13 | gcloud-chirp_3 | 3/3 runs | $0.274011 |
-| 14 | aws-standard | 3/3 runs | $0.411200 |
 
 #### Speed Ranking
 
@@ -343,10 +335,8 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceNonD
 | 8 | speechmatics-enhanced | 3/3 runs | 50.381s |
 | 9 | soniox-stt-async-v4 | 3/3 runs | 70.938s |
 | 10 | happyscribe-auto | 3/3 runs | 72.542s |
-| 11 | aws-standard | 3/3 runs | 92.770s |
 | 12 | rev-low_cost | 3/3 runs | 100.136s |
 | 13 | rev-machine | 3/3 runs | 113.103s |
-| 14 | gcloud-chirp_3 | 3/3 runs | 215.324s |
 
 #### Auto-Quality Ranking
 
@@ -359,11 +349,9 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceNonD
 | 5 | gladia-default | 3/3 runs | 95.46/100 |
 | 6 | speechmatics-standard | 3/3 runs | 94.47/100 |
 | 7 | soniox-stt-async-v4 | 3/3 runs | 94.42/100 |
-| 8 | gcloud-chirp_3 | 3/3 runs | 94.10/100 |
 | 9 | rev-machine | 3/3 runs | 92.65/100 |
 | 10 | deepgram-nova-3 | 3/3 runs | 92.45/100 |
 | 11 | elevenlabs-scribe_v2 | 3/3 runs | 92.27/100 |
-| 12 | aws-standard | 3/3 runs | 92.23/100 |
 | 13 | rev-low_cost | 3/3 runs | 91.95/100 |
 | 14 | grok-speech-to-text | 3/3 runs | 88.44/100 |
 
@@ -423,7 +411,6 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceDiar
 | 4 | openai (gpt-4o-mini-tts) | 1/1 runs | $0.006741 |
 | 5 | gemini (gemini-3.1-flash-tts-preview) | 1/1 runs | $0.011235 |
 | 6 | deepgram (aura-2-thalia-en) | 1/1 runs | $0.016050 |
-| 7 | gcloud (chirp3-hd) | 1/1 runs | $0.016050 |
 | 8 | groq (canopylabs/orpheus-v1-english) | 1/1 runs | $0.017120 |
 | 9 | cartesia (sonic-3.5) | 1/1 runs | $0.019996 |
 | 10 | cartesia (sonic-3) | 1/1 runs | $0.019996 |
@@ -431,14 +418,11 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceDiar
 | 12 | elevenlabs (eleven_v3) | 1/1 runs | $0.053500 |
 | 13 | minimax (speech-2.8-hd) | 1/1 runs | $0.053500 |
 | 14 | hume (octave-2) | 1/1 runs | $0.080250 |
-| 15 | gcloud (studio) | 1/1 runs | $0.085600 |
 
 #### Speed Ranking
 
 | Rank | Provider/model | Runs | Average |
 | ---: | --- | ---: | ---: |
-| 1 | gcloud (studio) | 1/1 runs | 2.217s |
-| 2 | gcloud (chirp3-hd) | 1/1 runs | 5.245s |
 | 3 | cartesia (sonic-3.5) | 1/1 runs | 5.835s |
 | 4 | speechify (simba-multilingual) | 1/1 runs | 6.120s |
 | 5 | hume (octave-2) | 1/1 runs | 6.316s |
@@ -464,10 +448,8 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceDiar
 | 5 | grok (grok-tts) | 1/1 runs | 95.51/100 |
 | 6 | speechify (simba-multilingual) | 1/1 runs | 94.94/100 |
 | 7 | elevenlabs (eleven_v3) | 1/1 runs | 94.38/100 |
-| 8 | gcloud (chirp3-hd) | 1/1 runs | 94.38/100 |
 | 9 | deepgram (aura-2-thalia-en) | 1/1 runs | 93.26/100 |
 | 10 | hume (octave-2) | 1/1 runs | 92.70/100 |
-| 11 | gcloud (studio) | 1/1 runs | 91.57/100 |
 | 12 | speechify (simba-english) | 1/1 runs | 90.45/100 |
 | 13 | cartesia (sonic-3.5) | 1/1 runs | 87.64/100 |
 | 14 | cartesia (sonic-3) | 1/1 runs | 87.64/100 |
@@ -478,12 +460,10 @@ _Unavailable: no humanQuality entries are present for `stt/thirdPartyServiceDiar
 | Rank | Provider/model | Runs | Average |
 | ---: | --- | ---: | ---: |
 | 1 | elevenlabs (eleven_v3) | 1/1 runs | 80.00/100 |
-| 2 | gcloud (chirp3-hd) | 1/1 runs | 80.00/100 |
 | 3 | grok (grok-tts) | 1/1 runs | 80.00/100 |
 | 4 | minimax (speech-2.8-turbo) | 1/1 runs | 80.00/100 |
 | 5 | openai (gpt-4o-mini-tts) | 1/1 runs | 80.00/100 |
 | 6 | deepgram (aura-2-thalia-en) | 1/1 runs | 70.00/100 |
-| 7 | gcloud (studio) | 1/1 runs | 70.00/100 |
 | 8 | gemini (gemini-3.1-flash-tts-preview) | 1/1 runs | 70.00/100 |
 | 9 | hume (octave-2) | 1/1 runs | 70.00/100 |
 | 10 | minimax (speech-2.8-hd) | 1/1 runs | 70.00/100 |

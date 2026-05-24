@@ -24,7 +24,6 @@ import {
   parsePaddleImageDimensions,
   summarizePaddleFailure
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/run-paddle-ocr'
-import { writeAwsTextractSyncDocumentFile } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/aws-textract/run-aws-textract'
 import { runHostedOcrWithPdfChunkFallback } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-chunk-fallback'
 import type { DocumentMetadata, HostedOcrRun, OcrProviderState, OcrTarget, PageResult } from '~/types'
 
@@ -420,14 +419,6 @@ describe('OCR resume contracts', () => {
   })
 
   test('stored OCR targets include current hosted provider set', () => {
-    expect(parseStoredRequestedTarget({ service: 'aws-textract', model: 'detect-document-text' })).toEqual({
-      service: 'aws-textract',
-      model: 'detect-document-text'
-    })
-    expect(parseStoredRequestedTarget({ service: 'gcloud-docai', model: 'processor/default' })).toEqual({
-      service: 'gcloud-docai',
-      model: 'processor/default'
-    })
     expect(parseStoredRequestedTarget({ service: 'unstructured', model: 'workflow/default' })).toEqual({
       service: 'unstructured',
       model: 'workflow/default'
@@ -489,20 +480,4 @@ describe('OCR resume contracts', () => {
     expect(parsePaddleImageDimensions('not dimensions')).toBeUndefined()
   })
 
-  test('AWS Textract sync document payload is written through file URI', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-ocr-resume-contracts-'))
-    try {
-      const inputPath = join(tempDir, 'document.jpg')
-      await Bun.write(inputPath, new Uint8Array([0, 1, 2, 3, 4, 5]))
-
-      const documentArg = await writeAwsTextractSyncDocumentFile(inputPath, tempDir)
-      expect(documentArg).toStartWith('file://')
-      expect(documentArg).not.toContain('AAECAwQF')
-
-      const payload = await Bun.file(documentArg.slice('file://'.length)).json() as { Bytes?: unknown }
-      expect(payload.Bytes).toBe(Buffer.from([0, 1, 2, 3, 4, 5]).toString('base64'))
-    } finally {
-      await rm(tempDir, { recursive: true, force: true })
-    }
-  })
 })

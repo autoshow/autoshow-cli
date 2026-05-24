@@ -153,6 +153,12 @@ const resolveExtractionProviderModel = (
       model: 'spider'
     }
   }
+  if (metadata.extractionMethod.includes('html+supadata')) {
+    return {
+      provider: 'supadata',
+      model: 'supadata'
+    }
+  }
   if (metadata.extractionMethod.includes('html+zyte')) {
     return {
       provider: 'zyte',
@@ -320,7 +326,7 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputMetric: 'pages',
         inputValue: input.step2.totalPages,
       })
-    } else if (provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'zyte') {
+    } else if (provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'supadata' || provider === 'zyte') {
       const extractPricing = getExtractPricing(provider, model)
       const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
       const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
@@ -442,32 +448,6 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         promptTokens,
         completionTokens
       })
-    } else if (provider === 'gcloud-docai') {
-      const extractPricing = getExtractPricing('gcloud-docai', model)
-      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
-      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
-      steps.push({
-        step: 'extract',
-        provider: 'gcloud-docai',
-        model,
-        cost,
-        costSource: 'registry_fallback',
-        inputMetric: 'pages',
-        inputValue: input.step2.totalPages,
-      })
-    } else if (provider === 'aws-textract') {
-      const extractPricing = getExtractPricing('aws-textract', model)
-      const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
-      const cost = (input.step2.totalPages / 1000) * costPer1kPagesCents
-      steps.push({
-        step: 'extract',
-        provider: 'aws-textract',
-        model,
-        cost,
-        costSource: 'registry_fallback',
-        inputMetric: 'pages',
-        inputValue: input.step2.totalPages,
-      })
     } else if (provider === 'unstructured') {
       const extractPricing = getExtractPricing('unstructured', model)
       const costPer1kPagesCents = extractPricing.costPer1kPagesCents ?? 0
@@ -523,12 +503,8 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       const completionTokens = step2Entry.completionTokens ?? 0
       const cost = provider === 'mistral'
         ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', model).costPer1kPagesCents ?? 0)
-        : provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'zyte'
+        : provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'supadata' || provider === 'zyte'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing(provider, model).costPer1kPagesCents ?? 0)
-        : provider === 'gcloud-docai'
-          ? (step2Entry.totalPages / 1000) * (getExtractPricing('gcloud-docai', model).costPer1kPagesCents ?? 0)
-        : provider === 'aws-textract'
-          ? (step2Entry.totalPages / 1000) * (getExtractPricing('aws-textract', model).costPer1kPagesCents ?? 0)
         : provider === 'unstructured'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('unstructured', model).costPer1kPagesCents ?? 0)
         : provider === 'glm' && step2Entry.ocrModel

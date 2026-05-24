@@ -13,6 +13,7 @@ import {
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { DEEPGRAM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
@@ -184,7 +185,7 @@ export const runDeepgramTranscribe = async (
 
   const file = Bun.file(audioPath)
   const mimeType = inferDeepgramMimeType(audioPath, file.type)
-  const baseURL = readEnv('DEEPGRAM_BASE_URL') ?? 'https://api.deepgram.com'
+  const baseURL = DEEPGRAM_DEFAULT_BASE_URL
   let transcribeMs = 0
   let requestCount = 0
   let retryCount = 0

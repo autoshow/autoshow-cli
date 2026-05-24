@@ -46,10 +46,7 @@ export const budgetedTest = (
   timeoutMs: number = E2E_TEST_TIMEOUT_MS
 ): void => {
   if (shouldSkipBudgetKeys(budgetKey)) {
-    const keys = normalizeBudgetKeys(budgetKey).join(', ')
-    test(name, () => {
-      throw new Error(`Budget prerequisite failed before paid command execution: ${keys}`)
-    }, timeoutMs)
+    test.skip(name, fn)
     return
   }
   test(name, fn, timeoutMs)

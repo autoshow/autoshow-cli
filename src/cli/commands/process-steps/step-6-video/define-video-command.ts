@@ -1,10 +1,14 @@
 import { defineCliCommand } from '~/cli/native'
 import { videoCommandFlags } from '~/cli/flags'
-import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
-import { normalizeCommandSelectorArgs, normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
+import {
+  normalizeCommandSelectorArgs,
+  normalizeCommandSelectorFlags,
+  normalizeGenericProviderSelectorFlags,
+  STANDALONE_VIDEO_PROVIDER_TARGETS
+} from '~/cli/commands/process-steps/service-selector-normalization'
 import { runVideoGen } from './run-video-gen'
 import { collectVideoTargets, buildVideoArtifactMap, getVideoArtifactFileName } from './video-targets'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
@@ -16,6 +20,18 @@ import { buildProviderStepSummaries, createGenerationOutputDir, getGenerationExp
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
 
+const VIDEO_COMMAND_OPTION_FLAGS = {
+  'video-mode': 'mode',
+  'video-duration': 'duration',
+  'video-size': 'size',
+  'video-aspect-ratio': 'aspect-ratio',
+  'video-resolution': 'resolution',
+  'video-input-image': 'input-image',
+  'video-last-frame': 'last-frame',
+  'video-reference-image': 'reference-image',
+  'video-input-video': 'input-video'
+} as const satisfies Record<string, string>
+
 export const videoCommand = defineCliCommand({
   name: 'video',
   description: 'Generate a video from a text prompt',
@@ -23,11 +39,11 @@ export const videoCommand = defineCliCommand({
   flags: videoCommandFlags,
   help: {
     examples: [
-      ['bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview', 'Generate video with Gemini Veo'],
-      ['bun as video "a cinematic mountain sunrise" --minimax MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo'],
-      ['bun as video "a cat playing with yarn" --glm cogvideox-3', 'Generate video with GLM CogVideoX'],
-      ['bun as video "a cat playing piano" --grok grok-imagine-video', 'Generate video with Grok'],
-      ['bun as video "a cinematic mountain sunrise" --runway gen4.5', 'Generate video with Runway Gen-4.5']
+      ['bun as video "a cinematic mountain sunrise" --provider gemini=veo-3.1-lite-generate-preview', 'Generate video with Gemini Veo'],
+      ['bun as video "a cinematic mountain sunrise" --provider minimax=MiniMax-Hailuo-2.3', 'Generate video with MiniMax Hailuo'],
+      ['bun as video "a cat playing with yarn" --provider glm=cogvideox-3', 'Generate video with GLM CogVideoX'],
+      ['bun as video "a cat playing piano" --provider grok=grok-imagine-video', 'Generate video with Grok'],
+      ['bun as video "a cinematic mountain sunrise" --provider runway=gen4.5', 'Generate video with Runway Gen-4.5']
     ]
   }
 }, async (ctx) => {
@@ -35,13 +51,21 @@ export const videoCommand = defineCliCommand({
   const flags = ctx.flags
 
   const videoMaxCents = await resolveMaxCentsFromFlags(flags as Record<string, unknown>)
-  const explicitFlags = extractExplicitFlags(Bun.argv.slice(2))
-  const normalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, VIDEO_COMMAND_SELECTOR_FLAGS)
-  const normalizedArgs = normalizeCommandSelectorArgs(Bun.argv.slice(2), VIDEO_COMMAND_SELECTOR_FLAGS)
-  const videoOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, normalizedArgs)
+  const rawArgs = Bun.argv.slice(2)
+  const explicitFlags = extractExplicitFlags(rawArgs)
+  const optionNormalized = normalizeCommandSelectorFlags(flags as Record<string, unknown>, explicitFlags, VIDEO_COMMAND_OPTION_FLAGS)
+  const optionNormalizedArgs = normalizeCommandSelectorArgs(rawArgs, VIDEO_COMMAND_OPTION_FLAGS)
+  const providerNormalized = normalizeGenericProviderSelectorFlags(
+    optionNormalized.flags,
+    optionNormalized.explicitFlags,
+    'provider',
+    STANDALONE_VIDEO_PROVIDER_TARGETS,
+    { allProvidersTarget: 'all-video', rawArgs: optionNormalizedArgs }
+  )
+  const videoOpts = buildOptsFromFlags(true, providerNormalized.flags, [], {}, providerNormalized.explicitFlags, providerNormalized.rawArgs ?? optionNormalizedArgs)
   const videoTargets = collectVideoTargets(videoOpts)
   if (videoTargets.length === 0) {
-    throw CLIUsageError('Specify a video generation provider: --gemini <model>, --minimax <model>, --glm <model>, --grok <model>, or --runway <model>')
+    throw CLIUsageError('Specify a video generation provider with --provider gemini|minimax|glm|grok|runway[=model]')
   }
 
   const { estimate: preflightEstimate, shouldExit: videoShouldExit } = await runPreflight('video', prompt, videoOpts, videoMaxCents)

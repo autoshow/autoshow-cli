@@ -17,7 +17,6 @@ import type {
   GeminiTtsModel,
   DeepgramTtsModel,
   SpeechifyTtsModel,
-  GcloudTtsModel,
   HumeTtsModel,
   CartesiaTtsModel
 } from '~/types'
@@ -280,95 +279,10 @@ export const validateGeminiTtsModel = createModelValidator<GeminiTtsModel>(SUPPO
 
 export const SUPPORTED_DEEPGRAM_TTS_MODELS = [
   'aura-2-thalia-en',
-  'aura-2-amalthea-en',
   'aura-2-andromeda-en',
   'aura-2-apollo-en',
-  'aura-2-arcas-en',
-  'aura-2-aries-en',
-  'aura-2-asteria-en',
-  'aura-2-athena-en',
-  'aura-2-atlas-en',
-  'aura-2-aurora-en',
-  'aura-2-callista-en',
-  'aura-2-cora-en',
-  'aura-2-cordelia-en',
-  'aura-2-delia-en',
-  'aura-2-draco-en',
-  'aura-2-electra-en',
-  'aura-2-harmonia-en',
-  'aura-2-helena-en',
-  'aura-2-hera-en',
-  'aura-2-hermes-en',
-  'aura-2-hyperion-en',
-  'aura-2-iris-en',
-  'aura-2-janus-en',
-  'aura-2-juno-en',
-  'aura-2-jupiter-en',
   'aura-2-luna-en',
-  'aura-2-mars-en',
-  'aura-2-minerva-en',
-  'aura-2-neptune-en',
-  'aura-2-odysseus-en',
-  'aura-2-ophelia-en',
   'aura-2-orion-en',
-  'aura-2-orpheus-en',
-  'aura-2-pandora-en',
-  'aura-2-phoebe-en',
-  'aura-2-pluto-en',
-  'aura-2-saturn-en',
-  'aura-2-selene-en',
-  'aura-2-theia-en',
-  'aura-2-vesta-en',
-  'aura-2-zeus-en',
-  'aura-2-sirio-es',
-  'aura-2-nestor-es',
-  'aura-2-carina-es',
-  'aura-2-celeste-es',
-  'aura-2-alvaro-es',
-  'aura-2-diana-es',
-  'aura-2-aquila-es',
-  'aura-2-selena-es',
-  'aura-2-estrella-es',
-  'aura-2-javier-es',
-  'aura-2-agustina-es',
-  'aura-2-antonia-es',
-  'aura-2-gloria-es',
-  'aura-2-luciano-es',
-  'aura-2-olivia-es',
-  'aura-2-silvia-es',
-  'aura-2-valerio-es',
-  'aura-2-beatrix-nl',
-  'aura-2-daphne-nl',
-  'aura-2-cornelia-nl',
-  'aura-2-sander-nl',
-  'aura-2-hestia-nl',
-  'aura-2-lars-nl',
-  'aura-2-roman-nl',
-  'aura-2-rhea-nl',
-  'aura-2-leda-nl',
-  'aura-2-agathe-fr',
-  'aura-2-hector-fr',
-  'aura-2-elara-de',
-  'aura-2-aurelia-de',
-  'aura-2-lara-de',
-  'aura-2-julius-de',
-  'aura-2-fabian-de',
-  'aura-2-kara-de',
-  'aura-2-viktoria-de',
-  'aura-2-melia-it',
-  'aura-2-elio-it',
-  'aura-2-flavio-it',
-  'aura-2-maia-it',
-  'aura-2-cinzia-it',
-  'aura-2-cesare-it',
-  'aura-2-livia-it',
-  'aura-2-dionisio-it',
-  'aura-2-demetra-it',
-  'aura-2-uzume-ja',
-  'aura-2-ebisu-ja',
-  'aura-2-fujin-ja',
-  'aura-2-izanami-ja',
-  'aura-2-ama-ja'
 ] as const satisfies readonly string[]
 
 export const DEEPGRAM_DEFAULT_VOICE = 'aura-2-thalia-en'
@@ -414,35 +328,6 @@ export const validateSpeechifyTtsAudioFormat = (value: string): string => {
     throw CLIUsageError(
       `Invalid --speechify-tts-audio-format "${value}". Allowed values: ${formatAllowedValues(SUPPORTED_SPEECHIFY_TTS_AUDIO_FORMATS)}`
     )
-  }
-  return normalized
-}
-
-export const SUPPORTED_GCLOUD_TTS_MODELS = [
-  'chirp3-hd',
-  'studio',
-  'instant-custom-voice'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS = [
-  'chirp3-hd',
-  'studio',
-] as const satisfies readonly string[]
-
-export const GCLOUD_DEFAULT_TTS_VOICES = {
-  'chirp3-hd': 'en-US-Chirp3-HD-Charon',
-  studio: 'en-US-Studio-O',
-} as const satisfies Record<typeof SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS[number], string>
-
-export const GCLOUD_DEFAULT_TTS_LANGUAGE = 'en-US'
-export const GCLOUD_DEFAULT_ICV_CONSENT_LANGUAGE = 'en-US'
-
-export const validateGcloudTtsModel = createModelValidator<GcloudTtsModel>(SUPPORTED_GCLOUD_TTS_MODELS, 'gcloud-tts')
-
-export const validateGcloudTtsVoice = (voice: string): string => {
-  const normalized = voice.trim()
-  if (!normalized) {
-    throw CLIUsageError('Invalid --gcloud-tts-voice value. Expected a non-empty Google Cloud voice name.')
   }
   return normalized
 }

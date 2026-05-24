@@ -1,33 +1,9 @@
 import * as l from '~/utils/logger'
 import { validateGlmOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { GLM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
-const DEFAULT_GLM_BASE_URL = 'https://api.z.ai/api/paas/v4'
-
-const normalizeGlmBaseUrl = (value: string): string => {
-  const normalized = value.trim().replace(/\/+$/, '')
-  if (normalized.endsWith('/paas/v4')) {
-    return normalized
-  }
-  if (normalized.endsWith('/api/paas')) {
-    return `${normalized}/v4`
-  }
-  if (normalized.endsWith('/api')) {
-    return `${normalized}/paas/v4`
-  }
-  if (/^https?:\/\/[^/]+$/i.test(normalized)) {
-    return `${normalized}/api/paas/v4`
-  }
-  return normalized
-}
-
-export const resolveGlmBaseUrl = (): string => {
-  const configured = readEnv('ZAI_BASE_URL')
-  if (!configured) {
-    return DEFAULT_GLM_BASE_URL
-  }
-  return normalizeGlmBaseUrl(configured)
-}
+export const resolveGlmBaseUrl = (): string => GLM_DEFAULT_BASE_URL
 
 export const getGlmApiKey = (): string | undefined => {
   return readEnv('GLM_API_KEY')

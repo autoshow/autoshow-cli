@@ -4,15 +4,15 @@ Complete trace of a real CLI command from input to output, plus environment vari
 
 ## Outline
 
-- [Example: `bun as write "https://youtube.com/watch?v=abc123" --whisper-stt small --llama`](#example-bun-as-write-httpsyoutubecomwatchvabc123---whisper-stt-small---llama)
+- [Example: `bun as write "https://youtube.com/watch?v=abc123" --stt whisper=small --llm llama`](#example-bun-as-write-httpsyoutubecomwatchvabc123---stt-whispersmall---llm-llama)
 - [Environment Variables](#environment-variables)
 
-## Example: `bun as write "https://youtube.com/watch?v=abc123" --whisper-stt small --llama`
+## Example: `bun as write "https://youtube.com/watch?v=abc123" --stt whisper=small --llm llama`
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │                                                                                     │
-│   USER: bun as write "https://youtube.com/watch?v=abc123" --whisper-stt small --llama   │
+│   USER: bun as write "https://youtube.com/watch?v=abc123" --stt whisper=small --llm llama   │
 │                                                                                     │
 └───────────────────────────────────────────┬─────────────────────────────────────────┘
                                             |
@@ -80,8 +80,6 @@ Complete trace of a real CLI command from input to output, plus environment vari
 | Step 6 video | `GEMINI_API_KEY`, `MINIMAX_API_KEY`, `GLM_API_KEY`, `XAI_API_KEY`, `RUNWAYML_API_SECRET` |
 | Step 7 music | `ELEVENLABS_API_KEY`, `MINIMAX_API_KEY`, `GEMINI_API_KEY` |
 
-AWS Transcribe and Textract use AWS CLI credentials plus `AWS_REGION` or `AWS_DEFAULT_REGION`. Google Cloud STT, Document AI, and TTS use gcloud CLI auth plus an active billed project.
-
 ### Base URL Overrides
 
 | Area | Variables |
@@ -89,7 +87,7 @@ AWS Transcribe and Textract use AWS CLI credentials plus `AWS_REGION` or `AWS_DE
 | OpenAI-compatible and LLM APIs | `OPENAI_BASE_URL`, `ANTHROPIC_BASE_URL`, `GROQ_BASE_URL`, `MISTRAL_BASE_URL`, `XAI_BASE_URL`, `GLM_BASE_URL`, `ZAI_BASE_URL`, `KIMI_BASE_URL`, `MINIMAX_BASE_URL` |
 | STT providers | `DEEPINFRA_BASE_URL`, `TOGETHER_BASE_URL`, `HAPPYSCRIBE_BASE_URL`, `SUPADATA_BASE_URL`, `SCRAPECREATORS_BASE_URL`, `ELEVENLABS_BASE_URL`, `DEEPGRAM_BASE_URL`, `SONIOX_BASE_URL`, `SPEECHMATICS_BASE_URL`, `REVAI_BASE_URL`, `ASSEMBLYAI_BASE_URL`, `GLADIA_BASE_URL` |
 | OCR and URL providers | `UNSTRUCTURED_API_URL`, `FIRECRAWL_API_URL`, `SPIDER_API_URL`, `ZYTE_API_URL` |
-| TTS, image, and music providers | `GCLOUD_TTS_BASE_URL`, `SPEECHIFY_BASE_URL`, `HUME_BASE_URL`, `CARTESIA_BASE_URL`, `BFL_BASE_URL`, `REVE_BASE_URL`, `ELEVENLABS_BASE_URL`, `MINIMAX_BASE_URL` |
+| TTS, image, and music providers | `SPEECHIFY_BASE_URL`, `HUME_BASE_URL`, `CARTESIA_BASE_URL`, `BFL_BASE_URL`, `REVE_BASE_URL`, `ELEVENLABS_BASE_URL`, `MINIMAX_BASE_URL` |
 
 Runway video generation currently uses the fixed Runway API base URL and `RUNWAYML_API_SECRET`.
 
@@ -98,8 +96,7 @@ Runway video generation currently uses the fixed Runway API base URL and `RUNWAY
 | Area | Variables |
 |------|-----------|
 | Local and model downloads | `HUGGINGFACE_TOKEN`, `LLAMA_MODEL_PATH`, `LLAMA_MODEL_REPO` |
-| AWS and Google Cloud helpers | `AUTOSHOW_AWS_BIN`, `AUTOSHOW_GCLOUD_BIN`, `AUTOSHOW_GCLOUD_PROJECT`, `AUTOSHOW_GCLOUD_DOCAI_LOCATION`, `AUTOSHOW_GCLOUD_DOCAI_OCR_PROCESSOR_ID`, `AUTOSHOW_GCLOUD_BUCKET` |
-| TTS voices and output controls | `ELEVENLABS_VOICE_ID`, `OPENAI_TTS_VOICE`, `GEMINI_TTS_VOICE`, `GROQ_TTS_VOICE`, `XAI_TTS_VOICE`, `MISTRAL_TTS_VOICE`, `MISTRAL_TTS_REF_AUDIO`, `DEEPGRAM_TTS_VOICE`, `SPEECHIFY_TTS_VOICE`, `HUME_TTS_VOICE`, `HUME_TTS_VOICE_PROVIDER`, `CARTESIA_TTS_VOICE`, `CARTESIA_VERSION`, `GCLOUD_TTS_LANGUAGE`, `GCLOUD_TTS_VOICE` |
+| TTS voices and output controls | `ELEVENLABS_VOICE_ID`, `OPENAI_TTS_VOICE`, `GEMINI_TTS_VOICE`, `GROQ_TTS_VOICE`, `XAI_TTS_VOICE`, `MISTRAL_TTS_VOICE`, `MISTRAL_TTS_REF_AUDIO`, `DEEPGRAM_TTS_VOICE`, `SPEECHIFY_TTS_VOICE`, `HUME_TTS_VOICE`, `HUME_TTS_VOICE_PROVIDER`, `CARTESIA_TTS_VOICE`, `CARTESIA_VERSION` |
 | URL backend defaults | `AUTOSHOW_URL_BACKEND`, `AUTOSHOW_DEFUDDLE_BIN` |
 | Logging | `AUTOSHOW_LOG_FORMAT`, `AUTOSHOW_LOG_LEVEL`, `NO_COLOR`, `FORCE_COLOR` |
 | Timeouts | `AUTOSHOW_MEDIA_GENERATION_TIMEOUT_MS`, `AUTOSHOW_LLM_REQUEST_TIMEOUT_MS`, `AUTOSHOW_OCR_REQUEST_TIMEOUT_MS`, `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS`, `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` |

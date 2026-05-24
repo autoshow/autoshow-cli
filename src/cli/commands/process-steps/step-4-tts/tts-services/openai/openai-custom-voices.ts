@@ -3,9 +3,8 @@ import { basename, extname } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
 import { createOpenAIVoice, createOpenAIVoiceConsent } from '~/utils/openai/client'
+import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { materializeMediaInput } from '~/utils/media-url'
-
-const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
 const OPENAI_DEFAULT_CONSENT_LANGUAGE = 'en-US'
 const MAX_OPENAI_CUSTOM_VOICE_AUDIO_BYTES = 10 * 1024 * 1024
 

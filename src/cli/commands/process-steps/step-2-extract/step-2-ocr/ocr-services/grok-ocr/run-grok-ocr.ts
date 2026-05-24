@@ -92,7 +92,7 @@ export const runGrokOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   model: string,
-  opts: Pick<ExtractionOptions, 'dpi' | 'password' | 'rotate' | 'ocrPreparationCache'>
+  opts: Pick<ExtractionOptions, 'dpi' | 'password' | 'ocrPreparationCache'>
 ): Promise<{
   pages: PageResult[]
   extractionMethod: 'grok-ocr'
@@ -144,8 +144,7 @@ export const runGrokOcr = async (
             filePath,
             page,
             dpi: opts.dpi,
-            password: opts.password,
-            rotate: opts.rotate
+            password: opts.password
           },
           async (outputPath) => {
             const renderResult = await renderPageToImage(
@@ -153,8 +152,7 @@ export const runGrokOcr = async (
               page,
               opts.dpi,
               outputPath,
-              opts.password,
-              opts.rotate
+              opts.password
             )
             if (renderResult.exitCode !== 0) {
               throw new Error(renderResult.stderr || `Failed rendering page ${page} for Grok OCR`)
@@ -169,8 +167,7 @@ export const runGrokOcr = async (
           page,
           opts.dpi,
           imagePath,
-          opts.password,
-          opts.rotate
+          opts.password
         )
         if (renderResult.exitCode !== 0) {
           throw new Error(renderResult.stderr || `Failed rendering page ${page} for Grok OCR`)

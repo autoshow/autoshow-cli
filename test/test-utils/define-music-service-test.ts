@@ -26,12 +26,12 @@ type MusicServiceModelCase = {
 
 export const defineMusicServiceTest = ({
   models,
-  cliFlag,
+  provider,
   musicService,
   envVarKey,
 }: {
   models: MusicServiceModelCase[]
-  cliFlag: string
+  provider: string
   musicService: string
   envVarKey: string
 }): void => {
@@ -39,8 +39,8 @@ export const defineMusicServiceTest = ({
     'src/cli/create-cli.ts',
     'music',
     'an ambient piano song',
-    cliFlag,
-    'invalid-model'
+    '--provider',
+    `${provider}=invalid-model`
   ])
 
   withOutputLifecycle(MUSIC_GEN_TITLE)
@@ -58,8 +58,8 @@ export const defineMusicServiceTest = ({
           'src/cli/create-cli.ts',
           'music',
           prompt,
-          cliFlag,
-          model,
+          '--provider',
+          `${provider}=${model}`,
           ...(extraArgs ?? [])
         ],
         commandTimeoutMs === undefined ? undefined : { timeoutMs: commandTimeoutMs }
@@ -85,11 +85,11 @@ export const defineMusicServiceTest = ({
 
 export const defineMusicServicePriceTests = ({
   models,
-  cliFlag,
+  provider,
   musicService,
 }: {
   models: MusicServiceModelCase[]
-  cliFlag: string
+  provider: string
   musicService: string
 }): void => {
   for (const { model } of models) {
@@ -98,8 +98,8 @@ export const defineMusicServicePriceTests = ({
         'src/cli/create-cli.ts',
         'music',
         'an ambient piano song',
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         '--price'
       ])
 

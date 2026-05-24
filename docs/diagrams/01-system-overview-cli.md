@@ -125,98 +125,81 @@ src/cli/create-cli.ts
 
 ## Flag System
 
-`extract` displays route-aware public aliases such as `--whisper`, `--openai`, `--grok`, `--aws`, and `--gcloud` based on the routed input. Larger command surfaces (`write`, `resume`, and `config`) use suffixed flags such as `--whisper-stt`, `--openai-ocr`, `--aws-textract`, and `--gcloud-docai` to avoid collisions between STT, OCR, LLM, and post-generation providers.
+Runtime provider selection uses generic selectors. Standalone `extract`, `tts`, `image`, `video`, `music`, and target-aware `resume` use `--provider provider[=model]` plus `--all-providers`. Pipeline and config surfaces use step selectors such as `--stt provider[=model]`, `--ocr provider[=model]`, `--llm provider[=model]`, `--tts provider[=model]`, `--image provider[=model]`, `--video provider[=model]`, `--music provider[=model]`, and `--all-providers <step>`.
 
 ```
 src/cli/flags/
 
 ┌─────────────────────────────────────────────────────────────┐
-│  transcriptionFlags (part of mediaFlags)                   │
+│  step-2 STT selection                                      │
 │                                                            │
-│  Local:                                                    │
-│  ├── --whisper-stt MODEL tiny|base|small|medium|large-v3-turbo│
-│  ├── --reverb-stt        Use Reverb ASR                    │
+│  extract/resume:                                           │
+│  ├── --provider whisper=MODEL                              │
+│  ├── --provider reverb                                     │
+│  └── --all-providers                                       │
 │                                                            │
-│  Cloud (LLM provider STT):                                 │
-│  ├── --openai-stt / --gemini-stt / --groq-stt             │
-│  ├── --grok-stt / --mistral-stt / --glm-stt               │
-│  ├── --together-stt / --deepinfra-stt                      │
-│                                                            │
-│  Cloud (dedicated STT services):                           │
-│  ├── --deepgram-stt / --assemblyai-stt / --gladia-stt     │
-│  ├── --elevenlabs-stt / --soniox-stt / --speechmatics-stt │
-│  ├── --rev-stt / --happyscribe-stt / --supadata-stt       │
-│  ├── --scrapecreators-stt                                  │
-│  ├── --gcloud-stt / --aws-stt                              │
+│  write/config:                                             │
+│  ├── --stt whisper=MODEL                                   │
+│  ├── --stt deepgram=nova-3                                 │
+│  └── --all-providers stt                                   │
 │                                                            │
 │  Controls:                                                 │
-│  ├── --all-stt           Enable every STT provider/model   │
 │  ├── --speaker-count N   Diarization speaker hint          │
 │  └── --split             Split audio into 30-min segments  │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│  llmProviderFlags (part of mediaFlags)                     │
-│  ├── --llama MODEL       llama.cpp model ID                │
-│  ├── --openai MODEL      gpt-5.5|gpt-5.4|gpt-5.4-pro|gpt-5.4-mini|gpt-5.4-nano│
-│  ├── --groq MODEL        openai/gpt-oss-20b|openai/gpt-oss-120b│
-│  ├── --anthropic MODEL   claude-opus-4-7|claude-sonnet-4-6|  │
-│  │                       claude-haiku-4-5                    │
-│  ├── --gemini MODEL      gemini-3.1-pro-preview|gemini-3.1-flash-lite-preview│
-│  ├── --minimax MODEL     MiniMax-M2.7|MiniMax-M2.7-highspeed│
-│  ├── --grok MODEL        grok-4.3|grok-4.20-reasoning|grok-4.20-non-reasoning│
-│  ├── --glm MODEL         glm-5.1                          │
-│  ├── --kimi MODEL        kimi-k2.6                         │
-│  └── --all-llm           Enable every LLM provider/model   │
+│  step-3 LLM selection                                      │
+│  ├── --llm llama=MODEL                                     │
+│  ├── --llm openai=gpt-5.5                                  │
+│  ├── --llm groq=openai/gpt-oss-20b                         │
+│  ├── --llm anthropic=claude-sonnet-4-6                     │
+│  ├── --llm gemini=gemini-3.1-flash-lite-preview            │
+│  ├── --llm minimax=MiniMax-M2.7                            │
+│  ├── --llm grok=grok-4.3                                   │
+│  ├── --llm glm=glm-5.1                                     │
+│  ├── --llm kimi=kimi-k2.6                                  │
+│  └── --all-providers llm                                   │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │  extractFlags                                              │
 │                                                            │
 │  Output:                                                   │
-│  ├── --out FORMAT        text|json|tsv|hocr                │
+│  ├── --format FORMAT     text|json|tsv|hocr                │
 │  ├── --password VALUE    Encrypted PDF password            │
 │                                                            │
-│  Local OCR engines on `extract`:                           │
-│  ├── --tesseract         Tesseract OCR (default engine)    │
-│  ├── --ocrmypdf          OCRmyPDF engine (PDF only)        │
-│  ├── --paddle            PaddleOCR engine                  │
-│  ├── --lang LANGS        Tesseract language(s) (default: eng)│
+│  OCR selectors:                                            │
+│  ├── extract/resume: --provider provider[=model]           │
+│  ├── write/config:    --ocr provider[=model]               │
+│  └── all providers:   --all-providers / --all-providers ocr│
 │                                                            │
-│  Hosted OCR provider aliases on `extract`:                 │
-│  ├── --openai / --grok / --anthropic                       │
-│  ├── --gemini / --mistral / --glm / --kimi                 │
-│  ├── --deepinfra / --unstructured                          │
-│  ├── --aws / --gcloud                                      │
+│  Provider names:                                           │
+│  ├── tesseract, ocrmypdf, paddle, mistral, glm, kimi       │
+│  └── openai, grok, anthropic, gemini, deepinfra, unstructured│
 │                                                            │
 │  URL article backends:                                     │
-│  ├── --url-backend NAME  defuddle|firecrawl|glm-reader|spider|zyte │
-│  ├── --all-url          run all URL article backends       │
-│  ├── --url-provider-concurrency N  hosted URL concurrency  │
-│                                                            │
-│  Controls:                                                 │
-│  ├── --all-ocr           Enable every OCR engine/provider  │
-│  └── --primary-ocr NAME  top-level artifact provider       │
+│  ├── --url-provider NAME defuddle|firecrawl|glm-reader|spider|supadata|zyte │
+│  └── --all-providers     route-aware all URL backends      │
 │                                                            │
 │  advancedExtractFlags                                      │
-│  ├── --dpi NUMBER        Render DPI (default: 300)         │
-│  ├── --psm NUMBER        Page segmentation mode (default: 3)│
-│  ├── --oem NUMBER        OCR engine mode (default: 1)      │
-│  ├── --page-separator    Custom page separator             │
-│  ├── --preserve-spaces   Preserve interword spacing        │
-│  ├── --rotate DEGREES    Rotate before OCR                 │
+│  ├── --ocr-dpi NUMBER    Render DPI (default: 300)         │
+│  ├── --tesseract-psm N   Page segmentation mode (default: 3)│
+│  ├── --tesseract-oem N   OCR engine mode (default: 1)      │
+│  ├── --ocr-page-separator Custom page separator            │
+│  ├── --tesseract-preserve-spaces Preserve interword spacing│
+│  ├── --ocr-rotate DEGREES Rotate before OCR                │
 │  ├── --chapters          Export EPUB/PDF chapter files     │
 │  ├── --length N          Split long EPUB/PDF exports       │
 │  ├── --pdf-chapter-mode  local|auto|llm                    │
-│  ├── --epub-bun          EPUB ZIP/XML inspect mode         │
-│  └── --epub-calibre      EPUB inspect compatibility alias  │
+│  └── --epub-bun          EPUB ZIP/XML inspect mode         │
 └─────────────────────────────────────────────────────────────┘
 
 Command-to-flag mapping:
-  metadata    → --save + --password + --url-backend + batchFlags
-  download    → downloadFlags + --url-backend
+  metadata    → --save + --password + --url-provider + batchFlags
+  download    → downloadFlags + --url-provider
   extract     → mediaFlags + extractFlags + advancedExtractFlags + batchFlags + priceFlag
-  resume      → resumeFlags (STT/OCR/TTS/image/video/music provider selection for partial reruns)
+  resume      → resumeFlags (target-aware --provider and --all-providers for partial reruns)
   write       → mediaFlags + extractFlags + advancedExtractFlags + batchFlags
                   + ttsFlags + imageGenFlags + musicGenFlags + videoGenFlags + promptFlag
   tts         → ttsFlags
@@ -226,6 +209,7 @@ Command-to-flag mapping:
   comic       → comicFlags
   config      → configCommandFlags (persist mapped defaults; ignore runtime-only flags)
 
-Shortcut flags (available on commands that include the relevant provider flags):
-  --all-stt, --all-ocr, --all-llm, --all-tts, --all-image, --all-video, --all-music
+All-provider flags:
+  standalone/resume: --all-providers
+  write/config:      --all-providers stt|ocr|url|llm|tts|image|video|music
 ```

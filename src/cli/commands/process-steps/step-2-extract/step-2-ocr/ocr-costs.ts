@@ -32,8 +32,6 @@ type OcrModelFallbackOptions = {
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
-  gcloudDocaiModel?: string | undefined
-  awsTextractModel?: string | undefined
   unstructuredOcrModel?: string | undefined
 }
 type CollectEstimatedExtractTargetsOptions = OcrModelFallbackOptions & {
@@ -50,8 +48,6 @@ const OCR_DIAGNOSTIC_PROVIDERS = new Set([
   'anthropic',
   'gemini',
   'deepinfra',
-  'gcloud-docai',
-  'aws-textract',
   'unstructured'
 ])
 
@@ -141,10 +137,11 @@ export const collectEstimatedExtractTargets = (
       || entry.extractionMethod === 'html+firecrawl'
       || entry.extractionMethod === 'html+glm-reader'
       || entry.extractionMethod === 'html+spider'
+      || entry.extractionMethod === 'html+supadata'
       || entry.extractionMethod === 'html+zyte'
     ) {
       const { provider, model } = resolveExtractionProviderModel(entry) as {
-        provider: 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
+        provider: 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'supadata' | 'zyte'
         model: string
       }
       targets.push({
@@ -204,26 +201,6 @@ export const collectEstimatedExtractTargets = (
 
     if (provider === 'deepinfra') {
       targets.push(withObservedTokenUsage(buildTokenTarget('deepinfra', model || opts.deepinfraOcrModel || 'deepinfra-ocr', pageCount, DEEPINFRA_OCR_PRICE_NOTE), entry, opts.useObservedUsage))
-      continue
-    }
-
-    if (provider === 'gcloud-docai') {
-      targets.push({
-        provider: 'gcloud-docai',
-        model: model || opts.gcloudDocaiModel || 'gcloud-docai',
-        pageCount,
-        estimateType: 'exact'
-      })
-      continue
-    }
-
-    if (provider === 'aws-textract') {
-      targets.push({
-        provider: 'aws-textract',
-        model: model || opts.awsTextractModel || 'aws-textract',
-        pageCount,
-        estimateType: 'exact'
-      })
       continue
     }
 

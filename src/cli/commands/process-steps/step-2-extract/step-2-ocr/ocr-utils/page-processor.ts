@@ -45,9 +45,8 @@ const createPool = (limit: number) => {
 }
 
 const buildTesseractOcrFn = (options: ExtractionOptions): OcrFn => async (imagePath) => {
-  const extraConfig = options.preserveInterwordSpaces ? { preserve_interword_spaces: 1 } : undefined
-  const textResult = await ocrImage(imagePath, options.languages, options.oem, options.psm, 'text', extraConfig)
-  const tsvResult = await ocrImage(imagePath, options.languages, options.oem, options.psm, 'tsv', extraConfig)
+  const textResult = await ocrImage(imagePath, options.languages, 'text')
+  const tsvResult = await ocrImage(imagePath, options.languages, 'tsv')
   const tsvText = toPlainTextFromTsv(tsvResult.text)
   const text = textResult.text.trim().length > 0 ? textResult.text : tsvText
   if (tsvResult.confidence !== undefined) {
@@ -75,8 +74,7 @@ const runOcrAttempt = async (
         filePath,
         page,
         dpi,
-        password: options.password,
-        rotate: options.rotate
+        password: options.password
       },
       async (outputPath) => {
         const renderResult = await renderPageToImage(
@@ -84,8 +82,7 @@ const runOcrAttempt = async (
           page,
           dpi,
           outputPath,
-          options.password,
-          options.rotate
+          options.password
         )
         if (renderResult.exitCode !== 0) {
           throw new Error(renderResult.stderr || `Failed rendering page ${page}`)
@@ -100,8 +97,7 @@ const runOcrAttempt = async (
       page,
       dpi,
       imagePath,
-      options.password,
-      options.rotate
+      options.password
     )
     if (renderResult.exitCode !== 0) {
       throw new Error(renderResult.stderr || `Failed rendering page ${page}`)

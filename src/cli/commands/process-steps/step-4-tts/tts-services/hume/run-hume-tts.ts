@@ -9,8 +9,7 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
-
-const HUME_DEFAULT_BASE_URL = 'https://api.hume.ai'
+import { HUME_DEFAULT_BASE_URL } from '~/utils/base-urls'
 const MAX_CHARS_PER_CHUNK = 5000
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -31,9 +30,9 @@ const resolveHumeVoice = (
     voiceProvider?: string | undefined
   }
 ): { label: string, payload: HumeVoicePayload, provider?: string | undefined } => {
-  const rawVoice = options.voice?.trim() || readEnv('HUME_TTS_VOICE') || HUME_DEFAULT_TTS_VOICE
+  const rawVoice = options.voice?.trim() || HUME_DEFAULT_TTS_VOICE
   const label = validateHumeTtsVoice(rawVoice)
-  const explicitProvider = options.voiceProvider?.trim() || readEnv('HUME_TTS_VOICE_PROVIDER')
+  const explicitProvider = options.voiceProvider?.trim()
 
   if (UUID_LIKE_RE.test(label) && !explicitProvider) {
     return { label, payload: { id: label } }
@@ -57,7 +56,7 @@ export const runHumeTts = async (
     throw new Error('HUME_API_KEY environment variable is required for Hume TTS')
   }
 
-  const baseURL = trimTrailingSlash(readEnv('HUME_BASE_URL') ?? HUME_DEFAULT_BASE_URL)
+  const baseURL = trimTrailingSlash(HUME_DEFAULT_BASE_URL)
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
 
   if (chunks.length === 0) {

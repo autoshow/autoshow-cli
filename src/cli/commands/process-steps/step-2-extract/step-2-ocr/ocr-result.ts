@@ -44,7 +44,7 @@ export const buildOcrOutput = (
     ? input.opts.preparedMarkdown.trim()
     : typeof input.canonicalText === 'string' && input.canonicalText.trim().length > 0
       ? input.canonicalText.trim()
-      : buildCombinedText(input.pages, input.opts.pageSeparator, input.extractionMethod !== 'epub-text')
+      : buildCombinedText(input.pages, input.extractionMethod !== 'epub-text')
   const ocrPages = input.pages.filter(page => page.method === 'ocr').length
   const textPages = input.pages.filter(page => page.method === 'text').length
 
@@ -105,12 +105,6 @@ export const buildOcrOutput = (
   }
   if (typeof input.opts.deepinfraOcrModel === 'string' && input.extractionMethod.includes('deepinfra-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.deepinfraOcrModel
-  }
-  if (typeof input.opts.awsTextractModel === 'string' && input.extractionMethod.includes('aws-textract')) {
-    step2MetadataPayload['ocrModel'] = input.opts.awsTextractModel
-  }
-  if (typeof input.opts.gcloudDocaiModel === 'string' && input.extractionMethod.includes('gcloud-docai')) {
-    step2MetadataPayload['ocrModel'] = input.opts.gcloudDocaiModel
   }
   if (typeof input.opts.unstructuredOcrModel === 'string' && input.extractionMethod.includes('unstructured-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.unstructuredOcrModel

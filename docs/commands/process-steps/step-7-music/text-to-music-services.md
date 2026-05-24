@@ -20,9 +20,9 @@ Generate music from a text prompt with hosted providers, or render local lyric v
 ## Usage
 
 ```bash
-bun as music <prompt-or-text-file> --elevenlabs <model>
-bun as music <prompt-or-text-file> --minimax <model>
-bun as music <prompt-or-text-file> --gemini <model>
+bun as music <prompt-or-text-file> --provider elevenlabs[=<model>]
+bun as music <prompt-or-text-file> --provider minimax[=<model>]
+bun as music <prompt-or-text-file> --provider gemini[=<model>]
 bun as music --audio input/<file>
 bun as music --audio input/<file> --captions output/<run-dir>/<stem>.vtt
 bun as music --batch
@@ -69,11 +69,15 @@ Hosted generation flags:
 
 | Flag | Description |
 |------|-------------|
-| `--all-music` | Enable every supported hosted music provider/model |
-| `--music-provider-concurrency <n>` | Hosted music providers/models to run concurrently per item; default `2`, or up to `8` for `--all-music` |
-| `--music-local-concurrency <n>` | Local music providers to run concurrently per item; default `1` |
+| `--provider provider[=model]` | Hosted music provider/model selector; repeat to run multiple targets |
+| `--all-providers` | Enable every supported hosted music provider/model |
+| `--provider-concurrency <n>` | Hosted music providers/models to run concurrently per item; default `2`, or up to `8` for `--all-providers` |
+| `--local-concurrency <n>` | Local music providers to run concurrently per item; default `1` |
+| `--duration <seconds>` | Requested music duration |
+| `--lyrics-file <path>` | Lyrics file path (`.md` or `.txt`) for MiniMax and Gemini music generation |
+| `--instrumental` | Force instrumental generation for providers that support prompt/instrumental mode |
 | `--price` | Show the estimate and exit |
-| `--out <dir>` / `--output-dir <dir>` | Use an exact hosted music run directory instead of `output/<timestamp>_music-gen/` |
+| `--output-dir <dir>` | Use an exact hosted music run directory instead of `output/<timestamp>_music-gen/` |
 
 Lyric-video flags:
 
@@ -86,11 +90,11 @@ Lyric-video flags:
 | `--font <name>` | Font family for lyric overlays; default `DejaVu Sans` |
 | `--keep-tmp` | Keep the per-run `.lyrics-tmp` workspace inside the output directory |
 
-One or more hosted provider flags can be specified. Repeating the same provider flag runs each selected model independently and produces its own output file.
+One or more hosted provider selectors can be specified. Repeating the same provider runs each selected model independently and produces its own output file.
 
 ```bash
-bun as music "chill lo-fi beat" --elevenlabs music_v1 --minimax music-2.6
-bun as music "chill lo-fi beat" --elevenlabs music_v1 --minimax music-2.6 --price
+bun as music "chill lo-fi beat" --provider elevenlabs=music_v1 --provider minimax=music-2.6
+bun as music "chill lo-fi beat" --provider elevenlabs=music_v1 --provider minimax=music-2.6 --price
 ```
 
 ## Music Services And Modes
@@ -99,54 +103,54 @@ bun as music "chill lo-fi beat" --elevenlabs music_v1 --minimax music-2.6 --pric
 
 | Option | Value |
 |--------|-------|
-| Selector | `--elevenlabs <model>` |
+| Selector | `--provider elevenlabs[=<model>]` |
 | Models | `music_v1` |
-| Duration | `--music-duration <seconds>`; defaults to 180 seconds for estimates when omitted |
-| Instrumental | `--music-instrumental` |
+| Duration | `--duration <seconds>`; defaults to 180 seconds for estimates when omitted |
+| Instrumental | `--instrumental` |
 
 ```bash
-bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs music_v1
-bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs music_v1 --music-duration 20 --music-instrumental
-bun as music "lo-fi chillhop with soft piano and vinyl texture" --elevenlabs music_v1 --price
+bun as music "cinematic orchestral trailer, dramatic strings and percussion" --provider elevenlabs=music_v1
+bun as music "lo-fi chillhop with soft piano and vinyl texture" --provider elevenlabs=music_v1 --duration 20 --instrumental
+bun as music "lo-fi chillhop with soft piano and vinyl texture" --provider elevenlabs=music_v1 --price
 ```
 
-ElevenLabs returns audio directly. Price estimation uses the explicit `--music-duration` when provided; otherwise it falls back to `180` seconds.
+ElevenLabs returns audio directly. Price estimation uses the explicit `--duration` when provided; otherwise it falls back to `180` seconds.
 
 ### MiniMax
 
 | Option | Value |
 |--------|-------|
-| Selector | `--minimax <model>` |
+| Selector | `--provider minimax[=<model>]` |
 | Models | `music-2.6`, `music-2.6-free` |
-| Lyrics | `--music-lyrics-file <path>`; lyrics are auto-generated when omitted |
-| Instrumental | `--music-instrumental` for `music-2.6` and `music-2.6-free` |
+| Lyrics | `--lyrics-file <path>`; lyrics are auto-generated when omitted |
+| Instrumental | `--instrumental` for `music-2.6` and `music-2.6-free` |
 
 ```bash
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax music-2.6
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax music-2.6 --music-lyrics-file input/examples/tts/1-tts.md
-bun as music "ambient piano instrumental with soft tape saturation" --minimax music-2.6 --music-instrumental
-bun as music "indie pop, nostalgic summer road trip vibe" --minimax music-2.6 --price
+bun as music "indie pop, nostalgic summer road trip vibe" --provider minimax=music-2.6
+bun as music "indie pop, nostalgic summer road trip vibe" --provider minimax=music-2.6 --lyrics-file input/examples/tts/1-tts.md
+bun as music "ambient piano instrumental with soft tape saturation" --provider minimax=music-2.6 --instrumental
+bun as music "indie pop, nostalgic summer road trip vibe" --provider minimax=music-2.6 --price
 ```
 
-MiniMax auto-generates lyrics when `--music-lyrics-file` is omitted. Price estimation includes the extra lyrics-generation cost when lyrics are auto-generated; `music-2.6-free` has a 0 cent track estimate but still carries the 1 cent lyrics add-on when lyrics are generated. `music-2.6` and `music-2.6-free` support instrumental mode; when instrumental mode is omitted, they generate with lyrics or auto-generated lyrics. `--music-duration` is currently ignored by MiniMax.
+MiniMax auto-generates lyrics when `--lyrics-file` is omitted. Price estimation includes the extra lyrics-generation cost when lyrics are auto-generated; `music-2.6-free` has a 0 cent track estimate but still carries the 1 cent lyrics add-on when lyrics are generated. `music-2.6` and `music-2.6-free` support instrumental mode; when instrumental mode is omitted, they generate with lyrics or auto-generated lyrics. `--duration` is currently ignored by MiniMax.
 
 ### Gemini
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gemini <model>` |
+| Selector | `--provider gemini[=<model>]` |
 | Models | `lyria-3-clip-preview`, `lyria-3-pro-preview` |
-| Duration | Gemini Clip is fixed at 30 seconds; Gemini Pro uses `--music-duration` when provided |
-| Lyrics/instrumental | `--music-lyrics-file <path>` or `--music-instrumental` |
+| Duration | Gemini Clip is fixed at 30 seconds; Gemini Pro uses `--duration` when provided |
+| Lyrics/instrumental | `--lyrics-file <path>` or `--instrumental` |
 
 ```bash
-bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
-bun as music "cinematic synth pop with verses, chorus, and bridge" --gemini lyria-3-pro-preview --music-duration 120
-bun as music input/examples/tts/1-tts.md --gemini lyria-3-pro-preview --music-lyrics-file input/examples/tts/1-tts.md
-bun as music "ambient piano and strings" --gemini lyria-3-clip-preview --price
+bun as music "bright 90s pop rock with a huge chorus" --provider gemini=lyria-3-clip-preview
+bun as music "cinematic synth pop with verses, chorus, and bridge" --provider gemini=lyria-3-pro-preview --duration 120
+bun as music input/examples/tts/1-tts.md --provider gemini=lyria-3-pro-preview --lyrics-file input/examples/tts/1-tts.md
+bun as music "ambient piano and strings" --provider gemini=lyria-3-clip-preview --price
 ```
 
-Gemini Lyria 3 Clip always generates a 30-second MP3 clip. Lyria 3 Pro uses duration instructions from `--music-duration`, or a 120-second timing estimate when omitted. `--music-lyrics-file` appends lyrics to the prompt. If `--music-instrumental` is also set, instrumental wins and the lyrics file is ignored with a warning.
+Gemini Lyria 3 Clip always generates a 30-second MP3 clip. Lyria 3 Pro uses duration instructions from `--duration`, or a 120-second timing estimate when omitted. `--lyrics-file` appends lyrics to the prompt. If `--instrumental` is also set, instrumental wins and the lyrics file is ignored with a warning.
 
 ### Lyric-Video Rendering
 
@@ -171,10 +175,10 @@ Lyric-video rendering uses local Whisper captions and ffmpeg rendering. In reren
 
 ```bash
 # Write pipeline
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --elevenlabs-music music_v1 --music-duration 20
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax-music music-2.6 --music-lyrics-file input/examples/tts/1-tts.md
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4 --gemini-music lyria-3-pro-preview --music-duration 120
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --minimax-music music-2.6 --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm openai=gpt-5.4 --music elevenlabs=music_v1 --music-duration 20
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --music minimax=music-2.6 --music-lyrics-file input/examples/tts/1-tts.md
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm openai=gpt-5.4 --music gemini=lyria-3-pro-preview --music-duration 120
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --music minimax=music-2.6 --price
 ```
 
 ## Output
@@ -199,7 +203,7 @@ output/YYYY-MM-DD_HH-mm-ss_music-gen/
 
 `run.json` includes `music`, `cost`, and `timing` sections. `music` is always an array, even when only one provider succeeds.
 
-For hosted music generation, `--out` / `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.
+For hosted music generation, `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.
 
 Lyric-video single runs write:
 

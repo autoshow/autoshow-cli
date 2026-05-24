@@ -18,22 +18,6 @@ test('usage-error output redacts password flag values', async () => {
   expect(`${result.stdout}\n${result.stderr}`).not.toContain(secret)
 })
 
-test('usage-error output redacts Google Cloud voice cloning keys', async () => {
-  const secret = 'gcloud-voice-cloning-secret-123'
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'tts',
-    'input/examples/tts/1-tts.md',
-    '--gcloud',
-    'definitely-not-a-model',
-    '--gcloud-tts-voice-cloning-key',
-    secret
-  ])
-
-  expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).not.toContain(secret)
-})
-
 test('usage-error output redacts Speechify custom voice consent email', async () => {
   const secret = 'voice-owner@example.com'
   const result = await runCommand([

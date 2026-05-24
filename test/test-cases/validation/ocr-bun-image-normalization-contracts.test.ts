@@ -107,11 +107,9 @@ describe('OCR Bun.Image normalization contracts', () => {
       { engine: 'openai-ocr', format: 'bmp' },
       { engine: 'kimi-ocr', format: 'bmp' },
       { engine: 'gemini-ocr', format: 'gif' },
-      { engine: 'aws-textract', format: 'bmp' },
-      { engine: 'aws-textract', format: 'webp' },
-      { engine: 'aws-textract', format: 'gif' },
       { engine: 'deepinfra-ocr', format: 'bmp' },
       { engine: 'deepinfra-ocr', format: 'gif' },
+      { engine: 'unstructured-ocr', format: 'webp' },
     ]
     const imageMagickCases: Array<{ engine: HostedExtractOcrEngine; format: string }> = [
       { engine: 'anthropic-ocr', format: 'tif' },
@@ -127,8 +125,6 @@ describe('OCR Bun.Image normalization contracts', () => {
     for (const entry of imageMagickCases) {
       expect(resolveHostedDirectImageInputStrategy(entry.format, entry.engine)).toBe('imagemagick-png')
     }
-    expect(resolveHostedDirectImageInputStrategy('tif', 'aws-textract')).toBe('direct')
-    expect(resolveHostedDirectImageInputStrategy('bmp', 'gcloud-docai')).toBe('direct')
     expect(resolveHostedDirectImageInputStrategy('gif', 'glm-ocr')).toBe('unsupported')
   })
 
@@ -138,7 +134,7 @@ describe('OCR Bun.Image normalization contracts', () => {
     const fixtures: Array<{ engine: HostedExtractOcrEngine; name: string; bytes: Uint8Array }> = [
       { engine: 'anthropic-ocr', name: 'anthropic.bmp', bytes: whiteBmp },
       { engine: 'gemini-ocr', name: 'gemini.gif', bytes: transparentGif },
-      { engine: 'aws-textract', name: 'aws.webp', bytes: await new Image(redDotPng).webp().bytes() },
+      { engine: 'unstructured-ocr', name: 'unstructured.webp', bytes: await new Image(redDotPng).webp().bytes() },
     ]
 
     try {

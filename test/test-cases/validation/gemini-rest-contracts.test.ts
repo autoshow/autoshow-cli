@@ -24,7 +24,7 @@ type FetchCall = {
 
 const originalFetch = globalThis.fetch
 const previousEnv: Record<string, string | undefined> = {}
-const envKeys = ['GEMINI_API_KEY', 'GEMINI_TTS_VOICE']
+const envKeys = ['GEMINI_API_KEY']
 const tempDirs: string[] = []
 
 const audioBytes = new Uint8Array([1, 2, 3, 4])

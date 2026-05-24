@@ -3,6 +3,7 @@ import * as l from '~/utils/logger'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
+import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
@@ -57,7 +58,7 @@ export const runElevenLabsMusicGen = async (
     throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs music generation')
   }
 
-  const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
+  const baseURL = ELEVENLABS_DEFAULT_BASE_URL
   const musicPath = `${outputDir}/generated-music.mp3`
   const musicDurationMs = normalizeMusicDurationMs(options.durationSeconds)
   const forceInstrumental = options.forceInstrumental === true

@@ -39,20 +39,12 @@ import {
 import {
   resolveComicScriptReference
 } from '~/cli/commands/process-steps/step-8-comic/utils/project-paths'
-import { buildExtractionCallOpts } from '~/cli/commands/process-steps/step-1-download/targets/single/document-write'
 import { runElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/run-elevenlabs-tts'
 import {
   createElevenLabsTtsIvcContext,
   ELEVENLABS_TTS_IVC_SETUP_MS,
   validateElevenLabsTtsIvcAudio
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-ivc'
-import {
-  ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
-  runElevenLabsTtsPvcSetup,
-  validateElevenLabsTtsPvcAudio,
-  validateElevenLabsTtsPvcSamples,
-  writeElevenLabsTtsPvcStatusArtifact
-} from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
 import { runOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/run-openai-tts'
 import {
   createOpenAITtsCustomVoiceContext,
@@ -70,12 +62,10 @@ import {
 import { getStep2AllShortcutModelExpansions } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import { resolveCheapestModelForFlag } from '~/cli/commands/setup-and-utilities/models/cheapest-models'
 import {
-  GCLOUD_DEFAULT_TTS_VOICES,
   getGroqDefaultTtsVoiceForModel,
   DEEPGRAM_DEFAULT_VOICE,
   GROK_DEFAULT_TTS_VOICE,
   SUPPORTED_ELEVENLABS_TTS_MODELS,
-  SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS,
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_GROK_TTS_MODELS,
   SUPPORTED_GROQ_TTS_MODELS,
@@ -529,7 +519,7 @@ describe('option resolution contracts', () => {
       'mistral-tts': 'voxtral-mini-tts-2603',
       'mistral-tts-voice': 'voice_abc123',
       'mistral-tts-voice-name': 'Saved Voice Name',
-      'deepgram-tts': 'aura-2-fujin-ja',
+      'deepgram-tts': 'aura-2-apollo-en',
       'deepgram-tts-encoding': 'linear16',
       'deepgram-tts-container': 'wav',
       'deepgram-tts-bit-rate': '128000',
@@ -557,10 +547,6 @@ describe('option resolution contracts', () => {
       'elevenlabs-tts-text-normalization': 'ON',
       'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2', 'dict_3'],
       'elevenlabs-tts-optimize-streaming-latency': '2',
-      'elevenlabs-tts-pvc-as-ivc': true,
-      'gcloud-tts': 'chirp3-hd',
-      'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
-      'gcloud-tts-language': 'en-US',
       'openai-ocr': 'gpt-5.5',
       'grok-ocr': 'grok-4.3',
       'deepinfra-ocr': 'Qwen/Qwen3-VL-30B-A3B-Instruct',
@@ -598,7 +584,7 @@ describe('option resolution contracts', () => {
     expect(opts.mistralTtsModel).toBe('voxtral-mini-tts-2603')
     expect(opts.mistralTtsVoice).toBe('voice_abc123')
     expect(opts.mistralTtsVoiceName).toBe('Saved Voice Name')
-    expect(opts.deepgramTtsModel).toBe('aura-2-fujin-ja')
+    expect(opts.deepgramTtsModel).toBe('aura-2-apollo-en')
     expect(opts.deepgramTtsEncoding).toBe('linear16')
     expect(opts.deepgramTtsContainer).toBe('wav')
     expect(opts.deepgramTtsBitRate).toBe(128000)
@@ -626,10 +612,6 @@ describe('option resolution contracts', () => {
     expect(opts.elevenlabsTtsTextNormalization).toBe('on')
     expect(opts.elevenlabsTtsPronunciationDictionaryLocators).toEqual(['dict_1:version_2', 'dict_3'])
     expect(opts.elevenlabsTtsOptimizeStreamingLatency).toBe(2)
-    expect(opts.elevenlabsTtsPvcAsIvc).toBe(true)
-    expect(opts.gcloudTtsModel).toBe('chirp3-hd')
-    expect(opts.gcloudTtsVoice).toBe('en-US-Chirp3-HD-Charon')
-    expect(opts.gcloudTtsLanguage).toBe('en-US')
     expect(opts.openaiOcrModel).toBe('gpt-5.5')
     expect(opts.grokOcrModel).toBe('grok-4.3')
     expect(opts.deepinfraOcrModel).toBe('Qwen/Qwen3-VL-30B-A3B-Instruct')
@@ -650,21 +632,6 @@ describe('option resolution contracts', () => {
     expect(opts.openaiTtsConsentLanguage).toBe('en-US')
     expect(opts.openaiTtsConsentName).toBe('Anthony Consent')
     expect(opts.openaiTtsVoiceName).toBe('AutoShow Anthony')
-  })
-
-  test('AWS region and bucket flags reach OCR extraction options', () => {
-    const opts = buildOptsFromFlags(false, {
-      'aws-textract': 'detect-text',
-      'aws-region': 'us-west-2',
-      'aws-bucket': 'autoshow-textract-existing'
-    })
-    const extractionOpts = buildExtractionCallOpts('input/examples/document/1-document.pdf', 'output/test', opts)
-
-    expect(opts.awsRegion).toBe('us-west-2')
-    expect(opts.awsBucket).toBe('autoshow-textract-existing')
-    expect(extractionOpts.awsTextractModel).toBe('detect-text')
-    expect(extractionOpts.awsRegion).toBe('us-west-2')
-    expect(extractionOpts.awsBucket).toBe('autoshow-textract-existing')
   })
 
   test('buildOptsFromFlags only accepts canonical flags before the positional separator', () => {
@@ -698,8 +665,8 @@ describe('option resolution contracts', () => {
   })
 
   test('buildOptsFromFlags accepts URL article backend names', () => {
-    for (const backend of ['defuddle', 'firecrawl', 'glm-reader', 'spider', 'zyte'] as const) {
-      const opts = buildOptsFromFlags(false, { 'url-backend': backend })
+    for (const backend of ['defuddle', 'firecrawl', 'glm-reader', 'spider', 'supadata', 'zyte'] as const) {
+      const opts = buildOptsFromFlags(false, { 'url-provider': backend })
       expect(opts.urlBackend).toBe(backend)
       expect(opts.urlBackendExplicit).toBe(true)
     }
@@ -709,8 +676,8 @@ describe('option resolution contracts', () => {
     const opts = buildOptsFromFlags(false, { 'all-url': true })
     const explicitConcurrency = buildOptsFromFlags(false, {
       'all-url': true,
-      'url-provider-concurrency': '3'
-    }, [], {}, new Set(['url-provider-concurrency']))
+      'provider-concurrency': '3'
+    }, [], {}, new Set(['provider-concurrency']))
 
     expect(opts.urlBackends).toEqual([...URL_ARTICLE_BACKENDS])
     expect(opts.urlProviderConcurrency).toBe(4)
@@ -718,74 +685,33 @@ describe('option resolution contracts', () => {
     expect(explicitConcurrency.urlProviderConcurrency).toBe(3)
   })
 
-  test('URL request timeout and attempts resolve defaults, CLI overrides, and env fallbacks', () => {
-    const previousTimeout = process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
-    const previousAttempts = process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
+  test('URL request timeout and attempts resolve defaults and CLI overrides', () => {
+    const defaults = buildOptsFromFlags(false, {})
+    const cliOverrides = buildOptsFromFlags(false, {
+      'url-request-timeout-ms': '45000',
+      'url-request-attempts': '4'
+    })
 
-    try {
-      delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
-      delete process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
-      const defaults = buildOptsFromFlags(false, {})
-      const cliOverrides = buildOptsFromFlags(false, {
-        'url-request-timeout-ms': '45000',
-        'url-request-attempts': '4'
-      })
-
-      process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = '30000'
-      process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = '2'
-      const envFallbacks = buildOptsFromFlags(false, {})
-      const cliWins = buildOptsFromFlags(false, {
-        'url-request-timeout-ms': '50000',
-        'url-request-attempts': '5'
-      })
-
-      expect(defaults.urlRequestTimeoutMs).toBe(DEFAULT_URL_REQUEST_TIMEOUT_MS)
-      expect(defaults.urlRequestAttempts).toBe(DEFAULT_URL_REQUEST_ATTEMPTS)
-      expect(cliOverrides.urlRequestTimeoutMs).toBe(45000)
-      expect(cliOverrides.urlRequestAttempts).toBe(4)
-      expect(envFallbacks.urlRequestTimeoutMs).toBe(30000)
-      expect(envFallbacks.urlRequestAttempts).toBe(2)
-      expect(cliWins.urlRequestTimeoutMs).toBe(50000)
-      expect(cliWins.urlRequestAttempts).toBe(5)
-    } finally {
-      if (previousTimeout === undefined) delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
-      else process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = previousTimeout
-      if (previousAttempts === undefined) delete process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
-      else process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = previousAttempts
-    }
+    expect(defaults.urlRequestTimeoutMs).toBe(DEFAULT_URL_REQUEST_TIMEOUT_MS)
+    expect(defaults.urlRequestAttempts).toBe(DEFAULT_URL_REQUEST_ATTEMPTS)
+    expect(cliOverrides.urlRequestTimeoutMs).toBe(45000)
+    expect(cliOverrides.urlRequestAttempts).toBe(4)
   })
 
-  test('URL request timeout and attempts reject invalid CLI and env values', () => {
-    const previousTimeout = process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
-    const previousAttempts = process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
-
-    try {
-      expect(() => buildOptsFromFlags(false, {
-        'url-request-timeout-ms': '0'
-      })).toThrow('Invalid --url-request-timeout-ms value "0". Expected a positive integer.')
-      expect(() => buildOptsFromFlags(false, {
-        'url-request-attempts': 'nope'
-      })).toThrow('Invalid --url-request-attempts value "nope". Expected a positive integer.')
-
-      process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = '-1'
-      expect(() => buildOptsFromFlags(false, {})).toThrow('Invalid AUTOSHOW_URL_REQUEST_TIMEOUT_MS value "-1". Expected a positive integer.')
-
-      delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
-      process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = '0'
-      expect(() => buildOptsFromFlags(false, {})).toThrow('Invalid AUTOSHOW_URL_REQUEST_ATTEMPTS value "0". Expected a positive integer.')
-    } finally {
-      if (previousTimeout === undefined) delete process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS']
-      else process.env['AUTOSHOW_URL_REQUEST_TIMEOUT_MS'] = previousTimeout
-      if (previousAttempts === undefined) delete process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS']
-      else process.env['AUTOSHOW_URL_REQUEST_ATTEMPTS'] = previousAttempts
-    }
+  test('URL request timeout and attempts reject invalid CLI values', () => {
+    expect(() => buildOptsFromFlags(false, {
+      'url-request-timeout-ms': '0'
+    })).toThrow('Invalid --url-request-timeout-ms value "0". Expected a positive integer.')
+    expect(() => buildOptsFromFlags(false, {
+      'url-request-attempts': 'nope'
+    })).toThrow('Invalid --url-request-attempts value "nope". Expected a positive integer.')
   })
 
   test('--all-url conflicts with single URL backend selection', () => {
     expect(() => buildOptsFromFlags(false, {
       'all-url': true,
-      'url-backend': 'firecrawl'
-    })).toThrow('Cannot use --all-url with --url-backend')
+      'url-provider': 'firecrawl'
+    })).toThrow('Cannot use --all-providers url with --url-provider')
   })
 
   test('--all-url article extraction reports provider artifact expectations', async () => {
@@ -875,8 +801,7 @@ describe('option resolution contracts', () => {
       'elevenlabs-tts-seed': '12345',
       'elevenlabs-tts-text-normalization': 'AUTO',
       'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2'],
-      'elevenlabs-tts-optimize-streaming-latency': '2',
-      'elevenlabs-tts-pvc-as-ivc': true
+      'elevenlabs-tts-optimize-streaming-latency': '2'
     })
 
     expect(opts.grokTtsVoice).toBe('ab12cd34')
@@ -910,7 +835,6 @@ describe('option resolution contracts', () => {
     expect(opts.elevenlabsTtsTextNormalization).toBe('auto')
     expect(opts.elevenlabsTtsPronunciationDictionaryLocators).toEqual(['dict_1:version_2'])
     expect(opts.elevenlabsTtsOptimizeStreamingLatency).toBe(2)
-    expect(opts.elevenlabsTtsPvcAsIvc).toBe(true)
 
     expect(() => buildOptsFromFlags(false, { 'grok-tts-language': 'xx' })).toThrow('Invalid --grok-tts-language "xx"')
     expect(() => buildOptsFromFlags(false, { 'openai-tts-speed': '0.1' })).toThrow('Invalid --openai-tts-speed value "0.1"')
@@ -931,35 +855,35 @@ describe('option resolution contracts', () => {
   test('TTS request control flags require their matching provider selection', () => {
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'openai-tts-speed': '1.1'
-    }))).toThrow('OpenAI TTS request control flags require --openai-tts <model> or --all-tts')
+    }))).toThrow('OpenAI TTS request control flags require selecting openai TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'grok-tts-text-normalization': true
-    }))).toThrow('Grok TTS request control flags require --grok-tts <model> or --all-tts')
+    }))).toThrow('Grok TTS request control flags require selecting grok TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'minimax-tts-emotion': 'calm'
-    }))).toThrow('MiniMax TTS request control flags require --minimax-tts <model> or --all-tts')
+    }))).toThrow('MiniMax TTS request control flags require selecting minimax TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'deepgram-tts-speed': '1.1'
-    }))).toThrow('Deepgram TTS request control flags require --deepgram-tts <model> or --all-tts')
+    }))).toThrow('Deepgram TTS request control flags require selecting deepgram TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'elevenlabs-tts-output-format': 'mp3_22050_32'
-    }))).toThrow('ElevenLabs TTS request control flags require --elevenlabs-tts <model> or --all-tts')
+    }))).toThrow('ElevenLabs TTS request control flags require selecting elevenlabs TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'speechify-tts-audio-format': 'wav'
-    }))).toThrow('Speechify TTS request control flags require --speechify-tts <model> or --all-tts')
+    }))).toThrow('Speechify TTS request control flags require selecting speechify TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'hume-tts-voice': 'Studio Voice'
-    }))).toThrow('Hume TTS voice flags require --hume-tts <model> or --all-tts')
+    }))).toThrow('Hume TTS voice flags require selecting hume TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'cartesia-tts-language': 'en'
-    }))).toThrow('Cartesia TTS request control flags require --cartesia-tts <model> or --all-tts')
+    }))).toThrow('Cartesia TTS request control flags require selecting cartesia TTS')
 
   })
 
@@ -1070,7 +994,6 @@ describe('option resolution contracts', () => {
     const speechifyTtsDefault = resolveCheapestModelForFlag('speechify-tts')
     const humeTtsDefault = resolveCheapestModelForFlag('hume-tts')
     const cartesiaTtsDefault = resolveCheapestModelForFlag('cartesia-tts')
-    const gcloudTtsDefault = resolveCheapestModelForFlag('gcloud-tts')
     const opts = buildOptsFromFlags(false, {
       openai: true,
       grok: true,
@@ -1085,8 +1008,7 @@ describe('option resolution contracts', () => {
       'unstructured-ocr': true,
       'speechify-tts': true,
       'hume-tts': true,
-      'cartesia-tts': true,
-      'gcloud-tts': true
+      'cartesia-tts': true
     })
 
     expect(openaiDefault).toBeDefined()
@@ -1103,7 +1025,6 @@ describe('option resolution contracts', () => {
     expect(speechifyTtsDefault).toBe('simba-english')
     expect(humeTtsDefault).toBe('octave-2')
     expect(cartesiaTtsDefault).toBe('sonic-3')
-    expect(gcloudTtsDefault).toBe('chirp3-hd')
     expect(opts.openaiModel).toBe(openaiDefault)
     expect(opts.grokModel).toBe(grokDefault)
     expect(opts.glmModel).toBe(glmDefault)
@@ -1118,7 +1039,6 @@ describe('option resolution contracts', () => {
     expect(opts.speechifyTtsModel).toBe(speechifyTtsDefault)
     expect(opts.humeTtsModel).toBe(humeTtsDefault)
     expect(opts.cartesiaTtsModel).toBe(cartesiaTtsDefault)
-    expect(opts.gcloudTtsModel).toBe(gcloudTtsDefault)
   })
 
   test('--all-llm expands OpenAI, Grok, GLM, and Kimi to their supported models', () => {
@@ -1172,8 +1092,6 @@ describe('option resolution contracts', () => {
     expect(ocrOpts.grokOcrModels).toEqual(['grok-4.3'])
     expect(ocrOpts.anthropicOcrModels).toEqual(['claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5'])
     expect(ocrOpts.deepinfraOcrModels).toEqual(['Qwen/Qwen3-VL-235B-A22B-Instruct', 'Qwen/Qwen3-VL-30B-A3B-Instruct'])
-    expect(ocrOpts.awsTextractModels).toEqual(['detect-text'])
-    expect(ocrOpts.gcloudDocaiModels).toEqual(['ocr'])
     expect(ocrOpts.unstructuredOcrModels).toEqual(['hi_res_and_enrichment'])
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('deepgram')
     expect(collectSttTargets(sttOpts).map((target) => target.service)).toContain('grok')
@@ -1194,12 +1112,10 @@ describe('option resolution contracts', () => {
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('anthropic:claude-opus-4-7')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('anthropic:claude-sonnet-4-6')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).toContain('anthropic:claude-haiku-4-5')
-    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('gcloud-docai:layout-parser')
     expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('deepinfra:PaddlePaddle/PaddleOCR-VL-0.9B')
-    expect(ocrTargets.map((target) => `${target.service}:${target.model}`)).not.toContain('aws-textract:analyze-document')
   })
 
-  test('GPT-5.5, Grok 4.3, and expanded Anthropic OCR models are available while removed provider OCR models stay rejected', () => {
+  test('GPT-5.5, Grok 4.3, and expanded Anthropic OCR models are available', () => {
     const openaiWriteOpts = buildOptsFromFlags(false, { openai: 'gpt-5.4-mini' })
     const openaiGpt55WriteOpts = buildOptsFromFlags(false, { openai: 'gpt-5.5' })
     const openaiOcrOpts = buildOptsFromFlags(false, { 'openai-ocr': 'gpt-5.4-mini' })
@@ -1223,9 +1139,6 @@ describe('option resolution contracts', () => {
     expect(anthropicOpusOcrOpts.anthropicOcrModels).toEqual(['claude-opus-4-7'])
     expect(anthropicSonnetOcrOpts.anthropicOcrModel).toBe('claude-sonnet-4-6')
     expect(anthropicSonnetOcrOpts.anthropicOcrModels).toEqual(['claude-sonnet-4-6'])
-    expect(() => buildOptsFromFlags(false, { 'gcloud-docai': 'layout-parser' })).toThrow(
-      'Invalid --gcloud-docai model "layout-parser". Allowed values: ocr'
-    )
   })
 
   test('--all-tts expands every self-contained TTS model and excludes special-input modes', () => {
@@ -1241,7 +1154,6 @@ describe('option resolution contracts', () => {
     const speechifyTargets = collectTtsTargets(opts).filter((target) => target.service === 'speechify')
     const humeTargets = collectTtsTargets(opts).filter((target) => target.service === 'hume')
     const cartesiaTargets = collectTtsTargets(opts).filter((target) => target.service === 'cartesia')
-    const gcloudTargets = collectTtsTargets(opts).filter((target) => target.service === 'gcloud')
 
     expect(services).not.toContain('runway')
     expect(opts.kittenTtsModels).toEqual([...SUPPORTED_KITTEN_TTS_MODELS])
@@ -1270,21 +1182,9 @@ describe('option resolution contracts', () => {
     expect(humeTargets.map((target) => target.model)).toEqual([...SUPPORTED_HUME_TTS_MODELS])
     expect(opts.cartesiaTtsModels).toEqual([...SUPPORTED_CARTESIA_TTS_MODELS])
     expect(cartesiaTargets.map((target) => target.model)).toEqual([...SUPPORTED_CARTESIA_TTS_MODELS])
-    expect(opts.gcloudTtsModels).toEqual([...SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS])
-    expect(gcloudTargets.map((target) => target.model)).toEqual([...SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS])
-    expect(gcloudTargets.map((target) => target.voice)).toEqual(
-      SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS.map((model) => GCLOUD_DEFAULT_TTS_VOICES[model])
-    )
-    expect(gcloudTargets.map((target) => target.model)).not.toContain('instant-custom-voice')
   })
 
   test('--all-tts rejects special-input modes that need an explicit model', () => {
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'all-tts': true,
-      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
-      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
-    }))).toThrow('require --gcloud-tts instant-custom-voice')
-
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'all-tts': true,
       'groq-voice': REMOVED_GROQ_TTS_VOICE
@@ -1295,7 +1195,7 @@ describe('option resolution contracts', () => {
       'mistral-tts': 'voxtral-mini-tts-2603',
       'tts-dialogue-format': 'labeled',
       'tts-speaker-ref-audio': ['Host=input/examples/audio/anthony-voice.mp3']
-    }))).toThrow('cannot be combined with other TTS providers')
+    }))).toThrow('does not support reference audio for multi-speaker TTS')
   })
 
   test('Groq TTS exposes only English Orpheus model and voices', () => {
@@ -1317,63 +1217,6 @@ describe('option resolution contracts', () => {
       'groq-tts': 'canopylabs/orpheus-v1-english',
       'groq-voice': REMOVED_GROQ_TTS_VOICE
     }))).toThrow(`Invalid --groq-voice "${REMOVED_GROQ_TTS_VOICE}"`)
-  })
-
-  test('Google Cloud instant custom voice flags validate model and key generation mode', () => {
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
-      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
-    }))).toThrow('require --gcloud-tts instant-custom-voice')
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts': 'chirp3-hd',
-      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
-      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
-    }))).toThrow('require --gcloud-tts instant-custom-voice')
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts': 'instant-custom-voice'
-    }))).toThrow('requires --gcloud-tts-voice-cloning-key or both --gcloud-tts-ref-audio and --gcloud-tts-consent-audio')
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts': 'instant-custom-voice',
-      'gcloud-tts-voice-cloning-key': 'existing-key',
-      'gcloud-tts-ref-audio': SHORT_AUDIO_URL,
-      'gcloud-tts-consent-audio': SHORT_AUDIO_URL
-    }))).toThrow('cannot be combined with key generation flags')
-
-    expect(collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts': 'instant-custom-voice',
-      'gcloud-tts-voice-cloning-key': 'existing-key'
-    })).map((target) => ({
-      service: target.service,
-      model: target.model,
-      voice: target.voice
-    }))).toEqual([{
-      service: 'gcloud',
-      model: 'instant-custom-voice',
-      voice: 'instant-custom-voice'
-    }])
-
-    expect(collectTtsTargets(buildOptsFromFlags(false, {
-      'gcloud-tts': ['chirp3-hd', 'instant-custom-voice'],
-      'gcloud-tts-voice-cloning-key': 'existing-key'
-    })).map((target) => ({
-      service: target.service,
-      model: target.model,
-      voice: target.voice
-    }))).toEqual([
-      {
-        service: 'gcloud',
-        model: 'chirp3-hd',
-        voice: GCLOUD_DEFAULT_TTS_VOICES['chirp3-hd']
-      },
-      {
-        service: 'gcloud',
-        model: 'instant-custom-voice',
-        voice: 'instant-custom-voice'
-      }
-    ])
   })
 
   test('Speechify custom voice flags build reference-audio targets and validate required consent', () => {
@@ -1426,7 +1269,7 @@ describe('option resolution contracts', () => {
       'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
       'speechify-tts-consent-name': 'Anthony Example',
       'speechify-tts-consent-email': 'anthony@example.com'
-    }))).toThrow('require --speechify-tts <model>')
+    }))).toThrow('Speechify TTS custom voice flags require selecting speechify TTS')
 
     expect(() => collectTtsTargets(buildOptsFromFlags(false, {
       'speechify-tts': 'simba-english',
@@ -1513,7 +1356,7 @@ describe('option resolution contracts', () => {
       'elevenlabs-voice': 'voice_existing123'
     })
 
-    expect(() => collectTtsTargets(missingElevenLabsModel)).toThrow('require --elevenlabs-tts <model> or --all-tts')
+    expect(() => collectTtsTargets(missingElevenLabsModel)).toThrow('ElevenLabs TTS IVC flags require selecting elevenlabs TTS')
     expect(() => collectTtsTargets(voiceNameWithoutReference)).toThrow('requires --elevenlabs-tts-ref-audio')
     expect(() => collectTtsTargets(voiceWithClone)).toThrow('cannot be combined with --elevenlabs-voice')
     expect(collectTtsTargets(existingVoice).map((target) => target.voice)).toEqual(['voice_existing123'])
@@ -1544,14 +1387,12 @@ describe('option resolution contracts', () => {
 
   test('elevenlabs clone flow creates once and reuses cloned voice across runs', async () => {
     const previousKey = process.env['ELEVENLABS_API_KEY']
-    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
     const previousFetch = globalThis.fetch
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-clone-flow-'))
     const calls: Array<{ url: string, method: string, body?: unknown }> = []
 
     try {
       process.env['ELEVENLABS_API_KEY'] = 'test-key'
-      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
       const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
 
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
@@ -1616,11 +1457,11 @@ describe('option resolution contracts', () => {
         body: call.body
       }))).toEqual([
         {
-          url: 'https://mock.elevenlabs.local/v1/text-to-speech/voice_elevenlabs_mock?output_format=mp3_44100_128',
+          url: 'https://api.elevenlabs.io/v1/text-to-speech/voice_elevenlabs_mock?output_format=mp3_44100_128',
           body: { text: 'Hello from the first run.', model_id: 'eleven_v3' }
         },
         {
-          url: 'https://mock.elevenlabs.local/v1/text-to-speech/voice_elevenlabs_mock?output_format=mp3_44100_128',
+          url: 'https://api.elevenlabs.io/v1/text-to-speech/voice_elevenlabs_mock?output_format=mp3_44100_128',
           body: { text: 'Hello from the second run.', model_id: 'eleven_v3' }
         }
       ])
@@ -1638,21 +1479,17 @@ describe('option resolution contracts', () => {
       globalThis.fetch = previousFetch
       if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
       else process.env['ELEVENLABS_API_KEY'] = previousKey
-      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
-      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
       await rm(tempDir, { recursive: true, force: true })
     }
   })
 
   test('elevenlabs clone flow fails clearly when verification is required', async () => {
     const previousKey = process.env['ELEVENLABS_API_KEY']
-    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
     const previousFetch = globalThis.fetch
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-verify-'))
 
     try {
       process.env['ELEVENLABS_API_KEY'] = 'test-key'
-      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = String(input)
         if (url.endsWith('/v1/voices/add')) {
@@ -1675,22 +1512,18 @@ describe('option resolution contracts', () => {
       globalThis.fetch = previousFetch
       if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
       else process.env['ELEVENLABS_API_KEY'] = previousKey
-      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
-      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
       await rm(tempDir, { recursive: true, force: true })
     }
   })
 
   test('elevenlabs clone flow surfaces API errors without synthesis', async () => {
     const previousKey = process.env['ELEVENLABS_API_KEY']
-    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
     const previousFetch = globalThis.fetch
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-error-'))
     let synthesisCalls = 0
 
     try {
       process.env['ELEVENLABS_API_KEY'] = 'test-key'
-      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0]): Promise<Response> => {
         const url = String(input)
         if (url.endsWith('/v1/voices/add')) {
@@ -1717,381 +1550,6 @@ describe('option resolution contracts', () => {
       globalThis.fetch = previousFetch
       if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
       else process.env['ELEVENLABS_API_KEY'] = previousKey
-      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
-      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
-      await rm(tempDir, { recursive: true, force: true })
-    }
-  })
-
-  test('elevenlabs PVC ready voice maps to synthesis speaker and rejects conflicting voice modes', () => {
-    const readyPvc = buildOptsFromFlags(false, {
-      'elevenlabs-tts': 'eleven_v3',
-      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
-    })
-    const targets = collectTtsTargets(readyPvc).filter((target) => target.service === 'elevenlabs')
-
-    expect(readyPvc.elevenlabsTtsPvcVoice).toBe('pvc_voice_123')
-    expect(targets.map((target) => ({
-      model: target.model,
-      voice: target.voice,
-      setupCostCents: target.setupCostCents
-    }))).toEqual([{
-      model: 'eleven_v3',
-      voice: 'pvc:pvc_voice_123',
-      setupCostCents: undefined
-    }])
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'elevenlabs-tts': 'eleven_v3',
-      'elevenlabs-voice': 'voice_existing123',
-      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
-    }))).toThrow('PVC voice cannot be combined with --elevenlabs-voice')
-
-    expect(() => collectTtsTargets(buildOptsFromFlags(false, {
-      'elevenlabs-tts': 'eleven_v3',
-      'elevenlabs-tts-ref-audio': 'input/examples/audio/anthony-voice.mp3',
-      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
-    }))).toThrow('PVC voice cannot be combined with ElevenLabs IVC flags')
-  })
-
-  test('elevenlabs PVC setup target records setup estimate and runtime-only setup flags', () => {
-    const opts = buildOptsFromFlags(false, {
-      'elevenlabs-tts': 'eleven_v3',
-      'elevenlabs-tts-pvc-sample': ['input/examples/audio/anthony-voice.mp3'],
-      'elevenlabs-tts-voice-name': 'AutoShow PVC',
-      'elevenlabs-tts-pvc-language': 'en',
-      'elevenlabs-tts-pvc-description': 'Narration PVC',
-      'elevenlabs-tts-pvc-captcha-out': '/tmp/autoshow-pvc-captcha.png',
-      'elevenlabs-tts-pvc-wait': true
-    }, [], {}, new Set(), [
-      '--elevenlabs-tts',
-      'eleven_v3',
-      '--elevenlabs-tts-pvc-sample',
-      'input/examples/audio/anthony-voice.mp3',
-      '--elevenlabs-tts-voice-name',
-      'AutoShow PVC',
-      '--elevenlabs-tts-pvc-language',
-      'en',
-      '--elevenlabs-tts-pvc-description',
-      'Narration PVC',
-      '--elevenlabs-tts-pvc-captcha-out',
-      '/tmp/autoshow-pvc-captcha.png',
-      '--elevenlabs-tts-pvc-wait'
-    ])
-    const targets = collectTtsTargets(opts).filter((target) => target.service === 'elevenlabs')
-
-    expect(opts.elevenlabsTtsPvcSamples).toEqual(['input/examples/audio/anthony-voice.mp3'])
-    expect(opts.elevenlabsTtsVoiceName).toBe('AutoShow PVC')
-    expect(opts.elevenlabsTtsPvcLanguage).toBe('en')
-    expect(opts.elevenlabsTtsPvcDescription).toBe('Narration PVC')
-    expect(opts.elevenlabsTtsPvcCaptchaOut).toBe('/tmp/autoshow-pvc-captcha.png')
-    expect(opts.elevenlabsTtsPvcWait).toBe(true)
-    expect(targets.map((target) => ({
-      model: target.model,
-      voice: target.voice,
-      setupCostCents: target.setupCostCents,
-      setupTimeMs: target.setupTimeMs,
-      setupNote: target.setupNote
-    }))).toEqual([{
-      model: 'eleven_v3',
-      voice: 'pvc_setup:AutoShow PVC',
-      setupCostCents: 0,
-      setupTimeMs: ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
-      setupNote: 'ElevenLabs professional voice clone training'
-    }])
-  })
-
-  test('elevenlabs PVC sample validation accepts directories and enforces file checks', async () => {
-    const sample = await validateElevenLabsTtsPvcAudio('input/examples/audio/anthony-voice.mp3')
-    expect(sample.basename).toBe('anthony-voice.mp3')
-    expect(sample.mimeType).toBe('audio/mpeg')
-
-    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-samples-'))
-    const emptyPath = join(tempDir, 'empty.mp3')
-    const textPath = join(tempDir, 'not-audio.txt')
-    const sampleCopyPath = join(tempDir, 'sample.mp3')
-    await writeFile(emptyPath, '')
-    await writeFile(textPath, 'hello')
-    await writeFile(sampleCopyPath, new Uint8Array(await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()))
-
-    try {
-      await expect(validateElevenLabsTtsPvcAudio('input/examples/audio/missing.mp3')).rejects.toThrow('not found')
-      await expect(validateElevenLabsTtsPvcAudio(textPath)).rejects.toThrow('mp3/mpeg, wav, m4a/mp4, ogg, flac, aac, or webm')
-      await expect(validateElevenLabsTtsPvcAudio(emptyPath)).rejects.toThrow('is empty')
-      await rm(emptyPath, { force: true })
-      const samples = await validateElevenLabsTtsPvcSamples(undefined, tempDir)
-      expect(samples.map((entry) => entry.basename)).toEqual(['sample.mp3'])
-    } finally {
-      await rm(tempDir, { recursive: true, force: true })
-    }
-  })
-
-  test('elevenlabs PVC setup creates a voice, uploads samples, writes captcha and status artifact', async () => {
-    const previousFetch = globalThis.fetch
-    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-create-'))
-    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
-    const calls: Array<{ url: string, method: string, body?: unknown }> = []
-
-    try {
-      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        const url = String(input)
-        if (url === SHORT_AUDIO_URL) {
-          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
-        }
-        const method = init?.method ?? 'GET'
-        const body = init?.body
-        if (url.endsWith('/v1/voices/pvc')) {
-          calls.push({ url, method, body: JSON.parse(String(body ?? '{}')) as unknown })
-          return new Response(JSON.stringify({ voice_id: 'pvc_new_voice' }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-          })
-        }
-        if (url.endsWith('/v1/voices/pvc/pvc_new_voice/samples') && body instanceof FormData) {
-          calls.push({
-            url,
-            method,
-            body: {
-              hasFile: body.get('files') instanceof Blob,
-              removeBackgroundNoise: body.get('remove_background_noise')
-            }
-          })
-          return new Response(JSON.stringify([{
-            sample_id: 'sample_1',
-            file_name: '0-audio-short.mp3',
-            mime_type: 'audio/mpeg',
-            size_bytes: 10,
-            duration_secs: 5
-          }]), { status: 200, headers: { 'content-type': 'application/json' } })
-        }
-        if (url.endsWith('/v1/voices/pvc/pvc_new_voice/captcha')) {
-          calls.push({ url, method })
-          return new Response(Buffer.from('captcha-bytes').toString('base64'), {
-            status: 200,
-            headers: { 'content-type': 'text/plain' }
-          })
-        }
-        throw new Error(`Unexpected ElevenLabs PVC create mock fetch: ${method} ${url}`)
-      }) as typeof fetch
-
-      const captchaPath = join(tempDir, 'captcha.png')
-      const result = await runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
-        model: 'eleven_v3',
-        samplePaths: [SHORT_AUDIO_URL],
-        voiceName: 'AutoShow PVC',
-        language: 'en',
-        description: 'Narration PVC',
-        captchaOut: captchaPath
-      })
-      const artifact = await writeElevenLabsTtsPvcStatusArtifact(tempDir, result)
-
-      expect(result).toMatchObject({
-        voiceId: 'pvc_new_voice',
-        voiceName: 'AutoShow PVC',
-        language: 'en',
-        description: 'Narration PVC',
-        createdVoice: true,
-        readyForSynthesis: false,
-        actions: ['create_voice', 'upload_samples', 'write_captcha']
-      })
-      expect(result.uploadedSamples).toEqual([{
-        sampleId: 'sample_1',
-        fileName: '0-audio-short.mp3',
-        mimeType: 'audio/mpeg',
-        sizeBytes: 10,
-        durationSeconds: 5
-      }])
-      expect(await Bun.file(captchaPath).text()).toBe('captcha-bytes')
-      expect(await Bun.file(join(tempDir, artifact.statusFileName)).exists()).toBe(true)
-      expect(calls.map((call) => ({ url: call.url, method: call.method, body: call.body }))).toEqual([
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc',
-          method: 'POST',
-          body: { name: 'AutoShow PVC', language: 'en', description: 'Narration PVC' }
-        },
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_new_voice/samples',
-          method: 'POST',
-          body: { hasFile: true, removeBackgroundNoise: 'false' }
-        },
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_new_voice/captcha',
-          method: 'GET',
-          body: undefined
-        }
-      ])
-    } finally {
-      globalThis.fetch = previousFetch
-      await rm(tempDir, { recursive: true, force: true })
-    }
-  })
-
-  test('elevenlabs PVC setup verifies, trains, and waits for fine tuning', async () => {
-    const previousFetch = globalThis.fetch
-    const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
-    const calls: Array<{ url: string, method: string, body?: unknown }> = []
-    let statusPolls = 0
-
-    try {
-      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        const url = String(input)
-        if (url === SHORT_AUDIO_URL) {
-          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
-        }
-        const method = init?.method ?? 'GET'
-        const body = init?.body
-        if (url.endsWith('/v1/voices/pvc/pvc_existing/captcha') && method === 'POST' && body instanceof FormData) {
-          calls.push({ url, method, body: { hasRecording: body.get('recording') instanceof Blob } })
-          return new Response(JSON.stringify({ status: 'ok' }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-          })
-        }
-        if (url.endsWith('/v1/voices/pvc/pvc_existing/train')) {
-          calls.push({ url, method, body: JSON.parse(String(body ?? '{}')) as unknown })
-          return new Response(JSON.stringify({ status: 'ok' }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-          })
-        }
-        if (url.endsWith('/v1/voices/pvc_existing')) {
-          statusPolls += 1
-          calls.push({ url, method })
-          return new Response(JSON.stringify({
-            voice_id: 'pvc_existing',
-            fine_tuning: {
-              state: {
-                eleven_v3: statusPolls === 1 ? 'fine_tuning' : 'fine_tuned'
-              },
-              progress: {
-                eleven_v3: statusPolls === 1 ? 0.5 : 1
-              }
-            }
-          }), { status: 200, headers: { 'content-type': 'application/json' } })
-        }
-        throw new Error(`Unexpected ElevenLabs PVC verify mock fetch: ${method} ${url}`)
-      }) as typeof fetch
-
-      const result = await runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
-        model: 'eleven_v3',
-        pvcVoiceId: 'pvc_existing',
-        verifyAudioPath: SHORT_AUDIO_URL,
-        wait: true,
-        pollIntervalMs: 1,
-        timeoutMs: 1000
-      })
-
-      expect(result).toMatchObject({
-        voiceId: 'pvc_existing',
-        verificationStatus: 'ok',
-        trainingStatus: 'ok',
-        fineTuningState: 'fine_tuned',
-        fineTuningProgress: 1,
-        readyForSynthesis: true,
-        actions: ['verify_captcha', 'start_training', 'wait_for_training']
-      })
-      expect(calls.map((call) => ({ url: call.url, method: call.method, body: call.body }))).toEqual([
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_existing/captcha',
-          method: 'POST',
-          body: { hasRecording: true }
-        },
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc/pvc_existing/train',
-          method: 'POST',
-          body: { model_id: 'eleven_v3' }
-        },
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc_existing',
-          method: 'GET',
-          body: undefined
-        },
-        {
-          url: 'https://mock.elevenlabs.local/v1/voices/pvc_existing',
-          method: 'GET',
-          body: undefined
-        }
-      ])
-    } finally {
-      globalThis.fetch = previousFetch
-    }
-  })
-
-  test('elevenlabs PVC setup surfaces failed training state', async () => {
-    const previousFetch = globalThis.fetch
-
-    try {
-      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        const url = String(input)
-        const method = init?.method ?? 'GET'
-        if (url.endsWith('/v1/voices/pvc_failed')) {
-          return new Response(JSON.stringify({
-            voice_id: 'pvc_failed',
-            fine_tuning: {
-              state: {
-                eleven_v3: 'failed'
-              }
-            }
-          }), { status: 200, headers: { 'content-type': 'application/json' } })
-        }
-        throw new Error(`Unexpected ElevenLabs PVC failed mock fetch: ${method} ${url}`)
-      }) as typeof fetch
-
-      await expect(runElevenLabsTtsPvcSetup('https://mock.elevenlabs.local/v1', 'test-key', {
-        model: 'eleven_v3',
-        pvcVoiceId: 'pvc_failed',
-        wait: true,
-        pollIntervalMs: 1,
-        timeoutMs: 100
-      })).rejects.toThrow('ElevenLabs PVC training failed')
-    } finally {
-      globalThis.fetch = previousFetch
-    }
-  })
-
-  test('elevenlabs ready PVC synthesis uses pvc speaker metadata', async () => {
-    const previousKey = process.env['ELEVENLABS_API_KEY']
-    const previousBaseUrl = process.env['ELEVENLABS_BASE_URL']
-    const previousFetch = globalThis.fetch
-    const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-elevenlabs-pvc-synthesis-'))
-    const calls: Array<{ url: string, method: string, body?: unknown }> = []
-
-    try {
-      process.env['ELEVENLABS_API_KEY'] = 'test-key'
-      process.env['ELEVENLABS_BASE_URL'] = 'https://mock.elevenlabs.local/v1'
-      const audioBytes = await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()
-
-      globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        const url = String(input)
-        const method = init?.method ?? 'GET'
-        const body = init?.body
-        if (url.includes('/v1/text-to-speech/')) {
-          calls.push({ url, method, body: JSON.parse(String(body ?? '{}')) as unknown })
-          return new Response(audioBytes, { status: 200, headers: { 'content-type': 'audio/mpeg' } })
-        }
-        throw new Error(`Unexpected ElevenLabs PVC synthesis mock fetch: ${method} ${url}`)
-      }) as typeof fetch
-
-      const result = await runElevenLabsTts('Hello from a PVC voice.', tempDir, {
-        model: 'eleven_v3',
-        pvcVoiceId: 'pvc_voice_123'
-      })
-
-      expect(await Bun.file(result.audioPath).exists()).toBe(true)
-      expect(result.metadata).toMatchObject({
-        speaker: 'pvc:pvc_voice_123'
-      })
-      expect(calls).toEqual([{
-        url: 'https://mock.elevenlabs.local/v1/text-to-speech/pvc_voice_123?output_format=mp3_44100_128',
-        method: 'POST',
-        body: { text: 'Hello from a PVC voice.', model_id: 'eleven_v3' }
-      }])
-    } finally {
-      globalThis.fetch = previousFetch
-      if (previousKey === undefined) delete process.env['ELEVENLABS_API_KEY']
-      else process.env['ELEVENLABS_API_KEY'] = previousKey
-      if (previousBaseUrl === undefined) delete process.env['ELEVENLABS_BASE_URL']
-      else process.env['ELEVENLABS_BASE_URL'] = previousBaseUrl
       await rm(tempDir, { recursive: true, force: true })
     }
   })
@@ -2185,7 +1643,7 @@ describe('option resolution contracts', () => {
       'openai-voice': 'voice_existing123'
     })
 
-    expect(() => collectTtsTargets(missingOpenAIModel)).toThrow('require --openai-tts <model> or --all-tts')
+    expect(() => collectTtsTargets(missingOpenAIModel)).toThrow('OpenAI TTS custom voice flags require selecting openai TTS')
     expect(() => collectTtsTargets(missingConsent)).toThrow('requires exactly one of --openai-tts-consent-id or --openai-tts-consent-audio')
     expect(() => collectTtsTargets(tooManyConsentSources)).toThrow('requires exactly one of --openai-tts-consent-id or --openai-tts-consent-audio')
     expect(() => collectTtsTargets(voiceWithClone)).toThrow('cannot be combined with --openai-voice')

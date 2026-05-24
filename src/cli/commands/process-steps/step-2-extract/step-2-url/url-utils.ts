@@ -275,7 +275,7 @@ export const ensureMeaningfulMarkdown = (
   if (backend === 'defuddle') {
     throw new Error(
       'Defuddle could not extract meaningful article content. ' +
-      'The page may require client-side rendering. Retry with a remote --url-backend such as firecrawl, spider, or zyte.'
+      'The page may require client-side rendering. Retry with a remote --url-provider such as firecrawl, spider, supadata, or zyte.'
     )
   }
 
@@ -284,6 +284,9 @@ export const ensureMeaningfulMarkdown = (
   }
   if (backend === 'spider') {
     throw new Error('Spider returned empty article markdown.')
+  }
+  if (backend === 'supadata') {
+    throw new Error('Supadata returned empty article markdown.')
   }
   if (backend === 'zyte') {
     throw new Error('Zyte returned empty article markdown.')

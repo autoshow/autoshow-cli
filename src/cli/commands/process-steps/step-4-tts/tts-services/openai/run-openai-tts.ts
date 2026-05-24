@@ -3,7 +3,6 @@ import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/
 import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { OPENAI_DEFAULT_TTS_VOICE } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { readEnv } from '~/utils/validate/env-utils'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import {
   ensureOpenAITtsCustomVoice,
@@ -37,7 +36,7 @@ export const runOpenAITts = async (
   const cloneResult = options.clone
     ? await ensureOpenAITtsCustomVoice(resolveOpenAITtsBaseUrl(config.baseURL), config.apiKey, options.clone)
     : undefined
-  const voiceId = (cloneResult?.voiceId ?? options.voiceId?.trim()) || readEnv('OPENAI_TTS_VOICE') || OPENAI_DEFAULT_TTS_VOICE
+  const voiceId = (cloneResult?.voiceId ?? options.voiceId?.trim()) || OPENAI_DEFAULT_TTS_VOICE
   const speaker = cloneResult ? `ref_audio:${cloneResult.sampleAudio.basename}` : voiceId
   const speechVoice = toOpenAISpeechVoice(voiceId)
 

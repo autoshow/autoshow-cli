@@ -8,8 +8,8 @@ import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import { readProviderResult, readRunMetadata } from './manifest-helpers'
 import { requireConfiguredEnvVar, runCommandAndExpectOutputDir, withOutputLifecycle } from './service-test-kit'
 
-const extractServiceFromFlag = (cliFlag: string): string => {
-  return cliFlag.replace(/^--/, '').replace(/-ocr$/, '')
+const extractServiceFromProvider = (provider: string): string => {
+  return provider
 }
 
 const requireServiceRunPrerequisites = async (
@@ -88,7 +88,7 @@ const assertOcrArtifacts = async ({
 
 export const defineOCRServiceTest = ({
   models,
-  cliFlag,
+  provider,
   expectedService,
   extractionMethod,
   imageExtractionMethod,
@@ -102,7 +102,7 @@ export const defineOCRServiceTest = ({
   timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   expectedService?: string
   extractionMethod: string
   imageExtractionMethod?: string
@@ -125,16 +125,16 @@ export const defineOCRServiceTest = ({
   })
 
   for (const model of models) {
-    const service = expectedService ?? extractServiceFromFlag(cliFlag)
+    const service = expectedService ?? extractServiceFromProvider(provider)
     const budgetKey = `extract-${service}-${model}`
 
     if (inputMode === 'pdf-and-image') {
-      budgetedTest(budgetKey, `extract PDF with ${cliFlag} ${model}`, async () => {
+      budgetedTest(budgetKey, `extract PDF with --provider ${provider}=${model}`, async () => {
         await requireServiceRunPrerequisites(envVarKey, shouldSkipReadiness)
 
         await cleanupTestOutput('1-document')
 
-        const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', pdfInput, cliFlag, model])
+        const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', pdfInput, '--provider', `${provider}=${model}`])
 
         await assertOcrArtifacts({
           outputDir,
@@ -148,7 +148,7 @@ export const defineOCRServiceTest = ({
       }, timeoutMs)
     }
 
-    budgetedTest(budgetKey, `extract image with ${cliFlag} ${model}`, async () => {
+    budgetedTest(budgetKey, `extract image with --provider ${provider}=${model}`, async () => {
       await requireServiceRunPrerequisites(envVarKey, shouldSkipReadiness)
 
       if (usesGeneratedPngFixture) {
@@ -156,7 +156,7 @@ export const defineOCRServiceTest = ({
       }
       await cleanupTestOutput('1-document')
 
-      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', imageInput, cliFlag, model])
+      const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', imageInput, '--provider', `${provider}=${model}`])
 
       await assertOcrArtifacts({
         outputDir,

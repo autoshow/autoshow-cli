@@ -1,6 +1,7 @@
 import { AppError } from '~/utils/error-handler'
+import { ANTHROPIC_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
-export const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com'
+export { ANTHROPIC_DEFAULT_BASE_URL }
 export const ANTHROPIC_VERSION = '2023-06-01'
 export const ANTHROPIC_FILES_API_BETA = 'files-api-2025-04-14'
 

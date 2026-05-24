@@ -17,7 +17,7 @@ export const defuddleRuntimeBinaryPath = join(
   process.platform === 'win32' ? 'defuddle.cmd' : 'defuddle'
 )
 
-type DefuddleCliSource = 'env' | 'runtime' | 'path'
+type DefuddleCliSource = 'runtime' | 'path'
 
 type ResolvedDefuddleCli = {
   path: string
@@ -62,17 +62,7 @@ const runCapture = async (
   return result
 }
 
-const cleanEnvPath = (value: string | undefined): string | undefined => {
-  const trimmed = value?.trim()
-  return trimmed && trimmed.length > 0 ? trimmed : undefined
-}
-
 const resolveDefuddleCli = async (): Promise<ResolvedDefuddleCli | undefined> => {
-  const envPath = cleanEnvPath(process.env['AUTOSHOW_DEFUDDLE_BIN'])
-  if (envPath) {
-    return { path: envPath, source: 'env' }
-  }
-
   if (await pathExists(defuddleRuntimeBinaryPath)) {
     return { path: defuddleRuntimeBinaryPath, source: 'runtime' }
   }
@@ -224,10 +214,6 @@ export const ensureDefuddleCliSetup = async (): Promise<string> => {
 
     if (resolved.source === 'runtime' && isPinnedDefuddleCli(verified)) {
       return resolved.path
-    }
-
-    if (resolved.source === 'env') {
-      throw new Error(`AUTOSHOW_DEFUDDLE_BIN is not usable: ${verified.detail}`)
     }
 
     if (resolved.source === 'runtime') {

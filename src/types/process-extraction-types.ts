@@ -7,7 +7,7 @@ export type DetectResult =
   | 'html'
   | null
 
-export type HtmlArticleBackend = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
+export type HtmlArticleBackend = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'supadata' | 'zyte'
 
 export type WebArticleMetadata = {
   sourceUrl?: string
@@ -36,17 +36,12 @@ export const ExtractionOptionsSchema = v.object({
   outputDir: v.string(),
   dpi: v.optional(v.number(), 300),
   languages: v.optional(v.string(), 'eng'),
-  oem: v.optional(v.number(), 1),
-  psm: v.optional(v.number(), 3),
   outputFormat: v.optional(v.picklist(['text', 'json', 'tsv', 'hocr']), 'text'),
   password: v.optional(v.string(), undefined),
-  pageSeparator: v.optional(v.string(), '\n\n'),
   renderConcurrency: v.optional(v.number(), undefined),
   ocrConcurrency: v.optional(v.number(), undefined),
   ocrProviderConcurrency: v.optional(v.number(), 2),
   ocrLocalConcurrency: v.optional(v.number(), 1),
-  preserveInterwordSpaces: v.optional(v.boolean(), false),
-    rotate: v.optional(v.number(), 0),
     useTesseract: v.optional(v.boolean(), undefined),
     useOcrmypdf: v.optional(v.boolean(), undefined),
     usePaddleOcr: v.optional(v.boolean(), undefined),
@@ -66,13 +61,7 @@ export const ExtractionOptionsSchema = v.object({
   geminiOcrModels: v.optional(v.array(v.string()), undefined),
   deepinfraOcrModel: v.optional(v.string(), undefined),
   deepinfraOcrModels: v.optional(v.array(v.string()), undefined),
-  awsTextractModel: v.optional(v.string(), undefined),
-  awsTextractModels: v.optional(v.array(v.string()), undefined),
-  awsRegion: v.optional(v.string(), undefined),
-  awsBucket: v.optional(v.string(), undefined),
   configPath: v.optional(v.string(), undefined),
-  gcloudDocaiModel: v.optional(v.string(), undefined),
-  gcloudDocaiModels: v.optional(v.array(v.string()), undefined),
   unstructuredOcrModel: v.optional(v.string(), undefined),
   unstructuredOcrModels: v.optional(v.array(v.string()), undefined),
   primaryOcr: v.optional(v.string(), undefined),
@@ -89,7 +78,7 @@ export const ExtractionOptionsSchema = v.object({
   ), undefined),
   preparedMarkdown: v.optional(v.string(), undefined),
   htmlArticleProcessingTimeMs: v.optional(v.number(), undefined),
-  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader', 'spider', 'zyte']), undefined)
+  htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader', 'spider', 'supadata', 'zyte']), undefined)
 })
 
 export const PageResultSchema = v.object({
@@ -131,11 +120,11 @@ export const ExtractionMetadataSchema = v.object({
   extractionMethod: v.picklist([
     'docx', 'pptx', 'xlsx', 'odf', 'tesseract', 'mutool+tesseract', 'paddle-ocr', 'mutool+paddle-ocr', 'ocrmypdf', 'mistral-ocr', 'openai-ocr', 'grok-ocr', 'epub-bun', 'epub-calibre',
     'epub-text',
-    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+kimi-ocr', 'pdf+openai-ocr', 'pdf+grok-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+deepinfra-ocr', 'pdf+aws-textract', 'pdf+gcloud-docai', 'pdf+unstructured-ocr',
+    'pdf-text', 'pdf+tesseract', 'pdf+ocrmypdf', 'pdf+paddle-ocr', 'pdf+mistral-ocr', 'pdf+glm-ocr', 'pdf+kimi-ocr', 'pdf+openai-ocr', 'pdf+grok-ocr', 'pdf+anthropic-ocr', 'pdf+gemini-ocr', 'pdf+deepinfra-ocr', 'pdf+unstructured-ocr',
     'office-native', 'rtf-native',
-    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+kimi-ocr', 'cbz+openai-ocr', 'cbz+grok-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+deepinfra-ocr', 'cbz+aws-textract', 'cbz+gcloud-docai', 'cbz+unstructured-ocr',
+    'cbz+tesseract', 'cbz+paddle-ocr', 'cbz+ocrmypdf', 'cbz+mistral-ocr', 'cbz+glm-ocr', 'cbz+kimi-ocr', 'cbz+openai-ocr', 'cbz+grok-ocr', 'cbz+anthropic-ocr', 'cbz+gemini-ocr', 'cbz+deepinfra-ocr', 'cbz+unstructured-ocr',
     'csv-raw',
-    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+kimi-ocr', 'image+openai-ocr', 'image+grok-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+deepinfra-ocr', 'image+aws-textract', 'image+gcloud-docai', 'image+unstructured-ocr',
+    'image+tesseract', 'image+ocrmypdf', 'image+paddle-ocr', 'image+mistral-ocr', 'image+glm-ocr', 'image+kimi-ocr', 'image+openai-ocr', 'image+grok-ocr', 'image+anthropic-ocr', 'image+gemini-ocr', 'image+deepinfra-ocr', 'image+unstructured-ocr',
     'glm-ocr',
     'kimi-ocr',
     'openai-ocr',
@@ -143,10 +132,8 @@ export const ExtractionMetadataSchema = v.object({
     'anthropic-ocr',
     'gemini-ocr',
     'deepinfra-ocr',
-    'aws-textract',
-    'gcloud-docai',
     'unstructured-ocr',
-    'html+defuddle', 'html+firecrawl', 'html+glm-reader', 'html+spider', 'html+zyte'
+    'html+defuddle', 'html+firecrawl', 'html+glm-reader', 'html+spider', 'html+supadata', 'html+zyte'
   ]),
   totalPages: v.number(),
   ocrPages: v.number(),

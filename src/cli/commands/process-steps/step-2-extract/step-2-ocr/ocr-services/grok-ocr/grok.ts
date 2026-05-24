@@ -1,13 +1,12 @@
 import * as l from '~/utils/logger'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
-export const GROK_OCR_DEFAULT_BASE_URL = 'https://api.x.ai/v1'
 export const GROK_OCR_IMAGE_BYTES = 20 * 1024 * 1024
 export const GROK_OCR_LIMIT_SOURCE = 'https://docs.x.ai/developers/models'
 
 export const resolveGrokOcrBaseUrl = (): string => {
-  const configured = readEnv('XAI_BASE_URL') ?? GROK_OCR_DEFAULT_BASE_URL
-  const trimmed = configured.trim().replace(/\/+$/, '')
+  const trimmed = XAI_DEFAULT_BASE_URL.trim().replace(/\/+$/, '')
   return trimmed.endsWith('/chat/completions')
     ? trimmed.slice(0, -'/chat/completions'.length)
     : trimmed

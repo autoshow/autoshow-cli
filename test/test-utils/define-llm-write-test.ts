@@ -38,13 +38,13 @@ const isMinimaxTransientUnavailable = (output: string): boolean => {
 
 export const defineLLMWriteTest = ({
   models,
-  cliFlag,
+  provider,
   llmService,
   requiresEnvVar,
   promptProfiles,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   llmService: string
   requiresEnvVar?: { key: string, description: string }
   promptProfiles?: Partial<Record<string, string>>
@@ -58,7 +58,7 @@ export const defineLLMWriteTest = ({
         await requireConfiguredEnvVar(requiresEnvVar.key, `${requiresEnvVar.key} is required for ${requiresEnvVar.description}`)
       }
 
-      const commandArgs = ["src/cli/create-cli.ts", "write", STABLE_EXAMPLE_AUDIO_URL, cliFlag, model]
+      const commandArgs = ["src/cli/create-cli.ts", "write", STABLE_EXAMPLE_AUDIO_URL, '--llm', `${provider}=${model}`]
       const promptProfile = promptProfiles?.[model]
       if (promptProfile) {
         commandArgs.push('--prompt', promptProfile)

@@ -21,50 +21,6 @@
         "tokenCount": 7890
       },
       {
-        "transcriptionService": "gcloud",
-        "transcriptionModel": "chirp_3",
-        "processingTime": 517982,
-        "tokenCount": 7836,
-        "timings": {
-          "transcribeMs": 326220,
-          "remoteProcessingMs": 191762,
-          "requestCount": 42
-        }
-      },
-      {
-        "transcriptionService": "aws",
-        "transcriptionModel": "standard",
-        "processingTime": 188813,
-        "tokenCount": 7831,
-        "runtime": {
-          "mode": "fresh",
-          "stage": "cleanup-complete",
-          "remoteJobId": "autoshow-1779362032965-source_media-571e243a16eb",
-          "remoteAssetId": "autoshow/transcribe/autoshow-1779362032965-source_media-571e243a16eb",
-          "remoteAssetUrl": "s3://autoshow-aws-710271913540-us-east-2-556e873712/autoshow/transcribe/autoshow-1779362032965-source_media-571e243a16eb/input/source_media.mp3",
-          "createCompletedAt": "2026-05-21T11:13:55.613Z",
-          "lastPollAt": "2026-05-21T11:17:00.817Z",
-          "completedAt": "2026-05-21T11:17:00.818Z",
-          "cleanupCompletedAt": "2026-05-21T11:17:03.580Z",
-          "cleanup": {
-            "remoteJobDeleted": true,
-            "remoteAssetDeleted": true
-          }
-        },
-        "timings": {
-          "uploadMs": 1783,
-          "createMs": 865,
-          "createCount": 1,
-          "pollMs": 11042,
-          "pollSleepMs": 174102,
-          "pollCount": 19,
-          "transcriptMs": 941,
-          "remoteProcessingMs": 172380,
-          "cleanupMs": 1802,
-          "requestCount": 22
-        }
-      },
-      {
         "transcriptionService": "deepinfra",
         "transcriptionModel": "openai/whisper-large-v3-turbo",
         "processingTime": 32830,
@@ -338,7 +294,6 @@
           "mode": "fresh",
           "stage": "completed",
           "remoteJobId": "c613cd78d5684aac8522061f01afeaf0",
-          "remoteAssetUrl": "https://media2.happyscribe.com/uploads/bdc78f0d-d9a4-436c-9610-8a87194eb986/source_media.mp3?x-amz-acl=public-read&x-amz-meta-user_id=17600298&x-amz-meta-generated_by=happyscribe-api&x-amz-sdk-checksum-algorithm=CRC32&x-amz-checksum-crc32=AAAAAA%3D%3D&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA3QN374LNFOXT7QML%2F20260521%2Feu-west-1%2Fs3%2Faws4_request&X-Amz-Date=20260521T111429Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=0816666bdb1d4b404a313f714e5a2225d924fa47121eec1b983f1c13dd9c7623",
           "createCompletedAt": "2026-05-21T11:14:34.600Z",
           "lastPollAt": "2026-05-21T11:16:02.252Z",
           "completedAt": "2026-05-21T11:16:03.301Z"
@@ -459,16 +414,6 @@
         {
           "service": "reverb",
           "model": "reverb",
-          "origin": "all-shortcut"
-        },
-        {
-          "service": "gcloud",
-          "model": "chirp_3",
-          "origin": "all-shortcut"
-        },
-        {
-          "service": "aws",
-          "model": "standard",
           "origin": "all-shortcut"
         },
         {
@@ -614,24 +559,6 @@
         "service": "reverb",
         "model": "reverb",
         "local": true
-      },
-      {
-        "service": "gcloud",
-        "model": "chirp_3",
-        "local": false,
-        "diarizationOptions": {
-          "enabled": true
-        }
-      },
-      {
-        "service": "aws",
-        "model": "standard",
-        "local": false,
-        "awsRegion": "us-east-2",
-        "awsBucket": "autoshow-aws-710271913540-us-east-2-556e873712",
-        "diarizationOptions": {
-          "enabled": true
-        }
       },
       {
         "service": "deepinfra",
@@ -811,22 +738,6 @@
         "model": "reverb",
         "local": true,
         "artifactDir": "providers/reverb-reverb",
-        "status": "succeeded",
-        "attempts": 1
-      },
-      {
-        "service": "gcloud",
-        "model": "chirp_3",
-        "local": false,
-        "artifactDir": "providers/gcloud-chirp_3",
-        "status": "succeeded",
-        "attempts": 1
-      },
-      {
-        "service": "aws",
-        "model": "standard",
-        "local": false,
-        "artifactDir": "providers/aws-standard",
         "status": "succeeded",
         "attempts": 1
       },
@@ -1062,22 +973,6 @@
           },
           {
             "step": "stt",
-            "provider": "gcloud",
-            "model": "chirp_3",
-            "cost": 64.6144,
-            "costMultiplier": 1,
-            "durationSeconds": 2423.04
-          },
-          {
-            "step": "stt",
-            "provider": "aws",
-            "model": "standard",
-            "cost": 96.96000000000001,
-            "costMultiplier": 1,
-            "durationSeconds": 2423.04
-          },
-          {
-            "step": "stt",
             "provider": "deepinfra",
             "model": "openai/whisper-large-v3-turbo",
             "cost": 0.8076800000000001,
@@ -1303,24 +1198,6 @@
             "model": "reverb_asr_v1",
             "cost": 0,
             "costSource": "local_zero",
-            "inputMetric": "durationSeconds",
-            "inputValue": 2423.04
-          },
-          {
-            "step": "stt",
-            "provider": "gcloud",
-            "model": "chirp_3",
-            "cost": 64.6144,
-            "costSource": "computed_usage",
-            "inputMetric": "durationSeconds",
-            "inputValue": 2423.04
-          },
-          {
-            "step": "stt",
-            "provider": "aws",
-            "model": "standard",
-            "cost": 96.96000000000001,
-            "costSource": "computed_usage",
             "inputMetric": "durationSeconds",
             "inputValue": 2423.04
           },
@@ -1578,32 +1455,6 @@
       "estimated": {
         "totalProcessingTimeMs": 12185467,
         "steps": [
-          {
-            "step": "stt",
-            "provider": "gcloud",
-            "model": "chirp_3",
-            "processingTimeMs": 230189,
-            "inputMetric": "durationSeconds",
-            "inputValue": 2423.04,
-            "rateBasis": "durationSecond",
-            "msPerUnit": 95,
-            "throughputValue": 10.526,
-            "throughputUnit": "x",
-            "timingScope": "estimated"
-          },
-          {
-            "step": "stt",
-            "provider": "aws",
-            "model": "standard",
-            "processingTimeMs": 918332,
-            "inputMetric": "durationSeconds",
-            "inputValue": 2423.04,
-            "rateBasis": "durationSecond",
-            "msPerUnit": 379,
-            "throughputValue": 2.639,
-            "throughputUnit": "x",
-            "timingScope": "estimated"
-          },
           {
             "step": "stt",
             "provider": "deepinfra",
@@ -1970,45 +1821,6 @@
             "rateBasis": "durationSecond",
             "msPerUnit": 1167.669,
             "throughputValue": 0.856,
-            "throughputUnit": "x",
-            "timingScope": "wall"
-          },
-          {
-            "step": "stt",
-            "provider": "gcloud",
-            "model": "chirp_3",
-            "processingTimeMs": 517982,
-            "timingBreakdown": {
-              "transcribeMs": 326220,
-              "remoteProcessingMs": 191762
-            },
-            "inputMetric": "durationSeconds",
-            "inputValue": 2423.04,
-            "rateBasis": "durationSecond",
-            "msPerUnit": 213.774,
-            "throughputValue": 4.678,
-            "throughputUnit": "x",
-            "timingScope": "wall"
-          },
-          {
-            "step": "stt",
-            "provider": "aws",
-            "model": "standard",
-            "processingTimeMs": 188813,
-            "timingBreakdown": {
-              "uploadMs": 1783,
-              "createMs": 865,
-              "pollMs": 11042,
-              "pollSleepMs": 174102,
-              "transcriptMs": 941,
-              "remoteProcessingMs": 172380,
-              "cleanupMs": 1802
-            },
-            "inputMetric": "durationSeconds",
-            "inputValue": 2423.04,
-            "rateBasis": "durationSecond",
-            "msPerUnit": 77.924,
-            "throughputValue": 12.833,
             "throughputUnit": "x",
             "timingScope": "wall"
           },
@@ -2460,33 +2272,6 @@
             "service": "reverb",
             "model": "reverb_asr_v1",
             "processingTimeMs": 2829308
-          },
-          {
-            "service": "gcloud",
-            "model": "chirp_3",
-            "processingTimeMs": 517982,
-            "timings": {
-              "transcribeMs": 326220,
-              "remoteProcessingMs": 191762,
-              "requestCount": 42
-            }
-          },
-          {
-            "service": "aws",
-            "model": "standard",
-            "processingTimeMs": 188813,
-            "timings": {
-              "uploadMs": 1783,
-              "createMs": 865,
-              "createCount": 1,
-              "pollMs": 11042,
-              "pollSleepMs": 174102,
-              "pollCount": 19,
-              "transcriptMs": 941,
-              "remoteProcessingMs": 172380,
-              "cleanupMs": 1802,
-              "requestCount": 22
-            }
           },
           {
             "service": "deepinfra",

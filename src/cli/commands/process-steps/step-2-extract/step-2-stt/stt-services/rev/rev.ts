@@ -1,8 +1,8 @@
 import * as l from '~/utils/logger'
+import { REVAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
-export const getRevBaseUrl = (): string =>
-  readEnv('REVAI_BASE_URL') ?? 'https://api.rev.ai/speechtotext/v1'
+export const getRevBaseUrl = (): string => REVAI_DEFAULT_BASE_URL
 
 export const setupRevStt = async (): Promise<void> => {
   const accessToken = readEnv('REVAI_ACCESS_TOKEN')

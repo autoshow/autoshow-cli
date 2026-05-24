@@ -1,8 +1,8 @@
 import * as l from '~/utils/logger'
+import { SPEECHMATICS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
-export const getSpeechmaticsBaseUrl = (): string =>
-  readEnv('SPEECHMATICS_BASE_URL') ?? 'https://eu1.asr.api.speechmatics.com'
+export const getSpeechmaticsBaseUrl = (): string => SPEECHMATICS_DEFAULT_BASE_URL
 
 export const setupSpeechmaticsStt = async (): Promise<void> => {
   const apiKey = readEnv('SPEECHMATICS_API_KEY')

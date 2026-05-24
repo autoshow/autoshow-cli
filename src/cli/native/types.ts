@@ -44,9 +44,7 @@ export type CliParameterValues = Record<string, string> & {
 }
 
 export type CliFlagValues = Record<string, unknown> & {
-  aws?: unknown
   doctor?: unknown
-  gcloud?: unknown
   models?: unknown
   out?: unknown
   refresh?: unknown

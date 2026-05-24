@@ -1,4 +1,4 @@
-import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { MODEL_CONFIG_FRAGMENT_PREFIXES, MODEL_CONFIG_PATHS } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { getFiniteNumber } from './utils'
@@ -19,18 +19,18 @@ type StepObservation = {
   unitValue: number | null
 }
 
-type CalibrationUpdate = {
+type CalibrationRecommendation = {
   kind: CalibrationKind
   service: string
   model: string
   costSamples: number
   timeSamples: number
   oldCostMultiplier: number | null
-  newCostMultiplier: number | null
+  recommendedCostMultiplier: number | null
   medianCostMultiplier: number | null
   timeField: string
   oldTimeValue: number | null
-  newTimeValue: number | null
+  recommendedTimeValue: number | null
   medianTimeValue: number | null
   notes?: string[]
 }
@@ -40,8 +40,8 @@ export type CalibrationReport = {
   rootDir: string
   runsScanned: number
   metadataFilesScanned: number
-  updatedModels: number
-  updates: CalibrationUpdate[]
+  recommendedModels: number
+  recommendations: CalibrationRecommendation[]
 }
 
 type StepShape = {
@@ -320,13 +320,6 @@ const readCurrentCostMultiplier = (modelEntry: MutableJson): number | null => {
   return getFiniteNumber(estimation['costMultiplier'])
 }
 
-const setEstimationValue = (modelEntry: MutableJson, fieldName: string, value: number): void => {
-  const estimationRaw = modelEntry['estimation']
-  const estimation = isRecord(estimationRaw) ? estimationRaw : {}
-  estimation[fieldName] = value
-  modelEntry['estimation'] = estimation
-}
-
 const getConfigFragmentFilenamePrefix = (kind: CalibrationKind): string | null => {
   switch (kind) {
     case 'stt':
@@ -400,7 +393,7 @@ const collectCalibrationManifestPaths = async (runDir: string): Promise<string[]
   return [...runManifests, ...metadataManifests]
 }
 
-export const applyModelConfigCalibrations = async (
+export const buildModelCalibrationReport = async (
   rootDir: string,
   configPaths: ConfigPaths = MODEL_CONFIG_PATHS
 ): Promise<CalibrationReport> => {
@@ -417,8 +410,8 @@ export const applyModelConfigCalibrations = async (
       rootDir: resolve(rootDir),
       runsScanned,
       metadataFilesScanned,
-      updatedModels: 0,
-      updates: [],
+      recommendedModels: 0,
+      recommendations: [],
     }
   }
 
@@ -450,8 +443,7 @@ export const applyModelConfigCalibrations = async (
   }
 
   const parsedConfigCache = new Map<string, MutableJson>()
-  const changedConfigPaths = new Set<string>()
-  const updates: CalibrationUpdate[] = []
+  const recommendations: CalibrationRecommendation[] = []
 
   for (const [key, group] of grouped) {
     const [kind, service, model] = key.split('::')
@@ -496,16 +488,15 @@ export const applyModelConfigCalibrations = async (
     const timeField = getTimeFieldName(calibrationKind)
     const oldTime = readCurrentTimeValue(modelEntry, timeField)
 
-    let newCost: number | null = null
-    let newTime: number | null = null
+    let recommendedCost: number | null = null
+    let recommendedTime: number | null = null
 
     if (medianCost !== null) {
       const next = roundCostMultiplier(smoothValue(oldCost, medianCost))
       const baseline = oldCost ?? 1
       const drift = Math.abs((next - baseline) / baseline)
       if (oldCost === null || drift >= COST_DRIFT_THRESHOLD) {
-        setEstimationValue(modelEntry, 'costMultiplier', next)
-        newCost = next
+        recommendedCost = next
       }
     }
 
@@ -514,38 +505,30 @@ export const applyModelConfigCalibrations = async (
       const baseline = oldTime ?? medianTime
       const drift = baseline > 0 ? Math.abs((next - baseline) / baseline) : 1
       if (oldTime === null || drift >= TIME_DRIFT_THRESHOLD) {
-        setEstimationValue(modelEntry, timeField, next)
-        newTime = next
+        recommendedTime = next
       }
     }
 
-    if (newCost !== null || newTime !== null) {
-      const notes = newTime !== null && timeRates.length > 0
+    if (recommendedCost !== null || recommendedTime !== null) {
+      const notes = recommendedTime !== null && timeRates.length > 0
         ? ['Timing calibration uses wall-clock latency observations.']
         : []
-      changedConfigPaths.add(configFilePath)
-      updates.push({
+      recommendations.push({
         kind: calibrationKind,
         service,
         model,
         costSamples: costRatios.length,
         timeSamples: timeRates.length,
         oldCostMultiplier: oldCost,
-        newCostMultiplier: newCost,
+        recommendedCostMultiplier: recommendedCost,
         medianCostMultiplier: medianCost,
         timeField,
         oldTimeValue: oldTime,
-        newTimeValue: newTime,
+        recommendedTimeValue: recommendedTime,
         medianTimeValue: medianTime,
         ...(notes.length > 0 ? { notes } : {}),
       })
     }
-  }
-
-  for (const configFilePath of changedConfigPaths) {
-    const parsedConfig = parsedConfigCache.get(configFilePath)
-    if (!parsedConfig) continue
-    await writeFile(configFilePath, `${JSON.stringify(parsedConfig, null, 2)}\n`)
   }
 
   return {
@@ -553,7 +536,7 @@ export const applyModelConfigCalibrations = async (
     rootDir: resolve(rootDir),
     runsScanned,
     metadataFilesScanned,
-    updatedModels: updates.length,
-    updates,
+    recommendedModels: recommendations.length,
+    recommendations,
   }
 }

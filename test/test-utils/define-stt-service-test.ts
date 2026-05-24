@@ -17,7 +17,7 @@ import { readRunMetadata } from './manifest-helpers'
 
 export const defineSTTServiceTest = ({
   models,
-  cliFlag,
+  provider,
   sttService,
   envVarKey,
   envVarDescription,
@@ -29,7 +29,7 @@ export const defineSTTServiceTest = ({
   timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   sttService: string
   envVarKey: string
   envVarDescription: string
@@ -46,8 +46,8 @@ export const defineSTTServiceTest = ({
     'src/cli/create-cli.ts',
     'extract',
     inputPath,
-    cliFlag,
-    'invalid-model'
+    '--provider',
+    `${provider}=invalid-model`
   ])
 
   for (const model of models) {
@@ -69,8 +69,8 @@ export const defineSTTServiceTest = ({
         'src/cli/create-cli.ts',
         'extract',
         inputPath,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         ...(extraArgs ?? [])
       ])
 
@@ -102,11 +102,11 @@ export const defineSTTServiceTest = ({
 
 export const defineSTTServicePriceTests = ({
   models,
-  cliFlag,
+  provider,
   sttService,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   sttService: string
 }): void => {
   for (const model of models) {
@@ -115,8 +115,8 @@ export const defineSTTServicePriceTests = ({
         'src/cli/create-cli.ts',
         'extract',
         STABLE_EXAMPLE_AUDIO_URL,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         '--price'
       ])
 

@@ -5,7 +5,8 @@ import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, buildTranscriptionOutputBase, formatTranscriptText, formatSpeakerLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry, parseRetryAfterMs } from '~/utils/retries'
-import { MISTRAL_DEFAULT_BASE_URL, mistralMultipartRequest } from '~/utils/mistral/client'
+import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
+import { mistralMultipartRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { createMistralSttPassController } from './mistral-stt-pass-controller'
@@ -127,7 +128,7 @@ export const runMistralStt = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
   const fileBytes = await Bun.file(audioPath).arrayBuffer()
-  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
+  const baseURL = MISTRAL_DEFAULT_BASE_URL
   const passController = options.passController ?? createMistralSttPassController()
   let transcribeMs = 0
 

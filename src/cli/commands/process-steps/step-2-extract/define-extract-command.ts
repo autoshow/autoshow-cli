@@ -5,11 +5,11 @@ import { validateEpubInspectCommandFlags } from './step-2-ocr/command-validation
 import { runExtractTranscriptVideo } from './transcript-video/run-transcript-video'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { CliFlagsDefinition } from '~/cli/native'
+import { withHelpGroup } from '~/cli/flags/flag-utils'
 
 const inputParameter = [{ key: '[input]', description: 'URL, local file, directory, URL list (.md/.txt), or X Space link' }] as const
 
-const extractFlags = {
-  ...extractStep2CommandFlags,
+const transcriptVideoFlags = {
   'transcript-video': {
     description: 'Render a transcript video from a media extract output directory or manual audio/transcript files',
     type: Boolean,
@@ -41,6 +41,11 @@ const extractFlags = {
   }
 } as const satisfies CliFlagsDefinition
 
+const extractFlags = {
+  ...extractStep2CommandFlags,
+  ...withHelpGroup(transcriptVideoFlags, 'transcript-video')
+} as const satisfies CliFlagsDefinition
+
 const TRANSCRIPT_VIDEO_REQUIRING_FLAGS = [
   'audio',
   'transcript-result',
@@ -57,9 +62,9 @@ export const extractCommand = defineCliCommand({
   help: {
     examples: [
       ['bun as extract https://youtube.com/watch?v=abc', 'Transcribe media with the default Whisper tiny STT model'],
-      ['bun as extract file.mp3 --assemblyai universal-3-pro', 'Transcribe media with AssemblyAI STT'],
-      ['bun as extract document.pdf --mistral mistral-ocr-2512', 'Extract text from a document with Mistral OCR'],
-      ['bun as extract https://example.com/article --url-backend spider', 'Extract a remote article with a URL backend'],
+      ['bun as extract file.mp3 --provider assemblyai=universal-3-pro', 'Transcribe media with AssemblyAI STT'],
+      ['bun as extract document.pdf --provider mistral=mistral-ocr-2512', 'Extract text from a document with Mistral OCR'],
+      ['bun as extract https://example.com/article --url-provider spider', 'Extract a remote article with a URL backend'],
       ['bun as extract output/<extract-run-dir> --transcript-video', 'Render a synced speaker transcript video from a media extract run'],
       ['bun as extract --transcript-video --audio input/audio.mp3 --transcript-result output/<extract-run-dir>/result.json', 'Render a transcript video from explicit files'],
       ['bun as extract input/examples/batch/2-urls.md --batch-all', 'Process every routed item from a mixed input list'],

@@ -1,4 +1,4 @@
-export const TTS_PROVIDERS = ['kitten', 'elevenlabs', 'minimax', 'groq', 'grok', 'mistral', 'openai', 'gemini', 'deepgram', 'speechify', 'gcloud', 'hume', 'cartesia'] as const
+export const TTS_PROVIDERS = ['kitten', 'elevenlabs', 'minimax', 'groq', 'grok', 'mistral', 'openai', 'gemini', 'deepgram', 'speechify', 'hume', 'cartesia'] as const
 export type TtsProvider = typeof TTS_PROVIDERS[number]
 
 export const IMAGE_PROVIDERS = ['gemini', 'openai', 'grok', 'bfl', 'reve'] as const
@@ -10,5 +10,5 @@ export type VideoProvider = typeof VIDEO_PROVIDERS[number]
 export const MUSIC_PROVIDERS = ['elevenlabs', 'minimax', 'gemini'] as const
 export type MusicProvider = typeof MUSIC_PROVIDERS[number]
 
-export const OCR_PROVIDERS = ['tesseract', 'ocrmypdf', 'paddle-ocr', 'mistral', 'glm', 'kimi', 'openai', 'grok', 'anthropic', 'gemini', 'deepinfra', 'aws-textract', 'gcloud-docai', 'unstructured'] as const
+export const OCR_PROVIDERS = ['tesseract', 'ocrmypdf', 'paddle-ocr', 'mistral', 'glm', 'kimi', 'openai', 'grok', 'anthropic', 'gemini', 'deepinfra', 'unstructured'] as const
 export type OcrProvider = typeof OCR_PROVIDERS[number]

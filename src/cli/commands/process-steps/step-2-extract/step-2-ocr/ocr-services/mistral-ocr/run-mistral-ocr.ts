@@ -2,7 +2,8 @@ import { extname } from 'node:path'
 import type { DocumentMetadata, PageResult } from '~/types'
 import { MistralOcrResponseSchema } from '~/types'
 import { withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
-import { MISTRAL_DEFAULT_BASE_URL, mistralJsonRequest } from '~/utils/mistral/client'
+import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
+import { mistralJsonRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 
@@ -25,7 +26,7 @@ export const runMistralOcr = async (
     throw new Error('MISTRAL_API_KEY environment variable is required for Mistral OCR')
   }
 
-  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
+  const baseURL = MISTRAL_DEFAULT_BASE_URL
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
 

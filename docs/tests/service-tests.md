@@ -20,31 +20,31 @@ These commands are documented for humans. Service, e2e, and full-runner commands
 bun t test/test-cases/setup/tts-models/tts-setup.test.ts
 
 # network-backed download coverage
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-direct-url.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-streaming.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
 
 # service command suites
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/ --test-price
+bun t test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/
+bun t test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ --test-price
 
-bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
-bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/ --test-price
+bun t test/test-cases/e2e/service/step-2-stt-e2e/stt-services/
+bun t test/test-cases/e2e/service/step-2-stt-e2e/stt-services/ --test-price
 
-bun t test/test-cases/e2e/step-3-write-e2e/write-services/
-bun t test/test-cases/e2e/step-3-write-e2e/write-services/ --test-price
+bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/
+bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/ --test-price
 
-bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
-bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/ --test-price
+bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/
+bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/ --test-price
 
-bun t test/test-cases/e2e/step-5-image-gen-e2e/
-bun t test/test-cases/e2e/step-5-image-gen-e2e/ --test-price
+bun t test/test-cases/e2e/service/step-5-image-gen-e2e/
+bun t test/test-cases/e2e/service/step-5-image-gen-e2e/ --test-price
 
-bun t test/test-cases/e2e/step-6-video-gen-e2e/
-bun t test/test-cases/e2e/step-6-video-gen-e2e/ --test-price
+bun t test/test-cases/e2e/service/step-6-video-gen-e2e/
+bun t test/test-cases/e2e/service/step-6-video-gen-e2e/ --test-price
 
-bun t test/test-cases/e2e/step-7-music-gen-e2e/
-bun t test/test-cases/e2e/step-7-music-gen-e2e/ --test-price
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/ --test-price
 ```
 
 ## Step Pages

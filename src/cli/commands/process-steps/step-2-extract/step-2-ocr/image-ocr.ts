@@ -96,8 +96,7 @@ export const ocrSingleImage = async (
   switch (engine) {
     case 'tesseract': {
       await ensureTesseractSetup()
-      const extraConfig = opts.preserveInterwordSpaces ? { preserve_interword_spaces: 1 } : undefined
-      const ocr = await ocrImage(normalizedPath, opts.languages, opts.oem, opts.psm, 'text', extraConfig)
+      const ocr = await ocrImage(normalizedPath, opts.languages, 'text')
       return {
         pageNumber,
         method: 'ocr',

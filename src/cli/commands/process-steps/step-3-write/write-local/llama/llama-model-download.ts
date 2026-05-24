@@ -1,7 +1,6 @@
 import { resolveLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-options'
 import * as l from '~/utils/logger'
 import { withProcessLock } from '~/utils/process-lock'
-import { readEnv } from '~/utils/validate/env-utils'
 import {
   getLlamaServerStartTimeoutMs,
   resolveLlamaServerBinary
@@ -31,7 +30,7 @@ import {
 const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> => {
   const llamaServerPath = resolveLlamaServerBinary()
 
-  const modelRepo = readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model)
+  const modelRepo = resolveLlamaDownloadRepo(model)
   l.write('info', `Downloading llama model: ${modelRepo}`)
 
   if (await checkLlamaHealthQuiet()) {

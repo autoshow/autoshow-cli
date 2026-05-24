@@ -33,9 +33,7 @@ const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
   'firecrawl',
   'glm-reader',
   'spider',
-  'zyte',
-  'gcloud-docai',
-  'aws-textract'
+  'zyte'
 ])
 
 const isTimedExtractProvider = (provider: ExtractStepEstimate['provider']): provider is TimedExtractProvider =>

@@ -1,13 +1,13 @@
 import type { CliFlagsDefinition } from '~/cli/native'
-import { transcriptionFlags, promptFlag, batchFlags, priceFlag } from './shared-flags'
+import { booleanAllProvidersFlag, sharedConcurrencyFlags, transcriptionFlags, promptFlag, batchFlags, priceFlag } from './shared-flags'
 
 export const sttFlags = {
-  'all-stt': {
-    description: 'Enable every supported STT provider/model for this command',
-    type: Boolean,
-    default: false,
-    negatable: false
+  ...booleanAllProvidersFlag,
+  provider: {
+    description: 'STT provider[=model]: whisper|reverb|deepinfra|elevenlabs|deepgram|soniox|speechmatics|rev|groq|grok|mistral|assemblyai|gladia|happyscribe|supadata|scrapecreators|openai|gemini|glm|together (default: whisper=tiny); repeatable',
+    type: [String] as [StringConstructor]
   },
+  ...sharedConcurrencyFlags,
   ...transcriptionFlags,
   ...promptFlag,
   ...batchFlags,

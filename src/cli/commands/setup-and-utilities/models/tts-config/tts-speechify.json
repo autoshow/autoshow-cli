@@ -15,7 +15,7 @@
         "costPer1kCharsCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 3000
+          "msPer1KChars": 4500
         }
       },
       "simba-multilingual": {
@@ -24,7 +24,7 @@
         "costPer1kCharsCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 3000
+          "msPer1KChars": 4500
         }
       }
     }

@@ -3,18 +3,17 @@ import { constants as fsConstants } from 'node:fs'
 import { resolve } from 'node:path'
 import * as l from '~/utils/logger'
 import type { YtDlpAuthMode, YtDlpListOptions } from '~/types'
-import { loadEnvFile } from '~/utils/cli-utils'
 
-const YOUTUBE_BOT_CHECK_PATTERN = /Sign in to confirm you(?:’|')re not a bot/i
+const YOUTUBE_BOT_CHECK_PATTERN = /Sign in to confirm you(?:’|’)re not a bot/i
 const warnedUnreadableCookiePaths = new Set<string>()
 
-const getTrimmedEnv = (key: string): string | undefined => {
-  const value = process.env[key]?.trim()
-  return value ? value : undefined
-}
+let configuredCookies: string | undefined
+let configuredCookiesFromBrowser: string | undefined
 
-const isTrueEnv = (key: string): boolean =>
-  String(process.env[key] || '').trim().toLowerCase() === 'true'
+export const configureYtDlpAuth = (opts: { cookies?: string, cookiesFromBrowser?: string }): void => {
+  configuredCookies = opts.cookies?.trim() || undefined
+  configuredCookiesFromBrowser = opts.cookiesFromBrowser?.trim() || undefined
+}
 
 const isReadableFile = async (filePath: string): Promise<boolean> => {
   try {
@@ -36,10 +35,8 @@ export const inspectYtDlpAuthState = async (
   cookieArgs: string[]
   warning?: string
 }> => {
-  await loadEnvFile()
-
-  const cookiesFromBrowser = getTrimmedEnv('YTDLP_COOKIES_FROM_BROWSER')
-  const cookiesPath = getTrimmedEnv('YTDLP_COOKIES')
+  const cookiesFromBrowser = configuredCookiesFromBrowser
+  const cookiesPath = configuredCookies
   const cwd = resolve(options?.cwd ?? process.cwd())
 
   if (cookiesPath) {
@@ -54,7 +51,7 @@ export const inspectYtDlpAuthState = async (
       cookieArgs: cookiesReadable ? ['--cookies', cookiesPath] : [],
       ...(cookiesReadable
         ? {}
-        : { warning: `YTDLP_COOKIES is set but unreadable: ${resolvedCookiesPath}. Fix or remove it before retrying yt-dlp auth.` })
+        : { warning: `--cookies path is unreadable: ${resolvedCookiesPath}. Fix the path or remove the flag before retrying.` })
     }
   }
 
@@ -74,21 +71,9 @@ export const inspectYtDlpAuthState = async (
 }
 
 export const buildSharedYtDlpArgs = async (): Promise<string[]> => {
-  await loadEnvFile()
-
-  const acceptLanguage = getTrimmedEnv('YTDLP_ACCEPT_LANGUAGE')
-  const userAgent = getTrimmedEnv('YTDLP_USER_AGENT')
-  const extractorArgs = getTrimmedEnv('YTDLP_EXTRACTOR_ARGS')
   const authState = await inspectYtDlpAuthState()
-
   const args: string[] = []
 
-  if (acceptLanguage) {
-    args.push('--add-header', `Accept-Language: ${acceptLanguage}`)
-  }
-  if (userAgent) {
-    args.push('--user-agent', userAgent)
-  }
   if (authState.warning) {
     const warningKey = authState.resolvedCookiesPath ?? authState.cookiesPath ?? authState.warning
     if (!warnedUnreadableCookiePaths.has(warningKey)) {
@@ -97,12 +82,6 @@ export const buildSharedYtDlpArgs = async (): Promise<string[]> => {
     }
   }
   args.push(...authState.cookieArgs)
-  if (isTrueEnv('YTDLP_NO_CHECK_CERTS')) {
-    args.push('--no-check-certificates')
-  }
-  if (extractorArgs) {
-    args.push('--extractor-args', extractorArgs)
-  }
 
   return args
 }
@@ -204,6 +183,6 @@ export const buildYtDlpFailureMessage = (
 
   return [
     `yt-dlp ${operation} failed. ${cleanDetails}`,
-    'Hint: YouTube blocked the anonymous request. See docs/cookies.md for the recommended cookie setup flow, or set YTDLP_COOKIES_FROM_BROWSER=chrome, YTDLP_COOKIES=/absolute/path/to/cookies.txt, or YTDLP_EXTRACTOR_ARGS for a PO token / client override.'
+    'Hint: YouTube blocked the anonymous request. See docs/cookies.md for the recommended cookie setup flow, or pass --cookies-from-browser chrome or --cookies /absolute/path/to/cookies.txt.'
   ].join('\n')
 }

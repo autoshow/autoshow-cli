@@ -25,8 +25,6 @@ import { runOpenaiStt } from '../stt-services/openai-stt/run-openai-stt'
 import { runGeminiStt } from '../stt-services/gemini-stt/run-gemini-stt'
 import { runGlmStt } from '../stt-services/glm-stt/run-glm-stt'
 import { runTogetherStt } from '../stt-services/together/run-together-stt'
-import { runGcloudStt } from '../stt-services/gcloud/run-gcloud-stt'
-import { runAwsStt } from '../stt-services/aws/run-aws-stt'
 import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from '../bootstrap'
 import { assertNever } from '~/utils/validate/assert-never'
 
@@ -56,16 +54,6 @@ export const dispatchStt = async (
 
   if (target.service === 'elevenlabs') {
     return await runElevenLabsTranscribe(audioPath, outputDir, {
-      model: target.model,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      diarizationOptions: target.diarizationOptions
-    })
-  }
-
-  if (target.service === 'gcloud') {
-    return await runGcloudStt(audioPath, outputDir, {
       model: target.model,
       segmentOffsetMinutes,
       segmentNumber,
@@ -122,21 +110,6 @@ export const dispatchStt = async (
   if (target.service === 'rev') {
     return await runRevStt(audioPath, outputDir, {
       model: target.model,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      diarizationOptions: target.diarizationOptions,
-      audioDurationSeconds: options.audioDurationSeconds,
-      runMode: options.runMode,
-      lifecycle: options.asyncLifecycle
-    })
-  }
-
-  if (target.service === 'aws') {
-    return await runAwsStt(audioPath, outputDir, {
-      model: target.model,
-      region: target.awsRegion,
-      bucket: target.awsBucket,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,

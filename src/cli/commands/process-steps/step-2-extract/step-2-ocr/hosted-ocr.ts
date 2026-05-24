@@ -23,7 +23,6 @@ import {
   GEMINI_PDF_PAGE_COUNT_LIMIT,
   ensureGeminiOcrSetup
 } from './ocr-services/gemini-ocr/gemini'
-import { ensureGcloudDocaiSetup } from './ocr-services/gcloud-docai/gcloud-docai'
 import { ensureGlmOcrSetup } from './ocr-services/glm-ocr/glm'
 import {
   GROK_OCR_LIMIT_SOURCE,
@@ -34,9 +33,7 @@ import { ensureMistralOcrSetup } from './ocr-services/mistral-ocr/mistral'
 import { ensureOpenAIOcrSetup } from './ocr-services/openai-ocr/openai-ocr'
 import { ensureUnstructuredOcrSetup } from './ocr-services/unstructured-ocr/unstructured'
 import { runAnthropicOcr } from './ocr-services/anthropic-ocr/run-anthropic-ocr'
-import { runAwsTextract } from './ocr-services/aws-textract/run-aws-textract'
 import { runDeepinfraOcr } from './ocr-services/deepinfra-ocr/run-deepinfra-ocr'
-import { runGcloudDocai } from './ocr-services/gcloud-docai/run-gcloud-docai'
 import { runGeminiOcr } from './ocr-services/gemini-ocr/run-gemini-ocr'
 import { runGlmOcr } from './ocr-services/glm-ocr/run-glm-ocr'
 import { runGrokOcr } from './ocr-services/grok-ocr/run-grok-ocr'
@@ -46,17 +43,14 @@ import { runOpenAIOcr } from './ocr-services/openai-ocr/run-openai-ocr'
 import { runUnstructuredOcr } from './ocr-services/unstructured-ocr/run-unstructured-ocr'
 import {
   hasAnthropicOcr,
-  hasAwsTextract,
   hasDeepinfraOcr,
-  hasGcloudDocai,
   hasGeminiOcr,
   hasGlmOcr,
   hasGrokOcr,
   hasKimiOcr,
   hasMistralOcr,
   hasOpenAIOcr,
-  hasUnstructuredOcr,
-  warnHostedOnlyFlags
+  hasUnstructuredOcr
 } from './ocr-engine-selection'
 import { isPdfEncrypted, resolvePdfPageCount } from './pdf-utils'
 import { runHostedOcrWithPdfChunkFallback } from './ocr-utils/pdf-chunk-fallback'
@@ -90,10 +84,6 @@ const formatHostedOcrLabel = (service: HostedOcrService): string => {
       return 'Gemini OCR'
     case 'deepinfra':
       return 'DeepInfra OCR'
-    case 'aws-textract':
-      return 'AWS Textract'
-    case 'gcloud-docai':
-      return 'Google Cloud Document AI'
     case 'unstructured':
       return 'Unstructured OCR'
   }
@@ -115,10 +105,6 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
       return 'project/links/glm-all-links.md'
     case 'kimi':
       return KIMI_OCR_LIMIT_SOURCE
-    case 'aws-textract':
-      return 'project/links/aws-ocr-links.md'
-    case 'gcloud-docai':
-      return 'project/links/gcloud-ocr-links.md'
     case 'unstructured':
       return 'project/links/unstructured-all-links.md'
     default:
@@ -126,62 +112,32 @@ const getHostedOcrLimitSource = (service: HostedOcrService): string => {
   }
 }
 
-const warnMistralOnlyFlags = (opts: ExtractionOptions): void => {
-  warnHostedOnlyFlags('mistral-ocr', opts)
-}
-
-const warnGlmOnlyFlags = (opts: ExtractionOptions): void => {
-  warnHostedOnlyFlags('glm-ocr', opts)
-}
-
-const warnOpenAIOnlyFlags = (opts: ExtractionOptions): void => {
-  warnHostedOnlyFlags('openai-ocr', opts)
-}
-
-const warnGrokOnlyFlags = (opts: ExtractionOptions): void => {
-  warnHostedOnlyFlags('grok-ocr', opts)
-}
-
-const warnAnthropicOnlyFlags = (opts: ExtractionOptions): void => {
-  warnHostedOnlyFlags('anthropic-ocr', opts)
-}
-
-const warnGeminiOnlyFlags = (opts: ExtractionOptions): void => {
-  warnHostedOnlyFlags('gemini-ocr', opts)
-}
-
 export const getHostedDirectImageSupportError = (engine: HostedExtractOcrEngine): string => {
   if (engine === 'glm-ocr') {
-    return 'The --glm-ocr engine supports PDF and standard image files (PNG/JPG) only.'
+    return 'The GLM OCR provider supports PDF and standard image files (PNG/JPG) only.'
   }
   if (engine === 'kimi-ocr') {
-    return 'The --kimi-ocr engine sends PNG/JPG/WEBP/GIF images to Kimi directly; PDF pages are rendered to PNG. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
+    return 'The Kimi OCR provider sends PNG/JPG/WEBP/GIF images to Kimi directly; PDF pages are rendered to PNG. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'mistral-ocr') {
-    return 'The --mistral-ocr engine supports PDF and standard image files (PNG/JPG/TIF) only.'
+    return 'The Mistral OCR provider supports PDF and standard image files (PNG/JPG/TIF) only.'
   }
   if (engine === 'anthropic-ocr') {
-    return 'The --anthropic-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
+    return 'The Anthropic OCR provider supports PDF and PNG/JPG/WEBP/GIF images directly. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'gemini-ocr') {
-    return 'The --gemini-ocr engine supports PDF and PNG/JPG/WEBP/BMP images directly. AutoShow normalizes GIF images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
+    return 'The Gemini OCR provider supports PDF and PNG/JPG/WEBP/BMP images directly. AutoShow normalizes GIF images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'deepinfra-ocr') {
-    return 'The --deepinfra-ocr engine sends PNG/JPG/WEBP images to DeepInfra directly; PDF pages are rendered to PNG. AutoShow normalizes GIF/BMP images locally with Bun.Image. Convert TIF images to PNG/JPG/WebP first, or install ImageMagick so AutoShow can normalize TIF automatically.'
+    return 'The DeepInfra OCR provider sends PNG/JPG/WEBP images to DeepInfra directly; PDF pages are rendered to PNG. AutoShow normalizes GIF/BMP images locally with Bun.Image. Convert TIF images to PNG/JPG/WebP first, or install ImageMagick so AutoShow can normalize TIF automatically.'
   }
   if (engine === 'grok-ocr') {
-    return 'The --grok-ocr engine sends PNG/JPG images to Grok directly; PDF pages are rendered to PNG. Convert WEBP/GIF/BMP/TIF images to PNG/JPG first.'
-  }
-  if (engine === 'aws-textract') {
-    return 'The --aws-textract engine supports PDF and PNG/JPG/TIF images directly. AutoShow normalizes BMP/WEBP/GIF images locally with Bun.Image.'
-  }
-  if (engine === 'gcloud-docai') {
-    return 'The --gcloud-docai engine supports PDF and PNG/JPG/TIF/GIF/BMP/WEBP images directly.'
+    return 'The Grok OCR provider sends PNG/JPG images to Grok directly; PDF pages are rendered to PNG. Convert WEBP/GIF/BMP/TIF images to PNG/JPG first.'
   }
   if (engine === 'unstructured-ocr') {
-    return 'The --unstructured-ocr engine supports PDF and PNG/JPG/TIF/BMP images directly. AutoShow normalizes GIF/WEBP images locally with Bun.Image.'
+    return 'The Unstructured OCR provider supports PDF and PNG/JPG/TIF/BMP images directly. AutoShow normalizes GIF/WEBP images locally with Bun.Image.'
   }
-  return 'The --openai-ocr engine supports PDF and PNG/JPG/WEBP/GIF images directly. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
+  return 'The OpenAI OCR provider supports PDF and PNG/JPG/WEBP/GIF images directly. AutoShow normalizes BMP images locally with Bun.Image. Convert TIF images to PNG/JPG first, or install ImageMagick so AutoShow can normalize TIF automatically.'
 }
 
 type HostedDirectImageInputStrategy = 'direct' | 'bun-png' | 'imagemagick-png' | 'unsupported'
@@ -211,8 +167,6 @@ const HOSTED_DIRECT_IMAGE_FORMATS: Record<HostedExtractOcrEngine, HostedDirectIm
   'anthropic-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'gif'], ['bmp'], ['tif']),
   'gemini-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp', 'bmp'], ['gif'], ['tif']),
   'deepinfra-ocr': hostedDirectImageFormats(['png', 'jpg', 'webp'], ['gif', 'bmp'], ['tif']),
-  'aws-textract': hostedDirectImageFormats(['png', 'jpg', 'tif'], ['bmp', 'webp', 'gif']),
-  'gcloud-docai': hostedDirectImageFormats(['png', 'jpg', 'tif', 'gif', 'bmp', 'webp']),
   'unstructured-ocr': hostedDirectImageFormats(['png', 'jpg', 'tif', 'bmp'], ['gif', 'webp'])
 }
 
@@ -336,14 +290,6 @@ const resolveHostedOcrSelection = (
     return { service: 'deepinfra', model: opts.deepinfraOcrModel as string }
   }
 
-  if (hasAwsTextract(opts)) {
-    return { service: 'aws-textract', model: opts.awsTextractModel as string }
-  }
-
-  if (hasGcloudDocai(opts)) {
-    return { service: 'gcloud-docai', model: opts.gcloudDocaiModel as string }
-  }
-
   if (hasUnstructuredOcr(opts)) {
     return { service: 'unstructured', model: opts.unstructuredOcrModel as string }
   }
@@ -358,14 +304,6 @@ const assertHostedOcrWithinLimits = async (
 ): Promise<void> => {
   const selection = resolveHostedOcrSelection(opts)
   if (!selection) return
-
-  if (selection.service === 'aws-textract') {
-    return
-  }
-
-  if (selection.service === 'gcloud-docai') {
-    return
-  }
 
   if (selection.service === 'gemini') {
     const inputLabel = step1Metadata.format === 'pdf' ? 'PDF' : 'image'
@@ -392,11 +330,11 @@ const assertHostedOcrWithinLimits = async (
 
   if (selection.service === 'anthropic' && step1Metadata.format === 'pdf') {
     if (typeof opts.password === 'string' && opts.password.length > 0) {
-      throw CLIUsageError('Anthropic OCR only supports standard unencrypted PDFs. Remove --password and decrypt the PDF before using --anthropic-ocr.')
+      throw CLIUsageError('Anthropic OCR only supports standard unencrypted PDFs. Remove --password and decrypt the PDF before using the Anthropic OCR provider.')
     }
 
     if (await isPdfEncrypted(filePath)) {
-      throw CLIUsageError('Anthropic OCR only supports standard unencrypted PDFs. Decrypt the PDF before using --anthropic-ocr.')
+      throw CLIUsageError('Anthropic OCR only supports standard unencrypted PDFs. Decrypt the PDF before using the Anthropic OCR provider.')
     }
   }
 
@@ -512,7 +450,6 @@ export const runHostedOcr = async (
 ): Promise<HostedOcrRun> => {
   if (hasMistralOcr(opts)) {
     await ensureMistralOcrSetup()
-    warnMistralOnlyFlags(opts)
     const ocrModel = opts.mistralOcrModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Mistral OCR', {
       extractionMethod: 'mistral-ocr',
@@ -532,7 +469,6 @@ export const runHostedOcr = async (
 
   if (hasGlmOcr(opts)) {
     await ensureGlmOcrSetup()
-    warnGlmOnlyFlags(opts)
     const ocrModel = opts.glmOcrModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'GLM OCR', {
       extractionMethod: 'glm-ocr',
@@ -556,13 +492,11 @@ export const runHostedOcr = async (
 
   if (hasKimiOcr(opts)) {
     await ensureKimiOcrSetup()
-    warnHostedOnlyFlags('kimi-ocr', opts)
     const ocrModel = opts.kimiOcrModel as string
     await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
     const run = await runKimiOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
-      rotate: opts.rotate,
       ocrPreparationCache: opts.ocrPreparationCache
     })
     return withHostedUsageDetail({
@@ -578,7 +512,6 @@ export const runHostedOcr = async (
 
   if (hasOpenAIOcr(opts)) {
     await ensureOpenAIOcrSetup()
-    warnOpenAIOnlyFlags(opts)
     const ocrModel = opts.openaiOcrModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'OpenAI OCR', {
       extractionMethod: 'openai-ocr',
@@ -601,13 +534,11 @@ export const runHostedOcr = async (
 
   if (hasGrokOcr(opts)) {
     await ensureGrokOcrSetup()
-    warnGrokOnlyFlags(opts)
     const ocrModel = opts.grokOcrModel as string
     await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
     const run = await runGrokOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
-      rotate: opts.rotate,
       ocrPreparationCache: opts.ocrPreparationCache
     })
     return withHostedUsageDetail({
@@ -623,7 +554,6 @@ export const runHostedOcr = async (
 
   if (hasAnthropicOcr(opts)) {
     await ensureAnthropicOcrSetup()
-    warnAnthropicOnlyFlags(opts)
     const ocrModel = opts.anthropicOcrModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Anthropic OCR', {
       extractionMethod: 'anthropic-ocr',
@@ -646,7 +576,6 @@ export const runHostedOcr = async (
 
   if (hasGeminiOcr(opts)) {
     await ensureGeminiOcrSetup()
-    warnGeminiOnlyFlags(opts)
     const ocrModel = opts.geminiOcrModel as string
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Gemini OCR', {
       extractionMethod: 'gemini-ocr',
@@ -671,13 +600,11 @@ export const runHostedOcr = async (
 
   if (hasDeepinfraOcr(opts)) {
     await ensureDeepinfraOcrSetup()
-    warnHostedOnlyFlags('deepinfra-ocr', opts)
     const ocrModel = opts.deepinfraOcrModel as string
     await assertHostedOcrWithinLimits(filePath, step1Metadata, opts)
     const run = await runDeepinfraOcr(filePath, step1Metadata, ocrModel, {
       dpi: opts.dpi,
       password: opts.password,
-      rotate: opts.rotate,
       ocrPreparationCache: opts.ocrPreparationCache
     })
     return withHostedUsageDetail({
@@ -691,55 +618,9 @@ export const runHostedOcr = async (
     }, { unit: 'document', pages: run.totalPages })
   }
 
-  if (hasAwsTextract(opts)) {
-    warnHostedOnlyFlags('aws-textract', opts)
-    const ocrModel = opts.awsTextractModel as string
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'AWS Textract', {
-      extractionMethod: 'aws-textract',
-      ocrService: 'aws-textract',
-      ocrModel
-    }, async (inputPath, inputMetadata) => {
-      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
-      const run = await runAwsTextract(inputPath, inputMetadata, {
-        region: opts.awsRegion,
-        bucket: opts.awsBucket,
-        configPath: opts.configPath
-      })
-      return {
-        pages: run.pages,
-        extractionMethod: run.extractionMethod,
-        ocrService: 'aws-textract',
-        ocrModel,
-        totalPages: run.totalPages
-      }
-    })
-  }
-
-  if (hasGcloudDocai(opts)) {
-    const ocrModel = opts.gcloudDocaiModel as string
-    await ensureGcloudDocaiSetup()
-    warnHostedOnlyFlags('gcloud-docai', opts)
-    return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Google Cloud Document AI', {
-      extractionMethod: 'gcloud-docai',
-      ocrService: 'gcloud-docai',
-      ocrModel
-    }, async (inputPath, inputMetadata) => {
-      await assertHostedOcrWithinLimits(inputPath, inputMetadata, opts)
-      const run = await runGcloudDocai(inputPath, inputMetadata)
-      return {
-        pages: run.pages,
-        extractionMethod: run.extractionMethod,
-        ocrService: 'gcloud-docai',
-        ocrModel,
-        totalPages: run.totalPages
-      }
-    })
-  }
-
   if (hasUnstructuredOcr(opts)) {
     const ocrModel = opts.unstructuredOcrModel as string
     await ensureUnstructuredOcrSetup()
-    warnHostedOnlyFlags('unstructured-ocr', opts)
     return await runChunkableHostedPdfOcr(filePath, step1Metadata, opts, 'Unstructured OCR', {
       extractionMethod: 'unstructured-ocr',
       ocrService: 'unstructured',

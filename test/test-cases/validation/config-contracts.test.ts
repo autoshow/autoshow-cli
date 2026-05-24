@@ -131,53 +131,28 @@ describe('config contracts', () => {
       price: true,
       password: 'secret-pdf-password',
       'config-path': '/tmp/autoshow.json',
-      'elevenlabs-tts-pvc-sample': ['input/examples/audio/anthony-voice.mp3'],
-      'elevenlabs-tts-pvc-captcha-out': '/tmp/captcha.png',
-      'elevenlabs-tts-pvc-verify-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'elevenlabs-tts-pvc-wait': true,
       'speechify-tts-ref-audio': 'input/voices/my-voice-sample.mp3',
       'speechify-tts-voice-name': 'AutoShow Anthony',
       'speechify-tts-consent-name': 'Anthony Example',
       'speechify-tts-consent-email': 'anthony@example.com',
       'speechify-tts-voice-locale': 'en-US',
-      'speechify-tts-voice-gender': 'notSpecified',
-      'gcloud-tts': ['instant-custom-voice'],
-      'gcloud-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'gcloud-tts-voice-cloning-key': 'raw-secret-key',
-      'gcloud-tts-voice-cloning-key-out': '/tmp/gcloud-key.txt'
+      'speechify-tts-voice-gender': 'notSpecified'
     }, new Set([
       'reverb-stt',
       'price',
       'password',
       'config-path',
-      'elevenlabs-tts-pvc-sample',
-      'elevenlabs-tts-pvc-captcha-out',
-      'elevenlabs-tts-pvc-verify-audio',
-      'elevenlabs-tts-pvc-wait',
       'speechify-tts-ref-audio',
       'speechify-tts-voice-name',
       'speechify-tts-consent-name',
       'speechify-tts-consent-email',
       'speechify-tts-voice-locale',
-      'speechify-tts-voice-gender',
-      'gcloud-tts',
-      'gcloud-tts-ref-audio',
-      'gcloud-tts-consent-audio',
-      'gcloud-tts-voice-cloning-key',
-      'gcloud-tts-voice-cloning-key-out'
+      'speechify-tts-voice-gender'
     ]))).toEqual({
       defaults: {
         extract: {
           stt: {
             reverb: true
-          }
-        },
-        post: {
-          tts: {
-            gcloudTts: ['instant-custom-voice'],
-            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
           }
         }
       }
@@ -204,7 +179,7 @@ describe('config contracts', () => {
     })
   })
 
-  test('buildConfigPatchFromFlags saves and merges Speechify, Hume, Cartesia, and Google Cloud TTS defaults', () => {
+  test('buildConfigPatchFromFlags saves and merges Speechify, Hume, and Cartesia TTS defaults', () => {
     const patch = buildConfigPatchFromFlags({
       'speechify-tts': ['simba-english', 'simba-multilingual'],
       'speechify-voice': 'narrator_voice',
@@ -215,13 +190,7 @@ describe('config contracts', () => {
       'hume-tts-voice-provider': 'CUSTOM_VOICE',
       'cartesia-tts': ['sonic-3.5'],
       'cartesia-tts-voice': 'cartesia-voice-id',
-      'cartesia-tts-language': 'en',
-      'gcloud-tts': ['chirp3-hd'],
-      'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
-      'gcloud-tts-language': 'en-US',
-      'gcloud-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'gcloud-tts-consent-language': 'en-US'
+      'cartesia-tts-language': 'en'
     }, new Set([
       'speechify-tts',
       'speechify-voice',
@@ -232,13 +201,7 @@ describe('config contracts', () => {
       'hume-tts-voice-provider',
       'cartesia-tts',
       'cartesia-tts-voice',
-      'cartesia-tts-language',
-      'gcloud-tts',
-      'gcloud-tts-voice',
-      'gcloud-tts-language',
-      'gcloud-tts-ref-audio',
-      'gcloud-tts-consent-audio',
-      'gcloud-tts-consent-language'
+      'cartesia-tts-language'
     ]))
 
     expect(patch).toEqual({
@@ -254,13 +217,7 @@ describe('config contracts', () => {
             humeTtsVoiceProvider: 'CUSTOM_VOICE',
             cartesiaTts: ['sonic-3.5'],
             cartesiaTtsVoice: 'cartesia-voice-id',
-            cartesiaTtsLanguage: 'en',
-            gcloudTts: ['chirp3-hd'],
-            gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
-            gcloudTtsLanguage: 'en-US',
-            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentLanguage: 'en-US'
+            cartesiaTtsLanguage: 'en'
           }
         }
       }
@@ -276,13 +233,7 @@ describe('config contracts', () => {
       'hume-tts-voice-provider': 'CUSTOM_VOICE',
       'cartesia-tts': ['sonic-3.5'],
       'cartesia-tts-voice': 'cartesia-voice-id',
-      'cartesia-tts-language': 'en',
-      'gcloud-tts': ['chirp3-hd'],
-      'gcloud-tts-voice': 'en-US-Chirp3-HD-Charon',
-      'gcloud-tts-language': 'en-US',
-      'gcloud-tts-ref-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'gcloud-tts-consent-audio': 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      'gcloud-tts-consent-language': 'en-US'
+      'cartesia-tts-language': 'en'
     })
   })
 
@@ -369,8 +320,7 @@ describe('config contracts', () => {
       'elevenlabs-tts-seed': '12345',
       'elevenlabs-tts-text-normalization': 'on',
       'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2', 'dict_3'],
-      'elevenlabs-tts-optimize-streaming-latency': '2',
-      'elevenlabs-tts-pvc-as-ivc': true
+      'elevenlabs-tts-optimize-streaming-latency': '2'
     }, new Set([
       'grok-tts-language',
       'grok-tts-text-normalization',
@@ -398,8 +348,7 @@ describe('config contracts', () => {
       'elevenlabs-tts-seed',
       'elevenlabs-tts-text-normalization',
       'elevenlabs-tts-pronunciation-dictionary-locator',
-      'elevenlabs-tts-optimize-streaming-latency',
-      'elevenlabs-tts-pvc-as-ivc'
+      'elevenlabs-tts-optimize-streaming-latency'
     ]))
 
     expect(patch).toEqual({
@@ -432,8 +381,7 @@ describe('config contracts', () => {
             elevenlabsTtsSeed: 12345,
             elevenlabsTtsTextNormalization: 'on',
             elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2', 'dict_3'],
-            elevenlabsTtsOptimizeStreamingLatency: 2,
-            elevenlabsTtsPvcAsIvc: true
+            elevenlabsTtsOptimizeStreamingLatency: 2
           }
         }
       }
@@ -466,8 +414,7 @@ describe('config contracts', () => {
       'elevenlabs-tts-seed': '12345',
       'elevenlabs-tts-text-normalization': 'on',
       'elevenlabs-tts-pronunciation-dictionary-locator': ['dict_1:version_2', 'dict_3'],
-      'elevenlabs-tts-optimize-streaming-latency': '2',
-      'elevenlabs-tts-pvc-as-ivc': true
+      'elevenlabs-tts-optimize-streaming-latency': '2'
     })
   })
 
@@ -551,32 +498,6 @@ describe('config contracts', () => {
     })
   })
 
-  test('buildConfigPatchFromFlags saves and merges ElevenLabs ready PVC voice defaults', () => {
-    const patch = buildConfigPatchFromFlags({
-      'elevenlabs-tts': ['eleven_v3'],
-      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
-    }, new Set([
-      'elevenlabs-tts',
-      'elevenlabs-tts-pvc-voice'
-    ]))
-
-    expect(patch).toEqual({
-      defaults: {
-        post: {
-          tts: {
-            elevenlabsTts: ['eleven_v3'],
-            elevenlabsTtsPvcVoice: 'pvc_voice_123'
-          }
-        }
-      }
-    })
-
-    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
-      'elevenlabs-tts': ['eleven_v3'],
-      'elevenlabs-tts-pvc-voice': 'pvc_voice_123'
-    })
-  })
-
   test('loadConfig accepts current array-shaped defaults', async () => {
     const configPath = await writeTempConfig({
       defaults: {
@@ -598,11 +519,7 @@ describe('config contracts', () => {
             openaiOcr: ['gpt-5.5'],
             grokOcr: ['grok-4.3'],
             deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
-            kimiOcr: ['kimi-k2.6'],
-            gcloudDocai: ['ocr'],
-            gcloudDocaiLocation: 'us',
-            gcloudDocaiOcrProcessorId: 'processor-123',
-            gcloudDocaiBucket: 'autoshow-docai-project-abc123'
+            kimiOcr: ['kimi-k2.6']
           }
         },
         post: {
@@ -611,12 +528,6 @@ describe('config contracts', () => {
             speechifyVoice: 'narrator_voice',
             speechifyTtsAudioFormat: 'wav',
             speechifyTtsLanguage: 'en-US',
-            gcloudTts: ['chirp3-hd'],
-            gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
-            gcloudTtsLanguage: 'en-US',
-            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentLanguage: 'en-US',
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
             mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -635,7 +546,6 @@ describe('config contracts', () => {
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTts: ['eleven_v3'],
-            elevenlabsTtsPvcVoice: 'pvc_voice_123',
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTtsCloneRemoveBackgroundNoise: true,
@@ -650,7 +560,6 @@ describe('config contracts', () => {
             elevenlabsTtsTextNormalization: 'on',
             elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2'],
             elevenlabsTtsOptimizeStreamingLatency: 2,
-            elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice'
           },
@@ -682,11 +591,7 @@ describe('config contracts', () => {
             openaiOcr: ['gpt-5.5'],
             grokOcr: ['grok-4.3'],
             deepinfraOcr: ['Qwen/Qwen3-VL-30B-A3B-Instruct'],
-            kimiOcr: ['kimi-k2.6'],
-            gcloudDocai: ['ocr'],
-            gcloudDocaiLocation: 'us',
-            gcloudDocaiOcrProcessorId: 'processor-123',
-            gcloudDocaiBucket: 'autoshow-docai-project-abc123'
+            kimiOcr: ['kimi-k2.6']
           }
         },
         post: {
@@ -695,12 +600,6 @@ describe('config contracts', () => {
             speechifyVoice: 'narrator_voice',
             speechifyTtsAudioFormat: 'wav',
             speechifyTtsLanguage: 'en-US',
-            gcloudTts: ['chirp3-hd'],
-            gcloudTtsVoice: 'en-US-Chirp3-HD-Charon',
-            gcloudTtsLanguage: 'en-US',
-            gcloudTtsRefAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentAudio: 'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-            gcloudTtsConsentLanguage: 'en-US',
             mistralTts: ['voxtral-mini-tts-2603'],
             mistralTtsVoice: 'voice_abc123',
             mistralTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
@@ -719,7 +618,6 @@ describe('config contracts', () => {
             openaiTtsConsentName: 'Anthony Consent',
             openaiTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTts: ['eleven_v3'],
-            elevenlabsTtsPvcVoice: 'pvc_voice_123',
             elevenlabsTtsRefAudio: 'input/examples/audio/anthony-voice.mp3',
             elevenlabsTtsVoiceName: 'AutoShow Anthony',
             elevenlabsTtsCloneRemoveBackgroundNoise: true,
@@ -734,7 +632,6 @@ describe('config contracts', () => {
             elevenlabsTtsTextNormalization: 'on',
             elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2'],
             elevenlabsTtsOptimizeStreamingLatency: 2,
-            elevenlabsTtsPvcAsIvc: true,
             minimaxTts: ['speech-2.8-turbo'],
             minimaxTtsVoice: 'AutoShowTestVoice'
           },

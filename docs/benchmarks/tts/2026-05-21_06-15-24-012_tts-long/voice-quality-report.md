@@ -33,10 +33,8 @@
 | 6 | `kitten/kitten-tts-nano` | local | 90.78 | 89.29 | 92.60 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 7 | `hume/octave-2` | cloud | 90.15 | 87.76 | 93.08 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 8 | `cartesia/sonic-3.5` | cloud | 90.15 | 88.41 | 92.27 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
-| 9 | `gcloud/chirp3-hd` | cloud | 90.10 | 85.20 | 96.10 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 10 | `elevenlabs/eleven_v3` | cloud | 89.95 | 84.76 | 96.30 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 11 | `kitten/kitten-tts-micro` | local | 89.85 | 90.00 | 89.68 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
-| 12 | `gcloud/studio` | cloud | 89.38 | 85.00 | 94.72 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 13 | `grok/grok-tts` | cloud | 89.26 | 84.08 | 95.59 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 14 | `deepgram/aura-2-thalia-en` | cloud | 87.99 | 82.74 | 94.41 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
 | 15 | `minimax/speech-2.8-turbo` | cloud | 87.89 | 84.31 | 92.27 | Low | 30% / 40% | naturalness.utmosv2Mos, naturalness.nisqaTtsNaturalnessMos, speechQuality.nisqaQualityMos, speechQuality.dnsmos |
@@ -471,7 +469,6 @@
 
 ---
 
-### 9. `gcloud/chirp3-hd` (cloud)
 
 | Metric | Score |
 | --- | ---: |
@@ -624,7 +621,6 @@
 
 ---
 
-### 12. `gcloud/studio` (cloud)
 
 | Metric | Score |
 | --- | ---: |

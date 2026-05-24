@@ -79,7 +79,7 @@ test('ggml-org/gemma-3-270m-it-GGUF --price prints a llama cost estimate', async
   await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', STABLE_EXAMPLE_AUDIO_URL, '--llama', model, '--price'],
+    ['src/cli/create-cli.ts', 'write', STABLE_EXAMPLE_AUDIO_URL, '--llm', `llama=${model}`, '--price'],
     { testName: `${model} --price prints a llama cost estimate` },
   )
   const output = `${result.stdout}\n${result.stderr}`

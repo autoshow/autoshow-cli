@@ -14,7 +14,7 @@ Safety: these `bun t` commands document human service/e2e coverage and may call 
 ## Quick Start
 
 ```bash
-bun t test/test-cases/e2e/step-6-video-gen-e2e/
+bun t test/test-cases/e2e/service/step-6-video-gen-e2e/
 ```
 
 ## Current Coverage
@@ -25,7 +25,7 @@ bun t test/test-cases/e2e/step-6-video-gen-e2e/
 ## Price Preflight
 
 ```bash
-bun t test/test-cases/e2e/step-6-video-gen-e2e/ --test-price
+bun t test/test-cases/e2e/service/step-6-video-gen-e2e/ --test-price
 ```
 
 The price checks cover:

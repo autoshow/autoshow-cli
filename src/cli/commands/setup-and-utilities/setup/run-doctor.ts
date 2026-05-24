@@ -2,8 +2,6 @@ import { inspectYtDlpAuthState } from '~/cli/commands/process-steps/step-1-downl
 import { commandExists } from '~/utils/cli-utils'
 import { loadEnvFile } from '~/utils/cli-utils'
 import { resolveConfigPath, loadConfig } from '~/cli/commands/setup-and-utilities/config/config-loader'
-import { readAwsSttConfigDefaults, readAwsSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
-import { readGcloudSttReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 import { readDefuddleCliReadiness } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/defuddle-cli'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
@@ -106,32 +104,6 @@ export const runDoctor = async (): Promise<void> => {
   const bunVersion = Bun.version
   checks.push({ label: 'bun', ok: true, detail: `v${bunVersion}` })
 
-  const awsDefaults = await readAwsSttConfigDefaults()
-  const awsState = await readAwsSttReadiness({
-    preferredRegion: awsDefaults.preferredRegion,
-    preferredBucket: awsDefaults.preferredBucket,
-    verifyTranscribe: true
-  })
-  checks.push({ label: 'aws', ok: awsState.hasCli, detail: awsState.details.cli })
-  checks.push({ label: 'aws auth', ok: awsState.authConfigured, detail: awsState.details.auth })
-  checks.push({ label: 'aws region', ok: awsState.region !== undefined, detail: awsState.region ?? awsState.details.region })
-  checks.push({
-    label: 'aws bucket',
-    ok: awsState.bucketAccessible === true,
-    detail: awsState.bucket ? `${awsState.bucket} (${awsState.details.bucket})` : awsState.details.bucket
-  })
-  checks.push({ label: 'aws transcribe', ok: awsState.transcribeAccessible === true, detail: awsState.details.transcribe })
-
-  const gcloudState = await readGcloudSttReadiness()
-  checks.push({ label: 'gcloud', ok: gcloudState.hasCli, detail: gcloudState.details.cli })
-  checks.push({ label: 'gcloud auth', ok: gcloudState.authConfigured, detail: gcloudState.details.auth })
-  checks.push({ label: 'gcloud project', ok: gcloudState.projectId !== undefined, detail: gcloudState.projectId ?? gcloudState.details.project })
-  checks.push({ label: 'gcloud billing', ok: gcloudState.billingEnabled === true, detail: gcloudState.details.billing })
-  checks.push({ label: 'speech.googleapis.com', ok: gcloudState.speechApiEnabled === true, detail: gcloudState.details.speechApi })
-  checks.push({ label: 'texttospeech.googleapis.com', ok: gcloudState.textToSpeechApiEnabled === true, detail: gcloudState.details.textToSpeechApi })
-  checks.push({ label: 'documentai.googleapis.com', ok: gcloudState.documentAiApiEnabled === true, detail: gcloudState.details.documentAiApi })
-  checks.push({ label: 'storage.googleapis.com', ok: gcloudState.storageApiEnabled === true, detail: gcloudState.details.storageApi })
-
   let hasFailure = false
   for (const check of checks) {
     if (!check.ok) {
@@ -202,7 +174,6 @@ export const runDoctor = async (): Promise<void> => {
       category: 'command',
       humanTable: createHumanTable([
         { action: 'Install missing tools', command: 'bun as setup' },
-        { action: 'Verify Google Cloud STT + Document AI OCR', command: 'bun as setup --gcloud' },
         { action: 'Configure YouTube cookies', command: 'docs/cookies.md' }
       ], ['action', 'command'])
     })

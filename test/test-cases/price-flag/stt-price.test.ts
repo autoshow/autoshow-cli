@@ -9,8 +9,8 @@ for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as con
       'src/cli/create-cli.ts',
       'extract',
       STABLE_EXAMPLE_AUDIO_URL,
-      '--whisper',
-      model,
+      '--provider',
+      `whisper=${model}`,
       '--price'
     ])
 
@@ -20,102 +20,72 @@ for (const model of ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'] as con
 
 defineSTTServicePriceTests({
   models: ['universal-3-pro'],
-  cliFlag: '--assemblyai',
+  provider: 'assemblyai',
   sttService: 'assemblyai',
 })
 
 defineSTTServicePriceTests({
   models: ['nova-3'],
-  cliFlag: '--deepgram',
+  provider: 'deepgram',
   sttService: 'deepgram',
 })
 
 defineSTTServicePriceTests({
   models: ['openai/whisper-large-v3-turbo', 'openai/whisper-large-v3'],
-  cliFlag: '--deepinfra',
+  provider: 'deepinfra',
   sttService: 'deepinfra',
 })
 
 defineSTTServicePriceTests({
   models: ['openai/whisper-large-v3'],
-  cliFlag: '--together',
+  provider: 'together',
   sttService: 'together',
 })
 
 defineSTTServicePriceTests({
   models: ['scribe_v2'],
-  cliFlag: '--elevenlabs',
+  provider: 'elevenlabs',
   sttService: 'elevenlabs',
 })
 
 defineSTTServicePriceTests({
   models: ['default'],
-  cliFlag: '--gladia',
+  provider: 'gladia',
   sttService: 'gladia',
 })
 
 defineSTTServicePriceTests({
   models: ['whisper-large-v3', 'whisper-large-v3-turbo'],
-  cliFlag: '--groq',
+  provider: 'groq',
   sttService: 'groq',
 })
 
 defineSTTServicePriceTests({
   models: ['speech-to-text'],
-  cliFlag: '--grok',
+  provider: 'grok',
   sttService: 'grok',
 })
 
 defineSTTServicePriceTests({
   models: ['voxtral-mini-2602'],
-  cliFlag: '--mistral',
+  provider: 'mistral',
   sttService: 'mistral',
 })
 
 defineSTTServicePriceTests({
   models: ['machine', 'low_cost'],
-  cliFlag: '--rev',
+  provider: 'rev',
   sttService: 'rev',
 })
 
 defineSTTServicePriceTests({
   models: ['stt-async-v4'],
-  cliFlag: '--soniox',
+  provider: 'soniox',
   sttService: 'soniox',
 })
 
 defineSTTServicePriceTests({
   models: ['standard', 'enhanced'],
-  cliFlag: '--speechmatics',
+  provider: 'speechmatics',
   sttService: 'speechmatics',
 })
-
-test('aws standard --price prints estimate', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'extract',
-    STABLE_EXAMPLE_AUDIO_URL,
-    '--aws',
-    'standard',
-    '--price'
-  ])
-
-  expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('aws')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('standard')
-}, E2E_TEST_TIMEOUT_MS)
-
-test('gcloud chirp_3 --price prints estimate', async () => {
-  const result = await runCommand([
-    'src/cli/create-cli.ts',
-    'extract',
-    STABLE_EXAMPLE_AUDIO_URL,
-    '--gcloud',
-    'chirp_3',
-    '--price'
-  ])
-
-  expect(result.exitCode).toBe(0)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('gcloud')
-  expect(`${result.stdout}\n${result.stderr}`).toContain('chirp_3')
-}, E2E_TEST_TIMEOUT_MS)

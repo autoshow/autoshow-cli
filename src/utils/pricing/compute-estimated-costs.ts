@@ -125,8 +125,6 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
   } else {
     const STT_FIELD_MAP = [
-      { field: 'gcloudSttModel' as const, provider: 'gcloud' },
-      { field: 'awsSttModel' as const, provider: 'aws' },
       { field: 'deepinfraSttModel' as const, provider: 'deepinfra' },
       { field: 'elevenlabsSttModel' as const, provider: 'elevenlabs' },
       { field: 'deepgramSttModel' as const, provider: 'deepgram' },
@@ -278,9 +276,8 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       || target.provider === 'firecrawl'
       || target.provider === 'glm-reader'
       || target.provider === 'spider'
+      || target.provider === 'supadata'
       || target.provider === 'zyte'
-      || target.provider === 'gcloud-docai'
-      || target.provider === 'aws-textract'
       || target.provider === 'unstructured'
     ) {
       const extractPricing = getExtractPricing(target.provider, target.model)

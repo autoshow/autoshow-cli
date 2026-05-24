@@ -1,74 +1,30 @@
 import type { CliFlagsDefinition } from '~/cli/native'
-import {
-  SUPPORTED_GEMINI_VIDEO_MODELS,
-  SUPPORTED_GLM_VIDEO_MODELS,
-  SUPPORTED_GROK_VIDEO_MODELS,
-  SUPPORTED_MINIMAX_VIDEO_MODELS,
-  SUPPORTED_RUNWAY_VIDEO_MODELS
-} from '~/cli/commands/setup-and-utilities/models/model-options'
-import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { generationOutputFlags, priceFlag } from './shared-flags'
-import { renameFlags } from './flag-utils'
+import { booleanAllProvidersFlag, generationOutputFlags, priceFlag, sharedConcurrencyFlags } from './shared-flags'
+import { pickFlags, renameFlags, withHelpGroup } from './flag-utils'
 
 export const VIDEO_COMMAND_SELECTOR_FLAGS = {
   'gemini-video': 'gemini',
   'minimax-video': 'minimax',
   'glm-video': 'glm',
   'grok-video': 'grok',
-  'runway-video': 'runway',
+  'runway-video': 'runway'
 } as const satisfies Record<string, string>
 
 export const videoGenFlags = {
-  'all-video': {
-    description: 'Enable every supported video provider/model for this command',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'video-provider-concurrency': {
-    description: 'Video: max hosted providers/models running in parallel for one item (default 2; --all-video defaults up to 8)',
-    type: String,
-    default: '2'
-  },
-  'video-local-concurrency': {
-    description: 'Video: max local providers running in parallel for one item (default 1)',
-    type: String,
-    default: '1'
-  },
   'video-mode': {
-    description: 'Video generation mode: text|image-to-video|reference-to-video|interpolate|extend|edit',
+    description: 'Video generation mode: text|image-to-video|reference-to-video|interpolate|extend|edit (default: text)',
     type: String
   },
-  'gemini-video': {
-    description: buildModelDescription('Gemini Veo video model', SUPPORTED_GEMINI_VIDEO_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'minimax-video': {
-    description: buildModelDescription('MiniMax video model', SUPPORTED_MINIMAX_VIDEO_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'glm-video': {
-    description: buildModelDescription('GLM video model', SUPPORTED_GLM_VIDEO_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'grok-video': {
-    description: buildModelDescription('Grok video model', SUPPORTED_GROK_VIDEO_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'runway-video': {
-    description: buildModelDescription('Runway video model', SUPPORTED_RUNWAY_VIDEO_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'video-duration': {
-    description: 'Video duration in seconds',
+    description: 'Video duration in seconds: 4|6|8 (Gemini Veo), 6|10 (MiniMax Hailuo), 5|10 (GLM), 1-15 (Grok), 2-10 (Runway)',
     type: String
   },
   'video-size': {
-    description: 'Video size, provider dependent',
+    description: 'Video size: 1280x720|720x1280|1024x1024|1920x1080|1080x1920|2048x1080 (GLM CogVideoX), 720x480|1280x720 (GLM Vidu2); other providers use --video-resolution or --video-aspect-ratio',
     type: String
   },
   'video-aspect-ratio': {
-    description: 'Video aspect ratio, provider dependent',
+    description: 'Video aspect ratio: 16:9|9:16|1:1|4:3|3:4 (GLM/MiniMax), 1:1|16:9|9:16|4:3|3:4|3:2|2:3 (Grok), 1280:720|720:1280 (Runway); Gemini uses --video-resolution',
     type: String
   },
   'video-resolution': {
@@ -99,10 +55,54 @@ export const videoGenFlags = {
     description: 'Grok video storage expiration in seconds (max 2592000)',
     type: String
   },
-  ...priceFlag
 } as const satisfies CliFlagsDefinition
 
+const videoCommandOptionNames = {
+  'video-mode': 'mode',
+  'video-duration': 'duration',
+  'video-size': 'size',
+  'video-aspect-ratio': 'aspect-ratio',
+  'video-resolution': 'resolution',
+  'video-input-image': 'input-image',
+  'video-last-frame': 'last-frame',
+  'video-reference-image': 'reference-image',
+  'video-input-video': 'input-video'
+} as const satisfies Record<string, string>
+
+const videoProviderSelectionFlags = {
+  provider: {
+    description: 'Video provider[=model]: gemini|minimax|glm|grok|runway; repeatable',
+    type: [String] as [StringConstructor]
+  },
+  ...booleanAllProvidersFlag,
+  ...sharedConcurrencyFlags
+} as const satisfies CliFlagsDefinition
+
+const videoGenerationOptionNames = [
+  'video-mode',
+  'video-duration',
+  'video-size',
+  'video-aspect-ratio',
+  'video-resolution'
+] as const
+
+const videoInputOptionNames = [
+  'video-input-image',
+  'video-last-frame',
+  'video-reference-image',
+  'video-input-video'
+] as const
+
+const grokStorageOptionNames = [
+  'grok-video-storage-filename',
+  'grok-video-storage-expires-after'
+] as const
+
 export const videoCommandFlags = {
-  ...renameFlags(videoGenFlags, VIDEO_COMMAND_SELECTOR_FLAGS),
-  ...generationOutputFlags
+  ...withHelpGroup(videoProviderSelectionFlags, 'provider-selection'),
+  ...withHelpGroup(renameFlags(pickFlags(videoGenFlags, videoGenerationOptionNames), videoCommandOptionNames), 'video-options'),
+  ...withHelpGroup(renameFlags(pickFlags(videoGenFlags, videoInputOptionNames), videoCommandOptionNames), 'video-inputs'),
+  ...withHelpGroup(renameFlags(pickFlags(videoGenFlags, grokStorageOptionNames), videoCommandOptionNames), 'grok-storage'),
+  ...withHelpGroup(priceFlag, 'pricing'),
+  ...withHelpGroup(generationOutputFlags, 'output')
 } as const satisfies CliFlagsDefinition

@@ -1,6 +1,7 @@
 import { AppError } from '~/utils/error-handler'
+import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
-export const MISTRAL_DEFAULT_BASE_URL = 'https://api.mistral.ai/v1'
+export { MISTRAL_DEFAULT_BASE_URL }
 
 export type MistralRestError = Error & {
   status: number

@@ -109,7 +109,7 @@ const runFirecrawlScrape = async (
 
   if (usingHostedApi && !apiKey) {
     throw new Error(
-      'FIRECRAWL_API_KEY is required for --url-backend firecrawl when using the hosted API. ' +
+      'FIRECRAWL_API_KEY is required for --url-provider firecrawl when using the hosted API. ' +
       'Set FIRECRAWL_API_KEY or point FIRECRAWL_API_URL at a self-hosted instance.'
     )
   }

@@ -47,10 +47,10 @@ describe('input classification contracts', () => {
       'src/cli/create-cli.ts',
       'write',
       STABLE_EXAMPLE_AUDIO_URL,
-      '--whisper-stt',
-      'tiny',
-      '--assemblyai-stt',
-      'universal-3-pro',
+      '--stt',
+      'whisper=tiny',
+      '--stt',
+      'assemblyai=universal-3-pro',
       '--price'
     ])
 

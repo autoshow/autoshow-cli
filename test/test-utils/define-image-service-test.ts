@@ -17,13 +17,13 @@ const IMAGE_GEN_TITLE = 'image-gen'
 
 export const defineImageServiceTest = ({
   models,
-  cliFlag,
+  provider,
   imageService,
   envVarKey,
   imageExtension,
 }: {
   models: Array<{ model: string, prompt: string, extraArgs?: string[], expectedExtension?: string }>
-  cliFlag: string
+  provider: string
   imageService: string
   envVarKey: string
   imageExtension?: string
@@ -34,8 +34,8 @@ export const defineImageServiceTest = ({
     'src/cli/create-cli.ts',
     'image',
     'a sunset',
-    cliFlag,
-    'invalid-model'
+    '--provider',
+    `${provider}=invalid-model`
   ])
 
   withOutputLifecycle(IMAGE_GEN_TITLE)
@@ -53,8 +53,8 @@ export const defineImageServiceTest = ({
         'src/cli/create-cli.ts',
         'image',
         prompt,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         ...(extraArgs ?? [])
       ])
 
@@ -77,11 +77,11 @@ export const defineImageServiceTest = ({
 
 export const defineImageServicePriceTests = ({
   models,
-  cliFlag,
+  provider,
   imageService,
 }: {
   models: Array<{ model: string, prompt: string, extraArgs?: string[], expectedExtension?: string }>
-  cliFlag: string
+  provider: string
   imageService: string
 }): void => {
   for (const { model, extraArgs } of models) {
@@ -90,8 +90,8 @@ export const defineImageServicePriceTests = ({
         'src/cli/create-cli.ts',
         'image',
         'a sunset',
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         ...(extraArgs ?? []),
         '--price'
       ])

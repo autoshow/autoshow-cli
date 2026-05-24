@@ -130,12 +130,6 @@ export const MODEL_RELEASE_DATES = {
     release('2024-10-09', 'https://groq.com/whisper-large-v3-turbo-now-available-on-groq-combining-speed-quality-for-speech-recognition')
   ),
 
-  'aws/standard': release('2018-04-04', 'https://aws.amazon.com/blogs/aws/amazon-transcribe-now-generally-available/', 'Amazon Transcribe GA date used for standard service row.'),
-  'aws-textract/detect-text': release('2019-05-29', 'https://aws.amazon.com/blogs/aws/amazon-textract-now-generally-available/', 'Amazon Textract GA date used for detect-text service row.'),
-  'gcloud-docai/ocr': release('2020-11-18', 'https://cloud.google.com/blog/products/ai-machine-learning/google-cloud-announces-document-ai-platform', 'Google Document AI Platform public release date used for OCR processor row.'),
-  'gcloud/chirp_3': release('2025-03-17', 'https://cloud.google.com/speech-to-text/docs/models/chirp-3'),
-  'gcloud/chirp3-hd': release('2025-03-17', 'https://cloud.google.com/text-to-speech/docs/chirp3-hd'),
-  'gcloud/studio': release('2024-02-26', 'https://cloud.google.com/text-to-speech/docs/release-notes', 'Google Cloud Studio voices GA date.'),
   'gladia/default': release('2023-04-25', 'https://docs.gladia.io/', 'Gladia API public launch date used for default service row.'),
   'happyscribe/auto': release('2020-05-01', 'https://www.happyscribe.com/api', 'Happy Scribe API public service date used for auto service row.'),
   'rev/machine': release('2018-02-28', 'https://www.rev.com/api', 'Rev AI API public service date used for machine transcription row.'),

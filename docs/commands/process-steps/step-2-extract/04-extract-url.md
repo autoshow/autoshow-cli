@@ -13,6 +13,7 @@ Remote article URLs and local HTML files use article extraction, while X/Twitter
   - [Firecrawl](#firecrawl)
   - [GLM Reader](#glm-reader)
   - [Spider](#spider)
+  - [Supadata](#supadata)
   - [Zyte](#zyte)
 - [URL Output](#url-output)
 - [URL Consensus](#url-consensus)
@@ -33,10 +34,10 @@ Article-style HTML inputs route through article extraction rather than OCR provi
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| Remote article URL | `html+defuddle` | `--url-backend firecrawl`, `--url-backend glm-reader`, `--url-backend spider`, `--url-backend zyte`, or `--all-url` |
-| Local `.html` / `.htm` | `html+defuddle` | `--all-url` runs `defuddle` and marks hosted backends skipped |
+| Remote article URL | `html+defuddle` | `--url-provider firecrawl`, `--url-provider glm-reader`, `--url-provider spider`, `--url-provider supadata`, `--url-provider zyte`, route-aware `--provider <backend>`, or `--all-providers` |
+| Local `.html` / `.htm` | `html+defuddle` | `--all-providers` runs `defuddle` and marks hosted backends skipped |
 
-OCR engine flags do not apply to article extraction. In single-backend mode, the default remote `defuddle` path preserves the existing fallback to `firecrawl` when local extraction fails. In `--all-url` mode, each backend is run and scored independently, so `defuddle` does not silently fall back to `firecrawl`.
+OCR engine flags do not apply to article extraction. In single-backend mode, the default remote `defuddle` path preserves the existing fallback to `firecrawl` when local extraction fails. In `--all-providers` mode, each backend is run and scored independently, so `defuddle` does not silently fall back to `firecrawl`.
 
 ## URL Environment
 
@@ -49,6 +50,8 @@ FIRECRAWL_API_KEY=...
 FIRECRAWL_API_URL=http://localhost:3002
 SPIDER_API_KEY=...
 SPIDER_API_URL=https://api.spider.cloud
+SUPADATA_API_KEY=...
+SUPADATA_BASE_URL=https://api.supadata.ai/v1
 ZYTE_API_KEY=...
 ZYTE_API_URL=https://api.zyte.com
 AUTOSHOW_URL_BACKEND=firecrawl
@@ -57,23 +60,26 @@ AUTOSHOW_URL_BACKEND=glm-reader
 # or
 AUTOSHOW_URL_BACKEND=spider
 # or
+AUTOSHOW_URL_BACKEND=supadata
+# or
 AUTOSHOW_URL_BACKEND=zyte
 ```
 
-`FIRECRAWL_API_KEY`, `SPIDER_API_KEY`, and `ZYTE_API_KEY` are required for the hosted APIs. `GLM_API_KEY` is required for GLM Reader. Their matching `*_API_URL` variables can point at compatible local or mock endpoints for development.
+`FIRECRAWL_API_KEY`, `SPIDER_API_KEY`, `SUPADATA_API_KEY`, and `ZYTE_API_KEY` are required for the hosted APIs. `GLM_API_KEY` is required for GLM Reader. Their matching `*_API_URL` / `*_BASE_URL` variables can point at compatible local or mock endpoints for development.
 
-Do not combine `AUTOSHOW_URL_BACKEND` with `--all-url`; `--all-url` selects the full canonical backend set.
+Do not combine `AUTOSHOW_URL_BACKEND` with `--all-providers`; `--all-providers` selects the full canonical backend set.
 
 ## Shared URL Options
 
 | Flag | Description |
 |------|-------------|
-| `--url-backend <backend>` | Article backend for remote article URLs: `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` |
-| `--all-url` | For `extract`, run every current URL article backend: `defuddle`, `firecrawl`, `glm-reader`, `spider`, and `zyte` |
-| `--url-provider-concurrency <n>` | Hosted URL backends to run concurrently per item; default `2`, or up to `4` by default with `--all-url` |
+| `--url-provider <backend>` | Article backend for remote article URLs: `defuddle`, `firecrawl`, `glm-reader`, `spider`, `supadata`, or `zyte` |
+| `--provider <backend>` | Route-aware shorthand for a URL backend on article inputs |
+| `--all-providers` | For `extract`, run every current URL article backend: `defuddle`, `firecrawl`, `glm-reader`, `spider`, `supadata`, and `zyte` |
+| `--provider-concurrency <n>` | Hosted URL backends to run concurrently per item; default `2`, or up to `4` by default with `--all-providers` |
 | `--url-request-timeout-ms <ms>` | Per-provider URL request timeout; default `60000`. Env fallback: `AUTOSHOW_URL_REQUEST_TIMEOUT_MS` |
 | `--url-request-attempts <n>` | Total provider request attempts, including the first try; default `3`. Env fallback: `AUTOSHOW_URL_REQUEST_ATTEMPTS` |
-| `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
+| `--format <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--price` | Show the aggregated URL extraction estimate and exit |
 | `--batch-limit <n>` | Limit batch size |
 | `--batch-all` | Process all batch items |
@@ -82,30 +88,30 @@ Do not combine `AUTOSHOW_URL_BACKEND` with `--all-url`; `--all-url` selects the 
 
 ```bash
 bun as extract input/examples/batch/2-urls.md --batch-all
-bun as extract input/article.html --out json
-bun as extract https://example.com/article --all-url --price
-bun as extract https://example.com/article --all-url --url-provider-concurrency 2
-bun as extract https://example.com/article --all-url --url-request-timeout-ms 90000 --url-request-attempts 2
+bun as extract input/article.html --format json
+bun as extract https://example.com/article --all-providers --price
+bun as extract https://example.com/article --all-providers --provider-concurrency 2
+bun as extract https://example.com/article --all-providers --url-request-timeout-ms 90000 --url-request-attempts 2
 ```
 
 ## All URL Backends
 
-`--all-url` is scoped to the `extract` command. It runs remote HTML/article inputs through the current URL backend set in canonical order:
+`--all-providers` is scoped to article inputs on the `extract` command. It runs remote HTML/article inputs through the current URL backend set in canonical order:
 
 ```text
-defuddle, firecrawl, glm-reader, spider, zyte
+defuddle, firecrawl, glm-reader, spider, supadata, zyte
 ```
 
-`defuddle` is local and free, so it runs in its own single-slot lane. Hosted backends run in a separate pool controlled by `--url-provider-concurrency`.
+`defuddle` is local and free, so it runs in its own single-slot lane. Hosted backends run in a separate pool controlled by `--provider-concurrency`.
 
-Because `--all-url` includes hosted providers, use `--price` first when you want an estimate without making provider calls.
+Because `--all-providers` includes hosted providers, use `--price` first when you want an estimate without making provider calls.
 
 Rules:
 
-- `--all-url` conflicts with `--url-backend` and with `AUTOSHOW_URL_BACKEND`.
-- `write --all-url` is rejected for this release because there is no primary URL extraction artifact for the LLM step.
-- Remote `--all-url` runs do not use the single-backend Defuddle-to-Firecrawl fallback path.
-- Local `.html` / `.htm --all-url` runs `defuddle` only and records hosted backends as skipped.
+- `--all-providers` conflicts with `--url-provider` and with `AUTOSHOW_URL_BACKEND`.
+- `write --all-providers url` is rejected for this release because there is no primary URL extraction artifact for the LLM step.
+- Remote `--all-providers` runs do not use the single-backend Defuddle-to-Firecrawl fallback path.
+- Local `.html` / `.htm --all-providers` runs `defuddle` only and records hosted backends as skipped.
 - URL request retries repeat hosted provider requests after timeout, network, `408`, `429`, and `5xx` failures. Increasing `--url-request-attempts` can increase hosted provider usage, quota consumption, or cost.
 
 ## Article Services
@@ -114,14 +120,14 @@ Rules:
 
 | Option | Value |
 |--------|-------|
-| Selector | default, or `--url-backend defuddle` |
+| Selector | default, or `--url-provider defuddle` |
 | Inputs | Remote article URLs and local `.html` / `.htm` files |
 | Runtime | Local HTML/article extraction through the Defuddle CLI |
 
 ```bash
 bun as setup --step defuddle
 bun as extract https://ajcwebdev.com
-bun as extract input/article.html --out json
+bun as extract input/article.html --format json
 ```
 
 Set `AUTOSHOW_DEFUDDLE_BIN` to use a specific `defuddle` executable. Otherwise AutoShow tries the managed runtime install, then a `defuddle` binary on `PATH`.
@@ -132,55 +138,69 @@ Local `.html` and `.htm` files always use `defuddle`, even if a hosted backend i
 
 | Option | Value |
 |--------|-------|
-| Selector | `--url-backend firecrawl` |
+| Selector | `--url-provider firecrawl` or `--provider firecrawl` |
 | Inputs | Remote article URLs |
 | Required env | `FIRECRAWL_API_KEY` unless `FIRECRAWL_API_URL` points at a self-hosted instance |
 | Optional env | `FIRECRAWL_API_URL` |
 | Endpoint | `POST /v2/scrape` |
 
 ```bash
-bun as extract https://ajcwebdev.com --url-backend firecrawl
+bun as extract https://ajcwebdev.com --url-provider firecrawl
 ```
 
 ### GLM Reader
 
 | Option | Value |
 |--------|-------|
-| Selector | `--url-backend glm-reader` |
+| Selector | `--url-provider glm-reader` or `--provider glm-reader` |
 | Inputs | Remote article URLs |
 | Required env | `GLM_API_KEY` |
 | Optional env | `ZAI_BASE_URL` |
 
 ```bash
-bun as extract https://ajcwebdev.com --url-backend glm-reader
+bun as extract https://ajcwebdev.com --provider glm-reader
 ```
 
 ### Spider
 
 | Option | Value |
 |--------|-------|
-| Selector | `--url-backend spider` |
+| Selector | `--url-provider spider` or `--provider spider` |
 | Inputs | Remote article URLs |
 | Required env | `SPIDER_API_KEY` unless `SPIDER_API_URL` points at a compatible mock endpoint |
 | Optional env | `SPIDER_API_URL` |
 | Endpoint | `POST /scrape` with `return_format: "markdown"` |
 
 ```bash
-bun as extract https://ajcwebdev.com --url-backend spider
+bun as extract https://ajcwebdev.com --url-provider spider
+```
+
+### Supadata
+
+| Option | Value |
+|--------|-------|
+| Selector | `--url-provider supadata` or `--provider supadata` |
+| Inputs | Remote article URLs |
+| Required env | `SUPADATA_API_KEY` |
+| Optional env | `SUPADATA_BASE_URL` |
+| Endpoint | `GET /web/scrape?url=<source>` |
+
+```bash
+bun as extract https://ajcwebdev.com --url-provider supadata
 ```
 
 ### Zyte
 
 | Option | Value |
 |--------|-------|
-| Selector | `--url-backend zyte` |
+| Selector | `--url-provider zyte` or `--provider zyte` |
 | Inputs | Remote article URLs |
 | Required env | `ZYTE_API_KEY` unless `ZYTE_API_URL` points at a compatible mock endpoint |
 | Optional env | `ZYTE_API_URL` |
 | Endpoint | `POST /v1/extract` with `article: true` |
 
 ```bash
-bun as extract https://ajcwebdev.com --url-backend zyte
+bun as extract https://ajcwebdev.com --url-provider zyte
 ```
 
 ## URL Output
@@ -189,14 +209,14 @@ Single-backend article extraction writes one top-level extraction artifact plus 
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_article/
-  extraction.txt      # default --out text
-  result.json         # if --out json
-  extraction.tsv      # if --out tsv
-  extraction.hocr     # if --out hocr
+  extraction.txt      # default --format text
+  result.json         # if --format json
+  extraction.tsv      # if --format tsv
+  extraction.hocr     # if --format hocr
   run.json
 ```
 
-`--all-url` writes fixed per-provider artifacts instead of a top-level extraction:
+`--all-providers` writes fixed per-provider artifacts instead of a top-level extraction:
 
 ```text
 output/YYYY-MM-DD_HH-MM-SS_article/
@@ -213,6 +233,9 @@ output/YYYY-MM-DD_HH-MM-SS_article/
     spider/
       extraction.txt
       result.json
+    supadata/
+      extraction.txt
+      result.json
     zyte/
       extraction.txt
       result.json
@@ -221,11 +244,11 @@ output/YYYY-MM-DD_HH-MM-SS_article/
 
 Each provider `result.json` is a provider-result envelope with the URL extraction metadata and structured extraction result. The root `run.json` records `completionStatus`, `requestedProviders`, `providerStates`, `missingProviders`, `errors` when present, estimated and actual cost data, and per-provider timing data.
 
-Incomplete runs can still leave useful provider artifacts. For example, local `.html --all-url` succeeds with `defuddle`, marks hosted providers skipped, and records an `incomplete` status because those hosted providers were requested by the shortcut.
+Incomplete runs can still leave useful provider artifacts. For example, local `.html --all-providers` succeeds with `defuddle`, marks hosted providers skipped, and records an `incomplete` status because those hosted providers were requested by the shortcut.
 
 ## URL Consensus
 
-After an `--all-url` run, use the local `consensus` skill to build a gold reference and comparison reports from `providers/*/result.json`:
+After an `--all-providers` run, use the local `consensus` skill to build a gold reference and comparison reports from `providers/*/result.json`:
 
 ```text
 .codex/skills/consensus/
@@ -237,9 +260,9 @@ The expected consensus deliverables are `consensus-extraction.txt`, `provider-co
 
 ## URL Notes
 
-- Remote article URLs use `defuddle` unless you pass `--url-backend firecrawl`, `--url-backend glm-reader`, `--url-backend spider`, `--url-backend zyte`, set `AUTOSHOW_URL_BACKEND`, or select every backend with `--all-url`.
+- Remote article URLs use `defuddle` unless you pass `--url-provider firecrawl`, `--url-provider glm-reader`, `--url-provider spider`, `--url-provider supadata`, `--url-provider zyte`, set `AUTOSHOW_URL_BACKEND`, or select every backend with `--all-providers`.
 - OCR engine flags do not apply to article extraction.
-- Single-backend article extraction writes a top-level extraction artifact. `--all-url` writes provider artifacts only.
+- Single-backend article extraction writes a top-level extraction artifact. `--all-providers` writes provider artifacts only.
 - Public URL flags are intentionally generic. Provider-specific browser actions, crawl/map/search, screenshots, and structured extraction controls are not exposed as article flags yet.
 
 ## X Space Path

@@ -1,4 +1,5 @@
 import { readEnv } from '~/utils/validate/env-utils'
+import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import type { OpenAIRestConfig } from '~/utils/openai/client'
 
 export const getOpenAIClientConfig = (): OpenAIRestConfig => {
@@ -7,6 +8,5 @@ export const getOpenAIClientConfig = (): OpenAIRestConfig => {
     throw new Error('OPENAI_API_KEY environment variable is required')
   }
 
-  const baseURL = readEnv('OPENAI_BASE_URL')
-  return baseURL ? { apiKey, baseURL } : { apiKey }
+  return { apiKey, baseURL: OPENAI_DEFAULT_BASE_URL }
 }

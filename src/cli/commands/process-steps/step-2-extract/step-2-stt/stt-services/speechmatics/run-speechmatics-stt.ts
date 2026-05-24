@@ -543,7 +543,6 @@ export const runSpeechmaticsStt = async (
       initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
       maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
       audioDurationSeconds,
-      envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_SPEECHMATICS',
       pollMode: resumedExistingJob ? 'resume-probe' : 'fresh',
       buildDeadlineError: (nextJobId, pollDeadlineMs) => buildPollingDeadlineError(nextJobId, pollDeadlineMs),
       buildResumeProbeError: (nextJobId, probeCount, totalWaitMs) => buildResumeProbeError(nextJobId, probeCount, totalWaitMs),

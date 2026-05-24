@@ -58,3 +58,17 @@ export const omitFlags = (
     Object.entries(flags).filter(([name]) => !omitted.has(name))
   ) as CliFlagsDefinition
 }
+
+export const pickFlags = (
+  flags: CliFlagsDefinition,
+  names: readonly string[]
+): CliFlagsDefinition => {
+  const picked: CliFlagsDefinition = {}
+  for (const name of names) {
+    const definition = flags[name]
+    if (definition !== undefined) {
+      picked[name] = definition
+    }
+  }
+  return picked
+}

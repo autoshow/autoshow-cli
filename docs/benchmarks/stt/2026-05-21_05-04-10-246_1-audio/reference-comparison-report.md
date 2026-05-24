@@ -116,8 +116,6 @@
 | 10 | <code>deepgram-nova-3</code> | $0.0096 | 92.27 | 7.73% | 6.02% | supported | 1.87s | $0.0096 |
 | 11 | <code>gladia-default</code> | $0.0101 | 95.00 | 5.00% | 4.17% | supported | 18.71s | $0.0101 |
 | 12 | <code>speechmatics-enhanced</code> | $0.0124 | 97.27 | 2.73% | 2.78% | supported | 9.58s | $0.0124 |
-| 13 | <code>gcloud-chirp_3</code> | $0.0159 | 95.91 | 4.09% | 4.17% | supported | 12.38s | $0.0159 |
-| 14 | <code>aws-standard</code> | $0.0240 | 92.27 | 7.73% | 5.09% | supported | 29.54s | $0.0240 |
 
 #### Speed
 
@@ -131,11 +129,9 @@
 | 6 | <code>speechmatics-standard</code> | 8.34s | 96.82 | 3.18% | 3.24% | supported | 8.34s | $0.0074 |
 | 7 | <code>assemblyai-universal-3-pro</code> | 8.72s | 100.00 | 0.00% | 0.00% | supported | 8.72s | $0.0035 |
 | 8 | <code>speechmatics-enhanced</code> | 9.58s | 97.27 | 2.73% | 2.78% | supported | 9.58s | $0.0124 |
-| 9 | <code>gcloud-chirp_3</code> | 12.38s | 95.91 | 4.09% | 4.17% | supported | 12.38s | $0.0159 |
 | 10 | <code>gladia-default</code> | 18.71s | 95.00 | 5.00% | 4.17% | supported | 18.71s | $0.0101 |
 | 11 | <code>rev-machine</code> | 24.64s | 93.18 | 6.82% | 6.02% | supported | 24.64s | $0.0033 |
 | 12 | <code>rev-low_cost</code> | 25.24s | 92.27 | 7.73% | 6.94% | supported | 25.24s | $0.0017 |
-| 13 | <code>aws-standard</code> | 29.54s | 92.27 | 7.73% | 5.09% | supported | 29.54s | $0.0240 |
 | 14 | <code>happyscribe-auto</code> | 60.19s | 99.55 | 0.45% | 0.46% | supported | 60.19s | $0.00 |
 
 #### Quality Score
@@ -147,11 +143,9 @@
 | 3 | <code>speechmatics-enhanced</code> | 97.27/100 quality score | 97.27 | 2.73% | 2.78% | supported | 9.58s | $0.0124 |
 | 4 | <code>speechmatics-standard</code> | 96.82/100 quality score | 96.82 | 3.18% | 3.24% | supported | 8.34s | $0.0074 |
 | 5 | <code>soniox-stt-async-v4</code> | 96.36/100 quality score | 96.36 | 3.64% | 3.70% | supported | 7.69s | $0.0017 |
-| 6 | <code>gcloud-chirp_3</code> | 95.91/100 quality score | 95.91 | 4.09% | 4.17% | supported | 12.38s | $0.0159 |
 | 7 | <code>mistral-voxtral-mini-2602</code> | 95.91/100 quality score | 95.91 | 4.09% | 4.17% | supported | 4.40s | $0.0030 |
 | 8 | <code>gladia-default</code> | 95.00/100 quality score | 95.00 | 5.00% | 4.17% | supported | 18.71s | $0.0101 |
 | 9 | <code>rev-machine</code> | 93.18/100 quality score | 93.18 | 6.82% | 6.02% | supported | 24.64s | $0.0033 |
-| 10 | <code>aws-standard</code> | 92.27/100 quality score | 92.27 | 7.73% | 5.09% | supported | 29.54s | $0.0240 |
 | 11 | <code>deepgram-nova-3</code> | 92.27/100 quality score | 92.27 | 7.73% | 6.02% | supported | 1.87s | $0.0096 |
 | 12 | <code>rev-low_cost</code> | 92.27/100 quality score | 92.27 | 7.73% | 6.94% | supported | 25.24s | $0.0017 |
 | 13 | <code>elevenlabs-scribe_v2</code> | 91.82/100 quality score | 91.82 | 8.18% | 5.56% | supported | 5.18s | $0.0036 |
@@ -169,12 +163,10 @@
 | <code>whisper-small</code> | Local | not-supported | 90.00 | 10.00% | 8.33% | 2.37s | $0.00 |
 | <code>whisper-tiny</code> | Local | not-supported | 86.36 | 13.64% | 12.04% | 12.02s | $0.00 |
 | <code>assemblyai-universal-3-pro</code> | Third-Party Service Diarization | supported | 100.00 | 0.00% | 0.00% | 8.72s | $0.0035 |
-| <code>aws-standard</code> | Third-Party Service Diarization | supported | 92.27 | 7.73% | 5.09% | 29.54s | $0.0240 |
 | <code>deepgram-nova-3</code> | Third-Party Service Diarization | supported | 92.27 | 7.73% | 6.02% | 1.87s | $0.0096 |
 | <code>deepinfra-openai_whisper-large-v3</code> | Third-Party Service Non-Diarization | not-supported | 93.64 | 6.36% | 4.63% | 2.12s | $0.0004 |
 | <code>deepinfra-openai_whisper-large-v3-turbo</code> | Third-Party Service Non-Diarization | not-supported | 93.18 | 6.82% | 5.09% | 1.90s | $0.0002 |
 | <code>elevenlabs-scribe_v2</code> | Third-Party Service Diarization | supported | 91.82 | 8.18% | 5.56% | 5.18s | $0.0036 |
-| <code>gcloud-chirp_3</code> | Third-Party Service Diarization | supported | 95.91 | 4.09% | 4.17% | 12.38s | $0.0159 |
 | <code>gemini-stt-gemini-3-flash-preview</code> | Third-Party Service Non-Diarization | not-supported | 91.82 | 8.18% | 6.48% | 48.73s | $0.0019 |
 | <code>gladia-default</code> | Third-Party Service Diarization | supported | 95.00 | 5.00% | 4.17% | 18.71s | $0.0101 |
 | <code>glm-stt-glm-asr-2512</code> | Third-Party Service Non-Diarization | not-supported | 91.36 | 8.64% | 6.94% | 8.23s | $0.0024 |
@@ -204,12 +196,10 @@
 | <code>whisper-small</code> | 14 | 8 | 0 | 220 |
 | <code>whisper-tiny</code> | 17 | 8 | 5 | 220 |
 | <code>assemblyai-universal-3-pro</code> | 0 | 0 | 0 | 220 |
-| <code>aws-standard</code> | 4 | 6 | 7 | 220 |
 | <code>deepgram-nova-3</code> | 4 | 11 | 2 | 220 |
 | <code>deepinfra-openai_whisper-large-v3</code> | 2 | 11 | 1 | 220 |
 | <code>deepinfra-openai_whisper-large-v3-turbo</code> | 2 | 11 | 2 | 220 |
 | <code>elevenlabs-scribe_v2</code> | 4 | 6 | 8 | 220 |
-| <code>gcloud-chirp_3</code> | 3 | 2 | 4 | 220 |
 | <code>gemini-stt-gemini-3-flash-preview</code> | 8 | 7 | 3 | 220 |
 | <code>gladia-default</code> | 2 | 5 | 4 | 220 |
 | <code>glm-stt-glm-asr-2512</code> | 8 | 11 | 0 | 220 |
@@ -239,12 +229,10 @@
 | <code>whisper-small</code> | 13 | 5 | 0 | 216 |
 | <code>whisper-tiny</code> | 16 | 5 | 5 | 216 |
 | <code>assemblyai-universal-3-pro</code> | 0 | 0 | 0 | 216 |
-| <code>aws-standard</code> | 4 | 3 | 4 | 216 |
 | <code>deepgram-nova-3</code> | 4 | 8 | 1 | 216 |
 | <code>deepinfra-openai_whisper-large-v3</code> | 1 | 8 | 1 | 216 |
 | <code>deepinfra-openai_whisper-large-v3-turbo</code> | 1 | 8 | 2 | 216 |
 | <code>elevenlabs-scribe_v2</code> | 4 | 3 | 5 | 216 |
-| <code>gcloud-chirp_3</code> | 3 | 2 | 4 | 216 |
 | <code>gemini-stt-gemini-3-flash-preview</code> | 7 | 4 | 3 | 216 |
 | <code>gladia-default</code> | 2 | 4 | 3 | 216 |
 | <code>glm-stt-glm-asr-2512</code> | 7 | 8 | 0 | 216 |
@@ -282,4 +270,3 @@ No duplicate transcript groups were detected.
 - `assemblyai-universal-3-pro` was the most accurate provider on strict speaker-aware WER, scoring 100.00/100.
 - The cheapest providers were `happyscribe-auto` and `reverb-reverb` at 0.0000¢ ($0.0000).
 - `whisper-base` was the fastest provider in this set at 1.43s.
-- `aws-standard` lost the most ground once speaker changes were counted, with 2.63 percentage-point gap between text-only and speaker-aware WER.

@@ -14,6 +14,7 @@ import {
 import { hostname, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/utils/logger'
+import { getDefaultCacheDir } from '~/utils/process-lock'
 import type {
   AcquireArtifactOptions,
   AudioNormalizationProfile,
@@ -51,10 +52,8 @@ const CURRENT_HOSTNAME = hostname()
 // New hosted STT providers default to shared mp3 artifacts until .m4a support is explicitly confirmed.
 const HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES = new Set<SttTarget['service']>([
   'assemblyai',
-  'aws',
   'deepgram',
   'elevenlabs',
-  'gcloud',
   'gladia',
   'groq',
   'mistral',
@@ -69,23 +68,13 @@ let activeSourceMediaAcquireCount = 0
 const sleep = async (ms: number): Promise<void> =>
   await new Promise((resolvePromise) => setTimeout(resolvePromise, ms))
 
-const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
-  const value = Number.parseInt(process.env[key] ?? '', 10)
-  if (!Number.isFinite(value) || value < 1) {
-    return fallback
-  }
-
-  return value
-}
-
-const getSourceMediaAcquireConcurrency = (): number =>
-  Math.max(1, parsePositiveIntegerEnv('AUTOSHOW_STT_ACQUIRE_CONCURRENCY', DEFAULT_STT_ACQUIRE_CONCURRENCY))
+const getSourceMediaAcquireConcurrency = (): number => DEFAULT_STT_ACQUIRE_CONCURRENCY
 
 const getCacheLockStaleMs = (): number =>
-  Math.max(LOCK_HEARTBEAT_MS * 2, parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_STALE_MS', DEFAULT_LOCK_STALE_MS))
+  Math.max(LOCK_HEARTBEAT_MS * 2, DEFAULT_LOCK_STALE_MS)
 
 const getCacheLockWaitTimeoutMs = (): number =>
-  Math.max(getCacheLockStaleMs(), parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_WAIT_MS', DEFAULT_LOCK_WAIT_TIMEOUT_MS))
+  Math.max(getCacheLockStaleMs(), DEFAULT_LOCK_WAIT_TIMEOUT_MS)
 
 const isHostedSttTarget = (target: SttTarget): boolean =>
   !target.local
@@ -174,7 +163,7 @@ const canonicalizeUrl = (url: string): string => {
 }
 
 const getCacheRootDir = (): string =>
-  join(process.env['AUTOSHOW_CACHE_DIR'] ?? join(process.env['HOME'] ?? resolve('.'), '.cache', 'autoshow-cli'), 'media')
+  join(getDefaultCacheDir(), 'media')
 
 const getEntryDir = (cacheKey: string): string => join(getCacheRootDir(), cacheKey)
 const getEntryJsonPath = (cacheKey: string): string => join(getEntryDir(cacheKey), 'entry.json')
@@ -593,17 +582,9 @@ const removeStaleSourceMediaArtifacts = async (
   }))
 }
 
-const getMaxCacheBytes = (): number => {
-  const value = Number.parseFloat(process.env['AUTOSHOW_CACHE_MAX_GB'] ?? '')
-  const maxGb = Number.isFinite(value) && value > 0 ? value : DEFAULT_CACHE_MAX_GB
-  return maxGb * 1024 * 1024 * 1024
-}
+const getMaxCacheBytes = (): number => DEFAULT_CACHE_MAX_GB * 1024 * 1024 * 1024
 
-const getMaxCacheAgeMs = (): number => {
-  const value = Number.parseFloat(process.env['AUTOSHOW_CACHE_MAX_AGE_DAYS'] ?? '')
-  const days = Number.isFinite(value) && value > 0 ? value : DEFAULT_CACHE_MAX_AGE_DAYS
-  return days * 24 * 60 * 60 * 1000
-}
+const getMaxCacheAgeMs = (): number => DEFAULT_CACHE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
 
 export const pruneMediaCache = async (): Promise<void> => {
   const rootDir = getCacheRootDir()

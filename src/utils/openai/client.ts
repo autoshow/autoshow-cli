@@ -1,6 +1,7 @@
 import { AppError } from '~/utils/error-handler'
+import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
-export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
+export { OPENAI_DEFAULT_BASE_URL }
 
 export type OpenAIRestConfig = {
   apiKey: string

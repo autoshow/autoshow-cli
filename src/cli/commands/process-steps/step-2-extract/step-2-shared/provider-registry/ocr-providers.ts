@@ -7,8 +7,6 @@ import {
   SUPPORTED_ANTHROPIC_OCR_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_DEEPINFRA_OCR_MODELS,
-  SUPPORTED_AWS_TEXTRACT_MODELS,
-  SUPPORTED_GCLOUD_DOCAI_MODELS,
   SUPPORTED_UNSTRUCTURED_OCR_MODELS,
   validateMistralOcrModel,
   validateGlmOcrModel,
@@ -18,8 +16,6 @@ import {
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
   validateDeepinfraOcrModel,
-  validateAwsTextractModel,
-  validateGcloudDocaiModel,
   validateUnstructuredOcrModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
@@ -185,36 +181,6 @@ export const STEP2_OCR_PROVIDER_REGISTRY = [
     supportedModels: SUPPORTED_DEEPINFRA_OCR_MODELS,
     validateModel: validateDeepinfraOcrModel,
     description: buildModelDescription('DeepInfra OCR model', SUPPORTED_DEEPINFRA_OCR_MODELS)
-  }),
-  modelProvider({
-    step: 'ocr',
-    modality: 'document',
-    flagName: 'aws-textract',
-    targetService: 'aws-textract',
-    providerSpecProvider: 'aws-textract',
-    bootstrapProviderId: 'aws-textract',
-    configKey: 'awsTextract',
-    allShortcut: 'all-ocr',
-    runtimeModelsKey: 'awsTextractModels',
-    runtimeModelKey: 'awsTextractModel',
-    supportedModels: SUPPORTED_AWS_TEXTRACT_MODELS,
-    validateModel: validateAwsTextractModel,
-    description: buildModelDescription('AWS Textract model', SUPPORTED_AWS_TEXTRACT_MODELS)
-  }),
-  modelProvider({
-    step: 'ocr',
-    modality: 'document',
-    flagName: 'gcloud-docai',
-    targetService: 'gcloud-docai',
-    providerSpecProvider: 'gcloud-docai',
-    bootstrapProviderId: 'gcloud-docai',
-    configKey: 'gcloudDocai',
-    allShortcut: 'all-ocr',
-    runtimeModelsKey: 'gcloudDocaiModels',
-    runtimeModelKey: 'gcloudDocaiModel',
-    supportedModels: SUPPORTED_GCLOUD_DOCAI_MODELS,
-    validateModel: validateGcloudDocaiModel,
-    description: buildModelDescription('Google Cloud Document AI model', SUPPORTED_GCLOUD_DOCAI_MODELS)
   }),
   modelProvider({
     step: 'ocr',

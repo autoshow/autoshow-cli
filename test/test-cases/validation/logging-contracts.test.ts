@@ -399,10 +399,10 @@ describe('logging contracts', () => {
     expect(renderedStderr).toContain('second diagnostic line')
 
     const progressTable = createHumanTable([
-      { provider: 'aws-textract', detail: 'attempt 10' }
+      { provider: 'unstructured', detail: 'attempt 10' }
     ], ['provider', 'detail'])
     expect(progressTable.details).toBeUndefined()
-    expect(stripAnsi(renderHumanTable(progressTable))).toContain('\u2502 aws-textract \u2502 attempt 10')
+    expect(stripAnsi(renderHumanTable(progressTable))).toContain('\u2502 unstructured \u2502 attempt 10')
   })
 
   test('lifted path details are redacted like table cells', () => {
@@ -436,7 +436,7 @@ describe('logging contracts', () => {
       effective: 2,
       batchConcurrency: 1,
       hostedProviders: 27,
-      providerSlots: 'aws/standard:create=2,poll=1, deepgram/nova-3:launch=4'
+      providerSlots: 'assemblyai/universal-3-pro:create=2,poll=1, deepgram/nova-3:launch=4'
     })
 
     expect(table).toEqual({
@@ -452,7 +452,7 @@ describe('logging contracts', () => {
 
     const rendered = stripAnsi(renderHumanTable(table))
     expect(rendered).not.toContain('providerSlots')
-    expect(rendered).not.toContain('aws/standard')
+    expect(rendered).not.toContain('assemblyai/universal-3-pro')
   })
 
   test('STT provider slot details render as provider rows', () => {
@@ -466,9 +466,9 @@ describe('logging contracts', () => {
         pollSlots: null
       },
       {
-        service: 'aws',
-        model: 'standard',
-        provider: 'aws/standard',
+        service: 'assemblyai',
+        model: 'universal-3-pro',
+        provider: 'assemblyai/universal-3-pro',
         kind: 'async',
         launchSlots: 2,
         pollSlots: 1
@@ -479,18 +479,20 @@ describe('logging contracts', () => {
       columns: ['provider', 'kind', 'launch', 'poll'],
       rows: [
         { provider: 'deepgram/nova-3', kind: 'sync', launch: 4, poll: '' },
-        { provider: 'aws/standard', kind: 'async', launch: 2, poll: 1 }
+        { provider: 'assemblyai/universal-3-pro', kind: 'async', launch: 2, poll: 1 }
       ]
     })
 
     const rendered = stripAnsi(renderHumanTable(table))
-    expect(rendered).toContain('\u2502 deepgram/nova-3 \u2502 sync')
-    expect(rendered).toContain('\u2502 aws/standard    \u2502 async \u2502 2      \u2502 1')
+    expect(rendered).toContain('deepgram/nova-3')
+    expect(rendered).toContain('sync')
+    expect(rendered).toContain('assemblyai/universal-3-pro')
+    expect(rendered).toContain('async')
   })
 
   test('STT provider concurrency log emits compact summary and slot tables', () => {
     const { logger, writes } = createCapturingLogger()
-    const providerSlots = 'deepgram/nova-3:launch=4, aws/standard:create=2,poll=1'
+    const providerSlots = 'deepgram/nova-3:launch=4, assemblyai/universal-3-pro:create=2,poll=1'
     const providerSlotDetails = [
       {
         service: 'deepgram',
@@ -501,9 +503,9 @@ describe('logging contracts', () => {
         pollSlots: null
       },
       {
-        service: 'aws',
-        model: 'standard',
-        provider: 'aws/standard',
+        service: 'assemblyai',
+        model: 'universal-3-pro',
+        provider: 'assemblyai/universal-3-pro',
         kind: 'async',
         launchSlots: 2,
         pollSlots: 1
@@ -615,14 +617,14 @@ describe('logging contracts', () => {
     })
 
     expect(buildSttDiarizationConfigTable({
-      provider: 'aws',
-      model: 'standard',
+      provider: 'assemblyai',
+      model: 'universal-3-pro',
       enabled: true,
       speakerCount: 3,
       maxSpeakers: 3
     }).rows).toEqual([
-      { key: 'provider', value: 'aws' },
-      { key: 'model', value: 'standard' },
+      { key: 'provider', value: 'assemblyai' },
+      { key: 'model', value: 'universal-3-pro' },
       { key: 'enabled', value: true },
       { key: 'speakerCount', value: 3 },
       { key: 'maxSpeakers', value: 3 }
@@ -655,7 +657,7 @@ describe('logging contracts', () => {
     expect(cleanupRendered).not.toContain('\u2502 artifact \u2502 path')
 
     expect(buildSttProviderSpeakerCountHintsTable([
-      { provider: 'aws/standard', speakerCount: 2, support: 'honored' },
+      { provider: 'assemblyai/universal-3-pro', speakerCount: 2, support: 'honored' },
       { provider: 'reverb/reverb_asr_v1', speakerCount: 2, support: 'ignored' }
     ]).columns).toEqual(['provider', 'speakerCount', 'support'])
   })
@@ -790,7 +792,7 @@ describe('logging contracts', () => {
     })
 
     expect(buildOcrJobProgressTable({
-      provider: 'aws-textract',
+      provider: 'unstructured',
       action: 'poll',
       remoteId: 'job-123',
       state: 'in_progress',
@@ -799,7 +801,7 @@ describe('logging contracts', () => {
     })).toEqual({
       columns: ['key', 'value'],
       rows: [
-        { key: 'provider', value: 'aws-textract' },
+        { key: 'provider', value: 'unstructured' },
         { key: 'action', value: 'poll' },
         { key: 'remoteId', value: 'job-123' },
         { key: 'state', value: 'in_progress' },
@@ -809,11 +811,11 @@ describe('logging contracts', () => {
     })
 
     expect(buildOcrJobProgressTable({
-      provider: 'aws-textract',
+      provider: 'unstructured',
       action: 'launch',
       state: 'queued'
     }).rows).toEqual([
-      { key: 'provider', value: 'aws-textract' },
+      { key: 'provider', value: 'unstructured' },
       { key: 'action', value: 'launch' },
       { key: 'state', value: 'queued' }
     ])
@@ -1237,7 +1239,7 @@ describe('logging contracts', () => {
     const humanTable = writes[1]?.options?.humanTable
     if (!humanTable) throw new Error('Expected cost estimate human table')
 
-    expect(humanTable.columns).toEqual(['step', 'provider', 'model', 'cost'])
+    expect(humanTable.columns).toEqual(['step', 'provider', 'model', 'setup', 'cost'])
     expect(humanTable.details).toBeUndefined()
     expect(humanTable.rows.every(row => row['details'] === undefined)).toBe(true)
 

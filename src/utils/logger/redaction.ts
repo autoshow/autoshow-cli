@@ -24,7 +24,6 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
   'scrapecreators-api-key',
   'elevenlabs-api-key',
   'minimax-api-key',
-  'gcloud-tts-voice-cloning-key',
   'speechify-tts-consent-email'
 ])
 

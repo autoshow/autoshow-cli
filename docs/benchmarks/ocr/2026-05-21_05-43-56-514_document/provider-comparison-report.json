@@ -159,49 +159,6 @@
       "count": 15,
       "providers": [
         {
-          "providerKey": "aws-textract/detect-text",
-          "provider": "aws-textract",
-          "model": "detect-text",
-          "group": "thirdPartyService",
-          "processingTimeMs": 4951,
-          "costCents": 0.15,
-          "qualityMetric": "WER",
-          "qualityValue": 0.3859289617486339,
-          "qualityLabel": "38.59% WER",
-          "metrics": {
-            "wer": 0.3859289617486339,
-            "cer": 0.2139912983741699,
-            "speakerAwareWER": null,
-            "textOnlyWER": null,
-            "roundtripWER": null,
-            "contentCoverage": null,
-            "score": 61.40710382513661,
-            "qualityScore": null,
-            "humanSpeechScore": null
-          },
-          "supportsDiarization": null,
-          "diarizationSupport": null,
-          "qualityWarnings": [],
-          "segmentStats": null,
-          "duplicateGroupId": null,
-          "tokenEstimate": 1329,
-          "tokenCount": null,
-          "werBreakdown": {
-            "substitutions": 336,
-            "deletions": 183,
-            "insertions": 46,
-            "referenceCount": 1464
-          },
-          "cerBreakdown": {
-            "substitutions": 676,
-            "deletions": 860,
-            "insertions": 333,
-            "referenceCount": 8734
-          },
-          "textOnlyBreakdown": null,
-          "speakerAwareBreakdown": null
-        },
-        {
           "providerKey": "deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct",
           "provider": "deepinfra",
           "model": "Qwen/Qwen3-VL-235B-A22B-Instruct",
@@ -282,49 +239,6 @@
             "substitutions": 68,
             "deletions": 501,
             "insertions": 5,
-            "referenceCount": 8734
-          },
-          "textOnlyBreakdown": null,
-          "speakerAwareBreakdown": null
-        },
-        {
-          "providerKey": "gcloud-docai/ocr",
-          "provider": "gcloud-docai",
-          "model": "ocr",
-          "group": "thirdPartyService",
-          "processingTimeMs": 5194,
-          "costCents": 0.15,
-          "qualityMetric": "WER",
-          "qualityValue": 0.27049180327868855,
-          "qualityLabel": "27.05% WER",
-          "metrics": {
-            "wer": 0.27049180327868855,
-            "cer": 0.1805587359743531,
-            "speakerAwareWER": null,
-            "textOnlyWER": null,
-            "roundtripWER": null,
-            "contentCoverage": null,
-            "score": 72.95081967213115,
-            "qualityScore": null,
-            "humanSpeechScore": null
-          },
-          "supportsDiarization": null,
-          "diarizationSupport": null,
-          "qualityWarnings": [],
-          "segmentStats": null,
-          "duplicateGroupId": null,
-          "tokenEstimate": 1509,
-          "tokenCount": null,
-          "werBreakdown": {
-            "substitutions": 201,
-            "deletions": 86,
-            "insertions": 109,
-            "referenceCount": 1464
-          },
-          "cerBreakdown": {
-            "substitutions": 662,
-            "deletions": 413,
-            "insertions": 502,
             "referenceCount": 8734
           },
           "textOnlyBreakdown": null,
@@ -1008,44 +922,6 @@
           "diarizationSupport": null
         },
         {
-          "rank": 2,
-          "providerKey": "aws-textract/detect-text",
-          "provider": "aws-textract",
-          "model": "detect-text",
-          "group": "thirdPartyService",
-          "metric": "price",
-          "value": 0.15,
-          "label": "$0.0015",
-          "actualCostCents": 0.15,
-          "processingTimeMs": 4951,
-          "score": 61.40710382513661,
-          "wer": 0.3859289617486339,
-          "cer": 0.2139912983741699,
-          "speakerAwareWER": null,
-          "textOnlyWER": null,
-          "supportsDiarization": null,
-          "diarizationSupport": null
-        },
-        {
-          "rank": 3,
-          "providerKey": "gcloud-docai/ocr",
-          "provider": "gcloud-docai",
-          "model": "ocr",
-          "group": "thirdPartyService",
-          "metric": "price",
-          "value": 0.15,
-          "label": "$0.0015",
-          "actualCostCents": 0.15,
-          "processingTimeMs": 5194,
-          "score": 72.95081967213115,
-          "wer": 0.27049180327868855,
-          "cer": 0.1805587359743531,
-          "speakerAwareWER": null,
-          "textOnlyWER": null,
-          "supportsDiarization": null,
-          "diarizationSupport": null
-        },
-        {
           "rank": 4,
           "providerKey": "mistral/mistral-ocr-2512",
           "provider": "mistral",
@@ -1275,44 +1151,6 @@
         }
       ],
       "speed": [
-        {
-          "rank": 1,
-          "providerKey": "aws-textract/detect-text",
-          "provider": "aws-textract",
-          "model": "detect-text",
-          "group": "thirdPartyService",
-          "metric": "speed",
-          "value": 4951,
-          "label": "4.95s",
-          "actualCostCents": 0.15,
-          "processingTimeMs": 4951,
-          "score": 61.40710382513661,
-          "wer": 0.3859289617486339,
-          "cer": 0.2139912983741699,
-          "speakerAwareWER": null,
-          "textOnlyWER": null,
-          "supportsDiarization": null,
-          "diarizationSupport": null
-        },
-        {
-          "rank": 2,
-          "providerKey": "gcloud-docai/ocr",
-          "provider": "gcloud-docai",
-          "model": "ocr",
-          "group": "thirdPartyService",
-          "metric": "speed",
-          "value": 5194,
-          "label": "5.19s",
-          "actualCostCents": 0.15,
-          "processingTimeMs": 5194,
-          "score": 72.95081967213115,
-          "wer": 0.27049180327868855,
-          "cer": 0.1805587359743531,
-          "speakerAwareWER": null,
-          "textOnlyWER": null,
-          "supportsDiarization": null,
-          "diarizationSupport": null
-        },
         {
           "rank": 3,
           "providerKey": "gemini/gemini-3.1-flash-lite-preview",
@@ -1753,44 +1591,6 @@
           "diarizationSupport": null
         },
         {
-          "rank": 11,
-          "providerKey": "gcloud-docai/ocr",
-          "provider": "gcloud-docai",
-          "model": "ocr",
-          "group": "thirdPartyService",
-          "metric": "qualityScore",
-          "value": 72.95081967213115,
-          "label": "72.95/100 quality score",
-          "actualCostCents": 0.15,
-          "processingTimeMs": 5194,
-          "score": 72.95081967213115,
-          "wer": 0.27049180327868855,
-          "cer": 0.1805587359743531,
-          "speakerAwareWER": null,
-          "textOnlyWER": null,
-          "supportsDiarization": null,
-          "diarizationSupport": null
-        },
-        {
-          "rank": 12,
-          "providerKey": "aws-textract/detect-text",
-          "provider": "aws-textract",
-          "model": "detect-text",
-          "group": "thirdPartyService",
-          "metric": "qualityScore",
-          "value": 61.40710382513661,
-          "label": "61.41/100 quality score",
-          "actualCostCents": 0.15,
-          "processingTimeMs": 4951,
-          "score": 61.40710382513661,
-          "wer": 0.3859289617486339,
-          "cer": 0.2139912983741699,
-          "speakerAwareWER": null,
-          "textOnlyWER": null,
-          "supportsDiarization": null,
-          "diarizationSupport": null
-        },
-        {
           "rank": 13,
           "providerKey": "openai/gpt-5.4-nano",
           "provider": "openai",
@@ -1855,7 +1655,6 @@
     "Best local model: `tesseract/tesseract` scored 14.55/100.",
     "Best cloud service: `kimi/kimi-k2.6` scored 99.45/100.",
     "The cheapest cloud provider was `glm/glm-ocr` at 0.0286¢ ($0.0003).",
-    "Fastest local model: `tesseract/tesseract` at 9.47s.",
-    "Fastest cloud service: `aws-textract/detect-text` at 4.95s."
+    "Fastest local model: `tesseract/tesseract` at 9.47s."
   ]
 }

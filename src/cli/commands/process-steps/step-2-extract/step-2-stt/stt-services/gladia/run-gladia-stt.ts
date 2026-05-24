@@ -449,7 +449,6 @@ export const runGladiaStt = async (
     initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
     maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
     audioDurationSeconds,
-    envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_GLADIA',
     pollMode: resumedExistingJob ? 'resume-probe' : 'fresh',
     buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
     buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),

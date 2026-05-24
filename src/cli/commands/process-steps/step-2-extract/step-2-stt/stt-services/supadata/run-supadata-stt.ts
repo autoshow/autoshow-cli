@@ -285,7 +285,6 @@ export const runSupadataStt = async (
         initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
         maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
         audioDurationSeconds,
-        envSpecificDeadlineKey: 'AUTOSHOW_SUPADATA_STT_POLL_DEADLINE_MS',
         pollMode,
         poll: async () => await pollSupadataTranscriptJob({
           baseURL,

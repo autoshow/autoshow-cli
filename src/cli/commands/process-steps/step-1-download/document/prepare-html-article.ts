@@ -67,7 +67,7 @@ export async function prepareHtmlArticle(
 
   if (!remote) {
     if (backend !== 'defuddle') {
-      l.warn(`Ignoring --url-backend ${backend} for local HTML inputs; using defuddle instead`)
+      l.warn(`Ignoring --url-provider ${backend} for local HTML inputs; using defuddle instead`)
     }
     resolvedBackend = 'defuddle'
   }

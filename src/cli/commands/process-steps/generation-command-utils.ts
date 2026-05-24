@@ -55,18 +55,12 @@ const ensureTrailingSlash = (path: string): string =>
 
 const readExplicitGenerationOutputDir = (flags: Record<string, unknown>): string | undefined => {
   const outputDir = typeof flags['output-dir'] === 'string' ? flags['output-dir'] : undefined
-  const out = typeof flags['out'] === 'string' ? flags['out'] : undefined
 
-  if (outputDir !== undefined && out !== undefined) {
-    throw CLIUsageError('Use only one of --output-dir or --out.')
-  }
-
-  const explicitOutputDir = outputDir ?? out
-  if (explicitOutputDir !== undefined && explicitOutputDir.trim().length === 0) {
+  if (outputDir !== undefined && outputDir.trim().length === 0) {
     throw CLIUsageError('Output directory cannot be empty.')
   }
 
-  return explicitOutputDir
+  return outputDir
 }
 
 const ensureExplicitOutputDirectory = async (outputDir: string): Promise<void> => {

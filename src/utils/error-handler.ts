@@ -217,15 +217,6 @@ export const extractErrorMetadata = (error: unknown): Record<string, unknown> =>
 
 const LEGACY_ERROR_HINTS: ReadonlyArray<[needle: string, hint: string]> = [
   ['yt-dlp', "Run 'bun as setup' to install yt-dlp and other dependencies"],
-  ['Google Cloud CLI is required for Google transcription', "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access"],
-  ['Google Cloud CLI auth is required for Google transcription', "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access"],
-  ['Google Cloud project is required for Google transcription', "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access"],
-  ['Google Cloud billing must be linked', "Run 'bun as setup --gcloud --gcloud-project PROJECT_ID' to create or select a project, link billing, and enable Speech-to-Text"],
-  ['Google Cloud Speech-to-Text API must be enabled', "Run 'bun as setup --gcloud' to verify gcloud installation, auth, project, billing, and Speech-to-Text API access"],
-  ['AWS CLI is required for AWS transcription', "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access"],
-  ['AWS CLI credentials are required for AWS transcription', "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access"],
-  ['AWS region is required for AWS transcription', "Run 'bun as setup --aws' to verify AWS CLI installation, auth, region, and Transcribe access"],
-  ['AWS S3 bucket is required for AWS transcription', "Run 'bun as setup --aws --aws-create-bucket' to provision a staging bucket shared by Transcribe and Textract, then pass --aws-region/--aws-bucket or save them with 'bun as config --aws-region ... --aws-bucket ... --aws-stt standard'"],
   ['OPENAI_API_KEY', 'Set OPENAI_API_KEY environment variable to use OpenAI models'],
   ['GEMINI_API_KEY', 'Set GEMINI_API_KEY environment variable to use Gemini models'],
   ['GROQ_API_KEY', 'Set GROQ_API_KEY environment variable to use Groq models'],

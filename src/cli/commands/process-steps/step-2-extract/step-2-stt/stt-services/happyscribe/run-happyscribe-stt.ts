@@ -200,7 +200,7 @@ export const runHappyScribeStt = async (
     throw new Error([
       `Happy Scribe organization ${organizationSelection.selected.id}${organizationSelection.selected.name ? ` (${organizationSelection.selected.name})` : ''} reports currency ${organizationSelection.selected.currency}, but v1 execution supports exact-cost capture only for usd organizations.`,
       `Organizations: ${organizationSelection.organizations.length > 0 ? organizationSelection.organizations.map((organization) => `${organization.id}${organization.name ? ` "${organization.name}"` : ''}${organization.currency ? ` currency=${organization.currency}` : ''}`).join(', ') : 'none'}.`,
-      'Pass --happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
+      'Pass --stt-happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
     ].join(' '))
   }
 
@@ -320,7 +320,6 @@ export const runHappyScribeStt = async (
     initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
     maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
     audioDurationSeconds,
-    envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_HAPPYSCRIBE',
     pollMode: resumedExistingOrder ? 'resume-probe' : 'fresh',
     buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
     buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
@@ -420,7 +419,6 @@ export const runHappyScribeStt = async (
         initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
         maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
         audioDurationSeconds,
-        envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_HAPPYSCRIBE',
         buildDeadlineError: (jobId, pollDeadlineMs) => buildExportDeadlineError(jobId, pollDeadlineMs),
         poll: async () => apiClient.pollExport(activeExportId),
         isComplete: (exportStatus) => exportStatus.state === 'ready',

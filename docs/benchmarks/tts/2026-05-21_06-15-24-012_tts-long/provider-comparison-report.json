@@ -113,12 +113,6 @@
                 "groupTier": 1
               },
               {
-                "providerKey": "gcloud/chirp3-hd",
-                "tierGroup": "thirdParty",
-                "groupOverallRank": 3,
-                "groupTier": 1
-              },
-              {
                 "providerKey": "speechify/simba-english",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 4,
@@ -200,12 +194,6 @@
                 "providerKey": "hume/octave-2",
                 "tierGroup": "thirdParty",
                 "groupOverallRank": 13,
-                "groupTier": 3
-              },
-              {
-                "providerKey": "gcloud/studio",
-                "tierGroup": "thirdParty",
-                "groupOverallRank": 14,
                 "groupTier": 3
               },
               {
@@ -462,64 +450,6 @@
           "duplicateGroupId": null,
           "tierGroup": "thirdParty",
           "groupOverallRank": 11,
-          "groupTier": 3
-        },
-        {
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "processingTimeMs": 5245,
-          "costCents": 1.605,
-          "qualityMetric": "humanSpeechScore",
-          "qualityValue": 80,
-          "qualityLabel": "80.00 humanSpeechScore",
-          "metrics": {
-            "wer": null,
-            "cer": null,
-            "speakerAwareWER": null,
-            "textOnlyWER": null,
-            "roundtripWER": 0.056179775280898875,
-            "contentCoverage": null,
-            "qualityScore": 80,
-            "humanSpeechScore": 80
-          },
-          "supportsDiarization": null,
-          "diarizationSupport": null,
-          "qualityWarnings": [],
-          "segmentStats": null,
-          "duplicateGroupId": null,
-          "tierGroup": "thirdParty",
-          "groupOverallRank": 3,
-          "groupTier": 1
-        },
-        {
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
-          "group": "service",
-          "processingTimeMs": 2217,
-          "costCents": 8.56,
-          "qualityMetric": "humanSpeechScore",
-          "qualityValue": 70,
-          "qualityLabel": "70.00 humanSpeechScore",
-          "metrics": {
-            "wer": null,
-            "cer": null,
-            "speakerAwareWER": null,
-            "textOnlyWER": null,
-            "roundtripWER": 0.08426966292134831,
-            "contentCoverage": null,
-            "qualityScore": 70,
-            "humanSpeechScore": 70
-          },
-          "supportsDiarization": null,
-          "diarizationSupport": null,
-          "qualityWarnings": [],
-          "segmentStats": null,
-          "duplicateGroupId": null,
-          "tierGroup": "thirdParty",
-          "groupOverallRank": 14,
           "groupTier": 3
         },
         {
@@ -1093,26 +1023,6 @@
     "service": {
       "fastest": [
         {
-          "rank": 1,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
-          "group": "service",
-          "metric": "processingTimeMs",
-          "value": 2217,
-          "label": "2.22s"
-        },
-        {
-          "rank": 2,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "metric": "processingTimeMs",
-          "value": 5245,
-          "label": "5.25s"
-        },
-        {
           "rank": 3,
           "providerKey": "cartesia/sonic-3.5",
           "provider": "cartesia",
@@ -1305,16 +1215,6 @@
           "label": "$0.0160"
         },
         {
-          "rank": 7,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "metric": "costCents",
-          "value": 1.605,
-          "label": "$0.0160"
-        },
-        {
           "rank": 8,
           "providerKey": "groq/canopylabs/orpheus-v1-english",
           "provider": "groq",
@@ -1383,16 +1283,6 @@
           "metric": "costCents",
           "value": 8.025,
           "label": "$0.0803"
-        },
-        {
-          "rank": 15,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
-          "group": "service",
-          "metric": "costCents",
-          "value": 8.56,
-          "label": "$0.0856"
         }
       ],
       "highestQuality": [
@@ -1401,16 +1291,6 @@
           "providerKey": "elevenlabs/eleven_v3",
           "provider": "elevenlabs",
           "model": "eleven_v3",
-          "group": "service",
-          "metric": "humanSpeechScore",
-          "value": 80,
-          "label": "80.00 humanSpeechScore"
-        },
-        {
-          "rank": 2,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
           "group": "service",
           "metric": "humanSpeechScore",
           "value": 80,
@@ -1451,16 +1331,6 @@
           "providerKey": "deepgram/aura-2-thalia-en",
           "provider": "deepgram",
           "model": "aura-2-thalia-en",
-          "group": "service",
-          "metric": "humanSpeechScore",
-          "value": 70,
-          "label": "70.00 humanSpeechScore"
-        },
-        {
-          "rank": 7,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
           "group": "service",
           "metric": "humanSpeechScore",
           "value": 70,
@@ -1612,16 +1482,6 @@
           "label": "$0.0160"
         },
         {
-          "rank": 7,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "metric": "costCents",
-          "value": 1.605,
-          "label": "$0.0160"
-        },
-        {
           "rank": 8,
           "providerKey": "groq/canopylabs/orpheus-v1-english",
           "provider": "groq",
@@ -1690,39 +1550,9 @@
           "metric": "costCents",
           "value": 8.025,
           "label": "$0.0803"
-        },
-        {
-          "rank": 15,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
-          "group": "service",
-          "metric": "costCents",
-          "value": 8.56,
-          "label": "$0.0856"
         }
       ],
       "speed": [
-        {
-          "rank": 1,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
-          "group": "service",
-          "metric": "processingTimeMs",
-          "value": 2217,
-          "label": "2.22s"
-        },
-        {
-          "rank": 2,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "metric": "processingTimeMs",
-          "value": 5245,
-          "label": "5.25s"
-        },
         {
           "rank": 3,
           "providerKey": "cartesia/sonic-3.5",
@@ -1926,16 +1756,6 @@
           "label": "94.38 accuracy (5.62% roundtrip WER)"
         },
         {
-          "rank": 8,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "metric": "roundtrip WER accuracy",
-          "value": 94.3820224719101,
-          "label": "94.38 accuracy (5.62% roundtrip WER)"
-        },
-        {
           "rank": 9,
           "providerKey": "deepgram/aura-2-thalia-en",
           "provider": "deepgram",
@@ -1954,16 +1774,6 @@
           "metric": "roundtrip WER accuracy",
           "value": 92.69662921348315,
           "label": "92.70 accuracy (7.30% roundtrip WER)"
-        },
-        {
-          "rank": 11,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
-          "group": "service",
-          "metric": "roundtrip WER accuracy",
-          "value": 91.57303370786516,
-          "label": "91.57 accuracy (8.43% roundtrip WER)"
         },
         {
           "rank": 12,
@@ -2018,16 +1828,6 @@
           "label": "80.00 humanSpeechScore"
         },
         {
-          "rank": 2,
-          "providerKey": "gcloud/chirp3-hd",
-          "provider": "gcloud",
-          "model": "chirp3-hd",
-          "group": "service",
-          "metric": "humanSpeechScore",
-          "value": 80,
-          "label": "80.00 humanSpeechScore"
-        },
-        {
           "rank": 3,
           "providerKey": "grok/grok-tts",
           "provider": "grok",
@@ -2062,16 +1862,6 @@
           "providerKey": "deepgram/aura-2-thalia-en",
           "provider": "deepgram",
           "model": "aura-2-thalia-en",
-          "group": "service",
-          "metric": "humanSpeechScore",
-          "value": 70,
-          "label": "70.00 humanSpeechScore"
-        },
-        {
-          "rank": 7,
-          "providerKey": "gcloud/studio",
-          "provider": "gcloud",
-          "model": "studio",
           "group": "service",
           "metric": "humanSpeechScore",
           "value": 70,
@@ -2167,10 +1957,8 @@
   "combinedLeaderboardPolicy": "omitted: local and service providers are not ranked against each other",
   "notes": [
     "Local human-quality scores were tied at 40.00 humanSpeechScore for all local Kitten models.",
-    "Top service human-quality scores were tied at 80.00 humanSpeechScore for `elevenlabs/eleven_v3`, `gcloud/chirp3-hd`, `grok/grok-tts`, `minimax/speech-2.8-turbo`, and `openai/gpt-4o-mini-tts`.",
     "The cheapest cloud provider was `grok/grok-tts` at 0.2247¢ ($0.0022).",
     "Fastest local model: `kitten/kitten-tts-nano` at 5.13s.",
-    "Fastest cloud service: `gcloud/studio` at 2.22s.",
     "Manual human quality ratings supplied on 2026-05-21 were mapped from a 1-10 scale to 0-100 humanSpeechScore values."
   ]
 }

@@ -155,24 +155,6 @@
         "audioFileName": "speech-cartesia-sonic-3.5.wav",
         "audioFileSize": 1029028,
         "chunkCount": 1
-      },
-      {
-        "ttsService": "gcloud",
-        "ttsModel": "chirp3-hd",
-        "speaker": "en-US-Chirp3-HD-Charon",
-        "processingTime": 5245,
-        "audioFileName": "speech-gcloud-chirp3-hd.wav",
-        "audioFileSize": 1070158,
-        "chunkCount": 1
-      },
-      {
-        "ttsService": "gcloud",
-        "ttsModel": "studio",
-        "speaker": "en-US-Studio-O",
-        "processingTime": 2217,
-        "audioFileName": "speech-gcloud-studio.wav",
-        "audioFileSize": 1019278,
-        "chunkCount": 1
       }
     ],
     "cost": {
@@ -326,22 +308,6 @@
             "cost": 1.9995625000000001,
             "costMultiplier": 1,
             "costPer1kCharactersCents": 3.7375
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "chirp3-hd",
-            "cost": 1.605,
-            "costMultiplier": 1,
-            "costPer1kCharactersCents": 3
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "studio",
-            "cost": 8.56,
-            "costMultiplier": 1,
-            "costPer1kCharactersCents": 16
           }
         ]
       },
@@ -495,22 +461,6 @@
             "cost": 1.9995625000000001,
             "costMultiplier": 1,
             "costPer1kCharactersCents": 3.7375
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "chirp3-hd",
-            "cost": 1.605,
-            "costMultiplier": 1,
-            "costPer1kCharactersCents": 3
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "studio",
-            "cost": 8.56,
-            "costMultiplier": 1,
-            "costPer1kCharactersCents": 16
           }
         ]
       },
@@ -666,24 +616,6 @@
             "provider": "cartesia",
             "model": "sonic-3.5",
             "cost": 1.9995625000000001,
-            "costSource": "computed_usage",
-            "inputMetric": "characters",
-            "inputValue": 535
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "chirp3-hd",
-            "cost": 1.605,
-            "costSource": "computed_usage",
-            "inputMetric": "characters",
-            "inputValue": 535
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "studio",
-            "cost": 8.56,
             "costSource": "computed_usage",
             "inputMetric": "characters",
             "inputValue": 535
@@ -928,32 +860,6 @@
             "throughputValue": 333.333,
             "throughputUnit": "charactersPerSecond",
             "timingScope": "estimated"
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "chirp3-hd",
-            "processingTimeMs": 4815,
-            "inputMetric": "characters",
-            "inputValue": 535,
-            "rateBasis": "1KCharacters",
-            "msPerUnit": 9000,
-            "throughputValue": 111.111,
-            "throughputUnit": "charactersPerSecond",
-            "timingScope": "estimated"
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "studio",
-            "processingTimeMs": 5350,
-            "inputMetric": "characters",
-            "inputValue": 535,
-            "rateBasis": "1KCharacters",
-            "msPerUnit": 10000,
-            "throughputValue": 100,
-            "throughputUnit": "charactersPerSecond",
-            "timingScope": "estimated"
           }
         ]
       },
@@ -1180,32 +1086,6 @@
             "throughputValue": 91.688,
             "throughputUnit": "charactersPerSecond",
             "timingScope": "wall"
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "chirp3-hd",
-            "processingTimeMs": 5245,
-            "inputMetric": "characters",
-            "inputValue": 535,
-            "rateBasis": "1KCharacters",
-            "msPerUnit": 9803.738,
-            "throughputValue": 102.002,
-            "throughputUnit": "charactersPerSecond",
-            "timingScope": "wall"
-          },
-          {
-            "step": "tts",
-            "provider": "gcloud",
-            "model": "studio",
-            "processingTimeMs": 2217,
-            "inputMetric": "characters",
-            "inputValue": 535,
-            "rateBasis": "1KCharacters",
-            "msPerUnit": 4143.925,
-            "throughputValue": 241.317,
-            "throughputUnit": "charactersPerSecond",
-            "timingScope": "wall"
           }
         ]
       }
@@ -1283,14 +1163,6 @@
       {
         "service": "cartesia",
         "model": "sonic-3.5"
-      },
-      {
-        "service": "gcloud",
-        "model": "chirp3-hd"
-      },
-      {
-        "service": "gcloud",
-        "model": "studio"
       }
     ]
   }

@@ -1,13 +1,11 @@
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
-
-const DEFAULT_BFL_BASE_URL = 'https://api.bfl.ai'
+import { BFL_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
 export const getBflApiKey = (): string | undefined => readEnv('BFL_API_KEY')
 
 export const getBflBaseUrl = (): string => {
-  const raw = readEnv('BFL_BASE_URL') ?? DEFAULT_BFL_BASE_URL
-  return raw.replace(/\/+$/, '')
+  return BFL_DEFAULT_BASE_URL.replace(/\/+$/, '')
 }
 
 export const setupBflImageGen = async (): Promise<void> => {

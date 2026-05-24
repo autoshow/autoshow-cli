@@ -10,8 +10,6 @@ import {
   validateGlmModel,
   validateKimiModel,
   validateWhisperModel,
-  validateGcloudSttModel,
-  validateAwsSttModel,
   validateDeepinfraSttModel,
   validateElevenlabsSttModel,
   validateDeepgramSttModel,
@@ -35,8 +33,6 @@ import {
   validateAnthropicOcrModel,
   validateGeminiOcrModel,
   validateDeepinfraOcrModel,
-  validateAwsTextractModel,
-  validateGcloudDocaiModel,
   validateUnstructuredOcrModel,
   validateMistralOcrModel,
   validateOpenAIOcrModel,
@@ -53,7 +49,6 @@ import {
   validateSpeechifyTtsModel,
   validateHumeTtsModel,
   validateCartesiaTtsModel,
-  validateGcloudTtsModel,
   validateElevenlabsMusicModel,
   validateMinimaxMusicModel,
   validateGeminiMusicModel,
@@ -109,8 +104,6 @@ export const readRuntimeModelOptions = (
 
   const whisperModels = readValidatedMany('whisper-stt', validateWhisperModel)
   const whisperModel = first(whisperModels) ?? validateCliValue(validateWhisperModel, readStringFlag(mergedFlags, 'whisper-stt', 'tiny'))
-  const gcloudSttModels = readValidatedMany('gcloud-stt', validateGcloudSttModel)
-  const awsSttModels = readValidatedMany('aws-stt', validateAwsSttModel)
   const deepinfraSttModels = readValidatedMany('deepinfra-stt', validateDeepinfraSttModel)
   const groqSttModels = readValidatedMany('groq-stt', validateGroqSttModel)
   const grokSttModels = readValidatedMany('grok-stt', validateGrokSttModel)
@@ -137,8 +130,6 @@ export const readRuntimeModelOptions = (
   const anthropicOcrModels = readValidatedMany('anthropic-ocr', validateAnthropicOcrModel)
   const geminiOcrModels = readValidatedMany('gemini-ocr', validateGeminiOcrModel)
   const deepinfraOcrModels = readValidatedMany('deepinfra-ocr', validateDeepinfraOcrModel)
-  const awsTextractModels = readValidatedMany('aws-textract', validateAwsTextractModel)
-  const gcloudDocaiModels = readValidatedMany('gcloud-docai', validateGcloudDocaiModel)
   const unstructuredOcrModels = readValidatedMany('unstructured-ocr', validateUnstructuredOcrModel)
   const llamaModels = readValidatedMany('llama', validateLlamaModel)
   const openaiModels = readValidatedMany('openai', validateOpenAIModel)
@@ -149,8 +140,6 @@ export const readRuntimeModelOptions = (
   const grokModels = readValidatedMany('grok', validateGrokModel)
   const glmModels = readValidatedMany('glm', validateGlmModel)
   const kimiModels = readValidatedMany('kimi', validateKimiModel)
-  const gcloudSttModel = first(gcloudSttModels)
-  const awsSttModel = first(awsSttModels)
   const deepinfraSttModel = first(deepinfraSttModels)
   const groqSttModel = first(groqSttModels)
   const grokSttModel = first(grokSttModels)
@@ -177,8 +166,6 @@ export const readRuntimeModelOptions = (
   const anthropicOcrModel = first(anthropicOcrModels)
   const geminiOcrModel = first(geminiOcrModels)
   const deepinfraOcrModel = first(deepinfraOcrModels)
-  const awsTextractModel = first(awsTextractModels)
-  const gcloudDocaiModel = first(gcloudDocaiModels)
   const unstructuredOcrModel = first(unstructuredOcrModels)
   const llamaModel = first(llamaModels)
   const openaiModel = first(openaiModels)
@@ -201,7 +188,6 @@ export const readRuntimeModelOptions = (
   const speechifyTtsModels = readValidatedMany('speechify-tts', validateSpeechifyTtsModel)
   const humeTtsModels = readValidatedMany('hume-tts', validateHumeTtsModel)
   const cartesiaTtsModels = readValidatedMany('cartesia-tts', validateCartesiaTtsModel)
-  const gcloudTtsModels = readValidatedMany('gcloud-tts', validateGcloudTtsModel)
   const hasExplicitTtsEngine = [
     kittenTtsModels,
     elevenlabsTtsModels,
@@ -215,7 +201,6 @@ export const readRuntimeModelOptions = (
     speechifyTtsModels,
     humeTtsModels,
     cartesiaTtsModels,
-    gcloudTtsModels,
   ].some((value) => value !== undefined && value.length > 0)
   const kittenTtsModelValues = defaults.defaultTtsEngine === 'kitten' && !hasExplicitTtsEngine
     ? [DEFAULT_KITTEN_TTS_MODEL]
@@ -238,10 +223,6 @@ export const readRuntimeModelOptions = (
   return {
     whisperModels,
     whisperModel,
-    gcloudSttModels,
-    gcloudSttModel,
-    awsSttModels,
-    awsSttModel,
     deepinfraSttModels,
     deepinfraSttModel,
     groqSttModels,
@@ -294,10 +275,6 @@ export const readRuntimeModelOptions = (
     geminiOcrModel,
     deepinfraOcrModels,
     deepinfraOcrModel,
-    awsTextractModels,
-    awsTextractModel,
-    gcloudDocaiModels,
-    gcloudDocaiModel,
     unstructuredOcrModels,
     unstructuredOcrModel,
     llamaModels,
@@ -342,8 +319,6 @@ export const readRuntimeModelOptions = (
     humeTtsModel: first(humeTtsModels),
     cartesiaTtsModels,
     cartesiaTtsModel: first(cartesiaTtsModels),
-    gcloudTtsModels,
-    gcloudTtsModel: first(gcloudTtsModels),
     geminiImageModels,
     geminiImageModel: first(geminiImageModels),
     openaiImageModels,

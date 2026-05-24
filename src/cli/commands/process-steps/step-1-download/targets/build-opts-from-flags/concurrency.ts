@@ -12,14 +12,23 @@ export const resolveProviderConcurrency = (
   explicitFlags: Set<string>,
   configuredFlags: Set<string>
 ): number => {
-  const explicitOrConfigured = hasExplicitOrConfiguredFlag(flagName, explicitFlags, configuredFlags)
+  const sharedFlagName = 'provider-concurrency'
+  const explicitOrConfigured =
+    hasExplicitOrConfiguredFlag(sharedFlagName, explicitFlags, configuredFlags)
+    || hasExplicitOrConfiguredFlag(flagName, explicitFlags, configuredFlags)
   if (allShortcutSelected && !explicitOrConfigured) {
     return Math.max(1, Math.min(8, hostedTargetCount))
   }
-  return Math.max(1, parseIntWithDefault(readOptionalStringFlag(flags, flagName), 2))
+  return Math.max(1, parseIntWithDefault(
+    readOptionalStringFlag(flags, sharedFlagName) ?? readOptionalStringFlag(flags, flagName),
+    2
+  ))
 }
 
 export const resolveLocalConcurrency = (
   flags: Record<string, unknown>,
   flagName: string
-): number => Math.max(1, parseIntWithDefault(readOptionalStringFlag(flags, flagName), 1))
+): number => Math.max(1, parseIntWithDefault(
+  readOptionalStringFlag(flags, 'local-concurrency') ?? readOptionalStringFlag(flags, flagName),
+  1
+))

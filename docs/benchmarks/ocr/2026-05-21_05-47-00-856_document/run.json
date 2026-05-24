@@ -427,32 +427,6 @@
         ]
       },
       {
-        "extractionMethod": "aws-textract",
-        "totalPages": 4,
-        "ocrPages": 4,
-        "textPages": 0,
-        "processingTime": 12036,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1351,
-        "ocrModel": "detect-text",
-        "ocrService": "aws-textract",
-        "inputFamily": "pdf"
-      },
-      {
-        "extractionMethod": "gcloud-docai",
-        "totalPages": 4,
-        "ocrPages": 4,
-        "textPages": 0,
-        "processingTime": 77979,
-        "dpi": 300,
-        "languages": "eng",
-        "tokenEstimate": 1349,
-        "ocrModel": "ocr",
-        "ocrService": "gcloud-docai",
-        "inputFamily": "pdf"
-      },
-      {
         "extractionMethod": "unstructured-ocr",
         "totalPages": 4,
         "ocrPages": 4,
@@ -561,16 +535,6 @@
         {
           "service": "deepinfra",
           "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
-          "origin": "all-shortcut"
-        },
-        {
-          "service": "aws-textract",
-          "model": "detect-text",
-          "origin": "all-shortcut"
-        },
-        {
-          "service": "gcloud-docai",
-          "model": "ocr",
           "origin": "all-shortcut"
         },
         {
@@ -778,26 +742,6 @@
           },
           {
             "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "cost": 0.6,
-            "costMultiplier": 1,
-            "costPer1kPagesCents": 150,
-            "pageCount": 4,
-            "estimateType": "exact"
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "cost": 0.6,
-            "costMultiplier": 1,
-            "costPer1kPagesCents": 150,
-            "pageCount": 4,
-            "estimateType": "exact"
-          },
-          {
-            "step": "extract",
             "provider": "unstructured",
             "model": "hi_res_and_enrichment",
             "cost": 12,
@@ -1000,24 +944,6 @@
             "inputValue": 33638,
             "promptTokens": 31872,
             "completionTokens": 1766
-          },
-          {
-            "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "cost": 0.6,
-            "costSource": "registry_fallback",
-            "inputMetric": "pages",
-            "inputValue": 4
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "cost": 0.6,
-            "costSource": "registry_fallback",
-            "inputMetric": "pages",
-            "inputValue": 4
           },
           {
             "step": "extract",
@@ -1669,60 +1595,6 @@
           "source": "token_usage"
         },
         {
-          "provider": "aws-textract",
-          "model": "detect-text",
-          "pages": 4,
-          "predictedCostInputs": {
-            "costCents": 0.6,
-            "pageCount": 4,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "estimateType": "exact"
-          },
-          "actualCostInputs": {
-            "costCents": 0.6,
-            "pageCount": 4,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "costSource": "registry_fallback"
-          },
-          "ratesUsed": {
-            "costPer1kPagesCents": 150
-          },
-          "delta": {
-            "costCents": 0,
-            "percent": 0
-          },
-          "source": "page_pricing"
-        },
-        {
-          "provider": "gcloud-docai",
-          "model": "ocr",
-          "pages": 4,
-          "predictedCostInputs": {
-            "costCents": 0.6,
-            "pageCount": 4,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "estimateType": "exact"
-          },
-          "actualCostInputs": {
-            "costCents": 0.6,
-            "pageCount": 4,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "costSource": "registry_fallback"
-          },
-          "ratesUsed": {
-            "costPer1kPagesCents": 150
-          },
-          "delta": {
-            "costCents": 0,
-            "percent": 0
-          },
-          "source": "page_pricing"
-        },
-        {
           "provider": "unstructured",
           "model": "hi_res_and_enrichment",
           "pages": 4,
@@ -1946,32 +1818,6 @@
             "rateBasis": "page",
             "msPerUnit": 14451,
             "throughputValue": 4.152,
-            "throughputUnit": "pagesPerMinute",
-            "timingScope": "estimated"
-          },
-          {
-            "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "processingTimeMs": 9164,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "rateBasis": "page",
-            "msPerUnit": 2291,
-            "throughputValue": 26.189,
-            "throughputUnit": "pagesPerMinute",
-            "timingScope": "estimated"
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "processingTimeMs": 7672,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "rateBasis": "page",
-            "msPerUnit": 1918,
-            "throughputValue": 31.283,
             "throughputUnit": "pagesPerMinute",
             "timingScope": "estimated"
           },
@@ -2229,32 +2075,6 @@
           },
           {
             "step": "extract",
-            "provider": "aws-textract",
-            "model": "detect-text",
-            "processingTimeMs": 12036,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "rateBasis": "page",
-            "msPerUnit": 3009,
-            "throughputValue": 19.94,
-            "throughputUnit": "pagesPerMinute",
-            "timingScope": "wall"
-          },
-          {
-            "step": "extract",
-            "provider": "gcloud-docai",
-            "model": "ocr",
-            "processingTimeMs": 77979,
-            "inputMetric": "pages",
-            "inputValue": 4,
-            "rateBasis": "page",
-            "msPerUnit": 19494.75,
-            "throughputValue": 3.078,
-            "throughputUnit": "pagesPerMinute",
-            "timingScope": "wall"
-          },
-          {
-            "step": "extract",
             "provider": "unstructured",
             "model": "hi_res_and_enrichment",
             "processingTimeMs": 114561,
@@ -2342,14 +2162,6 @@
       {
         "service": "deepinfra",
         "model": "Qwen/Qwen3-VL-30B-A3B-Instruct"
-      },
-      {
-        "service": "aws-textract",
-        "model": "detect-text"
-      },
-      {
-        "service": "gcloud-docai",
-        "model": "ocr"
       },
       {
         "service": "unstructured",
@@ -2480,20 +2292,6 @@
         "service": "deepinfra",
         "model": "Qwen/Qwen3-VL-30B-A3B-Instruct",
         "artifactDir": "providers/deepinfra-Qwen-Qwen3-VL-30B-A3B-Instruct",
-        "status": "succeeded",
-        "attempts": 1
-      },
-      {
-        "service": "aws-textract",
-        "model": "detect-text",
-        "artifactDir": "providers/aws-textract-detect-text",
-        "status": "succeeded",
-        "attempts": 1
-      },
-      {
-        "service": "gcloud-docai",
-        "model": "ocr",
-        "artifactDir": "providers/gcloud-docai-ocr",
         "status": "succeeded",
         "attempts": 1
       },

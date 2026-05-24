@@ -12,8 +12,6 @@ import type {
 const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
   'whisper',
   'reverb',
-  'gcloud',
-  'aws',
   'deepgram',
   'deepinfra',
   'elevenlabs',

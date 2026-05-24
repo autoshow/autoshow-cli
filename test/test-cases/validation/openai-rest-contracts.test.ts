@@ -562,7 +562,6 @@ describe('OpenAI REST contracts', () => {
 
       const result = await runGrokOcr(imagePath, metadata, 'grok-4.3', {
         dpi: 300,
-        rotate: 0,
         password: undefined,
         ocrPreparationCache: undefined
       })

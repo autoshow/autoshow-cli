@@ -14,6 +14,7 @@ import {
   logSttSegmentLifecycle
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
@@ -188,7 +189,7 @@ export const runElevenLabsTranscribe = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
-  const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
+  const baseURL = ELEVENLABS_DEFAULT_BASE_URL
   let transcribeMs = 0
   let requestCount = 0
   let retryCount = 0

@@ -15,7 +15,6 @@ export type TtsOptions = Pick<
   | 'elevenlabsTtsModels'
   | 'elevenlabsTtsModel'
   | 'elevenlabsVoiceId'
-  | 'elevenlabsTtsPvcVoice'
   | 'elevenlabsTtsRefAudio'
   | 'elevenlabsTtsVoiceName'
   | 'elevenlabsTtsCloneRemoveBackgroundNoise'
@@ -30,14 +29,6 @@ export type TtsOptions = Pick<
   | 'elevenlabsTtsTextNormalization'
   | 'elevenlabsTtsPronunciationDictionaryLocators'
   | 'elevenlabsTtsOptimizeStreamingLatency'
-  | 'elevenlabsTtsPvcAsIvc'
-  | 'elevenlabsTtsPvcSamples'
-  | 'elevenlabsTtsPvcSampleDir'
-  | 'elevenlabsTtsPvcLanguage'
-  | 'elevenlabsTtsPvcDescription'
-  | 'elevenlabsTtsPvcCaptchaOut'
-  | 'elevenlabsTtsPvcVerifyAudio'
-  | 'elevenlabsTtsPvcWait'
   | 'deepgramTtsModels'
   | 'deepgramTtsModel'
   | 'deepgramVoiceId'
@@ -65,15 +56,6 @@ export type TtsOptions = Pick<
   | 'cartesiaTtsModel'
   | 'cartesiaTtsVoice'
   | 'cartesiaTtsLanguage'
-  | 'gcloudTtsModels'
-  | 'gcloudTtsModel'
-  | 'gcloudTtsVoice'
-  | 'gcloudTtsLanguage'
-  | 'gcloudTtsRefAudio'
-  | 'gcloudTtsConsentAudio'
-  | 'gcloudTtsConsentLanguage'
-  | 'gcloudTtsVoiceCloningKey'
-  | 'gcloudTtsVoiceCloningKeyOut'
   | 'minimaxTtsModels'
   | 'minimaxTtsModel'
   | 'minimaxTtsVoice'
@@ -99,6 +81,7 @@ export type TtsOptions = Pick<
   | 'mistralTtsVoiceName'
   | 'ttsDialogueFormat'
   | 'ttsSpeakerRefAudios'
+  | 'ttsSpeakers'
   | 'openaiTtsModels'
   | 'openaiTtsModel'
   | 'openaiVoiceId'
@@ -121,8 +104,23 @@ export type TtsOptions = Pick<
   | 'ttsLocalConcurrency'
 >
 
+export type MultiSpeakerStrategy = 'native' | 'segment-and-concat'
+
+export type SpeakerVoiceMapping = {
+  speaker: string
+  normalizedSpeaker: string
+  voice: string
+  voiceKind: 'id' | 'ref-audio'
+}
+
+export type SpeakerVoiceRegistry = {
+  entries: SpeakerVoiceMapping[]
+  bySpeaker: Map<string, SpeakerVoiceMapping>
+}
+
 export type TtsTarget = ProviderTargetBase<TtsProvider> & {
   voice?: string
+  multiSpeakerStrategy?: MultiSpeakerStrategy
   setupCostCents?: number | undefined
   setupTimeMs?: number | undefined
   setupNote?: string | undefined

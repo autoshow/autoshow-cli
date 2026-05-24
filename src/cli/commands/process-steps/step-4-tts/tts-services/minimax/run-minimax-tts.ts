@@ -7,6 +7,7 @@ import { splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
+import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import { pollUntil } from '~/utils/retries'
 import {
@@ -17,8 +18,6 @@ import {
   isMinimaxTaskFailure
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
-
-const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const MINIMAX_DEFAULT_VOICE_ID = 'English_expressive_narrator'
 const MAX_CHARS_PER_CHUNK = 50_000
 const POLL_INTERVAL_MS = 3_000
@@ -158,7 +157,7 @@ export const runMinimaxTts = async (
     throw new Error('MINIMAX_API_KEY environment variable is required for MiniMax TTS')
   }
 
-  const baseURL = readEnv('MINIMAX_BASE_URL') ?? MINIMAX_DEFAULT_BASE_URL
+  const baseURL = MINIMAX_DEFAULT_BASE_URL
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
   if (chunks.length === 0) {
     throw new Error('MiniMax TTS input text is empty')

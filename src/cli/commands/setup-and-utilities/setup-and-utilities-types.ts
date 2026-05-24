@@ -9,11 +9,9 @@ import {
   SUPPORTED_MINIMAX_MODELS
 } from './models/llm-models'
 import {
-  SUPPORTED_AWS_STT_MODELS,
   SUPPORTED_DEEPGRAM_STT_MODELS,
   SUPPORTED_DEEPINFRA_STT_MODELS,
   SUPPORTED_ELEVENLABS_STT_MODELS,
-  SUPPORTED_GCLOUD_STT_MODELS,
   SUPPORTED_GLADIA_STT_MODELS,
   SUPPORTED_GROK_STT_MODELS,
   SUPPORTED_GROQ_STT_MODELS,
@@ -32,9 +30,7 @@ import {
 } from './models/stt-models'
 import {
   SUPPORTED_ANTHROPIC_OCR_MODELS,
-  SUPPORTED_AWS_TEXTRACT_MODELS,
   SUPPORTED_DEEPINFRA_OCR_MODELS,
-  SUPPORTED_GCLOUD_DOCAI_MODELS,
   SUPPORTED_GEMINI_OCR_MODELS,
   SUPPORTED_GLM_OCR_MODELS,
   SUPPORTED_GROK_OCR_MODELS,
@@ -54,7 +50,6 @@ import {
   SUPPORTED_MINIMAX_TTS_MODELS,
   SUPPORTED_OPENAI_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS,
-  SUPPORTED_GCLOUD_TTS_MODELS,
   SUPPORTED_HUME_TTS_MODELS,
   SUPPORTED_CARTESIA_TTS_MODELS
 } from './models/tts-models'
@@ -116,8 +111,6 @@ export type AnthropicModel = typeof SUPPORTED_ANTHROPIC_MODELS[number]
 export type MinimaxModel = typeof SUPPORTED_MINIMAX_MODELS[number]
 export type GlmModel = typeof SUPPORTED_GLM_MODELS[number]
 export type KimiModel = typeof SUPPORTED_KIMI_MODELS[number]
-export type AwsSttModel = typeof SUPPORTED_AWS_STT_MODELS[number]
-export type GcloudSttModel = typeof SUPPORTED_GCLOUD_STT_MODELS[number]
 export type DeepgramSttModel = typeof SUPPORTED_DEEPGRAM_STT_MODELS[number]
 export type DeepinfraSttModel = typeof SUPPORTED_DEEPINFRA_STT_MODELS[number]
 export type ElevenlabsSttModel = typeof SUPPORTED_ELEVENLABS_STT_MODELS[number]
@@ -144,8 +137,6 @@ export type GrokOcrModel = typeof SUPPORTED_GROK_OCR_MODELS[number]
 export type AnthropicOcrModel = typeof SUPPORTED_ANTHROPIC_OCR_MODELS[number]
 export type GeminiOcrModel = typeof SUPPORTED_GEMINI_OCR_MODELS[number]
 export type DeepinfraOcrModel = typeof SUPPORTED_DEEPINFRA_OCR_MODELS[number]
-export type AwsTextractModel = typeof SUPPORTED_AWS_TEXTRACT_MODELS[number]
-export type GcloudDocaiModel = typeof SUPPORTED_GCLOUD_DOCAI_MODELS[number]
 export type UnstructuredOcrModel = typeof SUPPORTED_UNSTRUCTURED_OCR_MODELS[number]
 export type KittenTtsModel = typeof SUPPORTED_KITTEN_TTS_MODELS[number]
 export type ElevenlabsTtsModel = typeof SUPPORTED_ELEVENLABS_TTS_MODELS[number]
@@ -157,7 +148,6 @@ export type OpenAITtsModel = typeof SUPPORTED_OPENAI_TTS_MODELS[number]
 export type GeminiTtsModel = typeof SUPPORTED_GEMINI_TTS_MODELS[number]
 export type DeepgramTtsModel = typeof SUPPORTED_DEEPGRAM_TTS_MODELS[number]
 export type SpeechifyTtsModel = typeof SUPPORTED_SPEECHIFY_TTS_MODELS[number]
-export type GcloudTtsModel = typeof SUPPORTED_GCLOUD_TTS_MODELS[number]
 export type HumeTtsModel = typeof SUPPORTED_HUME_TTS_MODELS[number]
 export type CartesiaTtsModel = typeof SUPPORTED_CARTESIA_TTS_MODELS[number]
 export type ElevenlabsMusicModel = typeof SUPPORTED_ELEVENLABS_MUSIC_MODELS[number]

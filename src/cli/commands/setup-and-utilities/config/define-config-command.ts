@@ -4,6 +4,10 @@ import { resolveConfigPath, loadConfig } from './config-loader'
 import { extractExplicitFlags, buildConfigPatchFromFlags, deepMergeConfig } from './config-merge'
 import { writeConfig } from './config-writer'
 import * as l from '~/utils/logger'
+import {
+  normalizeGenericTtsOptionFlags,
+  normalizeWriteStepSelectorFlags
+} from '~/cli/commands/process-steps/service-selector-normalization'
 
 export const configCommand = defineCliCommand({
   name: 'config',
@@ -12,7 +16,7 @@ export const configCommand = defineCliCommand({
   help: {
     examples: [
       ['bun as config --show', 'Print current config'],
-      ['bun as config --openai gpt-5.4 --whisper-stt base', 'Set default LLM and STT model'],
+      ['bun as config --llm openai=gpt-5.4 --stt whisper=base', 'Set default LLM and STT model'],
       ['bun as config --reset', 'Clear all saved config']
     ]
   }
@@ -36,7 +40,13 @@ export const configCommand = defineCliCommand({
 
   const preprocessedArgv = Bun.argv.slice(2)
   const explicitFlagNames = extractExplicitFlags(preprocessedArgv)
-  const patch = buildConfigPatchFromFlags(flags as Record<string, unknown>, explicitFlagNames, preprocessedArgv)
+  const selectorNormalized = normalizeWriteStepSelectorFlags(flags as Record<string, unknown>, explicitFlagNames, preprocessedArgv)
+  const ttsNormalized = normalizeGenericTtsOptionFlags(selectorNormalized.flags, selectorNormalized.explicitFlags)
+  const patch = buildConfigPatchFromFlags(
+    ttsNormalized.flags,
+    ttsNormalized.explicitFlags,
+    selectorNormalized.rawArgs ?? preprocessedArgv
+  )
 
   if (Object.keys(patch).length === 0) {
     l.write('info', `No changes to write. Config path: ${resolvedPath}`)

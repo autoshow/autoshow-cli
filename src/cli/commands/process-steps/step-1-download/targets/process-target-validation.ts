@@ -12,17 +12,13 @@ export const validateWriteStep2ProviderSelection = (command: ProcessCommand, opt
     return
   }
 
-  if (opts.urlBackends !== undefined) {
-    throw CLIUsageError('--all-url is only supported on extract for this release')
-  }
-
   const sttTargets = collectSttTargets(opts)
   if (sttTargets.length > 1) {
-    throw CLIUsageError('write accepts at most one STT provider (--whisper-stt, --reverb-stt, --*-stt).')
+    throw CLIUsageError('write accepts at most one STT provider (--stt provider[=model]).')
   }
 
   const ocrTargets = collectExplicitOcrTargets(opts)
   if (ocrTargets.length > 1) {
-    throw CLIUsageError('write accepts at most one OCR provider (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --grok-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai, --unstructured-ocr).')
+    throw CLIUsageError('write accepts at most one OCR provider (--ocr provider[=model]).')
   }
 }

@@ -74,7 +74,6 @@
 | 4 | <code>openai/gpt-4o-mini-tts</code> | $0.0067 |
 | 5 | <code>gemini/gemini-3.1-flash-tts-preview</code> | $0.0112 |
 | 6 | <code>deepgram/aura-2-thalia-en</code> | $0.0160 |
-| 7 | <code>gcloud/chirp3-hd</code> | $0.0160 |
 | 8 | <code>groq/canopylabs/orpheus-v1-english</code> | $0.0171 |
 | 9 | <code>cartesia/sonic-3</code> | $0.0200 |
 | 10 | <code>cartesia/sonic-3.5</code> | $0.0200 |
@@ -82,14 +81,11 @@
 | 12 | <code>elevenlabs/eleven_v3</code> | $0.0535 |
 | 13 | <code>minimax/speech-2.8-hd</code> | $0.0535 |
 | 14 | <code>hume/octave-2</code> | $0.0803 |
-| 15 | <code>gcloud/studio</code> | $0.0856 |
 
 ### Speed
 
 | Rank | Provider | Evidence |
 | ---: | --- | --- |
-| 1 | <code>gcloud/studio</code> | 2.22s |
-| 2 | <code>gcloud/chirp3-hd</code> | 5.25s |
 | 3 | <code>cartesia/sonic-3.5</code> | 5.83s |
 | 4 | <code>speechify/simba-multilingual</code> | 6.12s |
 | 5 | <code>hume/octave-2</code> | 6.32s |
@@ -115,10 +111,8 @@
 | 5 | <code>grok/grok-tts</code> | 95.51 accuracy (4.49% roundtrip WER) |
 | 6 | <code>speechify/simba-multilingual</code> | 94.94 accuracy (5.06% roundtrip WER) |
 | 7 | <code>elevenlabs/eleven_v3</code> | 94.38 accuracy (5.62% roundtrip WER) |
-| 8 | <code>gcloud/chirp3-hd</code> | 94.38 accuracy (5.62% roundtrip WER) |
 | 9 | <code>deepgram/aura-2-thalia-en</code> | 93.26 accuracy (6.74% roundtrip WER) |
 | 10 | <code>hume/octave-2</code> | 92.70 accuracy (7.30% roundtrip WER) |
-| 11 | <code>gcloud/studio</code> | 91.57 accuracy (8.43% roundtrip WER) |
 | 12 | <code>speechify/simba-english</code> | 90.45 accuracy (9.55% roundtrip WER) |
 | 13 | <code>cartesia/sonic-3</code> | 87.64 accuracy (12.36% roundtrip WER) |
 | 14 | <code>cartesia/sonic-3.5</code> | 87.64 accuracy (12.36% roundtrip WER) |
@@ -129,12 +123,10 @@
 | Rank | Provider | Evidence |
 | ---: | --- | --- |
 | 1 | <code>elevenlabs/eleven_v3</code> | 80.00 humanSpeechScore |
-| 2 | <code>gcloud/chirp3-hd</code> | 80.00 humanSpeechScore |
 | 3 | <code>grok/grok-tts</code> | 80.00 humanSpeechScore |
 | 4 | <code>minimax/speech-2.8-turbo</code> | 80.00 humanSpeechScore |
 | 5 | <code>openai/gpt-4o-mini-tts</code> | 80.00 humanSpeechScore |
 | 6 | <code>deepgram/aura-2-thalia-en</code> | 70.00 humanSpeechScore |
-| 7 | <code>gcloud/studio</code> | 70.00 humanSpeechScore |
 | 8 | <code>gemini/gemini-3.1-flash-tts-preview</code> | 70.00 humanSpeechScore |
 | 9 | <code>hume/octave-2</code> | 70.00 humanSpeechScore |
 | 10 | <code>minimax/speech-2.8-hd</code> | 70.00 humanSpeechScore |
@@ -152,8 +144,6 @@
 | <code>cartesia/sonic-3.5</code> | 60.00 humanSpeechScore | 5.83s | $0.0200 |
 | <code>deepgram/aura-2-thalia-en</code> | 70.00 humanSpeechScore | 17.72s | $0.0160 |
 | <code>elevenlabs/eleven_v3</code> | 80.00 humanSpeechScore | 19.14s | $0.0535 |
-| <code>gcloud/chirp3-hd</code> | 80.00 humanSpeechScore | 5.25s | $0.0160 |
-| <code>gcloud/studio</code> | 70.00 humanSpeechScore | 2.22s | $0.0856 |
 | <code>gemini/gemini-3.1-flash-tts-preview</code> | 70.00 humanSpeechScore | 31.18s | $0.0112 |
 | <code>grok/grok-tts</code> | 80.00 humanSpeechScore | 9.28s | $0.0022 |
 | <code>groq/canopylabs/orpheus-v1-english</code> | 60.00 humanSpeechScore | 7.45s | $0.0171 |
@@ -167,8 +157,6 @@
 ## Notes
 
 - Local human-quality scores were tied at 40.00 humanSpeechScore for all local Kitten models.
-- Top service human-quality scores were tied at 80.00 humanSpeechScore for `elevenlabs/eleven_v3`, `gcloud/chirp3-hd`, `grok/grok-tts`, `minimax/speech-2.8-turbo`, and `openai/gpt-4o-mini-tts`.
 - The cheapest cloud provider was `grok/grok-tts` at 0.2247¢ ($0.0022).
 - Fastest local model: `kitten/kitten-tts-nano` at 5.13s.
-- Fastest cloud service: `gcloud/studio` at 2.22s.
 - Manual human quality ratings supplied on 2026-05-21 were mapped from a 1-10 scale to 0-100 humanSpeechScore values.

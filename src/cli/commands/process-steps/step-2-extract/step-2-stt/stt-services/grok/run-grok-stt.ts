@@ -18,10 +18,10 @@ import {
   resolveTranscriptionOutput
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData, validateDataSafe } from '~/utils/validate/validation'
 
-const GROK_DEFAULT_BASE_URL = 'https://api.x.ai/v1'
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 
 const GrokSttWordSchema = v.object({
@@ -223,7 +223,7 @@ export const runGrokStt = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const baseURL = trimTrailingSlash(readEnv('XAI_BASE_URL') ?? GROK_DEFAULT_BASE_URL)
+  const baseURL = trimTrailingSlash(XAI_DEFAULT_BASE_URL)
   let transcribeMs = 0
   let requestCount = 0
   let retryCount = 0

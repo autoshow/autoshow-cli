@@ -14,18 +14,21 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { getResumeHandler } from './resume-registry'
 import type { ResumeTarget, ResumeTargetKind } from '~/types'
 import {
-  normalizeCommandSelectorArgs,
-  normalizeCommandSelectorFlags,
-  normalizeExtractPublicSelectorArgs,
-  normalizeExtractPublicSelectorFlags,
+  EXTRACT_PUBLIC_SELECTOR_FLAGS,
+  normalizeExtractGenericSelectorArgs,
+  normalizeExtractGenericSelectorFlags,
+  normalizeGenericProviderSelectorFlags,
+  normalizeGenericTtsOptionFlags,
+  STANDALONE_IMAGE_PROVIDER_TARGETS,
+  STANDALONE_MUSIC_PROVIDER_TARGETS,
+  STANDALONE_TTS_PROVIDER_TARGETS,
+  STANDALONE_VIDEO_PROVIDER_TARGETS,
   type ExtractSelectorInputRoutes,
-  type SelectorFlagMap
 } from '~/cli/commands/process-steps/service-selector-normalization'
 import { TTS_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/tts-flags'
 import { IMAGE_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/image-flags'
 import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 import { MUSIC_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/music-flags'
-import { EXTRACT_PUBLIC_SELECTOR_FLAGS } from '~/cli/commands/process-steps/service-selector-normalization'
 import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
 const SUPPORTED_RESUME_KINDS = new Set<ResumeTargetKind>(['extract', 'tts', 'image', 'video', 'music'])
@@ -68,13 +71,6 @@ const INTERNAL_SELECTOR_FLAGS_BY_KIND: Record<ResumeTargetKind, ReadonlySet<stri
   music: new Set(MUSIC_SELECTOR_FLAGS)
 }
 
-const PUBLIC_SELECTOR_MAP_BY_KIND = {
-  tts: TTS_COMMAND_SELECTOR_FLAGS,
-  image: IMAGE_COMMAND_SELECTOR_FLAGS,
-  video: VIDEO_COMMAND_SELECTOR_FLAGS,
-  music: MUSIC_COMMAND_SELECTOR_FLAGS
-} as const satisfies Record<Exclude<ResumeTargetKind, 'extract'>, SelectorFlagMap>
-
 const PUBLIC_SELECTOR_FLAGS_BY_KIND: Record<ResumeTargetKind, ReadonlySet<string>> = {
   extract: new Set(Object.keys(EXTRACT_PUBLIC_SELECTOR_FLAGS)),
   tts: new Set(Object.values(TTS_COMMAND_SELECTOR_FLAGS)),
@@ -90,6 +86,20 @@ const ALL_PUBLIC_SELECTOR_FLAGS = new Set(
   Object.values(PUBLIC_SELECTOR_FLAGS_BY_KIND).flatMap((flags) => [...flags])
 )
 
+const PROVIDER_TARGETS_BY_KIND = {
+  tts: STANDALONE_TTS_PROVIDER_TARGETS,
+  image: STANDALONE_IMAGE_PROVIDER_TARGETS,
+  video: STANDALONE_VIDEO_PROVIDER_TARGETS,
+  music: STANDALONE_MUSIC_PROVIDER_TARGETS
+} as const satisfies Record<Exclude<ResumeTargetKind, 'extract'>, Record<string, string>>
+
+const ALL_PROVIDERS_TARGET_BY_KIND = {
+  tts: 'all-tts',
+  image: 'all-image',
+  video: 'all-video',
+  music: 'all-music'
+} as const satisfies Record<Exclude<ResumeTargetKind, 'extract'>, string>
+
 type ResumeSelectorNormalizationResult = {
   flags: Record<string, unknown>
   explicitFlags: Set<string>
@@ -103,14 +113,6 @@ const occurrenceValues = (value: unknown): Array<string | boolean> => {
   return typeof value === 'string' || value === true ? [value] : []
 }
 
-const targetLabel = (target: ResumeTarget): string => {
-  if (target.kind === 'tts') return 'TTS'
-  if (target.kind === 'extract' && target.extractRoute === 'media') return 'extract media'
-  if (target.kind === 'extract' && target.extractRoute === 'document') return 'extract document'
-  if (target.kind === 'extract' && target.extractRoute === 'x-space') return 'extract X Space'
-  return target.kind
-}
-
 const explicitOrPresent = (
   flags: Record<string, unknown>,
   explicitFlags: Set<string>,
@@ -119,25 +121,21 @@ const explicitOrPresent = (
   explicitFlags.has(flagName) || occurrenceValues(flags[flagName]).length > 0
 
 const assertSelectorFlagsApplyToTarget = (
-  target: ResumeTarget,
   flags: Record<string, unknown>,
   explicitFlags: Set<string>
 ): void => {
-  const compatibleInternal = INTERNAL_SELECTOR_FLAGS_BY_KIND[target.kind]
-  const compatiblePublic = PUBLIC_SELECTOR_FLAGS_BY_KIND[target.kind]
-
   for (const flagName of ALL_INTERNAL_SELECTOR_FLAGS) {
-    if (!explicitFlags.has(flagName) || compatibleInternal.has(flagName)) {
+    if (!explicitFlags.has(flagName)) {
       continue
     }
-    throw CLIUsageError(`--${flagName} does not apply to ${targetLabel(target)} resume targets.`)
+    throw CLIUsageError(`--${flagName} is no longer supported for resume. Use --provider provider[=model] or --all-providers.`)
   }
 
   for (const flagName of ALL_PUBLIC_SELECTOR_FLAGS) {
-    if (!explicitOrPresent(flags, explicitFlags, flagName) || compatiblePublic.has(flagName)) {
+    if (!explicitOrPresent(flags, explicitFlags, flagName)) {
       continue
     }
-    throw CLIUsageError(`--${flagName} does not apply to ${targetLabel(target)} resume targets.`)
+    throw CLIUsageError(`--${flagName} is no longer supported for resume. Use --provider provider[=model] or --all-providers.`)
   }
 }
 
@@ -145,7 +143,8 @@ const extractRoutesForTarget = (
   target: ResumeTarget
 ): ExtractSelectorInputRoutes => ({
   media: target.extractRoute === undefined || target.extractRoute === 'media',
-  document: target.extractRoute === undefined || target.extractRoute === 'document'
+  document: target.extractRoute === undefined || target.extractRoute === 'document',
+  article: target.extractRoute === undefined || target.extractRoute === 'x-space'
 })
 
 const isExtractRoute = (value: unknown): value is ExtractRoute =>
@@ -245,22 +244,44 @@ export const normalizeResumeSelectorFlagsForTarget = (
   explicitFlags: Set<string>,
   rawArgs: string[]
 ): ResumeSelectorNormalizationResult => {
-  assertSelectorFlagsApplyToTarget(target, flags, explicitFlags)
+  assertSelectorFlagsApplyToTarget(flags, explicitFlags)
 
   if (target.kind === 'extract') {
     const routes = extractRoutesForTarget(target)
-    const normalized = normalizeExtractPublicSelectorFlags(flags, explicitFlags, routes)
+    const normalized = normalizeExtractGenericSelectorFlags(flags, explicitFlags, routes)
     return {
       ...normalized,
-      rawArgs: normalizeExtractPublicSelectorArgs(rawArgs, routes)
+      rawArgs: normalizeExtractGenericSelectorArgs(rawArgs, routes)
     }
   }
 
-  const selectorMap = PUBLIC_SELECTOR_MAP_BY_KIND[target.kind]
-  const normalized = normalizeCommandSelectorFlags(flags, explicitFlags, selectorMap)
+  const providerNormalized = normalizeGenericProviderSelectorFlags(
+    flags,
+    explicitFlags,
+    'provider',
+    PROVIDER_TARGETS_BY_KIND[target.kind],
+    {
+      allProvidersTarget: ALL_PROVIDERS_TARGET_BY_KIND[target.kind],
+      rawArgs
+    }
+  )
+
+  if (target.kind === 'tts') {
+    const ttsNormalized = normalizeGenericTtsOptionFlags(
+      providerNormalized.flags,
+      providerNormalized.explicitFlags
+    )
+    return {
+      flags: ttsNormalized.flags,
+      explicitFlags: ttsNormalized.explicitFlags,
+      rawArgs: providerNormalized.rawArgs ?? rawArgs
+    }
+  }
+
   return {
-    ...normalized,
-    rawArgs: normalizeCommandSelectorArgs(rawArgs, selectorMap)
+    flags: providerNormalized.flags,
+    explicitFlags: providerNormalized.explicitFlags,
+    rawArgs: providerNormalized.rawArgs ?? rawArgs
   }
 }
 

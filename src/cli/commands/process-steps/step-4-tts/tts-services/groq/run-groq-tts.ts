@@ -8,9 +8,8 @@ import {
   validateGroqTtsVoiceForModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
+import { GROQ_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateDataSafe } from '~/utils/validate/validation'
-
-const GROQ_DEFAULT_BASE_URL = 'https://api.groq.com/openai/v1'
 const MAX_CHARS_PER_CHUNK = 200
 
 const GroqErrorSchema = v.object({
@@ -55,8 +54,8 @@ export const runGroqTts = async (
     throw new Error('GROQ_API_KEY environment variable is required for Groq TTS')
   }
 
-  const baseURL = readEnv('GROQ_BASE_URL') ?? GROQ_DEFAULT_BASE_URL
-  const rawVoice = options.voiceId?.trim() || readEnv('GROQ_TTS_VOICE') || getGroqDefaultTtsVoiceForModel(options.model)
+  const baseURL = GROQ_DEFAULT_BASE_URL
+  const rawVoice = options.voiceId?.trim() || getGroqDefaultTtsVoiceForModel(options.model)
   const voice = validateGroqTtsVoiceForModel(options.model, rawVoice)
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
   if (chunks.length === 0) {

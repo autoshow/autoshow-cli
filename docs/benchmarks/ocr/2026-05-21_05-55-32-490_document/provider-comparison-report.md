@@ -52,8 +52,6 @@
 | 3 | <code>openai/gpt-5.4-nano</code> | $0.0039 | 58.12 | 41.88% | 28.95% | 53.85s | $0.0039 |
 | 4 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | $0.0052 | 91.21 | 8.79% | 2.99% | 70.58s | $0.0052 |
 | 5 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | $0.0071 | 84.84 | 15.16% | 4.04% | 44.17s | $0.0071 |
-| 6 | <code>aws-textract/detect-text</code> | $0.0075 | 80.72 | 19.28% | 4.41% | 14.61s | $0.0075 |
-| 7 | <code>gcloud-docai/ocr</code> | $0.0075 | 77.67 | 22.33% | 5.12% | 74.10s | $0.0075 |
 | 8 | <code>mistral/mistral-ocr-2512</code> | $0.0100 | 96.05 | 3.95% | 1.54% | 6.32s | $0.0100 |
 | 9 | <code>openai/gpt-5.4-mini</code> | $0.0104 | 28.34 | 71.66% | 69.47% | 16.08s | $0.0104 |
 | 10 | <code>anthropic/claude-haiku-4-5</code> | $0.0191 | 96.86 | 3.14% | 0.81% | 38.37s | $0.0191 |
@@ -72,7 +70,6 @@
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 6.26s | 98.65 | 1.35% | 0.40% | 6.26s | $0.0033 |
 | 2 | <code>mistral/mistral-ocr-2512</code> | 6.32s | 96.05 | 3.95% | 1.54% | 6.32s | $0.0100 |
-| 3 | <code>aws-textract/detect-text</code> | 14.61s | 80.72 | 19.28% | 4.41% | 14.61s | $0.0075 |
 | 4 | <code>glm/glm-ocr</code> | 15.17s | 80.36 | 19.64% | 15.28% | 15.17s | $0.0003 |
 | 5 | <code>openai/gpt-5.4-mini</code> | 16.08s | 28.34 | 71.66% | 69.47% | 16.08s | $0.0104 |
 | 6 | <code>openai/gpt-5.4</code> | 26.84s | 88.88 | 11.12% | 7.43% | 26.84s | $0.0513 |
@@ -85,7 +82,6 @@
 | 13 | <code>anthropic/claude-opus-4-7</code> | 54.98s | 98.74 | 1.26% | 0.21% | 54.98s | $0.1097 |
 | 14 | <code>anthropic/claude-sonnet-4-6</code> | 66.18s | 98.92 | 1.08% | 0.17% | 66.18s | $0.0581 |
 | 15 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | 70.58s | 91.21 | 8.79% | 2.99% | 70.58s | $0.0052 |
-| 16 | <code>gcloud-docai/ocr</code> | 74.10s | 77.67 | 22.33% | 5.12% | 74.10s | $0.0075 |
 | 17 | <code>grok/grok-4.3</code> | 83.79s | 98.74 | 1.26% | 0.24% | 83.79s | $0.0202 |
 | 18 | <code>gemini/gemini-3.1-pro-preview</code> | 127.83s | 94.17 | 5.83% | 0.90% | 127.83s | $0.0287 |
 
@@ -105,9 +101,7 @@
 | 10 | <code>kimi/kimi-k2.6</code> | 89.33/100 quality score | 89.33 | 10.67% | 1.85% | 54.20s | $0.0274 |
 | 11 | <code>openai/gpt-5.4</code> | 88.88/100 quality score | 88.88 | 11.12% | 7.43% | 26.84s | $0.0513 |
 | 12 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | 84.84/100 quality score | 84.84 | 15.16% | 4.04% | 44.17s | $0.0071 |
-| 13 | <code>aws-textract/detect-text</code> | 80.72/100 quality score | 80.72 | 19.28% | 4.41% | 14.61s | $0.0075 |
 | 14 | <code>glm/glm-ocr</code> | 80.36/100 quality score | 80.36 | 19.64% | 15.28% | 15.17s | $0.0003 |
-| 15 | <code>gcloud-docai/ocr</code> | 77.67/100 quality score | 77.67 | 22.33% | 5.12% | 74.10s | $0.0075 |
 | 16 | <code>openai/gpt-5.4-nano</code> | 58.12/100 quality score | 58.12 | 41.88% | 28.95% | 53.85s | $0.0039 |
 | 17 | <code>openai/gpt-5.4-mini</code> | 28.34/100 quality score | 28.34 | 71.66% | 69.47% | 16.08s | $0.0104 |
 | 18 | <code>unstructured/hi_res_and_enrichment</code> | 1.35/100 quality score | 1.35 | 98.65% | 98.76% | 36.83s | $0.1500 |
@@ -123,10 +117,8 @@
 | <code>anthropic/claude-haiku-4-5</code> | Third-Party Service | 96.86 | 3.14% | 0.81% | 38.37s | $0.0191 |
 | <code>anthropic/claude-opus-4-7</code> | Third-Party Service | 98.74 | 1.26% | 0.21% | 54.98s | $0.1097 |
 | <code>anthropic/claude-sonnet-4-6</code> | Third-Party Service | 98.92 | 1.08% | 0.17% | 66.18s | $0.0581 |
-| <code>aws-textract/detect-text</code> | Third-Party Service | 80.72 | 19.28% | 4.41% | 14.61s | $0.0075 |
 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | Third-Party Service | 84.84 | 15.16% | 4.04% | 44.17s | $0.0071 |
 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | Third-Party Service | 91.21 | 8.79% | 2.99% | 70.58s | $0.0052 |
-| <code>gcloud-docai/ocr</code> | Third-Party Service | 77.67 | 22.33% | 5.12% | 74.10s | $0.0075 |
 | <code>gemini/gemini-3.1-flash-lite-preview</code> | Third-Party Service | 98.65 | 1.35% | 0.40% | 6.26s | $0.0033 |
 | <code>gemini/gemini-3.1-pro-preview</code> | Third-Party Service | 94.17 | 5.83% | 0.90% | 127.83s | $0.0287 |
 | <code>glm/glm-ocr</code> | Third-Party Service | 80.36 | 19.64% | 15.28% | 15.17s | $0.0003 |
@@ -149,10 +141,8 @@
 | <code>anthropic/claude-haiku-4-5</code> | 21 | 11 | 3 | 1115 |
 | <code>anthropic/claude-opus-4-7</code> | 5 | 7 | 2 | 1115 |
 | <code>anthropic/claude-sonnet-4-6</code> | 6 | 3 | 3 | 1115 |
-| <code>aws-textract/detect-text</code> | 199 | 8 | 8 | 1115 |
 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | 130 | 24 | 15 | 1115 |
 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | 62 | 27 | 9 | 1115 |
-| <code>gcloud-docai/ocr</code> | 172 | 24 | 53 | 1115 |
 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 12 | 3 | 0 | 1115 |
 | <code>gemini/gemini-3.1-pro-preview</code> | 20 | 0 | 45 | 1115 |
 | <code>glm/glm-ocr</code> | 63 | 149 | 7 | 1115 |

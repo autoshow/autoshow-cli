@@ -1,13 +1,11 @@
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
-
-const DEFAULT_REVE_BASE_URL = 'https://api.reve.com'
+import { REVE_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
 export const getReveApiKey = (): string | undefined => readEnv('REVE_API_KEY')
 
 export const getReveBaseUrl = (): string => {
-  const raw = readEnv('REVE_BASE_URL') ?? DEFAULT_REVE_BASE_URL
-  return raw.replace(/\/+$/, '')
+  return REVE_DEFAULT_BASE_URL.replace(/\/+$/, '')
 }
 
 export const setupReveImageGen = async (): Promise<void> => {

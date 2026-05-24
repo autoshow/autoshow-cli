@@ -106,7 +106,7 @@ export const readBatchOrder = (flags: Record<string, unknown>): BatchOrder => {
   const v = readFlagValue(flags, 'batch-order')
   return v === 'oldest' ? 'oldest' : 'newest'
 }
-export const parseUrlBackend = (value: string | undefined): HtmlArticleBackend => {
+export const parseUrlBackend = (value: string | undefined, flagName = 'url-provider'): HtmlArticleBackend => {
   const normalized = value?.trim().toLowerCase()
   if (!normalized || normalized === 'defuddle') {
     return 'defuddle'
@@ -120,10 +120,13 @@ export const parseUrlBackend = (value: string | undefined): HtmlArticleBackend =
   if (normalized === 'spider') {
     return 'spider'
   }
+  if (normalized === 'supadata') {
+    return 'supadata'
+  }
   if (normalized === 'zyte') {
     return 'zyte'
   }
-  throw CLIUsageError(`Invalid --url-backend value "${value}". Expected "defuddle", "firecrawl", "glm-reader", "spider", or "zyte".`)
+  throw CLIUsageError(`Invalid --${flagName} value "${value}". Expected "defuddle", "firecrawl", "glm-reader", "spider", "supadata", or "zyte".`)
 }
 
 export const parsePdfChapterMode = (value: string | undefined): 'local' | 'auto' | 'llm' => {

@@ -22,7 +22,7 @@ bun as config --show
 bun as config --reset
 ```
 
-No input argument is required. Flags that are explicitly passed are persisted to the config file. Runtime-only flags such as `--price`, `--allow-over-budget`, `--show`, `--reset`, `--config-path`, setup-only voice-clone verification flags, `--music-lyrics-file`, and `--music-instrumental` are never persisted.
+No input argument is required. Flags that are explicitly passed are persisted to the config file when they map to reusable defaults. Runtime-only flags such as `--price`, `--allow-over-budget`, `--show`, `--reset`, `--config-path`, PDF passwords, Speechify custom-voice creation fields, raw Google Cloud voice-cloning keys, `--music-lyrics-file`, and `--music-instrumental` are never persisted.
 
 ## Config File Location
 
@@ -38,31 +38,34 @@ bun as write input/examples/audio/1-audio.mp3 --config-path ./input/my-autoshow.
 ## Setting Defaults
 
 ```bash
-bun as config --openai gpt-5.4
-bun as config --glm glm-5.1
-bun as config --kimi kimi-k2.6
-bun as config --whisper-stt large-v3-turbo
-bun as config --gcloud-stt chirp_3
-bun as config --aws-stt standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
-bun as config --kitten-tts kitten-tts-mini --kitten-voice Jasper
-bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
-bun as config --minimax-tts speech-2.8-hd --minimax-tts-language-boost English --minimax-tts-speed 1.15
-bun as config --grok-tts grok-tts --grok-tts-language auto --grok-tts-text-normalization
-bun as config --openai-tts gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
-bun as config --openai-tts gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1
-bun as config --speechify-tts simba-english --speechify-voice george
-bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
-bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
-bun as config --gcloud-tts chirp3-hd --gcloud-tts-voice en-US-Chirp3-HD-Achernar
+bun as config --llm openai=gpt-5.4
+bun as config --llm glm=glm-5.1
+bun as config --llm kimi=kimi-k2.6
+bun as config --stt whisper=large-v3-turbo
+bun as config --stt gcloud=chirp_3
+bun as config --stt aws=standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
+bun as config --tts kitten=kitten-tts-mini --tts-voice Jasper
+bun as config --tts elevenlabs=eleven_v3 --tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --tts minimax=speech-2.8-hd --minimax-tts-language-boost English --tts-speed 1.15
+bun as config --tts grok=grok-tts --tts-language auto --tts-text-normalization true
+bun as config --tts mistral=voxtral-mini-tts-2603 --tts-ref-audio input/examples/audio/anthony-voice.mp3 --tts-voice-name AutoShowAnthony
+bun as config --tts openai=gpt-4o-mini-tts --tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+bun as config --tts openai=gpt-4o-mini-tts --tts-instructions "Warm documentary narration" --tts-speed 1.1
+bun as config --tts deepgram=aura-2-thalia-en --deepgram-tts-container wav --deepgram-tts-sample-rate 24000
+bun as config --tts speechify=simba-english --tts-voice george --speechify-tts-audio-format mp3 --tts-language en-US
+bun as config --tts hume=octave-2 --tts-voice "Male English Actor"
+bun as config --tts cartesia=sonic-3.5 --tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+bun as config --tts gcloud=chirp3-hd --tts-voice en-US-Chirp3-HD-Achernar
+bun as config --tts gcloud=instant-custom-voice --tts-ref-audio input/examples/audio/anthony-voice.mp3 --tts-consent-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3 --tts-consent-language en-US
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 100
 ```
 
-Model-selecting flags are repeatable. Repeating a provider flag saves all selected models in first-seen order:
+Model-selecting step selector flags are repeatable. Repeating a provider selector saves all selected models in first-seen order:
 
 ```bash
-bun as config --speechmatics-stt standard --speechmatics-stt enhanced
-bun as config --openai gpt-5.4 --openai gpt-5.4-mini
+bun as config --stt speechmatics=standard --stt speechmatics=enhanced
+bun as config --llm openai=gpt-5.4 --llm openai=gpt-5.4-mini
 ```
 
 Cloud setup commands may save reusable AWS or Google Cloud runtime settings to `config/autoshow.json` when they provision shared resources. Use `bun as config ...` for intentional provider and model defaults.
@@ -140,10 +143,19 @@ Representative JSON shape:
         "grokTts": ["grok-tts"],
         "grokTtsLanguage": "auto",
         "grokTtsTextNormalization": true,
+        "mistralTts": ["voxtral-mini-tts-2603"],
+        "mistralTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
+        "mistralTtsVoiceName": "AutoShowAnthony",
         "openaiTts": ["gpt-4o-mini-tts"],
         "openaiTtsInstructions": "Warm documentary narration",
         "openaiTtsSpeed": 1.1,
+        "deepgramTts": ["aura-2-thalia-en"],
+        "deepgramTtsContainer": "wav",
+        "deepgramTtsSampleRate": 24000,
         "speechifyTts": ["simba-english"],
+        "speechifyVoice": "george",
+        "speechifyTtsAudioFormat": "mp3",
+        "speechifyTtsLanguage": "en-US",
         "humeTts": ["octave-2"],
         "humeTtsVoice": "Male English Actor",
         "humeTtsVoiceProvider": "HUME_AI",
@@ -152,6 +164,9 @@ Representative JSON shape:
         "cartesiaTtsLanguage": "en",
         "gcloudTts": ["chirp3-hd"],
         "gcloudTtsVoice": "en-US-Chirp3-HD-Achernar",
+        "gcloudTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
+        "gcloudTtsConsentAudio": "https://ajc.pics/autoshow/examples/0-audio-short.mp3",
+        "gcloudTtsConsentLanguage": "en-US",
         "providerConcurrency": 2,
         "localConcurrency": 1
       },
@@ -167,11 +182,6 @@ Representative JSON shape:
         "imageFormat": "png",
         "imageBackground": "auto",
         "imageCount": 1,
-        "imageInputs": ["input/reference.png"],
-        "imageMask": "input/mask.png",
-        "imageResponseMode": "image",
-        "geminiSearchGrounding": true,
-        "imageCompression": 80,
         "providerConcurrency": 2,
         "localConcurrency": 1
       },
@@ -225,17 +235,13 @@ Model-selecting fields are arrays of models, not single strings.
 
 | Field | Flag |
 |-------|------|
-| `whisper` | `--whisper-stt` |
-| `reverb` | `--reverb-stt` |
+| `whisper`, `reverb` | `--stt whisper[=<model>]`, `--stt reverb[=<model>]` |
 | `youtubeCaptions` | `--youtube-captions` |
-| `gcloudStt`, `awsStt`, `deepinfraStt` | `--gcloud-stt`, `--aws-stt`, `--deepinfra-stt` |
-| `groqStt`, `grokStt`, `elevenlabsStt`, `deepgramStt` | `--groq-stt`, `--grok-stt`, `--elevenlabs-stt`, `--deepgram-stt` |
-| `sonioxStt`, `speechmaticsStt`, `revStt`, `mistralStt` | `--soniox-stt`, `--speechmatics-stt`, `--rev-stt`, `--mistral-stt` |
-| `assemblyaiStt`, `gladiaStt`, `happyscribeStt`, `supadataStt`, `scrapecreatorsStt` | `--assemblyai-stt`, `--gladia-stt`, `--happyscribe-stt`, `--supadata-stt`, `--scrapecreators-stt` |
-| `openaiStt`, `geminiStt`, `glmStt` | matching provider flags |
+| Hosted STT model fields | `--stt provider[=model]` |
 | `awsRegion`, `awsBucket`, `happyscribeOrganizationId`, `supadataLang`, `scrapecreatorsLang` | matching provider option flags |
 | `speakerCount`, `split`, `reverbVerbatimicity` | `--speaker-count`, `--split`, `--reverb-verbatimicity` |
-| `providerConcurrency`, `localConcurrency`, `segmentConcurrency`, `preflightConcurrency` | STT concurrency flags |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
+| `segmentConcurrency`, `preflightConcurrency` | `--stt-segment-concurrency`, `--stt-preflight-concurrency` |
 | `refreshCache`, `noCache` | `--refresh-cache`, `--no-cache` |
 
 `--together-stt` appears in generated config help through the shared STT registry, but the current persisted config schema does not validate that default. Use it on `extract` or `write` directly until schema support is added.
@@ -244,60 +250,62 @@ Model-selecting fields are arrays of models, not single strings.
 
 | Field | Flag |
 |-------|------|
-| `tesseract`, `ocrmypdf`, `paddleOcr` | `--tesseract-ocr`, `--ocrmypdf`, `--paddle-ocr` |
-| `mistralOcr`, `glmOcr`, `kimiOcr`, `openaiOcr`, `grokOcr`, `anthropicOcr`, `geminiOcr`, `deepinfraOcr`, `awsTextract`, `gcloudDocai`, `unstructuredOcr` | matching OCR provider flags |
-| `lang`, `out`, `dpi`, `psm`, `oem`, `rotate`, `pageSeparator`, `preserveSpaces` | matching OCR tuning flags |
-| `providerConcurrency`, `localConcurrency` | `--ocr-provider-concurrency`, `--ocr-local-concurrency` |
+| Local OCR engine fields | `--ocr tesseract`, `--ocr ocrmypdf`, `--ocr paddle` |
+| Hosted OCR model fields | `--ocr provider[=model]` |
+| `lang`, `out`, `dpi`, `psm`, `oem`, `rotate`, `pageSeparator`, `preserveSpaces` | `--ocr-language`, `--format`, `--ocr-dpi`, `--tesseract-psm`, `--tesseract-oem`, `--ocr-rotate`, `--ocr-page-separator`, `--tesseract-preserve-spaces` |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 | `chapters`, `length`, `pdfChapterMode` | `--chapters`, `--length`, `--pdf-chapter-mode` |
 
-Google Cloud Document AI runtime fields such as processor IDs, location, and bucket are accepted by the schema. Persist model defaults with `bun as config --gcloud-docai ocr`; use `bun as setup --gcloud --gcloud-project ...` or environment variables to provision or override the shared runtime values.
+Google Cloud Document AI runtime fields such as processor IDs, location, and bucket are accepted by the schema. Persist model defaults with `bun as config --ocr gcloud=ocr`; use `bun as setup --gcloud --gcloud-project ...` or environment variables to provision or override the shared runtime values.
 
 ### defaults.llm
 
 | Field | Flag |
 |-------|------|
-| `llama`, `openai`, `groq`, `gemini`, `anthropic`, `minimax`, `grok`, `glm`, `kimi` | matching LLM provider flags |
-| `providerConcurrency`, `localConcurrency` | `--llm-provider-concurrency`, `--llm-local-concurrency` |
+| `llama`, `openai`, `groq`, `gemini`, `anthropic`, `minimax`, `grok`, `glm`, `kimi` | `--llm provider[=model]` |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 
 ### defaults.post.tts
 
 | Field | Flag |
 |-------|------|
-| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `speechifyTts`, `humeTts`, `cartesiaTts`, `gcloudTts` | matching TTS provider flags |
-| `ttsSpeaker`, `groqVoice`, `grokTtsVoice`, `grokTtsLanguage`, `grokTtsTextNormalization`, `mistralTtsVoice`, `mistralTtsRefAudio` | matching voice/reference flags |
+| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `speechifyTts`, `humeTts`, `cartesiaTts`, `gcloudTts` | `--tts provider[=model]` |
+| `ttsSpeaker`, `groqVoice`, `grokTtsVoice`, `grokTtsLanguage`, `grokTtsTextNormalization`, `mistralTtsVoice`, `mistralTtsRefAudio`, `mistralTtsVoiceName` | generic `--tts-*` voice/reference flags or matching provider-specific controls |
 | `ttsDialogueFormat`, `ttsSpeakerRefAudio` | dialogue TTS flags |
-| `openaiVoice`, `openaiTtsInstructions`, `openaiTtsSpeed`, `openaiTtsRefAudio`, `openaiTtsConsentId`, `openaiTtsConsentAudio`, `openaiTtsConsentLanguage`, `openaiTtsConsentName`, `openaiTtsVoiceName` | OpenAI voice and synthesis flags |
+| `openaiVoice`, `openaiTtsInstructions`, `openaiTtsSpeed`, `openaiTtsRefAudio`, `openaiTtsConsentId`, `openaiTtsConsentAudio`, `openaiTtsConsentLanguage`, `openaiTtsConsentName`, `openaiTtsVoiceName` | generic `--tts-*` flags plus `--openai-tts-consent-id` |
 | `geminiVoice`, `geminiSpeaker1Name`, `geminiSpeaker1Voice`, `geminiSpeaker2Name`, `geminiSpeaker2Voice` | Gemini voice and multispeaker flags |
-| `elevenlabsVoice`, `elevenlabsTtsPvcVoice`, `elevenlabsTtsRefAudio`, `elevenlabsTtsVoiceName`, `elevenlabsTtsCloneRemoveBackgroundNoise`, `elevenlabsTtsOutputFormat`, `elevenlabsTtsLanguageCode`, `elevenlabsTtsStability`, `elevenlabsTtsSimilarityBoost`, `elevenlabsTtsStyle`, `elevenlabsTtsUseSpeakerBoost`, `elevenlabsTtsSpeed`, `elevenlabsTtsSeed`, `elevenlabsTtsTextNormalization`, `elevenlabsTtsPronunciationDictionaryLocators`, `elevenlabsTtsOptimizeStreamingLatency`, `elevenlabsTtsPvcAsIvc` | ElevenLabs reusable voice/clone and synthesis flags |
+| `elevenlabsVoice`, `elevenlabsTtsRefAudio`, `elevenlabsTtsVoiceName`, `elevenlabsTtsCloneRemoveBackgroundNoise`, `elevenlabsTtsOutputFormat`, `elevenlabsTtsLanguageCode`, `elevenlabsTtsStability`, `elevenlabsTtsSimilarityBoost`, `elevenlabsTtsStyle`, `elevenlabsTtsUseSpeakerBoost`, `elevenlabsTtsSpeed`, `elevenlabsTtsSeed`, `elevenlabsTtsTextNormalization`, `elevenlabsTtsPronunciationDictionaryLocators`, `elevenlabsTtsOptimizeStreamingLatency` | ElevenLabs reusable voice/clone and synthesis flags |
 | `minimaxTtsVoice`, `minimaxTtsLanguageBoost`, `minimaxTtsSpeed`, `minimaxTtsVolume`, `minimaxTtsPitch`, `minimaxTtsEmotion`, `minimaxTtsEnglishNormalization`, `minimaxTtsPronunciations` | MiniMax voice and synthesis control flags |
-| `deepgramVoice`, `deepgramTtsEncoding`, `deepgramTtsContainer`, `deepgramTtsBitRate`, `deepgramTtsSampleRate`, `deepgramTtsSpeed`, `speechifyVoice`, `speechifyTtsAudioFormat`, `speechifyTtsLanguage`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage` | provider voice/reference and output flags |
-| `providerConcurrency`, `localConcurrency` | `--tts-provider-concurrency`, `--tts-local-concurrency` |
+| `deepgramVoice`, `deepgramTtsEncoding`, `deepgramTtsContainer`, `deepgramTtsBitRate`, `deepgramTtsSampleRate`, `deepgramTtsSpeed`, `speechifyVoice`, `speechifyTtsAudioFormat`, `speechifyTtsLanguage`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage` | provider voice/reference, output, and reusable setup flags |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 
-PVC training samples, CAPTCHA output, Speechify custom-voice consent fields, and Google Cloud voice-cloning key output flags are runtime-only and are not persisted.
+Speechify custom-voice creation fields (`--speechify-tts-ref-audio`, `--speechify-tts-voice-name`, `--speechify-tts-consent-*`, `--speechify-tts-voice-locale`, `--speechify-tts-voice-gender`) and Google Cloud raw voice-cloning key fields (`--gcloud-tts-voice-cloning-key`, `--gcloud-tts-voice-cloning-key-out`) are runtime-only and are not persisted.
 
 ### defaults.post.image
 
 | Field | Flag |
 |-------|------|
-| `geminiImage`, `openaiImage`, `grokImage`, `bflImage`, `reveImage` | matching image provider flags |
-| `imageAspectRatio`, `imageSize`, `imageQuality`, `imageFormat`, `imageBackground`, `imageCount`, `imageInputs`, `imageMask`, `imageResponseMode`, `geminiSearchGrounding`, `imageCompression` | matching image option flags |
-| `providerConcurrency`, `localConcurrency` | `--image-provider-concurrency`, `--image-local-concurrency` |
+| `geminiImage`, `openaiImage`, `grokImage`, `bflImage`, `reveImage` | `--image provider[=model]` |
+| `imageAspectRatio`, `imageSize`, `imageQuality`, `imageFormat`, `imageBackground`, `imageCount` | matching reusable image option flags |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
+
+`--image-input`, `--image-mask`, `--image-response-mode`, `--gemini-search-grounding`, and `--image-compression` are runtime image-generation flags. They are not persisted by the current config command.
 
 ### defaults.post.video
 
 | Field | Flag |
 |-------|------|
-| `geminiVideo`, `minimaxVideo`, `glmVideo`, `grokVideo`, `runwayVideo` | matching video provider flags |
+| `geminiVideo`, `minimaxVideo`, `glmVideo`, `grokVideo`, `runwayVideo` | `--video provider[=model]` |
 | `videoDuration`, `videoSize`, `videoAspectRatio`, `videoResolution`, `videoMode`, `videoInputImage`, `videoLastFrame`, `videoReferenceImages`, `videoInputVideo`, `grokVideoStorageFilename`, `grokVideoStorageExpiresAfter` | matching video option flags |
-| `providerConcurrency`, `localConcurrency` | `--video-provider-concurrency`, `--video-local-concurrency` |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 
 ### defaults.post.music
 
 | Field | Flag |
 |-------|------|
-| `elevenlabsMusic`, `minimaxMusic`, `geminiMusic` | matching music provider flags |
+| `elevenlabsMusic`, `minimaxMusic`, `geminiMusic` | `--music provider[=model]` |
 | `musicDuration` | `--music-duration` |
-| `providerConcurrency`, `localConcurrency` | `--music-provider-concurrency`, `--music-local-concurrency` |
+| `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 
 `--music-lyrics-file` and `--music-instrumental` are runtime music generation flags and are not persisted config defaults.
 
@@ -319,7 +327,7 @@ Explicit CLI flags > config file defaults > native CLI defaults
 
 Only flags explicitly typed on the command line override config values. Native CLI defaults do not overwrite saved config defaults.
 
-If you type any provider/model flag for a step family at runtime, configured provider selections for that family are replaced instead of merged. For example, passing `--openai ...` on `write` suppresses configured `defaults.llm.gemini` and `defaults.llm.groq` entries for that run.
+If you type any provider/model selector for a step family at runtime, configured provider selections for that family are replaced instead of merged. For example, passing `--llm openai=...` on `write` suppresses configured `defaults.llm.gemini` and `defaults.llm.groq` entries for that run.
 
 ## Pricing And Budgets
 
@@ -345,9 +353,9 @@ When the estimate exceeds the limit, the command fails before execution. Use `--
 
 ```bash
 bun as config \
-  --whisper-stt tiny \
-  --llama ggml-org/gemma-3-270m-it-GGUF \
-  --kitten-tts kitten-tts-mini
+  --stt whisper=tiny \
+  --llm llama=ggml-org/gemma-3-270m-it-GGUF \
+  --tts kitten=kitten-tts-mini
 ```
 
 Image, video, and hosted music generation have no local provider defaults.
@@ -356,12 +364,12 @@ Image, video, and hosted music generation have no local provider defaults.
 
 ```bash
 bun as config \
-  --groq-stt whisper-large-v3-turbo \
-  --groq openai/gpt-oss-20b \
-  --minimax-tts speech-2.8-turbo \
-  --openai-image gpt-image-2 --image-quality low \
-  --minimax-video MiniMax-Hailuo-2.3 \
-  --minimax-music music-2.6
+  --stt groq=whisper-large-v3-turbo \
+  --llm groq=openai/gpt-oss-20b \
+  --tts minimax=speech-2.8-turbo \
+  --image openai=gpt-image-2 --image-quality low \
+  --video minimax=MiniMax-Hailuo-2.3 \
+  --music minimax=music-2.6
 ```
 
 ## Flags

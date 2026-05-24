@@ -1,10 +1,14 @@
 import { defineCliCommand } from '~/cli/native'
 import { musicCommandFlags } from '~/cli/flags'
-import { MUSIC_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/music-flags'
 import { CLIUsageError } from '~/utils/error-handler'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { extractExplicitFlags as extractConfigExplicitFlags } from '~/cli/commands/setup-and-utilities/config/config-merge'
-import { normalizeCommandSelectorArgs, normalizeCommandSelectorFlags } from '~/cli/commands/process-steps/service-selector-normalization'
+import {
+  normalizeCommandSelectorArgs,
+  normalizeCommandSelectorFlags,
+  normalizeGenericProviderSelectorFlags,
+  STANDALONE_MUSIC_PROVIDER_TARGETS
+} from '~/cli/commands/process-steps/service-selector-normalization'
 import { runMusicGen } from './run-music-gen'
 import { runMusicLyricVideo } from './lyrics-video/run-lyrics-video'
 import { buildMusicArtifactMap, collectMusicTargets, getMusicArtifactFileName } from './music-targets'
@@ -20,15 +24,12 @@ import { fileExists } from '~/utils/cli-utils'
 import { isTextInputPath } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 
 const HOSTED_MUSIC_FLAGS = [
-  'all-music',
-  'elevenlabs',
-  'minimax',
-  'gemini',
-  'music-duration',
-  'music-lyrics-file',
-  'music-instrumental',
+  'all-providers',
+  'provider',
+  'duration',
+  'lyrics-file',
+  'instrumental',
   'output-dir',
-  'out',
   'price'
 ] as const
 
@@ -54,6 +55,12 @@ const collectExplicitFlags = (
   flagNames: readonly string[]
 ): string[] => flagNames.filter((flag) => hasExplicitFlag(argv, flag)).map((flag) => `--${flag}`)
 
+const MUSIC_COMMAND_OPTION_FLAGS = {
+  'music-duration': 'duration',
+  'music-lyrics-file': 'lyrics-file',
+  'music-instrumental': 'instrumental'
+} as const satisfies Record<string, string>
+
 const runHostedMusicGeneration = async (
   input: string,
   flags: Record<string, unknown>
@@ -62,20 +69,29 @@ const runHostedMusicGeneration = async (
     ? await Bun.file(input).text()
     : input
 
-  const musicDurationRaw = typeof flags['music-duration'] === 'string' ? parseInt(flags['music-duration'], 10) : undefined
-  const musicDuration = Number.isFinite(musicDurationRaw) ? musicDurationRaw : undefined
-  const musicLyricsFile = typeof flags['music-lyrics-file'] === 'string' ? flags['music-lyrics-file'] : undefined
-  const musicInstrumental = flags['music-instrumental'] === true
-
   const musicMaxCents = await resolveMaxCentsFromFlags(flags)
-  const explicitRuntimeFlags = extractConfigExplicitFlags(Bun.argv.slice(2))
-  const normalized = normalizeCommandSelectorFlags(flags, explicitRuntimeFlags, MUSIC_COMMAND_SELECTOR_FLAGS)
-  const normalizedArgs = normalizeCommandSelectorArgs(Bun.argv.slice(2), MUSIC_COMMAND_SELECTOR_FLAGS)
-  const musicOpts = buildOptsFromFlags(true, normalized.flags, [], {}, normalized.explicitFlags, normalizedArgs)
+  const rawArgs = Bun.argv.slice(2)
+  const explicitRuntimeFlags = extractConfigExplicitFlags(rawArgs)
+  const optionNormalized = normalizeCommandSelectorFlags(flags, explicitRuntimeFlags, MUSIC_COMMAND_OPTION_FLAGS)
+  const optionNormalizedArgs = normalizeCommandSelectorArgs(rawArgs, MUSIC_COMMAND_OPTION_FLAGS)
+  const musicDurationRaw = typeof optionNormalized.flags['music-duration'] === 'string'
+    ? parseInt(optionNormalized.flags['music-duration'], 10)
+    : undefined
+  const musicDuration = Number.isFinite(musicDurationRaw) ? musicDurationRaw : undefined
+  const musicLyricsFile = typeof optionNormalized.flags['music-lyrics-file'] === 'string' ? optionNormalized.flags['music-lyrics-file'] : undefined
+  const musicInstrumental = optionNormalized.flags['music-instrumental'] === true
+  const providerNormalized = normalizeGenericProviderSelectorFlags(
+    optionNormalized.flags,
+    optionNormalized.explicitFlags,
+    'provider',
+    STANDALONE_MUSIC_PROVIDER_TARGETS,
+    { allProvidersTarget: 'all-music', rawArgs: optionNormalizedArgs }
+  )
+  const musicOpts = buildOptsFromFlags(true, providerNormalized.flags, [], {}, providerNormalized.explicitFlags, providerNormalized.rawArgs ?? optionNormalizedArgs)
 
   const musicTargets = collectMusicTargets(musicOpts)
   if (musicTargets.length === 0) {
-    throw CLIUsageError('Specify a music generation provider: --elevenlabs <model>, --minimax <model>, or --gemini <model>')
+    throw CLIUsageError('Specify a music generation provider with --provider elevenlabs|minimax|gemini[=model]')
   }
 
   const { estimate: preflightEstimate, shouldExit: musicShouldExit } = await runPreflight('music', prompt, musicOpts, musicMaxCents)
@@ -153,10 +169,10 @@ export const musicCommand = defineCliCommand({
   flags: musicCommandFlags,
   help: {
     examples: [
-      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --elevenlabs music_v1', 'Generate music with ElevenLabs'],
-      ['bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental', 'Generate instrumental music with MiniMax'],
-      ['bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
-      ['bun as music input/examples/tts/1-tts.md --minimax music-2.6', 'Use a local markdown file as the prompt body'],
+      ['bun as music "cinematic orchestral trailer, dramatic strings and percussion" --provider elevenlabs=music_v1', 'Generate music with ElevenLabs'],
+      ['bun as music "an ambient piano instrumental" --provider minimax=music-2.6 --instrumental', 'Generate instrumental music with MiniMax'],
+      ['bun as music "bright 90s pop rock with a huge chorus" --provider gemini=lyria-3-clip-preview', 'Generate a 30s Lyria 3 clip with Gemini'],
+      ['bun as music input/examples/tts/1-tts.md --provider minimax=music-2.6', 'Use a local markdown file as the prompt body'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3', 'Render a lyric video from local audio'],
       ['bun as music --audio input/examples/lyrics/01-example-song.mp3 --captions output/<run-dir>/01-example-song.vtt', 'Rerender from edited captions without rerunning Whisper'],
       ['bun as music --batch --model small', 'Render lyric videos for every supported audio file under input']
@@ -186,7 +202,7 @@ export const musicCommand = defineCliCommand({
     throw CLIUsageError(
       hostedFlags.length > 0
         ? 'Missing hosted music prompt input'
-        : 'Missing music mode: provide a prompt with --elevenlabs/--minimax/--gemini, or use --audio/--batch for lyric-video rendering'
+        : 'Missing music mode: provide a prompt with --provider, or use --audio/--batch for lyric-video rendering'
     )
   }
 

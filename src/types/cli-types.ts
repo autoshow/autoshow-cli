@@ -37,12 +37,6 @@ export type RuntimeOptions = {
   kimiModel: string | undefined
   whisperModels: string[] | undefined
   whisperModel: string
-  gcloudSttModels: string[] | undefined
-  gcloudSttModel: string | undefined
-  awsSttModels: string[] | undefined
-  awsSttModel: string | undefined
-  awsRegion: string | undefined
-  awsBucket: string | undefined
   deepinfraSttModels: string[] | undefined
   deepinfraSttModel: string | undefined
   groqSttModels: string[] | undefined
@@ -108,13 +102,8 @@ export type RuntimeOptions = {
   skipLLM: boolean
   dpi: number
   lang: string
-  psm: number
-  oem: number
   out: OutputFormat
   password: string | undefined
-  pageSeparator: string | undefined
-  preserveSpaces: boolean
-  rotate: number
   useTesseract: boolean
   useOcrmypdf: boolean
   usePaddleOcr: boolean
@@ -134,10 +123,6 @@ export type RuntimeOptions = {
   geminiOcrModel: string | undefined
   deepinfraOcrModels: string[] | undefined
   deepinfraOcrModel: string | undefined
-  awsTextractModels: string[] | undefined
-  awsTextractModel: string | undefined
-  gcloudDocaiModels: string[] | undefined
-  gcloudDocaiModel: string | undefined
   unstructuredOcrModels: string[] | undefined
   unstructuredOcrModel: string | undefined
   primaryOcr: string | undefined
@@ -189,6 +174,7 @@ export type RuntimeOptions = {
   mistralTtsVoiceName: string | undefined
   ttsDialogueFormat: 'screenplay' | 'labeled' | undefined
   ttsSpeakerRefAudios: string[] | undefined
+  ttsSpeakers: string[] | undefined
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined
@@ -210,7 +196,6 @@ export type RuntimeOptions = {
   elevenlabsTtsModels: string[] | undefined
   elevenlabsTtsModel: string | undefined
   elevenlabsVoiceId: string | undefined
-  elevenlabsTtsPvcVoice: string | undefined
   elevenlabsTtsRefAudio: string | undefined
   elevenlabsTtsVoiceName: string | undefined
   elevenlabsTtsCloneRemoveBackgroundNoise: boolean
@@ -225,14 +210,6 @@ export type RuntimeOptions = {
   elevenlabsTtsTextNormalization: string | undefined
   elevenlabsTtsPronunciationDictionaryLocators: string[] | undefined
   elevenlabsTtsOptimizeStreamingLatency: number | undefined
-  elevenlabsTtsPvcAsIvc: boolean
-  elevenlabsTtsPvcSamples: string[] | undefined
-  elevenlabsTtsPvcSampleDir: string | undefined
-  elevenlabsTtsPvcLanguage: string | undefined
-  elevenlabsTtsPvcDescription: string | undefined
-  elevenlabsTtsPvcCaptchaOut: string | undefined
-  elevenlabsTtsPvcVerifyAudio: string | undefined
-  elevenlabsTtsPvcWait: boolean
   deepgramTtsModels: string[] | undefined
   deepgramTtsModel: string | undefined
   deepgramVoiceId: string | undefined
@@ -260,15 +237,6 @@ export type RuntimeOptions = {
   cartesiaTtsModel: string | undefined
   cartesiaTtsVoice: string | undefined
   cartesiaTtsLanguage: string | undefined
-  gcloudTtsModels: string[] | undefined
-  gcloudTtsModel: string | undefined
-  gcloudTtsVoice: string | undefined
-  gcloudTtsLanguage: string | undefined
-  gcloudTtsRefAudio: string | undefined
-  gcloudTtsConsentAudio: string | undefined
-  gcloudTtsConsentLanguage: string | undefined
-  gcloudTtsVoiceCloningKey: string | undefined
-  gcloudTtsVoiceCloningKeyOut: string | undefined
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined

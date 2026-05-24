@@ -33,7 +33,7 @@
         "outputCostPer1MCents": 18000,
         "estimation": {
           "costMultiplier": 0.8039,
-          "msPer1KTokens": 120980
+          "msPer1KTokens": 101983
         }
       },
       "gpt-5.4-mini": {
@@ -100,7 +100,7 @@
         "outputCostPer1MCents": 1200,
         "estimation": {
           "costMultiplier": 0.8434,
-          "msPer1KTokens": 17370
+          "msPer1KTokens": 15341
         }
       },
       "gemini-3.1-flash-lite-preview": {
@@ -128,7 +128,7 @@
         "outputCostPer1MCents": 2500,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 5363
+          "msPer1KTokens": 4524
         }
       },
       "claude-sonnet-4-6": {
@@ -139,7 +139,7 @@
         "outputCostPer1MCents": 1500,
         "estimation": {
           "costMultiplier": 0.8487,
-          "msPer1KTokens": 6025
+          "msPer1KTokens": 5119
         }
       },
       "claude-haiku-4-5": {
@@ -150,7 +150,7 @@
         "outputCostPer1MCents": 500,
         "estimation": {
           "costMultiplier": 0.8487,
-          "msPer1KTokens": 4202
+          "msPer1KTokens": 3340
         }
       }
     }
@@ -205,7 +205,7 @@
         "outputCostPer1MUSD": 6,
         "outputCostPer1MCents": 600,
         "estimation": {
-          "msPer1KTokens": 31668,
+          "msPer1KTokens": 25913,
           "costMultiplier": 1
         }
       },
@@ -216,7 +216,7 @@
         "outputCostPer1MUSD": 6,
         "outputCostPer1MCents": 600,
         "estimation": {
-          "msPer1KTokens": 11318,
+          "msPer1KTokens": 9839,
           "costMultiplier": 1
         }
       }
@@ -234,7 +234,7 @@
         "outputCostPer1MCents": 440,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KTokens": 15747
+          "msPer1KTokens": 14146
         }
       }
     }
@@ -268,7 +268,7 @@
         "outputCostPer1MUSD": 0,
         "outputCostPer1MCents": 0,
         "estimation": {
-          "msPer1KTokens": 2261
+          "msPer1KTokens": 2857
         }
       },
       "ggml-org/Qwen3-0.6B-GGUF": {

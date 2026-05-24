@@ -48,8 +48,6 @@
 | Rank | Provider | Value | Score / 100 | WER | CER | Processing Time | Actual Cost |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 1 | <code>glm/glm-ocr</code> | $0.0003 | 83.33 | 16.67% | 15.66% | 21.07s | $0.0003 |
-| 2 | <code>aws-textract/detect-text</code> | $0.0015 | 61.41 | 38.59% | 21.40% | 4.95s | $0.0015 |
-| 3 | <code>gcloud-docai/ocr</code> | $0.0015 | 72.95 | 27.05% | 18.06% | 5.19s | $0.0015 |
 | 4 | <code>mistral/mistral-ocr-2512</code> | $0.0020 | 86.61 | 13.39% | 9.23% | 9.56s | $0.0020 |
 | 5 | <code>gemini/gemini-3.1-flash-lite-preview</code> | $0.0027 | 91.12 | 8.88% | 9.14% | 7.87s | $0.0027 |
 | 6 | <code>openai/gpt-5.4-nano</code> | $0.0032 | 60.18 | 39.82% | 32.32% | 15.02s | $0.0032 |
@@ -67,8 +65,6 @@
 
 | Rank | Provider | Value | Score / 100 | WER | CER | Processing Time | Actual Cost |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | <code>aws-textract/detect-text</code> | 4.95s | 61.41 | 38.59% | 21.40% | 4.95s | $0.0015 |
-| 2 | <code>gcloud-docai/ocr</code> | 5.19s | 72.95 | 27.05% | 18.06% | 5.19s | $0.0015 |
 | 3 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 7.87s | 91.12 | 8.88% | 9.14% | 7.87s | $0.0027 |
 | 4 | <code>mistral/mistral-ocr-2512</code> | 9.56s | 86.61 | 13.39% | 9.23% | 9.56s | $0.0020 |
 | 5 | <code>openai/gpt-5.4-mini</code> | 10.72s | 97.47 | 2.53% | 2.06% | 10.72s | $0.0109 |
@@ -97,8 +93,6 @@
 | 8 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 91.12/100 quality score | 91.12 | 8.88% | 9.14% | 7.87s | $0.0027 |
 | 9 | <code>mistral/mistral-ocr-2512</code> | 86.61/100 quality score | 86.61 | 13.39% | 9.23% | 9.56s | $0.0020 |
 | 10 | <code>glm/glm-ocr</code> | 83.33/100 quality score | 83.33 | 16.67% | 15.66% | 21.07s | $0.0003 |
-| 11 | <code>gcloud-docai/ocr</code> | 72.95/100 quality score | 72.95 | 27.05% | 18.06% | 5.19s | $0.0015 |
-| 12 | <code>aws-textract/detect-text</code> | 61.41/100 quality score | 61.41 | 38.59% | 21.40% | 4.95s | $0.0015 |
 | 13 | <code>openai/gpt-5.4-nano</code> | 60.18/100 quality score | 60.18 | 39.82% | 32.32% | 15.02s | $0.0032 |
 | 14 | <code>openai/gpt-5.5</code> | 59.84/100 quality score | 59.84 | 40.16% | 40.28% | 53.82s | $0.1271 |
 | 15 | <code>unstructured/hi_res_and_enrichment</code> | 2.73/100 quality score | 2.73 | 97.27% | 83.48% | 68.27s | $0.0300 |
@@ -111,10 +105,8 @@
 | <code>ocrmypdf</code> | Local | 13.18 | 86.82% | 49.74% | 14.36s | $0.00 |
 | <code>paddle-ocr</code> | Local | 1.57 | 98.43% | 89.96% | 50.89s | $0.00 |
 | <code>tesseract</code> | Local | 14.55 | 85.45% | 45.94% | 9.47s | $0.00 |
-| <code>aws-textract/detect-text</code> | Third-Party Service | 61.41 | 38.59% | 21.40% | 4.95s | $0.0015 |
 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | Third-Party Service | 95.83 | 4.17% | 3.30% | 40.36s | $0.0049 |
 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | Third-Party Service | 92.76 | 7.24% | 6.57% | 72.21s | $0.0035 |
-| <code>gcloud-docai/ocr</code> | Third-Party Service | 72.95 | 27.05% | 18.06% | 5.19s | $0.0015 |
 | <code>gemini/gemini-3.1-flash-lite-preview</code> | Third-Party Service | 91.12 | 8.88% | 9.14% | 7.87s | $0.0027 |
 | <code>gemini/gemini-3.1-pro-preview</code> | Third-Party Service | 91.12 | 8.88% | 6.84% | 17.48s | $0.0269 |
 | <code>glm/glm-ocr</code> | Third-Party Service | 83.33 | 16.67% | 15.66% | 21.07s | $0.0003 |
@@ -134,10 +126,8 @@
 | <code>ocrmypdf</code> | 959 | 298 | 14 | 1464 |
 | <code>paddle-ocr</code> | 138 | 1303 | 0 | 1464 |
 | <code>tesseract</code> | 1035 | 196 | 20 | 1464 |
-| <code>aws-textract/detect-text</code> | 336 | 183 | 46 | 1464 |
 | <code>deepinfra/Qwen/Qwen3-VL-235B-A22B-Instruct</code> | 29 | 28 | 4 | 1464 |
 | <code>deepinfra/Qwen/Qwen3-VL-30B-A3B-Instruct</code> | 26 | 79 | 1 | 1464 |
-| <code>gcloud-docai/ocr</code> | 201 | 86 | 109 | 1464 |
 | <code>gemini/gemini-3.1-flash-lite-preview</code> | 2 | 128 | 0 | 1464 |
 | <code>gemini/gemini-3.1-pro-preview</code> | 119 | 6 | 5 | 1464 |
 | <code>glm/glm-ocr</code> | 25 | 209 | 10 | 1464 |
@@ -156,4 +146,3 @@
 - Best cloud service: `kimi/kimi-k2.6` scored 99.45/100.
 - The cheapest cloud provider was `glm/glm-ocr` at 0.0286¢ ($0.0003).
 - Fastest local model: `tesseract/tesseract` at 9.47s.
-- Fastest cloud service: `aws-textract/detect-text` at 4.95s.

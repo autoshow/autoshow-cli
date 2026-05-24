@@ -6,9 +6,8 @@ import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-util
 import { GROK_DEFAULT_TTS_VOICE, validateGrokTtsLanguage, validateGrokTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateDataSafe } from '~/utils/validate/validation'
-
-const GROK_DEFAULT_BASE_URL = 'https://api.x.ai/v1'
 const MAX_CHARS_PER_CHUNK = 15000
 
 const GrokErrorSchema = v.object({
@@ -60,8 +59,8 @@ export const runGrokTts = async (
     throw new Error('XAI_API_KEY environment variable is required for Grok TTS')
   }
 
-  const baseURL = trimTrailingSlash(readEnv('XAI_BASE_URL') ?? GROK_DEFAULT_BASE_URL)
-  const rawVoice = options.voiceId?.trim() || readEnv('XAI_TTS_VOICE') || GROK_DEFAULT_TTS_VOICE
+  const baseURL = trimTrailingSlash(XAI_DEFAULT_BASE_URL)
+  const rawVoice = options.voiceId?.trim() || GROK_DEFAULT_TTS_VOICE
   const voice = validateGrokTtsVoice(rawVoice)
   const language = validateGrokTtsLanguage(options.language?.trim() || 'auto')
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)

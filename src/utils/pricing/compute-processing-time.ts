@@ -279,6 +279,12 @@ const resolveExtractionProviderModel = (
       model: 'spider'
     }
   }
+  if (metadata.extractionMethod.includes('html+supadata')) {
+    return {
+      provider: 'supadata',
+      model: 'supadata'
+    }
+  }
   if (metadata.extractionMethod.includes('html+zyte')) {
     return {
       provider: 'zyte',

@@ -1,14 +1,6 @@
 import type { CliFlagsDefinition } from '~/cli/native'
-import {
-  SUPPORTED_GEMINI_IMAGE_MODELS,
-  SUPPORTED_GROK_IMAGE_MODELS,
-  SUPPORTED_OPENAI_IMAGE_MODELS,
-  SUPPORTED_BFL_IMAGE_MODELS,
-  SUPPORTED_REVE_IMAGE_MODELS
-} from '~/cli/commands/setup-and-utilities/models/model-options'
-import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { generationOutputFlags, priceFlag } from './shared-flags'
-import { aliasFlags } from './flag-utils'
+import { booleanAllProvidersFlag, generationOutputFlags, priceFlag, sharedConcurrencyFlags } from './shared-flags'
+import { pickFlags, renameFlags, withHelpGroup } from './flag-utils'
 
 export const IMAGE_COMMAND_SELECTOR_FLAGS = {
   'gemini-image': 'gemini',
@@ -19,42 +11,6 @@ export const IMAGE_COMMAND_SELECTOR_FLAGS = {
 } as const satisfies Record<string, string>
 
 export const imageGenFlags = {
-  'all-image': {
-    description: 'Enable every supported image provider/model for this command',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'image-provider-concurrency': {
-    description: 'Image: max hosted providers/models running in parallel for one item (default 2; --all-image defaults up to 8)',
-    type: String,
-    default: '2'
-  },
-  'image-local-concurrency': {
-    description: 'Image: max local providers running in parallel for one item (default 1)',
-    type: String,
-    default: '1'
-  },
-  'gemini-image': {
-    description: buildModelDescription('Gemini image model', SUPPORTED_GEMINI_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'openai-image': {
-    description: buildModelDescription('OpenAI image model', SUPPORTED_OPENAI_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'grok-image': {
-    description: buildModelDescription('xAI Grok image model', SUPPORTED_GROK_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'bfl-image': {
-    description: buildModelDescription('BFL image model', SUPPORTED_BFL_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'reve-image': {
-    description: buildModelDescription('Reve image model', SUPPORTED_REVE_IMAGE_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'image-aspect-ratio': {
     description: 'Image aspect ratio: 1:1|16:9|9:16|4:3|3:4|3:2|2:3|2:1|1:2|19.5:9|9:19.5|20:9|9:20|auto (provider-specific support)',
     type: String
@@ -91,7 +47,7 @@ export const imageGenFlags = {
     description: 'Gemini native response mode: image|text-image (default: image)',
     type: String
   },
-  'gemini-search-grounding': {
+  'image-search-grounding': {
     description: 'Enable Gemini native image generation with Google Search grounding metadata',
     type: Boolean,
     default: false,
@@ -101,10 +57,63 @@ export const imageGenFlags = {
     description: 'OpenAI output compression for jpeg/webp images, 0-100',
     type: String
   },
-  ...priceFlag
+  'gemini-search-grounding': {
+    description: 'Enable Gemini native image generation with Google Search grounding metadata',
+    type: Boolean,
+    default: false,
+    negatable: false,
+    help: { hidden: true }
+  },
 } as const satisfies CliFlagsDefinition
 
+const imageCommandOptionNames = {
+  'image-aspect-ratio': 'aspect-ratio',
+  'image-size': 'size',
+  'image-quality': 'quality',
+  'image-format': 'format',
+  'image-background': 'background',
+  'image-count': 'count',
+  'image-input': 'input',
+  'image-mask': 'mask',
+  'image-response-mode': 'response-mode',
+  'image-search-grounding': 'search-grounding',
+  'image-compression': 'compression'
+} as const satisfies Record<string, string>
+
+const imageProviderSelectionFlags = {
+  provider: {
+    description: 'Image provider[=model]: gemini|openai|grok|bfl|reve; repeatable',
+    type: [String] as [StringConstructor]
+  },
+  ...booleanAllProvidersFlag,
+  ...sharedConcurrencyFlags
+} as const satisfies CliFlagsDefinition
+
+const imageGenerationOptionNames = [
+  'image-aspect-ratio',
+  'image-size',
+  'image-quality',
+  'image-format',
+  'image-background',
+  'image-count'
+] as const
+
+const imageInputOptionNames = [
+  'image-input',
+  'image-mask'
+] as const
+
+const imageProviderSpecificOptionNames = [
+  'image-response-mode',
+  'image-search-grounding',
+  'image-compression'
+] as const
+
 export const imageCommandFlags = {
-  ...aliasFlags(imageGenFlags, IMAGE_COMMAND_SELECTOR_FLAGS),
-  ...generationOutputFlags
+  ...withHelpGroup(imageProviderSelectionFlags, 'provider-selection'),
+  ...withHelpGroup(renameFlags(pickFlags(imageGenFlags, imageGenerationOptionNames), imageCommandOptionNames), 'image-options'),
+  ...withHelpGroup(renameFlags(pickFlags(imageGenFlags, imageInputOptionNames), imageCommandOptionNames), 'image-inputs'),
+  ...withHelpGroup(renameFlags(pickFlags(imageGenFlags, imageProviderSpecificOptionNames), imageCommandOptionNames), 'image-provider-options'),
+  ...withHelpGroup(priceFlag, 'pricing'),
+  ...withHelpGroup(generationOutputFlags, 'output')
 } as const satisfies CliFlagsDefinition

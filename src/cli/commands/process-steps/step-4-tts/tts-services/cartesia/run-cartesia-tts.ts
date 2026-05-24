@@ -8,8 +8,7 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
-
-const CARTESIA_DEFAULT_BASE_URL = 'https://api.cartesia.ai'
+import { CARTESIA_DEFAULT_BASE_URL } from '~/utils/base-urls'
 const CARTESIA_DEFAULT_VERSION = '2026-03-01'
 const MAX_CHARS_PER_CHUNK = 5000
 
@@ -34,9 +33,9 @@ export const runCartesiaTts = async (
     throw new Error('CARTESIA_API_KEY environment variable is required for Cartesia TTS')
   }
 
-  const baseURL = trimTrailingSlash(readEnv('CARTESIA_BASE_URL') ?? CARTESIA_DEFAULT_BASE_URL)
-  const version = readEnv('CARTESIA_VERSION') ?? CARTESIA_DEFAULT_VERSION
-  const voice = validateCartesiaTtsVoice(options.voiceId?.trim() || readEnv('CARTESIA_TTS_VOICE') || CARTESIA_DEFAULT_TTS_VOICE)
+  const baseURL = trimTrailingSlash(CARTESIA_DEFAULT_BASE_URL)
+  const version = CARTESIA_DEFAULT_VERSION
+  const voice = validateCartesiaTtsVoice(options.voiceId?.trim() || CARTESIA_DEFAULT_TTS_VOICE)
   const language = options.language?.trim() || undefined
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
 

@@ -65,9 +65,9 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
+export type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'supadata' | 'zyte'
 
-export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
@@ -119,8 +119,6 @@ export type ComputeEstimatedCostsInput = {
   sourceUrl?: string | undefined
   sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   whisperModel?: string | undefined
-  gcloudSttModel?: string | undefined
-  awsSttModel?: string | undefined
   deepinfraSttModel?: string | undefined
   groqSttModel?: string | undefined
   grokSttModel?: string | undefined
@@ -149,7 +147,7 @@ export type ComputeEstimatedCostsInput = {
   deepinfraOcrModel?: string | undefined
   unstructuredOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'
+    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -218,7 +216,7 @@ export type ComputeEstimatedProcessingTimesInput = {
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
   unstructuredOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured', model: string, pageCount?: number }> | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']

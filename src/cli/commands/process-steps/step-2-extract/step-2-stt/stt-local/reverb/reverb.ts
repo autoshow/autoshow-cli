@@ -178,7 +178,7 @@ export const setupReverb = async (): Promise<void> => {
       category: 'command',
       humanTable: createHumanTable([
         { status: 'complete', command: 'bun as extract "URL" --reverb' },
-        { status: 'complete', command: 'bun as extract "URL" --reverb --reverb-verbatimicity 0.5' }
+        { status: 'complete', command: 'bun as extract "URL" --reverb --stt-reverb-verbatimicity 0.5' }
       ], ['status', 'command'])
     })
   }

@@ -487,3 +487,14 @@ export const stopLlamaServer = async (): Promise<void> => {
     { lockRoot }
   )
 }
+
+export const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null
+}
+
+export const toRecordArray = (value: unknown): Record<string, unknown>[] => {
+  if (Array.isArray(value)) {
+    return value.filter(isRecord)
+  }
+  return isRecord(value) ? [value] : []
+}

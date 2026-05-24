@@ -3,11 +3,10 @@ import {
   GEMINI_OCR_PRICE_NOTE,
   GLM_OCR_PRICE_NOTE,
   estimateAnthropicOcrCost,
-  estimateAwsTextractCost,
   estimateDeepinfraOcrCost,
-  estimateGcloudDocaiCost,
   estimateGeminiOcrCost,
   estimateGlmOcrCost,
+  estimateGrokOcrCost,
   estimateKimiOcrCost,
   estimateMistralOcrCost,
   estimateOpenAIOcrCost,
@@ -199,34 +198,22 @@ export const buildExtractEstimates = async (
       continue
     }
 
-    if (provider.service === 'gcloud-docai') {
-      const estimate = await estimateGcloudDocaiCost(provider.model, resolvedTarget)
+    if (provider.service === 'grok') {
+      const estimate = await estimateGrokOcrCost(provider.model, resolvedTarget)
       const estimation = getExtractEstimation(estimate.provider, estimate.model)
       estimates.push({
         step: 'extract',
         provider: estimate.provider,
         model: estimate.model,
-        costPer1kPagesCents: estimate.costPer1kPagesCents,
+        inputCostPer1MCents: estimate.inputCostPer1MCents,
+        outputCostPer1MCents: estimate.outputCostPer1MCents,
         pageCount: estimate.pageCount,
+        promptTokens: estimate.promptTokens,
+        completionTokens: estimate.completionTokens,
         totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
         costMultiplier: estimation.costMultiplier,
-        estimateType: 'exact'
-      })
-      continue
-    }
-
-    if (provider.service === 'aws-textract') {
-      const estimate = await estimateAwsTextractCost(provider.model, resolvedTarget)
-      const estimation = getExtractEstimation(estimate.provider, estimate.model)
-      estimates.push({
-        step: 'extract',
-        provider: estimate.provider,
-        model: estimate.model,
-        costPer1kPagesCents: estimate.costPer1kPagesCents,
-        pageCount: estimate.pageCount,
-        totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
-        costMultiplier: estimation.costMultiplier,
-        estimateType: 'exact'
+        estimateType: estimate.estimateType,
+        note: estimate.note
       })
       continue
     }

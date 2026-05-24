@@ -19,7 +19,7 @@ const sanitizeSegmentName = (value: string): string =>
 const resolveDialogueMistralModel = (options: TtsOptions): MistralTtsModel => {
   const models = options.mistralTtsModels ?? (options.mistralTtsModel ? [options.mistralTtsModel] : [])
   if (models.length !== 1 || !models[0]) {
-    throw new Error('Dialogue TTS requires exactly one --mistral-tts <model> selection.')
+    throw new Error('Dialogue TTS requires exactly one Mistral TTS model selection.')
   }
   return validateMistralTtsModel(models[0])
 }
@@ -52,7 +52,7 @@ export const runDialogueTts = async (
     try {
       const result = await runMistralTts(turn.text, workspaceDir, {
         model,
-        refAudioPath: speakerRef.refAudioPath
+        refAudioPath: speakerRef.voice
       })
       await rename(result.audioPath, segmentPath)
       segmentPaths.push(segmentPath)

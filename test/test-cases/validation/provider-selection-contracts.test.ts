@@ -13,15 +13,14 @@ import {
   getStep2ProviderSelectionFlagNames
 } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 import {
-  normalizeCommandSelectorArgs,
-  normalizeCommandSelectorFlags,
-  normalizeExtractPublicSelectorArgs,
-  normalizeExtractPublicSelectorFlags
+  normalizeExtractGenericSelectorArgs,
+  normalizeExtractGenericSelectorFlags,
+  normalizeGenericProviderSelectorFlags,
+  STANDALONE_IMAGE_PROVIDER_TARGETS,
+  STANDALONE_MUSIC_PROVIDER_TARGETS,
+  STANDALONE_TTS_PROVIDER_TARGETS,
+  STANDALONE_VIDEO_PROVIDER_TARGETS
 } from '~/cli/commands/process-steps/service-selector-normalization'
-import { IMAGE_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/image-flags'
-import { MUSIC_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/music-flags'
-import { TTS_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/tts-flags'
-import { VIDEO_COMMAND_SELECTOR_FLAGS } from '~/cli/flags/video-flags'
 
 describe('provider selection contracts', () => {
   test('retired model flag values are rejected', () => {
@@ -44,8 +43,6 @@ describe('provider selection contracts', () => {
   test('STT provider canonical ordering is stable', () => {
     expect(getStep2ProviderSelectionFlagNames('stt')).toEqual([
       'reverb-stt',
-      'gcloud-stt',
-      'aws-stt',
       'deepinfra-stt',
       'elevenlabs-stt',
       'deepgram-stt',
@@ -81,8 +78,6 @@ describe('provider selection contracts', () => {
       'anthropic-ocr',
       'gemini-ocr',
       'deepinfra-ocr',
-      'aws-textract',
-      'gcloud-docai',
       'unstructured-ocr'
     ])
   })
@@ -225,24 +220,19 @@ describe('provider selection contracts', () => {
     ])
   })
 
-  test('dedicated command bare provider selectors normalize to existing runtime option keys', () => {
-    const ttsNormalized = normalizeCommandSelectorFlags({
-      openai: ['gpt-4o-mini-tts'],
-      elevenlabs: ['eleven_v3']
-    }, new Set(['openai', 'elevenlabs']), TTS_COMMAND_SELECTOR_FLAGS)
-    const imageNormalized = normalizeCommandSelectorFlags({
-      openai: ['gpt-image-1.5'],
-      grok: ['grok-imagine-image'],
-      reve: ['latest']
-    }, new Set(['openai', 'grok', 'reve']), IMAGE_COMMAND_SELECTOR_FLAGS)
-    const videoNormalized = normalizeCommandSelectorFlags({
-      gemini: ['veo-3.1-lite-generate-preview'],
-      runway: ['gen4.5']
-    }, new Set(['gemini', 'runway']), VIDEO_COMMAND_SELECTOR_FLAGS)
-    const musicNormalized = normalizeCommandSelectorFlags({
-      minimax: ['music-2.6'],
-      gemini: ['lyria-3-clip-preview']
-    }, new Set(['minimax', 'gemini']), MUSIC_COMMAND_SELECTOR_FLAGS)
+  test('dedicated command generic provider selectors normalize to existing runtime option keys', () => {
+    const ttsNormalized = normalizeGenericProviderSelectorFlags({
+      provider: ['openai=gpt-4o-mini-tts', 'elevenlabs=eleven_v3']
+    }, new Set(['provider']), 'provider', STANDALONE_TTS_PROVIDER_TARGETS, { allProvidersTarget: 'all-tts' })
+    const imageNormalized = normalizeGenericProviderSelectorFlags({
+      provider: ['openai=gpt-image-1.5', 'grok=grok-imagine-image', 'reve=latest']
+    }, new Set(['provider']), 'provider', STANDALONE_IMAGE_PROVIDER_TARGETS, { allProvidersTarget: 'all-image' })
+    const videoNormalized = normalizeGenericProviderSelectorFlags({
+      provider: ['gemini=veo-3.1-lite-generate-preview', 'runway=gen4.5']
+    }, new Set(['provider']), 'provider', STANDALONE_VIDEO_PROVIDER_TARGETS, { allProvidersTarget: 'all-video' })
+    const musicNormalized = normalizeGenericProviderSelectorFlags({
+      provider: ['minimax=music-2.6', 'gemini=lyria-3-clip-preview']
+    }, new Set(['provider']), 'provider', STANDALONE_MUSIC_PROVIDER_TARGETS, { allProvidersTarget: 'all-music' })
 
     const ttsOpts = buildOptsFromFlags(false, ttsNormalized.flags, [], {}, ttsNormalized.explicitFlags)
     const imageOpts = buildOptsFromFlags(false, imageNormalized.flags, [], {}, imageNormalized.explicitFlags)
@@ -265,44 +255,55 @@ describe('provider selection contracts', () => {
       'gemini:lyria-3-clip-preview'
     ])
 
-    expect(normalizeCommandSelectorArgs([
-      'image',
-      'a sunset',
-      '--openai',
-      'gpt-image-1.5',
-      '--gemini=gemini-3.1-flash-image-preview',
-      '--reve',
-      'latest'
-    ], IMAGE_COMMAND_SELECTOR_FLAGS)).toEqual([
+    const imageArgNormalized = normalizeGenericProviderSelectorFlags(
+      {},
+      new Set(),
+      'provider',
+      STANDALONE_IMAGE_PROVIDER_TARGETS,
+      {
+        allProvidersTarget: 'all-image',
+        rawArgs: [
+          'image',
+          'a sunset',
+          '--provider',
+          'openai=gpt-image-1.5',
+          '--provider=gemini=gemini-3.1-flash-image-preview',
+          '--provider',
+          'reve=latest'
+        ]
+      }
+    )
+    expect(imageArgNormalized.rawArgs).toEqual([
       'image',
       'a sunset',
       '--openai-image',
       'gpt-image-1.5',
-      '--gemini-image=gemini-3.1-flash-image-preview',
+      '--gemini-image',
+      'gemini-3.1-flash-image-preview',
       '--reve-image',
       'latest'
     ])
   })
 
-  test('extract bare provider selectors route to STT or OCR internal keys', () => {
-    const mediaNormalized = normalizeExtractPublicSelectorFlags({
-      glm: ['glm-asr-2512']
-    }, new Set(['glm']), { media: true, document: false })
-    const documentNormalized = normalizeExtractPublicSelectorFlags({
-      glm: ['glm-ocr']
-    }, new Set(['glm']), { media: false, document: true })
-    const grokDocumentNormalized = normalizeExtractPublicSelectorFlags({
-      grok: ['grok-4.3']
-    }, new Set(['grok']), { media: false, document: true })
-    const unstructuredDocumentNormalized = normalizeExtractPublicSelectorFlags({
-      unstructured: ['hi_res_and_enrichment']
-    }, new Set(['unstructured']), { media: false, document: true })
-    const mixedDefaultNormalized = normalizeExtractPublicSelectorFlags({
-      glm: [true]
-    }, new Set(['glm']), { media: true, document: true })
-    const grokMixedDefaultNormalized = normalizeExtractPublicSelectorFlags({
-      grok: [true]
-    }, new Set(['grok']), { media: true, document: true })
+  test('extract generic provider selectors route to STT or OCR internal keys', () => {
+    const mediaNormalized = normalizeExtractGenericSelectorFlags({
+      provider: ['glm=glm-asr-2512']
+    }, new Set(['provider']), { media: true, document: false })
+    const documentNormalized = normalizeExtractGenericSelectorFlags({
+      provider: ['glm=glm-ocr']
+    }, new Set(['provider']), { media: false, document: true })
+    const grokDocumentNormalized = normalizeExtractGenericSelectorFlags({
+      provider: ['grok=grok-4.3']
+    }, new Set(['provider']), { media: false, document: true })
+    const unstructuredDocumentNormalized = normalizeExtractGenericSelectorFlags({
+      provider: ['unstructured=hi_res_and_enrichment']
+    }, new Set(['provider']), { media: false, document: true })
+    const mixedDefaultNormalized = normalizeExtractGenericSelectorFlags({
+      provider: ['glm']
+    }, new Set(['provider']), { media: true, document: true })
+    const grokMixedDefaultNormalized = normalizeExtractGenericSelectorFlags({
+      provider: ['grok']
+    }, new Set(['provider']), { media: true, document: true })
 
     expect(buildOptsFromFlags(false, mediaNormalized.flags, [], {}, mediaNormalized.explicitFlags).glmSttModels).toEqual(['glm-asr-2512'])
     expect(buildOptsFromFlags(false, documentNormalized.flags, [], {}, documentNormalized.explicitFlags).glmOcrModels).toEqual(['glm-ocr'])
@@ -314,11 +315,11 @@ describe('provider selection contracts', () => {
     const grokMixedDefaultOpts = buildOptsFromFlags(false, grokMixedDefaultNormalized.flags, [], {}, grokMixedDefaultNormalized.explicitFlags)
     expect(grokMixedDefaultOpts.grokSttModels).toEqual(['speech-to-text'])
     expect(grokMixedDefaultOpts.grokOcrModels).toEqual(['grok-4.3'])
-    const routeAwareDocumentArgs = normalizeExtractPublicSelectorArgs([
+    const routeAwareDocumentArgs = normalizeExtractGenericSelectorArgs([
       'extract',
       'input/examples/document/1-document.pdf',
-      '--glm',
-      'glm-ocr',
+      '--provider',
+      'glm=glm-ocr',
       '--price'
     ], { media: false, document: true })
     expect(routeAwareDocumentArgs).toEqual([
@@ -328,11 +329,11 @@ describe('provider selection contracts', () => {
       'glm-ocr',
       '--price'
     ])
-    expect(normalizeExtractPublicSelectorArgs([
+    expect(normalizeExtractGenericSelectorArgs([
       'extract',
       'input/examples/document/1-document.pdf',
-      '--grok',
-      'grok-4.3',
+      '--provider',
+      'grok=grok-4.3',
       '--price'
     ], { media: false, document: true })).toEqual([
       'extract',
@@ -341,31 +342,34 @@ describe('provider selection contracts', () => {
       'grok-4.3',
       '--price'
     ])
-    expect(normalizeExtractPublicSelectorArgs([
+    expect(normalizeExtractGenericSelectorArgs([
       'extract',
       'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      '--glm=glm-asr-2512',
+      '--provider=glm=glm-asr-2512',
       '--price'
     ], { media: true, document: false })).toEqual([
       'extract',
       'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
-      '--glm-stt=glm-asr-2512',
+      '--glm-stt',
+      'glm-asr-2512',
       '--price'
     ])
-    expect(normalizeExtractPublicSelectorArgs([
+    expect(normalizeExtractGenericSelectorArgs([
       'extract',
       'input/examples/batch/2-urls.md',
-      '--glm'
+      '--provider',
+      'glm'
     ], { media: true, document: true })).toEqual([
       'extract',
       'input/examples/batch/2-urls.md',
       '--glm-stt',
       '--glm-ocr'
     ])
-    expect(normalizeExtractPublicSelectorArgs([
+    expect(normalizeExtractGenericSelectorArgs([
       'extract',
       'input/examples/batch/2-urls.md',
-      '--grok'
+      '--provider',
+      'grok'
     ], { media: true, document: true })).toEqual([
       'extract',
       'input/examples/batch/2-urls.md',
@@ -377,9 +381,9 @@ describe('provider selection contracts', () => {
     expect(routeAwareDocumentOpts.glmOcrModels).toEqual(['glm-ocr'])
     expect(routeAwareDocumentOpts.glmModels).toBeUndefined()
 
-    expect(() => normalizeExtractPublicSelectorFlags({
-      glm: ['glm-ocr']
-    }, new Set(['glm']), { media: true, document: true })).toThrow('--glm <model> is ambiguous')
+    expect(() => normalizeExtractGenericSelectorFlags({
+      provider: ['glm=glm-ocr']
+    }, new Set(['provider']), { media: true, document: true })).toThrow('--provider glm=<model> is ambiguous')
   })
 
   test('gpt-image-2 accepts flexible valid OpenAI image sizes', () => {
@@ -547,7 +551,7 @@ describe('provider selection contracts', () => {
         ['image-background', 'transparent'],
         ['image-compression', '80'],
         ['image-response-mode', 'text-image'],
-        ['gemini-search-grounding', true]
+        ['image-search-grounding', true]
       ] as const) {
         const opts = buildOptsFromFlags(false, {
           'reve-image': ['latest'],

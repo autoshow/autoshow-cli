@@ -29,8 +29,6 @@ export const collectSttTargets = (
       service,
       model,
       local: service === 'reverb' || service === 'whisper',
-      ...(service === 'aws' && options.awsRegion ? { awsRegion: options.awsRegion } : {}),
-      ...(service === 'aws' && options.awsBucket ? { awsBucket: options.awsBucket } : {}),
       ...(service === 'whisper' || service === 'reverb'
         ? {}
         : { diarizationOptions: resolveDiarizationOptions(options, service) })

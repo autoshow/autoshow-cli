@@ -26,7 +26,6 @@ const getHostedOcrExecutionPriority = (target: OcrTarget): number => {
   if (target.service === 'anthropic') return 80
   if (target.service === 'gemini') return 75
   if (target.service === 'openai') return 70
-  if (target.service === 'aws-textract' || target.service === 'gcloud-docai') return 65
   if (target.service === 'mistral') return 60
   if (target.service === 'glm') return 55
   return 0

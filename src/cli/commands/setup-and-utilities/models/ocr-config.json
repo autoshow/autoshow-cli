@@ -12,7 +12,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3303
+          "msPerPage": 2957
         }
       }
     }
@@ -58,7 +58,7 @@
         },
         "estimation": {
           "costMultiplier": 0.4405,
-          "msPerPage": 14240,
+          "msPerPage": 16355,
           "promptTokensPerPage": 4232,
           "completionTokensPerPage": 2068
         }
@@ -84,8 +84,8 @@
         "estimation": {
           "promptTokensPerPage": 2986,
           "completionTokensPerPage": 1903,
-          "costMultiplier": 0.2165,
-          "msPerPage": 4931
+          "costMultiplier": 0.2892,
+          "msPerPage": 5887
         }
       },
       "gpt-5.4": {
@@ -134,7 +134,7 @@
         },
         "estimation": {
           "costMultiplier": 0.2692,
-          "msPerPage": 8245,
+          "msPerPage": 7209,
           "promptTokensPerPage": 2986,
           "completionTokensPerPage": 1844
         }
@@ -160,8 +160,8 @@
         "estimation": {
           "promptTokensPerPage": 4000,
           "completionTokensPerPage": 1000,
-          "costMultiplier": 1,
-          "msPerPage": 12000
+          "costMultiplier": 0.7329,
+          "msPerPage": 18000
         }
       }
     }
@@ -182,7 +182,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 7000,
+          "msPerPage": 7914,
           "promptTokensPerPage": 1657.5,
           "completionTokensPerPage": 474.5
         }
@@ -199,7 +199,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 7000,
+          "msPerPage": 8679,
           "promptTokensPerPage": 1657.5,
           "completionTokensPerPage": 474.5
         }
@@ -300,7 +300,7 @@
         },
         "estimation": {
           "costMultiplier": 0.7802,
-          "msPerPage": 14451,
+          "msPerPage": 12618,
           "promptTokensPerPage": 7981,
           "completionTokensPerPage": 471.5
         }
@@ -338,7 +338,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 210
+          "msPerPage": 315
         }
       }
     }
@@ -356,7 +356,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2540
+          "msPerPage": 2145
         }
       }
     }
@@ -379,6 +379,24 @@
       }
     }
   },
+  "supadata": {
+    "description": "Supadata hosted article extraction",
+    "type": "api",
+    "models": {
+      "supadata": {
+        "description": "Supadata Web Reader /web/scrape extraction at 1 credit per request using the Basic/Pro auto-recharge rate ($10 / 1,000 credits)",
+        "costPer1kPagesUSD": 10,
+        "costPer1kPagesCents": 1000,
+        "limits": {
+          "notes": "Supadata Web Reader charges 1 credit per scrape request. Actual plan pricing can differ from the reference auto-recharge rate."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2500
+        }
+      }
+    }
+  },
   "zyte": {
     "description": "Zyte API hosted article extraction",
     "type": "api",
@@ -393,48 +411,6 @@
         "estimation": {
           "costMultiplier": 1,
           "msPerPage": 3500
-        }
-      }
-    }
-  },
-  "gcloud-docai": {
-    "description": "Google Cloud Document AI OCR",
-    "type": "api",
-    "models": {
-      "ocr": {
-        "description": "Google Cloud Document AI OCR processor",
-        "costPer1kPagesUSD": 1.5,
-        "costPer1kPagesCents": 150,
-        "limits": {
-          "pdfBytes": 20971520,
-          "imageBytes": 20971520,
-          "pageCount": 2000,
-          "notes": "Sync API: 20 MB per request. Batch API: 1 GB per file, 50 GB per batch, 2000 pages per batch."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 1918
-        }
-      }
-    }
-  },
-  "aws-textract": {
-    "description": "AWS Textract OCR",
-    "type": "api",
-    "models": {
-      "detect-text": {
-        "description": "AWS Textract DetectDocumentText API",
-        "costPer1kPagesUSD": 1.5,
-        "costPer1kPagesCents": 150,
-        "limits": {
-          "pdfBytes": 524288000,
-          "imageBytes": 10485760,
-          "pageCount": 3000,
-          "notes": "Sync: single-page, 10 MB image. Async: up to 3000 pages per PDF, 500 MB max file size."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 2291
         }
       }
     }
@@ -459,7 +435,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 11813
+          "msPerPage": 15098
         }
       }
     }

@@ -157,7 +157,7 @@ const runSpiderScrape = async (
 
   if (usingHostedApi && !apiKey) {
     throw new Error(
-      'SPIDER_API_KEY is required for --url-backend spider when using the hosted API. ' +
+      'SPIDER_API_KEY is required for --url-provider spider when using the hosted API. ' +
       'Set SPIDER_API_KEY or point SPIDER_API_URL at a compatible endpoint.'
     )
   }

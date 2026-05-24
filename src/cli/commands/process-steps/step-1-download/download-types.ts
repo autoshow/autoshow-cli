@@ -210,8 +210,6 @@ export type BuildOptsDefaults = {
 
 export type RepeatableModelFlag =
   | 'whisper-stt'
-  | 'gcloud-stt'
-  | 'aws-stt'
   | 'deepinfra-stt'
   | 'groq-stt'
   | 'grok-stt'
@@ -238,8 +236,6 @@ export type RepeatableModelFlag =
   | 'anthropic-ocr'
   | 'gemini-ocr'
   | 'deepinfra-ocr'
-  | 'aws-textract'
-  | 'gcloud-docai'
   | 'unstructured-ocr'
   | 'llama'
   | 'openai'
@@ -262,7 +258,6 @@ export type RepeatableModelFlag =
   | 'speechify-tts'
   | 'hume-tts'
   | 'cartesia-tts'
-  | 'gcloud-tts'
   | 'gemini-image'
   | 'openai-image'
   | 'grok-image'

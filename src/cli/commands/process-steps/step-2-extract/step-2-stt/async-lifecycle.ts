@@ -14,15 +14,6 @@ export const ASYNC_STT_RESUME_PROBE_DELAYS_MS = [0, 30_000, 60_000, 120_000, 240
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const parsePositiveIntegerEnv = (key: string): number | undefined => {
-  const parsed = Number.parseInt(process.env[key] ?? '', 10)
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return undefined
-  }
-
-  return parsed
-}
-
 const parseCleanupState = (value: unknown): Step2RuntimeMetadata['cleanup'] | undefined => {
   if (!isRecord(value)) {
     return undefined
@@ -114,15 +105,8 @@ export const writeAsyncSttProgressMetadata = async (
 }
 
 export const resolveAsyncSttPollDeadlineMs = (
-  audioDurationSeconds: number | undefined,
-  envSpecificKey: string
+  audioDurationSeconds: number | undefined
 ): number => {
-  const explicit = parsePositiveIntegerEnv(envSpecificKey)
-    ?? parsePositiveIntegerEnv('AUTOSHOW_STT_POLL_DEADLINE_MS')
-  if (explicit !== undefined) {
-    return explicit
-  }
-
   const durationScaled = typeof audioDurationSeconds === 'number' && Number.isFinite(audioDurationSeconds) && audioDurationSeconds > 0
     ? Math.round(audioDurationSeconds * POLL_DEADLINE_AUDIO_MULTIPLIER_MS)
     : 0
@@ -182,7 +166,7 @@ export const pollAsyncSttJobUntilComplete = async <TStatus>(
     options.buildDeadlineError(options.jobId, totalWaitMs)
   }
 
-  const pollDeadlineMs = resolveAsyncSttPollDeadlineMs(options.audioDurationSeconds, options.envSpecificDeadlineKey)
+  const pollDeadlineMs = resolveAsyncSttPollDeadlineMs(options.audioDurationSeconds)
   const deadlineAt = Date.now() + pollDeadlineMs
   let pollDelayMs = options.initialPollIntervalMs
   let pollCount = 0

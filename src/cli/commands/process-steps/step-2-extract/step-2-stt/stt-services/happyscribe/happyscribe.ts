@@ -1,3 +1,4 @@
+import { HAPPYSCRIBE_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import type { HappyScribeOrganization, HappyScribeOrganizationSelection } from '~/types'
@@ -73,14 +74,10 @@ const extractErrorMessage = (payload: unknown): string | undefined => {
   return undefined
 }
 
-export const getHappyScribeBaseUrl = (): string =>
-  readEnv('HAPPYSCRIBE_BASE_URL') ?? 'https://www.happyscribe.com/api/v1'
+export const getHappyScribeBaseUrl = (): string => HAPPYSCRIBE_DEFAULT_BASE_URL
 
 export const getHappyScribeApiKey = (): string | undefined =>
   readEnv('HAPPYSCRIBE_API_KEY')
-
-export const getHappyScribeEnvOrganizationId = (): string | undefined =>
-  readEnv('HAPPYSCRIBE_ORGANIZATION_ID')
 
 export const buildHappyScribeUrl = (baseURL: string, path: string): string =>
   new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()
@@ -164,9 +161,7 @@ export const resolveHappyScribeOrganizationSelection = async (
   } = {}
 ): Promise<HappyScribeOrganizationSelection> => {
   const organizations = await listHappyScribeOrganizations()
-  const preferredOrganizationId = options.preferredOrganizationId?.trim()
-  const envOrganizationId = getHappyScribeEnvOrganizationId()?.trim()
-  const requestedOrganizationId = preferredOrganizationId || envOrganizationId
+  const requestedOrganizationId = options.preferredOrganizationId?.trim()
 
   if (requestedOrganizationId) {
     const selected = organizations.find((organization) => organization.id === requestedOrganizationId)
@@ -174,7 +169,7 @@ export const resolveHappyScribeOrganizationSelection = async (
       return {
         selected,
         organizations,
-        source: preferredOrganizationId ? 'option' : 'env',
+        source: 'option',
         requestedOrganizationId
       }
     }
@@ -182,7 +177,7 @@ export const resolveHappyScribeOrganizationSelection = async (
     return {
       organizations,
       reason: 'not_found',
-      source: preferredOrganizationId ? 'option' : 'env',
+      source: 'option',
       requestedOrganizationId
     }
   }
@@ -213,7 +208,7 @@ export const buildHappyScribeOrganizationResolutionError = (
   return new Error([
     baseMessage,
     `Organizations: ${formatHappyScribeOrganizationChoices(selection.organizations)}.`,
-    'Pass --happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
+    'Pass --stt-happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
   ].join(' '))
 }
 

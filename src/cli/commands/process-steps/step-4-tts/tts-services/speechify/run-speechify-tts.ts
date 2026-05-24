@@ -6,13 +6,12 @@ import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-util
 import { SPEECHIFY_DEFAULT_TTS_VOICE, validateSpeechifyTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
+import { SPEECHIFY_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateDataSafe } from '~/utils/validate/validation'
 import {
   ensureSpeechifyTtsCustomVoice,
   type SpeechifyTtsCustomVoiceOptions
 } from './speechify-custom-voices'
-
-const SPEECHIFY_DEFAULT_BASE_URL = 'https://api.speechify.ai'
 const MAX_CHARS_PER_CHUNK = 2000
 
 const SpeechifySpeechResponseSchema = v.object({
@@ -49,7 +48,7 @@ export const runSpeechifyTts = async (
     throw new Error('SPEECHIFY_API_KEY environment variable is required for Speechify TTS')
   }
 
-  const baseURL = trimTrailingSlash(readEnv('SPEECHIFY_BASE_URL') ?? SPEECHIFY_DEFAULT_BASE_URL)
+  const baseURL = trimTrailingSlash(SPEECHIFY_DEFAULT_BASE_URL)
   const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
 
   if (chunks.length === 0) {
@@ -60,7 +59,7 @@ export const runSpeechifyTts = async (
   const customVoiceResult = options.customVoice
     ? await ensureSpeechifyTtsCustomVoice(baseURL, apiKey, options.customVoice)
     : undefined
-  const voice = validateSpeechifyTtsVoice(customVoiceResult?.voiceId || options.voiceId?.trim() || readEnv('SPEECHIFY_TTS_VOICE') || SPEECHIFY_DEFAULT_TTS_VOICE)
+  const voice = validateSpeechifyTtsVoice(customVoiceResult?.voiceId || options.voiceId?.trim() || SPEECHIFY_DEFAULT_TTS_VOICE)
   const audioFormat = options.audioFormat?.trim() || 'mp3'
   const language = options.language?.trim() || undefined
   const speaker = customVoiceResult ? `ref_audio:${customVoiceResult.sourceAudio.basename}` : voice

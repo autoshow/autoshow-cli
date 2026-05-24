@@ -291,10 +291,6 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
   }
 
   switch (flagName) {
-    case 'gcloud-stt':
-      return selectCheapestSttModel('gcloud')
-    case 'aws-stt':
-      return selectCheapestSttModel('aws')
     case 'deepinfra-stt':
       return selectCheapestSttModel('deepinfra')
     case 'elevenlabs-stt':
@@ -387,8 +383,6 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('hume')
     case 'cartesia-tts':
       return selectCheapestTtsModel('cartesia')
-    case 'gcloud-tts':
-      return selectCheapestTtsModel('gcloud')
     case 'gemini-image':
       return selectCheapestImageModel('gemini')
     case 'openai-image':

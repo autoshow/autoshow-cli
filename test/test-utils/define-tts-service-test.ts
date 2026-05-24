@@ -45,7 +45,7 @@ const resolveTtsExtraArgs = async (
 
 export const defineTTSServiceTest = ({
   models,
-  cliFlag,
+  provider,
   ttsService,
   envVarKey,
   envVarDescription,
@@ -57,7 +57,7 @@ export const defineTTSServiceTest = ({
   generationTimeoutMsByModel,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   ttsService: string
   envVarKey: string
   envVarDescription: string
@@ -74,8 +74,8 @@ export const defineTTSServiceTest = ({
     'src/cli/create-cli.ts',
     'tts',
     inputPath,
-    cliFlag,
-    'invalid-model'
+    '--provider',
+    `${provider}=invalid-model`
   ])
 
   for (const model of models) {
@@ -92,8 +92,8 @@ export const defineTTSServiceTest = ({
         'src/cli/create-cli.ts',
         'tts',
         inputPath,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         ...resolvedExtraArgs
       ]
       let result = await runCommand(args)
@@ -159,11 +159,11 @@ export const defineTTSServiceTest = ({
 
 export const defineTTSServicePriceTests = ({
   models,
-  cliFlag,
+  provider,
   ttsService,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   ttsService: string
 }): void => {
   for (const model of models) {
@@ -172,8 +172,8 @@ export const defineTTSServicePriceTests = ({
         'src/cli/create-cli.ts',
         'tts',
         STABLE_TTS_MD_PATH,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         '--price'
       ])
 

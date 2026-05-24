@@ -995,62 +995,6 @@
           }
         },
         {
-          "providerKey": "aws/standard",
-          "provider": "aws-standard",
-          "model": "standard",
-          "group": "thirdPartyServiceDiarization",
-          "processingTimeMs": 29543,
-          "costCents": 2.4,
-          "qualityMetric": "speaker-aware WER",
-          "qualityValue": 0.07727272727272727,
-          "qualityLabel": "7.73% speaker-aware WER",
-          "metrics": {
-            "wer": null,
-            "cer": null,
-            "speakerAwareWER": 0.07727272727272727,
-            "textOnlyWER": 0.05092592592592592,
-            "roundtripWER": null,
-            "contentCoverage": null,
-            "score": 92.27272727272727,
-            "qualityScore": null,
-            "humanSpeechScore": null
-          },
-          "supportsDiarization": true,
-          "diarizationSupport": "supported",
-          "qualityWarnings": [],
-          "segmentStats": {
-            "segmentCount": 8,
-            "timedSegmentCount": 8,
-            "zeroDurationSegmentCount": 0,
-            "negativeDurationSegmentCount": 0,
-            "monotonicStarts": true,
-            "firstStartSeconds": 0,
-            "lastEndSeconds": 59,
-            "totalSegmentDurationSeconds": 59,
-            "coverageSeconds": 59,
-            "durationCoverageRatio": 0.9901770077340879,
-            "timingQuality": "native_word",
-            "hasSpeakerLabels": true
-          },
-          "duplicateGroupId": null,
-          "tokenEstimate": null,
-          "tokenCount": 213,
-          "werBreakdown": null,
-          "cerBreakdown": null,
-          "textOnlyBreakdown": {
-            "substitutions": 4,
-            "deletions": 3,
-            "insertions": 4,
-            "referenceWordCount": 216
-          },
-          "speakerAwareBreakdown": {
-            "substitutions": 4,
-            "deletions": 6,
-            "insertions": 7,
-            "referenceWordCount": 220
-          }
-        },
-        {
           "providerKey": "deepgram/nova-3",
           "provider": "deepgram-nova-3",
           "model": "nova-3",
@@ -1159,62 +1103,6 @@
             "substitutions": 4,
             "deletions": 6,
             "insertions": 8,
-            "referenceWordCount": 220
-          }
-        },
-        {
-          "providerKey": "gcloud/chirp_3",
-          "provider": "gcloud-chirp_3",
-          "model": "chirp_3",
-          "group": "thirdPartyServiceDiarization",
-          "processingTimeMs": 12376,
-          "costCents": 1.5889414933333335,
-          "qualityMetric": "speaker-aware WER",
-          "qualityValue": 0.04090909090909091,
-          "qualityLabel": "4.09% speaker-aware WER",
-          "metrics": {
-            "wer": null,
-            "cer": null,
-            "speakerAwareWER": 0.04090909090909091,
-            "textOnlyWER": 0.041666666666666664,
-            "roundtripWER": null,
-            "contentCoverage": null,
-            "score": 95.9090909090909,
-            "qualityScore": null,
-            "humanSpeechScore": null
-          },
-          "supportsDiarization": true,
-          "diarizationSupport": "supported",
-          "qualityWarnings": [],
-          "segmentStats": {
-            "segmentCount": 9,
-            "timedSegmentCount": 9,
-            "zeroDurationSegmentCount": 0,
-            "negativeDurationSegmentCount": 0,
-            "monotonicStarts": true,
-            "firstStartSeconds": 0,
-            "lastEndSeconds": 59,
-            "totalSegmentDurationSeconds": 57,
-            "coverageSeconds": 59,
-            "durationCoverageRatio": 0.9901770077340879,
-            "timingQuality": "native_word",
-            "hasSpeakerLabels": true
-          },
-          "duplicateGroupId": null,
-          "tokenEstimate": null,
-          "tokenCount": 211,
-          "werBreakdown": null,
-          "cerBreakdown": null,
-          "textOnlyBreakdown": {
-            "substitutions": 3,
-            "deletions": 2,
-            "insertions": 4,
-            "referenceWordCount": 216
-          },
-          "speakerAwareBreakdown": {
-            "substitutions": 3,
-            "deletions": 2,
-            "insertions": 4,
             "referenceWordCount": 220
           }
         },
@@ -2883,44 +2771,6 @@
           "textOnlyWER": 0.027777777777777776,
           "supportsDiarization": true,
           "diarizationSupport": "supported"
-        },
-        {
-          "rank": 13,
-          "providerKey": "gcloud/chirp_3",
-          "provider": "gcloud-chirp_3",
-          "model": "chirp_3",
-          "group": "thirdPartyServiceDiarization",
-          "metric": "price",
-          "value": 1.5889414933333335,
-          "label": "$0.0159",
-          "actualCostCents": 1.5889414933333335,
-          "processingTimeMs": 12376,
-          "score": 95.9090909090909,
-          "wer": null,
-          "cer": null,
-          "speakerAwareWER": 0.04090909090909091,
-          "textOnlyWER": 0.041666666666666664,
-          "supportsDiarization": true,
-          "diarizationSupport": "supported"
-        },
-        {
-          "rank": 14,
-          "providerKey": "aws/standard",
-          "provider": "aws-standard",
-          "model": "standard",
-          "group": "thirdPartyServiceDiarization",
-          "metric": "price",
-          "value": 2.4,
-          "label": "$0.0240",
-          "actualCostCents": 2.4,
-          "processingTimeMs": 29543,
-          "score": 92.27272727272727,
-          "wer": null,
-          "cer": null,
-          "speakerAwareWER": 0.07727272727272727,
-          "textOnlyWER": 0.05092592592592592,
-          "supportsDiarization": true,
-          "diarizationSupport": "supported"
         }
       ],
       "speed": [
@@ -3077,25 +2927,6 @@
           "diarizationSupport": "supported"
         },
         {
-          "rank": 9,
-          "providerKey": "gcloud/chirp_3",
-          "provider": "gcloud-chirp_3",
-          "model": "chirp_3",
-          "group": "thirdPartyServiceDiarization",
-          "metric": "speed",
-          "value": 12376,
-          "label": "12.38s",
-          "actualCostCents": 1.5889414933333335,
-          "processingTimeMs": 12376,
-          "score": 95.9090909090909,
-          "wer": null,
-          "cer": null,
-          "speakerAwareWER": 0.04090909090909091,
-          "textOnlyWER": 0.041666666666666664,
-          "supportsDiarization": true,
-          "diarizationSupport": "supported"
-        },
-        {
           "rank": 10,
           "providerKey": "gladia/default",
           "provider": "gladia-default",
@@ -3149,25 +2980,6 @@
           "cer": null,
           "speakerAwareWER": 0.07727272727272727,
           "textOnlyWER": 0.06944444444444445,
-          "supportsDiarization": true,
-          "diarizationSupport": "supported"
-        },
-        {
-          "rank": 13,
-          "providerKey": "aws/standard",
-          "provider": "aws-standard",
-          "model": "standard",
-          "group": "thirdPartyServiceDiarization",
-          "metric": "speed",
-          "value": 29543,
-          "label": "29.54s",
-          "actualCostCents": 2.4,
-          "processingTimeMs": 29543,
-          "score": 92.27272727272727,
-          "wer": null,
-          "cer": null,
-          "speakerAwareWER": 0.07727272727272727,
-          "textOnlyWER": 0.05092592592592592,
           "supportsDiarization": true,
           "diarizationSupport": "supported"
         },
@@ -3288,25 +3100,6 @@
           "diarizationSupport": "supported"
         },
         {
-          "rank": 6,
-          "providerKey": "gcloud/chirp_3",
-          "provider": "gcloud-chirp_3",
-          "model": "chirp_3",
-          "group": "thirdPartyServiceDiarization",
-          "metric": "qualityScore",
-          "value": 95.9090909090909,
-          "label": "95.91/100 quality score",
-          "actualCostCents": 1.5889414933333335,
-          "processingTimeMs": 12376,
-          "score": 95.9090909090909,
-          "wer": null,
-          "cer": null,
-          "speakerAwareWER": 0.04090909090909091,
-          "textOnlyWER": 0.041666666666666664,
-          "supportsDiarization": true,
-          "diarizationSupport": "supported"
-        },
-        {
           "rank": 7,
           "providerKey": "mistral/voxtral-mini-2602",
           "provider": "mistral-voxtral-mini-2602",
@@ -3360,25 +3153,6 @@
           "cer": null,
           "speakerAwareWER": 0.06818181818181818,
           "textOnlyWER": 0.06018518518518518,
-          "supportsDiarization": true,
-          "diarizationSupport": "supported"
-        },
-        {
-          "rank": 10,
-          "providerKey": "aws/standard",
-          "provider": "aws-standard",
-          "model": "standard",
-          "group": "thirdPartyServiceDiarization",
-          "metric": "qualityScore",
-          "value": 92.27272727272727,
-          "label": "92.27/100 quality score",
-          "actualCostCents": 2.4,
-          "processingTimeMs": 29543,
-          "score": 92.27272727272727,
-          "wer": null,
-          "cer": null,
-          "speakerAwareWER": 0.07727272727272727,
-          "textOnlyWER": 0.05092592592592592,
           "supportsDiarization": true,
           "diarizationSupport": "supported"
         },
@@ -3465,7 +3239,6 @@
   "notes": [
     "`assemblyai-universal-3-pro` was the most accurate provider on strict speaker-aware WER, scoring 100.00/100.",
     "The cheapest providers were `happyscribe-auto` and `reverb-reverb` at 0.0000¢ ($0.0000).",
-    "`whisper-base` was the fastest provider in this set at 1.43s.",
-    "`aws-standard` lost the most ground once speaker changes were counted, with 2.63 percentage-point gap between text-only and speaker-aware WER."
+    "`whisper-base` was the fastest provider in this set at 1.43s."
   ]
 }

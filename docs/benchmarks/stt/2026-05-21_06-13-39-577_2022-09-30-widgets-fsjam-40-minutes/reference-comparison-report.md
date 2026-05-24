@@ -116,8 +116,6 @@
 | 10 | <code>deepgram-nova-3</code> | $0.3917 | 95.07 | 4.93% | 3.91% | supported | 11.51s | $0.3917 |
 | 11 | <code>gladia-default</code> | $0.4106 | 96.58 | 3.42% | 3.19% | supported | 38.18s | $0.4106 |
 | 12 | <code>speechmatics-enhanced</code> | $0.5048 | 96.40 | 3.60% | 3.45% | supported | 111.51s | $0.5048 |
-| 13 | <code>gcloud-chirp_3</code> | $0.6461 | 95.05 | 4.95% | 4.16% | supported | 517.98s | $0.6461 |
-| 14 | <code>aws-standard</code> | $0.9696 | 94.66 | 5.34% | 4.47% | supported | 188.81s | $0.9696 |
 
 #### Speed
 
@@ -133,10 +131,8 @@
 | 8 | <code>happyscribe-auto</code> | 95.74s | 98.98 | 1.02% | 0.99% | supported | 95.74s | $0.00 |
 | 9 | <code>speechmatics-enhanced</code> | 111.51s | 96.40 | 3.60% | 3.45% | supported | 111.51s | $0.5048 |
 | 10 | <code>soniox-stt-async-v4</code> | 158.36s | 96.20 | 3.80% | 3.68% | supported | 158.36s | $0.0673 |
-| 11 | <code>aws-standard</code> | 188.81s | 94.66 | 5.34% | 4.47% | supported | 188.81s | $0.9696 |
 | 12 | <code>rev-low_cost</code> | 209.12s | 93.43 | 6.57% | 6.10% | supported | 209.12s | $0.0673 |
 | 13 | <code>rev-machine</code> | 229.50s | 94.09 | 5.91% | 5.45% | supported | 229.50s | $0.1347 |
-| 14 | <code>gcloud-chirp_3</code> | 517.98s | 95.05 | 4.95% | 4.16% | supported | 517.98s | $0.6461 |
 
 #### Quality Score
 
@@ -151,8 +147,6 @@
 | 7 | <code>elevenlabs-scribe_v2</code> | 96.12/100 quality score | 96.12 | 3.88% | 3.10% | supported | 61.48s | $0.1481 |
 | 8 | <code>speechmatics-standard</code> | 95.12/100 quality score | 95.12 | 4.88% | 4.71% | supported | 79.62s | $0.3029 |
 | 9 | <code>deepgram-nova-3</code> | 95.07/100 quality score | 95.07 | 4.93% | 3.91% | supported | 11.51s | $0.3917 |
-| 10 | <code>gcloud-chirp_3</code> | 95.05/100 quality score | 95.05 | 4.95% | 4.16% | supported | 517.98s | $0.6461 |
-| 11 | <code>aws-standard</code> | 94.66/100 quality score | 94.66 | 5.34% | 4.47% | supported | 188.81s | $0.9696 |
 | 12 | <code>rev-machine</code> | 94.09/100 quality score | 94.09 | 5.91% | 5.45% | supported | 229.50s | $0.1347 |
 | 13 | <code>rev-low_cost</code> | 93.43/100 quality score | 93.43 | 6.57% | 6.10% | supported | 209.12s | $0.0673 |
 | 14 | <code>grok-speech-to-text</code> | 92.01/100 quality score | 92.01 | 7.99% | 7.60% | supported | 41.36s | $0.0673 |
@@ -169,12 +163,10 @@
 | <code>whisper-small</code> | Local | not-supported | 95.11 | 4.89% | 4.11% | 99.11s | $0.00 |
 | <code>whisper-tiny</code> | Local | not-supported | 90.54 | 9.46% | 8.75% | 40.54s | $0.00 |
 | <code>assemblyai-universal-3-pro</code> | Third-Party Service Diarization | supported | 99.48 | 0.52% | 0.50% | 39.60s | $0.1413 |
-| <code>aws-standard</code> | Third-Party Service Diarization | supported | 94.66 | 5.34% | 4.47% | 188.81s | $0.9696 |
 | <code>deepgram-nova-3</code> | Third-Party Service Diarization | supported | 95.07 | 4.93% | 3.91% | 11.51s | $0.3917 |
 | <code>deepinfra-openai_whisper-large-v3</code> | Third-Party Service Non-Diarization | not-supported | 96.24 | 3.76% | 2.95% | 38.54s | $0.0182 |
 | <code>deepinfra-openai_whisper-large-v3-turbo</code> | Third-Party Service Non-Diarization | not-supported | 96.05 | 3.95% | 3.14% | 32.83s | $0.0081 |
 | <code>elevenlabs-scribe_v2</code> | Third-Party Service Diarization | supported | 96.12 | 3.88% | 3.10% | 61.48s | $0.1481 |
-| <code>gcloud-chirp_3</code> | Third-Party Service Diarization | supported | 95.05 | 4.95% | 4.16% | 517.98s | $0.6461 |
 | <code>gemini-stt-gemini-3-flash-preview</code> | Third-Party Service Non-Diarization | not-supported | 0.00 | 125.13% | 125.49% | 382.48s | $0.0775 |
 | <code>gladia-default</code> | Third-Party Service Diarization | supported | 96.58 | 3.42% | 3.19% | 38.18s | $0.4106 |
 | <code>glm-stt-glm-asr-2512</code> | Third-Party Service Non-Diarization | not-supported | 93.95 | 6.05% | 5.25% | 166.00s | $0.0969 |
@@ -204,12 +196,10 @@
 | <code>whisper-small</code> | 183 | 152 | 67 | 8220 |
 | <code>whisper-tiny</code> | 421 | 215 | 142 | 8220 |
 | <code>assemblyai-universal-3-pro</code> | 22 | 11 | 10 | 8220 |
-| <code>aws-standard</code> | 223 | 95 | 121 | 8220 |
 | <code>deepgram-nova-3</code> | 161 | 153 | 91 | 8220 |
 | <code>deepinfra-openai_whisper-large-v3</code> | 126 | 125 | 58 | 8220 |
 | <code>deepinfra-openai_whisper-large-v3-turbo</code> | 130 | 135 | 60 | 8220 |
 | <code>elevenlabs-scribe_v2</code> | 134 | 92 | 93 | 8220 |
-| <code>gcloud-chirp_3</code> | 194 | 112 | 101 | 8220 |
 | <code>gemini-stt-gemini-3-flash-preview</code> | -1 | -1 | -1 | 8220 |
 | <code>gladia-default</code> | 132 | 72 | 77 | 8220 |
 | <code>glm-stt-glm-asr-2512</code> | 248 | 176 | 73 | 8220 |
@@ -239,12 +229,10 @@
 | <code>whisper-small</code> | 176 | 87 | 72 | 8149 |
 | <code>whisper-tiny</code> | 410 | 153 | 150 | 8149 |
 | <code>assemblyai-universal-3-pro</code> | 22 | 10 | 9 | 8149 |
-| <code>aws-standard</code> | 209 | 47 | 108 | 8149 |
 | <code>deepgram-nova-3</code> | 156 | 94 | 69 | 8149 |
 | <code>deepinfra-openai_whisper-large-v3</code> | 123 | 57 | 60 | 8149 |
 | <code>deepinfra-openai_whisper-large-v3-turbo</code> | 127 | 67 | 62 | 8149 |
 | <code>elevenlabs-scribe_v2</code> | 128 | 48 | 77 | 8149 |
-| <code>gcloud-chirp_3</code> | 182 | 53 | 104 | 8149 |
 | <code>gemini-stt-gemini-3-flash-preview</code> | -1 | -1 | -1 | 8149 |
 | <code>gladia-default</code> | 131 | 58 | 71 | 8149 |
 | <code>glm-stt-glm-asr-2512</code> | 241 | 110 | 77 | 8149 |

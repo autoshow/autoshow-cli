@@ -20,25 +20,25 @@ type VideoTestService = 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 
 export const defineVideoServiceTest = ({
   models,
-  cliFlag,
+  provider,
   videoService,
   envVarKey,
   envVarDescription,
   timeoutMs = E2E_TEST_TIMEOUT_MS,
 }: {
   models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
-  cliFlag: string
+  provider: string
   videoService: VideoTestService
   envVarKey: string
   envVarDescription: string
   timeoutMs?: number
 }): void => {
-  defineInvalidModelTest(`rejects invalid model for ${cliFlag}`, [
+  defineInvalidModelTest(`rejects invalid model for ${provider}`, [
     'src/cli/create-cli.ts',
     'video',
     PRICE_PROMPT,
-    cliFlag,
-    'invalid-model'
+    '--provider',
+    `${provider}=invalid-model`
   ])
 
   withOutputLifecycle(VIDEO_GEN_TITLE)
@@ -54,8 +54,8 @@ export const defineVideoServiceTest = ({
         'src/cli/create-cli.ts',
         'video',
         prompt ?? DEFAULT_LIVE_PROMPT,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         ...(extraArgs ?? [])
       ])
 
@@ -87,11 +87,11 @@ export const defineVideoServiceTest = ({
 
 export const defineVideoServicePriceTests = ({
   models,
-  cliFlag,
+  provider,
   videoService,
 }: {
   models: Array<{ model: string, extraArgs?: string[], expectedDuration?: number, prompt?: string }>
-  cliFlag: string
+  provider: string
   videoService: VideoTestService
 }): void => {
   for (const { model } of models) {
@@ -100,8 +100,8 @@ export const defineVideoServicePriceTests = ({
         'src/cli/create-cli.ts',
         'video',
         PRICE_PROMPT,
-        cliFlag,
-        model,
+        '--provider',
+        `${provider}=${model}`,
         '--price'
       ])
 

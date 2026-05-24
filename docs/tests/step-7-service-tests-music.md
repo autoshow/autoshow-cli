@@ -14,21 +14,21 @@ Safety: these `bun t` commands document human service/e2e coverage and may call 
 ## Quick Start
 
 ```bash
-bun t test/test-cases/e2e/step-7-music-gen-e2e/
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/
 ```
 
 ## Current Coverage
 
-- `test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts`, `minimax-music-gen.test.ts`, and `gemini-music-gen.test.ts` use `defineMusicServiceTest` for invalid model rejection, `--price`, and real provider generation when the required API key is configured.
+- `test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts`, `minimax-music-gen.test.ts`, and `gemini-music-gen.test.ts` use `defineMusicServiceTest` for invalid model rejection, `--price`, and real provider generation when the required API key is configured.
 - Step 7 also covers provider-selection validation, multi-provider `--price` output, and multi-provider runs that emit per-provider filenames plus array metadata.
 - `minimax-music-gen.test.ts` adds write-pipeline coverage for `write --price` with MiniMax music, `write` with ElevenLabs music enabled, and `write` with MiniMax music plus a lyrics file.
 
 ## Price Preflight
 
 ```bash
-bun t test/test-cases/e2e/step-7-music-gen-e2e/ --test-price
-bun t test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts --test-price
-bun t test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts --budget 2500
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/ --test-price
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-music-gen.test.ts --test-price
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-gen.test.ts --budget 2500
 ```
 
 

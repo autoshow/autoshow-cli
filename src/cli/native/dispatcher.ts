@@ -1,5 +1,8 @@
 import * as l from '~/utils/logger'
 import { reconfigureLogger, runWithLogContext } from '~/utils/logger'
+import { configureCacheDir } from '~/utils/process-lock'
+import { configureYtDlpAuth } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-options'
+import { configureModelPath } from '~/cli/commands/process-steps/step-3-write/write-local/llama/llama-config'
 import type {
   CliCommandDefinition,
   CliCommandContext,
@@ -51,6 +54,15 @@ export const dispatchNativeCli = async (
     quiet: parsed.flags['quiet'] === true,
     json: parsed.flags['json'] === true
   })
+
+  const cacheDir = typeof parsed.flags['cache-dir'] === 'string' ? parsed.flags['cache-dir'] : undefined
+  const cookies = typeof parsed.flags['cookies'] === 'string' ? parsed.flags['cookies'] : undefined
+  const cookiesFromBrowser = typeof parsed.flags['cookies-from-browser'] === 'string' ? parsed.flags['cookies-from-browser'] : undefined
+  const modelPath = typeof parsed.flags['model-path'] === 'string' ? parsed.flags['model-path'] : undefined
+
+  if (cacheDir) configureCacheDir(cacheDir)
+  if (cookies || cookiesFromBrowser) configureYtDlpAuth({ ...(cookies ? { cookies } : {}), ...(cookiesFromBrowser ? { cookiesFromBrowser } : {}) })
+  if (modelPath) configureModelPath(modelPath)
 
   const store: Record<string, unknown> = { startedAtMs: Date.now() }
   const ctx: CliCommandContext = {

@@ -123,23 +123,39 @@ const GLOBAL_FLAG_DEFINITIONS = {
     negatable: false
   },
   verbose: {
-    description: colorizeHelpDescription('Enable debug-level logging (overrides AUTOSHOW_LOG_LEVEL)'),
+    description: colorizeHelpDescription('Enable debug-level logging'),
     type: Boolean,
     default: false,
     negatable: false
   },
   quiet: {
-    description: colorizeHelpDescription('Suppress all output except errors (overrides AUTOSHOW_LOG_LEVEL)'),
+    description: colorizeHelpDescription('Suppress all output except errors'),
     short: 'q',
     type: Boolean,
     default: false,
     negatable: false
   },
   json: {
-    description: colorizeHelpDescription('Output logs as JSON (overrides AUTOSHOW_LOG_FORMAT)'),
+    description: colorizeHelpDescription('Output logs as JSON'),
     type: Boolean,
     default: false,
     negatable: false
+  },
+  'cache-dir': {
+    description: colorizeHelpDescription('Base cache directory (default: ~/.cache/autoshow-cli)'),
+    type: String
+  },
+  cookies: {
+    description: colorizeHelpDescription('Path to cookies.txt file for authenticated downloads'),
+    type: String
+  },
+  'cookies-from-browser': {
+    description: colorizeHelpDescription('Import cookies from browser for authenticated downloads: chrome|firefox|opera|edge|chromium|brave|vivaldi|safari (passed to yt-dlp --cookies-from-browser)'),
+    type: String
+  },
+  'model-path': {
+    description: colorizeHelpDescription('Path to a local GGUF model file for llama.cpp inference (overrides the default downloaded model)'),
+    type: String
   }
 } as const satisfies CliFlagsDefinition
 

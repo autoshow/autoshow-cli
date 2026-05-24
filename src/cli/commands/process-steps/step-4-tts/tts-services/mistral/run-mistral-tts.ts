@@ -3,8 +3,9 @@ import type { MistralTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
 import { splitTextIntoChunks, concatAndConvertToWav, convertAudioToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
-import { MISTRAL_DEFAULT_BASE_URL, mistralJsonRequest } from '~/utils/mistral/client'
+import { mistralJsonRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
+import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { materializeMediaInput } from '~/utils/media-url'
 
@@ -59,19 +60,7 @@ const resolveVoiceSource = (
     return { kind: 'refAudio', path: optionRefAudio, speaker: `ref_audio:${basename(optionRefAudio)}` }
   }
 
-  const envVoice = readEnv('MISTRAL_TTS_VOICE')
-  const envRefAudio = readEnv('MISTRAL_TTS_REF_AUDIO')
-  if (envVoice && envRefAudio) {
-    throw new Error('Mistral TTS requires exactly one voice source. Set either MISTRAL_TTS_VOICE or MISTRAL_TTS_REF_AUDIO, not both.')
-  }
-  if (envVoice) {
-    return { kind: 'voice', value: envVoice, speaker: envVoice }
-  }
-  if (envRefAudio) {
-    return { kind: 'refAudio', path: envRefAudio, speaker: `ref_audio:${basename(envRefAudio)}` }
-  }
-
-  throw new Error('Mistral TTS requires a saved voice ID or reference audio. Set --mistral-tts-voice, --mistral-tts-ref-audio, MISTRAL_TTS_VOICE, or MISTRAL_TTS_REF_AUDIO.')
+  throw new Error('Mistral TTS requires a saved voice ID or reference audio. Use --mistral-tts-voice or --mistral-tts-ref-audio.')
 }
 
 const readAudioBase64 = async (path: string): Promise<string> => {
@@ -178,7 +167,7 @@ export const runMistralTts = async (
   const referenceAudio = voiceSource.kind === 'refAudio'
     ? await prepareReferenceAudio(materializedRefAudio?.path ?? voiceSource.path, outputDir)
     : undefined
-  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
+  const baseURL = MISTRAL_DEFAULT_BASE_URL
   const savedVoice = referenceAudio && voiceName
     ? await createMistralSavedVoice(apiKey, baseURL, referenceAudio, voiceName)
     : undefined

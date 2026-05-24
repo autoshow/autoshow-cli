@@ -143,7 +143,7 @@ const runZyteExtract = async (
 
   if (usingHostedApi && !apiKey) {
     throw new Error(
-      'ZYTE_API_KEY is required for --url-backend zyte when using the hosted API. ' +
+      'ZYTE_API_KEY is required for --url-provider zyte when using the hosted API. ' +
       'Set ZYTE_API_KEY or point ZYTE_API_URL at a compatible endpoint.'
     )
   }

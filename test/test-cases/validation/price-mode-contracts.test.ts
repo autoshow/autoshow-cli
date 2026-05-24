@@ -6,10 +6,6 @@ import {
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
-import {
-  ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
-  ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS
-} from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-pvc'
 import { estimateOcrTokenUsage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts, resolveExtractionProviderModel } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
@@ -26,130 +22,119 @@ import type { ExtractionMetadata, Step1Metadata, Step2Metadata, StepEstimate } f
 const priceCases: Array<{ label: string; args: string[]; expected: string | string[]; env?: Record<string, string | undefined> }> = [
   {
     label: 'write',
-    args: ['write', STABLE_EXAMPLE_AUDIO_URL, '--openai', 'gpt-5.4-nano', '--price'],
+    args: ['write', STABLE_EXAMPLE_AUDIO_URL, '--llm', 'openai=gpt-5.4-nano', '--price'],
     expected: 'Expected files'
   },
   {
     label: 'Kimi write',
-    args: ['write', STABLE_EXAMPLE_AUDIO_URL, '--kimi', 'kimi-k2.6', '--price'],
+    args: ['write', STABLE_EXAMPLE_AUDIO_URL, '--llm', 'kimi=kimi-k2.6', '--price'],
     expected: 'Expected files'
   },
   {
     label: 'extract',
-    args: ['extract', STABLE_EXAMPLE_AUDIO_URL, '--whisper', 'tiny', '--price'],
+    args: ['extract', STABLE_EXAMPLE_AUDIO_URL, '--provider', 'whisper=tiny', '--price'],
     expected: 'Total estimated cost'
   },
   {
     label: 'Kimi OCR',
-    args: ['extract', 'input/examples/document/1-document.pdf', '--kimi', 'kimi-k2.6', '--price'],
+    args: ['extract', 'input/examples/document/1-document.pdf', '--provider', 'kimi=kimi-k2.6', '--price'],
     expected: 'Total estimated cost'
   },
   {
     label: 'Grok OCR',
-    args: ['extract', 'input/examples/document/1-document.pdf', '--grok', 'grok-4.3', '--price'],
+    args: ['extract', 'input/examples/document/1-document.pdf', '--provider', 'grok=grok-4.3', '--price'],
     expected: 'Total estimated cost'
   },
   {
     label: 'OpenAI GPT-5.5 OCR',
-    args: ['extract', 'input/examples/document/1-document.pdf', '--openai', 'gpt-5.5', '--price'],
+    args: ['extract', 'input/examples/document/1-document.pdf', '--provider', 'openai=gpt-5.5', '--price'],
     expected: ['Total estimated cost', 'gpt-5.5']
   },
   {
     label: 'Anthropic Opus OCR',
-    args: ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-opus-4-7', '--price'],
+    args: ['extract', 'input/examples/document/1-document.pdf', '--provider', 'anthropic=claude-opus-4-7', '--price'],
     expected: ['Total estimated cost', 'claude-opus-4-7']
   },
   {
     label: 'Anthropic Sonnet OCR',
-    args: ['extract', 'input/examples/document/1-document.pdf', '--anthropic', 'claude-sonnet-4-6', '--price'],
+    args: ['extract', 'input/examples/document/1-document.pdf', '--provider', 'anthropic=claude-sonnet-4-6', '--price'],
     expected: ['Total estimated cost', 'claude-sonnet-4-6']
   },
   {
     label: 'all URL article extraction',
-    args: ['extract', 'https://example.com/articles/story.html', '--all-url', '--price'],
+    args: ['extract', 'https://example.com/articles/story.html', '--all-providers', '--price'],
     expected: 'providers/<backend>/result.json'
   },
   {
     label: 'GLM Reader URL article extraction',
-    args: ['extract', 'https://ajcwebdev.com', '--url-backend', 'glm-reader', '--price'],
+    args: ['extract', 'https://ajcwebdev.com', '--provider', 'glm-reader', '--price'],
     expected: ['Total estimated cost', 'glm-reader']
   },
   {
     label: 'tts',
-    args: ['tts', STABLE_TTS_MD_PATH, '--openai', 'gpt-4o-mini-tts', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--provider', 'openai=gpt-4o-mini-tts', '--price'],
     expected: 'speech'
   },
   {
     label: 'all TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--all-tts', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--all-providers', '--price'],
     expected: 'speech'
   },
   {
     label: 'Speechify TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--speechify', 'simba-english', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--provider', 'speechify=simba-english', '--price'],
     expected: 'speech'
   },
   {
     label: 'Speechify custom voice TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--speechify', 'simba-english', '--speechify-tts-ref-audio', 'input/voices/my-voice-sample.mp3', '--speechify-tts-consent-name', 'Anthony Example', '--speechify-tts-consent-email', 'anthony@example.com', '--price'],
-    expected: 'speech'
-  },
-  {
-    label: 'Google Cloud TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--gcloud', 'chirp3-hd', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--provider', 'speechify=simba-english', '--tts-ref-audio', 'input/voices/my-voice-sample.mp3', '--tts-consent-name', 'Anthony Example', '--tts-consent-email', 'anthony@example.com', '--price'],
     expected: 'speech'
   },
   {
     label: 'Mistral TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--mistral', 'voxtral-mini-tts-2603', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--provider', 'mistral=voxtral-mini-tts-2603', '--price'],
     expected: 'speech'
   },
   {
     label: 'Mistral dialogue TTS',
-    args: ['tts', 'input/examples/tts/tts-dialogue.txt', '--mistral', 'voxtral-mini-tts-2603', '--tts-dialogue-format', 'labeled', '--tts-speaker-ref-audio', 'Host=input/examples/audio/anthony-voice.mp3', '--tts-speaker-ref-audio', 'Guest=https://ajc.pics/autoshow/examples/1-audio.mp3', '--price'],
+    args: ['tts', 'input/examples/tts/tts-dialogue.txt', '--provider', 'mistral=voxtral-mini-tts-2603', '--tts-dialogue-format', 'labeled', '--tts-speaker-ref-audio', 'Host=input/examples/audio/anthony-voice.mp3', '--tts-speaker-ref-audio', 'Guest=https://ajc.pics/autoshow/examples/1-audio.mp3', '--price'],
     expected: 'dialogue-normalized.txt'
   },
   {
     label: 'OpenAI custom voice TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--openai', 'gpt-4o-mini-tts', '--openai-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--provider', 'openai=gpt-4o-mini-tts', '--tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--openai-tts-consent-id', 'cons_123', '--price'],
     expected: 'speech',
     env: { OPENAI_API_KEY: '', OPENAI_BASE_URL: '' }
   },
   {
     label: 'ElevenLabs IVC TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs', 'eleven_v3', '--elevenlabs-tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
+    args: ['tts', STABLE_TTS_MD_PATH, '--provider', 'elevenlabs=eleven_v3', '--tts-ref-audio', 'input/examples/audio/anthony-voice.mp3', '--price'],
     expected: 'speech',
     env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
   },
   {
-    label: 'ElevenLabs PVC setup TTS',
-    args: ['tts', STABLE_TTS_MD_PATH, '--elevenlabs', 'eleven_v3', '--elevenlabs-tts-pvc-sample', 'input/examples/audio/anthony-voice.mp3', '--price'],
-    expected: 'elevenlabs-pvc-status.json',
-    env: { ELEVENLABS_API_KEY: '', ELEVENLABS_BASE_URL: '' }
-  },
-  {
     label: 'image',
-    args: ['image', 'a sunset over a lake', '--openai', 'gpt-image-1.5', '--price'],
+    args: ['image', 'a sunset over a lake', '--provider', 'openai=gpt-image-1.5', '--price'],
     expected: 'generated-image'
   },
   {
     label: 'BFL image',
-    args: ['image', 'a sunset over a lake', '--bfl', 'flux-2-pro', '--price'],
+    args: ['image', 'a sunset over a lake', '--provider', 'bfl=flux-2-pro', '--price'],
     expected: 'generated-image'
   },
   {
     label: 'video',
-    args: ['video', 'a sunset over a lake', '--gemini', 'veo-3.1-fast-generate-preview', '--price'],
+    args: ['video', 'a sunset over a lake', '--provider', 'gemini=veo-3.1-fast-generate-preview', '--price'],
     expected: 'video'
   },
   {
     label: 'music',
-    args: ['music', 'an ambient piano song', '--minimax', 'music-2.6', '--price'],
+    args: ['music', 'an ambient piano song', '--provider', 'minimax=music-2.6', '--price'],
     expected: 'music'
   },
   {
     label: 'Gemini music',
-    args: ['music', 'an ambient piano song', '--gemini', 'lyria-3-clip-preview', '--price'],
+    args: ['music', 'an ambient piano song', '--provider', 'gemini=lyria-3-clip-preview', '--price'],
     expected: 'gemini'
   }
 ]
@@ -245,12 +230,12 @@ describe('price mode contracts', () => {
       'src/cli/create-cli.ts',
       'write',
       STABLE_EXAMPLE_AUDIO_URL,
-      '--openai',
-      'gpt-5.4',
-      '--groq',
-      'openai/gpt-oss-20b',
-      '--kitten-tts',
-      'kitten-tts-mini',
+      '--llm',
+      'openai=gpt-5.4',
+      '--llm',
+      'groq=openai/gpt-oss-20b',
+      '--tts',
+      'kitten=kitten-tts-mini',
       '--price',
       '--json'
     ])
@@ -465,7 +450,6 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('grok-tts')).toBe('grok-tts')
     expect(resolveCheapestModelForFlag('mistral-tts')).toBe('voxtral-mini-tts-2603')
     expect(resolveCheapestModelForFlag('speechify-tts')).toBe('simba-english')
-    expect(resolveCheapestModelForFlag('gcloud-tts')).toBe('chirp3-hd')
     expect(resolveCheapestModelForFlag('openai-stt')).toBe('gpt-4o-mini-transcribe')
     expect(resolveCheapestModelForFlag('gemini-stt')).toBe('gemini-3-flash-preview')
     expect(resolveCheapestModelForFlag('glm-stt')).toBe('glm-asr-2512')
@@ -514,21 +498,16 @@ describe('price mode contracts', () => {
       .toBe(Math.round(getTtsEstimation('mistral', model).msPer1KChars))
   })
 
-  test('Speechify and Google Cloud TTS estimates use registry pricing and timing defaults', () => {
+  test('Speechify TTS estimates use registry pricing and timing defaults', () => {
     const costs = [
       ...estimateTtsCosts({
-        speechifyTtsModels: ['simba-english'],
-        gcloudTtsModels: ['chirp3-hd', 'studio']
+        speechifyTtsModels: ['simba-english']
       } as Parameters<typeof estimateTtsCosts>[0], 1000),
       ...estimateTtsCosts({
         speechifyTtsModels: ['simba-multilingual'],
         speechifyTtsRefAudio: 'input/voices/my-voice-sample.mp3',
         speechifyTtsConsentName: 'Anthony Example',
         speechifyTtsConsentEmail: 'anthony@example.com'
-      } as Parameters<typeof estimateTtsCosts>[0], 1000),
-      ...estimateTtsCosts({
-        gcloudTtsModels: ['instant-custom-voice'],
-        gcloudTtsVoiceCloningKey: 'existing-key'
       } as Parameters<typeof estimateTtsCosts>[0], 1000)
     ]
 
@@ -541,16 +520,12 @@ describe('price mode contracts', () => {
       totalCost: cost.totalCost
     }))).toEqual([
       { provider: 'speechify', model: 'simba-english', costPer1kCharactersCents: 1, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 1 },
-      { provider: 'gcloud', model: 'chirp3-hd', costPer1kCharactersCents: 3, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 3 },
-      { provider: 'gcloud', model: 'studio', costPer1kCharactersCents: 16, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 16 },
-      { provider: 'speechify', model: 'simba-multilingual', costPer1kCharactersCents: 1, setupCostCents: 0, setupTimeMs: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS, totalCost: 1 },
-      { provider: 'gcloud', model: 'instant-custom-voice', costPer1kCharactersCents: 6, setupCostCents: undefined, setupTimeMs: undefined, totalCost: 6 }
+      { provider: 'speechify', model: 'simba-multilingual', costPer1kCharactersCents: 1, setupCostCents: 0, setupTimeMs: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS, totalCost: 1 }
     ])
 
     const timing = computeEstimatedProcessingTimes({
       ttsTargets: [
-        { service: 'speechify', model: 'simba-english' },
-        { service: 'gcloud', model: 'chirp3-hd' }
+        { service: 'speechify', model: 'simba-english' }
       ],
       ttsCharacterCount: 1000
     })
@@ -560,8 +535,7 @@ describe('price mode contracts', () => {
       model: step.model,
       processingTimeMs: step.processingTimeMs
     }))).toEqual([
-      { provider: 'speechify', model: 'simba-english', processingTimeMs: 3_000 },
-      { provider: 'gcloud', model: 'chirp3-hd', processingTimeMs: 9_000 }
+      { provider: 'speechify', model: 'simba-english', processingTimeMs: 4_500 }
     ])
   })
 
@@ -614,39 +588,6 @@ describe('price mode contracts', () => {
       { provider: 'elevenlabs', model: 'eleven_v3', processingTimeMs: 35_885 }
     ])
 
-    const pvcReadyCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_v3'],
-      elevenlabsTtsPvcVoice: 'pvc_voice_123'
-    } as Parameters<typeof estimateTtsCosts>[0], 1000)
-    expect(pvcReadyCosts[0]).toMatchObject({
-      provider: 'elevenlabs',
-      model: 'eleven_v3',
-      totalCost: 10
-    })
-    expect(pvcReadyCosts[0]?.setupCostCents).toBeUndefined()
-
-    const pvcEnglishSetupCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_v3'],
-      elevenlabsTtsPvcSamples: ['input/examples/audio/anthony-voice.mp3'],
-      elevenlabsTtsPvcLanguage: 'en',
-      elevenlabsTtsPvcWait: true
-    } as Parameters<typeof estimateTtsCosts>[0], 1000)
-    expect(pvcEnglishSetupCosts[0]).toMatchObject({
-      provider: 'elevenlabs',
-      model: 'eleven_v3',
-      setupCostCents: 0,
-      setupTimeMs: ELEVENLABS_TTS_PVC_ENGLISH_SETUP_MS,
-      setupNote: 'ElevenLabs professional voice clone training',
-      totalCost: 10
-    })
-
-    const pvcMultilingualSetupCosts = estimateTtsCosts({
-      elevenlabsTtsModels: ['eleven_v3'],
-      elevenlabsTtsPvcSamples: ['input/examples/audio/anthony-voice.mp3'],
-      elevenlabsTtsPvcLanguage: 'es',
-      elevenlabsTtsPvcWait: true
-    } as Parameters<typeof estimateTtsCosts>[0], 1000)
-    expect(pvcMultilingualSetupCosts[0]?.setupTimeMs).toBe(ELEVENLABS_TTS_PVC_MULTILINGUAL_SETUP_MS)
   })
 
   test('OpenAI custom voice TTS estimates include zero-cost setup and setup timing', () => {
@@ -1324,13 +1265,13 @@ describe('price mode contracts', () => {
         },
         {
           ...base,
-          extractionMethod: 'pdf+aws-textract',
-          ocrService: 'aws-textract',
-          ocrModel: 'detect-text',
+          extractionMethod: 'pdf+unstructured-ocr',
+          ocrService: 'unstructured',
+          ocrModel: 'hi_res_and_enrichment',
           providerCostCents: 0.75,
           providerCostSource: 'provider_quote'
         }
-      ]
+      ] as ExtractionMetadata[]
     })
 
     expect(actual.steps.map((step) => ({
@@ -1339,7 +1280,7 @@ describe('price mode contracts', () => {
       costSource: step.costSource
     }))).toEqual([
       { provider: 'openai', cost: 0.42, costSource: 'provider_usage' },
-      { provider: 'aws-textract', cost: 0.75, costSource: 'provider_quote' }
+      { provider: 'unstructured', cost: 0.75, costSource: 'provider_quote' }
     ])
     expect(actual.totalCost).toBe(1.17)
   })

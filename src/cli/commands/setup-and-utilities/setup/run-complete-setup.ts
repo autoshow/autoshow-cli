@@ -26,7 +26,6 @@ import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-extract/
 import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
 import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
 import { setupScrapeCreatorsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/scrapecreators/scrapecreators'
-import { readAwsSttConfigDefaults, setupAwsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 import { setupCalibreDocumentTools } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 import { setupTesseractOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/tesseract-setup'
 import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
@@ -49,7 +48,6 @@ import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-se
 import { setupSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-tts'
 import { setupHumeTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/hume-tts'
 import { setupCartesiaTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/cartesia-tts'
-import { setupGcloudTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gcloud/gcloud-tts'
 import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
@@ -271,7 +269,6 @@ const runFullSetup = async (): Promise<void> => {
   l.write('info', 'Starting complete AutoShow setup')
   await logPinnedVersions()
   await ensureRuntimeDirs()
-  const awsDefaults = await readAwsSttConfigDefaults()
 
   await withCompactSetup(setupYtDependencies)
 
@@ -326,13 +323,6 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(setupScrapeCreatorsStt)
 
-  await withCompactSetup(async () => {
-    await setupAwsStt({
-      ...awsDefaults,
-      verifyTranscribe: true
-    })
-  })
-
   await withCompactSetup(setupCalibreDocumentTools)
 
   await withCompactSetup(setupTesseractOcr)
@@ -358,8 +348,6 @@ const runFullSetup = async (): Promise<void> => {
   await withCompactSetup(setupHumeTts)
 
   await withCompactSetup(setupCartesiaTts)
-
-  await withCompactSetup(setupGcloudTts)
 
   await withCompactSetup(setupGeminiImageGen)
 
@@ -388,7 +376,6 @@ const runFullSetup = async (): Promise<void> => {
 export const runCompleteSetup = async (): Promise<void> => { await runFullSetup() }
 
 const runSetupTranscription = async (): Promise<void> => {
-  const awsDefaults = await readAwsSttConfigDefaults()
   await downloadWhisperModel('large-v3-turbo')
   await setupReverb()
   await setupOpenaiStt()
@@ -396,10 +383,6 @@ const runSetupTranscription = async (): Promise<void> => {
   await setupGlmStt()
   await setupTogetherStt()
   await setupGrokStt()
-  await setupAwsStt({
-    ...awsDefaults,
-    verifyTranscribe: true
-  })
   l.write('success', 'Transcription setup complete')
 }
 
@@ -423,7 +406,6 @@ const runSetupTts = async (): Promise<void> => {
   await setupSpeechifyTts()
   await setupHumeTts()
   await setupCartesiaTts()
-  await setupGcloudTts()
   l.write('success', 'TTS setup complete')
 }
 
