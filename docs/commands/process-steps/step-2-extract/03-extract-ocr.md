@@ -95,7 +95,7 @@ UNSTRUCTURED_API_URL=https://platform.unstructuredapp.io/api/v1
 | `--primary-ocr <service[/model]>` | In multi-provider OCR, choose which requested provider writes top-level extraction artifacts |
 | `--provider-concurrency <n>` | Hosted providers/models to run concurrently per item; default `2` |
 | `--local-concurrency <n>` | Local providers to run concurrently per item; default `1` |
-| `--dpi <n>` | Render DPI for OCR pages |
+| `--ocr-dpi <n>` | Render DPI for OCR pages |
 | `--chapters` | EPUB native text runs or PDF autodetection: write chapter files under `chapters/` |
 | `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |
 | `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
@@ -168,15 +168,14 @@ bun as extract input/examples/document/3-document.pdf --chapters --pdf-chapter-m
 | Option | Value |
 |--------|-------|
 | Selector | default PDF/image path, or `--provider tesseract` |
-| Language | `--lang <codes>` such as `eng` or `eng+fra` |
-| Tuning | `--psm <n>`, `--oem <n>`, `--page-separator <text>`, `--preserve-spaces`, `--rotate <degrees>` |
+| Language | `--ocr-language <codes>` such as `eng` or `eng+fra` |
 
 ```bash
 bun as extract input/examples/document/1-document.pdf --provider tesseract
 bun as extract input/examples/document/1-document.pdf --provider tesseract --ocr-language eng+fra --ocr-dpi 300
 ```
 
-Tesseract tuning flags work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md). Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
+Tesseract language and DPI controls work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md). Non-Tesseract engines may ignore local OCR controls and report a warning when they do.
 
 ### OCRmyPDF
 
@@ -193,11 +192,11 @@ bun as extract input/examples/document/1-document.pdf --provider ocrmypdf
 
 | Option | Value |
 |--------|-------|
-| Selector | `--provider paddle` |
+| Selector | `--provider paddle-ocr` |
 | Setup | Can be prepared lazily on first use |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --provider paddle
+bun as extract input/examples/document/1-document.pdf --provider paddle-ocr
 ```
 
 ### Mistral OCR
@@ -362,7 +361,7 @@ Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create
 - Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
 - Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
-- Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
+- Config defaults can persist chapter export settings under `defaults.extract.ocr.chapters`, `defaults.extract.ocr.length`, and `defaults.extract.ocr.pdfChapterMode`.
 - Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
 - Grok OCR refers to xAI `grok-4.3`. Groq `openai/gpt-oss-20b` and `openai/gpt-oss-120b` are LLM text models in this project and are not OCR benchmark targets.
 - MiniMax `MiniMax-M2.7` / `MiniMax-M2.7-highspeed` and GLM `glm-5.1` are LLM text models here. Use `glm-ocr` for GLM OCR coverage.

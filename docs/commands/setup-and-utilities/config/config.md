@@ -22,7 +22,7 @@ bun as config --show
 bun as config --reset
 ```
 
-No input argument is required. Flags that are explicitly passed are persisted to the config file when they map to reusable defaults. Runtime-only flags such as `--price`, `--allow-over-budget`, `--show`, `--reset`, `--config-path`, PDF passwords, Speechify custom-voice creation fields, raw Google Cloud voice-cloning keys, `--music-lyrics-file`, and `--music-instrumental` are never persisted.
+No input argument is required. Flags that are explicitly passed are persisted to the config file when they map to reusable defaults. Runtime-only flags such as `--price`, `--allow-over-budget`, `--show`, `--reset`, `--config-path`, PDF passwords, Speechify custom-voice creation fields, `--music-lyrics-file`, and `--music-instrumental` are never persisted. Image edit/reference controls such as `--image-input`, `--image-mask`, `--image-response-mode`, `--image-search-grounding`, and `--image-compression` are accepted by write/config/resume flag surfaces but are not persisted or injected by the current config command.
 
 ## Config File Location
 
@@ -42,8 +42,11 @@ bun as config --llm openai=gpt-5.4
 bun as config --llm glm=glm-5.1
 bun as config --llm kimi=kimi-k2.6
 bun as config --stt whisper=large-v3-turbo
-bun as config --stt gcloud=chirp_3
-bun as config --stt aws=standard --aws-region us-east-1 --aws-bucket my-transcribe-bucket
+bun as config --stt reverb --stt-reverb-verbatimicity 0.5
+bun as config --stt happyscribe=auto --stt-happyscribe-organization-id org_123
+bun as config --stt supadata=auto --stt-supadata-lang en
+bun as config --ocr paddle-ocr
+bun as config --ocr mistral=mistral-ocr-2512 --ocr-language eng --ocr-dpi 300
 bun as config --tts kitten=kitten-tts-mini --tts-voice Jasper
 bun as config --tts elevenlabs=eleven_v3 --tts-ref-audio input/examples/audio/anthony-voice.mp3
 bun as config --tts minimax=speech-2.8-hd --minimax-tts-language-boost English --tts-speed 1.15
@@ -55,8 +58,6 @@ bun as config --tts deepgram=aura-2-thalia-en --deepgram-tts-container wav --dee
 bun as config --tts speechify=simba-english --tts-voice george --speechify-tts-audio-format mp3 --tts-language en-US
 bun as config --tts hume=octave-2 --tts-voice "Male English Actor"
 bun as config --tts cartesia=sonic-3.5 --tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
-bun as config --tts gcloud=chirp3-hd --tts-voice en-US-Chirp3-HD-Achernar
-bun as config --tts gcloud=instant-custom-voice --tts-ref-audio input/examples/audio/anthony-voice.mp3 --tts-consent-audio https://ajc.pics/autoshow/examples/0-audio-short.mp3 --tts-consent-language en-US
 bun as config --batch-limit 20 --batch-order oldest
 bun as config --max-cents 100
 ```
@@ -68,7 +69,7 @@ bun as config --stt speechmatics=standard --stt speechmatics=enhanced
 bun as config --llm openai=gpt-5.4 --llm openai=gpt-5.4-mini
 ```
 
-Cloud setup commands may save reusable AWS or Google Cloud runtime settings to `config/autoshow.json` when they provision shared resources. Use `bun as config ...` for intentional provider and model defaults.
+The config command only persists flags mapped by the current config merge layer. Hidden compatibility aliases may still work at runtime, but saved examples use the public names shown by `bun as config --help`.
 
 ## Config Schema
 
@@ -80,8 +81,8 @@ Representative JSON shape:
     "extract": {
       "stt": {
         "whisper": ["large-v3-turbo"],
-        "gcloudStt": ["chirp_3"],
-        "awsStt": ["standard"],
+        "reverb": true,
+        "youtubeCaptions": true,
         "deepinfraStt": ["openai/whisper-large-v3-turbo"],
         "groqStt": ["whisper-large-v3-turbo"],
         "grokStt": ["speech-to-text"],
@@ -99,15 +100,25 @@ Representative JSON shape:
         "openaiStt": ["gpt-4o-mini-transcribe"],
         "geminiStt": ["gemini-3-flash-preview"],
         "glmStt": ["glm-asr-2512"],
-        "awsRegion": "us-east-1",
-        "awsBucket": "autoshow-transcribe",
+        "happyscribeOrganizationId": "org_123",
+        "supadataLang": "en",
+        "scrapecreatorsLang": "en",
         "speakerCount": 2,
+        "split": true,
+        "reverbVerbatimicity": 0.5,
         "providerConcurrency": 2,
-        "localConcurrency": 1
+        "localConcurrency": 1,
+        "segmentConcurrency": 2,
+        "preflightConcurrency": 4,
+        "refreshCache": false,
+        "noCache": false
       },
       "ocr": {
         "lang": "eng",
         "out": "text",
+        "tesseract": true,
+        "ocrmypdf": true,
+        "paddleOcr": true,
         "dpi": 300,
         "mistralOcr": ["mistral-ocr-2512"],
         "glmOcr": ["glm-ocr"],
@@ -117,8 +128,6 @@ Representative JSON shape:
         "anthropicOcr": ["claude-haiku-4-5"],
         "geminiOcr": ["gemini-3.1-flash-lite-preview"],
         "deepinfraOcr": ["Qwen/Qwen3-VL-30B-A3B-Instruct"],
-        "awsTextract": ["detect-text"],
-        "gcloudDocai": ["ocr"],
         "unstructuredOcr": ["hi_res_and_enrichment"],
         "chapters": true,
         "length": 50,
@@ -126,8 +135,13 @@ Representative JSON shape:
       }
     },
     "llm": {
+      "llama": ["ggml-org/gemma-3-270m-it-GGUF"],
       "openai": ["gpt-5.4", "gpt-5.4-mini"],
       "groq": ["openai/gpt-oss-20b"],
+      "gemini": ["gemini-3.1-flash-lite-preview"],
+      "anthropic": ["claude-haiku-4-5"],
+      "minimax": ["MiniMax-M2.7"],
+      "grok": ["grok-4.3"],
       "glm": ["glm-5.1"],
       "kimi": ["kimi-k2.6"],
       "providerConcurrency": 2,
@@ -136,10 +150,13 @@ Representative JSON shape:
     "post": {
       "tts": {
         "kittenTts": ["kitten-tts-mini"],
+        "elevenlabsTts": ["eleven_v3"],
         "minimaxTts": ["speech-2.8-turbo"],
         "minimaxTtsLanguageBoost": "English",
         "minimaxTtsSpeed": 1.1,
         "minimaxTtsEnglishNormalization": true,
+        "groqTts": ["canopylabs/orpheus-v1-english"],
+        "groqVoice": "troy",
         "grokTts": ["grok-tts"],
         "grokTtsLanguage": "auto",
         "grokTtsTextNormalization": true,
@@ -149,6 +166,8 @@ Representative JSON shape:
         "openaiTts": ["gpt-4o-mini-tts"],
         "openaiTtsInstructions": "Warm documentary narration",
         "openaiTtsSpeed": 1.1,
+        "geminiTts": ["gemini-3.1-flash-tts-preview"],
+        "geminiVoice": "Kore",
         "deepgramTts": ["aura-2-thalia-en"],
         "deepgramTtsContainer": "wav",
         "deepgramTtsSampleRate": 24000,
@@ -162,11 +181,6 @@ Representative JSON shape:
         "cartesiaTts": ["sonic-3.5"],
         "cartesiaTtsVoice": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
         "cartesiaTtsLanguage": "en",
-        "gcloudTts": ["chirp3-hd"],
-        "gcloudTtsVoice": "en-US-Chirp3-HD-Achernar",
-        "gcloudTtsRefAudio": "input/examples/audio/anthony-voice.mp3",
-        "gcloudTtsConsentAudio": "https://ajc.pics/autoshow/examples/0-audio-short.mp3",
-        "gcloudTtsConsentLanguage": "en-US",
         "providerConcurrency": 2,
         "localConcurrency": 1
       },
@@ -235,28 +249,26 @@ Model-selecting fields are arrays of models, not single strings.
 
 | Field | Flag |
 |-------|------|
-| `whisper`, `reverb` | `--stt whisper[=<model>]`, `--stt reverb[=<model>]` |
+| `whisper` and hosted STT model fields | `--stt provider[=model]` |
+| `reverb` | `--stt reverb` |
 | `youtubeCaptions` | `--youtube-captions` |
-| Hosted STT model fields | `--stt provider[=model]` |
-| `awsRegion`, `awsBucket`, `happyscribeOrganizationId`, `supadataLang`, `scrapecreatorsLang` | matching provider option flags |
-| `speakerCount`, `split`, `reverbVerbatimicity` | `--speaker-count`, `--split`, `--reverb-verbatimicity` |
+| `happyscribeOrganizationId`, `supadataLang`, `scrapecreatorsLang` | `--stt-happyscribe-organization-id`, `--stt-supadata-lang`, `--stt-scrapecreators-lang` |
+| `speakerCount`, `split`, `reverbVerbatimicity` | `--speaker-count`, `--split`, `--stt-reverb-verbatimicity` |
 | `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 | `segmentConcurrency`, `preflightConcurrency` | `--stt-segment-concurrency`, `--stt-preflight-concurrency` |
 | `refreshCache`, `noCache` | `--refresh-cache`, `--no-cache` |
 
-`--together-stt` appears in generated config help through the shared STT registry, but the current persisted config schema does not validate that default. Use it on `extract` or `write` directly until schema support is added.
+`--stt together` appears in generated config help through the shared STT registry, but the current persisted config schema does not validate `defaults.extract.stt.togetherStt`. Use it on `extract` or `write` directly until schema support is added.
 
 ### defaults.extract.ocr
 
 | Field | Flag |
 |-------|------|
-| Local OCR engine fields | `--ocr tesseract`, `--ocr ocrmypdf`, `--ocr paddle` |
+| Local OCR engine fields | `--ocr tesseract`, `--ocr ocrmypdf`, `--ocr paddle-ocr` |
 | Hosted OCR model fields | `--ocr provider[=model]` |
-| `lang`, `out`, `dpi`, `psm`, `oem`, `rotate`, `pageSeparator`, `preserveSpaces` | `--ocr-language`, `--format`, `--ocr-dpi`, `--tesseract-psm`, `--tesseract-oem`, `--ocr-rotate`, `--ocr-page-separator`, `--tesseract-preserve-spaces` |
+| `lang`, `out`, `dpi` | `--ocr-language`, `--format`, `--ocr-dpi` |
 | `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 | `chapters`, `length`, `pdfChapterMode` | `--chapters`, `--length`, `--pdf-chapter-mode` |
-
-Google Cloud Document AI runtime fields such as processor IDs, location, and bucket are accepted by the schema. Persist model defaults with `bun as config --ocr gcloud=ocr`; use `bun as setup --gcloud --gcloud-project ...` or environment variables to provision or override the shared runtime values.
 
 ### defaults.llm
 
@@ -269,17 +281,17 @@ Google Cloud Document AI runtime fields such as processor IDs, location, and buc
 
 | Field | Flag |
 |-------|------|
-| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `speechifyTts`, `humeTts`, `cartesiaTts`, `gcloudTts` | `--tts provider[=model]` |
+| `kittenTts`, `elevenlabsTts`, `minimaxTts`, `groqTts`, `grokTts`, `mistralTts`, `openaiTts`, `geminiTts`, `deepgramTts`, `speechifyTts`, `humeTts`, `cartesiaTts` | `--tts provider[=model]` |
 | `ttsSpeaker`, `groqVoice`, `grokTtsVoice`, `grokTtsLanguage`, `grokTtsTextNormalization`, `mistralTtsVoice`, `mistralTtsRefAudio`, `mistralTtsVoiceName` | generic `--tts-*` voice/reference flags or matching provider-specific controls |
 | `ttsDialogueFormat`, `ttsSpeakerRefAudio` | dialogue TTS flags |
 | `openaiVoice`, `openaiTtsInstructions`, `openaiTtsSpeed`, `openaiTtsRefAudio`, `openaiTtsConsentId`, `openaiTtsConsentAudio`, `openaiTtsConsentLanguage`, `openaiTtsConsentName`, `openaiTtsVoiceName` | generic `--tts-*` flags plus `--openai-tts-consent-id` |
 | `geminiVoice`, `geminiSpeaker1Name`, `geminiSpeaker1Voice`, `geminiSpeaker2Name`, `geminiSpeaker2Voice` | Gemini voice and multispeaker flags |
 | `elevenlabsVoice`, `elevenlabsTtsRefAudio`, `elevenlabsTtsVoiceName`, `elevenlabsTtsCloneRemoveBackgroundNoise`, `elevenlabsTtsOutputFormat`, `elevenlabsTtsLanguageCode`, `elevenlabsTtsStability`, `elevenlabsTtsSimilarityBoost`, `elevenlabsTtsStyle`, `elevenlabsTtsUseSpeakerBoost`, `elevenlabsTtsSpeed`, `elevenlabsTtsSeed`, `elevenlabsTtsTextNormalization`, `elevenlabsTtsPronunciationDictionaryLocators`, `elevenlabsTtsOptimizeStreamingLatency` | ElevenLabs reusable voice/clone and synthesis flags |
 | `minimaxTtsVoice`, `minimaxTtsLanguageBoost`, `minimaxTtsSpeed`, `minimaxTtsVolume`, `minimaxTtsPitch`, `minimaxTtsEmotion`, `minimaxTtsEnglishNormalization`, `minimaxTtsPronunciations` | MiniMax voice and synthesis control flags |
-| `deepgramVoice`, `deepgramTtsEncoding`, `deepgramTtsContainer`, `deepgramTtsBitRate`, `deepgramTtsSampleRate`, `deepgramTtsSpeed`, `speechifyVoice`, `speechifyTtsAudioFormat`, `speechifyTtsLanguage`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage`, `gcloudTtsVoice`, `gcloudTtsLanguage`, `gcloudTtsRefAudio`, `gcloudTtsConsentAudio`, `gcloudTtsConsentLanguage` | provider voice/reference, output, and reusable setup flags |
+| `deepgramVoice`, `deepgramTtsEncoding`, `deepgramTtsContainer`, `deepgramTtsBitRate`, `deepgramTtsSampleRate`, `deepgramTtsSpeed`, `speechifyVoice`, `speechifyTtsAudioFormat`, `speechifyTtsLanguage`, `humeTtsVoice`, `humeTtsVoiceProvider`, `cartesiaTtsVoice`, `cartesiaTtsLanguage` | provider voice/reference, output, and reusable setup flags |
 | `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 
-Speechify custom-voice creation fields (`--speechify-tts-ref-audio`, `--speechify-tts-voice-name`, `--speechify-tts-consent-*`, `--speechify-tts-voice-locale`, `--speechify-tts-voice-gender`) and Google Cloud raw voice-cloning key fields (`--gcloud-tts-voice-cloning-key`, `--gcloud-tts-voice-cloning-key-out`) are runtime-only and are not persisted.
+Speechify custom-voice creation fields (`--speechify-tts-ref-audio`, `--speechify-tts-voice-name`, `--speechify-tts-consent-*`, `--speechify-tts-voice-locale`, `--speechify-tts-voice-gender`) are runtime-only and are not persisted.
 
 ### defaults.post.image
 
@@ -289,7 +301,7 @@ Speechify custom-voice creation fields (`--speechify-tts-ref-audio`, `--speechif
 | `imageAspectRatio`, `imageSize`, `imageQuality`, `imageFormat`, `imageBackground`, `imageCount` | matching reusable image option flags |
 | `providerConcurrency`, `localConcurrency` | `--provider-concurrency`, `--local-concurrency` |
 
-`--image-input`, `--image-mask`, `--image-response-mode`, `--gemini-search-grounding`, and `--image-compression` are runtime image-generation flags. They are not persisted by the current config command.
+`--image-input`, `--image-mask`, `--image-response-mode`, `--image-search-grounding`, and `--image-compression` are runtime image-generation flags. They are not persisted by the current config command.
 
 ### defaults.post.video
 

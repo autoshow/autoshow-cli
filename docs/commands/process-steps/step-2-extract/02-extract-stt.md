@@ -146,48 +146,48 @@ These services either work best with provider-side URLs or have source-URL-speci
 |--------|-------|
 | Selector | `--provider happyscribe[=<model>]` |
 | Models | `auto` |
-| Organization | `--happyscribe-organization-id <id>` |
+| Organization | `--stt-happyscribe-organization-id <id>` |
 | Language | Fixed to `en-US` in v1 |
 | Diarization | Enabled by default; `--speaker-count` is ignored |
 
 ```bash
 bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider happyscribe=auto
-bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider happyscribe --happyscribe-organization-id org_123
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider happyscribe --stt-happyscribe-organization-id org_123
 ```
 
-Organization resolution order is CLI `--happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
+Organization resolution order is CLI `--stt-happyscribe-organization-id`, config default, `HAPPYSCRIBE_ORGANIZATION_ID`, then auto-select only when the API key can access exactly one organization. Non-English audio and multilingual audio are unsupported and may produce poor transcripts.
 
 ### Supadata
 
 | Option | Value |
 |--------|-------|
 | Selector | `--provider supadata=auto` |
-| Language | `--supadata-lang <code>` when a native transcript is available |
+| Language | `--stt-supadata-lang <code>` when a native transcript is available |
 | Required env | `SUPADATA_API_KEY` |
 | Optional env | `SUPADATA_BASE_URL` |
 | Input support | Public YouTube, TikTok, Instagram, X/Twitter, Facebook, or direct media/file URLs |
 
 ```bash
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --provider supadata=auto --supadata-lang en
+bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --provider supadata=auto --stt-supadata-lang en
 bun as extract https://www.tiktok.com/@example/video/1234567890 --provider supadata=auto
 bun as extract https://example.com/audio/interview.mp3 --provider supadata=auto --price
 ```
 
-Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. AutoShow exposes only Supadata `auto` mode: it tries provider-native transcripts first and generates a transcript when needed. Supadata treats direct media/file URLs as generated transcripts. `--supadata-lang` is sent with the auto request, but generated transcripts ignore that flag.
+Supadata requires a public source URL and cannot transcribe local file inputs through the AutoShow CLI. AutoShow exposes only Supadata `auto` mode: it tries provider-native transcripts first and generates a transcript when needed. Supadata treats direct media/file URLs as generated transcripts. `--stt-supadata-lang` is sent with the auto request, but generated transcripts ignore that flag.
 
 ### ScrapeCreators
 
 | Option | Value |
 |--------|-------|
 | Selector | `--provider scrapecreators=youtube-transcript` |
-| Language | `--scrapecreators-lang <code>`, default `en` |
+| Language | `--stt-scrapecreators-lang <code>`, default `en` |
 | Required env | `SCRAPECREATORS_API_KEY` |
 | Optional env | `SCRAPECREATORS_BASE_URL` |
 | Input support | Public `youtube.com` and `youtu.be` URLs only |
 
 ```bash
 bun as extract "https://www.youtube.com/watch?v=MORMZXEaONk" --provider scrapecreators=youtube-transcript
-bun as extract https://youtu.be/dQw4w9WgXcQ --provider scrapecreators=youtube-transcript --scrapecreators-lang es
+bun as extract https://youtu.be/dQw4w9WgXcQ --provider scrapecreators=youtube-transcript --stt-scrapecreators-lang es
 ```
 
 ScrapeCreators is transcript retrieval, not general audio transcription. AutoShow calls `GET /v1/youtube/video/transcript` with the source URL and requested language, then normalizes returned timed transcript entries into `transcription.txt` and structured STT artifacts. It does not replace `--youtube-captions`; use ScrapeCreators when you want it as an explicit paid provider in the same target set as other STT providers.
@@ -313,11 +313,11 @@ These engines either support diarization directly or AutoShow enables diarizatio
 | Option | Value |
 |--------|-------|
 | Selector | `--provider reverb` |
-| Style | `--reverb-verbatimicity <0-1>` |
+| Style | `--stt-reverb-verbatimicity <0-1>` |
 | Runtime | Local diarized transcription |
 
 ```bash
-bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider reverb --reverb-verbatimicity 0.5
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider reverb --stt-reverb-verbatimicity 0.5
 ```
 
 ### Grok STT

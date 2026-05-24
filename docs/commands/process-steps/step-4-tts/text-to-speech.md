@@ -335,7 +335,6 @@ Cartesia TTS uses `POST /tts/bytes`, sends the `Cartesia-Version` header, reques
 - Speechify Simba estimates use 1 cent / 1K characters for both `simba-english` and `simba-multilingual`, with a 3000 ms / 1K characters timing heuristic. Custom voice creation adds a one-time 0 cent setup estimate and a 10000 ms setup timing estimate.
 - Hume `octave-2` estimates use the conservative public overage rate of 15 cents / 1K characters.
 - Cartesia Sonic estimates use 3.7375 cents / 1K characters for `sonic-3` and `sonic-3.5`, with a 3000 ms / 1K characters timing heuristic.
-- Google Cloud TTS estimates use paid list prices without subtracting free-tier usage: Chirp 3 HD 3 cents / 1K characters, Instant Custom Voice 6 cents / 1K, and Studio 16 cents / 1K. Timing heuristics are 9000 ms / 1K characters for Chirp 3 HD, 10000 ms / 1K for Studio, and 12000 ms / 1K for Instant Custom Voice.
 
 ## Output
 
@@ -346,7 +345,6 @@ Cartesia TTS uses `POST /tts/bytes`, sends the `Cartesia-Version` header, reques
 - OpenAI custom voice creation runs record `speaker: "ref_audio:<basename>"`, `clonedVoiceId`, and `cloneCostCents: 0` in the Step 4 metadata.
 - Hume runs record the selected voice name or ID as `speaker`.
 - Cartesia runs record the selected voice ID as `speaker`.
-- Google Cloud Instant Custom Voice runs record `speaker: "instant-custom-voice"` and do not store the raw voice cloning key in `run.json`.
 - `run.json` includes `tts`, `cost`, and `timing` sections. `tts` is always an array, even when only one target succeeds.
 - Reference-audio runs store only `speaker: "ref_audio:<basename>"`; the full path and reference transcript are not written to `run.json`.
 - `--output-dir` controls the run directory; generated file names remain provider-dependent and deterministic inside that directory.

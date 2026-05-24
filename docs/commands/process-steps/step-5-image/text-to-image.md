@@ -65,7 +65,7 @@ bun as image <prompt> [flags]
 | `--mask <path>` | OpenAI mask image for inpainting/edit workflows |
 | `--compression <0-100>` | OpenAI JPEG/WebP output compression |
 | `--response-mode <image\|text-image>` | Native Gemini response mode |
-| `--gemini-search-grounding` | Enable native Gemini search grounding metadata |
+| `--search-grounding` | Enable native Gemini search grounding metadata |
 | `--price` | Show the aggregated estimate and exit |
 | `--output-dir <dir>` | Use an exact run directory instead of `output/<timestamp>_image-gen/` |
 
@@ -187,7 +187,7 @@ bun as image "make the mug matte black and keep the same camera angle" --provide
 bun as image "combine the mug shape with the lighting and surface from these references" --provider reve=latest --input output/mug-base/generated-image.png --input input/examples/document/1-document.png --size 1024x1024 --output-dir output/mug-reve-remix
 ```
 
-`--provider reve` with no model resolves to `latest`. `reve-create@20250915` is create-only in this command and rejects `--input`; use `--provider reve=latest` for edit or remix workflows. Reve rejects `--count`, `--quality`, `--background`, `--mask`, `--compression`, `--response-mode`, and `--gemini-search-grounding`. When Reve returns usage headers, AutoShow records provider-reported credits as cost at `$10 / 7500 credits`.
+`--provider reve` with no model resolves to `latest`. `reve-create@20250915` is create-only in this command and rejects `--input`; use `--provider reve=latest` for edit or remix workflows. Reve rejects `--count`, `--quality`, `--background`, `--mask`, `--compression`, `--response-mode`, and `--search-grounding`. When Reve returns usage headers, AutoShow records provider-reported credits as cost at `$10 / 7500 credits`.
 
 ## Output
 

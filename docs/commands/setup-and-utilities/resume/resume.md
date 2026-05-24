@@ -38,7 +38,7 @@ Examples of provider names:
 | Target | Provider names |
 |--------|----------------|
 | STT extract | `whisper`, `reverb`, `deepinfra`, `elevenlabs`, `deepgram`, `soniox`, `speechmatics`, `rev`, `groq`, `grok`, `mistral`, `assemblyai`, `gladia`, `happyscribe`, `supadata`, `scrapecreators`, `openai`, `gemini`, `glm`, `together` |
-| OCR extract | `tesseract`, `ocrmypdf`, `paddle`, `mistral`, `glm`, `kimi`, `openai`, `grok`, `anthropic`, `gemini`, `deepinfra`, `unstructured` |
+| OCR extract | `tesseract`, `ocrmypdf`, `paddle-ocr`, `mistral`, `glm`, `kimi`, `openai`, `grok`, `anthropic`, `gemini`, `deepinfra`, `unstructured` |
 | URL extract | `defuddle`, `firecrawl`, `glm-reader`, `spider`, `supadata`, `zyte` |
 | TTS | `kitten`, `elevenlabs`, `minimax`, `groq`, `grok`, `mistral`, `openai`, `gemini`, `deepgram`, `speechify`, `hume`, `cartesia` |
 | Image | `gemini`, `openai`, `grok`, `bfl`, `reve` |
@@ -59,7 +59,7 @@ bun as resume ./output/2026-04-22_12-00-00-000_batch --provider glm=glm-ocr
 bun as resume ./output/2026-04-22_12-00-00-000_batch --provider kimi=kimi-k2.6
 bun as resume ./output/2026-04-22_12-00-00-000_batch --provider deepgram=nova-3
 bun as resume ./output/2026-04-22_12-00-00-000_batch --provider deepinfra
-bun as resume ./output/2026-04-22_12-00-00-000_batch --provider happyscribe=auto --happyscribe-organization-id org_123
+bun as resume ./output/2026-04-22_12-00-00-000_batch --provider happyscribe=auto --stt-happyscribe-organization-id org_123
 
 # Retry or append TTS providers
 bun as resume ./output/2026-04-22_12-00-00-000_run --provider elevenlabs=eleven_v3
@@ -93,10 +93,10 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --all-providers
 | Flag | Description |
 |------|-------------|
 | `--youtube-captions` | Prefer English YouTube captions before STT when available |
-| `--reverb-verbatimicity <0-1>` | Reverb output style |
-| `--happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |
-| `--supadata-lang <code>` | Supadata preferred transcript language |
-| `--scrapecreators-lang <code>` | ScrapeCreators transcript language; defaults to `en` |
+| `--stt-reverb-verbatimicity <0-1>` | Reverb output style |
+| `--stt-happyscribe-organization-id <id>` | Happy Scribe organization/workspace ID override |
+| `--stt-supadata-lang <code>` | Supadata preferred transcript language |
+| `--stt-scrapecreators-lang <code>` | ScrapeCreators transcript language; defaults to `en` |
 | `--speaker-count <n>` | Diarization speaker-count hint |
 | `--split` | Split audio into 30-minute segments before transcription |
 | `--refresh-cache` | Rebuild STT cache entries touched by this run |
@@ -105,11 +105,6 @@ bun as resume ./output/2026-04-22_12-00-00-000_run --all-providers
 | `--password <value>` | Password for encrypted PDFs |
 | `--ocr-language <codes>` | Tesseract language codes such as `eng` or `eng+fra` |
 | `--ocr-dpi <n>` | Render DPI for OCR pages |
-| `--tesseract-psm <n>` | Tesseract page segmentation mode |
-| `--tesseract-oem <n>` | Tesseract OCR engine mode |
-| `--ocr-page-separator <text>` | Custom page separator string |
-| `--tesseract-preserve-spaces` | Enable Tesseract `preserve_interword_spaces=1` |
-| `--ocr-rotate <degrees>` | Rotate pages before OCR |
 | `--chapters` | Write EPUB/PDF chapter files when rebuilding extraction artifacts |
 | `--length <thousands>` | Hard export limit in thousands of characters for EPUB/PDF chunking |
 | `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
@@ -142,7 +137,7 @@ Resume keeps the pipeline/config option names for media generation options:
 
 | Target | Option flags |
 |--------|--------------|
-| Image | `--image-aspect-ratio`, `--image-size`, `--image-quality`, `--image-format`, `--image-background`, `--image-count`, `--image-input`, `--image-mask`, `--image-response-mode`, `--gemini-search-grounding`, `--image-compression` |
+| Image | `--image-aspect-ratio`, `--image-size`, `--image-quality`, `--image-format`, `--image-background`, `--image-count`, `--image-input`, `--image-mask`, `--image-response-mode`, `--image-search-grounding`, `--image-compression` |
 | Video | `--video-mode`, `--video-duration`, `--video-size`, `--video-aspect-ratio`, `--video-resolution`, `--video-input-image`, `--video-last-frame`, `--video-reference-image`, `--video-input-video`, `--grok-video-storage-filename`, `--grok-video-storage-expires-after` |
 | Music | `--music-duration`, `--music-lyrics-file`, `--music-instrumental` |
 

@@ -175,7 +175,7 @@ src/cli/flags/
 │  └── all providers:   --all-providers / --all-providers ocr│
 │                                                            │
 │  Provider names:                                           │
-│  ├── tesseract, ocrmypdf, paddle, mistral, glm, kimi       │
+│  ├── tesseract, ocrmypdf, paddle-ocr, mistral, glm, kimi   │
 │  └── openai, grok, anthropic, gemini, deepinfra, unstructured│
 │                                                            │
 │  URL article backends:                                     │
@@ -184,11 +184,6 @@ src/cli/flags/
 │                                                            │
 │  advancedExtractFlags                                      │
 │  ├── --ocr-dpi NUMBER    Render DPI (default: 300)         │
-│  ├── --tesseract-psm N   Page segmentation mode (default: 3)│
-│  ├── --tesseract-oem N   OCR engine mode (default: 1)      │
-│  ├── --ocr-page-separator Custom page separator            │
-│  ├── --tesseract-preserve-spaces Preserve interword spacing│
-│  ├── --ocr-rotate DEGREES Rotate before OCR                │
 │  ├── --chapters          Export EPUB/PDF chapter files     │
 │  ├── --length N          Split long EPUB/PDF exports       │
 │  ├── --pdf-chapter-mode  local|auto|llm                    │

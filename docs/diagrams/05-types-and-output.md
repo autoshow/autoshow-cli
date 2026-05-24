@@ -133,7 +133,7 @@ src/types/
 │  MusicProvider = 'elevenlabs'|'minimax'|'gemini'                             │
 │                                                                              │
 │  OcrProvider   = 'tesseract'|'ocrmypdf'|'paddle-ocr'|'mistral'|'glm'|       │
-│                  'kimi'|'openai'|'anthropic'|'gemini'|'deepinfra'|           │
+│                  'kimi'|'openai'|'grok'|'anthropic'|'gemini'|'deepinfra'|    │
 │                  'unstructured'                                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -151,12 +151,12 @@ src/types/
 │  Step 2 (Transcribe/Extract):                                                │
 │  ├── TranscriptionResult  text + segments[]                                  │
 │  ├── TranscriptionSegment start, end, text, speaker?                         │
-│  ├── ExtractionOptions    filePath, outputDir, dpi, lang, oem, psm, ...      │
+│  ├── ExtractionOptions    filePath, outputDir, dpi, languages, format, ...   │
 │  ├── ExtractionResult     text + pages[] + totalPages/ocrPages/textPages     │
 │  ├── PageResult           pageNumber, method:'text'|'ocr'|'skipped', text    │
 │  ├── ExtractionMetadata   extractionMethod, pages, processingTime, ...       │
 │  ├── Step2Metadata        transcriptionService, model, time, tokenCount      │
-│  │    transcriptionService: 'whisper'|'reverb'|'elevenlabs'|'groq'|'grok'|'openai'|'mistral'|... │
+│  │    transcriptionService: 'whisper'|'reverb'|'elevenlabs'|'groq'|'grok'|'openai-stt'|'mistral'|... │
 │  ├── WhisperJsonOutput    whisper.cpp JSON output schema                     │
 │  ├── ReverbOutput         reverb segments + speakers                         │
 │  └── ElevenLabsSttResponse  ElevenLabs word/segment schema                   │

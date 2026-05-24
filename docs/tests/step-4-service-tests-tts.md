@@ -36,7 +36,7 @@ bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/ --test-price
 bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/ --budget 2500
 ```
 
-ElevenLabs IVC, OpenAI custom voice, Speechify, Hume, Cartesia, Google Cloud prebuilt TTS, and Google Cloud Instant Custom Voice with an existing key have side-effect-free price coverage. ElevenLabs IVC adds a 0 cent setup cost and 10000 ms setup time to the first ElevenLabs clone target. OpenAI adds a 0 cent setup cost and 15000 ms setup time to the first OpenAI clone target.
+ElevenLabs IVC, OpenAI custom voice, Speechify, Hume, and Cartesia have side-effect-free price coverage. ElevenLabs IVC adds a 0 cent setup cost and 10000 ms setup time to the first ElevenLabs clone target. OpenAI adds a 0 cent setup cost and 15000 ms setup time to the first OpenAI clone target.
 
 The Kitten pipeline mapping is selected with `bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/kitten-tts-pipeline.test.ts --test-price`; budget preflight still maps the live e2e file.
 

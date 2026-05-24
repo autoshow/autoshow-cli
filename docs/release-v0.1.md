@@ -186,7 +186,6 @@ Persistent config lives in `config/autoshow.json` and can store selected default
 - generation options
 - concurrency
 - cache behavior
-- cloud staging
 - pricing thresholds
 
 Runtime-only flags are intentionally not persisted, including:
@@ -194,8 +193,8 @@ Runtime-only flags are intentionally not persisted, including:
 - `--price`
 - `--allow-over-budget`
 - setup-only verification fields
-- `--lyrics-file`
-- `--instrumental`
+- `--music-lyrics-file`
+- `--music-instrumental`
 
 ```bash
 bun as config --show

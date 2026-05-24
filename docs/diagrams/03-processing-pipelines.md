@@ -177,11 +177,11 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │  --provider          │  │ --ocr-dpi│  │  pptx → ppt/slides/*    │        │
 │  │    paddle-ocr →      │  │ --ocr-   │  │  xlsx → sharedStrings   │        │
 │  │    PaddleOCR         │  │ language │  │                         │        │
-│  │  hosted providers →  │  │ --tesser-│  │                         │        │
-│  │    API providers     │  │ act-psm  │  └────────────┬────────────┘        │
-│  │  default → MuPDF+Tess│  │ --ocr-   │               |                     │
-│  │                      │  │ rotate   │               |                     │
-│  │  default → MuPDF+Tess│  └────┬─────┘               |                     │
+│  │  hosted providers →  │  │          │  │                         │        │
+│  │    API providers     │  │          │  └────────────┬────────────┘        │
+│  │  default → MuPDF+Tess│  │          │               |                     │
+│  │                      │  │          │               |                     │
+│  │                      │  └────┬─────┘               |                     │
 │  │  Stage A: MuPDF      │       |                     |                     │
 │  │  mutool draw -F text │       |                     |                     │
 │  │  per-page text       │       |                     |                     │

@@ -132,7 +132,7 @@ bun as setup → src/cli/commands/setup-and-utilities/setup/run-complete-setup.t
 
   Step 4 — Hosted TTS readiness
     ElevenLabs, Groq, Grok, OpenAI, Gemini, Deepgram,
-    MiniMax, Mistral, Speechify, Hume, Cartesia, Google Cloud
+    MiniMax, Mistral, Speechify, Hume, Cartesia
 
   Step 5 — Hosted image generation readiness
     Gemini, OpenAI, Grok, BFL, and Reve
