@@ -12,7 +12,9 @@ import { runMinimaxTts } from '~/cli/commands/process-steps/step-4-tts/tts-servi
 import { runMistralTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/run-mistral-tts'
 import { runOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/run-openai-tts'
 import { runSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/run-speechify-tts'
+import { runTts } from '~/cli/commands/process-steps/step-4-tts/run-tts'
 import { splitTextIntoUtf8ByteChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import type { TtsOptions } from '~/types'
 
 const SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
 const LOCAL_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')
@@ -733,6 +735,76 @@ describe('TTS provider service contracts', () => {
       speaker: 'mistral_saved_voice_123',
       clonedVoiceId: 'mistral_saved_voice_123',
       cloneCostCents: 0
+    })
+  }, 10_000)
+
+  test('Mistral multi-speaker TTS sends each speaker reference audio', async () => {
+    const dir = await makeTempDir('autoshow-mistral-tts-dialogue-ref-audio-')
+    const calls: Array<{ url: string, method: string, authorization: string | null, body: Record<string, unknown> }> = []
+
+    process.env['MISTRAL_API_KEY'] = 'mistral-key'
+
+    globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      const request = input instanceof Request ? input : undefined
+      const bodyText = typeof init?.body === 'string'
+        ? init.body
+        : request
+          ? await request.clone().text()
+          : ''
+      const headers = new Headers(init?.headers ?? request?.headers)
+      const method = init?.method ?? request?.method ?? 'GET'
+      const url = request?.url ?? String(input)
+      calls.push({
+        url,
+        method,
+        authorization: headers.get('authorization'),
+        body: JSON.parse(bodyText) as Record<string, unknown>
+      })
+      return Response.json({ audio_data: createMockWavBase64() })
+    }) as typeof fetch
+
+    const result = await runTts([
+      'Host: Welcome to the reference audio test.',
+      'Guest: Thanks. I should use the guest sample.'
+    ].join('\n'), dir, {
+      mistralTtsModels: ['voxtral-mini-tts-2603'],
+      ttsDialogueFormat: 'labeled',
+      ttsSpeakerRefAudios: [
+        `Host=${LOCAL_SHORT_AUDIO_PATH}`,
+        `Guest=${LOCAL_AUDIO_PATH}`
+      ]
+    } as TtsOptions)
+
+    expect(calls).toHaveLength(2)
+    for (const call of calls) {
+      expect(call).toMatchObject({
+        url: 'https://api.mistral.ai/v1/audio/speech',
+        method: 'POST',
+        authorization: 'Bearer mistral-key',
+        body: {
+          model: 'voxtral-mini-tts-2603',
+          stream: false,
+          response_format: 'wav'
+        }
+      })
+      expect(typeof call.body['ref_audio']).toBe('string')
+      expect(String(call.body['ref_audio']).length).toBeGreaterThan(0)
+      expect(call.body['voice_id']).toBeUndefined()
+    }
+    expect(calls[0]?.body['input']).toBe('Welcome to the reference audio test.')
+    expect(calls[1]?.body['input']).toBe('Thanks. I should use the guest sample.')
+
+    expect(await Bun.file(join(dir, 'speech.wav')).exists()).toBe(true)
+    expect(await Bun.file(join(dir, 'dialogue-normalized.txt')).exists()).toBe(true)
+    expect(await Bun.file(join(dir, 'segments', 'segment-001-Host.wav')).exists()).toBe(true)
+    expect(await Bun.file(join(dir, 'segments', 'segment-002-Guest.wav')).exists()).toBe(true)
+    expect(await Bun.file(result.audioPaths[0] ?? '').exists()).toBe(true)
+    expect(result.metadata).toHaveLength(1)
+    expect(result.metadata[0]).toMatchObject({
+      ttsService: 'mistral',
+      ttsModel: 'voxtral-mini-tts-2603',
+      speaker: 'Host=ref_audio:0-audio-short.mp3, Guest=ref_audio:1-audio.mp3',
+      chunkCount: 2
     })
   }, 10_000)
 

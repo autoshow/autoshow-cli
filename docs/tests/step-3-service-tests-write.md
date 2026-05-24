@@ -19,7 +19,7 @@ bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/
 
 ## Current Coverage
 
-- Provider-backed write coverage lives in `test/test-cases/e2e/service/step-3-write-e2e/write-services/service-models.test.ts`.
+- Provider-backed write coverage lives in model-level files under `test/test-cases/e2e/service/step-3-write-e2e/write-services/`.
 - The suite uses `defineLLMWriteTest` to verify service-backed write runs, output artifacts, and `run.json` step 3 metadata when the required API key is configured.
 - Current providers are OpenAI, Anthropic, Gemini, Groq, MiniMax, Grok, GLM, and Kimi. The GLM case covers `--llm glm=glm-5.1` and requires `GLM_API_KEY`; the Kimi case covers `--llm kimi=kimi-k2.6` and requires `KIMI_API_KEY`.
 
@@ -27,7 +27,7 @@ bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/
 
 ```bash
 bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/ --test-price
-bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/service-models.test.ts --budget 2500
+bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/ --budget 2500
 ```
 
 The directory-wide `--test-price` selection resolves OpenAI, Anthropic, Gemini, Groq, MiniMax, GLM, and Kimi price mappings. Live service tests skip providers whose API key is not configured.

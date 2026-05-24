@@ -1,6 +1,5 @@
 import { expect } from 'bun:test'
 import {
-  cleanupTestOutput,
   ensurePageImageFixture,
   fileExists,
 } from './test-helpers'
@@ -132,8 +131,6 @@ export const defineOCRServiceTest = ({
       budgetedTest(budgetKey, `extract PDF with --provider ${provider}=${model}`, async () => {
         await requireServiceRunPrerequisites(envVarKey, shouldSkipReadiness)
 
-        await cleanupTestOutput('1-document')
-
         const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', pdfInput, '--provider', `${provider}=${model}`])
 
         await assertOcrArtifacts({
@@ -154,8 +151,6 @@ export const defineOCRServiceTest = ({
       if (usesGeneratedPngFixture) {
         await ensurePageImageFixture(imageInput)
       }
-      await cleanupTestOutput('1-document')
-
       const outputDir = await runCommandAndExpectOutputDir('1-document', ['src/cli/create-cli.ts', 'extract', imageInput, '--provider', `${provider}=${model}`])
 
       await assertOcrArtifacts({

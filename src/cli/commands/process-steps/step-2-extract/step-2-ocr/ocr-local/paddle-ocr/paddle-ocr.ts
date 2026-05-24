@@ -1,8 +1,10 @@
 import { rm } from 'node:fs/promises'
 import { pathExists, runCapture, runUvCapture, runUvInherit, paddleOcrUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
+import { withProcessLock } from '~/utils/process-lock'
 
 const PYTHON_VERSION = '3.10'
+const PADDLE_OCR_SETUP_LOCK_NAME = 'paddle-ocr-setup'
 
 const envExistsAndValid = async (): Promise<boolean> => {
   if (!await pathExists(paddleOcrUvEnvDir)) {
@@ -21,7 +23,7 @@ const envExistsAndValid = async (): Promise<boolean> => {
   return check.exitCode === 0
 }
 
-export const setupPaddleOcrEnvironment = async (): Promise<void> => {
+const setupPaddleOcrEnvironmentUnlocked = async (): Promise<void> => {
   l.write('info', 'Setting up PaddleOCR environment')
 
   await setupUv()
@@ -57,6 +59,16 @@ export const setupPaddleOcrEnvironment = async (): Promise<void> => {
 
   l.warn('Note: First PaddleOCR inference will download model weights (~150MB+)')
   l.write('success', 'PaddleOCR environment ready')
+}
+
+export const setupPaddleOcrEnvironment = async (): Promise<void> => {
+  await withProcessLock(PADDLE_OCR_SETUP_LOCK_NAME, async () => {
+    if (await envExistsAndValid()) {
+      return
+    }
+
+    await setupPaddleOcrEnvironmentUnlocked()
+  })
 }
 
 export const ensurePaddleOcrSetup = async (): Promise<void> => {

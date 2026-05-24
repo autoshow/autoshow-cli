@@ -29,7 +29,17 @@ import {
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
-import { buildProviderReadinessTable } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import {
+  buildProviderReadinessTable,
+  buildSetupToolStatusTable
+} from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import {
+  buildHostedProviderConfigurationLogTable,
+  buildHostedProviderConfigurationRows,
+  buildHostedProviderConfigurationSummaryTable,
+  buildHostedProviderConfigurationTable,
+  summarizeHostedProviderRows
+} from '~/cli/commands/setup-and-utilities/setup/hosted-provider-config'
 import { createLogger } from '~/utils/logger/core'
 import { formatCost } from '~/utils/logger/formatters'
 import { createReporter } from '~/utils/logger/reporter'
@@ -743,7 +753,7 @@ describe('logging contracts', () => {
     expect(buildProviderReadinessTable({
       provider: 'supadata',
       capability: 'transcription',
-      status: 'ready',
+      status: 'configured',
       envKey: 'SUPADATA_API_KEY',
       detail: 'https://api.supadata.ai/v1'
     })).toEqual({
@@ -751,10 +761,71 @@ describe('logging contracts', () => {
       rows: [{
         provider: 'supadata',
         capability: 'transcription',
-        status: 'ready',
+        status: 'configured',
         envKey: 'SUPADATA_API_KEY',
         detail: 'https://api.supadata.ai/v1'
       }]
+    })
+
+    const providerRows = buildHostedProviderConfigurationRows(
+      { OPENAI_API_KEY: 'sk-test' },
+      { envVars: ['OPENAI_API_KEY', 'GEMINI_API_KEY'] }
+    )
+    expect(providerRows).toEqual([
+      {
+        provider: 'OpenAI write/STT/OCR/TTS/image',
+        status: 'configured',
+        envKey: 'OPENAI_API_KEY',
+        detail: 'set'
+      },
+      {
+        provider: 'Gemini write/STT/OCR/TTS/image/video/music',
+        status: 'missing',
+        envKey: 'GEMINI_API_KEY',
+        detail: 'set GEMINI_API_KEY to enable'
+      }
+    ])
+    expect(summarizeHostedProviderRows(providerRows)).toEqual({
+      configured: 1,
+      missing: 1,
+      total: 2
+    })
+    expect(buildHostedProviderConfigurationTable(providerRows)).toEqual({
+      columns: ['provider', 'status', 'envKey', 'detail'],
+      rows: providerRows
+    })
+
+    expect(buildHostedProviderConfigurationLogTable(providerRows, { mode: 'missing' })).toEqual({
+      columns: ['provider', 'status', 'envKey', 'detail'],
+      rows: [providerRows[1]!],
+      details: [{ label: 'configured', value: '1/2' }]
+    })
+
+    expect(buildHostedProviderConfigurationSummaryTable({
+      configured: 2,
+      missing: 0,
+      total: 2
+    })).toEqual({
+      columns: ['configured', 'missing', 'detail'],
+      rows: [{
+        configured: '2/2',
+        missing: 0,
+        detail: 'all env vars set'
+      }]
+    })
+
+    const longRuntimePath = '/Users/ajc/c/as/autoshow-cli/runtime/bin/whisper-cli'
+    expect(buildSetupToolStatusTable({
+      tool: 'whisper-cli',
+      status: 'ready',
+      detail: longRuntimePath
+    })).toEqual({
+      columns: ['tool', 'status'],
+      rows: [{
+        tool: 'whisper-cli',
+        status: 'ready'
+      }],
+      details: [{ label: 'path', value: longRuntimePath }]
     })
   })
 

@@ -248,6 +248,19 @@ describe('test-runner contracts', () => {
     ])).toThrow('Use --test-price')
   })
 
+  test('arg parsing rejects legacy --concurrency spelling', () => {
+    for (const args of [
+      ['--concurrency', '50'],
+      ['--concurrency=50'],
+    ]) {
+      expect(() => parseRunnerArgs([
+        'bun',
+        'test/test-runner.ts',
+        ...args,
+      ])).toThrow('Use --max-concurrency=<n> for per-file test concurrency and --parallel=<n> for file-level worker parallelism')
+    }
+  })
+
   test('arg parsing uses --no-cleanup as the explicit keep flag', () => {
     const parsed = parseRunnerArgs([
       'bun',
@@ -630,7 +643,7 @@ describe('test-runner contracts', () => {
     const urlName = 'extract url with all backends'
     const docFile = 'test/test-cases/e2e/service/step-2-ocr-e2e/document.test.ts'
     const docName = 'extract pdf with tesseract'
-    const writeFilePath = 'test/test-cases/e2e/service/step-3-write-e2e/write-services/service-models.test.ts'
+    const writeFilePath = 'test/test-cases/e2e/service/step-3-write-e2e/write-services/openai-gpt-5.4-mini.test.ts'
     const writeName = 'gpt-5.4-mini model generates summary'
     const downloadFile = 'test/test-cases/e2e/local/download.test.ts'
     const downloadName = 'download local document input'
@@ -948,7 +961,7 @@ describe('test-runner contracts', () => {
 
   test('price mode uses e2e path selections', () => {
     const allFiles = [
-      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/service-models.test.ts',
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/mistral-ocr-2512.test.ts',
       'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts',
       'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts',
       'test/test-cases/e2e/local/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts'
@@ -998,12 +1011,12 @@ describe('test-runner contracts', () => {
 
   test('specific e2e files resolve only their mapped price commands', () => {
     const allFiles = [
-      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/service-models.test.ts',
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/mistral-ocr-2512.test.ts',
       'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts'
     ]
 
     const serviceModelKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/mistral-ocr-2512.test.ts'
     ]).commands.map((command) => command.key)
     const firecrawlKeys = resolvePriceSelection(allFiles, [
       'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts'
@@ -1016,7 +1029,7 @@ describe('test-runner contracts', () => {
 
   test('price mode rejects legacy test-price selectors', () => {
     const allFiles = [
-      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/openai-gpt-4o-mini-tts.test.ts'
     ]
 
     expect(() => resolvePriceSelection(allFiles, [
@@ -1026,15 +1039,15 @@ describe('test-runner contracts', () => {
 
   test('price path selections match path boundaries', () => {
     const allFiles = [
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-gen.test.ts',
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-music-gen.test.ts',
-      'test/test-cases/e2e/service/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-v1.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-lyria-3-pro-preview.test.ts',
+      'test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts'
     ]
 
     const musicKeys = resolvePriceSelection(allFiles, ['test/test-cases/e2e/service/step-7-music-gen-e2e/'])
       .commands.map((command) => command.key)
-    const lyricsVideoKeys = resolvePriceSelection(allFiles, ['test/test-cases/e2e/service/step-7-music-lyrics-video-e2e/'])
+    const lyricsVideoKeys = resolvePriceSelection(allFiles, ['test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/'])
       .commands.map((command) => command.key)
 
     expect(musicKeys).toContain('music-elevenlabs-music_v1')
@@ -1044,7 +1057,7 @@ describe('test-runner contracts', () => {
   })
 
   test('budget-skip entries are emitted from skipped entry keys', () => {
-    const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/service-models.test.ts', [
+    const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/openai-gpt-5.4.test.ts', [
       {
         name: 'write-openai-gpt-5.4',
         key: 'write-openai-gpt-5.4',
@@ -1174,11 +1187,14 @@ describe('test-runner contracts', () => {
 
   test('TTS service budget preflight includes remaining service entries', () => {
     const allFiles = [
-      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/groq-canopylabs-orpheus-v1-english.test.ts',
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/cartesia-sonic-3.test.ts',
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/deepgram-aura-2-thalia-en.test.ts',
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/minimax-speech-2.8-turbo.test.ts',
     ]
 
     const keys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/'
     ], true).commands.map((command) => command.key)
 
     expect(keys).toContain('tts-groq-canopylabs/orpheus-v1-english')
@@ -1190,19 +1206,23 @@ describe('test-runner contracts', () => {
 
   test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {
     const allFiles = [
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-music-gen.test.ts',
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-v1.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-v1-pipeline.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-lyria-3-pro-preview.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6-free.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6-pipeline.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6-gemini-lyria-3-clip-preview.test.ts'
     ]
 
     const elevenlabsKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/'
     ], true).commands.map((command) => command.key)
     expect(elevenlabsKeys).toContain('music-elevenlabs-music_v1')
     expect(elevenlabsKeys).toContain('music-pipeline-elevenlabs-music_v1')
 
     const minimaxKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/'
     ], true).commands.map((command) => command.key)
     expect(minimaxKeys).toContain('music-multi-minimax-music-2.6-gemini-lyria-3-clip-preview')
     expect(minimaxKeys).toContain('music-pipeline-minimax-music-2.6')
@@ -1212,7 +1232,7 @@ describe('test-runner contracts', () => {
     expect(minimaxKeys).not.toContain('music-minimax-' + 'music-2' + '.5')
 
     const geminiKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-lyria-3-pro-preview.test.ts'
     ], true).commands.map((command) => command.key)
     expect(geminiKeys).toContain('music-gemini-lyria-3-pro-preview')
     expect(geminiKeys).not.toContain('music-gemini-lyria-3-clip-preview')

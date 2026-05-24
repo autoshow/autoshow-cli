@@ -51,3 +51,17 @@ export const budgetedTest = (
   }
   test(name, fn, timeoutMs)
 }
+
+export const budgetedTestIf = (
+  enabled: boolean,
+  budgetKey: BudgetKeyInput,
+  name: string,
+  fn: () => void | Promise<void>,
+  timeoutMs: number = E2E_TEST_TIMEOUT_MS
+): void => {
+  if (!enabled || shouldSkipBudgetKeys(budgetKey)) {
+    test.skip(name, fn)
+    return
+  }
+  test(name, fn, timeoutMs)
+}

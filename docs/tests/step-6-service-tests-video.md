@@ -19,7 +19,7 @@ bun t test/test-cases/e2e/service/step-6-video-gen-e2e/
 
 ## Current Coverage
 
-- GLM, Grok, and Runway currently have command flag/model validation and price coverage, but no dedicated live-service cases in the step-6 e2e file.
+- Video coverage is split into one model or scenario file per provider target under `test/test-cases/e2e/service/step-6-video-gen-e2e/`, with provider flag validation isolated in `provider-flag-validation.test.ts`.
 - `test/test-cases/validation/video-provider-contracts.test.ts` covers mocked REST contracts for Gemini Veo media inputs, GLM text/image/interpolation/reference requests, MiniMax text/image/subject-reference requests, and Grok generation/reference/edit/extension endpoint shapes including moderation failure handling.
 
 ## Price Preflight

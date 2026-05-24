@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
   fileExists,
-  cleanupTestOutput,
   runCommand,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
@@ -48,8 +47,6 @@ export const defineMusicServiceTest = ({
   for (const { model, prompt, extraArgs, expectedLyricsSource, commandTimeoutMs, testTimeoutMs } of models) {
     const budgetKey = `music-${musicService}-${model}`
     budgetedTest(budgetKey, `${musicService} ${model} generates music and metadata`, async () => {
-      await cleanupTestOutput(MUSIC_GEN_TITLE)
-
       await requireConfiguredEnvVar(envVarKey, `${envVarKey} not configured`)
 
       const outputDir = await runCommandAndExpectOutputDir(

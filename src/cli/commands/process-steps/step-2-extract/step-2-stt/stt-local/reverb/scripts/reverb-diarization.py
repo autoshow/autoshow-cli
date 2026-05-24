@@ -1,17 +1,171 @@
 #!/usr/bin/env python3
-import sys
+import inspect
 import os
+import sys
+import tempfile
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+
+def patch_huggingface_auth_compatibility():
+    try:
+        import huggingface_hub
+        import huggingface_hub.file_download as file_download
+    except Exception:
+        return
+
+    def wrap_hf_hub_download(original):
+        try:
+            parameters = inspect.signature(original).parameters
+        except (TypeError, ValueError):
+            return original
+
+        if "use_auth_token" in parameters or "token" not in parameters:
+            return original
+
+        def compatible_hf_hub_download(*args, **kwargs):
+            if "use_auth_token" in kwargs:
+                if "token" not in kwargs:
+                    kwargs["token"] = kwargs["use_auth_token"]
+                del kwargs["use_auth_token"]
+            return original(*args, **kwargs)
+
+        return compatible_hf_hub_download
+
+    for module in (huggingface_hub, file_download):
+        original = getattr(module, "hf_hub_download", None)
+        if original is not None:
+            setattr(module, "hf_hub_download", wrap_hf_hub_download(original))
+
+
+patch_huggingface_auth_compatibility()
+
 from pyannote.audio import Pipeline
 import torch
 import torchaudio
+
+
+def normalize_pipeline_model_name(model_name):
+    if os.path.isdir(model_name):
+        return os.path.join(model_name, "config.yaml")
+    return model_name
+
+
+def rewrite_local_pipeline_config(model_name):
+    config_path = normalize_pipeline_model_name(model_name)
+    if not os.path.isfile(config_path) or os.path.basename(config_path) != "config.yaml":
+        return config_path, None
+
+    if yaml is None:
+        print(
+            "[DIARIZATION] PyYAML is unavailable; using local config without rewrite",
+            file=sys.stderr,
+        )
+        return config_path, None
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            config = yaml.safe_load(config_file)
+    except Exception as error:
+        print(
+            f"[DIARIZATION] Could not read local pipeline config: {error}",
+            file=sys.stderr,
+        )
+        return config_path, None
+
+    if not isinstance(config, dict):
+        return config_path, None
+
+    pipeline_config = config.get("pipeline")
+    if not isinstance(pipeline_config, dict):
+        return config_path, None
+
+    params = pipeline_config.get("params")
+    if not isinstance(params, dict):
+        return config_path, None
+
+    config_dir = os.path.dirname(os.path.abspath(config_path))
+    reverb_models_dir = os.path.dirname(config_dir)
+    segmentation_checkpoint = os.path.join(config_dir, "pytorch_model.bin")
+    embedding_checkpoint = os.path.join(
+        reverb_models_dir,
+        "pyannote-wespeaker-voxceleb-resnet34-LM",
+        "pytorch_model.bin",
+    )
+
+    rewritten = False
+    if os.path.isfile(segmentation_checkpoint):
+        params["segmentation"] = segmentation_checkpoint
+        rewritten = True
+        print(
+            f"[DIARIZATION] Using local segmentation checkpoint: {segmentation_checkpoint}",
+            file=sys.stderr,
+        )
+
+    if os.path.isfile(embedding_checkpoint):
+        params["embedding"] = embedding_checkpoint
+        rewritten = True
+        print(
+            f"[DIARIZATION] Using local embedding checkpoint: {embedding_checkpoint}",
+            file=sys.stderr,
+        )
+
+    if not rewritten:
+        return config_path, None
+
+    temp_config = tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".yaml",
+        prefix="autoshow-reverb-diarization-",
+        delete=False,
+        encoding="utf-8",
+    )
+    try:
+        with temp_config:
+            yaml.safe_dump(config, temp_config, sort_keys=False)
+    except Exception:
+        os.unlink(temp_config.name)
+        raise
+
+    return temp_config.name, temp_config.name
+
+
+def pipeline_auth_kwargs(hf_token):
+    if not hf_token:
+        return {}
+
+    try:
+        parameters = inspect.signature(Pipeline.from_pretrained).parameters
+    except (TypeError, ValueError):
+        return {"use_auth_token": hf_token}
+
+    if "token" in parameters:
+        return {"token": hf_token}
+    if "use_auth_token" in parameters:
+        return {"use_auth_token": hf_token}
+    return {}
+
+
+def load_diarization_pipeline(model_name, hf_token):
+    load_target, temp_config_path = rewrite_local_pipeline_config(model_name)
+    try:
+        return Pipeline.from_pretrained(load_target, **pipeline_auth_kwargs(hf_token))
+    finally:
+        if temp_config_path:
+            try:
+                os.unlink(temp_config_path)
+            except OSError:
+                pass
 
 
 def run_diarization(audio_path, hf_token, model_name="Revai/reverb-diarization-v2"):
     try:
         print(f"[DIARIZATION] Loading diarization model: {model_name}", file=sys.stderr)
 
-        pipeline_kwargs = {"token": hf_token} if hf_token else {}
-        pipeline = Pipeline.from_pretrained(model_name, **pipeline_kwargs)
+        pipeline = load_diarization_pipeline(model_name, hf_token)
 
         if pipeline is None:
             print(
@@ -199,7 +353,7 @@ def run_diarization(audio_path, hf_token, model_name="Revai/reverb-diarization-v
                 file=sys.stderr,
             )
             try:
-                pipeline = Pipeline.from_pretrained(model_name, **pipeline_kwargs)
+                pipeline = load_diarization_pipeline(model_name, hf_token)
                 device = torch.device("cpu")
 
                 if hasattr(pipeline, "to"):

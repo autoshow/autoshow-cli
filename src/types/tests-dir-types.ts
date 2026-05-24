@@ -53,6 +53,7 @@ export type ParsedCommandMetric = {
   exitCode: number
   durationMs: number
   outputDir: string | null
+  outputRoot?: string | null
   callerFile: string | null
   callerLine: number | null
   callerColumn: number | null

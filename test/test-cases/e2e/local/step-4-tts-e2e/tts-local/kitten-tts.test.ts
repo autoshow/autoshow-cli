@@ -50,7 +50,7 @@ describe('kitten-tts', () => {
 
         expect(result.exitCode).toBe(0)
 
-        const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+        const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE, result.outputRoot)
         expect(outputDir).not.toBeNull()
 
         if (outputDir) {
@@ -91,7 +91,7 @@ describe('kitten-tts', () => {
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE, result.outputRoot)
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {
@@ -141,7 +141,7 @@ describe('kitten-tts', () => {
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE, result.outputRoot)
       expect(outputDir).not.toBeNull()
 
       if (outputDir) {

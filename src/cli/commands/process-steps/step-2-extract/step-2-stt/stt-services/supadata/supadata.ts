@@ -65,7 +65,7 @@ export const setupSupadataStt = async (): Promise<void> => {
     logProviderReadiness(l, {
       provider: 'supadata',
       capability: 'transcription',
-      status: 'ready',
+      status: 'configured',
       envKey: 'SUPADATA_API_KEY',
       detail: getSupadataBaseUrl()
     })

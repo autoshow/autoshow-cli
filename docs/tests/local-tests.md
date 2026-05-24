@@ -28,7 +28,7 @@ The `bun t` commands below document the full project runner for humans. Do not u
 
 ```bash
 # run all local tests
-bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/local/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/local/step-2-stt-e2e/stt-local/ test/test-cases/e2e/local/step-3-write-e2e/write-local/ test/test-cases/e2e/local/step-4-tts-e2e/tts-local/ test/test-cases/e2e/service/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-local-file.test.ts test/test-cases/e2e/local/step-2-ocr-e2e/ocr-local/ test/test-cases/e2e/local/step-2-stt-e2e/stt-local/ test/test-cases/e2e/local/step-3-write-e2e/write-local/ test/test-cases/e2e/local/step-4-tts-e2e/tts-local/ test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
 ```
 
 ```bash
@@ -42,7 +42,7 @@ bun t test/test-cases/e2e/local/step-3-write-e2e/write-local/write-project-lyric
 bun t test/test-cases/e2e/local/step-4-tts-e2e/tts-local/kitten-tts.test.ts
 
 # local lyric-video coverage
-bun t test/test-cases/e2e/service/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
+bun t test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts
 ```
 
 ## Shared Runner Behavior
@@ -76,7 +76,7 @@ cat project/test-output/latest.log
 | Reverb | `test/test-cases/e2e/local/step-2-stt-e2e/stt-local/reverb/reverb.test.ts` | Heavier local STT coverage |
 | Llama write | `test/test-cases/e2e/local/step-3-write-e2e/write-local/write-subcommand-local.test.ts`, `test/test-cases/e2e/local/step-3-write-e2e/write-local/write-project-lyrics.test.ts` | Local llama.cpp audio and project-text flows |
 | Local TTS | `test/test-cases/e2e/local/step-4-tts-e2e/tts-local/kitten-tts.test.ts` | Standalone Kitten TTS coverage |
-| Music lyric-video | `test/test-cases/e2e/service/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts` | Local FFmpeg/Whisper lyric-video rendering |
+| Music lyric-video | `test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts` | Local FFmpeg/Whisper lyric-video rendering |
 
 ## Price Preflight
 

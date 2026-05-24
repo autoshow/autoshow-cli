@@ -75,9 +75,7 @@ export const setupKittenTts = async (): Promise<void> => {
 
   await setupKittenTtsEnvironment()
 
-  if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1') {
-    l.write('success', 'Kitten TTS setup complete')
-  } else {
+  if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') !== '1') {
     l.write('success', 'Kitten TTS Setup', {
       category: 'command',
       humanTable: createHumanTable([

@@ -31,7 +31,7 @@ budgetedTest('transcribe-whisper-large-v3-turbo', 'whisper large-v3-turbo model 
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {
@@ -70,7 +70,7 @@ budgetedTest('transcribe-whisper-tiny-split', 'whisper tiny with split processes
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(videoTitleSuffix)
+  const outputDir = result.outputDir ?? await findLatestDirectory(videoTitleSuffix, result.outputRoot)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {

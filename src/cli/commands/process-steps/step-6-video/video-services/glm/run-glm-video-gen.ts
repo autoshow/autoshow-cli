@@ -12,6 +12,7 @@ import {
   normalizeGlmQuality,
   normalizeGlmSize
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
@@ -192,13 +193,8 @@ export const runGlmVideoGen = async (
     throw new Error('GLM video generation succeeded but no video_result[0].url was returned')
   }
 
-  const downloadResp = await fetch(videoUrl)
-  if (!downloadResp.ok) {
-    throw new Error(`GLM video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  await Bun.write(outputPath, new Uint8Array(await downloadResp.arrayBuffer()))
+  await Bun.write(outputPath, await downloadVideoOutputBytes(videoUrl, 'GLM'))
 
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)

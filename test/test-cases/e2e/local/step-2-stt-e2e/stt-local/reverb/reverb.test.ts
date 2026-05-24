@@ -1,5 +1,5 @@
 import { expect, beforeAll, afterAll } from "bun:test"
-import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_EXAMPLE_AUDIO_URL, STABLE_EXAMPLE_AUDIO_TITLE } from "../../../../../test-utils/test-helpers"
+import { runCommand, fileExists, findLatestDirectory, cleanupTestOutput, STABLE_EXAMPLE_AUDIO_URL, STABLE_EXAMPLE_AUDIO_TITLE } from "../../../../../../test-utils/test-helpers"
 import { budgetedTest } from '../../../../../../test-utils/budget'
 
 beforeAll(async () => {
@@ -21,7 +21,7 @@ budgetedTest('transcribe-reverb', 'reverb processes local audio with speaker dia
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {

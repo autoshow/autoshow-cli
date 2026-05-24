@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
   fileExists,
-  cleanupTestOutput,
   runCommand,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
@@ -47,8 +46,6 @@ export const defineVideoServiceTest = ({
     const budgetKey = `video-${videoService}-${model}`
     budgetedTest(budgetKey, `${videoService} ${model} generates video and metadata`, async () => {
       await requireConfiguredEnvVar(envVarKey, `${envVarKey} is required for ${envVarDescription}`)
-
-      await cleanupTestOutput(VIDEO_GEN_TITLE)
 
       const outputDir = await runCommandAndExpectOutputDir(VIDEO_GEN_TITLE, [
         'src/cli/create-cli.ts',

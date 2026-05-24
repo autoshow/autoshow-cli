@@ -7,6 +7,7 @@ import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import * as l from '~/utils/logger'
 import { normalizeMinimaxDurationForApi, normalizeMinimaxResolutionForApi } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import {
@@ -209,13 +210,8 @@ export const runMinimaxVideoGen = async (
   )
   ensureMinimaxBaseRespSuccess(retrieveData.base_resp, 'MiniMax video file retrieve')
 
-  const downloadResp = await fetch(retrieveData.file.download_url)
-  if (!downloadResp.ok) {
-    throw new Error(`MiniMax video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  const bytes = new Uint8Array(await downloadResp.arrayBuffer())
+  const bytes = await downloadVideoOutputBytes(retrieveData.file.download_url, 'MiniMax')
   await Bun.write(outputPath, bytes)
 
   const processingTime = Date.now() - startTime

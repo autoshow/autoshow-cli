@@ -54,7 +54,7 @@ export const setupScrapeCreatorsStt = async (): Promise<void> => {
     logProviderReadiness(l, {
       provider: 'scrapecreators',
       capability: 'youtube-transcript',
-      status: 'ready',
+      status: 'configured',
       envKey: 'SCRAPECREATORS_API_KEY',
       detail: getScrapeCreatorsBaseUrl()
     })

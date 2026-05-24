@@ -4,7 +4,12 @@ import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-import { requireUvCommand, reverbDiarizationDir, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { requireUvCommand, reverbUvEnvDir } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import {
+  checkReverbDiarizationAssets,
+  getMissingReverbDiarizationFiles,
+  reverbDiarizationConfigPath
+} from './reverb-assets'
 
 const REVERB_SCRIPTS_DIR = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -19,36 +24,23 @@ export const getHuggingFaceToken = (): string | null => {
   return null
 }
 
-const directoryHasFiles = async (root: string): Promise<boolean> => {
-  try {
-    const entries = await readdir(root, { withFileTypes: true })
-    for (const entry of entries) {
-      const path = `${root}/${entry.name}`
-      if (entry.isFile()) return true
-      if (entry.isDirectory() && await directoryHasFiles(path)) return true
-    }
-    return false
-  } catch {
-    return false
-  }
-}
-
 export type ReverbDiarizationModel = {
   modelName: string
   hfToken: string | null
 }
 
 export const resolveDiarizationModel = async (): Promise<ReverbDiarizationModel | null> => {
-  if (await directoryHasFiles(reverbDiarizationDir)) {
+  if (await checkReverbDiarizationAssets()) {
     return {
-      modelName: reverbDiarizationDir,
+      modelName: reverbDiarizationConfigPath,
       hfToken: null
     }
   }
 
   const hfToken = getHuggingFaceToken()
   if (!hfToken) {
-    l.warn('Reverb diarization snapshot is missing. Set HUGGINGFACE_TOKEN and run `bun as setup --step reverb` to download it.')
+    const missing = await getMissingReverbDiarizationFiles()
+    l.warn(`Reverb diarization assets are missing (${missing.join(', ')}). Set HUGGINGFACE_TOKEN and run \`bun as setup --step reverb\` to download them.`)
     return null
   }
 

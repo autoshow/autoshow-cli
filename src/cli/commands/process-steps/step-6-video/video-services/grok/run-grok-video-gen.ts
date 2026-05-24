@@ -9,6 +9,7 @@ import {
   normalizeGrokVideoExtensionDuration,
   normalizeGrokVideoResolution
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
@@ -199,13 +200,8 @@ export const runGrokVideoGen = async (
     throw new Error('Grok video generation succeeded but no video.url was returned')
   }
 
-  const downloadResp = await fetch(videoUrl)
-  if (!downloadResp.ok) {
-    throw new Error(`Grok video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  await Bun.write(outputPath, new Uint8Array(await downloadResp.arrayBuffer()))
+  await Bun.write(outputPath, await downloadVideoOutputBytes(videoUrl, 'Grok'))
 
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)

@@ -11,7 +11,6 @@ import { getOutputRootAbsolute } from '~/cli/commands/process-steps/output-root'
 const TEXT_INPUT_EXTENSIONS = new Set(['.md', '.txt'])
 const TRACK_LINE_PATTERN = /^\s*(\d+)\.\s+(.+?)\s*$/
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../')
-const OUTPUT_ROOT = getOutputRootAbsolute(PROJECT_ROOT)
 
 const promptFileCache = new Map<string, string>()
 const promptFileResultCache = new Map<string, PromptFileResult>()
@@ -52,6 +51,8 @@ const toProjectDisplayPath = (absolutePath: string): string => {
 
   return `./${toPosixPath(rel)}`
 }
+
+const getProjectOutputRoot = (): string => getOutputRootAbsolute(PROJECT_ROOT)
 
 const pathExistsAsFile = async (filePath: string): Promise<boolean> => {
   try {
@@ -204,7 +205,8 @@ export const resolveWriteTextProjectDefaults = async (
   }
 
   const absoluteTarget = resolve(PROJECT_ROOT, target)
-  const relativeToOutput = relative(OUTPUT_ROOT, absoluteTarget)
+  const outputRoot = getProjectOutputRoot()
+  const relativeToOutput = relative(outputRoot, absoluteTarget)
   if (relativeToOutput.length === 0 || relativeToOutput.startsWith('..') || isAbsolute(relativeToOutput)) {
     return undefined
   }
@@ -225,7 +227,7 @@ export const resolveWriteTextProjectDefaults = async (
     return undefined
   }
 
-  const projectDir = join(OUTPUT_ROOT, projectName)
+  const projectDir = join(outputRoot, projectName)
   const textDir = join(projectDir, 'text')
   const lyricsDir = join(projectDir, 'lyrics')
   const promptFile = explicitFlags.has('prompt-file') && options.promptFile

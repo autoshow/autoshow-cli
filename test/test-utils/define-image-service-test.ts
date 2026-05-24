@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
   fileExists,
-  cleanupTestOutput,
   runCommand,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
@@ -45,8 +44,6 @@ export const defineImageServiceTest = ({
     const imageFileName = `generated-image.${modelExt}`
     const budgetKey = `image-${imageService}-${model}`
     budgetedTest(budgetKey, `${model} generates image and metadata`, async () => {
-      await cleanupTestOutput(IMAGE_GEN_TITLE)
-
       await requireConfiguredEnvVar(envVarKey, `${envVarKey} not configured`)
 
       const outputDir = await runCommandAndExpectOutputDir(IMAGE_GEN_TITLE, [

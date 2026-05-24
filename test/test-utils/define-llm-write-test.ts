@@ -108,7 +108,7 @@ export const defineLLMWriteTest = ({
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
       if (!outputDir) {
         throw new Error(`Expected output directory for ${STABLE_EXAMPLE_AUDIO_TITLE}`)
       }

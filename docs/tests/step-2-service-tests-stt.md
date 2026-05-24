@@ -19,7 +19,8 @@ bun t test/test-cases/e2e/service/step-2-stt-e2e/stt-services/
 
 - The shared `defineSTTServiceTest` helper covers invalid model rejection, `--price` output, and real transcription when the required API key is configured.
 - YouTube caption-first mode and other zero-cost routing coverage live in validation suites such as `input-contracts.test.ts`, `option-resolution-contracts.test.ts`, `provider-selection-contracts.test.ts`, `price-mode-contracts.test.ts`, `resume-cache-setup-contracts.test.ts`, and `stt-media-cache-contracts.test.ts`.
-- `happyscribe` has dedicated mocked validation coverage in `test/test-cases/validation/happyscribe-transcript-parser-contracts.test.ts`. `scrapecreators` has dedicated mocked validation coverage in `test/test-cases/validation/scrapecreators-stt-contracts.test.ts`. `openai-stt`, `gemini-stt`, and `glm-stt` are defined STT providers with no entries in the shared `service-models.test.ts` suite or dedicated e2e service tests.
+- Service STT coverage is split into one model or scenario file per provider target under `test/test-cases/e2e/service/step-2-stt-e2e/stt-services/`, including URL transcript and ElevenLabs speaker-count scenarios.
+- `happyscribe` has dedicated mocked validation coverage in `test/test-cases/validation/happyscribe-transcript-parser-contracts.test.ts`. `scrapecreators` has dedicated mocked validation coverage in `test/test-cases/validation/scrapecreators-stt-contracts.test.ts`. `openai-stt`, `gemini-stt`, and `glm-stt` are defined STT providers with no dedicated e2e service tests.
 
 ## Price Preflight
 

@@ -1,10 +1,10 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { pathExists, runUvCapture, runUvInherit, reverbConfigPath, reverbModelPath, reverbUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { pathExists, runUvInherit, reverbUvEnvDir, setupUv } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
 import * as l from '~/utils/logger'
 import { createHumanTable } from '~/utils/logger/human-table'
-import { downloadDiarizationModel, downloadReverbModel } from './reverb-download'
+import { checkReverbModelExists, downloadDiarizationModel, downloadReverbModel } from './reverb-download'
 import { getHuggingFaceToken } from './reverb-huggingface'
 import { downloadGithubCommitArchive } from '~/cli/commands/setup-and-utilities/setup/setup-download/github-archives'
 import { readDependencyRef } from '~/cli/commands/setup-and-utilities/setup/dependency-metadata'
@@ -34,10 +34,6 @@ const envExistsAndValid = async (): Promise<boolean> => {
   return true
 }
 
-const checkReverbModelExists = async (): Promise<boolean> => {
-  return await pathExists(reverbModelPath) && await pathExists(reverbConfigPath)
-}
-
 const logReverbTokenNextSteps = (): void => {
   l.warn('No HUGGINGFACE_TOKEN found')
   l.warn('Reverb model downloads require a Hugging Face account')
@@ -51,63 +47,55 @@ const logReverbTokenNextSteps = (): void => {
   })
 }
 
+const reverbPythonPath = (): string => `${reverbUvEnvDir}/bin/python`
+
+const formatInstallError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error)
+
+const runReverbSetupPhase = async (
+  phase: string,
+  args: string[]
+): Promise<void> => {
+  try {
+    await runUvInherit(args)
+  } catch (error) {
+    throw new Error(`Reverb setup failed during ${phase}: ${formatInstallError(error)}`)
+  }
+}
+
 export const setupReverbEnvironment = async (): Promise<void> => {
   l.write('info', 'Setting up Reverb ASR environment')
 
   await setupUv()
 
-  await runUvCapture(['python', 'install', '3.11'], { allowFailure: true })
+  await runReverbSetupPhase('Python 3.11 install', ['python', 'install', '3.11'])
 
   await rm(reverbUvEnvDir, { recursive: true, force: true })
 
-  const venv = await runUvInherit(['venv', '--python', '3.11', reverbUvEnvDir], { allowFailure: true })
-  if (venv !== 0) {
-    l.error('Failed to create venv')
-    throw new Error('Failed to create Reverb virtual environment')
-  }
+  await runReverbSetupPhase('virtual environment creation', ['venv', '--python', '3.11', reverbUvEnvDir])
 
   l.write('info', 'Installing Reverb ASR dependencies')
-  const baseDeps = [
+  const reverbDeps = [
+    'numpy<2',
     'torch>=2.0.0',
     'torchaudio>=2.0.0',
-    'numpy<2',
     'omegaconf',
     'sentencepiece',
     'soundfile',
     'librosa',
     'scipy',
     'pypinyin',
-    'matplotlib'
-  ]
-
-  await runUvInherit(['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, ...baseDeps], { allowFailure: true })
-
-  l.write('info', 'Installing pyannote.audio for diarization')
-  const pyannoteDeps = [
-    'pyannote.audio>=3.1.0',
-    'pyannote.core>=5.0.0',
-    'pyannote.database>=5.0.0',
-    'pyannote.metrics>=3.2.0',
-    'pyannote.pipeline>=3.0.0',
-    'speechbrain>=0.5.14',
-    'asteroid-filterbanks>=0.4.0',
-    'pytorch-lightning>=1.5.0',
-    'rich>=10.0.0',
+    'matplotlib',
+    'pyannote.audio<4',
     'huggingface_hub'
   ]
 
-  const pyannoteInstall = await runUvInherit(['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, ...pyannoteDeps], { allowFailure: true })
-  if (pyannoteInstall !== 0) {
-    l.warn('Pyannote installation had issues, trying alternate approach')
-    await runUvInherit(['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, '--no-deps', 'pyannote.audio>=3.1.0'])
-    await runUvInherit(['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, 'pyannote.core>=5.0.0', 'pyannote.pipeline>=3.0.0'])
-  }
+  await runReverbSetupPhase('Python dependency install', ['pip', 'install', '-p', reverbPythonPath(), ...reverbDeps])
 
   l.write('info', 'Installing Reverb package')
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-reverb-source-'))
   const reverbRef = await readDependencyRef('reverb') ?? '8cd4099828d68e464a9536ccb6a380ddad07c982'
 
-  let installCode = 1
   try {
     await withRetry(
       { retryClass: 'setup_download', operationName: 'reverb-source' },
@@ -123,14 +111,9 @@ export const setupReverbEnvironment = async (): Promise<void> => {
       }
     )
 
-    installCode = await runUvInherit(['pip', 'install', '-p', `${reverbUvEnvDir}/bin/python`, tempDir], { allowFailure: true })
+    await runReverbSetupPhase('Reverb package install', ['pip', 'install', '-p', reverbPythonPath(), tempDir])
   } finally {
     await rm(tempDir, { recursive: true, force: true })
-  }
-
-  if (installCode !== 0) {
-    l.error('Failed to install Reverb package')
-    throw new Error('Failed to install Reverb package')
   }
 
   l.write('success', 'Reverb ASR environment ready')

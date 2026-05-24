@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
+import { normalizeLegacyMultiSpeakerFlags } from '~/cli/commands/process-steps/service-selector-normalization'
 import { collectTtsTargets } from '~/cli/commands/process-steps/step-4-tts/tts-targets'
 import {
   detectVoiceKind,
@@ -91,6 +92,44 @@ describe('TTS dialogue contracts', () => {
     expect(targets.length).toBe(1)
     expect(targets[0]?.service).toBe('openai')
     expect(targets[0]?.multiSpeakerStrategy).toBe('segment-and-concat')
+  })
+
+  test('legacy Gemini speaker flags normalize to labeled speaker mappings', () => {
+    const normalized = normalizeLegacyMultiSpeakerFlags({
+      'gemini-speaker-1-name': 'Host',
+      'gemini-speaker-1-voice': 'Kore',
+      'gemini-speaker-2-name': 'Guest',
+      'gemini-speaker-2-voice': 'Puck'
+    }, new Set([
+      'gemini-speaker-1-name',
+      'gemini-speaker-1-voice',
+      'gemini-speaker-2-name',
+      'gemini-speaker-2-voice'
+    ]))
+    const opts = buildOptsFromFlags(false, normalized.flags, [], {}, normalized.explicitFlags)
+
+    expect(opts.ttsSpeakers).toEqual(['Host=Kore', 'Guest=Puck'])
+    expect(opts.ttsDialogueFormat).toBe('labeled')
+  })
+
+  test('legacy Gemini speaker flags preserve an explicit dialogue format', () => {
+    const normalized = normalizeLegacyMultiSpeakerFlags({
+      'tts-dialogue-format': 'screenplay',
+      'gemini-speaker-1-name': 'Host',
+      'gemini-speaker-1-voice': 'Kore',
+      'gemini-speaker-2-name': 'Guest',
+      'gemini-speaker-2-voice': 'Puck'
+    }, new Set([
+      'tts-dialogue-format',
+      'gemini-speaker-1-name',
+      'gemini-speaker-1-voice',
+      'gemini-speaker-2-name',
+      'gemini-speaker-2-voice'
+    ]))
+    const opts = buildOptsFromFlags(false, normalized.flags, [], {}, normalized.explicitFlags)
+
+    expect(opts.ttsSpeakers).toEqual(['Host=Kore', 'Guest=Puck'])
+    expect(opts.ttsDialogueFormat).toBe('screenplay')
   })
 
   test('ref-audio speakers rejected for providers that do not support ref audio', () => {

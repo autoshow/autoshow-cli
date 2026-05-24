@@ -1,9 +1,8 @@
-import { test, expect, beforeAll, afterAll } from 'bun:test'
+import { test, expect, beforeAll } from 'bun:test'
 import { E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   runCommand,
   findLatestDirectory,
-  cleanupTestOutput,
   readConfiguredEnvVar,
   type RunCommandOptions
 } from './test-helpers'
@@ -124,18 +123,13 @@ export const classifyLiveProviderAvailabilityFailure = (output: string): string 
 }
 
 export const withOutputLifecycle = (
-  title: string,
+  _title: string,
   setup?: (() => Promise<void>) | undefined
 ): void => {
   beforeAll(async () => {
     if (setup) {
       await setup()
     }
-    await cleanupTestOutput(title)
-  })
-
-  afterAll(async () => {
-    await cleanupTestOutput(title)
   })
 }
 
@@ -245,7 +239,7 @@ export const runCommandAndExpectOutputDir = async (
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(title)
+  const outputDir = result.outputDir ?? await findLatestDirectory(title, result.outputRoot)
   if (!outputDir) {
     throw new Error(`Expected output directory for ${title}`)
   }

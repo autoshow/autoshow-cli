@@ -3,7 +3,6 @@ import {
   runCommand,
   fileExists,
   findLatestDirectory,
-  cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
 } from './test-helpers'
@@ -33,12 +32,12 @@ const isRunwayInsufficientCreditsFailure = (output: string): boolean =>
 const isGroqTermsAcceptanceFailure = (output: string): boolean =>
   /requires terms acceptance/i.test(stripAnsi(output))
 
-type TtsExtraArgs = string[] | ((model: string) => string[] | Promise<string[]>)
+type TtsExtraArgs = readonly string[] | ((model: string) => readonly string[] | Promise<readonly string[]>)
 
 const resolveTtsExtraArgs = async (
   extraArgs: TtsExtraArgs | undefined,
   model: string
-): Promise<string[]> => {
+): Promise<readonly string[]> => {
   if (!extraArgs) return []
   return typeof extraArgs === 'function' ? await extraArgs(model) : extraArgs
 }
@@ -85,7 +84,6 @@ export const defineTTSServiceTest = ({
     budgetedTest(budgetKey, `${model} generates speech.wav`, async () => {
       await requireConfiguredEnvVar(envVarKey, `${envVarKey} is required for ${envVarDescription}`)
 
-      await cleanupTestOutput(inputTitle)
       const resolvedExtraArgs = await resolveTtsExtraArgs(extraArgs, model)
 
       const args = [
@@ -132,7 +130,7 @@ export const defineTTSServiceTest = ({
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(inputTitle)
+      const outputDir = result.outputDir ?? await findLatestDirectory(inputTitle, result.outputRoot)
       if (!outputDir) {
         throw new Error(`Expected output directory for ${inputTitle}`)
       }

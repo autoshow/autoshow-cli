@@ -6,6 +6,17 @@ import { extractTarGzBuffer } from '~/cli/commands/setup-and-utilities/setup/set
 import { buildGithubArchiveUrl, buildGithubCommitArchiveUrl } from '~/cli/commands/setup-and-utilities/setup/setup-download/github-archives'
 import { resolveUvAssetName, resolveUvCommandFromCandidates, resolveUvDownloadUrl } from '~/cli/commands/setup-and-utilities/setup/setup-download/managed-uv'
 import { downloadHuggingFaceSnapshot } from '~/cli/commands/setup-and-utilities/setup/setup-download/huggingface'
+import {
+  hasSetupManagedLlamaModel,
+  parseLlamaSetupModelMetadata,
+  readLlamaSetupModelMetadata,
+  recordSetupManagedLlamaModel
+} from '~/cli/commands/process-steps/step-3-write/write-local/llama/llama-model-metadata'
+import {
+  REVERB_ASR_REQUIRED_FILES,
+  REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES,
+  REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb-assets'
 
 type TarEntry =
   | { type: 'directory', path: string, mode?: number }
@@ -137,6 +148,37 @@ describe('managed uv resolution', () => {
   })
 })
 
+describe('llama setup model metadata', () => {
+  test('records setup-managed llama model downloads without probing external caches', async () => {
+    const dir = await makeTempDir()
+    const metadataPath = join(dir, 'setup-managed-models.json')
+
+    await recordSetupManagedLlamaModel('ggml-org/gemma-3-270m-it-GGUF', {
+      metadataPath,
+      now: new Date('2026-01-02T03:04:05.000Z')
+    })
+
+    const metadata = await readLlamaSetupModelMetadata(metadataPath)
+    expect(metadata.models['ggml-org/gemma-3-270m-it-GGUF']).toEqual({
+      requestedModel: 'ggml-org/gemma-3-270m-it-GGUF',
+      repo: 'ggml-org/gemma-3-270m-it-GGUF',
+      downloadedAt: '2026-01-02T03:04:05.000Z'
+    })
+    expect(await hasSetupManagedLlamaModel('ggml-org/gemma-3-270m-it-GGUF', metadataPath)).toBe(true)
+    expect(await hasSetupManagedLlamaModel('ggml-org/Qwen3-0.6B-GGUF', metadataPath)).toBe(false)
+  })
+
+  test('ignores malformed llama metadata instead of trusting an unknown cache', () => {
+    expect(parseLlamaSetupModelMetadata('{bad json')).toEqual({ version: 1, models: {} })
+    expect(parseLlamaSetupModelMetadata(JSON.stringify({
+      version: 1,
+      models: {
+        bad: { repo: 'ggml-org/bad' }
+      }
+    }))).toEqual({ version: 1, models: {} })
+  })
+})
+
 describe('GitHub archive URLs', () => {
   test('builds tag and commit archive URLs', () => {
     expect(buildGithubArchiveUrl({ owner: 'ggerganov', repo: 'whisper.cpp', ref: 'v1.7.4' })).toBe(
@@ -178,6 +220,83 @@ describe('Hugging Face downloader', () => {
     expect(await Bun.file(join(destination, 'README.md')).exists()).toBe(false)
     expect(await Bun.file(join(destination, 'reverb_asr_v1.pt')).exists()).toBe(true)
     expect(await Bun.file(join(destination, 'config.yaml')).exists()).toBe(true)
+  })
+
+  test('downloads the complete Reverb ASR runtime asset set', async () => {
+    const destination = await makeTempDir()
+    const fetchImpl = mockFetch(async (url: string | URL | Request): Promise<Response> => {
+      if (String(url).includes('/tree/')) {
+        return Response.json([
+          ...REVERB_ASR_REQUIRED_FILES.map(path => ({ path, type: 'file' })),
+          { path: 'README.md', type: 'file' }
+        ])
+      }
+      return new Response(`download:${String(url)}`)
+    })
+
+    await downloadHuggingFaceSnapshot({
+      repoId: 'Revai/reverb-asr',
+      revision: 'main',
+      token: 'hf_test',
+      destination,
+      allowPatterns: [...REVERB_ASR_REQUIRED_FILES],
+      requiredFiles: [...REVERB_ASR_REQUIRED_FILES],
+      fetchImpl
+    })
+
+    for (const file of REVERB_ASR_REQUIRED_FILES) {
+      expect(await Bun.file(join(destination, file)).exists()).toBe(true)
+    }
+    expect(await Bun.file(join(destination, 'README.md')).exists()).toBe(false)
+  })
+
+  test('downloads the complete Reverb diarization runtime asset sets', async () => {
+    const pipelineDestination = await makeTempDir()
+    const embeddingDestination = await makeTempDir()
+    const fetchImpl = mockFetch(async (url: string | URL | Request): Promise<Response> => {
+      if (String(url).includes('/tree/')) {
+        if (String(url).includes('pyannote-wespeaker-voxceleb-resnet34-LM')) {
+          return Response.json([
+            ...REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES.map(path => ({ path, type: 'file' })),
+            { path: 'README.md', type: 'file' }
+          ])
+        }
+        return Response.json([
+          ...REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES.map(path => ({ path, type: 'file' })),
+          { path: 'README.md', type: 'file' }
+        ])
+      }
+      return new Response(`download:${String(url)}`)
+    })
+
+    await downloadHuggingFaceSnapshot({
+      repoId: 'Revai/reverb-diarization-v2',
+      revision: 'main',
+      token: 'hf_test',
+      destination: pipelineDestination,
+      allowPatterns: [...REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES],
+      requiredFiles: [...REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES],
+      fetchImpl
+    })
+
+    await downloadHuggingFaceSnapshot({
+      repoId: 'Revai/pyannote-wespeaker-voxceleb-resnet34-LM',
+      revision: 'main',
+      token: 'hf_test',
+      destination: embeddingDestination,
+      allowPatterns: [...REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES],
+      requiredFiles: [...REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES],
+      fetchImpl
+    })
+
+    for (const file of REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES) {
+      expect(await Bun.file(join(pipelineDestination, file)).exists()).toBe(true)
+    }
+    for (const file of REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES) {
+      expect(await Bun.file(join(embeddingDestination, file)).exists()).toBe(true)
+    }
+    expect(await Bun.file(join(pipelineDestination, 'README.md')).exists()).toBe(false)
+    expect(await Bun.file(join(embeddingDestination, 'README.md')).exists()).toBe(false)
   })
 
   test('retries retryable listing failures', async () => {

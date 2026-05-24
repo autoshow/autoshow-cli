@@ -177,6 +177,7 @@ test('tts help exposes hosted TTS provider flags', async () => {
   expect(getFlagGroupSection(result.stdout, 'Deepgram TTS')).toContain('--deepgram-tts-sample-rate')
   expect(getFlagGroupSection(result.stdout, 'Speechify TTS')).toContain('--speechify-tts-voice-locale')
   expect(getFlagGroupSection(result.stdout, 'Hume TTS')).toContain('--hume-tts-voice-provider')
+  expect(getFlagGroupSection(result.stdout, 'Groq TTS')).toContain('--groq-voice')
   expect(getFlagGroupSection(result.stdout, 'Gemini TTS')).toContain('--gemini-speaker-1-name')
   expect(getFlagGroupSection(result.stdout, 'Multi-Speaker / Dialogue')).toContain('--tts-dialogue-format')
   expect(getFlagGroupSection(result.stdout, 'ElevenLabs TTS')).toContain('--elevenlabs-tts-stability')

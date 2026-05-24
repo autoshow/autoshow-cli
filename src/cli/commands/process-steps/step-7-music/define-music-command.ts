@@ -34,6 +34,7 @@ const HOSTED_MUSIC_FLAGS = [
 ] as const
 
 const LYRIC_VIDEO_FLAGS = [
+  'input-dir',
   'audio',
   'captions',
   'batch',

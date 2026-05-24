@@ -464,6 +464,10 @@ const humeTtsCommandOptionNames = [
   'hume-tts-voice-provider'
 ] as const
 
+const groqTtsCommandOptionNames = [
+  'groq-voice'
+] as const
+
 const geminiTtsCommandOptionNames = [
   'gemini-speaker-1-name',
   'gemini-speaker-1-voice',
@@ -496,6 +500,7 @@ export const ttsCommandFlags = {
   ...withHelpGroup(pickFlags(ttsFlags, deepgramTtsCommandOptionNames), 'tts-deepgram'),
   ...withHelpGroup(pickFlags(ttsFlags, speechifyTtsCommandOptionNames), 'tts-speechify'),
   ...withHelpGroup(pickFlags(ttsFlags, humeTtsCommandOptionNames), 'tts-hume'),
+  ...withHelpGroup(pickFlags(ttsFlags, groqTtsCommandOptionNames), 'tts-groq'),
   ...withHelpGroup(pickFlags(ttsFlags, geminiTtsCommandOptionNames), 'tts-gemini'),
   ...withHelpGroup(pickFlags(ttsFlags, dialogueTtsCommandOptionNames), 'tts-dialogue'),
   ...withHelpGroup(pickFlags(ttsFlags, elevenlabsTtsCommandOptionNames), 'tts-elevenlabs'),

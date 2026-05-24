@@ -5,6 +5,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { normalizeRunwayDuration, normalizeRunwayRatio } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -79,7 +80,7 @@ export const runRunwayVideoGen = async (
   logVideoEstimate(estimate)
 
   const startTime = Date.now()
-  const createResp = await fetch(`${RUNWAY_BASE_URL}/image_to_video`, {
+  const createResp = await fetch(`${RUNWAY_BASE_URL}/text_to_video`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -148,13 +149,8 @@ export const runRunwayVideoGen = async (
     throw new Error('Runway video generation succeeded but no output[0] URL was returned')
   }
 
-  const downloadResp = await fetch(videoUrl)
-  if (!downloadResp.ok) {
-    throw new Error(`Runway video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  await Bun.write(outputPath, new Uint8Array(await downloadResp.arrayBuffer()))
+  await Bun.write(outputPath, await downloadVideoOutputBytes(videoUrl, 'Runway'))
 
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)

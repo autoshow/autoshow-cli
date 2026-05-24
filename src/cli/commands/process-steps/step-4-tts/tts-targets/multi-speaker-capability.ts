@@ -53,18 +53,31 @@ export const overrideVoiceForProvider = (
   mapping: SpeakerVoiceMapping
 ): TtsOptions => {
   const overridden = { ...opts }
+  const writable = overridden as Record<string, unknown>
   if (mapping.voiceKind === 'ref-audio') {
     const field = REF_AUDIO_FIELD_BY_PROVIDER[service]
     if (!field) {
       throw new Error(`Provider ${service} does not support reference audio for multi-speaker TTS.`)
     }
-    ;(overridden as Record<string, unknown>)[field] = mapping.voice
+    writable[field] = mapping.voice
+    const voiceField = VOICE_ID_FIELD_BY_PROVIDER[service]
+    if (voiceField) {
+      delete writable[voiceField]
+    }
   } else {
     const field = VOICE_ID_FIELD_BY_PROVIDER[service]
     if (!field) {
       throw new Error(`Provider ${service} does not support voice ID override for multi-speaker TTS.`)
     }
-    ;(overridden as Record<string, unknown>)[field] = mapping.voice
+    writable[field] = mapping.voice
+    const refAudioField = REF_AUDIO_FIELD_BY_PROVIDER[service]
+    if (refAudioField) {
+      delete writable[refAudioField]
+    }
+  }
+
+  if (service === 'mistral') {
+    delete writable['mistralTtsVoiceName']
   }
   return overridden
 }

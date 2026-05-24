@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 import {
   fileExists,
-  cleanupTestOutput,
   runCommand,
   STABLE_EXAMPLE_AUDIO_URL,
   STABLE_EXAMPLE_AUDIO_TITLE,
@@ -62,8 +61,6 @@ export const defineSTTServiceTest = ({
       if (shouldSkipReadiness && await shouldSkipReadiness()) {
         throw new Error(`${sttService} ${model} readiness prerequisite failed`)
       }
-
-      await cleanupTestOutput(inputTitle)
 
       const outputDir = await runCommandAndExpectOutputDir(inputTitle, [
         'src/cli/create-cli.ts',

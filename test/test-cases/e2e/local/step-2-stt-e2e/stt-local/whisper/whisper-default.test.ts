@@ -24,7 +24,7 @@ budgetedTest('transcribe-whisper-tiny', 'default transcribe processes local audi
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {
@@ -86,7 +86,7 @@ for (const modelCase of [
 
     expect(result.exitCode).toBe(0)
 
-    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
@@ -127,7 +127,7 @@ budgetedTest('transcribe-whisper-split', 'split mode processes audio in segments
   expect(result.exitCode).toBe(0)
   expect(stripAnsi(result.stderr)).toContain('STT Segment')
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+  const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
   expect(outputDir).not.toBeNull()
 
   if (outputDir) {

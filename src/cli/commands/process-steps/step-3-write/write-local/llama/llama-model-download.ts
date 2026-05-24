@@ -26,6 +26,7 @@ import {
   stopSpawnedLlamaServer,
   waitForLlamaHealth
 } from './llama-server-process'
+import { recordSetupManagedLlamaModel } from './llama-model-metadata'
 
 const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> => {
   const llamaServerPath = resolveLlamaServerBinary()
@@ -102,6 +103,7 @@ const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> 
     )
   }
 
+  await recordSetupManagedLlamaModel(model)
   l.write('success', `Model downloaded and ready: ${modelRepo}`)
 }
 

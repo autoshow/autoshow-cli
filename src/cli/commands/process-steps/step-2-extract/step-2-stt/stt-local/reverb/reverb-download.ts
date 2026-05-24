@@ -1,37 +1,35 @@
-import { mkdir, readdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
-import { pathExists, reverbConfigPath, reverbDiarizationDir, reverbModelDir, reverbModelPath } from '~/cli/commands/setup-and-utilities/setup/run-complete-setup'
+import { mkdir } from 'node:fs/promises'
 import { downloadHuggingFaceSnapshot } from '~/cli/commands/setup-and-utilities/setup/setup-download/huggingface'
 import * as l from '~/utils/logger'
 import { withRetry } from '~/utils/retries'
 import { getHuggingFaceToken } from './reverb-huggingface'
+import {
+  checkReverbDiarizationAssets,
+  checkReverbAsrAssets,
+  getMissingReverbDiarizationFiles,
+  getMissingReverbAsrFiles,
+  REVERB_ASR_REQUIRED_FILES,
+  REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES,
+  REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES,
+  type ReverbDiarizationRequiredFile,
+  reverbDiarizationDir,
+  reverbDiarizationEmbeddingDir,
+  reverbModelDir
+} from './reverb-assets'
 
 const REVERB_ASR_REPO = 'Revai/reverb-asr'
 const REVERB_ASR_REVISION = 'main'
-const REVERB_ASR_REQUIRED_FILES = ['reverb_asr_v1.pt', 'config.yaml'] as const
 const REVERB_DIARIZATION_REPO = 'Revai/reverb-diarization-v2'
 const REVERB_DIARIZATION_REVISION = 'main'
-
-const directoryHasFiles = async (root: string): Promise<boolean> => {
-  try {
-    const entries = await readdir(root, { withFileTypes: true })
-    for (const entry of entries) {
-      const path = join(root, entry.name)
-      if (entry.isFile()) return true
-      if (entry.isDirectory() && await directoryHasFiles(path)) return true
-    }
-    return false
-  } catch {
-    return false
-  }
-}
+const REVERB_DIARIZATION_EMBEDDING_REPO = 'Revai/pyannote-wespeaker-voxceleb-resnet34-LM'
+const REVERB_DIARIZATION_EMBEDDING_REVISION = 'main'
 
 export const checkReverbModelExists = async (): Promise<boolean> => {
-  return await pathExists(reverbModelPath) && await pathExists(reverbConfigPath)
+  return await checkReverbAsrAssets()
 }
 
 export const checkDiarizationModelCached = async (): Promise<boolean> => {
-  return await directoryHasFiles(reverbDiarizationDir)
+  return await checkReverbDiarizationAssets()
 }
 
 export const downloadReverbModel = async (): Promise<void> => {
@@ -50,19 +48,24 @@ export const downloadReverbModel = async (): Promise<void> => {
   await withRetry(
     { retryClass: 'setup_download', operationName: 'reverb-model' },
     async () => {
-      await rm(reverbModelDir, { recursive: true, force: true })
+      const missingBeforeDownload = await getMissingReverbAsrFiles()
+      if (missingBeforeDownload.length === 0) {
+        return
+      }
+
       await mkdir(reverbModelDir, { recursive: true })
       await downloadHuggingFaceSnapshot({
         repoId: REVERB_ASR_REPO,
         revision: REVERB_ASR_REVISION,
         token: hfToken,
         destination: reverbModelDir,
-        allowPatterns: [...REVERB_ASR_REQUIRED_FILES],
+        allowPatterns: [...missingBeforeDownload],
         requiredFiles: [...REVERB_ASR_REQUIRED_FILES]
       })
 
-      if (!await checkReverbModelExists()) {
-        throw new Error('Reverb model files missing after download')
+      const missing = await getMissingReverbAsrFiles()
+      if (missing.length > 0) {
+        throw new Error(`Reverb ASR files missing after download: ${missing.join(', ')}`)
       }
     }
   )
@@ -85,14 +88,51 @@ export const downloadDiarizationModel = async (): Promise<boolean> => {
     await withRetry(
       { retryClass: 'setup_download', operationName: 'reverb-diarization-model' },
       async () => {
-        await rm(reverbDiarizationDir, { recursive: true, force: true })
-        await mkdir(reverbDiarizationDir, { recursive: true })
-        await downloadHuggingFaceSnapshot({
-          repoId: REVERB_DIARIZATION_REPO,
-          revision: REVERB_DIARIZATION_REVISION,
-          token: hfToken,
-          destination: reverbDiarizationDir
-        })
+        const missingBeforeDownload = await getMissingReverbDiarizationFiles()
+        if (missingBeforeDownload.length === 0) {
+          return
+        }
+
+        const missingPipelineFiles = missingBeforeDownload
+          .filter((file): file is Extract<ReverbDiarizationRequiredFile, `diarization-v2/${string}`> =>
+            file.startsWith('diarization-v2/')
+          )
+          .map(file => file.replace('diarization-v2/', ''))
+
+        if (missingPipelineFiles.length > 0) {
+          await mkdir(reverbDiarizationDir, { recursive: true })
+          await downloadHuggingFaceSnapshot({
+            repoId: REVERB_DIARIZATION_REPO,
+            revision: REVERB_DIARIZATION_REVISION,
+            token: hfToken,
+            destination: reverbDiarizationDir,
+            allowPatterns: missingPipelineFiles,
+            requiredFiles: [...REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES]
+          })
+        }
+
+        const missingEmbeddingFiles = missingBeforeDownload
+          .filter((file): file is Extract<ReverbDiarizationRequiredFile, `pyannote-wespeaker-voxceleb-resnet34-LM/${string}`> =>
+            file.startsWith('pyannote-wespeaker-voxceleb-resnet34-LM/')
+          )
+          .map(file => file.replace('pyannote-wespeaker-voxceleb-resnet34-LM/', ''))
+
+        if (missingEmbeddingFiles.length > 0) {
+          await mkdir(reverbDiarizationEmbeddingDir, { recursive: true })
+          await downloadHuggingFaceSnapshot({
+            repoId: REVERB_DIARIZATION_EMBEDDING_REPO,
+            revision: REVERB_DIARIZATION_EMBEDDING_REVISION,
+            token: hfToken,
+            destination: reverbDiarizationEmbeddingDir,
+            allowPatterns: missingEmbeddingFiles,
+            requiredFiles: [...REVERB_DIARIZATION_EMBEDDING_REQUIRED_FILES]
+          })
+        }
+
+        const missing = await getMissingReverbDiarizationFiles()
+        if (missing.length > 0) {
+          throw new Error(`Reverb diarization files missing after download: ${missing.join(', ')}`)
+        }
       }
     )
   } catch (error) {

@@ -26,14 +26,14 @@ bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/
 - Mistral live coverage is gated by `MISTRAL_API_KEY`; the saved-voice test also requires `MISTRAL_TTS_VOICE`, and the reference-audio test uses `input/examples/audio/anthony-voice.mp3`.
 - MiniMax live coverage is gated by `MINIMAX_API_KEY` and uses hosted/preset voice IDs.
 - Speechify live coverage is gated by `SPEECHIFY_API_KEY`; the expected speaker is `SPEECHIFY_TTS_VOICE` or `george`.
-- Hume and Cartesia currently have mocked provider-contract, option/config/help, and side-effect-free price coverage; no live service e2e cases are mapped yet.
+- Hume and Cartesia have provider-contract, option/config/help, side-effect-free price coverage, and model-level service e2e files gated by their provider keys.
 - `test/test-cases/e2e/service/step-4-tts-e2e/tts-services/kitten-tts-pipeline.test.ts` covers the root `write` pipeline with Groq plus Kitten TTS, `write --price` behavior when multiple LLM providers are selected, and multi-provider speech artifacts when OpenAI TTS is also enabled.
 
 ## Price Preflight
 
 ```bash
 bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/ --test-price
-bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/service-models.test.ts --budget 2500
+bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/ --budget 2500
 ```
 
 ElevenLabs IVC, OpenAI custom voice, Speechify, Hume, Cartesia, Google Cloud prebuilt TTS, and Google Cloud Instant Custom Voice with an existing key have side-effect-free price coverage. ElevenLabs IVC adds a 0 cent setup cost and 10000 ms setup time to the first ElevenLabs clone target. OpenAI adds a 0 cent setup cost and 15000 ms setup time to the first OpenAI clone target.

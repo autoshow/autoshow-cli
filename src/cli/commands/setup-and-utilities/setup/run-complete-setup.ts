@@ -11,57 +11,29 @@ import { setupWhisper, downloadWhisperModel } from '~/cli/commands/process-steps
 import { checkLlamaInstalled, runLlamaSetup } from '~/cli/commands/process-steps/step-3-write/write-local/llama/llama'
 import { setupReverb } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb'
 import { defuddleRuntimeDir, setupDefuddleCli } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-local/defuddle/defuddle-cli'
-import { setupElevenLabsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/elevenlabs/elevenlabs'
-import { setupDeepgramStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deepgram/deepgram'
-import { setupSonioxStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/soniox/soniox'
-import { setupSpeechmaticsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/speechmatics/speechmatics'
-import { setupRevStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/rev/rev'
-import { setupGrokStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/grok/grok-stt'
-import { setupMistralStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/mistral'
-import { setupOpenaiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/openai-stt/openai-stt'
-import { setupGeminiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/gemini-stt'
-import { setupGlmStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/glm-stt/glm-stt'
-import { setupTogetherStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/together/together'
-import { setupAssemblyAiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/assemblyai/assemblyai'
-import { setupGladiaStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
-import { setupSupadataStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/supadata/supadata'
-import { setupScrapeCreatorsStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/scrapecreators/scrapecreators'
 import { setupCalibreDocumentTools } from '~/cli/commands/setup-and-utilities/setup/setup-download/dl-document/calibre'
 import { setupTesseractOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/tesseract-setup'
-import { setupMistralOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
-import { setupGlmOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
-import { setupKimiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/kimi-ocr/kimi'
-import { setupGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
-import { setupGrokOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/grok-ocr/grok'
-import { setupOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
-import { setupAnthropicOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
-import { setupDeepinfraOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deepinfra-ocr/deepinfra-ocr'
-import { setupUnstructuredOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/unstructured-ocr/unstructured'
 import { setupKittenTts } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
-import { setupElevenLabsTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-tts'
-import { setupGroqTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/groq/groq-tts'
-import { setupGrokTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
-import { setupMistralTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/mistral-tts'
-import { setupOpenAITts } from '~/cli/commands/process-steps/step-4-tts/tts-services/openai/openai-tts'
-import { setupGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/gemini-tts'
-import { setupDeepgramTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
-import { setupSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-tts'
-import { setupHumeTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/hume-tts'
-import { setupCartesiaTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/cartesia-tts'
-import { setupGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
-import { setupGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
-import { setupOpenAIImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
-import { setupBflImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/bfl-image-gen'
-import { setupReveImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/reve/reve-image-gen'
-import { setupElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
-import { setupMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
-import { setupGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/gemini-music-gen'
 import { ensureLlamaModelDownloaded } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
 import { ensureKittenTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-local/kitten/kitten-tts'
-import { logProviderReadiness, logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 import { RUNTIME_BIN_DIR, RUNTIME_DIR, ytDlpManagedBinaryPath } from '~/utils/runtime-paths'
 import { installManagedUv, managedUvxPath, resolveUvCommand } from './setup-download/managed-uv'
 import { readDependencyMetadata } from './dependency-metadata'
+import { isJsonResultActive, l as globalLogger } from '~/utils/logger'
+import {
+  HOSTED_PROVIDER_ENV_CHECKS,
+  logHostedProviderConfiguration,
+  type HostedProviderConfigurationSummary
+} from './hosted-provider-config'
+import {
+  checkReverbAsrAssets,
+  reverbConfigPath as reverbConfigPathFromAssets,
+  reverbDiarizationDir as reverbDiarizationDirFromAssets,
+  reverbDiarizationEmbeddingDir as reverbDiarizationEmbeddingDirFromAssets,
+  reverbModelDir as reverbModelDirFromAssets,
+  reverbModelPath as reverbModelPathFromAssets
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb-assets'
 
 const RUNTIME = RUNTIME_DIR
 
@@ -75,10 +47,11 @@ export const paddleOcrUvEnvDir = join(RUNTIME, 'bin/paddle-ocr')
 export const whisperBuildDir = join(RUNTIME, 'build/whisper.cpp')
 export const whisperModelsDir = join(RUNTIME, 'models/whisper')
 export const llamaModelsDir = join(RUNTIME, 'models/llama')
-export const reverbModelDir = join(RUNTIME, 'models/reverb/reverb_asr_v1')
-export const reverbModelPath = join(reverbModelDir, 'reverb_asr_v1.pt')
-export const reverbConfigPath = join(reverbModelDir, 'config.yaml')
-export const reverbDiarizationDir = join(RUNTIME, 'models/reverb/diarization-v2')
+export const reverbModelDir = reverbModelDirFromAssets
+export const reverbModelPath = reverbModelPathFromAssets
+export const reverbConfigPath = reverbConfigPathFromAssets
+export const reverbDiarizationDir = reverbDiarizationDirFromAssets
+export const reverbDiarizationEmbeddingDir = reverbDiarizationEmbeddingDirFromAssets
 const mergeEnv = (env?: Record<string, string | undefined>): Record<string, string | undefined> =>
   env ? { ...(process.env as Record<string, string | undefined>), ...env } : process.env as Record<string, string | undefined>
 
@@ -86,6 +59,42 @@ const readStream = async (stream: ReadableStream<Uint8Array> | null | undefined)
   stream ? await new Response(stream).text() : ''
 
 const fmtCmd = (command: string, args: string[]): string => [command, ...args].join(' ').trim()
+const SETUP_OUTPUT_TAIL_LINES = 40
+const SETUP_OUTPUT_TAIL_CHARS = 6000
+
+export const formatSetupOutputTail = (stdout: string, stderr: string): string => {
+  const combined = [
+    stderr.trim().length > 0 ? `stderr:\n${stderr.trim()}` : '',
+    stdout.trim().length > 0 ? `stdout:\n${stdout.trim()}` : ''
+  ].filter(Boolean).join('\n\n')
+
+  if (combined.trim().length === 0) {
+    return ''
+  }
+
+  const lines = combined.split('\n')
+  const lineTail = lines.slice(-SETUP_OUTPUT_TAIL_LINES).join('\n')
+  return lineTail.length > SETUP_OUTPUT_TAIL_CHARS
+    ? lineTail.slice(lineTail.length - SETUP_OUTPUT_TAIL_CHARS)
+    : lineTail
+}
+
+const formatCommandFailure = (command: string, args: string[], result: RunResult): string => {
+  const tail = formatSetupOutputTail(result.stdout, result.stderr)
+  return tail.length > 0
+    ? `Command failed (${fmtCmd(command, args)}): exit code ${result.exitCode}\n${tail}`
+    : `Command failed (${fmtCmd(command, args)}): exit code ${result.exitCode}`
+}
+
+const shouldUseCompactSetup = (): boolean =>
+  (process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1'
+
+const shouldUseVerboseHumanOutput = (): boolean =>
+  globalLogger.config.minLevel === 'debug' && !isJsonResultActive()
+
+const shouldStreamCompactSetupOutput = (): boolean =>
+  shouldUseCompactSetup()
+  && shouldUseVerboseHumanOutput()
 
 export const runCapture = async (command: string, args: string[] = [], options: RunOptions = {}): Promise<RunResult> => {
   const proc = Bun.spawn([command, ...args], {
@@ -99,13 +108,20 @@ export const runCapture = async (command: string, args: string[] = [], options: 
   ])
   const result: RunResult = { stdout, stderr, exitCode }
   if (exitCode !== 0 && !options.allowFailure) {
-    const details = result.stderr.trim() || result.stdout.trim() || `exit code ${result.exitCode}`
-    throw new Error(`Command failed (${fmtCmd(command, args)}): ${details}`)
+    throw new Error(formatCommandFailure(command, args, result))
   }
   return result
 }
 
 export const runInherit = async (command: string, args: string[] = [], options: RunOptions = {}): Promise<number> => {
+  if (shouldUseCompactSetup() && !shouldStreamCompactSetupOutput()) {
+    const result = await runCapture(command, args, { ...options, allowFailure: true })
+    if (result.exitCode !== 0 && !options.allowFailure) {
+      throw new Error(formatCommandFailure(command, args, result))
+    }
+    return result.exitCode
+  }
+
   const proc = Bun.spawn([command, ...args], {
     ...(options.cwd ? { cwd: options.cwd } : {}),
     env: mergeEnv(options.env),
@@ -201,17 +217,20 @@ const ensureRuntimeDirs = async (): Promise<void> => {
     mkdir(reverbUvEnvDir, { recursive: true }).catch(() => undefined),
     mkdir(reverbModelDir, { recursive: true }).catch(() => undefined),
     mkdir(reverbDiarizationDir, { recursive: true }).catch(() => undefined),
+    mkdir(reverbDiarizationEmbeddingDir, { recursive: true }).catch(() => undefined)
   ])
 }
 
 const logPinnedVersions = async (): Promise<void> => {
   try {
     const deps = await readDependencyMetadata()
+    const formatVersion = (value: string): string =>
+      /^[a-f0-9]{40}$/i.test(value) ? value.slice(0, 12) : value
     logKeyValueTable(l, 'Pinned Versions', [
-      ['whisper.cpp', deps['whisper.cpp']?.tag ?? 'unknown'],
-      ['llama.cpp', deps['llama.cpp']?.tag ?? 'unknown'],
-      ['uv', deps['uv']?.version ?? 'unknown'],
-      ['reverb', deps['reverb']?.ref ?? 'unknown']
+      ['whisper.cpp', formatVersion(deps['whisper.cpp']?.tag ?? 'unknown')],
+      ['llama.cpp', formatVersion(deps['llama.cpp']?.tag ?? 'unknown')],
+      ['uv', formatVersion(deps['uv']?.version ?? 'unknown')],
+      ['reverb', formatVersion(deps['reverb']?.ref ?? 'unknown')]
     ], { category: 'command', keyLabel: 'dependency', valueLabel: 'version' })
   } catch { l.warn('Could not read config/deps.json') }
 }
@@ -221,51 +240,168 @@ const validateBinary = async (name: string, path: string, args: string[]): Promi
   try {
     const result = await runCapture(path, args, { allowFailure: true })
     if (result.exitCode === 0 || result.exitCode === 1) {
-      logSetupToolStatus(l, { tool: name, status: 'ok', detail: path })
+      logSetupToolStatus(l, { tool: name, status: 'ready', detail: path })
     } else l.warn(`${name}: installed but exited ${result.exitCode} (may still work)`)
   } catch (err) {
     l.warn(`${name}: could not execute — ${err instanceof Error ? err.message : String(err)}`)
   }
 }
 
-const setupHostedVideoApiKey = async (
-  envKey: string,
-  providerName: string
+const TRANSCRIPTION_PROVIDER_ENV_KEYS = [
+  'OPENAI_API_KEY',
+  'GEMINI_API_KEY',
+  'GLM_API_KEY',
+  'TOGETHER_API_KEY',
+  'XAI_API_KEY',
+  'MISTRAL_API_KEY',
+  'ELEVENLABS_API_KEY',
+  'DEEPGRAM_API_KEY',
+  'SONIOX_API_KEY',
+  'SPEECHMATICS_API_KEY',
+  'REVAI_ACCESS_TOKEN',
+  'ASSEMBLYAI_API_KEY',
+  'GLADIA_API_KEY',
+  'SUPADATA_API_KEY',
+  'SCRAPECREATORS_API_KEY',
+  'GROQ_API_KEY',
+  'DEEPINFRA_API_KEY',
+  'HAPPYSCRIBE_API_KEY',
+  'HUGGINGFACE_TOKEN'
+] as const
+
+const WRITE_PROVIDER_ENV_KEYS = [
+  'OPENAI_API_KEY',
+  'XAI_API_KEY',
+  'GEMINI_API_KEY',
+  'GLM_API_KEY',
+  'KIMI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'GROQ_API_KEY',
+  'MINIMAX_API_KEY'
+] as const
+
+const TTS_PROVIDER_ENV_KEYS = [
+  'OPENAI_API_KEY',
+  'ELEVENLABS_API_KEY',
+  'GROQ_API_KEY',
+  'XAI_API_KEY',
+  'MISTRAL_API_KEY',
+  'GEMINI_API_KEY',
+  'DEEPGRAM_API_KEY',
+  'SPEECHIFY_API_KEY',
+  'HUME_API_KEY',
+  'CARTESIA_API_KEY',
+  'MINIMAX_API_KEY'
+] as const
+
+const IMAGE_PROVIDER_ENV_KEYS = [
+  'OPENAI_API_KEY',
+  'GEMINI_API_KEY',
+  'XAI_API_KEY',
+  'BFL_API_KEY',
+  'REVE_API_KEY',
+  'GLM_API_KEY'
+] as const
+
+const VIDEO_PROVIDER_ENV_KEYS = [
+  'GEMINI_API_KEY',
+  'MINIMAX_API_KEY',
+  'GLM_API_KEY',
+  'XAI_API_KEY',
+  'RUNWAYML_API_SECRET'
+] as const
+
+const MUSIC_PROVIDER_ENV_KEYS = [
+  'GEMINI_API_KEY',
+  'ELEVENLABS_API_KEY',
+  'MINIMAX_API_KEY'
+] as const
+
+const ALL_PROVIDER_ENV_KEYS = HOSTED_PROVIDER_ENV_CHECKS.map(check => check.envVar)
+
+const logSetupProviderConfiguration = (
+  title: string,
+  envVars: readonly string[] = ALL_PROVIDER_ENV_KEYS
+): HostedProviderConfigurationSummary =>
+  logHostedProviderConfiguration(l, {
+    title,
+    envVars,
+    mode: shouldUseVerboseHumanOutput() ? 'all' : 'missing'
+  })
+
+export const downloadKittenTtsModel = async (
+  model: string,
+  options: { pythonPath?: string } = {}
 ): Promise<void> => {
-  const apiKey = process.env[envKey]
-  if (apiKey && apiKey.length > 0) {
-    logProviderReadiness(l, {
-      provider: providerName,
-      capability: 'video generation',
-      status: 'ready',
-      envKey
-    })
-  } else {
-    logProviderReadiness(l, {
-      provider: providerName,
-      capability: 'video generation',
-      status: 'missing',
-      envKey,
-      detail: `Set ${envKey} environment variable to use ${providerName} video models`
-    })
-  }
-}
-
-const setupGeminiVideoGen = async (): Promise<void> => setupHostedVideoApiKey('GEMINI_API_KEY', 'Gemini')
-const setupMinimaxVideoGen = async (): Promise<void> => setupHostedVideoApiKey('MINIMAX_API_KEY', 'MiniMax')
-const setupGlmVideoGen = async (): Promise<void> => setupHostedVideoApiKey('GLM_API_KEY', 'GLM')
-const setupGrokVideoGen = async (): Promise<void> => setupHostedVideoApiKey('XAI_API_KEY', 'Grok')
-const setupRunwayVideoGen = async (): Promise<void> => setupHostedVideoApiKey('RUNWAYML_API_SECRET', 'Runway')
-
-const downloadKittenTtsModel = async (model: string): Promise<void> => {
-  const kittenPython = `${kittenTtsUvEnvDir}/bin/python`
+  const kittenPython = options.pythonPath ?? `${kittenTtsUvEnvDir}/bin/python`
   if (!await pathExists(kittenPython)) { l.warn(`Kitten TTS venv not found, skipping model download: ${model}`); return }
   logSetupToolStatus(l, { tool: 'kitten-tts', status: 'downloading', detail: model })
-  await runCapture(kittenPython, ['-c', `from kittentts import KittenTTS; KittenTTS("${model}")`], { allowFailure: true })
+  const result = await runCapture(
+    kittenPython,
+    ['-c', `from kittentts import KittenTTS; KittenTTS("${model}")`],
+    { allowFailure: true }
+  )
+  if (result.exitCode !== 0) {
+    throw new Error(`Kitten TTS model download failed for ${model}: ${formatCommandFailure(kittenPython, ['-c', 'from kittentts import KittenTTS; KittenTTS("<model>")'], result)}`)
+  }
   logSetupToolStatus(l, { tool: 'kitten-tts', status: 'ready', detail: model })
 }
 
+const formatElapsed = (elapsedMs: number): string => {
+  if (elapsedMs < 1000) return `${elapsedMs}ms`
+  return `${(elapsedMs / 1000).toFixed(1)}s`
+}
+
+const logSetupSummary = async (
+  startedAtMs: number,
+  providerSummary: HostedProviderConfigurationSummary
+): Promise<void> => {
+  const localToolChecks = [
+    ['whisper-cli', await pathExists(whisperBinaryPath)] as const,
+    ['llama-server', await pathExists(llamaBinaryPath)] as const,
+    ['Kitten TTS env', await pathExists(`${kittenTtsUvEnvDir}/bin/python`)] as const
+  ]
+  const localModelChecks = [
+    [`whisper ${defaultWhisperModel}`, await pathExists(`${whisperModelsDir}/ggml-${defaultWhisperModel}.bin`)] as const,
+    ['Reverb ASR', await checkReverbAsrAssets()] as const
+  ]
+  const missingTools = localToolChecks.filter(([, ok]) => !ok).map(([name]) => name)
+  const missingModels = localModelChecks.filter(([, ok]) => !ok).map(([name]) => name)
+
+  l.write(missingTools.length === 0 && missingModels.length === 0 ? 'success' : 'warn', 'Setup Summary', {
+    category: 'command',
+    humanTable: createHumanTable([
+      {
+        item: 'elapsed',
+        status: formatElapsed(Date.now() - startedAtMs),
+        detail: ''
+      },
+      {
+        item: 'local tools',
+        status: missingTools.length === 0 ? 'ready' : 'missing',
+        detail: missingTools.length === 0 ? 'all checked tools available' : missingTools.join(', ')
+      },
+      {
+        item: 'local models',
+        status: missingModels.length === 0 ? 'ready' : 'missing',
+        detail: missingModels.length === 0 ? 'default local assets available' : missingModels.join(', ')
+      },
+      {
+        item: 'hosted providers',
+        status: `${providerSummary.configured}/${providerSummary.total} configured`,
+        detail: providerSummary.missing === 0 ? 'all env vars set' : `${providerSummary.missing} missing`
+      },
+      {
+        item: 'validation',
+        status: 'next',
+        detail: 'bun as setup --doctor'
+      }
+    ], ['item', 'status', 'detail'])
+  })
+}
+
 const runFullSetup = async (): Promise<void> => {
+  const startedAtMs = Date.now()
   l.write('info', 'Starting complete AutoShow setup')
   await logPinnedVersions()
   await ensureRuntimeDirs()
@@ -284,44 +420,9 @@ const runFullSetup = async (): Promise<void> => {
     await withCompactSetup(async () => { await ensureLlamaModelDownloaded(defaultLlamaModel) })
   } else { l.warn('llama.cpp not available, skipping model download') }
 
+  const providerSummary = logSetupProviderConfiguration('Hosted Provider Configuration')
+
   await withCompactSetup(setupReverb)
-
-  await withCompactSetup(setupElevenLabsStt)
-
-  await withCompactSetup(setupDeepgramStt)
-
-  await withCompactSetup(setupSonioxStt)
-
-  await withCompactSetup(setupSpeechmaticsStt)
-
-  await withCompactSetup(setupRevStt)
-
-  await withCompactSetup(setupGrokStt)
-
-  await withCompactSetup(async () => {
-    await setupMistralStt()
-    await setupOpenaiStt()
-    await setupGeminiStt()
-    await setupGlmStt()
-    await setupTogetherStt()
-    await setupMistralOcr()
-    await setupGlmOcr()
-    await setupKimiOcr()
-    await setupOpenAIOcr()
-    await setupGrokOcr()
-    await setupAnthropicOcr()
-    await setupGeminiOcr()
-    await setupDeepinfraOcr()
-    await setupUnstructuredOcr()
-  })
-
-  await withCompactSetup(setupAssemblyAiStt)
-
-  await withCompactSetup(setupGladiaStt)
-
-  await withCompactSetup(setupSupadataStt)
-
-  await withCompactSetup(setupScrapeCreatorsStt)
 
   await withCompactSetup(setupCalibreDocumentTools)
 
@@ -331,44 +432,10 @@ const runFullSetup = async (): Promise<void> => {
 
   await withCompactSetup(async () => { await downloadKittenTtsModel('kitten-tts-nano-0.8-int8') })
 
-  await withCompactSetup(setupElevenLabsTts)
-
-  await withCompactSetup(setupGroqTts)
-
-  await withCompactSetup(setupGrokTts)
-
-  await withCompactSetup(setupOpenAITts)
-
-  await withCompactSetup(setupGeminiTts)
-
-  await withCompactSetup(setupDeepgramTts)
-
-  await withCompactSetup(setupSpeechifyTts)
-
-  await withCompactSetup(setupHumeTts)
-
-  await withCompactSetup(setupCartesiaTts)
-
-  await withCompactSetup(setupGeminiImageGen)
-
-  await withCompactSetup(setupOpenAIImageGen)
-
-  await withCompactSetup(setupGrokImageGen)
-
-  await withCompactSetup(setupBflImageGen)
-
-  await withCompactSetup(setupReveImageGen)
-
-  await withCompactSetup(setupMinimaxVideoGen)
-
-  await withCompactSetup(setupGeminiMusicGen)
-
-  await withCompactSetup(setupElevenLabsMusicGen)
-
-  await withCompactSetup(setupMinimaxMusicGen)
-
   await validateBinary('whisper-cli', whisperBinaryPath, ['--help'])
   await validateBinary('llama-server', llamaBinaryPath, ['--version'])
+
+  await logSetupSummary(startedAtMs, providerSummary)
 
   l.write('info', 'You can now run: bun as "https://www.youtube.com/watch?v=u1-WHqATSQU"')
 }
@@ -378,60 +445,36 @@ export const runCompleteSetup = async (): Promise<void> => { await runFullSetup(
 const runSetupTranscription = async (): Promise<void> => {
   await downloadWhisperModel('large-v3-turbo')
   await setupReverb()
-  await setupOpenaiStt()
-  await setupGeminiStt()
-  await setupGlmStt()
-  await setupTogetherStt()
-  await setupGrokStt()
+  logSetupProviderConfiguration('Transcription Provider Configuration', TRANSCRIPTION_PROVIDER_ENV_KEYS)
   l.write('success', 'Transcription setup complete')
 }
 
 const runSetupWrite = async (): Promise<void> => {
   if (!await checkLlamaInstalled()) await runLlamaSetup()
   for (const model of SUPPORTED_LLAMA_MODELS) await ensureLlamaModelDownloaded(model)
-  await setupKimiOcr()
+  logSetupProviderConfiguration('Write Provider Configuration', WRITE_PROVIDER_ENV_KEYS)
   l.write('success', 'Write setup complete')
 }
 
 const runSetupTts = async (): Promise<void> => {
   await ensureKittenTtsSetup()
   for (const model of SUPPORTED_KITTEN_TTS_MODELS) await downloadKittenTtsModel(model)
-  await setupElevenLabsTts()
-  await setupGroqTts()
-  await setupGrokTts()
-  await setupMistralTts()
-  await setupOpenAITts()
-  await setupGeminiTts()
-  await setupDeepgramTts()
-  await setupSpeechifyTts()
-  await setupHumeTts()
-  await setupCartesiaTts()
+  logSetupProviderConfiguration('TTS Provider Configuration', TTS_PROVIDER_ENV_KEYS)
   l.write('success', 'TTS setup complete')
 }
 
 const runSetupImage = async (): Promise<void> => {
-  await setupGeminiImageGen()
-  await setupOpenAIImageGen()
-  await setupGrokImageGen()
-  await setupBflImageGen()
-  await setupReveImageGen()
-  await setupGlmOcr()
+  logSetupProviderConfiguration('Image Provider Configuration', IMAGE_PROVIDER_ENV_KEYS)
   l.write('success', 'Image setup complete (all image providers are API-based)')
 }
 
 const runSetupVideo = async (): Promise<void> => {
-  await setupGeminiVideoGen()
-  await setupMinimaxVideoGen()
-  await setupGlmVideoGen()
-  await setupGrokVideoGen()
-  await setupRunwayVideoGen()
+  logSetupProviderConfiguration('Video Provider Configuration', VIDEO_PROVIDER_ENV_KEYS)
   l.write('success', 'Video setup complete (all video providers are API-based)')
 }
 
 const runSetupMusic = async (): Promise<void> => {
-  await setupGeminiMusicGen()
-  await setupElevenLabsMusicGen()
-  await setupMinimaxMusicGen()
+  logSetupProviderConfiguration('Music Provider Configuration', MUSIC_PROVIDER_ENV_KEYS)
   const requiredTools = ['ffmpeg', 'ffprobe']
   const missing = requiredTools.filter((tool) => !commandExists(tool))
   if (missing.length > 0) {
@@ -496,7 +539,7 @@ const getForceRedownloadPaths = (step: SetupStepId): readonly string[] => {
     case 'whisper-binary': return [whisperBinaryPath, whisperBuildDir]
     case 'whisper-model': return [whisperModelPath]
     case 'llama-binary': return [llamaBinaryPath]
-    case 'reverb': return [reverbModelDir, reverbDiarizationDir]
+    case 'reverb': return [reverbModelDir, reverbDiarizationDir, reverbDiarizationEmbeddingDir]
     case 'defuddle': return [defuddleRuntimeDir]
     case 'music': return [whisperBinaryPath, whisperBuildDir, lyricsWhisperModelPath]
     case 'all': return [whisperModelPath, llamaBinaryPath]

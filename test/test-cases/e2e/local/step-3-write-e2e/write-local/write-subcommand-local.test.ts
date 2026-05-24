@@ -45,7 +45,7 @@ describe('write subcommand with llama', () => {
     expect(output).not.toContain('Run manifest:\n{')
     expect(output).not.toContain('"step1": {')
 
-    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {
@@ -90,7 +90,7 @@ describe('write subcommand with llama', () => {
 
     expect(result.exitCode).toBe(0)
 
-    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE)
+    const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_EXAMPLE_AUDIO_TITLE, result.outputRoot)
     expect(outputDir).not.toBeNull()
 
     if (outputDir) {

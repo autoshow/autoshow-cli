@@ -2,7 +2,8 @@ import { isAbsolute, join, resolve } from 'node:path'
 
 const DEFAULT_OUTPUT_ROOT = './output'
 
-export const getOutputRoot = (): string => DEFAULT_OUTPUT_ROOT
+export const getOutputRoot = (): string =>
+  process.env['AUTOSHOW_OUTPUT_DIR']?.trim() || DEFAULT_OUTPUT_ROOT
 
 export const getOutputRootAbsolute = (projectRoot = process.cwd()): string => {
   const outputRoot = getOutputRoot()

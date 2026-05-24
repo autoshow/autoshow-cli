@@ -168,7 +168,7 @@ export const setupDefuddleCli = async (): Promise<void> => {
     if (isPinnedDefuddleCli(verified)) {
       logSetupToolStatus(l, {
         tool: 'defuddle',
-        status: 'ok',
+        status: 'ready',
         detail: `${defuddleRuntimeBinaryPath} (${verified.detail})`
       })
       return

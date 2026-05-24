@@ -188,7 +188,7 @@ export const defineSingleCaseTest = (tc: SingleCase): void => {
 
     const outputDir = result.outputDir
       ?? (tc.suffix
-        ? await findLatestDirectory(tc.suffix)
+        ? await findLatestDirectory(tc.suffix, result.outputRoot)
         : (dirsBefore ? await getNewOutputDir(dirsBefore) : null))
     expect(outputDir).not.toBeNull()
     if (!outputDir) {

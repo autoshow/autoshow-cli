@@ -7,6 +7,7 @@ import { runGrokVideoGen } from '~/cli/commands/process-steps/step-6-video/video
 import { runGlmVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/glm/run-glm-video-gen'
 import { runMinimaxVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/minimax/run-minimax-video-gen'
 import { runRunwayVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/runway/run-runway-video-gen'
+import { GLM_DEFAULT_BASE_URL, MINIMAX_DEFAULT_BASE_URL, XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 
 type FetchCall = {
@@ -19,7 +20,7 @@ type FetchCall = {
 
 const originalFetch = globalThis.fetch
 const previousEnv: Record<string, string | undefined> = {}
-const envKeys = ['GEMINI_API_KEY', 'XAI_API_KEY', 'XAI_BASE_URL', 'GLM_API_KEY', 'ZAI_BASE_URL', 'MINIMAX_API_KEY', 'MINIMAX_BASE_URL', 'RUNWAYML_API_SECRET']
+const envKeys = ['GEMINI_API_KEY', 'XAI_API_KEY', 'GLM_API_KEY', 'MINIMAX_API_KEY', 'RUNWAYML_API_SECRET']
 const tempDirs: string[] = []
 const videoBytes = new Uint8Array([9, 8, 7])
 const inlineVideo = Buffer.from(videoBytes).toString('base64')
@@ -35,6 +36,16 @@ const jsonResponse = (body: unknown, init?: ResponseInit): Response =>
 
 const videoResponse = (): Response =>
   new Response(videoBytes, { headers: { 'content-type': 'video/mp4' } })
+
+const transientVideoReadFailureResponse = (): Response => {
+  const response = new Response(videoBytes, { headers: { 'content-type': 'video/mp4' } })
+  Object.defineProperty(response, 'arrayBuffer', {
+    value: async () => {
+      throw new TypeError('socket connection was closed unexpectedly')
+    }
+  })
+  return response
+}
 
 const installFetch = (
   handler: (call: FetchCall) => Promise<Response> | Response
@@ -177,14 +188,13 @@ describe('video provider REST contracts', () => {
 
   test('GLM sends text, image, interpolation, and reference request bodies', async () => {
     process.env['GLM_API_KEY'] = 'glm-key'
-    process.env['ZAI_BASE_URL'] = 'https://mock.z.ai'
     let requestIndex = 0
     const calls = installFetch((call) => {
       if (call.method === 'POST') {
         requestIndex += 1
         return jsonResponse({ id: `glm-${requestIndex}`, task_status: 'PROCESSING' })
       }
-      if (call.url.startsWith('https://mock.z.ai/api/paas/v4/async-result/glm-')) {
+      if (call.url.startsWith(`${GLM_DEFAULT_BASE_URL}/async-result/glm-`)) {
         return jsonResponse({
           id: 'glm-result',
           task_status: 'SUCCESS',
@@ -254,20 +264,19 @@ describe('video provider REST contracts', () => {
 
   test('MiniMax sends text, image, and subject-reference request bodies', async () => {
     process.env['MINIMAX_API_KEY'] = 'minimax-key'
-    process.env['MINIMAX_BASE_URL'] = 'https://mock.minimax.io'
     let requestIndex = 0
     const calls = installFetch((call) => {
       if (call.method === 'POST') {
         requestIndex += 1
         return jsonResponse({ task_id: `minimax-${requestIndex}`, base_resp: { status_code: 0, status_msg: 'success' } })
       }
-      if (call.url.startsWith('https://mock.minimax.io/v1/query/video_generation?task_id=minimax-')) {
+      if (call.url.startsWith(`${MINIMAX_DEFAULT_BASE_URL}/v1/query/video_generation?task_id=minimax-`)) {
         return jsonResponse({
           data: { status: 'success', file_id: 'file-123' },
           base_resp: { status_code: 0, status_msg: 'success' }
         })
       }
-      if (call.url === 'https://mock.minimax.io/v1/files/retrieve?file_id=file-123') {
+      if (call.url === `${MINIMAX_DEFAULT_BASE_URL}/v1/files/retrieve?file_id=file-123`) {
         return jsonResponse({
           file: { download_url: 'https://cdn.example.com/minimax.mp4' },
           base_resp: { status_code: 0, status_msg: 'success' }
@@ -318,12 +327,53 @@ describe('video provider REST contracts', () => {
     })
   })
 
+  test('MiniMax retries transient video download body read failures after task success', async () => {
+    process.env['MINIMAX_API_KEY'] = 'minimax-key'
+    let downloadAttempts = 0
+    const calls = installFetch((call) => {
+      if (call.method === 'POST') {
+        return jsonResponse({ task_id: 'minimax-retry', base_resp: { status_code: 0, status_msg: 'success' } })
+      }
+      if (call.url === `${MINIMAX_DEFAULT_BASE_URL}/v1/query/video_generation?task_id=minimax-retry`) {
+        return jsonResponse({
+          data: { status: 'success', file_id: 'file-retry' },
+          base_resp: { status_code: 0, status_msg: 'success' }
+        })
+      }
+      if (call.url === `${MINIMAX_DEFAULT_BASE_URL}/v1/files/retrieve?file_id=file-retry`) {
+        return jsonResponse({
+          file: { download_url: 'https://cdn.example.com/minimax-retry.mp4' },
+          base_resp: { status_code: 0, status_msg: 'success' }
+        })
+      }
+      if (call.url === 'https://cdn.example.com/minimax-retry.mp4') {
+        downloadAttempts += 1
+        return downloadAttempts === 1 ? transientVideoReadFailureResponse() : videoResponse()
+      }
+      throw new Error(`Unexpected MiniMax fetch: ${call.method} ${call.url}`)
+    })
+
+    await withTempDir(async (dir) => {
+      const { imagePath } = await writeMediaFixtures(dir)
+      const result = await runMinimaxVideoGen('animate after retry', dir, {
+        model: 'MiniMax-Hailuo-2.3-Fast',
+        mode: 'image-to-video',
+        inputImage: imagePath,
+        durationSeconds: 6
+      })
+
+      expect(Array.from(new Uint8Array(await Bun.file(result.videoPath).arrayBuffer()))).toEqual(Array.from(videoBytes))
+    })
+
+    expect(calls.filter((call) => call.method === 'POST')).toHaveLength(1)
+    expect(calls.filter((call) => call.url === 'https://cdn.example.com/minimax-retry.mp4')).toHaveLength(2)
+  })
+
   test('Grok sends generation media, storage options, and extracts poll metadata cost', async () => {
     process.env['XAI_API_KEY'] = 'xai-key'
-    process.env['XAI_BASE_URL'] = 'https://mock.x.ai/v1'
     const calls = installFetch((call) => {
       if (call.method === 'POST') return jsonResponse({ request_id: 'grok-123' })
-      if (call.url === 'https://mock.x.ai/v1/videos/grok-123') {
+      if (call.url === `${XAI_DEFAULT_BASE_URL}/videos/grok-123`) {
         return jsonResponse({
           status: 'done',
           model: 'grok-imagine-video',
@@ -369,7 +419,7 @@ describe('video provider REST contracts', () => {
     })
 
     expect(calls[0]).toMatchObject({
-      url: 'https://mock.x.ai/v1/videos/generations',
+      url: `${XAI_DEFAULT_BASE_URL}/videos/generations`,
       method: 'POST'
     })
     expect(calls[0]?.bodyJson).toMatchObject({
@@ -390,14 +440,13 @@ describe('video provider REST contracts', () => {
 
   test('Grok sends reference, edit, and extension endpoint shapes', async () => {
     process.env['XAI_API_KEY'] = 'xai-key'
-    process.env['XAI_BASE_URL'] = 'https://mock.x.ai/v1'
     let requestIndex = 0
     const calls = installFetch((call) => {
       if (call.method === 'POST') {
         requestIndex += 1
         return jsonResponse({ request_id: `grok-${requestIndex}` })
       }
-      if (call.url.startsWith('https://mock.x.ai/v1/videos/grok-')) {
+      if (call.url.startsWith(`${XAI_DEFAULT_BASE_URL}/videos/grok-`)) {
         return jsonResponse({
           status: 'done',
           video: {
@@ -433,9 +482,9 @@ describe('video provider REST contracts', () => {
 
     const postCalls = calls.filter((call) => call.method === 'POST')
     expect(postCalls.map((call) => call.url)).toEqual([
-      'https://mock.x.ai/v1/videos/generations',
-      'https://mock.x.ai/v1/videos/edits',
-      'https://mock.x.ai/v1/videos/extensions'
+      `${XAI_DEFAULT_BASE_URL}/videos/generations`,
+      `${XAI_DEFAULT_BASE_URL}/videos/edits`,
+      `${XAI_DEFAULT_BASE_URL}/videos/extensions`
     ])
     expect(postCalls[0]?.bodyJson).toMatchObject({
       reference_images: [
@@ -458,10 +507,9 @@ describe('video provider REST contracts', () => {
 
   test('Grok fails clearly when moderation blocks video output', async () => {
     process.env['XAI_API_KEY'] = 'xai-key'
-    process.env['XAI_BASE_URL'] = 'https://mock.x.ai/v1'
     installFetch((call) => {
       if (call.method === 'POST') return jsonResponse({ request_id: 'grok-blocked' })
-      if (call.url === 'https://mock.x.ai/v1/videos/grok-blocked') {
+      if (call.url === `${XAI_DEFAULT_BASE_URL}/videos/grok-blocked`) {
         return jsonResponse({
           status: 'done',
           video: {
@@ -480,10 +528,10 @@ describe('video provider REST contracts', () => {
     })
   })
 
-  test('Runway Gen-4.5 uses image_to_video text-only request shape and downloads output', async () => {
+  test('Runway Gen-4.5 uses text_to_video request shape and downloads output', async () => {
     process.env['RUNWAYML_API_SECRET'] = 'runway-key'
     const calls = installFetch((call) => {
-      if (call.url === 'https://api.dev.runwayml.com/v1/image_to_video' && call.method === 'POST') {
+      if (call.url === 'https://api.dev.runwayml.com/v1/text_to_video' && call.method === 'POST') {
         return jsonResponse({ id: 'runway-task-123' })
       }
       if (call.url === 'https://api.dev.runwayml.com/v1/tasks/runway-task-123' && call.method === 'GET') {
@@ -517,7 +565,7 @@ describe('video provider REST contracts', () => {
     })
 
     expect(calls.map((call) => `${call.method} ${call.url}`)).toEqual([
-      'POST https://api.dev.runwayml.com/v1/image_to_video',
+      'POST https://api.dev.runwayml.com/v1/text_to_video',
       'GET https://api.dev.runwayml.com/v1/tasks/runway-task-123',
       'GET https://cdn.example.com/runway.mp4'
     ])

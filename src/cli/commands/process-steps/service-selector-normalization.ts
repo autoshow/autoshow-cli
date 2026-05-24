@@ -1071,6 +1071,12 @@ export const normalizeLegacyMultiSpeakerFlags = (
   if (s1Name && s1Voice && s2Name && s2Voice) {
     appendFlagValue(normalizedFlags, 'tts-speaker', `${s1Name}=${s1Voice}`)
     appendFlagValue(normalizedFlags, 'tts-speaker', `${s2Name}=${s2Voice}`)
+    if (
+      typeof normalizedFlags['tts-dialogue-format'] !== 'string'
+      || normalizedFlags['tts-dialogue-format'].trim().length === 0
+    ) {
+      normalizedFlags['tts-dialogue-format'] = 'labeled'
+    }
     normalizedExplicitFlags.add('tts-speaker')
   }
 
