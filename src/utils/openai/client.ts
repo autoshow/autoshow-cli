@@ -8,12 +8,12 @@ export type OpenAIRestConfig = {
   baseURL?: string | undefined
 }
 
-export type OpenAIRequestOptions = {
+type OpenAIRequestOptions = {
   signal?: AbortSignal | undefined
   errorMessagePrefix?: string | undefined
 }
 
-export type OpenAIResponsesResponse = {
+type OpenAIResponsesResponse = {
   id?: string | undefined
   model?: string | undefined
   status?: string | undefined
@@ -115,7 +115,7 @@ export class OpenAIRestError extends Error {
 
 const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '')
 
-export const buildOpenAIUrl = (baseURL: string | undefined, path: string): string => {
+const buildOpenAIUrl = (baseURL: string | undefined, path: string): string => {
   const base = trimTrailingSlashes((baseURL ?? OPENAI_DEFAULT_BASE_URL).trim() || OPENAI_DEFAULT_BASE_URL)
   const pathWithoutLeadingSlash = path.replace(/^\/+/, '')
 
@@ -185,7 +185,7 @@ const extractErrorFields = (payload: unknown): OpenAIErrorFields => {
   return fields
 }
 
-export const createOpenAIHttpError = async (
+const createOpenAIHttpError = async (
   response: Response,
   errorMessagePrefix: string
 ): Promise<OpenAIRestError> => {
@@ -279,7 +279,7 @@ export const openAIJsonRequest = async <T = Record<string, unknown>>(
   return await readJsonResponse(response, options.errorMessagePrefix ?? 'OpenAI response') as T
 }
 
-export const openAIBinaryJsonRequest = async (
+const openAIBinaryJsonRequest = async (
   config: OpenAIRestConfig,
   path: string,
   body: Record<string, unknown>,
@@ -297,7 +297,7 @@ export const openAIBinaryJsonRequest = async (
   return new Uint8Array(await response.arrayBuffer())
 }
 
-export const openAIMultipartRequest = async <T = Record<string, unknown>>(
+const openAIMultipartRequest = async <T = Record<string, unknown>>(
   config: OpenAIRestConfig,
   path: string,
   form: FormData,

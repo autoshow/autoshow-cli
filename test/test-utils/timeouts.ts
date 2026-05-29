@@ -1,4 +1,4 @@
-export const DEFAULT_E2E_TEST_TIMEOUT_MS = 2 * 60 * 60_000
+const DEFAULT_E2E_TEST_TIMEOUT_MS = 2 * 60 * 60_000
 
 const readPositiveIntegerEnv = (key: string, fallback: number): number => {
   const raw = process.env[key]?.trim()

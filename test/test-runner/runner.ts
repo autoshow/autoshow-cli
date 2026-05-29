@@ -20,8 +20,11 @@ import {
   toObservation,
   type PriceCommandObservation,
 } from './price-evaluation'
-import { resolvePriceSelection } from './price-commands'
-import { buildDashboardReportData, buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
+import { resolvePriceSelection } from './price-commands/resolve'
+import { buildDashboardReportData } from './reports/dashboard-report'
+import { buildPriceReportData } from './reports/price-report'
+import { buildTestReportData } from './reports/test-report'
+import type { BudgetPreflightSummary } from './reports/types'
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
 import { buildModelCalibrationReport } from './model-calibration'
 import { resolveSelectedFiles } from './path-selection'

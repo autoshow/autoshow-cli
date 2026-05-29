@@ -2,7 +2,7 @@ import type {
   GrokLlmModel,
   GrokLlmUsageLike,
   TokenPricing,
-} from '../types'
+} from '../types/comic-types'
 
 export const GROK_LLM_MODELS = ['grok-4.3'] as const
 

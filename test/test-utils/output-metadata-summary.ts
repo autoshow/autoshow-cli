@@ -65,14 +65,14 @@ const readTimingTotal = (
   return getFiniteNumber(section['totalProcessingTimeMs'])
 }
 
-export type OutputMetadataSummary = {
+type OutputMetadataSummary = {
   estimatedCostCents: number | null
   actualCostCents: number | null
   estimatedProcessingTimeMs: number | null
   actualProcessingTimeMs: number | null
 }
 
-export const summarizeOutputMetadataValue = (value: unknown): OutputMetadataSummary | null => {
+const summarizeOutputMetadataValue = (value: unknown): OutputMetadataSummary | null => {
   const metadata = unwrapRunMetadataValue(value)
   if (!metadata) {
     return null

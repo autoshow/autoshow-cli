@@ -59,7 +59,7 @@ export class XApiError extends Error {
   }
 }
 
-export interface XApiClientOptions {
+interface XApiClientOptions {
   baseUrl?: string;
   bearerToken: string;
   fetchImpl?: typeof fetch;

@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test'
+import { expect } from 'bun:test'
 import {
   runCommand,
   fileExists,
@@ -152,30 +152,5 @@ export const defineTTSServiceTest = ({
       }
       expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
     }, timeoutMs)
-  }
-}
-
-export const defineTTSServicePriceTests = ({
-  models,
-  provider,
-  ttsService,
-}: {
-  models: readonly string[]
-  provider: string
-  ttsService: string
-}): void => {
-  for (const model of models) {
-    test(`${ttsService} ${model} --price prints estimate`, async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'tts',
-        STABLE_TTS_MD_PATH,
-        '--provider',
-        `${provider}=${model}`,
-        '--price'
-      ])
-
-      expect(result.exitCode).toBe(0)
-    }, E2E_TEST_TIMEOUT_MS)
   }
 }

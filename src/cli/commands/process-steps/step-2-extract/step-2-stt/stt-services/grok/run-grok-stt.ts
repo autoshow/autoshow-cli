@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import * as v from 'valibot'
 import type {
   RetryClass,
@@ -6,7 +7,6 @@ import type {
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   appendToken,

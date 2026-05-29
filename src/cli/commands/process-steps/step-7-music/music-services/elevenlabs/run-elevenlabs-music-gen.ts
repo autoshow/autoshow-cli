@@ -1,5 +1,5 @@
-import type { ElevenlabsMusicModel, Step7MusicMetadata } from '~/types'
 import * as l from '~/utils/logger'
+import type { ElevenlabsMusicModel, Step7MusicMetadata } from '~/types'
 import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'

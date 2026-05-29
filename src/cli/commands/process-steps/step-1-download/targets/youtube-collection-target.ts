@@ -28,7 +28,7 @@ const isYoutubeUrl = (s: string): boolean => {
   }
 }
 
-export const buildYoutubeCollectionListArgs = async (url: string): Promise<string[]> =>
+const buildYoutubeCollectionListArgs = async (url: string): Promise<string[]> =>
   await buildYtDlpListArgs(url, { all: true, order: 'newest' })
 
 const getYoutubeCollectionItems = async (url: string): Promise<string[]> => {

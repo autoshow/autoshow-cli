@@ -1,6 +1,6 @@
+import * as l from '~/utils/logger'
 import { mkdir } from 'node:fs/promises'
 import type { OpenAIImageModel, Step5Metadata } from '~/types'
-import * as l from '~/utils/logger'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { createOpenAIImage, createOpenAIImageEdit } from '~/utils/openai/client'

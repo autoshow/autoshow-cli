@@ -8,7 +8,7 @@ import { classifyOcrProviderFailure, stripAnsi } from '../ocr-run-state'
 import { findOcrStructuredResponseError } from '../ocr-structured-response-error'
 import { collectErrorChain } from '~/utils/error-handler'
 
-export type OcrPdfChunkRange = {
+type OcrPdfChunkRange = {
   startPage: number
   endPage: number
 }
@@ -104,7 +104,7 @@ export const createOcrPdfChunkRenderError = (
     }
   )
 
-export const getOcrPdfChunkRangePageCount = (range: OcrPdfChunkRange): number =>
+const getOcrPdfChunkRangePageCount = (range: OcrPdfChunkRange): number =>
   Math.max(0, range.endPage - range.startPage + 1)
 
 export const shouldFallbackToOcrPdfChunks = (error: unknown): boolean => {
@@ -126,7 +126,7 @@ export const shouldFallbackToOcrPdfChunks = (error: unknown): boolean => {
   return FALLBACK_MESSAGE_PATTERN.test(message)
 }
 
-export const remapOcrPagesToRange = (
+const remapOcrPagesToRange = (
   pages: PageResult[],
   range: OcrPdfChunkRange
 ): PageResult[] =>

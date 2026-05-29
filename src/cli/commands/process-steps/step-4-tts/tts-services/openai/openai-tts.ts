@@ -1,15 +1,4 @@
-import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
-
-export const setupOpenAITts = async (): Promise<void> => {
-  const apiKey = readEnv('OPENAI_API_KEY')
-  if (apiKey) {
-    l.write('success', 'OPENAI_API_KEY found — OpenAI TTS ready')
-  } else {
-    l.warn('OPENAI_API_KEY not set — OpenAI TTS will not work until set')
-    l.write('info', 'Set OPENAI_API_KEY environment variable to use OpenAI TTS')
-  }
-}
 
 export const ensureOpenAITtsSetup = async (): Promise<void> => {
   const apiKey = readEnv('OPENAI_API_KEY')

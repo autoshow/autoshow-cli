@@ -1,20 +1,7 @@
-import type { TranscriptionEvidenceWord, TranscriptionSegment } from '~/types'
+import type { TranscriptionSegment } from '~/types'
 import { toTimestamp } from './stt-utils'
 
-export type TranscriptionSegmentStats = {
-  segmentCount: number
-  timedSegmentCount: number
-  zeroDurationSegmentCount: number
-  negativeDurationSegmentCount: number
-  monotonicStarts: boolean
-  firstStartSeconds: number | null
-  lastEndSeconds: number | null
-  totalSegmentDurationSeconds: number
-  coverageSeconds: number | null
-  durationCoverageRatio: number | null
-}
-
-export type TimingCoverageAssessment = {
+type TimingCoverageAssessment = {
   compressed: boolean
   coverageRatio: number
   latestEndSeconds: number
@@ -26,7 +13,7 @@ const EPSILON_SECONDS = 0.001
 const isFiniteNonNegativeNumber = (value: number | undefined): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0
 
-export const timestampToSeconds = (timestamp: string): number | null => {
+const timestampToSeconds = (timestamp: string): number | null => {
   const parts = timestamp.trim().replace(',', '.').split(':')
   if (parts.length !== 2 && parts.length !== 3) {
     return null
@@ -40,66 +27,6 @@ export const timestampToSeconds = (timestamp: string): number | null => {
   }
 
   return (hours * 3600) + (minutes * 60) + seconds
-}
-
-export const computeTranscriptionSegmentStats = (
-  segments: readonly TranscriptionSegment[],
-  knownEndSeconds?: number | undefined
-): TranscriptionSegmentStats => {
-  let timedSegmentCount = 0
-  let zeroDurationSegmentCount = 0
-  let negativeDurationSegmentCount = 0
-  let monotonicStarts = true
-  let firstStartSeconds: number | null = null
-  let lastEndSeconds: number | null = null
-  let previousStartSeconds: number | null = null
-  let totalSegmentDurationSeconds = 0
-
-  for (const segment of segments) {
-    const startSeconds = timestampToSeconds(segment.start)
-    const endSeconds = timestampToSeconds(segment.end)
-    if (startSeconds === null || endSeconds === null) {
-      continue
-    }
-
-    timedSegmentCount += 1
-    if (previousStartSeconds !== null && startSeconds + EPSILON_SECONDS < previousStartSeconds) {
-      monotonicStarts = false
-    }
-    previousStartSeconds = startSeconds
-    firstStartSeconds = firstStartSeconds === null ? startSeconds : Math.min(firstStartSeconds, startSeconds)
-    lastEndSeconds = lastEndSeconds === null ? endSeconds : Math.max(lastEndSeconds, endSeconds)
-
-    const durationSeconds = endSeconds - startSeconds
-    if (durationSeconds < -EPSILON_SECONDS) {
-      negativeDurationSegmentCount += 1
-      continue
-    }
-    if (Math.abs(durationSeconds) <= EPSILON_SECONDS) {
-      zeroDurationSegmentCount += 1
-    }
-    totalSegmentDurationSeconds += Math.max(0, durationSeconds)
-  }
-
-  const coverageSeconds = firstStartSeconds !== null && lastEndSeconds !== null
-    ? Math.max(0, lastEndSeconds - firstStartSeconds)
-    : null
-  const durationCoverageRatio = coverageSeconds !== null && isFiniteNonNegativeNumber(knownEndSeconds) && knownEndSeconds > 0
-    ? coverageSeconds / knownEndSeconds
-    : null
-
-  return {
-    segmentCount: segments.length,
-    timedSegmentCount,
-    zeroDurationSegmentCount,
-    negativeDurationSegmentCount,
-    monotonicStarts,
-    firstStartSeconds,
-    lastEndSeconds,
-    totalSegmentDurationSeconds,
-    coverageSeconds,
-    durationCoverageRatio
-  }
 }
 
 export const repairZeroDurationMonotonicSegments = (
@@ -212,33 +139,6 @@ export const clampWordTimingsToKnownEnd = <T extends { start: number, end: numbe
       ...word,
       start,
       end
-    }
-  })
-
-  return { words: clampedWords, clampedCount }
-}
-
-export const clampEvidenceWordsToKnownEnd = (
-  words: readonly TranscriptionEvidenceWord[],
-  knownEndSeconds: number | undefined
-): { words: TranscriptionEvidenceWord[], clampedCount: number } => {
-  if (!isFiniteNonNegativeNumber(knownEndSeconds)) {
-    return { words: words.map((word) => ({ ...word })), clampedCount: 0 }
-  }
-
-  let clampedCount = 0
-  const clampedWords = words.map((word) => {
-    if (word.endSeconds <= knownEndSeconds + EPSILON_SECONDS) {
-      return { ...word }
-    }
-
-    const startSeconds = Math.min(word.startSeconds, knownEndSeconds)
-    const endSeconds = Math.max(startSeconds, Math.min(word.endSeconds, knownEndSeconds))
-    clampedCount += 1
-    return {
-      ...word,
-      startSeconds,
-      endSeconds
     }
   })
 

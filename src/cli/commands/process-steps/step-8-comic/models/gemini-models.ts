@@ -8,7 +8,7 @@ import type {
   ImageGenerationSize,
   GeminiTieredTokenPricing,
   GeminiTokenPricing,
-} from '../types'
+} from '../types/comic-types'
 
 export const GEMINI_LLM_MODELS = [
   'gemini-3.1-pro-preview',
@@ -24,8 +24,8 @@ export const GEMINI_IMAGE_MODELS = ['gemini-3.1-flash-image-preview'] as const
 
 
 
-export const GEMINI_REFERENCE_IMAGE_LIMIT = 10
-export const GEMINI_PRIMARY_CHARACTER_REFERENCE_WARNING_LIMIT = 4
+const GEMINI_REFERENCE_IMAGE_LIMIT = 10
+const GEMINI_PRIMARY_CHARACTER_REFERENCE_WARNING_LIMIT = 4
 
 const GEMINI_LLM_PRICING: Record<GeminiLlmModel, GeminiTieredTokenPricing> = {
   'gemini-3.1-pro-preview': {
@@ -49,7 +49,7 @@ const GEMINI_LLM_PRICING: Record<GeminiLlmModel, GeminiTieredTokenPricing> = {
   },
 }
 
-export const GEMINI_IMAGE_MODEL_PRICING: Record<GeminiImageGenerationModel, GeminiImagePricing> = {
+const GEMINI_IMAGE_MODEL_PRICING: Record<GeminiImageGenerationModel, GeminiImagePricing> = {
   'gemini-3.1-flash-image-preview': {
     input: 0.5,
     textOutput: 3.0,

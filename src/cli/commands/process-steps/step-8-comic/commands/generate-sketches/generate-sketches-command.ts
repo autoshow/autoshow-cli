@@ -6,11 +6,11 @@ import { validateImageSizeForModels } from '../../utils/image-size'
 import { getSketchesDirectory } from '../../utils/project-paths'
 import { assertPanelPromptSourceCoverage } from '../../utils/source-coverage-utils'
 import { DEFAULT_PANELS_PER_IMAGE } from '../generate-images/comic-page-utils'
+import type { ImageRunStats } from '../../types/comic-types'
 import type {
   GenerateSceneSketchesOptions,
   GenerateSketchesCommandOptions,
-  ImageRunStats,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
 

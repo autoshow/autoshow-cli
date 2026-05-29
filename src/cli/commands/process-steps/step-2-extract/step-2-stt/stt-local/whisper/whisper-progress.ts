@@ -6,7 +6,7 @@ const clampPercent = (value: number): number => {
   return Math.max(0, Math.min(100, value))
 }
 
-export const renderWhisperProgressBar = (percent: number, width: number = 24): string => {
+const renderWhisperProgressBar = (percent: number, width: number = 24): string => {
   const clamped = clampPercent(percent)
   const filled = Math.round((clamped / 100) * width)
   if (filled >= width) {
@@ -32,7 +32,7 @@ export const parseWhisperProgressPercent = (line: string): number | null => {
   return clampPercent(parsed)
 }
 
-export const computeWhisperOverallPercent = (
+const computeWhisperOverallPercent = (
   segmentPercent: number,
   context: WhisperProgressLogContext
 ): number | null => {

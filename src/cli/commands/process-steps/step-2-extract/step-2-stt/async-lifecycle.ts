@@ -9,7 +9,7 @@ import { readSttProviderCheckpoint, writeSttProviderCheckpoint } from './manifes
 const DEFAULT_POLL_DEADLINE_MS = 10 * 60 * 1000
 const MAX_POLL_DEADLINE_MS = 30 * 60 * 1000
 const POLL_DEADLINE_AUDIO_MULTIPLIER_MS = 250
-export const ASYNC_STT_RESUME_PROBE_DELAYS_MS = [0, 30_000, 60_000, 120_000, 240_000] as const
+const ASYNC_STT_RESUME_PROBE_DELAYS_MS = [0, 30_000, 60_000, 120_000, 240_000] as const
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -104,7 +104,7 @@ export const writeAsyncSttProgressMetadata = async (
   )
 }
 
-export const resolveAsyncSttPollDeadlineMs = (
+const resolveAsyncSttPollDeadlineMs = (
   audioDurationSeconds: number | undefined
 ): number => {
   const durationScaled = typeof audioDurationSeconds === 'number' && Number.isFinite(audioDurationSeconds) && audioDurationSeconds > 0

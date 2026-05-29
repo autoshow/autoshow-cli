@@ -3,9 +3,9 @@ import { ReverbOutputSchema, type TranscriptionResult, type TranscriptionSegment
 import { toTimestamp } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import type { EmbeddedJson } from '~/types'
 
-export const formatTimestamp = toTimestamp
+const formatTimestamp = toTimestamp
 
-export const adjustTimestampByOffset = (timestamp: string, offsetMinutes: number): string => {
+const adjustTimestampByOffset = (timestamp: string, offsetMinutes: number): string => {
   const parts = timestamp.split(':')
   const hours = parseInt(parts[0]!)
   const minutes = parseInt(parts[1]!)

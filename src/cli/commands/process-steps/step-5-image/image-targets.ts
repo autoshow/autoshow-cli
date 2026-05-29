@@ -31,7 +31,7 @@ import {
   validateImageMaskReference
 } from './image-utils/image-inputs'
 
-export const sanitizeImageModelName = sanitizeModelName
+const sanitizeImageModelName = sanitizeModelName
 
 const normalizeOpenAIImageExtension = (format: string | undefined): string => {
   if (format === 'jpeg') {
@@ -169,7 +169,7 @@ const validateFixedOpenAIImageSize = (model: OpenAIImageModel, size: string | un
   throw CLIUsageError(`Invalid --image-size value "${size}" for ${model}. Expected auto, 1024x1024, 1536x1024, or 1024x1536.`)
 }
 
-export const validateOpenAIImageOptions = (
+const validateOpenAIImageOptions = (
   model: OpenAIImageModel,
   options: Pick<ImageGenOptions, 'imageSize' | 'imageQuality' | 'imageFormat' | 'imageBackground' | 'imageCompression'>
 ): void => {
@@ -228,7 +228,7 @@ const getExpectedImageExtension = (
   return 'png'
 }
 
-export const getImageArtifactFileName = (
+const getImageArtifactFileName = (
   target: Pick<ImageTarget, 'service' | 'model'> | Pick<Step5Metadata, 'imageService' | 'imageModel'>,
   singleTarget: boolean,
   sourceFileName: string,
@@ -266,7 +266,7 @@ export const getExpectedImageArtifactFileNames = (
   )
 }
 
-export const getStep5ImageFileNames = (
+const getStep5ImageFileNames = (
   metadata: Pick<Step5Metadata, 'imageFileNames'>
 ): string[] => metadata.imageFileNames
 

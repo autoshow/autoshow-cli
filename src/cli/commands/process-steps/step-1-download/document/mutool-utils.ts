@@ -26,7 +26,7 @@ const withPassword = (args: string[], password?: string): string[] => {
   return [...args, '-p', password]
 }
 
-export const ensureMutoolSetup = async (): Promise<void> => {
+const ensureMutoolSetup = async (): Promise<void> => {
   if (commandExists('mutool')) return
   await setupDocumentTools()
 }

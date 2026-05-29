@@ -22,7 +22,7 @@ import {
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from '../../step-1-download/document/dl-document'
-import { runOcr } from './orchestrator'
+import { runOcr } from './run-ocr'
 import { l, runWithLogContext } from '~/utils/logger'
 import {
   buildExtractionOptionsForTarget,

@@ -4,14 +4,14 @@ export type VoiceQualityScoreInput = {
   weight: number
 }
 
-export type VoiceQualityAggregate = {
+type VoiceQualityAggregate = {
   score: number | null
   availableWeight: number
   totalWeight: number
   missingKeys: string[]
 }
 
-export type VoiceQualityRankable = {
+type VoiceQualityRankable = {
   providerKey: string
   humanSpeechScore: number | null
   naturalnessScore: number | null
@@ -21,7 +21,7 @@ export type VoiceQualityRankable = {
   }
 }
 
-export type VoiceQualityRanked<T extends VoiceQualityRankable> = T & {
+type VoiceQualityRanked<T extends VoiceQualityRankable> = T & {
   rank: number
 }
 

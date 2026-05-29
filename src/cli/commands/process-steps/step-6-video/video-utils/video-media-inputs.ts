@@ -2,16 +2,16 @@ import { existsSync } from 'node:fs'
 import { basename, extname } from 'node:path'
 import { CLIUsageError } from '~/utils/error-handler'
 
-export type VideoMediaKind = 'image' | 'video'
+type VideoMediaKind = 'image' | 'video'
 
-export type GeminiInlineMedia = {
+type GeminiInlineMedia = {
   inlineData: {
     mimeType: string
     data: string
   }
 }
 
-export type GrokUrlMedia = {
+type GrokUrlMedia = {
   url: string
 }
 
@@ -38,7 +38,7 @@ const allowedMimeTypes = (kind: VideoMediaKind): readonly string[] =>
 const prettyMimeList = (kind: VideoMediaKind): string =>
   kind === 'image' ? 'JPEG, PNG, or WebP' : 'MP4'
 
-export const isHttpMediaUrl = (value: string): boolean => {
+const isHttpMediaUrl = (value: string): boolean => {
   try {
     const url = new URL(value)
     return url.protocol === 'http:' || url.protocol === 'https:'
@@ -47,7 +47,7 @@ export const isHttpMediaUrl = (value: string): boolean => {
   }
 }
 
-export const isVideoMediaDataUrl = (value: string): boolean =>
+const isVideoMediaDataUrl = (value: string): boolean =>
   /^data:(image\/(?:jpeg|jpg|png|webp)|video\/mp4);base64,/i.test(value)
 
 const getLocalMimeType = (value: string): string | undefined =>

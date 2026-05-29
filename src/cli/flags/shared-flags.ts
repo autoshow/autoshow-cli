@@ -16,13 +16,6 @@ export const generationOutputFlags = {
   }
 } as const satisfies CliFlagsDefinition
 
-export const providerSelectorFlag = {
-  provider: {
-    description: 'Provider selector, repeatable as provider[=model]',
-    type: [String] as [StringConstructor]
-  }
-} as const satisfies CliFlagsDefinition
-
 export const booleanAllProvidersFlag = {
   'all-providers': {
     description: 'Run every provider supported by this command and input route',

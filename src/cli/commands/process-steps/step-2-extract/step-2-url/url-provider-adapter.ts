@@ -1,7 +1,7 @@
 import type { HtmlArticleBackend } from '~/types'
 import type { UrlArticleRunResult, UrlRequestOptions } from './url-utils'
 
-export type UrlArticleProviderCapability =
+type UrlArticleProviderCapability =
   | 'remote-html'
   | 'local-html'
   | 'main-content'

@@ -1,6 +1,6 @@
+import * as l from '~/utils/logger'
 import type { DeepgramAlternative, DeepgramHttpError, DeepgramResponse, DeepgramWords, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { DeepgramResponseSchema } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   appendToken,

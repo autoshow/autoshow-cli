@@ -7,7 +7,7 @@ const countSelectedTargets = (
   model: string | undefined
 ): number => models?.length ?? (model ? 1 : 0)
 
-export type TargetCounts = {
+type TargetCounts = {
   hostedOcrTargetCount: number
   hostedLlmTargetCount: number
   hostedTtsTargetCount: number

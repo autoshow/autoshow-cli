@@ -35,7 +35,7 @@ const ElevenLabsIvcResponseSchema = v.object({
   requires_verification: v.boolean()
 })
 
-export type ElevenLabsTtsIvcAudio = {
+type ElevenLabsTtsIvcAudio = {
   path: string
   basename: string
   mimeType: string
@@ -43,14 +43,14 @@ export type ElevenLabsTtsIvcAudio = {
   durationSeconds?: number | undefined
 }
 
-export type ElevenLabsTtsIvcResult = {
+type ElevenLabsTtsIvcResult = {
   voiceId: string
   voiceName: string
   sourceAudio: ElevenLabsTtsIvcAudio
   requiresVerification: boolean
 }
 
-export type ElevenLabsTtsIvcContext = {
+type ElevenLabsTtsIvcContext = {
   voicePromise?: Promise<ElevenLabsTtsIvcResult> | undefined
 }
 
@@ -63,7 +63,7 @@ export type ElevenLabsTtsIvcOptions = {
 
 export const createElevenLabsTtsIvcContext = (): ElevenLabsTtsIvcContext => ({})
 
-export const defaultElevenLabsTtsIvcVoiceName = (): string => `AutoShow_${Date.now()}`
+const defaultElevenLabsTtsIvcVoiceName = (): string => `AutoShow_${Date.now()}`
 
 export const validateElevenLabsTtsIvcAudio = async (
   audioPath: string

@@ -10,7 +10,7 @@ const DEFAULT_MISTRAL_SLOT_LIMIT = 1
 const MAX_POLL_SLOT_LIMIT = 8
 
 
-export const isAsyncSttBatchProvider = (
+const isAsyncSttBatchProvider = (
   target: Pick<SttTarget, 'service'>
 ): boolean =>
   target.service === 'assemblyai'
@@ -47,11 +47,11 @@ const getDefaultProviderSlotLimit = (
   return DEFAULT_PROVIDER_SLOT_LIMIT
 }
 
-export const resolveSttBatchProviderSlotLimit = (
+const resolveSttBatchProviderSlotLimit = (
   target: Pick<SttTarget, 'service' | 'model' | 'local'>
 ): number => getDefaultProviderSlotLimit(target)
 
-export const resolveSttBatchPollSlotLimit = (
+const resolveSttBatchPollSlotLimit = (
   target: Pick<SttTarget, 'service' | 'local'>,
   batchConcurrency: number
 ): number => {

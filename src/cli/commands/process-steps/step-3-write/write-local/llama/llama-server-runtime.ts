@@ -26,7 +26,7 @@ import {
 } from './llama-server-process'
 import { writeLlamaServerState } from './llama-server-state'
 
-export const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerIdentity> => {
+const startLlamaServer = async (target: LlamaServerTarget): Promise<LlamaServerIdentity> => {
   const llamaServerPath = resolveLlamaServerBinary()
 
   if (target.mode === 'repo' && target.expectedRepo !== target.requestedModel) {

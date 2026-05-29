@@ -1,7 +1,7 @@
 import { createSingleRowTable } from '~/utils/logger/human-table'
 import type { HumanLogTable, LogLevel, ResumeItemSummary, ResumeTotals, TableLogger } from '~/types'
 
-export const buildResumeItemTable = (
+const buildResumeItemTable = (
   summary: ResumeItemSummary
 ): HumanLogTable =>
   createSingleRowTable(summary, ['item', 'status', 'outputDir', 'providers', 'detail'])

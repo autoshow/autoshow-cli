@@ -31,7 +31,7 @@ import {
 export { buildExpectedFilesList } from './expected-output'
 export { shouldRunCommandPreflight } from './process-target-preflight'
 
-export type ResolvedProcessTargetDoubleDash =
+type ResolvedProcessTargetDoubleDash =
   | { kind: 'target', resolvedTarget: string, ytDlpPassthroughArgs?: string[] | undefined }
   | { kind: 'raw-yt-dlp', ytDlpPassthroughArgs: string[] }
 
@@ -75,7 +75,7 @@ export const resolveProcessTargetDoubleDash = (
   throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
 }
 
-export const runRawYtDlp = async (args: string[]): Promise<void> => {
+const runRawYtDlp = async (args: string[]): Promise<void> => {
   if (!hasYtDlpBinary()) {
     await setupYtDependencies()
   }

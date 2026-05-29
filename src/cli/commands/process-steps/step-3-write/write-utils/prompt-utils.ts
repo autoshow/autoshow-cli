@@ -2,7 +2,7 @@ import type { BuildPromptOptions, TranscriptionResult, VideoMetadata } from '~/t
 import * as l from '~/utils/logger'
 import { createKeyValueTable } from '~/utils/logger/human-table'
 
-export const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
+const TRANSCRIPT_PREAMBLE = `This is a transcript with timestamps. Do not include advertisements in the summaries or descriptions. Do not actually write the transcript.`
 
 export const buildPrompt = (
   metadata: VideoMetadata,

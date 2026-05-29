@@ -13,7 +13,7 @@ import { estimateTokens } from '~/utils/text-utils'
 import { validateData } from '~/utils/validate/validation'
 import { buildCombinedText } from './native-text-extractors'
 
-export type OcrResultBuilderInput = {
+type OcrResultBuilderInput = {
   start: number
   pages: PageResult[]
   extractionMethod: string

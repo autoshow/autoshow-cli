@@ -28,14 +28,6 @@ export const cyan = (text: string): string => {
   return `${CYAN}${text}${RESET}`
 }
 
-export const green = (text: string): string => {
-  return `${GREEN}${text}${RESET}`
-}
-
-export const red = (text: string): string => {
-  return `${RED}${text}${RESET}`
-}
-
 export const formatDuration = (durationMs: number): string => {
   return `${(durationMs / 1000).toFixed(2)}s`
 }
@@ -46,7 +38,7 @@ export const formatCompactCost = (dollars: number): string => {
     : `$${dollars.toFixed(2)}`
 }
 
-export const compactParts = (
+const compactParts = (
   parts: Array<string | number | false | null | undefined>
 ): string => {
   return parts

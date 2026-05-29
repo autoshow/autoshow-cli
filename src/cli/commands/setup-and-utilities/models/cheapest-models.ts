@@ -90,7 +90,7 @@ const isDefaultVideoSelectionModel = (
   return true
 }
 
-export const selectCheapestSttModel = (service: string): string => {
+const selectCheapestSttModel = (service: string): string => {
   const serviceConfig = getModelRegistry().stt[service]
   if (!serviceConfig) {
     throw new Error(`Missing STT service config: ${service}`)
@@ -99,7 +99,7 @@ export const selectCheapestSttModel = (service: string): string => {
   return selectCheapestRegistryModel(serviceConfig.models, sttHourlyCost)
 }
 
-export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'): string => {
+const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'): string => {
   const serviceConfig = getModelRegistry().extract[service]
   if (!serviceConfig) {
     throw new Error(`Missing extract service config: ${service}`)
@@ -128,7 +128,7 @@ export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' |
   })
 }
 
-export const selectCheapestLlmModel = (service: string): string => {
+const selectCheapestLlmModel = (service: string): string => {
   const serviceConfig = getModelRegistry().llm[service]
   if (!serviceConfig) {
     throw new Error(`Missing LLM service config: ${service}`)
@@ -139,7 +139,7 @@ export const selectCheapestLlmModel = (service: string): string => {
   )
 }
 
-export const selectCheapestTtsModel = (service: string): string => {
+const selectCheapestTtsModel = (service: string): string => {
   const serviceConfig = getModelRegistry().tts[service]
   if (!serviceConfig) {
     throw new Error(`Missing TTS service config: ${service}`)
@@ -162,7 +162,7 @@ export const selectCheapestTtsModel = (service: string): string => {
   })
 }
 
-export const selectCheapestImageModel = (service: string): string => {
+const selectCheapestImageModel = (service: string): string => {
   const serviceConfig = getModelRegistry().image[service]
   if (!serviceConfig) {
     throw new Error(`Missing image service config: ${service}`)
@@ -175,7 +175,7 @@ export const selectCheapestImageModel = (service: string): string => {
   )
 }
 
-export const selectCheapestMusicModel = (service: string): string => {
+const selectCheapestMusicModel = (service: string): string => {
   const serviceConfig = getModelRegistry().music[service]
   if (!serviceConfig) {
     throw new Error(`Missing music service config: ${service}`)
@@ -280,7 +280,7 @@ export const selectCheapestVideoSelection = (
   return best
 }
 
-export const selectCheapestVideoModel = (
+const selectCheapestVideoModel = (
   provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): string => selectCheapestVideoSelection(provider).model
 

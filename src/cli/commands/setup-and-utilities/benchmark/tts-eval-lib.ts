@@ -13,7 +13,7 @@ export interface AudioProperties {
   codec: string | null;
 }
 
-export interface TtsEntryMetadata {
+interface TtsEntryMetadata {
   ttsService: string;
   ttsModel: string;
   speaker?: string;
@@ -57,31 +57,11 @@ export interface TtsRunJson {
       actual?: { totalProcessingTimeMs?: number; steps?: RunStepTimingEntry[] };
     };
   };
-}
-
-export interface ProviderEvidence {
-  providerKey: string;
-  ttsService: string;
-  ttsModel: string;
-  speaker: string | null;
-  audioFileName: string;
-  audioFileSize: number;
-  audioPath: string;
-  audioExists: boolean;
-  audioProperties: AudioProperties | null;
-  chunkCount: number;
-  processingTimeMs: number;
-  costCents: number | null;
-  speakingRateCharsPerSec: number | null;
-  charCount: number;
-  wordCount: number;
-}
-
-// ---------------------------------------------------------------------------
+}// ---------------------------------------------------------------------------
 // Run JSON helpers
 // ---------------------------------------------------------------------------
 
-export function readJson<T>(path: string): T {
+function readJson<T>(path: string): T {
   return JSON.parse(readFileSync(path, "utf8")) as T;
 }
 
@@ -168,32 +148,6 @@ export function computeSpeakingRate(charCount: number, durationSeconds: number):
 }
 
 // ---------------------------------------------------------------------------
-// Cost and timing lookups
-// ---------------------------------------------------------------------------
-
-export function buildCostLookup(runJson: TtsRunJson): Map<string, number> {
-  const lookup = new Map<string, number>();
-  const steps = runJson.metadata.cost?.actual?.steps ?? runJson.metadata.cost?.estimated?.steps ?? [];
-  for (const step of steps) {
-    if (step.provider && step.model && step.cost !== undefined) {
-      lookup.set(makeProviderKey(step.provider, step.model), Number(step.cost));
-    }
-  }
-  return lookup;
-}
-
-export function buildTimingLookup(runJson: TtsRunJson): Map<string, number> {
-  const lookup = new Map<string, number>();
-  const steps = runJson.metadata.timing?.actual?.steps ?? runJson.metadata.timing?.estimated?.steps ?? [];
-  for (const step of steps) {
-    if (step.provider && step.model && step.processingTimeMs !== undefined) {
-      lookup.set(makeProviderKey(step.provider, step.model), Number(step.processingTimeMs));
-    }
-  }
-  return lookup;
-}
-
-// ---------------------------------------------------------------------------
 // Text utilities (self-contained copies from stt-consensus)
 // ---------------------------------------------------------------------------
 
@@ -208,7 +162,7 @@ const PUNCT_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\u2026/g, "..."],
 ];
 
-export function normalizeText(text: string): string {
+function normalizeText(text: string): string {
   let normalized = text.toLowerCase();
   for (const [pattern, replacement] of PUNCT_REPLACEMENTS) {
     normalized = normalized.replace(pattern, replacement);
@@ -220,7 +174,7 @@ export function tokenize(text: string): string[] {
   return normalizeText(text).match(TOKEN_RE) ?? [];
 }
 
-export function levenshteinDistance(left: string[], right: string[]): number {
+function levenshteinDistance(left: string[], right: string[]): number {
   if (left.length === 0) {
     return right.length;
   }
@@ -261,22 +215,4 @@ const LOCAL_SERVICES = new Set(["kitten"]);
 
 export function isLocalService(ttsService: string): boolean {
   return LOCAL_SERVICES.has(ttsService);
-}
-
-// ---------------------------------------------------------------------------
-// Formatting
-// ---------------------------------------------------------------------------
-
-export function formatCents(cents: number | null): string {
-  if (cents === null) {
-    return "n/a";
-  }
-  return `${cents.toFixed(3)}\u00A2 ($${(cents / 100).toFixed(4)})`;
-}
-
-export function formatProcessingSeconds(milliseconds: number | null): string {
-  if (milliseconds === null) {
-    return "n/a";
-  }
-  return `${(milliseconds / 1000).toFixed(2)}s`;
 }

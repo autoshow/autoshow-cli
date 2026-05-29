@@ -34,7 +34,7 @@ import type {
   ScenePromptData,
   StructuredScriptData,
   StructuredScriptSourceSegment,
-} from '~/cli/commands/process-steps/step-8-comic/types'
+} from '~/cli/commands/process-steps/step-8-comic/types/comic-types'
 
 const episode5ScriptPath = 'input/uss/episode-scripts/05-script/01-paddy-goes-on-vacation.md'
 const episode4RecapScriptPath = 'input/uss/episode-scripts/04-script/01-previously-on-uss-acampo.md'

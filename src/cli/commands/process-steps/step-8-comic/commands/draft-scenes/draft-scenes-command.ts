@@ -9,22 +9,22 @@ import type {
   DraftScenesCommandOptions,
   DraftScenesStage,
   PanelPromptsCommandOptions,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
 
 const DRAFT_SCENE_STAGE_ORDER: DraftScenesStage[] = ['structure', 'prompt', 'scene', 'panel-prompts']
 
-export type DraftScenesWorkflowDependencies = {
+type DraftScenesWorkflowDependencies = {
   runStructureScripts?: (options: DraftScenesCommandOptions) => Promise<unknown>
   runDraftPrompts?: (options: DraftScenesCommandOptions) => Promise<unknown>
   runSceneDraft?: (options: DraftScenesCommandOptions) => Promise<unknown>
   runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<unknown>
 }
 
-export type DraftScenesLogMode = 'standalone' | 'nested'
+type DraftScenesLogMode = 'standalone' | 'nested'
 
-export type DraftScenesWorkflowResult = {
+type DraftScenesWorkflowResult = {
   stages: DraftScenesStage[]
   durationMs: number
 }
@@ -33,7 +33,7 @@ const getDraftSceneStages = (only: DraftScenesCommandOptions['only']): DraftScen
   return only ? [only] : DRAFT_SCENE_STAGE_ORDER
 }
 
-export const runSceneDraftStage = async (options: DraftScenesCommandOptions) => {
+const runSceneDraftStage = async (options: DraftScenesCommandOptions) => {
   const llmModel = options.llmModel ?? DEFAULT_LLM_MODEL
 
   try {

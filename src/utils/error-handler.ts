@@ -2,14 +2,14 @@ import { isNativeUsageError, nativeUsageMessage } from '~/cli/native/errors'
 import { sanitizeLogMetadata, sanitizeLogText } from '~/utils/logger/redaction'
 import type { RetryClass } from '~/types'
 
-export type AppErrorKind =
+type AppErrorKind =
   | 'usage'
   | 'provider_http'
   | 'retry_exhausted'
   | 'validation'
   | 'infrastructure'
 
-export type AppErrorOptions = {
+type AppErrorOptions = {
   kind: AppErrorKind
   hints?: string[]
   exitCode?: number
@@ -99,7 +99,7 @@ export const CLIUsageError = (
 export const isAppError = (error: unknown): error is AppError =>
   error instanceof AppError
 
-export const isCLIUsageError = (error: unknown): boolean =>
+const isCLIUsageError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'CLIUsageError'
 
 export const isUsageError = (error: unknown): boolean => {
@@ -133,7 +133,7 @@ export const usageMessage = (error: unknown): string => {
   return 'Invalid command usage. Run: bun as --help'
 }
 
-export type ErrorChainEntry = Error & Record<string, unknown>
+type ErrorChainEntry = Error & Record<string, unknown>
 
 export const collectErrorChain = (error: unknown): ErrorChainEntry[] => {
   const chain: ErrorChainEntry[] = []

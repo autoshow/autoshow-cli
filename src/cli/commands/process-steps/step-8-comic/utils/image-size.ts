@@ -6,7 +6,7 @@ import { GPT_IMAGE_2_MODEL } from '../models/openai-models'
 import type {
   ImageGenerationModel,
   ImageGenerationSize,
-} from '../types'
+} from '../types/comic-types'
 
 const IMAGE_SIZE_OPTIONS = new Set<string>(IMAGE_GENERATION_SIZES)
 const CUSTOM_IMAGE_SIZE_PATTERN = /^(\d+)x(\d+)$/
@@ -17,7 +17,7 @@ const MAX_CUSTOM_IMAGE_ASPECT_RATIO = 3
 
 export const IMAGE_SIZE_HELP = `${IMAGE_GENERATION_SIZES.join(', ')}, or a custom WIDTHxHEIGHT size for ${GPT_IMAGE_2_MODEL}`
 
-export const isPresetImageGenerationSize = (
+const isPresetImageGenerationSize = (
   value: string
 ): value is (typeof IMAGE_GENERATION_SIZES)[number] => {
   return IMAGE_SIZE_OPTIONS.has(value)

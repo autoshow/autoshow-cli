@@ -28,22 +28,24 @@ import { getGrokClientConfig } from './grok-client'
 import { getOpenAIClientConfig } from './openai-client'
 import { LLM_MODEL_PRICING, openAiLlmSupportsStructuredOutputs } from '../models/openai-models'
 import type {
-  CharacterAliasPattern,
-  CharacterMention,
   CharacterName,
   GeminiLlmModel,
-  GenerateStructuredScriptsOptions,
   GrokLlmModel,
   LlmModel,
   OpenAiLlmModel,
-  StructuredScriptBeat,
   StructuredScriptData,
   StructuredScriptSourceSegment,
+} from '../types/comic-types'
+import type {
+  CharacterAliasPattern,
+  CharacterMention,
+  GenerateStructuredScriptsOptions,
+  StructuredScriptBeat,
   StructuredScriptResponseUsage,
   StructuredScriptReviewResponse,
   StructuredScriptReviewResult,
   StructuredScriptRunStats,
-} from '../types'
+} from '../types/comic-command-types'
 
 
 
@@ -974,7 +976,7 @@ const canonicalizeBeat = (
   }
 }
 
-export const normalizeStructuredScriptData = (
+const normalizeStructuredScriptData = (
   data: StructuredScriptData,
   options: { scriptSlug: string; sourceFile: string; sourceSegments?: StructuredScriptSourceSegment[] }
 ): StructuredScriptData => {

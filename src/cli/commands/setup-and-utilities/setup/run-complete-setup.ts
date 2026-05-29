@@ -28,11 +28,9 @@ import {
 } from './hosted-provider-config'
 import {
   checkReverbAsrAssets,
-  reverbConfigPath as reverbConfigPathFromAssets,
   reverbDiarizationDir as reverbDiarizationDirFromAssets,
   reverbDiarizationEmbeddingDir as reverbDiarizationEmbeddingDirFromAssets,
-  reverbModelDir as reverbModelDirFromAssets,
-  reverbModelPath as reverbModelPathFromAssets
+  reverbModelDir as reverbModelDirFromAssets
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb-assets'
 
 const RUNTIME = RUNTIME_DIR
@@ -46,12 +44,10 @@ export const kittenTtsUvEnvDir = join(RUNTIME, 'bin/kitten-tts')
 export const paddleOcrUvEnvDir = join(RUNTIME, 'bin/paddle-ocr')
 export const whisperBuildDir = join(RUNTIME, 'build/whisper.cpp')
 export const whisperModelsDir = join(RUNTIME, 'models/whisper')
-export const llamaModelsDir = join(RUNTIME, 'models/llama')
+const llamaModelsDir = join(RUNTIME, 'models/llama')
 export const reverbModelDir = reverbModelDirFromAssets
-export const reverbModelPath = reverbModelPathFromAssets
-export const reverbConfigPath = reverbConfigPathFromAssets
-export const reverbDiarizationDir = reverbDiarizationDirFromAssets
-export const reverbDiarizationEmbeddingDir = reverbDiarizationEmbeddingDirFromAssets
+const reverbDiarizationDir = reverbDiarizationDirFromAssets
+const reverbDiarizationEmbeddingDir = reverbDiarizationEmbeddingDirFromAssets
 const mergeEnv = (env?: Record<string, string | undefined>): Record<string, string | undefined> =>
   env ? { ...(process.env as Record<string, string | undefined>), ...env } : process.env as Record<string, string | undefined>
 
@@ -62,7 +58,7 @@ const fmtCmd = (command: string, args: string[]): string => [command, ...args].j
 const SETUP_OUTPUT_TAIL_LINES = 40
 const SETUP_OUTPUT_TAIL_CHARS = 6000
 
-export const formatSetupOutputTail = (stdout: string, stderr: string): string => {
+const formatSetupOutputTail = (stdout: string, stderr: string): string => {
   const combined = [
     stderr.trim().length > 0 ? `stderr:\n${stderr.trim()}` : '',
     stdout.trim().length > 0 ? `stdout:\n${stdout.trim()}` : ''

@@ -1,5 +1,5 @@
-import type { GrokImageModel, Step5Metadata } from '~/types'
 import * as l from '~/utils/logger'
+import type { GrokImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'

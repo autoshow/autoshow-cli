@@ -63,7 +63,7 @@ const runReverbSetupPhase = async (
   }
 }
 
-export const setupReverbEnvironment = async (): Promise<void> => {
+const setupReverbEnvironment = async (): Promise<void> => {
   l.write('info', 'Setting up Reverb ASR environment')
 
   await setupUv()

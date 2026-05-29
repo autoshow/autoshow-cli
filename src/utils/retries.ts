@@ -156,7 +156,7 @@ export const classifyFetchRetry = (
   return noRetry('unknown error type')
 }
 
-export const getRetryPolicy = (retryClass: RetryClass, overrides?: Partial<RetryPolicy>): RetryPolicy => {
+const getRetryPolicy = (retryClass: RetryClass, overrides?: Partial<RetryPolicy>): RetryPolicy => {
   const base = RETRY_POLICIES[retryClass]
   if (!overrides) return base
   return { ...base, ...overrides }
@@ -181,7 +181,7 @@ const toErrorCause = (error: unknown): Error => {
   return new Error(error === undefined ? 'Unknown retry failure' : String(error))
 }
 
-export type RetryAttemptLog = {
+type RetryAttemptLog = {
   operation: string
   attempt: number
   maxAttempts: number
@@ -200,7 +200,7 @@ export const buildRetryAttemptTable = (
     ['delayMs', summary.delayMs]
   ])
 
-export const logRetryAttempt = (
+const logRetryAttempt = (
   summary: RetryAttemptLog,
   metadata: Record<string, unknown> = {}
 ): void => {

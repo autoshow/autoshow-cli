@@ -24,11 +24,7 @@ const parseBudgetSkipKeys = (): Set<string> => {
   return new Set(keys)
 }
 
-export const shouldSkipBudgetKey = (key: string): boolean => {
-  return parseBudgetSkipKeys().has(key)
-}
-
-export type BudgetKeyInput = string | readonly string[]
+type BudgetKeyInput = string | readonly string[]
 
 const normalizeBudgetKeys = (budgetKey: BudgetKeyInput): readonly string[] => {
   return typeof budgetKey === 'string' ? [budgetKey] : budgetKey

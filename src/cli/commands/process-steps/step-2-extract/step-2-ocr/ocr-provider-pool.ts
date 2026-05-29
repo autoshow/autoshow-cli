@@ -2,7 +2,7 @@ import type { OcrTarget } from '~/types'
 import { runProviderTargetScheduler } from '~/cli/commands/process-steps/provider-target-scheduler'
 import { getOcrTargetKey } from './ocr-run-state'
 
-export type OcrProviderPoolConcurrency = {
+type OcrProviderPoolConcurrency = {
   provider: number
   local: number
 }

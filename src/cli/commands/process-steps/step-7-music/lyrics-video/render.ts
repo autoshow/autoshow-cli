@@ -26,7 +26,7 @@ export const extractTitle = (audioPath: string): string => {
   return match ? `${match[1]} - ${match[2]}` : baseName
 }
 
-export const assTime = (seconds: number): string => {
+const assTime = (seconds: number): string => {
   const clamped = Math.max(0, seconds)
   const totalCentiseconds = Math.round(clamped * 100)
   const centiseconds = totalCentiseconds % 100
@@ -180,7 +180,7 @@ const hasFfmpegFilter = async (filterName: string): Promise<boolean> => {
   return filters.split('\n').some((line) => line.trim().split(/\s+/).includes(filterName))
 }
 
-export const detectLyricsEncoder = async (): Promise<string> => {
+const detectLyricsEncoder = async (): Promise<string> => {
   if (!encoderPromise) {
     encoderPromise = (async () => {
       if (process.platform === 'darwin' && await checkFfmpegEncoder('h264_videotoolbox')) {

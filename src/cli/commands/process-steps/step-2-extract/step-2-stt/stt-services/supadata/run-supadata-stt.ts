@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   AsyncSttLifecycleHooks,
   Step2Metadata,
@@ -6,7 +7,6 @@ import type {
   SupadataTranscriptPayload,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
   logSttSegmentLifecycle,

@@ -1,7 +1,7 @@
 import * as v from 'valibot'
 import { validateDataSafe } from '~/utils/validate/validation'
 
-export const ElevenLabsErrorSchema = v.object({
+const ElevenLabsErrorSchema = v.object({
   detail: v.optional(v.union([
     v.string(),
     v.object({

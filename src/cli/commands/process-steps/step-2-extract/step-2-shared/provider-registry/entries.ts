@@ -9,7 +9,7 @@ import type {
 import { STEP2_OCR_PROVIDER_REGISTRY } from './ocr-providers'
 import { STEP2_STT_PROVIDER_REGISTRY } from './stt-providers'
 
-export const STEP2_PROVIDER_REGISTRY = [
+const STEP2_PROVIDER_REGISTRY = [
   ...STEP2_STT_PROVIDER_REGISTRY,
   ...STEP2_OCR_PROVIDER_REGISTRY
 ] as const satisfies readonly Step2ProviderRegistryEntry[]

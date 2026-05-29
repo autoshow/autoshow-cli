@@ -2,7 +2,7 @@ import type { ParsedCommandMetric, ParsedJunitCase } from '~/types'
 
 export type MatchProvenance = 'name-file' | 'name-global' | 'line-unique' | 'group-order' | 'heuristic'
 
-export type MatchEntry = { metrics: ParsedCommandMetric[]; matchedBy: MatchProvenance }
+type MatchEntry = { metrics: ParsedCommandMetric[]; matchedBy: MatchProvenance }
 export type MatchResult = Map<string, MatchEntry>
 
 export type HistoricalLookup = {

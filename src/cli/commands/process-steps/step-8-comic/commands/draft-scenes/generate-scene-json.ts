@@ -31,15 +31,17 @@ import { parseJsonFile } from '../../utils/json-prompt-utils'
 import { validateSceneRecapMontageExpansion } from '../../utils/recap-montage-utils'
 import { validateSceneSourceSegmentCoverage } from '../../utils/source-coverage-utils'
 import type {
-  DraftSceneResponseUsage,
-  DraftSceneRunStats,
   GeminiLlmModel,
-  GenerateSceneJsonOptions,
   GrokLlmModel,
   LlmModel,
   OpenAiLlmModel,
+} from '../../types/comic-types'
+import type {
+  DraftSceneResponseUsage,
+  DraftSceneRunStats,
+  GenerateSceneJsonOptions,
   SceneResponseResult,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
 const SCENE_JSON_RESPONSE_FORMAT = {

@@ -1,6 +1,6 @@
 import type { RetryClass, SonioxHttpError } from '~/types'
 
-export type SonioxStage = NonNullable<SonioxHttpError['stage']>
+type SonioxStage = NonNullable<SonioxHttpError['stage']>
 export type SonioxRequestMetrics = {
   onRequest?: (() => void) | undefined
   onRetry?: ((status: number | undefined) => void) | undefined

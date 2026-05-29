@@ -16,7 +16,7 @@ const REVERB_SCRIPTS_DIR = join(
   'scripts'
 )
 
-export const getHuggingFaceToken = (): string | null => {
+const getHuggingFaceToken = (): string | null => {
   const token = readEnv('HUGGINGFACE_TOKEN')
   if (token && token.trim().length > 0) {
     return token.trim()
@@ -24,7 +24,7 @@ export const getHuggingFaceToken = (): string | null => {
   return null
 }
 
-export type ReverbDiarizationModel = {
+type ReverbDiarizationModel = {
   modelName: string
   hfToken: string | null
 }

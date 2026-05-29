@@ -417,7 +417,7 @@ const stringArray = (object: JsonObject, key: string): string[] =>
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .map((value) => value.trim())
 
-export const parseImageJudgeResponse = (rawText: string, fileName: string): ImageEvaluation => {
+const parseImageJudgeResponse = (rawText: string, fileName: string): ImageEvaluation => {
   const parsed = parseJsonObjectFromText(rawText)
   const criterionScores: ImageCriterionScores = {
     promptAdherence: requireScore(parsed, 'promptAdherence'),

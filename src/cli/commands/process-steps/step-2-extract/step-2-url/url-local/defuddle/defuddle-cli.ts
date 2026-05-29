@@ -1,16 +1,16 @@
+import * as l from '~/utils/logger'
 import { mkdir, rm, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { CheckResult, RunOptions, RunResult } from '~/types'
-import * as l from '~/utils/logger'
 import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
-export const DEFUDDLE_CLI_VERSION = '0.17.0'
+const DEFUDDLE_CLI_VERSION = '0.17.0'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../../../')
 const RUNTIME = join(PROJECT_ROOT, 'runtime')
 
 export const defuddleRuntimeDir = join(RUNTIME, 'defuddle')
-export const defuddleRuntimeBinaryPath = join(
+const defuddleRuntimeBinaryPath = join(
   defuddleRuntimeDir,
   'node_modules',
   '.bin',
@@ -74,9 +74,6 @@ const resolveDefuddleCli = async (): Promise<ResolvedDefuddleCli | undefined> =>
 
   return undefined
 }
-
-export const resolveDefuddleCliBinary = async (): Promise<string | undefined> =>
-  (await resolveDefuddleCli())?.path
 
 const trimForError = (value: string): string => {
   const trimmed = value.trim()

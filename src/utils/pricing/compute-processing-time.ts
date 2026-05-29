@@ -130,7 +130,7 @@ const resolveTimingBasis = (
   }
 }
 
-export const computeNormalizedTimingFields = (
+const computeNormalizedTimingFields = (
   step: TimingStepEntry['step'],
   inputMetric: string | undefined,
   inputValue: number | undefined,

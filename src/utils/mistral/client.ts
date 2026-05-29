@@ -3,7 +3,7 @@ import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
 export { MISTRAL_DEFAULT_BASE_URL }
 
-export type MistralRestError = Error & {
+type MistralRestError = Error & {
   status: number
   headers: Headers
   body: string
@@ -55,7 +55,7 @@ export const normalizeMistralBaseUrl = (baseURL: string): string => {
   }
 }
 
-export const buildMistralUrl = (baseURL: string | undefined, path: string): string => {
+const buildMistralUrl = (baseURL: string | undefined, path: string): string => {
   const normalizedBase = normalizeMistralBaseUrl(baseURL ?? MISTRAL_DEFAULT_BASE_URL)
   return new URL(path.replace(/^\/+/, ''), `${normalizedBase}/`).toString()
 }
@@ -96,7 +96,7 @@ const parseJsonOrText = (rawText: string): unknown => {
   }
 }
 
-export const createMistralHttpError = async (
+const createMistralHttpError = async (
   response: Response,
   errorMessagePrefix: string
 ): Promise<MistralRestError> => {
@@ -127,7 +127,7 @@ const normalizeMistralFetchError = (error: unknown): unknown => {
   return error
 }
 
-export const mistralFetch = async (options: MistralFetchOptions): Promise<Response> => {
+const mistralFetch = async (options: MistralFetchOptions): Promise<Response> => {
   const headers = new Headers(options.headers)
   if (!headers.has('accept')) {
     headers.set('accept', 'application/json')

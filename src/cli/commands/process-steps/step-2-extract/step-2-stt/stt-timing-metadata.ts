@@ -1,6 +1,6 @@
 import type { Step2TimingMetadata } from '~/types'
 
-export const STT_TIMING_KEYS = [
+const STT_TIMING_KEYS = [
   'queueWaitMs',
   'transcribeMs',
   'uploadMs',

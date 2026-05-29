@@ -77,7 +77,7 @@ const buildSttBatchSummaryItem = (entry: BatchManifestEntry): SttBatchSummaryIte
   }
 }
 
-export const buildSttBatchSummary = (
+const buildSttBatchSummary = (
   items: BatchManifestEntry[],
   source?: Record<string, unknown>
 ): SttBatchSummary => {
@@ -109,7 +109,7 @@ export const buildSttBatchSummary = (
   }
 }
 
-export const writeSttBatchSummary = async (
+const writeSttBatchSummary = async (
   batchDir: string,
   items: BatchManifestEntry[],
   source?: Record<string, unknown>

@@ -40,7 +40,7 @@ const SPEECHIFY_CUSTOM_VOICE_GENDERS = ['male', 'female', 'notSpecified'] as con
 
 type SpeechifyTtsCustomVoiceGender = typeof SPEECHIFY_CUSTOM_VOICE_GENDERS[number]
 
-export type SpeechifyTtsCustomVoiceAudio = {
+type SpeechifyTtsCustomVoiceAudio = {
   path: string
   basename: string
   mimeType: string
@@ -48,7 +48,7 @@ export type SpeechifyTtsCustomVoiceAudio = {
   durationSeconds?: number | undefined
 }
 
-export type SpeechifyTtsCustomVoiceResult = {
+type SpeechifyTtsCustomVoiceResult = {
   voiceId: string
   voiceName: string
   locale: string
@@ -56,7 +56,7 @@ export type SpeechifyTtsCustomVoiceResult = {
   sourceAudio: SpeechifyTtsCustomVoiceAudio
 }
 
-export type SpeechifyTtsCustomVoiceContext = {
+type SpeechifyTtsCustomVoiceContext = {
   voicePromise?: Promise<SpeechifyTtsCustomVoiceResult> | undefined
 }
 
@@ -72,7 +72,7 @@ export type SpeechifyTtsCustomVoiceOptions = {
 
 export const createSpeechifyTtsCustomVoiceContext = (): SpeechifyTtsCustomVoiceContext => ({})
 
-export const defaultSpeechifyTtsCustomVoiceName = (): string => `AutoShow_${Date.now()}`
+const defaultSpeechifyTtsCustomVoiceName = (): string => `AutoShow_${Date.now()}`
 
 const isSpeechifyCustomVoiceGender = (value: string): value is SpeechifyTtsCustomVoiceGender =>
   (SPEECHIFY_CUSTOM_VOICE_GENDERS as readonly string[]).includes(value)
@@ -116,7 +116,7 @@ const resolveSpeechifyTtsCustomVoiceConsent = (
   return { fullName, email }
 }
 
-export const validateSpeechifyTtsCustomVoiceAudio = async (
+const validateSpeechifyTtsCustomVoiceAudio = async (
   audioPath: string
 ): Promise<SpeechifyTtsCustomVoiceAudio> => {
   const normalizedPath = audioPath.trim()

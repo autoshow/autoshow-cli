@@ -9,7 +9,7 @@ export const buildSuitePriceSummaryRows = (
   totalEstimatedCost: formatEstimatedCost(summary.totalEstimatedCost)
 }]
 
-export const buildSuitePriceSummaryTable = (
+const buildSuitePriceSummaryTable = (
   summary: SuitePriceSummary
 ): HumanLogTable =>
   createSingleRowTable(buildSuitePriceSummaryRows(summary)[0]!, ['checked', 'totalEstimatedCost'])

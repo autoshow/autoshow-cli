@@ -10,9 +10,8 @@ import { getExtractEstimation, getExtractPricing } from '~/cli/commands/setup-an
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.gif', '.bmp'] as const
 const DEFAULT_EXTRACT_PAGE_COUNT = 1
 const FIRECRAWL_MODEL = 'firecrawl'
-export const OCR_INPUT_TOKENS_PER_PAGE = 4000
-export const OCR_OUTPUT_TOKENS_PER_PAGE = 1000
-export const OCR_TOKEN_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed OCR benchmark usage. Actual OCR cost is computed from response usage after execution when available.'
+const OCR_INPUT_TOKENS_PER_PAGE = 4000
+const OCR_OUTPUT_TOKENS_PER_PAGE = 1000
 const OPENAI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed OpenAI OCR benchmark usage. Actual OpenAI OCR cost is computed from response usage after execution.'
 export const ANTHROPIC_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Anthropic OCR benchmark usage. Actual Anthropic OCR cost is computed from response usage after execution, and PDF cost varies with extracted text plus page-image tokens.'
 export const GEMINI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate based on observed Gemini OCR benchmark usage. Actual Gemini OCR cost is computed from response usage after execution.'
@@ -60,7 +59,7 @@ const downloadToTemp = async (url: string): Promise<string> => {
 
 const pageCountCache = new Map<string, Promise<number | undefined>>()
 
-export const resolveExtractInputPageCount = (input: string): Promise<number | undefined> => {
+const resolveExtractInputPageCount = (input: string): Promise<number | undefined> => {
   const cached = pageCountCache.get(input)
   if (cached) return cached
 

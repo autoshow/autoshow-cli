@@ -33,7 +33,7 @@ export const isHttpUrl = (value: string): boolean => {
   }
 }
 
-export const isDataImageUrl = (value: string): boolean =>
+const isDataImageUrl = (value: string): boolean =>
   /^data:image\/[a-z0-9.+-]+;base64,/i.test(value)
 
 const getLocalMimeType = (value: string): string | undefined =>
@@ -239,5 +239,4 @@ export const OPENAI_IMAGE_MASK_MIME_TYPES = ['image/png'] as const
 export const GROK_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg'] as const
 export const GEMINI_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'] as const
 export const BFL_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const
-export const MINIMAX_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const
 export const REVE_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const

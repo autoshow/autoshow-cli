@@ -66,7 +66,7 @@ export const parseOptionalNumberFlag = (
   return parsed
 }
 
-export const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
+const readFlagValue = (flags: Record<string, unknown>, key: string): unknown => {
   return flags[key]
 }
 

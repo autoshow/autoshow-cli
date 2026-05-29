@@ -1,14 +1,14 @@
 import { existsSync } from 'node:fs'
 import { ytDlpManagedBinaryPath } from '~/utils/runtime-paths'
 
-export type YtDlpBinarySource = 'managed' | 'path'
+type YtDlpBinarySource = 'managed' | 'path'
 
 export type ResolvedYtDlpBinary = {
   path: string
   source: YtDlpBinarySource
 }
 
-export type ResolveYtDlpBinaryOptions = {
+type ResolveYtDlpBinaryOptions = {
   managedPath?: string
   exists?: (path: string) => boolean
   which?: (command: string) => string | null
@@ -29,7 +29,7 @@ export const resolveYtDlpBinaryInfo = (
   return pathBinary ? { path: pathBinary, source: 'path' } : undefined
 }
 
-export const resolveYtDlpBinary = (
+const resolveYtDlpBinary = (
   options: ResolveYtDlpBinaryOptions = {}
 ): string | undefined => resolveYtDlpBinaryInfo(options)?.path
 

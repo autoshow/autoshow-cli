@@ -347,7 +347,7 @@ const buildReport = (
   return `${lines.join('\n')}\n`
 }
 
-export const runBenchmarkRankingReport = async (): Promise<number> => {
+const runBenchmarkRankingReport = async (): Promise<number> => {
   const stats = createStats()
   const aggregates = new Map<StepKey, Map<string, ProviderAggregate>>()
   const dashboards = await dashboardFilesFromIndex(stats)

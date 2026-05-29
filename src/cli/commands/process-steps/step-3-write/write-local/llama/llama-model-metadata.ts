@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { resolveLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { RUNTIME_DIR } from '~/utils/runtime-paths'
 
-export type LlamaSetupModelMetadataEntry = {
+type LlamaSetupModelMetadataEntry = {
   requestedModel: string
   repo: string
   downloadedAt: string
@@ -62,7 +62,7 @@ export const readLlamaSetupModelMetadata = async (
   return parseLlamaSetupModelMetadata(await file.text())
 }
 
-export const writeLlamaSetupModelMetadata = async (
+const writeLlamaSetupModelMetadata = async (
   metadata: LlamaSetupModelMetadata,
   metadataPath: string = llamaSetupModelsMetadataPath
 ): Promise<void> => {

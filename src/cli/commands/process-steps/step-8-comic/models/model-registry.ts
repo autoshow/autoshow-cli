@@ -9,7 +9,7 @@ import type {
   LlmModel,
   OpenAiImageGenerationModel,
   OpenAiLlmModel,
-} from '../types'
+} from '../types/comic-types'
 
 
 export const LLM_MODELS = [...OPENAI_LLM_MODELS, ...GEMINI_LLM_MODELS, ...GROK_LLM_MODELS] as const

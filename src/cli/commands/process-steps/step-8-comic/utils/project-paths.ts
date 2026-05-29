@@ -1,13 +1,12 @@
 import { readdir } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 
-export const INPUT_ROOT = 'input'
-export const OUTPUT_ROOT = 'output'
+const INPUT_ROOT = 'input'
+const OUTPUT_ROOT = 'output'
 
-export const COMIC_OUTPUT_ROOT = join(OUTPUT_ROOT, 'comic')
-export const CHARACTER_INPUT_ROOT = join(INPUT_ROOT, 'characters')
+const COMIC_OUTPUT_ROOT = join(OUTPUT_ROOT, 'comic')
 export const CHARACTER_SKETCHES_ROOT = join(OUTPUT_ROOT, 'characters', 'sketches')
-export const EPISODE_SCRIPTS_ROOT = join(INPUT_ROOT, 'episode-scripts')
+const EPISODE_SCRIPTS_ROOT = join(INPUT_ROOT, 'episode-scripts')
 
 const COMIC_SCRIPT_SHORTHAND_PATTERN = /^(\d{2})-(\d{2})$/
 
@@ -46,7 +45,7 @@ export const resolveSceneSlug = (scriptPath: string): string =>
 
 export const normalizeProjectPath = (path: string): string => path.replace(/\\/g, '/')
 
-export type ResolveComicScriptReferenceOptions = {
+type ResolveComicScriptReferenceOptions = {
   episodeScriptsRoot?: string
 }
 

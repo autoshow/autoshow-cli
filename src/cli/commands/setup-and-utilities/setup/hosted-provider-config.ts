@@ -3,13 +3,13 @@ import type { AutoshowConfig, HumanLogTable, TableLogger } from '~/types'
 
 export type HostedProviderStatus = 'configured' | 'missing'
 
-export type HostedProviderEnvCheck = {
+type HostedProviderEnvCheck = {
   envVar: string
   label: string
   configPaths: readonly string[]
 }
 
-export type HostedProviderConfigurationRow = {
+type HostedProviderConfigurationRow = {
   provider: string
   status: HostedProviderStatus
   envKey: string
@@ -22,7 +22,7 @@ export type HostedProviderConfigurationSummary = {
   total: number
 }
 
-export type HostedProviderConfigurationLogMode = 'all' | 'missing'
+type HostedProviderConfigurationLogMode = 'all' | 'missing'
 
 export const HOSTED_PROVIDER_ENV_CHECKS = [
   {
@@ -260,7 +260,7 @@ export const getHostedProviderConfiguredPaths = (
   paths: readonly string[]
 ): string[] => paths.filter(path => isConfiguredValue(getConfigPathValue(config, path)))
 
-export const resolveHostedProviderChecks = (
+const resolveHostedProviderChecks = (
   envVars?: readonly string[]
 ): HostedProviderEnvCheck[] => {
   if (!envVars) {

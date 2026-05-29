@@ -4,7 +4,7 @@ import { generateImagesCommand } from '~/cli/commands/process-steps/step-8-comic
 import { comicLog } from '~/cli/commands/process-steps/step-8-comic/utils/logger'
 import type {
   ImageRunStats,
-} from '~/cli/commands/process-steps/step-8-comic/types'
+} from '~/cli/commands/process-steps/step-8-comic/types/comic-types'
 import type {
   SourceCoverageReport,
 } from '~/cli/commands/process-steps/step-8-comic/utils/source-coverage-utils'

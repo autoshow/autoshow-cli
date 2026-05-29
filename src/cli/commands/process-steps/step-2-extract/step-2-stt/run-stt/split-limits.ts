@@ -23,7 +23,7 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
 
 const MIN_ADAPTIVE_SPLIT_SEGMENT_SECONDS = 60
 
-export type SplitRetryReason = 'attachment_cap' | 'duration_cap' | 'request_budget'
+type SplitRetryReason = 'attachment_cap' | 'duration_cap' | 'request_budget'
 export type SplitLimitClassification = {
   reason: SplitRetryReason
   durationCapSeconds?: number | undefined

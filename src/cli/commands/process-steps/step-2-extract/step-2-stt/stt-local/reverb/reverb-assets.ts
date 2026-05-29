@@ -10,16 +10,12 @@ export const REVERB_ASR_REQUIRED_FILES = [
   'tk.units.txt'
 ] as const
 
-export type ReverbAsrRequiredFile = typeof REVERB_ASR_REQUIRED_FILES[number]
+type ReverbAsrRequiredFile = typeof REVERB_ASR_REQUIRED_FILES[number]
 
 export const reverbModelDir = join(RUNTIME_DIR, 'models/reverb/reverb_asr_v1')
-export const reverbModelPath = join(reverbModelDir, 'reverb_asr_v1.pt')
-export const reverbConfigPath = join(reverbModelDir, 'config.yaml')
 export const reverbDiarizationDir = join(RUNTIME_DIR, 'models/reverb/diarization-v2')
 export const reverbDiarizationConfigPath = join(reverbDiarizationDir, 'config.yaml')
-export const reverbDiarizationSegmentationCheckpointPath = join(reverbDiarizationDir, 'pytorch_model.bin')
 export const reverbDiarizationEmbeddingDir = join(RUNTIME_DIR, 'models/reverb/pyannote-wespeaker-voxceleb-resnet34-LM')
-export const reverbDiarizationEmbeddingCheckpointPath = join(reverbDiarizationEmbeddingDir, 'pytorch_model.bin')
 
 export const REVERB_DIARIZATION_PIPELINE_REQUIRED_FILES = [
   'config.yaml',
@@ -44,12 +40,12 @@ const pathExistsAsFile = async (path: string): Promise<boolean> => {
   }
 }
 
-export const getReverbAsrAssetPath = (file: ReverbAsrRequiredFile): string =>
+const getReverbAsrAssetPath = (file: ReverbAsrRequiredFile): string =>
   join(reverbModelDir, file)
 
 export type ReverbDiarizationRequiredFile = typeof REVERB_DIARIZATION_REQUIRED_FILES[number]
 
-export const getReverbDiarizationAssetPath = (file: ReverbDiarizationRequiredFile): string =>
+const getReverbDiarizationAssetPath = (file: ReverbDiarizationRequiredFile): string =>
   join(RUNTIME_DIR, 'models/reverb', file)
 
 export const getMissingReverbAsrFiles = async (

@@ -181,7 +181,7 @@ const resolveHostedTargetBitRate = (probe: MediaProbe): number => {
   return HOSTED_STT_MAX_BIT_RATE
 }
 
-export const resolveNormalizedAudioPlan = (
+const resolveNormalizedAudioPlan = (
   inputPath: string,
   probe: MediaProbe,
   profile: AudioNormalizationProfile = 'default'

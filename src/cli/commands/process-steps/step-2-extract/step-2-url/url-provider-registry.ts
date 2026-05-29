@@ -40,7 +40,7 @@ export const getUrlArticleProviderAdapter = (
   backend: HtmlArticleBackend
 ): UrlArticleProviderAdapter => URL_ARTICLE_PROVIDER_ADAPTERS[backend]
 
-export type UrlArticleProviderRunWithStats = {
+type UrlArticleProviderRunWithStats = {
   article: UrlArticleRunResult
   attempts: number
 }

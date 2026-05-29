@@ -365,7 +365,7 @@ const indexRows = <T extends { step: WriteStepKind, provider: string, model: str
   return indexed
 }
 
-export const formatWriteManifestThroughput = (
+const formatWriteManifestThroughput = (
   inputMetric: string | undefined,
   inputValue: number | undefined,
   processingTimeMs: number | undefined

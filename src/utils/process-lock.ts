@@ -10,7 +10,7 @@ const DEFAULT_LOCK_HEARTBEAT_MS = 5_000
 const LOCK_OWNER_FILE = 'owner.json'
 const CURRENT_HOSTNAME = hostname()
 
-export type ProcessLockOptions = {
+type ProcessLockOptions = {
   lockRoot?: string
   staleMs?: number
   waitTimeoutMs?: number

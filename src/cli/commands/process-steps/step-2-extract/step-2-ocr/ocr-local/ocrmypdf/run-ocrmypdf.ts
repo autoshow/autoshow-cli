@@ -1,7 +1,7 @@
+import * as l from '~/utils/logger'
 import { join } from 'node:path'
 import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { cpus, tmpdir } from 'node:os'
-import * as l from '~/utils/logger'
 import { exec } from '~/utils/cli-utils'
 import type { ExtractionOptions, PageResult } from '~/types'
 import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/ocrmypdf/ocrmypdf'

@@ -35,7 +35,7 @@ type CalibrationRecommendation = {
   notes?: string[]
 }
 
-export type CalibrationReport = {
+type CalibrationReport = {
   generatedAt: string
   rootDir: string
   runsScanned: number

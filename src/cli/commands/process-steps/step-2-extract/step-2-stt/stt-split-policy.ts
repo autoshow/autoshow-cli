@@ -4,7 +4,7 @@ import type { SttSplitDecision, SttSplitDecisionReason, SttSplitPolicy } from '~
 
 export const DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES = 30
 export const SPLIT_DURATION_SAFETY_SECONDS = 1
-export const SPLIT_ATTACHMENT_CAP_SAFETY_RATIO = 0.95
+const SPLIT_ATTACHMENT_CAP_SAFETY_RATIO = 0.95
 
 const resolveRequiredEffectiveBytes = (
   service: string,

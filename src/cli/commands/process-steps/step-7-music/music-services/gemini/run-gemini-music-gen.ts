@@ -17,7 +17,7 @@ type GeminiMusicResponsePart = {
   } | undefined
 }
 
-export const collectGeminiMusicTextParts = (
+const collectGeminiMusicTextParts = (
   parts: GeminiMusicResponsePart[]
 ): string | undefined => {
   const text = parts

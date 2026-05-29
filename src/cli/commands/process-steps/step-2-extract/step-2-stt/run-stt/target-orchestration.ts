@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   ProcessingOptions,
   RuntimeOptions,
@@ -6,7 +7,6 @@ import type {
   SttTargetOptions,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import { dispatchStt, ensureSttTargetSetup } from './dispatch'
 import { isSupadataSupportedSourceUrl } from '../stt-services/supadata/supadata'
 import { isScrapeCreatorsSupportedSourceUrl } from '../stt-services/scrapecreators/scrapecreators'

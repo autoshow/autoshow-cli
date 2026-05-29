@@ -2,7 +2,7 @@ import { AppError } from '~/utils/error-handler'
 import { ANTHROPIC_DEFAULT_BASE_URL } from '~/utils/base-urls'
 
 export { ANTHROPIC_DEFAULT_BASE_URL }
-export const ANTHROPIC_VERSION = '2023-06-01'
+const ANTHROPIC_VERSION = '2023-06-01'
 export const ANTHROPIC_FILES_API_BETA = 'files-api-2025-04-14'
 
 export type AnthropicRestConfig = {
@@ -10,12 +10,12 @@ export type AnthropicRestConfig = {
   baseURL?: string | undefined
 }
 
-export type AnthropicRequestOptions = {
+type AnthropicRequestOptions = {
   signal?: AbortSignal | undefined
   beta?: string | string[] | undefined
 }
 
-export type AnthropicMessageResponse = {
+type AnthropicMessageResponse = {
   model?: string | undefined
   content?: Array<{ type: string, text?: string | undefined } & Record<string, unknown>> | undefined
   usage?: {
@@ -24,7 +24,7 @@ export type AnthropicMessageResponse = {
   } & Record<string, unknown> | undefined
 } & Record<string, unknown>
 
-export type AnthropicFileMetadata = {
+type AnthropicFileMetadata = {
   id: string
   type?: string | undefined
   filename?: string | undefined
@@ -34,12 +34,12 @@ export type AnthropicFileMetadata = {
   downloadable?: boolean | undefined
 } & Record<string, unknown>
 
-export type AnthropicDeletedFile = {
+type AnthropicDeletedFile = {
   id?: string | undefined
   type?: string | undefined
 } & Record<string, unknown>
 
-export type AnthropicRestError = Error & {
+type AnthropicRestError = Error & {
   status: number
   headers: Headers
   body: string
@@ -71,7 +71,7 @@ const getBetaHeaderValue = (beta: string | string[] | undefined): string | undef
   return value ? value : undefined
 }
 
-export const buildAnthropicUrl = (baseURL: string | undefined, path: string): string => {
+const buildAnthropicUrl = (baseURL: string | undefined, path: string): string => {
   const base = trimTrailingSlashes((baseURL ?? ANTHROPIC_DEFAULT_BASE_URL).trim() || ANTHROPIC_DEFAULT_BASE_URL)
   const pathWithoutLeadingSlash = path.replace(/^\/+/, '')
 
@@ -143,7 +143,7 @@ const extractResponseType = (payload: unknown): string | undefined => {
   return typeof payload['type'] === 'string' ? payload['type'] : undefined
 }
 
-export const createAnthropicHttpError = async (
+const createAnthropicHttpError = async (
   response: Response,
   errorMessagePrefix: string
 ): Promise<AnthropicRestError> => {

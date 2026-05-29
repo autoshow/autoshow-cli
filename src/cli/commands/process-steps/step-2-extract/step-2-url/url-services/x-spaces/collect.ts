@@ -16,7 +16,7 @@ import type {
 } from "./types";
 import { extractSpaceIdsFromText } from "./input";
 
-export interface CollectSpacesOptions {
+interface CollectSpacesOptions {
   client: SpacesClientContract;
   input?: ParsedSpaceInput;
   now?: () => Date;

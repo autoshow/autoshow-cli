@@ -5,7 +5,7 @@ import {
   isRecord
 } from './supadata-response-parsers'
 
-export type SupadataStage = NonNullable<SupadataHttpError['stage']>
+type SupadataStage = NonNullable<SupadataHttpError['stage']>
 export type SupadataRequestMetrics = {
   onRequest?: (() => void) | undefined
   onRetry?: ((status: number | undefined) => void) | undefined

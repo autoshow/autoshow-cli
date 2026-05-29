@@ -12,7 +12,7 @@ const reindexCues = (cues: Array<Omit<CaptionCue, 'index'>>): CaptionCue[] =>
     text: cue.text
   }))
 
-export const parseCaptionTimestamp = (timestamp: string): number => {
+const parseCaptionTimestamp = (timestamp: string): number => {
   const match = timestamp.trim().match(/^(\d+):(\d{2}):(\d{2})([.,])(\d{3})$/)
   if (!match) {
     return Number.NaN
@@ -37,7 +37,7 @@ export const parseCaptionTimestamp = (timestamp: string): number => {
   return (hours * 3600) + (minutes * 60) + seconds + (milliseconds / 1000)
 }
 
-export const formatCaptionTimestamp = (seconds: number, separator: '.' | ','): string => {
+const formatCaptionTimestamp = (seconds: number, separator: '.' | ','): string => {
   const totalMilliseconds = Math.max(0, Math.round(seconds * 1000))
   const milliseconds = totalMilliseconds % 1000
   const totalSeconds = Math.floor(totalMilliseconds / 1000)
@@ -65,7 +65,7 @@ export const formatSrt = (cues: CaptionCue[]): string => {
   return body.length > 0 ? `${body}\n` : ''
 }
 
-export const parseVtt = (raw: string): CaptionCue[] => {
+const parseVtt = (raw: string): CaptionCue[] => {
   const source = raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')
   const blocks = source.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean)
   const cues: Array<Omit<CaptionCue, 'index'>> = []
@@ -107,7 +107,7 @@ export const parseVtt = (raw: string): CaptionCue[] => {
   return reindexCues(cues)
 }
 
-export const parseSrt = (raw: string): CaptionCue[] => {
+const parseSrt = (raw: string): CaptionCue[] => {
   const source = raw.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n')
   const blocks = source.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean)
   const cues: Array<Omit<CaptionCue, 'index'>> = []

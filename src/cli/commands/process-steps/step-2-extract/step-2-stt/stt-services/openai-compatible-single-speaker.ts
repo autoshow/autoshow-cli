@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   OpenAICompatibleTranscriptionResponse,
   OpenAICompatibleTranscriptionSegment,
@@ -5,7 +6,6 @@ import type {
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,

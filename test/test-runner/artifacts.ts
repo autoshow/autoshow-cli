@@ -6,9 +6,8 @@ import { formatTimestampForDir } from './utils'
 const LATEST_LOG_FILE = 'latest.log'
 const ACTIVE_RUN_FILE = '.active-run.json'
 
-export const TEST_OUTPUT_ROOT = resolve(process.cwd(), 'project/test-output')
-export const LATEST_TEST_LOG_PATH = resolve(TEST_OUTPUT_ROOT, LATEST_LOG_FILE)
-export const DASHBOARD_RESULTS_ROOT = resolve(process.cwd(), 'project/reports/results')
+const TEST_OUTPUT_ROOT = resolve(process.cwd(), 'project/test-output')
+const DASHBOARD_RESULTS_ROOT = resolve(process.cwd(), 'project/reports/results')
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null

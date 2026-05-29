@@ -43,7 +43,7 @@ import {
   getDraftPromptPath,
   getPanelPromptsDirectory,
 } from './project-paths'
-import { estimateImageOutputCost, formatCost } from '../image-services'
+import { estimateImageOutputCost, formatCost } from '../image-services/image-costs'
 import {
   PANEL_DIRECTORY_PATTERN,
   getPanelNumberFromName,
@@ -62,19 +62,21 @@ import {
   getImagePromptVariationLabel,
 } from '../commands/generate-images/prompt-variations'
 import type {
+  ImageGenerationModel,
+  ImageGenerationQuality,
+  ImageGenerationSize,
+  ModelRow,
+} from '../types/comic-types'
+import type {
   CharacterSketchCommandOptions,
   DraftScenesCommandOptions,
   GenerateImagesCommandOptions,
   GenerateSketchesCommandOptions,
-  ImageGenerationModel,
-  ImageGenerationQuality,
-  ImageGenerationSize,
   ImagePromptVariation,
-  ModelRow,
   ScenePanelCount,
   SceneSketchCount,
   StructureScriptsCommandOptions,
-} from '../types'
+} from '../types/comic-command-types'
 
 
 const ESTIMATED_OUTPUT_TOKENS_PER_LLM_CALL = 800
@@ -113,7 +115,7 @@ const estimateLlmCost = (model: DraftScenesCommandOptions['llmModel'], inputToke
   throw new Error(`Unsupported LLM model "${resolvedModel}"`)
 }
 
-export const estimateSceneDraftPrice = async (options: DraftScenesCommandOptions): Promise<void> => {
+const estimateSceneDraftPrice = async (options: DraftScenesCommandOptions): Promise<void> => {
   const model = options.llmModel ?? DEFAULT_LLM_MODEL
   const { sceneSlug } = options
 
@@ -247,7 +249,7 @@ export const estimateDraftScenesPrice = async (options: DraftScenesCommandOption
   }
 }
 
-export const estimateStructureScriptsPrice = async (options: StructureScriptsCommandOptions): Promise<void> => {
+const estimateStructureScriptsPrice = async (options: StructureScriptsCommandOptions): Promise<void> => {
   l(`${bold('USS Acampo')} - Price Estimate: draft-scenes --only structure`)
   l(`${cyan('='.repeat(50))}\n`)
 
@@ -625,7 +627,7 @@ const estimateFinalPanelImagesPrice = async (options: GenerateImagesCommandOptio
   }
 }
 
-export const estimateGenerateSketchesPrice = async (
+const estimateGenerateSketchesPrice = async (
   options: GenerateSketchesCommandOptions
 ): Promise<void> => {
   const { sceneSlug } = options
@@ -773,10 +775,4 @@ export const estimateGenerateImagesPrice = async (
   if (target === 'images' || target === 'both') {
     await estimateFinalPanelImagesPrice(options)
   }
-}
-
-export const estimateNoCostCommandPrice = (commandName: string): void => {
-  l(`${bold('USS Acampo')} - Price Estimate: ${commandName}`)
-  l(`${cyan('='.repeat(50))}\n`)
-  l(`  ${commandName} makes no LLM or image generation API calls.`)
 }

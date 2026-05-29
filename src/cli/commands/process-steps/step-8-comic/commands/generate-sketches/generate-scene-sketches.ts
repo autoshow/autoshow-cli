@@ -6,10 +6,14 @@ import { err, comicLog, formatDuration } from '../../utils/logger'
 import { ExpandedScenePromptDataSchema } from '../../schemas/schemas'
 import {
   createImage,
+} from '../../image-services/image-targets'
+import {
   createImageRunStats,
   updateImageRunStatsWithCostFallback,
+} from '../../image-services/image-costs'
+import {
   writeGeneratedImage,
-} from '../../image-services'
+} from '../../image-services/image-writer'
 import {
   applyReferenceImageLimits,
   extractExpandedScenePromptData,
@@ -31,17 +35,19 @@ import {
 import { getPanelPromptsDirectory, getSketchesDirectory } from '../../utils/project-paths'
 import type {
   ExpandedScenePromptData,
-  GenerateSceneSketchesDependencies,
-  GenerateSceneSketchesOptions,
   ImageGenerationModel,
   PromptsConfig,
   ResolvedReferenceImages,
+} from '../../types/comic-types'
+import type {
+  GenerateSceneSketchesDependencies,
+  GenerateSceneSketchesOptions,
   SketchPanelChunk,
   SketchPanelSource,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
-export const SKETCH_CHUNK_SIZE = DEFAULT_PANELS_PER_IMAGE
+const SKETCH_CHUNK_SIZE = DEFAULT_PANELS_PER_IMAGE
 
 
 
@@ -51,7 +57,7 @@ const formatSketchChunkLabel = (startPanelNumber: number, endPanelNumber: number
   return `panels-${String(startPanelNumber).padStart(PANEL_FILENAME_PADDING, '0')}-${String(endPanelNumber).padStart(PANEL_FILENAME_PADDING, '0')}`
 }
 
-export const chunkSketchPanels = <T extends { panelNumber: number }>(
+const chunkSketchPanels = <T extends { panelNumber: number }>(
   panels: T[],
   chunkSize = SKETCH_CHUNK_SIZE
 ): Array<SketchPanelChunk<T>> => {
@@ -164,7 +170,7 @@ export const resolveSketchChunks = <T extends { panelNumber: number }>(
   }
 }
 
-export const buildSketchPromptData = (
+const buildSketchPromptData = (
   bundleDataList: ExpandedScenePromptData[]
 ): ExpandedScenePromptData => {
   if (bundleDataList.length === 0) {
@@ -194,12 +200,6 @@ export const buildSketchPromptData = (
     location: firstBundle.location,
     panels,
   })
-}
-
-export const assembleSketchPromptDataFromBundleContents = (
-  bundleContents: string[]
-): ExpandedScenePromptData => {
-  return buildSketchPromptData(bundleContents.map(extractExpandedScenePromptData))
 }
 
 const preferSketchRefsOverCanonicalRefs = (
@@ -256,7 +256,7 @@ export const buildSketchPrompt = (
   return sections.filter(section => section && section.length > 0).join('\n\n')
 }
 
-export const resolveSketchChunkReferences = (
+const resolveSketchChunkReferences = (
   panels: Array<Pick<SketchPanelSource, 'panelDirectory' | 'panelEntries' | 'bundleData'>>,
   model: ImageGenerationModel
 ): ResolvedReferenceImages => {

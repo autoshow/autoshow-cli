@@ -3,7 +3,7 @@ import { basename, resolve as pathResolve } from 'node:path'
 import type { HtmlArticleBackend, WebArticleMetadata } from '~/types'
 import { isAbortError } from '~/utils/retries'
 
-export const HTML_FETCH_TIMEOUT_MS = 15000
+const HTML_FETCH_TIMEOUT_MS = 15000
 export const DEFAULT_URL_REQUEST_TIMEOUT_MS = 60000
 export const DEFAULT_URL_REQUEST_ATTEMPTS = 3
 
@@ -24,13 +24,13 @@ export type UrlArticleRunResult = {
   author?: string
 }
 
-export type RemoteHtmlFetchResult = {
+type RemoteHtmlFetchResult = {
   html: string
   finalUrl: string
   fileSize: number
 }
 
-export type LocalHtmlReadResult = {
+type LocalHtmlReadResult = {
   html: string
   fileSize: number
   localFileUrl: string
@@ -91,7 +91,7 @@ export const fallbackTitleFromSource = (source: string): string => {
   }
 }
 
-export const withTimeout = async <T>(
+const withTimeout = async <T>(
   timeoutMs: number,
   fn: (signal: AbortSignal) => Promise<T>
 ): Promise<T> => {
@@ -115,7 +115,7 @@ export const getUrlRequestAttempts = (options: UrlRequestOptions | undefined): n
     ? Math.floor(options.requestAttempts)
     : DEFAULT_URL_REQUEST_ATTEMPTS
 
-export const createUrlProviderTimeoutError = (
+const createUrlProviderTimeoutError = (
   providerLabel: string,
   timeoutMs: number,
   cause: unknown

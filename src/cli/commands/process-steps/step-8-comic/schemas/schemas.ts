@@ -1,10 +1,6 @@
 import * as v from 'valibot'
-import type {
-  CharacterFilePath,
-} from '../types'
 
-
-export const CHARACTER_FILES = {
+const CHARACTER_FILES = {
   '00': 'input/uss/characters/00-uss-acampo.webp',
   '01': 'input/uss/characters/01-peaches.webp',
   '02': 'input/uss/characters/02-bishop.webp',
@@ -24,6 +20,8 @@ export const CHARACTER_FILES = {
   '16': 'input/uss/characters/16-village-guards.webp',
 } as const
 
+export type CharacterFileNumber = keyof typeof CHARACTER_FILES
+export type CharacterFilePath = (typeof CHARACTER_FILES)[CharacterFileNumber]
 
 const CHARACTER_FILE_PATHS = Object.values(CHARACTER_FILES) as [CharacterFilePath, ...CharacterFilePath[]]
 const CHARACTER_REFERENCE_IMAGE_PATH_PATTERN = /^input\/uss\/characters\/.+\.(?:png|webp|jpg|jpeg)$/
@@ -39,14 +37,16 @@ export const CHARACTER_REFERENCE_ALIASES = {
   CHAT: 'HR Hologram',
 } as const
 
-export const STRUCTURED_SCRIPT_BEAT_TYPES = ['narration', 'dialogue', 'direction', 'transition', 'panel-note'] as const
+const STRUCTURED_SCRIPT_BEAT_TYPES = ['narration', 'dialogue', 'direction', 'transition', 'panel-note'] as const
 
-export const CharacterReferenceImagePathSchema = v.pipe(
+export type StructuredScriptBeatType = typeof STRUCTURED_SCRIPT_BEAT_TYPES[number]
+
+const CharacterReferenceImagePathSchema = v.pipe(
   v.string(),
   v.regex(CHARACTER_REFERENCE_IMAGE_PATH_PATTERN, 'Expected a character reference image path under input/uss/characters/')
 )
 
-export const CharacterSketchImagePathSchema = v.pipe(
+const CharacterSketchImagePathSchema = v.pipe(
   v.string(),
   v.regex(CHARACTER_SKETCH_IMAGE_PATH_PATTERN, 'Expected a character sketch image path under output/characters/sketches/')
 )
@@ -87,11 +87,6 @@ const CharacterSketchPromptsSchema = v.object({
 const ImagePromptVariationsSchema = v.object({
   'animation-polish': v.string(),
   'cinematic-depth': v.string(),
-})
-
-const EpisodeEntrySchema = v.object({
-  scenes: v.array(v.string()),
-  scripts: v.array(v.string())
 })
 
 const SpeechItemSchema = v.object({
@@ -156,11 +151,6 @@ export const PromptsConfigSchema = v.object({
   'Sketch Prompts': SketchPromptsSchema,
   'Character Sketch Prompts': CharacterSketchPromptsSchema,
   'Image Prompt Variations': ImagePromptVariationsSchema,
-})
-
-
-export const EpisodeManifestSchema = v.object({
-  episodes: v.record(v.string(), EpisodeEntrySchema)
 })
 
 

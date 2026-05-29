@@ -1,6 +1,6 @@
+import * as l from '~/utils/logger'
 import { mkdir } from 'node:fs/promises'
 import { basename } from 'node:path'
-import * as l from '~/utils/logger'
 import type { GeminiImageModel, Step5Metadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'

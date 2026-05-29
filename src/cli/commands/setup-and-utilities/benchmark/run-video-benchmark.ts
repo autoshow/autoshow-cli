@@ -546,7 +546,7 @@ const stringArray = (object: JsonObject, key: string): string[] =>
     .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
     .map((value) => value.trim())
 
-export const parseVideoJudgeResponse = (
+const parseVideoJudgeResponse = (
   rawText: string,
   video: VideoFileReference,
   durationSeconds: number,

@@ -1,13 +1,13 @@
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { countTokens } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 
-export type NormalizedLlmUsage = {
+type NormalizedLlmUsage = {
   inputTokenCount?: number | undefined
   outputTokenCount?: number | undefined
   totalTokenCount?: number | undefined
 }
 
-export type LlmProviderResponse = {
+type LlmProviderResponse = {
   text: string
   usage?: unknown
   rawProviderUsage?: unknown
@@ -41,7 +41,7 @@ const firstNumber = (record: Record<string, unknown>, keys: readonly string[]): 
   return undefined
 }
 
-export const normalizeLlmProviderUsage = (usage: unknown): NormalizedLlmUsage | undefined => {
+const normalizeLlmProviderUsage = (usage: unknown): NormalizedLlmUsage | undefined => {
   if (!isRecord(usage)) {
     return undefined
   }

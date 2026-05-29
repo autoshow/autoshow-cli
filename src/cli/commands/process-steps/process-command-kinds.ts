@@ -35,7 +35,7 @@ export const isExtractCommand = (command: ProcessCommand): command is 'extract' 
 export const canonicalizeProcessCommand = (command: ProcessCommand): ProcessCommand =>
   command
 
-export const getProcessCommandCapabilities = (
+const getProcessCommandCapabilities = (
   command: ProcessCommand
 ): ProcessCommandCapabilities => PROCESS_COMMAND_CAPABILITIES[command]
 

@@ -4,10 +4,14 @@ import { dirname, join } from 'node:path'
 import { err, comicLog, formatDuration } from '../../utils/logger'
 import {
   createImage,
+} from '../../image-services/image-targets'
+import {
   createImageRunStats,
   updateImageRunStatsWithCostFallback,
+} from '../../image-services/image-costs'
+import {
   writeGeneratedImage,
-} from '../../image-services'
+} from '../../image-services/image-writer'
 import {
   applyReferenceImageLimits,
   extractExpandedScenePromptData,
@@ -29,13 +33,15 @@ import {
   getImagePromptVariationLabel,
 } from './prompt-variations'
 import type {
+  ImageGenerationModel,
+  ResolvedReferenceImages,
+} from '../../types/comic-types'
+import type {
   ComicPagePanelSource,
   GenerateComicPagesDependencies,
   GenerateComicPagesOptions,
-  ImageGenerationModel,
   ImagePromptVariation,
-  ResolvedReferenceImages,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 const readComicPagePanelSource = async (
   sceneDirectory: string,

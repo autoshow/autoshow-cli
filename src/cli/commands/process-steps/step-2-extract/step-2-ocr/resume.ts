@@ -1,6 +1,6 @@
+import * as l from '~/utils/logger'
 import { join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as l from '~/utils/logger'
 import { logResumeItem, logResumeSummary } from '../../resume/resume-logging'
 import {
   DocumentMetadataSchema,

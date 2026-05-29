@@ -18,7 +18,7 @@ const isYoutubeHostname = (hostname: string): boolean =>
   hostname === 'youtu.be' ||
   hostname === 'm.youtube.com'
 
-export const isYoutubeChannelUrl = (url: string): boolean => {
+const isYoutubeChannelUrl = (url: string): boolean => {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -46,7 +46,7 @@ const ensureAbsoluteYoutubeUrl = (idOrUrl: string): string => {
   return `https://www.youtube.com/watch?v=${idOrUrl}`
 }
 
-export const buildYoutubeChannelListArgs = async (
+const buildYoutubeChannelListArgs = async (
   url: string,
   opts: YtDlpListOptions & { limit: number; all: boolean; order: 'newest' | 'oldest' }
 ): Promise<string[]> => await buildYtDlpListArgs(url, opts)

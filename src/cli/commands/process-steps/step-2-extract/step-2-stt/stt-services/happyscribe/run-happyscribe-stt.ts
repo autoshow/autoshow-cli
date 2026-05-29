@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   AsyncSttLifecycleHooks,
   HappyScribeExport,
@@ -8,7 +9,6 @@ import type {
   Step2RuntimeMetadata,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,

@@ -1,17 +1,17 @@
 import { sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 
-export const CHAPTER_SLUG_MAX_LENGTH = 60
+const CHAPTER_SLUG_MAX_LENGTH = 60
 export const ROMAN_RE = /^[ivxlcdm]+$/i
 export const ISOLATED_LABEL_RE = /^([0-9]+|[ivxlcdm]+)$/i
 export const TOC_PAGE_TITLE_RE = /^(table of contents|contents)$/i
 export const INDEX_PAGE_TITLE_RE = /^index$/i
-export const FILE_EXTENSION_RE = /\.(pdf|epub|docx?|txt|rtf)$/i
-export const OUTLINE_ARTIFACT_RE = /\b(?:topaz|scan(?:ned)?|enhance(?:d)?|ocr|djvu|archive|text|output|input)\b/i
-export const ISBNISH_OUTLINE_RE = /\b(?:97[89]\d{10}|[0-9]{9}[0-9x])\b/i
-export const TOC_ARTIFACT_RE = /\b(?:https?:\/\/|www\.|web\.archive|archive\.org|original page|orignal page|main branch|printing|\d{1,2}\/\d{1,2}\/\d{2,4})\b/i
+const FILE_EXTENSION_RE = /\.(pdf|epub|docx?|txt|rtf)$/i
+const OUTLINE_ARTIFACT_RE = /\b(?:topaz|scan(?:ned)?|enhance(?:d)?|ocr|djvu|archive|text|output|input)\b/i
+const ISBNISH_OUTLINE_RE = /\b(?:97[89]\d{10}|[0-9]{9}[0-9x])\b/i
+const TOC_ARTIFACT_RE = /\b(?:https?:\/\/|www\.|web\.archive|archive\.org|original page|orignal page|main branch|printing|\d{1,2}\/\d{1,2}\/\d{2,4})\b/i
 export const MAX_TOC_TITLE_LENGTH = 120
-export const MAX_TOC_ARABIC_PAGE = 1200
-export const MAX_TOC_ROMAN_PAGE = 100
+const MAX_TOC_ARABIC_PAGE = 1200
+const MAX_TOC_ROMAN_PAGE = 100
 
 export const stripMutoolPageBanner = (text: string): string =>
   text.replace(/^page(?:\s+\S+)?\s+\d+\s*\n?/i, '')
@@ -26,20 +26,20 @@ export const normalizeTitle = (value: string): string =>
     .replace(/\s+/g, ' ')
     .trim()
 
-export const normalizeCompactTitle = (value: string): string =>
+const normalizeCompactTitle = (value: string): string =>
   normalizeTitle(value).replace(/\s+/g, '')
 
 export const normalizeDecoratedLabel = (value: string): string =>
   value.trim().replace(/^[\-\[\]()\s]+|[\-\[\]()\s]+$/g, '')
 
-export const extractPageLines = (text: string): string[] =>
+const extractPageLines = (text: string): string[] =>
   stripMutoolPageBanner(text)
     .replace(/\r/g, '')
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
 
-export const stripLeadingIsolatedLabels = (lines: string[]): string[] => {
+const stripLeadingIsolatedLabels = (lines: string[]): string[] => {
   let index = 0
   while (index < lines.length && ISOLATED_LABEL_RE.test(normalizeDecoratedLabel(lines[index] ?? ''))) {
     index += 1
@@ -50,7 +50,7 @@ export const stripLeadingIsolatedLabels = (lines: string[]): string[] => {
 export const getTocCandidateLines = (text: string): string[] =>
   stripLeadingIsolatedLabels(extractPageLines(text))
 
-export const countAlphaChars = (value: string): number =>
+const countAlphaChars = (value: string): number =>
   (value.match(/[A-Za-z]/g) ?? []).length
 
 export const countWords = (value: string): number =>
@@ -59,7 +59,7 @@ export const countWords = (value: string): number =>
     .filter(Boolean)
     .length
 
-export const countNumericTokens = (value: string): number =>
+const countNumericTokens = (value: string): number =>
   normalizeInlineWhitespace(value).match(/\b\d+\b/g)?.length ?? 0
 
 export const isMostlyUppercase = (value: string): boolean => {
@@ -71,7 +71,7 @@ export const isMostlyUppercase = (value: string): boolean => {
   return uppercase.length / letters.length >= 0.65
 }
 
-export const isLikelyFilenameTitle = (value: string): boolean => {
+const isLikelyFilenameTitle = (value: string): boolean => {
   const trimmed = normalizeInlineWhitespace(value)
   const normalized = normalizeTitle(trimmed)
   if (trimmed.length === 0) {
@@ -111,7 +111,7 @@ export const getOutlineRejectReason = (title: string): string | undefined => {
   return undefined
 }
 
-export const romanToInt = (value: string): number => {
+const romanToInt = (value: string): number => {
   const roman = value.toUpperCase()
   const lookup: Record<string, number> = {
     I: 1,
@@ -137,7 +137,7 @@ export const romanToInt = (value: string): number => {
   return total
 }
 
-export const intToRoman = (value: number): string => {
+const intToRoman = (value: number): string => {
   if (!Number.isFinite(value) || value < 1) {
     return String(value)
   }

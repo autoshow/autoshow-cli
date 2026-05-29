@@ -38,20 +38,20 @@ const OpenAIVoiceResponseSchema = v.object({
   created_at: v.optional(v.number(), undefined)
 })
 
-export type OpenAITtsCustomVoiceAudio = {
+type OpenAITtsCustomVoiceAudio = {
   path: string
   basename: string
   mimeType: string
   sizeBytes: number
 }
 
-export type OpenAITtsCustomVoiceResult = {
+type OpenAITtsCustomVoiceResult = {
   voiceId: string
   sampleAudio: OpenAITtsCustomVoiceAudio
   voiceName: string
 }
 
-export type OpenAITtsCustomVoiceContext = {
+type OpenAITtsCustomVoiceContext = {
   voicePromise?: Promise<OpenAITtsCustomVoiceResult> | undefined
 }
 
@@ -78,12 +78,12 @@ const sanitizeGeneratedName = (value: string): string =>
     .replace(/\s+/g, '_')
     .replace(/^_+|_+$/g, '')
 
-export const defaultOpenAITtsConsentName = (audioPath: string): string => {
+const defaultOpenAITtsConsentName = (audioPath: string): string => {
   const label = sanitizeGeneratedName(basename(audioPath))
   return label || `AutoShow_consent_${Date.now()}`
 }
 
-export const defaultOpenAITtsVoiceName = (): string => `AutoShow_${Date.now()}`
+const defaultOpenAITtsVoiceName = (): string => `AutoShow_${Date.now()}`
 
 export const validateOpenAITtsCustomVoiceAudio = async (
   audioPath: string,

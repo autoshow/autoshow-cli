@@ -82,7 +82,7 @@ export const getHappyScribeApiKey = (): string | undefined =>
 export const buildHappyScribeUrl = (baseURL: string, path: string): string =>
   new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()
 
-export const formatHappyScribeOrganizationChoices = (
+const formatHappyScribeOrganizationChoices = (
   organizations: HappyScribeOrganization[]
 ): string =>
   organizations.length === 0
@@ -98,7 +98,7 @@ export const formatHappyScribeOrganizationChoices = (
         })
         .join(', ')
 
-export const listHappyScribeOrganizations = async (
+const listHappyScribeOrganizations = async (
   options: {
     apiKey?: string | undefined
     baseURL?: string | undefined

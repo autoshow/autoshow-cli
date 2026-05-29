@@ -1,6 +1,5 @@
 import type { Dirent } from 'node:fs'
 import type {
-  Awaitable,
   CharacterName,
   ExpandedScenePromptData,
   GeneratedImageResponse,
@@ -11,12 +10,6 @@ import type {
   PromptsConfig,
   StructuredScriptData,
 } from './comic-types'
-
-export type DefineCharacterSketchCommandDeps = {
-  command?: (options: CharacterSketchCommandOptions) => Awaitable<void>
-  estimatePrice?: (options: CharacterSketchCommandOptions) => Awaitable<void>
-  printHelp?: (text: string) => void
-}
 
 export type CharacterSketchCommandOptions = {
   image?: string
@@ -32,12 +25,6 @@ export type ParsedCharacterSketchArgs = CharacterSketchCommandOptions & { showHe
 
 export type DraftPromptsCommandOptions = {
   sceneSlug: string
-}
-
-export type DefineDraftScenesCommandDeps = {
-  command?: (options: DraftScenesCommandOptions) => Awaitable<void>
-  estimatePrice?: (options: DraftScenesCommandOptions) => Awaitable<void>
-  printHelp?: (text: string) => void
 }
 
 export type DraftScenesStage = 'structure' | 'prompt' | 'scene' | 'panel-prompts'
@@ -61,7 +48,7 @@ export type GenerateSceneJsonOptions = {
   model: LlmModel
 }
 
-export type NormalizedSceneResponse = {
+type NormalizedSceneResponse = {
   model: string
   text: string
   usage?: DraftSceneResponseUsage
@@ -81,12 +68,6 @@ export type DraftSceneRunStats = {
   totalCachedTokens: number
   totalCost: number
   totalDurationMs: number
-}
-
-export type DefineGenerateImagesCommandDeps = {
-  command?: (options: GenerateImagesCommandOptions) => Awaitable<void>
-  estimatePrice?: (options: GenerateImagesCommandOptions) => Awaitable<void>
-  printHelp?: (text: string) => void
 }
 
 export type GenerateImagesTarget = 'images' | 'sketches' | 'both'

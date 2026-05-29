@@ -44,7 +44,7 @@ export type GeminiGenerateContentUsageMetadata = {
   [key: string]: unknown
 }
 
-export type GeminiGenerateContentResponse = {
+type GeminiGenerateContentResponse = {
   candidates?: Array<{
     content?: {
       parts?: GeminiPart[] | undefined
@@ -68,7 +68,7 @@ export type GeminiGenerateContentResponse = {
   [key: string]: unknown
 }
 
-export type GeminiFile = {
+type GeminiFile = {
   name?: string | undefined
   uri?: string | undefined
   mimeType?: string | undefined
@@ -76,47 +76,29 @@ export type GeminiFile = {
   [key: string]: unknown
 }
 
-export type GeminiGeneratedImage = {
-  image?: {
-    imageBytes?: string | undefined
-    mimeType?: string | undefined
-  } | undefined
-  raiFilteredReason?: unknown
-  safetyAttributes?: unknown
-}
-
-export type GeminiGenerateImagesResponse = {
-  generatedImages?: GeminiGeneratedImage[] | undefined
-  positivePromptSafetyAttributes?: unknown
-  sdkHttpResponse?: {
-    headers: Headers
-    status: number
-  } | undefined
-}
-
-export type GeminiVideo = {
+type GeminiVideo = {
   uri?: string | undefined
   videoBytes?: string | undefined
   mimeType?: string | undefined
 }
 
-export type GeminiInlineMedia = {
+type GeminiInlineMedia = {
   inlineData: {
     mimeType: string
     data: string
   }
 }
 
-export type GeminiVideoReferenceImage = {
+type GeminiVideoReferenceImage = {
   image: GeminiInlineMedia
   referenceType: 'asset'
 }
 
-export type GeminiGeneratedVideo = {
+type GeminiGeneratedVideo = {
   video?: GeminiVideo | undefined
 }
 
-export type GeminiVideoOperation = {
+type GeminiVideoOperation = {
   name?: string | undefined
   done?: boolean | undefined
   error?: unknown
@@ -250,7 +232,7 @@ const formatGeminiErrorMessage = (body: unknown, status: number): string => {
   return `Gemini API request failed with status ${status}`
 }
 
-export const normalizeGeminiModelPath = (model: string): string => {
+const normalizeGeminiModelPath = (model: string): string => {
   if (!model || model.includes('..') || model.includes('?') || model.includes('&')) {
     throw new Error('invalid Gemini model parameter')
   }
@@ -292,7 +274,7 @@ const normalizeGeminiContents = (
   return [geminiUserContent(contents as Array<string | GeminiPart>)]
 }
 
-export const extractGeminiResponseText = (response: GeminiGenerateContentResponse): string | undefined => {
+const extractGeminiResponseText = (response: GeminiGenerateContentResponse): string | undefined => {
   const parts = response.candidates?.[0]?.content?.parts ?? []
   let text = ''
   let found = false
@@ -341,55 +323,6 @@ export const geminiGenerateContent = async (
   response.text = extractGeminiResponseText(response)
   response.sdkHttpResponse = { headers, status }
   return response
-}
-
-export const geminiGenerateImages = async (
-  apiKey: string,
-  params: {
-    model: string
-    prompt: string
-    numberOfImages: number
-    aspectRatio?: string | undefined
-    imageSize?: string | undefined
-    personGeneration?: string | undefined
-    abortSignal?: AbortSignal | undefined
-  }
-): Promise<GeminiGenerateImagesResponse> => {
-  const body: Record<string, unknown> = {
-    instances: [{ prompt: params.prompt }],
-    parameters: {
-      sampleCount: params.numberOfImages,
-      ...(params.aspectRatio ? { aspectRatio: params.aspectRatio } : {}),
-      ...(params.imageSize ? { sampleImageSize: params.imageSize } : {}),
-      ...(params.personGeneration ? { personGeneration: params.personGeneration } : {})
-    }
-  }
-  const modelPath = normalizeGeminiModelPath(params.model)
-  const { json, headers, status } = await geminiJsonRequest(apiKey, `${encodePath(modelPath)}:predict`, {
-    method: 'POST',
-    body,
-    ...(params.abortSignal ? { abortSignal: params.abortSignal } : {})
-  })
-  const raw = isRecord(json) ? json : {}
-  const predictions = Array.isArray(raw['predictions']) ? raw['predictions'] : []
-  const generatedImages = predictions
-    .map((prediction): GeminiGeneratedImage | undefined => {
-      if (!isRecord(prediction)) return undefined
-      return {
-        image: {
-          imageBytes: typeof prediction['bytesBase64Encoded'] === 'string' ? prediction['bytesBase64Encoded'] : undefined,
-          mimeType: typeof prediction['mimeType'] === 'string' ? prediction['mimeType'] : undefined
-        },
-        ...(prediction['raiFilteredReason'] !== undefined ? { raiFilteredReason: prediction['raiFilteredReason'] } : {}),
-        ...(prediction['safetyAttributes'] !== undefined ? { safetyAttributes: prediction['safetyAttributes'] } : {})
-      }
-    })
-    .filter((image): image is GeminiGeneratedImage => image !== undefined)
-  return {
-    generatedImages,
-    ...(raw['positivePromptSafetyAttributes'] !== undefined ? { positivePromptSafetyAttributes: raw['positivePromptSafetyAttributes'] } : {}),
-    sdkHttpResponse: { headers, status }
-  }
 }
 
 export const geminiPredictLongRunning = async (

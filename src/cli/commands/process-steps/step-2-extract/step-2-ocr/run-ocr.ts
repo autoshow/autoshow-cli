@@ -13,9 +13,10 @@ import type {
 import { CLIUsageError } from '~/utils/error-handler'
 import { writeFile } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
-import { buildPdfChapterArtifacts } from './chapters'
-import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
+import { buildPdfChapterArtifacts } from './chapters/artifacts'
 import { buildEpubTextOutput } from './epub/export'
+import { runEpubBunInspect } from './epub/run-epub-bun-inspect'
+import { runEpubCalibreInspect } from './epub/run-epub-calibre-inspect'
 import {
   countSelectedOcrEngines,
   engineSuffix,

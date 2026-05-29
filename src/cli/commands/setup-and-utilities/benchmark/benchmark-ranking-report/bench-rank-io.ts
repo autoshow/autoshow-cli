@@ -37,7 +37,7 @@ export const getBoolean = (object: JsonObject, key: string): boolean | undefined
 export const getNestedNumber = (object: JsonObject | undefined, key: string): number | undefined =>
   object ? getNumber(object, key) : undefined
 
-export const normalizePath = (path: string): string => path.split('\\').join('/')
+const normalizePath = (path: string): string => path.split('\\').join('/')
 
 export const relativeToProject = (path: string): string => normalizePath(relative(PROJECT_ROOT, path))
 

@@ -1,7 +1,5 @@
-import * as l from '~/utils/logger'
 import { SCRAPECREATORS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
-import { logProviderReadiness } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
 const YOUTUBE_HOST_PATTERNS = [
   /(^|\.)youtube\.com$/i,
@@ -46,27 +44,6 @@ export const describeScrapeCreatorsUnsupportedSource = (
   }
 
   return `ScrapeCreators YouTube transcript retrieval only supports youtube.com and youtu.be URLs; unsupported source URL: ${sourceUrl}`
-}
-
-export const setupScrapeCreatorsStt = async (): Promise<void> => {
-  const apiKey = readEnv('SCRAPECREATORS_API_KEY')
-  if (apiKey) {
-    logProviderReadiness(l, {
-      provider: 'scrapecreators',
-      capability: 'youtube-transcript',
-      status: 'configured',
-      envKey: 'SCRAPECREATORS_API_KEY',
-      detail: getScrapeCreatorsBaseUrl()
-    })
-  } else {
-    logProviderReadiness(l, {
-      provider: 'scrapecreators',
-      capability: 'youtube-transcript',
-      status: 'missing',
-      envKey: 'SCRAPECREATORS_API_KEY',
-      detail: 'Set SCRAPECREATORS_API_KEY environment variable to use ScrapeCreators YouTube transcript retrieval'
-    })
-  }
 }
 
 export const ensureScrapeCreatorsSttSetup = async (): Promise<void> => {

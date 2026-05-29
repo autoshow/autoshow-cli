@@ -10,8 +10,8 @@ import {
 
 export const mistralTtsModel = 'voxtral-mini-tts-2603'
 export const mistralRefAudioPath = 'input/examples/audio/anthony-voice.mp3'
-export const shortTtsInputPath = 'input/examples/tts/0-tts-short.txt'
-export const shortTtsInputTitle = '0-tts-short'
+const shortTtsInputPath = 'input/examples/tts/0-tts-short.txt'
+const shortTtsInputTitle = '0-tts-short'
 
 export const openaiTts = {
   provider: 'openai',

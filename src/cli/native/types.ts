@@ -62,7 +62,7 @@ export type CliCommandContext = {
   store: Record<string, unknown>
 }
 
-export type CliCommandHandler = (ctx: CliCommandContext) => void | Promise<void>
+type CliCommandHandler = (ctx: CliCommandContext) => void | Promise<void>
 
 export type CliCommandDefinition = {
   name: string
@@ -86,7 +86,7 @@ export type CliRootDefinition = {
   flagGroups: readonly CliHelpGroup[]
 }
 
-export type CliParseMode = 'command' | 'help' | 'version'
+type CliParseMode = 'command' | 'help' | 'version'
 
 export type CliParseResult = {
   mode: CliParseMode

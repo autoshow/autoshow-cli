@@ -16,15 +16,17 @@ import {
   parseImagePromptVariations,
 } from '../commands/generate-images/prompt-variations'
 import type {
-  ParsedCharacterSketchArgs,
   ParsedDraftCommandArgs,
   ParsedGenerateBaseArgs,
-  ParsedGenerateImagesArgs,
   ParsedImageModel,
   ParsedImageQuality,
   ParsedImageSize,
   ParsedLlmModel,
-} from '../types'
+} from '../types/comic-types'
+import type {
+  ParsedCharacterSketchArgs,
+  ParsedGenerateImagesArgs,
+} from '../types/comic-command-types'
 import {
   COMIC_GRID_PANEL_SIZE,
   DEFAULT_PANELS_PER_IMAGE,
@@ -38,9 +40,9 @@ import {
 export const CHARACTER_SKETCH_COMMAND = 'character-sketch'
 export const DRAFT_SCENES_COMMAND = 'draft-scenes'
 export const GENERATE_IMAGES_COMMAND = 'generate-images'
-export const DRAFT_SCENES_ONLY_VALUES = ['structure', 'prompt', 'scene', 'panel-prompts'] as const
-export const GENERATE_IMAGES_TARGET_VALUES = ['images', 'sketches', 'both'] as const
-export const PANEL_PROMPTS_TARGET_MIGRATION =
+const DRAFT_SCENES_ONLY_VALUES = ['structure', 'prompt', 'scene', 'panel-prompts'] as const
+const GENERATE_IMAGES_TARGET_VALUES = ['images', 'sketches', 'both'] as const
+const PANEL_PROMPTS_TARGET_MIGRATION =
   'The generate-images "prompts" target was removed. Use: bun as comic draft-scenes <script-path> --only panel-prompts'
 
 const IMAGE_QUALITY_OPTIONS = new Set<string>(IMAGE_GENERATION_QUALITIES)

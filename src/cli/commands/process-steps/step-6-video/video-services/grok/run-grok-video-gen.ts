@@ -1,5 +1,5 @@
-import * as v from 'valibot'
 import * as l from '~/utils/logger'
+import * as v from 'valibot'
 import type { GrokVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'

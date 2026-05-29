@@ -38,8 +38,8 @@ import {
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb-assets'
 export { HOSTED_PROVIDER_ENV_CHECKS } from './hosted-provider-config'
 
-export type DoctorStatus = 'OK' | 'MISSING' | 'WARN' | 'INFO'
-export type DoctorSeverity = 'warn' | 'info'
+type DoctorStatus = 'OK' | 'MISSING' | 'WARN' | 'INFO'
+type DoctorSeverity = 'warn' | 'info'
 
 export type DoctorCheck = {
   label: string
@@ -49,12 +49,12 @@ export type DoctorCheck = {
   nextStep?: string | undefined
 }
 
-export type DoctorSection = {
+type DoctorSection = {
   title: string
   checks: DoctorCheck[]
 }
 
-export type DoctorReport = {
+type DoctorReport = {
   sections: DoctorSection[]
   hasWarnings: boolean
   nextSteps: string[]
@@ -493,7 +493,7 @@ const collectLocalModelAssetChecks = async (probes: DoctorProbes): Promise<Docto
   ]
 })
 
-export const buildHostedProviderEnvChecks = (
+const buildHostedProviderEnvChecks = (
   env: Record<string, string | undefined>,
   config?: AutoshowConfig
 ): DoctorCheck[] =>
@@ -608,7 +608,7 @@ export const collectDoctorNextSteps = (sections: readonly DoctorSection[]): stri
   return [...steps]
 }
 
-export const hasDoctorWarnings = (sections: readonly DoctorSection[]): boolean =>
+const hasDoctorWarnings = (sections: readonly DoctorSection[]): boolean =>
   sections.some(section => section.checks.some(item => item.severity === 'warn' && item.status !== 'OK'))
 
 export const collectDoctorReport = async (

@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   AssemblyAiHttpError,
   AsyncSttLifecycleHooks,
@@ -9,7 +10,6 @@ import type {
   RetryClass
 } from '~/types'
 import { AssemblyAiTranscriptResponseSchema } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
   logSttDiarizationConfig,

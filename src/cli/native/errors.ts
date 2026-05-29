@@ -1,4 +1,4 @@
-export type NativeCliUsageErrorCode =
+type NativeCliUsageErrorCode =
   | 'invalid-parameters'
   | 'invalid-schema'
   | 'missing-required-flag'

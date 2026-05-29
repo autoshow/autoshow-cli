@@ -23,17 +23,19 @@ import {
 } from '../../utils/project-paths'
 import { assertPanelPromptSourceCoverage } from '../../utils/source-coverage-utils'
 import type {
+  ImageRunStats,
+  ImageGenerationQuality,
+  ImageGenerationSize,
+} from '../../types/comic-types'
+import type {
   DraftScenesCommandOptions,
   GenerateComicPagesOptions,
   GenerateImagesTarget,
   GenerateImagesCommandOptions,
   GeneratePanelImagesOptions,
   GenerateSketchesCommandOptions,
-  ImageRunStats,
-  ImageGenerationQuality,
-  ImageGenerationSize,
   PanelPromptsCommandOptions,
-} from '../../types'
+} from '../../types/comic-command-types'
 import type { SourceCoverageReport } from '../../utils/source-coverage-utils'
 
 
@@ -41,7 +43,7 @@ import type { SourceCoverageReport } from '../../utils/source-coverage-utils'
 const DEFAULT_IMAGE_SIZE: ImageGenerationSize = COMIC_GRID_PANEL_SIZE
 const DEFAULT_IMAGE_QUALITY: ImageGenerationQuality = 'high'
 
-export type GenerateImagesWorkflowDependencies = {
+type GenerateImagesWorkflowDependencies = {
   runDraftScenes?: (options: DraftScenesCommandOptions) => Promise<unknown>
   runPanelPrompts?: (options: PanelPromptsCommandOptions) => Promise<unknown>
   runSketches?: (options: GenerateSketchesCommandOptions) => Promise<ImageRunStats | void>
@@ -99,7 +101,7 @@ const formatPanelSelection = (panels: GenerateImagesCommandOptions['panels']): s
   return panels.join(',')
 }
 
-export const runFinalPanelImageStage = async (options: GenerateImagesCommandOptions): Promise<ImageRunStats> => {
+const runFinalPanelImageStage = async (options: GenerateImagesCommandOptions): Promise<ImageRunStats> => {
   const { sceneSlug } = options
   const panelsPerImage = options.panelsPerImage ?? DEFAULT_PANELS_PER_IMAGE
   const usePageMode = !options.grid && panelsPerImage > 1

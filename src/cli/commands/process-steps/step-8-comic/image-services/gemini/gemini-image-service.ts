@@ -13,7 +13,7 @@ import type {
   GeneratedImageResponse,
   ImageGenerationSize,
   ImageUsage,
-} from '../../types'
+} from '../../types/comic-types'
 
 
 const getGeminiModalityTokenCount = (

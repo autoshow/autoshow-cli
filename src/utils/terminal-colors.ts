@@ -6,7 +6,7 @@ type TerminalColorStream = {
   isTTY?: boolean | undefined
 }
 
-export type TerminalPaintOptions = {
+type TerminalPaintOptions = {
   enabled?: boolean | undefined
   stream?: TerminalColorStream | undefined
 }

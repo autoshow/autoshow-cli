@@ -10,7 +10,7 @@ export const normalizeRepoPath = (path: string | null | undefined): string | nul
   return normalize(relative(process.cwd(), abs)).replace(/\\/g, '/')
 }
 
-export const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
+const stripAnsi = (text: string): string => text.replace(/\x1b\[[0-9;]*m/g, '')
 
 export const getFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null
@@ -115,7 +115,7 @@ export const formatTimestampForDir = (date: Date): string => {
   return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
 }
 
-export const formatElapsedForOutput = (elapsedMs: number): string => {
+const formatElapsedForOutput = (elapsedMs: number): string => {
   const safeElapsedMs = Math.max(0, Math.round(elapsedMs))
   const hours = Math.floor(safeElapsedMs / 3_600_000)
   const minutes = Math.floor((safeElapsedMs % 3_600_000) / 60_000)

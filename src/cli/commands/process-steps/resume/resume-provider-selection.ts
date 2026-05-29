@@ -3,7 +3,7 @@ export type ResumeProviderIdentity = {
   model: string
 }
 
-export type AdditiveResumeProviderSelection<TProvider extends ResumeProviderIdentity> = {
+type AdditiveResumeProviderSelection<TProvider extends ResumeProviderIdentity> = {
   requestedProviders: TProvider[]
   providersToRun: TProvider[]
   skippedSuccessfulProviders: TProvider[]

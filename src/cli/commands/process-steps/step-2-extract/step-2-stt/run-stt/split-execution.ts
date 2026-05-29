@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   IndexedTranscriptionChunk,
   Step2Metadata,
@@ -7,7 +8,6 @@ import type {
 } from '~/types'
 import type { SplitPolicyTarget } from '~/types'
 import { mkdir } from 'node:fs/promises'
-import * as l from '~/utils/logger'
 import { mergeStep2TimingMetadata } from '../stt-timing-metadata'
 import { splitAudioFile } from '../stt-utils/audio-splitter'
 import { formatTranscriptText } from '../stt-utils/stt-utils'

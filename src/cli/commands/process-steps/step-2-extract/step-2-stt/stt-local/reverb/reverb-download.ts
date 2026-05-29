@@ -28,7 +28,7 @@ export const checkReverbModelExists = async (): Promise<boolean> => {
   return await checkReverbAsrAssets()
 }
 
-export const checkDiarizationModelCached = async (): Promise<boolean> => {
+const checkDiarizationModelCached = async (): Promise<boolean> => {
   return await checkReverbDiarizationAssets()
 }
 

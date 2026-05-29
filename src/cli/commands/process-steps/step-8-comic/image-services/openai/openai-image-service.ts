@@ -9,9 +9,9 @@ import type {
   ImageUsage,
   ImageEditInputFidelity,
   OpenAiImageGenerationModel,
-} from '../../types'
+} from '../../types/comic-types'
 
-export type OpenAiImageEditParams = {
+type OpenAiImageEditParams = {
   model: OpenAiImageGenerationModel
   image: string[]
   prompt: string
@@ -22,7 +22,7 @@ export type OpenAiImageEditParams = {
   output_format: 'png'
 }
 
-export type OpenAiImageGenerateParams = {
+type OpenAiImageGenerateParams = {
   model: OpenAiImageGenerationModel
   prompt: string
   n: 1
@@ -31,7 +31,7 @@ export type OpenAiImageGenerateParams = {
   output_format: 'png'
 }
 
-export const buildOpenAiImageEditParams = (
+const buildOpenAiImageEditParams = (
   normalizedPrompt: string,
   referenceImages: string[],
   model: OpenAiImageGenerationModel,
@@ -52,7 +52,7 @@ export const buildOpenAiImageEditParams = (
   }
 }
 
-export const buildOpenAiImageGenerateParams = (
+const buildOpenAiImageGenerateParams = (
   normalizedPrompt: string,
   model: OpenAiImageGenerationModel,
   size: ImageGenerationSize,
@@ -68,7 +68,7 @@ export const buildOpenAiImageGenerateParams = (
   }
 }
 
-export const buildOpenAiImageEditForm = (params: OpenAiImageEditParams): FormData => {
+const buildOpenAiImageEditForm = (params: OpenAiImageEditParams): FormData => {
   const form = new FormData()
   form.append('model', params.model)
   form.append('prompt', params.prompt)

@@ -33,7 +33,7 @@ const envExistsAndValid = async (): Promise<boolean> => {
   return check.exitCode === 0
 }
 
-export const setupKittenTtsEnvironment = async (): Promise<void> => {
+const setupKittenTtsEnvironment = async (): Promise<void> => {
   l.write('info', 'Setting up Kitten TTS environment')
 
   await setupUv()

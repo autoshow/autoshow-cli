@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   AsyncSttLifecycleHooks,
   DiarizationOptions,
@@ -5,7 +6,6 @@ import type {
   Step2RuntimeMetadata,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
   logSttSegmentLifecycle

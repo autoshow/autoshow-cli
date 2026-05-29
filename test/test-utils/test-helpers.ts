@@ -29,16 +29,11 @@ const resolveTestOutputDir = (): string => {
 
 export const OUTPUT_DIR = resolveTestOutputDir()
 process.env['AUTOSHOW_OUTPUT_DIR'] = OUTPUT_DIR
-export const EXAMPLE_AUDIO_URL = 'https://ajc.pics/autoshow/examples/1-audio.mp3'
+const EXAMPLE_AUDIO_URL = 'https://ajc.pics/autoshow/examples/1-audio.mp3'
 export const EXAMPLE_SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
-export const EXAMPLE_VIDEO_URL = 'https://ajc.pics/autoshow/examples/2-video.mp4'
+
 export const LOCAL_EXAMPLE_AUDIO_PATH = join('input/examples/audio', '1-audio.mp3')
 export const LOCAL_EXAMPLE_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')
-export const LOCAL_EXAMPLE_VIDEO_PATH = join('input/examples/video', '2-video.mp4')
-export const SHORT_LOCAL_AUDIO_PATH = LOCAL_EXAMPLE_SHORT_AUDIO_PATH
-export const SHORT_LOCAL_AUDIO_TITLE = basename(SHORT_LOCAL_AUDIO_PATH).replace(/\.[^/.]+$/, '')
-export const STABLE_AUDIO_URL = EXAMPLE_AUDIO_URL
-export const STABLE_AUDIO_TITLE = new URL(STABLE_AUDIO_URL).pathname.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
 export const STABLE_EXAMPLE_AUDIO_URL = EXAMPLE_AUDIO_URL
 export const STABLE_EXAMPLE_AUDIO_TITLE = STABLE_EXAMPLE_AUDIO_URL.split('/').pop()?.replace(/\.[^/.]+$/, '') ?? ''
 export const STABLE_TTS_MD_PATH = 'input/examples/tts/1-tts.md'
@@ -270,7 +265,7 @@ export type RunCommandOptions = {
   timeoutMs?: number
 }
 
-export type RunCommandResult = {
+type RunCommandResult = {
   exitCode: number
   stdout: string
   stderr: string
@@ -461,23 +456,6 @@ export const findLatestDirectory = async (
   }
 }
 
-export const cleanupOutput = async (): Promise<void> => {
-  if (shouldPreserveArtifacts()) {
-    return
-  }
-
-  try {
-    await mkdir(OUTPUT_DIR, { recursive: true })
-    const entries = await readdir(OUTPUT_DIR, { withFileTypes: true })
-    await Promise.all(
-      entries
-        .filter(entry => entry.isDirectory())
-        .map(entry => rm(`${OUTPUT_DIR}/${entry.name}`, { recursive: true, force: true }))
-    )
-  } catch {
-  }
-}
-
 export const cleanupTestOutput = async (titleSuffix: string): Promise<void> => {
   if (shouldPreserveArtifacts()) {
     return
@@ -487,36 +465,6 @@ export const cleanupTestOutput = async (titleSuffix: string): Promise<void> => {
     const dirs = await listMatchingOutputDirs(titleSuffix)
     await Promise.all(dirs.map(d => rm(d, { recursive: true, force: true })))
   } catch {
-  }
-}
-
-export const hasConfiguredEnvVar = async (key: string): Promise<boolean> => {
-  const direct = process.env[key]
-  if (typeof direct === 'string' && direct.trim().length > 0) {
-    return true
-  }
-
-  try {
-    const text = await Bun.file('.env').text()
-    for (const line of text.split('\n')) {
-      const trimmed = line.trim()
-      if (trimmed.length === 0 || trimmed.startsWith('#')) {
-        continue
-      }
-      const idx = trimmed.indexOf('=')
-      if (idx <= 0) {
-        continue
-      }
-      const k = trimmed.slice(0, idx).trim()
-      if (k !== key) {
-        continue
-      }
-      const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
-      return value.length > 0
-    }
-    return false
-  } catch {
-    return false
   }
 }
 

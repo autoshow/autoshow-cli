@@ -116,7 +116,7 @@ const buildDefuddleWebMetadata = (
   return web
 }
 
-export const runDefuddleUrl = async (
+const runDefuddleUrl = async (
   source: string,
   sourceUrl?: string,
   options?: UrlArticleRunOptions

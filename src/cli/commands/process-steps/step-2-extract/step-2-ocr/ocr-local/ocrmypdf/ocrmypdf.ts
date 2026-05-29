@@ -23,7 +23,7 @@ const installOcrmypdf = async (): Promise<void> => {
   throw new Error('Unsupported platform for OCRmyPDF setup')
 }
 
-export const setupOcrmypdf = async (): Promise<void> => {
+const setupOcrmypdf = async (): Promise<void> => {
   if (checkOcrmypdf()) {
     return
   }

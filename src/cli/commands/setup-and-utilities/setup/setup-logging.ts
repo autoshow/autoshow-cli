@@ -16,7 +16,7 @@ const isPathLikeDetail = (detail: string): boolean => {
     || value.split('/').length > 2
 }
 
-export const buildSetupToolStatusRows = (
+const buildSetupToolStatusRows = (
   summary: SetupToolStatus
 ): SetupToolStatusRow[] => {
   const detail = summary.detail ?? ''
@@ -82,20 +82,3 @@ export const buildProviderReadinessTable = (
     envKey: summary.envKey ?? '',
     detail: summary.detail ?? ''
   }], ['provider', 'capability', 'status', 'envKey', 'detail'])
-
-export const logProviderReadiness = (
-  logger: TableLogger,
-  summary: {
-    provider: string
-    capability: string
-    status: HostedProviderStatus
-    envKey?: string | undefined
-    detail?: string | undefined
-  }
-): void => {
-  logger.write(summary.status === 'configured' ? 'success' : 'info', 'Provider Configuration', {
-    category: 'command',
-    humanTable: buildProviderReadinessTable(summary),
-    metadata: summary
-  })
-}

@@ -1,5 +1,5 @@
-import { mkdir, stat } from 'node:fs/promises'
 import * as l from '~/utils/logger'
+import { mkdir, stat } from 'node:fs/promises'
 import { createKeyValueTable, logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
@@ -16,7 +16,7 @@ import type {
   TableLogger
 } from '~/types'
 
-export const buildMediaGenerationStatusTable = (
+const buildMediaGenerationStatusTable = (
   summary: MediaGenerationStatus
 ): HumanLogTable => {
   const entries: Array<readonly [string, unknown]> = [

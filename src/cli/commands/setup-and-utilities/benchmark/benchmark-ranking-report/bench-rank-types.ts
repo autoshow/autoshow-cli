@@ -1,6 +1,6 @@
 export type JsonObject = Record<string, unknown>
 
-export type SourceKind = 'raw' | 'dashboard'
+type SourceKind = 'raw' | 'dashboard'
 
 export type SttDiarizationGroup = 'diarization' | 'nonDiarization'
 

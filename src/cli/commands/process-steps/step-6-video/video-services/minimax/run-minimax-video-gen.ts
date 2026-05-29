@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import * as v from 'valibot'
 import type { MinimaxVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
@@ -5,7 +6,6 @@ import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-step
 import { readEnv } from '~/utils/validate/env-utils'
 import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
-import * as l from '~/utils/logger'
 import { normalizeMinimaxDurationForApi, normalizeMinimaxResolutionForApi } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'

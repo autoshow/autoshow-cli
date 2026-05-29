@@ -140,17 +140,6 @@ export const defineInvalidModelTest = (name: string, args: string[]): void => {
   }, E2E_TEST_TIMEOUT_MS)
 }
 
-export const definePriceEstimateTest = (
-  _budgetKey: string,
-  name: string,
-  args: string[]
-): void => {
-  test(name, async () => {
-    const result = await runCommand(args)
-    expect(result.exitCode).toBe(0)
-  }, E2E_TEST_TIMEOUT_MS)
-}
-
 export const requireConfiguredValue = <T>(
   value: T | null | undefined,
   message: string

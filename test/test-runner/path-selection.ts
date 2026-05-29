@@ -8,7 +8,7 @@ export const normalizePathFilter = (pathFilter: string): string => {
     .replace(/\/+$/, '')
 }
 
-export const matchPathFilters = (file: string, pathFilters: string[]): boolean => {
+const matchPathFilters = (file: string, pathFilters: string[]): boolean => {
   return pathFilters.some(pathFilter => {
     const normalizedFilter = normalizePathFilter(pathFilter)
     const prefix = normalizedFilter.endsWith('/') ? normalizedFilter : `${normalizedFilter}/`

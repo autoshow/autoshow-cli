@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   ElevenLabsHttpError,
   Step2Metadata,
@@ -8,7 +9,6 @@ import type {
   RetryClass
 } from '~/types'
 import { ElevenLabsSttResponseSchema } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttDiarizationConfig,
   logSttSegmentLifecycle

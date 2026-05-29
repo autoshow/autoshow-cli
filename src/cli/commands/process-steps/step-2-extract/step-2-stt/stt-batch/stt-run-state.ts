@@ -174,7 +174,7 @@ export const toRecordedProviderError = (
   ...(failure.rawResponseFile ? { rawResponseFile: failure.rawResponseFile } : {})
 })
 
-export const parseStoredRequestedTarget = (value: unknown): SttTarget | undefined => {
+const parseStoredRequestedTarget = (value: unknown): SttTarget | undefined => {
   if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
     return undefined
   }
@@ -194,7 +194,7 @@ export const parseStoredRequestedTargets = (
     ? entry['requestedProviders'].map(parseStoredRequestedTarget).filter((target): target is SttTarget => target !== undefined)
     : []
 
-export const parseStoredProviderState = (value: unknown): SttProviderState | undefined => {
+const parseStoredProviderState = (value: unknown): SttProviderState | undefined => {
   if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
     return undefined
   }
@@ -230,7 +230,7 @@ export const parseStoredProviderState = (value: unknown): SttProviderState | und
   }
 }
 
-export const parseStoredProviderStateMap = (
+const parseStoredProviderStateMap = (
   entry: Record<string, unknown>
 ): Map<string, SttProviderState> => {
   const states = new Map<string, SttProviderState>()
@@ -245,7 +245,7 @@ export const parseStoredProviderStateMap = (
   return states
 }
 
-export const parseSuccessfulProviderKeys = (
+const parseSuccessfulProviderKeys = (
   entry: Record<string, unknown>
 ): Set<string> => {
   const values = Array.isArray(entry['step2'])

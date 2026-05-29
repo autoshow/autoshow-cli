@@ -11,7 +11,7 @@ import type {
   ScenePromptData,
   StructuredScriptData,
   StructuredScriptSourceSegment,
-} from '../types'
+} from '../types/comic-types'
 
 type SourceCoverageField = 'speakerLabel' | 'delivery' | 'text'
 
@@ -22,12 +22,12 @@ type SourceCoverageItem = {
   text: string
 }
 
-export type SourcePromptFile = {
+type SourcePromptFile = {
   path: string
   content: string
 }
 
-export type MissingSourceCoverageItem = {
+type MissingSourceCoverageItem = {
   id: string
   type: StructuredScriptSourceSegment['type']
   field: SourceCoverageField
@@ -215,7 +215,7 @@ export const verifySourceSegmentCoverageInPromptFiles = (
   }
 }
 
-export const formatPromptCoverageError = (report: SourceCoverageReport): string => {
+const formatPromptCoverageError = (report: SourceCoverageReport): string => {
   const details = report.missingItems
     .slice(0, 8)
     .map(item => `${item.id}.${item.field} "${item.excerpt}"`)
@@ -265,7 +265,7 @@ const readPanelPromptFiles = async (sceneSlug: string): Promise<SourcePromptFile
   return promptFiles
 }
 
-export const verifyPanelPromptSourceCoverage = async (
+const verifyPanelPromptSourceCoverage = async (
   sceneSlug: string
 ): Promise<SourceCoverageReport> => {
   const structuredScript = await parseJsonFile<StructuredScriptData>(

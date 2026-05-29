@@ -1,34 +1,22 @@
 import type { Dirent } from 'node:fs'
 import type * as v from 'valibot'
 import type {
-  CharacterSketchCommandOptions,
   ComicPanelSelection,
   DraftScenesCommandOptions,
   GenerateImagesCommandOptions,
 } from './comic-command-types'
+export type {
+  CharacterFileNumber,
+  CharacterFilePath,
+  StructuredScriptBeatType
+} from '../schemas/schemas'
 
-export type Awaitable<T> = T | Promise<T>
-
-export type CommandContextRecord = Record<string, unknown>
-
-export type RawArgsCommandDefinition = {
-  name: string
-  description: string
-  flags: Record<string, never>
-  parameters: readonly ['[args...]']
-  ignore: () => boolean
-  run: (rawArgs: string[]) => Promise<void>
-  handler: (context: unknown) => Promise<void>
-}
-
-export type ImageProvider = 'openai' | 'gemini'
-
-export type OpenAiImageRequestTarget = {
+type OpenAiImageRequestTarget = {
   provider: 'openai'
   model: OpenAiImageGenerationModel
 }
 
-export type GeminiImageRequestTarget = {
+type GeminiImageRequestTarget = {
   provider: 'gemini'
   model: GeminiImageGenerationModel
 }
@@ -57,8 +45,6 @@ export type ImageGenerationSize =
 
 export type ImageGenerationQuality = (typeof import('../image-services/image-types').IMAGE_GENERATION_QUALITIES)[number]
 
-export type ConcreteImageSize = Exclude<ImageGenerationSize, 'auto'>
-
 export type ConcreteImageQuality = Exclude<ImageGenerationQuality, 'auto'>
 
 export type ImageUsage = {
@@ -75,7 +61,7 @@ export type ImageUsage = {
   total_tokens: number
 }
 
-export type NormalizedImageResult = {
+type NormalizedImageResult = {
   imageBase64: string
   mimeType?: string
   usage?: ImageUsage
@@ -157,8 +143,6 @@ export type GeminiImageConfig = {
   imageSize: '1K'
 }
 
-export type CliImageSize = '1536x1024' | '1024x1024' | '1024x1536' | 'auto'
-
 export type LlmModel = OpenAiLlmModel | GeminiLlmModel | GrokLlmModel
 
 export type ImageGenerationModel = OpenAiImageGenerationModel | GeminiImageGenerationModel
@@ -175,7 +159,7 @@ export type TokenPricing = {
   output: number
 }
 
-export type PerImageOutputPricing = {
+type PerImageOutputPricing = {
   low: Record<'1024x1024' | '1024x1536' | '1536x1024', number>
   medium: Record<'1024x1024' | '1024x1536' | '1536x1024', number>
   high: Record<'1024x1024' | '1024x1536' | '1536x1024', number>
@@ -187,71 +171,7 @@ export type ImageModelPricing = {
   perImageOutput: PerImageOutputPricing
 }
 
-export type CliCommandHandlers = {
-  characterSketch: (options: CharacterSketchCommandOptions) => Awaitable<void>
-  draftScenes: (options: DraftScenesCommandOptions) => Awaitable<void>
-  generateImages: (options: GenerateImagesCommandOptions) => Awaitable<void>
-}
-
-export type CliPriceHandlers = {
-  characterSketch: (options: CharacterSketchCommandOptions) => Awaitable<void>
-  draftScenes: (options: DraftScenesCommandOptions) => Awaitable<void>
-  generateImages: (options: GenerateImagesCommandOptions) => Awaitable<void>
-}
-
-export type CreateCliDeps = {
-  commandHandlers?: Partial<CliCommandHandlers>
-  priceHandlers?: Partial<CliPriceHandlers>
-  printHelp?: (text: string) => void
-}
-
-export type CreatedCli = {
-  commandDefinitions: RawArgsCommandDefinition[]
-  clerc: unknown | null
-  run: (argv?: string[]) => Promise<void>
-}
-
-export type ChainableClerc = Record<string, unknown>
-
-export type ChainMethod = (...args: unknown[]) => unknown
-
-export type CliFlagName =
-  | 'image'
-  | 'llm-model'
-  | 'only'
-  | 'target'
-  | 'panel'
-  | 'chunk'
-  | 'sketch-group-size'
-  | 'sketch-panels'
-  | 'panels'
-  | 'panel-limit'
-  | 'panels-per-image'
-  | 'grid'
-  | 'variation'
-  | 'image-model'
-  | 'size'
-  | 'quality'
-  | 'force'
-  | 'revise'
-  | 'notes'
-  | 'price'
-  | 'help'
-
-export type CliFlagMetadata = {
-  name: CliFlagName
-  aliases?: readonly string[]
-  valueName?: string
-  commands: readonly string[]
-}
-
-export type CharacterFileNumber = keyof typeof import('../schemas/schemas').CHARACTER_FILES
-
-export type CharacterFilePath = (typeof import('../schemas/schemas').CHARACTER_FILES)[CharacterFileNumber]
-
 export type CharacterName = (typeof import('../schemas/schemas').CHARACTER_NAMES)[number]
-
-export type StructuredScriptBeatType = (typeof import('../schemas/schemas').STRUCTURED_SCRIPT_BEAT_TYPES)[number]
 
 export type PromptsConfig = v.InferOutput<typeof import('../schemas/schemas').PromptsConfigSchema>
 

@@ -70,7 +70,7 @@ export const inspectYtDlpAuthState = async (
   }
 }
 
-export const buildSharedYtDlpArgs = async (): Promise<string[]> => {
+const buildSharedYtDlpArgs = async (): Promise<string[]> => {
   const authState = await inspectYtDlpAuthState()
   const args: string[] = []
 

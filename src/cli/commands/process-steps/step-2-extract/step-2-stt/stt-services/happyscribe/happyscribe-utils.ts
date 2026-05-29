@@ -40,7 +40,7 @@ export const readHappyScribeJsonOrText = async (response: Response): Promise<unk
   }
 }
 
-export const extractHappyScribeErrorMessage = (payload: unknown): string | undefined => {
+const extractHappyScribeErrorMessage = (payload: unknown): string | undefined => {
   if (typeof payload === 'string') {
     const trimmed = payload.trim()
     return trimmed.length > 0 ? trimmed : undefined

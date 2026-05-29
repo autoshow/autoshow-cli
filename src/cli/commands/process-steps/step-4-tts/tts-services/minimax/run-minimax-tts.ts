@@ -23,7 +23,7 @@ const MAX_CHARS_PER_CHUNK = 50_000
 const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
-export type MinimaxTtsOptions = {
+type MinimaxTtsOptions = {
   model: MinimaxTtsModel
   voiceId?: string | undefined
   languageBoost?: string | undefined

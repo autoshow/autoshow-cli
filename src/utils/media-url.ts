@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 
-export type MaterializedMediaInput = {
+type MaterializedMediaInput = {
   input: string
   path: string
   basename: string
@@ -13,7 +13,7 @@ export type MaterializedMediaInput = {
 
 const SAFE_FILE_NAME_PATTERN = /[^A-Za-z0-9._-]+/g
 
-export const isHttpMediaUrl = (value: string): boolean => {
+const isHttpMediaUrl = (value: string): boolean => {
   try {
     const url = new URL(value)
     return url.protocol === 'http:' || url.protocol === 'https:'

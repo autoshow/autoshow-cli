@@ -3,27 +3,6 @@ import type { RuntimeOptions } from '~/types'
 import type { TtsRateEstimate, TtsCostEstimate } from '~/types'
 import { collectTtsTargets } from '../tts-targets'
 
-export const estimateTtsRates = (opts: RuntimeOptions): TtsRateEstimate[] => {
-  return collectTtsTargets(opts).map((target) => {
-    const pricing = getTtsPricing(target.service, target.model)
-    const hasDualRates = pricing.inputCostPer1MCharsCents !== undefined && pricing.outputCostPer1MCharsCents !== undefined
-    if (hasDualRates) {
-      return {
-        provider: target.service,
-        model: target.model,
-        inputCostPer1MCharactersCents: pricing.inputCostPer1MCharsCents as number,
-        outputCostPer1MCharactersCents: pricing.outputCostPer1MCharsCents as number
-      }
-    }
-
-    return {
-      provider: target.service,
-      model: target.model,
-      costPer1kCharactersCents: pricing.costPer1kCharsCents ?? getTtsCost(target.service, target.model)
-    }
-  })
-}
-
 export const estimateTtsCosts = (opts: RuntimeOptions, characterCount: number): TtsCostEstimate[] => {
   const normalizedCharCount = Math.max(0, Math.floor(characterCount))
   return collectTtsTargets(opts).map((target) => {

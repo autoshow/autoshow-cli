@@ -155,7 +155,7 @@ const sockFlags = {
   }
 } as const satisfies CliFlagsDefinition
 
-export const SOCKET_TOKEN_HELP = `Socket API token guidance for bun as sock
+const SOCKET_TOKEN_HELP = `Socket API token guidance for bun as sock
 
 Do not select all scopes.
 

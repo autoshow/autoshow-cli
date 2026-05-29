@@ -11,11 +11,11 @@ const DependencyEntrySchema = v.object({
 
 const DependencyMetadataSchema = v.record(v.string(), DependencyEntrySchema)
 
-export type DependencyMetadata = v.InferOutput<typeof DependencyMetadataSchema>
+type DependencyMetadata = v.InferOutput<typeof DependencyMetadataSchema>
 
-export const depsJsonPath = join(PROJECT_ROOT, 'config/deps.json')
+const depsJsonPath = join(PROJECT_ROOT, 'config/deps.json')
 
-export const DEFAULT_DEPENDENCY_METADATA: DependencyMetadata = {
+const DEFAULT_DEPENDENCY_METADATA: DependencyMetadata = {
   'whisper.cpp': { tag: 'v1.7.4' },
   'llama.cpp': { tag: 'b8087' },
   uv: { version: '0.11.14' },

@@ -236,7 +236,7 @@ function helpText(): string {
   ].join("\n");
 }
 
-export function parseVoiceQualityReportArgs(argv: string[]): VoiceQualityReportOptions {
+function parseVoiceQualityReportArgs(argv: string[]): VoiceQualityReportOptions {
   if (argv.includes("--help") || argv.includes("-h")) {
     console.log(helpText());
     process.exit(0);

@@ -67,7 +67,7 @@ import type { AllShortcutFlag, BuildOptsDefaults, FlagOccurrenceValue, Repeatabl
 import { readStringFlag } from './flag-readers'
 import { appendUnique, expandAllShortcutModels } from './model-flag-selection'
 
-export const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
+const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
 export const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
 export const validateCliValue = <T>(validator: (value: string) => T, value: string): T => {
@@ -77,7 +77,7 @@ export const validateCliValue = <T>(validator: (value: string) => T, value: stri
     throw CLIUsageError(error instanceof Error ? error.message : String(error))
   }
 }
-export const first = <T>(values: T[] | undefined): T | undefined => values?.[0]
+const first = <T>(values: T[] | undefined): T | undefined => values?.[0]
 
 export const readRuntimeModelOptions = (
   flags: Record<string, unknown>,

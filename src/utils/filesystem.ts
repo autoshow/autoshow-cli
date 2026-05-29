@@ -1,9 +1,9 @@
 import { chmod, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
-export type WalkPathKind = 'file' | 'directory' | 'any'
+type WalkPathKind = 'file' | 'directory' | 'any'
 
-export type WalkPathsOptions = {
+type WalkPathsOptions = {
   kind?: WalkPathKind
   maxDepth?: number
 }

@@ -61,7 +61,7 @@ const setupPaddleOcrEnvironmentUnlocked = async (): Promise<void> => {
   l.write('success', 'PaddleOCR environment ready')
 }
 
-export const setupPaddleOcrEnvironment = async (): Promise<void> => {
+const setupPaddleOcrEnvironment = async (): Promise<void> => {
   await withProcessLock(PADDLE_OCR_SETUP_LOCK_NAME, async () => {
     if (await envExistsAndValid()) {
       return

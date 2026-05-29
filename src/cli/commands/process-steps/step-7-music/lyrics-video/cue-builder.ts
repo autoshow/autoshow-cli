@@ -126,7 +126,7 @@ const buildFromWords = (words: TranscriptionEvidenceWord[]): CaptionCue[] => {
   return cues
 }
 
-export const parseWhisperSegmentTimestamp = (timestamp: string): number => {
+const parseWhisperSegmentTimestamp = (timestamp: string): number => {
   const match = timestamp.match(/^(\d{2}):(\d{2}):(\d{2})$/)
   if (!match) {
     return Number.NaN

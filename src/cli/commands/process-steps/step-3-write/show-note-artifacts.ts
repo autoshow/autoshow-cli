@@ -8,7 +8,7 @@ import type {
   StructuredRunResult
 } from '~/types'
 
-export type ShowNoteArtifactResult = {
+type ShowNoteArtifactResult = {
   internalArtifacts: Record<string, string>
 }
 
@@ -182,7 +182,7 @@ const renderShowNoteBody = (parsedJson: unknown, fallbackRenderedText: string): 
     : fallbackRenderedText.trimEnd()
 }
 
-export const buildShowNoteFileName = (
+const buildShowNoteFileName = (
   metadata: Pick<Step3Metadata, 'outputFileName'>
 ): string => {
   const stem = metadata.outputFileName.replace(/\.json$/u, '')

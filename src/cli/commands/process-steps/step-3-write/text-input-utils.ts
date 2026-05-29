@@ -16,11 +16,11 @@ const promptFileCache = new Map<string, string>()
 const promptFileResultCache = new Map<string, PromptFileResult>()
 const trackListCache = new Map<string, Map<string, string>>()
 
-export type PromptFileResult =
+type PromptFileResult =
   | { kind: 'text'; text: string }
   | { kind: 'leaf'; name: string; leaf: LeafPrompt }
 
-export type WriteTextProjectDefaults = {
+type WriteTextProjectDefaults = {
   projectDir: string
   projectName: string
   textDir: string
@@ -259,7 +259,7 @@ export const resolveWriteTextProjectDefaults = async (
   }
 }
 
-export const extractTrackNumber = (filePath: string): string | undefined => {
+const extractTrackNumber = (filePath: string): string | undefined => {
   const stem = basename(filePath, extname(filePath))
   const match = stem.match(/^(?:text-)?(\d+)(?:-|$)/)
   return match?.[1] ? match[1].padStart(2, '0') : undefined
@@ -369,7 +369,7 @@ export const readPromptFile = async (filePath: string | undefined): Promise<Prom
   return result
 }
 
-export const loadTrackTitles = async (filePath: string | undefined): Promise<Map<string, string> | undefined> => {
+const loadTrackTitles = async (filePath: string | undefined): Promise<Map<string, string> | undefined> => {
   if (!filePath) {
     return undefined
   }

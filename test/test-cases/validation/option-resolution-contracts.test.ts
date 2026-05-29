@@ -79,7 +79,7 @@ import {
   SUPPORTED_SPEECHIFY_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import type { LLMTarget, OcrTarget, Step3Metadata } from '~/types'
-import type { ExpandedScenePromptData, PromptsConfig } from '~/cli/commands/process-steps/step-8-comic/types'
+import type { ExpandedScenePromptData, PromptsConfig } from '~/cli/commands/process-steps/step-8-comic/types/comic-types'
 
 const SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
 const LOCAL_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')

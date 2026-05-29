@@ -112,7 +112,7 @@ const readWhisperTag = async (): Promise<string> => {
   return await readDependencyTag('whisper.cpp') ?? 'v1.7.4'
 }
 
-export const detectCoremlSupport = async (): Promise<boolean> => {
+const detectCoremlSupport = async (): Promise<boolean> => {
   return await supportsCoreML()
 }
 
@@ -228,7 +228,7 @@ const compileCoremlPackage = async (modelName: string): Promise<void> => {
   }
 }
 
-export const coremlConvert = async (modelName: string): Promise<void> => {
+const coremlConvert = async (modelName: string): Promise<void> => {
   if (!await detectCoremlSupport()) {
     l.warn('CoreML not supported on this host')
     return

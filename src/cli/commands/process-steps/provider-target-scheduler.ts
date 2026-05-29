@@ -1,12 +1,12 @@
 import type { TargetPoolKind, TargetSchedulerConcurrency } from '~/types'
 
-export type ProviderTargetSchedulerEntry<TTarget> = {
+type ProviderTargetSchedulerEntry<TTarget> = {
   index: number
   target: TTarget
   priority?: number | undefined
 }
 
-export type ProviderTargetLifecycleEvent<TTarget> = {
+type ProviderTargetLifecycleEvent<TTarget> = {
   index: number
   target: TTarget
   pool: TargetPoolKind
@@ -15,19 +15,19 @@ export type ProviderTargetLifecycleEvent<TTarget> = {
   message?: string | undefined
 }
 
-export type ProviderTargetFailure<TTarget> = {
+type ProviderTargetFailure<TTarget> = {
   index: number
   target: TTarget
   message: string
   error?: unknown
 }
 
-export type ProviderTargetSchedulerResult<TTarget, TResult> = {
+type ProviderTargetSchedulerResult<TTarget, TResult> = {
   results: Array<TResult | undefined>
   failures: Array<ProviderTargetFailure<TTarget>>
 }
 
-export type RunProviderTargetSchedulerOptions<TTarget, TResult> = {
+type RunProviderTargetSchedulerOptions<TTarget, TResult> = {
   entries: Array<ProviderTargetSchedulerEntry<TTarget>>
   concurrency: TargetSchedulerConcurrency
   getPool: (target: TTarget) => TargetPoolKind

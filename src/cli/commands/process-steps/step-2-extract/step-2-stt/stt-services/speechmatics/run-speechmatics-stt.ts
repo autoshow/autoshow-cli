@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import { basename } from 'node:path'
 import type {
   AsyncSttLifecycleHooks,
@@ -17,7 +18,6 @@ import {
   SpeechmaticsJobResponseSchema,
   SpeechmaticsTranscriptResponseSchema
 } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
   logSttCleanupFailure,

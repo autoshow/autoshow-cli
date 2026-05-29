@@ -6,9 +6,7 @@ import {
   getSceneJsonPath,
   getPanelPromptsDirectory,
 } from '../../utils/project-paths'
-import type {
-  PanelPromptsCommandOptions,
-} from '../../types'
+import type { PanelPromptsCommandOptions } from '../../types/comic-command-types'
 
 
 

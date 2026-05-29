@@ -18,7 +18,7 @@ type Step1Metadata = {
   slug?: string
 }
 
-export type Metadata = {
+type Metadata = {
   step1?: Step1Metadata
   step2?: unknown
   step3?: unknown
@@ -163,7 +163,7 @@ export const setupDownloadInputTypeLifecycle = (suffixes: string[]): void => {
   })
 }
 
-export const assertDownloadOnlyArtifacts = async (outputDir: string, metadata: Metadata): Promise<void> => {
+const assertDownloadOnlyArtifacts = async (outputDir: string, metadata: Metadata): Promise<void> => {
   expect(await fileExists(`${outputDir}/transcription.txt`)).toBe(false)
   expect(await fileExists(`${outputDir}/extraction.txt`)).toBe(false)
   expect(await fileExists(`${outputDir}/text.json`)).toBe(false)

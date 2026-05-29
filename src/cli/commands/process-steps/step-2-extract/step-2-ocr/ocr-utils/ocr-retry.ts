@@ -47,7 +47,7 @@ export const classifyOcrCreateRetry = (error: unknown): RetryDecision => {
   return classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
 }
 
-export const classifyOcrPageRequestRetry = (error: unknown): RetryDecision => {
+const classifyOcrPageRequestRetry = (error: unknown): RetryDecision => {
   if (isStructuredOcrResponseError(error)) {
     return { shouldRetry: true, delayMs: 0, reason: 'structured_response' }
   }

@@ -1,7 +1,7 @@
 import type { RuntimeOptions } from '~/types'
 import type { ResolvedLLMConfig } from '~/types'
 
-export const DEFAULT_LLAMA_MODEL = 'ggml-org/gemma-3-270m-it-GGUF'
+const DEFAULT_LLAMA_MODEL = 'ggml-org/gemma-3-270m-it-GGUF'
 
 export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
   const llamaModels = opts.llamaModels
