@@ -272,6 +272,10 @@ describe('price mode contracts', () => {
       provider: 'spider',
       model: 'spider'
     })
+    expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+supadata' })).toEqual({
+      provider: 'supadata',
+      model: 'supadata'
+    })
     expect(resolveExtractionProviderModel({ ...base, extractionMethod: 'html+zyte' })).toEqual({
       provider: 'zyte',
       model: 'zyte'

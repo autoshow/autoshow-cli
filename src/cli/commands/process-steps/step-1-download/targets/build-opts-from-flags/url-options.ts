@@ -47,11 +47,30 @@ const readPositiveIntegerOption = (
 
 export const resolveUrlOptions = (
   flags: Record<string, unknown>,
-  allUrlSelected: boolean
+  allUrlSelected: boolean,
+  options: {
+    explicitFlags?: Set<string> | undefined
+    configuredFlags?: Set<string> | undefined
+    rawArgs?: string[] | undefined
+  } = {}
 ): Pick<RuntimeOptions, 'urlBackend' | 'urlBackendExplicit' | 'urlBackends' | 'urlRequestTimeoutMs' | 'urlRequestAttempts'> => {
   const publicUrlBackendFlag = readOptionalStringFlag(flags, 'url-provider')
   const legacyUrlBackendFlag = readOptionalStringFlag(flags, 'url-backend')
-  const urlBackendFlag = publicUrlBackendFlag ?? legacyUrlBackendFlag
+  const hasRawArgs = (options.rawArgs?.length ?? 0) > 0
+  const hasSelectedFlag = (flagName: string, value: string | undefined): boolean =>
+    value !== undefined
+    && (
+      options.explicitFlags?.has(flagName) === true
+      || options.configuredFlags?.has(flagName) === true
+      || !hasRawArgs
+    )
+  const publicSelected = hasSelectedFlag('url-provider', publicUrlBackendFlag)
+  const legacySelected = hasSelectedFlag('url-backend', legacyUrlBackendFlag)
+  const urlBackendFlag = publicSelected
+    ? publicUrlBackendFlag
+    : legacySelected
+      ? legacyUrlBackendFlag
+      : undefined
   if (allUrlSelected && urlBackendFlag !== undefined) {
     throw CLIUsageError('Cannot use --all-providers url with --url-provider')
   }

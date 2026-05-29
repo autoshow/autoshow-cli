@@ -9,6 +9,7 @@ import { classifyOcrCreateRetry, OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry }
 import { getCachedCloudStagingObject } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import type { RetryDecision } from '~/types'
+import { buildHostedOcrJsonPrompt, normalizeHostedOcrPages } from '../../ocr-utils/hosted-ocr-json'
 import {
   geminiDeleteFile,
   geminiFileDataPart,
@@ -57,16 +58,6 @@ const GEMINI_OCR_JSON_SCHEMA = {
   }
 } as const
 
-const buildOcrPrompt = (expectedPageCount: number): string => [
-  'Perform OCR on the provided document or image.',
-  'Return only JSON.',
-  'Do not summarize, explain, or translate.',
-  'Preserve the visible reading order.',
-  'Preserve paragraph breaks and line breaks when they are meaningful.',
-  'If a page is blank or unreadable, return that page with an empty string for text.',
-  `Return exactly ${expectedPageCount} page objects with contiguous pageNumber values from 1 through ${expectedPageCount}.`
-].join(' ')
-
 const normalizePages = (
   value: unknown,
   expectedPageCount: number
@@ -76,31 +67,11 @@ const normalizePages = (
     throw new Error('Gemini OCR response did not match the expected page schema.')
   }
 
-  const pages = parsed.output.pages
-    .slice()
-    .sort((a, b) => a.pageNumber - b.pageNumber)
-    .map((page) => ({
-      pageNumber: page.pageNumber,
-      method: 'ocr' as const,
-      text: page.text
-    }))
-
-  if (pages.length === 0) {
-    throw new Error('Gemini OCR returned no pages.')
-  }
-
-  if (pages.length !== expectedPageCount) {
-    throw new Error(`Gemini OCR returned ${pages.length} pages, expected ${expectedPageCount}.`)
-  }
-
-  for (let i = 0; i < pages.length; i++) {
-    const expectedPageNumber = i + 1
-    if (pages[i]?.pageNumber !== expectedPageNumber) {
-      throw new Error('Gemini OCR returned non-contiguous page numbers.')
-    }
-  }
-
-  return pages
+  return normalizeHostedOcrPages(parsed.output.pages, expectedPageCount, {
+    emptyPagesMessage: 'Gemini OCR returned no pages.',
+    countMismatchMessage: (actual, expected) => `Gemini OCR returned ${actual} pages, expected ${expected}.`,
+    nonContiguousMessage: 'Gemini OCR returned non-contiguous page numbers.'
+  })
 }
 
 const parseOcrResponse = (
@@ -208,7 +179,7 @@ export const runGeminiOcr = async (
 
   const expectedPageCount = Math.max(1, step1Metadata.pageCount)
   const mimeType = getGeminiMimeType(step1Metadata.format)
-  const prompt = buildOcrPrompt(expectedPageCount)
+  const prompt = buildHostedOcrJsonPrompt(expectedPageCount)
   const fileSizeBytes = Bun.file(filePath).size
   if (fileSizeBytes > GEMINI_FILE_UPLOAD_BYTES) {
     throw new Error(`Gemini OCR input exceeds the 2 GB file upload limit for ${basename(filePath)}.`)

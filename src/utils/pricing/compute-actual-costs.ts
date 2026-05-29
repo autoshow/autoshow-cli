@@ -37,6 +37,7 @@ import {
   getScrapeCreatorsCreditRateCents
 } from './scrapecreators-pricing'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
+import { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
 
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
 
@@ -124,77 +125,6 @@ const resolveSttBillingDurationSeconds = (input: ComputeActualCostsInput): numbe
   }
 
   return 0
-}
-
-const resolveExtractionProviderModel = (
-  metadata: ExtractionMetadata
-): { provider: string, model: string } => {
-  if (metadata.extractionMethod.includes('html+defuddle')) {
-    return {
-      provider: 'defuddle',
-      model: 'defuddle'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+firecrawl')) {
-    return {
-      provider: 'firecrawl',
-      model: 'firecrawl'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+glm-reader')) {
-    return {
-      provider: 'glm-reader',
-      model: 'glm-reader'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+spider')) {
-    return {
-      provider: 'spider',
-      model: 'spider'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+supadata')) {
-    return {
-      provider: 'supadata',
-      model: 'supadata'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+zyte')) {
-    return {
-      provider: 'zyte',
-      model: 'zyte'
-    }
-  }
-
-  if (typeof metadata.ocrService === 'string' && typeof metadata.ocrModel === 'string') {
-    return {
-      provider: metadata.ocrService,
-      model: metadata.ocrModel
-    }
-  }
-
-  if (metadata.extractionMethod.includes('paddle-ocr')) {
-    return {
-      provider: 'paddle-ocr',
-      model: 'paddle-ocr'
-    }
-  }
-  if (metadata.extractionMethod.includes('ocrmypdf')) {
-    return {
-      provider: 'ocrmypdf',
-      model: 'ocrmypdf'
-    }
-  }
-  if (metadata.extractionMethod.includes('tesseract')) {
-    return {
-      provider: 'tesseract',
-      model: 'tesseract'
-    }
-  }
-  return {
-    provider: 'extract',
-    model: metadata.extractionMethod
-  }
 }
 
 const computeActualSttCharge = (

@@ -1,5 +1,6 @@
 import { CLIUsageError } from '~/utils/error-handler'
 import { URL_ARTICLE_BACKENDS } from './step-2-extract/step-2-url/url-provider-registry'
+import { readInjectedConfigFlags } from './step-1-download/targets/build-opts-from-flags/config-flags'
 
 type SelectorFlagMap = Record<string, string>
 
@@ -796,6 +797,15 @@ export const normalizeExtractGenericSelectorFlags = (
 ): SelectorNormalizationResult => {
   const normalizedFlags: Record<string, unknown> = { ...flags }
   const normalizedExplicitFlags = new Set(explicitFlags)
+  const configuredFlags = readInjectedConfigFlags(normalizedFlags)
+
+  if (
+    normalizedFlags['url-provider'] === 'defuddle'
+    && !explicitFlags.has('url-provider')
+    && !configuredFlags.has('url-provider')
+  ) {
+    delete normalizedFlags['url-provider']
+  }
 
   for (const value of occurrenceValues(normalizedFlags['provider'])) {
     const parsed = parseProviderSelectorValue(value, 'provider')

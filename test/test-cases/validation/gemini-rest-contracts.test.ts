@@ -19,6 +19,7 @@ import {
   restoreEnv,
   snapshotEnv
 } from '../../test-utils/rest-contract-helpers'
+import { createMockWavBase64 } from '../../test-utils/media-fixtures'
 
 const originalFetch = globalThis.fetch
 let previousEnv: Record<string, string | undefined> = {}
@@ -30,31 +31,6 @@ const audioBytes = new Uint8Array([1, 2, 3, 4])
 const audioBase64 = Buffer.from(audioBytes).toString('base64')
 const imageBase64 = Buffer.from(new Uint8Array([9, 8, 7])).toString('base64')
 const videoBytes = new Uint8Array([5, 4, 3, 2])
-
-const createMockWavBase64 = (): string => {
-  const sampleRate = 16000
-  const channels = 1
-  const bitsPerSample = 16
-  const samples = 1600
-  const dataSize = samples * channels * (bitsPerSample / 8)
-  const buffer = Buffer.alloc(44 + dataSize)
-
-  buffer.write('RIFF', 0)
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write('WAVE', 8)
-  buffer.write('fmt ', 12)
-  buffer.writeUInt32LE(16, 16)
-  buffer.writeUInt16LE(1, 20)
-  buffer.writeUInt16LE(channels, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(sampleRate * channels * (bitsPerSample / 8), 28)
-  buffer.writeUInt16LE(channels * (bitsPerSample / 8), 32)
-  buffer.writeUInt16LE(bitsPerSample, 34)
-  buffer.write('data', 36)
-  buffer.writeUInt32LE(dataSize, 40)
-
-  return buffer.toString('base64')
-}
 
 beforeEach(() => {
   previousEnv = snapshotEnv(envKeys)

@@ -18,7 +18,7 @@ import { logLocationsTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { reserveBatchChildOutputDir } from '~/cli/commands/process-steps/batch-child-output'
 import { createUniqueDirectoryName, sanitizeTitleSlug } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
-import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
+import { buildLLMModelOptions, resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { runLLM } from './run-llm'
 import {
   buildTextInputPrompt,
@@ -159,24 +159,7 @@ export const runTextWrite = async (
       outputDir,
       prompts: opts.prompts,
       promptFile: opts.promptFile,
-      openaiModels: llmConfig.openaiModels,
-      openaiModel: llmConfig.openaiModel,
-      groqModels: llmConfig.groqModels,
-      groqModel: llmConfig.groqModel,
-      geminiModels: llmConfig.geminiModels,
-      geminiModel: llmConfig.geminiModel,
-      anthropicModels: llmConfig.anthropicModels,
-      anthropicModel: llmConfig.anthropicModel,
-      minimaxModels: llmConfig.minimaxModels,
-      minimaxModel: llmConfig.minimaxModel,
-      grokModels: llmConfig.grokModels,
-      grokModel: llmConfig.grokModel,
-      glmModels: llmConfig.glmModels,
-      glmModel: llmConfig.glmModel,
-      kimiModels: llmConfig.kimiModels,
-      kimiModel: llmConfig.kimiModel,
-      llamaModels: llmConfig.llamaModels,
-      llamaModel: llmConfig.llamaModel,
+      ...buildLLMModelOptions(llmConfig),
       llmProviderConcurrency: opts.llmProviderConcurrency,
       llmLocalConcurrency: opts.llmLocalConcurrency,
       structuredContext: {

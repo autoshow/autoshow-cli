@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-export type MockFetchCall = {
+type MockFetchCall = {
   url: string
   method: string
   headers: Headers
@@ -12,7 +12,7 @@ export type MockFetchCall = {
   form?: FormData | undefined
 }
 
-export type MockFetchHandler = (
+type MockFetchHandler = (
   call: MockFetchCall,
   input: Parameters<typeof fetch>[0],
   init?: Parameters<typeof fetch>[1]

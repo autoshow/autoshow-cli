@@ -14,7 +14,7 @@ import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import type { AggregatedPriceEstimate, BatchChildRunContext, ExtractionMetadata, ExtractionOptions, PreparedDocument, RuntimeOptions, Step1SourceRef, Step3Metadata, TranscriptionResult, VideoMetadata, WriteDocumentOutputMetadataOptions } from '~/types'
 import { isLikelyUrl } from '../input/input-classifier'
-import { resolveLLMDefaults } from '../llm-defaults'
+import { buildLLMModelOptions, resolveLLMDefaults } from '../llm-defaults'
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
   [
@@ -318,24 +318,7 @@ export const runDocumentWrite = async (
     outputDir: extraction.outputDir,
     prompts: opts.prompts,
     promptFile: opts.promptFile,
-    openaiModels: llmConfig.openaiModels,
-    openaiModel: llmConfig.openaiModel,
-    groqModels: llmConfig.groqModels,
-    groqModel: llmConfig.groqModel,
-    geminiModels: llmConfig.geminiModels,
-    geminiModel: llmConfig.geminiModel,
-    anthropicModels: llmConfig.anthropicModels,
-    anthropicModel: llmConfig.anthropicModel,
-    minimaxModels: llmConfig.minimaxModels,
-    minimaxModel: llmConfig.minimaxModel,
-    grokModels: llmConfig.grokModels,
-    grokModel: llmConfig.grokModel,
-    glmModels: llmConfig.glmModels,
-    glmModel: llmConfig.glmModel,
-    kimiModels: llmConfig.kimiModels,
-    kimiModel: llmConfig.kimiModel,
-    llamaModels: llmConfig.llamaModels,
-    llamaModel: llmConfig.llamaModel,
+    ...buildLLMModelOptions(llmConfig),
     llmProviderConcurrency: opts.llmProviderConcurrency,
     llmLocalConcurrency: opts.llmLocalConcurrency,
     promptBuilder: (instruction: string) =>

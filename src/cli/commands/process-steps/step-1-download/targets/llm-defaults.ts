@@ -3,6 +3,31 @@ import type { ResolvedLLMConfig } from '~/types'
 
 const DEFAULT_LLAMA_MODEL = 'ggml-org/gemma-3-270m-it-GGUF'
 
+type LLMModelOptionKey = Exclude<keyof ResolvedLLMConfig, 'llmService' | 'llmModel'>
+
+export type ResolvedLLMModelOptions = Pick<ResolvedLLMConfig, LLMModelOptionKey>
+
+export const buildLLMModelOptions = (config: ResolvedLLMConfig): ResolvedLLMModelOptions => ({
+  llamaModels: config.llamaModels,
+  llamaModel: config.llamaModel,
+  openaiModels: config.openaiModels,
+  openaiModel: config.openaiModel,
+  groqModels: config.groqModels,
+  groqModel: config.groqModel,
+  geminiModels: config.geminiModels,
+  geminiModel: config.geminiModel,
+  anthropicModels: config.anthropicModels,
+  anthropicModel: config.anthropicModel,
+  minimaxModels: config.minimaxModels,
+  minimaxModel: config.minimaxModel,
+  grokModels: config.grokModels,
+  grokModel: config.grokModel,
+  glmModels: config.glmModels,
+  glmModel: config.glmModel,
+  kimiModels: config.kimiModels,
+  kimiModel: config.kimiModel,
+})
+
 export const resolveLLMDefaults = (opts: RuntimeOptions): ResolvedLLMConfig => {
   const llamaModels = opts.llamaModels
   const openaiModels = opts.openaiModels

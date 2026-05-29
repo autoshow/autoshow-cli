@@ -13,6 +13,7 @@ import {
   parseOpenAiAudioJudgeResponseContent
 } from '~/cli/commands/setup-and-utilities/benchmark/tts-voice-quality-report'
 import { runCommand } from '../../test-utils/test-helpers'
+import { writeSyntheticWav } from '../../test-utils/media-fixtures'
 
 const tempDirs: string[] = []
 const originalFetch = globalThis.fetch
@@ -32,40 +33,6 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
 const makeMockFetch = (
   fn: (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => Promise<Response>
 ): typeof fetch => Object.assign(fn, { preconnect: () => undefined }) as typeof fetch
-
-const writeSyntheticWav = async (
-  path: string,
-  options: { durationSeconds: number, amplitude: number, frequencyHz: number }
-): Promise<void> => {
-  const sampleRate = 16000
-  const sampleCount = Math.floor(sampleRate * options.durationSeconds)
-  const bytesPerSample = 2
-  const dataSize = sampleCount * bytesPerSample
-  const buffer = Buffer.alloc(44 + dataSize)
-
-  buffer.write('RIFF', 0, 'ascii')
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write('WAVE', 8, 'ascii')
-  buffer.write('fmt ', 12, 'ascii')
-  buffer.writeUInt32LE(16, 16)
-  buffer.writeUInt16LE(1, 20)
-  buffer.writeUInt16LE(1, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(sampleRate * bytesPerSample, 28)
-  buffer.writeUInt16LE(bytesPerSample, 32)
-  buffer.writeUInt16LE(16, 34)
-  buffer.write('data', 36, 'ascii')
-  buffer.writeUInt32LE(dataSize, 40)
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const seconds = index / sampleRate
-    const envelope = seconds < 0.08 || seconds > options.durationSeconds - 0.08 ? 0 : 1
-    const sample = Math.round(Math.sin(2 * Math.PI * options.frequencyHz * seconds) * options.amplitude * envelope * 32767)
-    buffer.writeInt16LE(sample, 44 + index * bytesPerSample)
-  }
-
-  await writeFile(path, buffer)
-}
 
 afterEach(async () => {
   globalThis.fetch = originalFetch

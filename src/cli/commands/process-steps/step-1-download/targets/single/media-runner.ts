@@ -8,7 +8,7 @@ import { buildMediaStep1Slug, createUniqueDirectoryName, extractSourceMetadata }
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { isLikelyUrl } from '../input/input-classifier'
-import { resolveLLMDefaults } from '../llm-defaults'
+import { buildLLMModelOptions, resolveLLMDefaults } from '../llm-defaults'
 import { writeMetadataTerminalOutput, writeSavedMetadataArtifacts } from './metadata-output'
 
 export const processMediaSingle = async (
@@ -73,24 +73,7 @@ export const processMediaSingle = async (
     diarizationSpeakerCount: llmDefaults.diarizationSpeakerCount,
     refreshCache: llmDefaults.refreshCache,
     noCache: llmDefaults.noCache,
-    llamaModels: llmConfig.llamaModels,
-    llamaModel: llmConfig.llamaModel,
-    openaiModels: llmConfig.openaiModels,
-    openaiModel: llmConfig.openaiModel,
-    groqModels: llmConfig.groqModels,
-    groqModel: llmConfig.groqModel,
-    geminiModels: llmConfig.geminiModels,
-    geminiModel: llmConfig.geminiModel,
-    anthropicModels: llmConfig.anthropicModels,
-    anthropicModel: llmConfig.anthropicModel,
-    minimaxModels: llmConfig.minimaxModels,
-    minimaxModel: llmConfig.minimaxModel,
-    grokModels: llmConfig.grokModels,
-    grokModel: llmConfig.grokModel,
-    glmModels: llmConfig.glmModels,
-    glmModel: llmConfig.glmModel,
-    kimiModels: llmConfig.kimiModels,
-    kimiModel: llmConfig.kimiModel,
+    ...buildLLMModelOptions(llmConfig),
     llmProviderConcurrency: llmDefaults.llmProviderConcurrency,
     llmLocalConcurrency: llmDefaults.llmLocalConcurrency,
     outputDir: baseDir,

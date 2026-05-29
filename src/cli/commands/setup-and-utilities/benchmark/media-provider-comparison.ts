@@ -13,9 +13,9 @@ import {
 
 type ProviderGroup = 'local' | 'service'
 
-export type ProviderGroupRows = Record<ProviderGroup, JsonObject[]>
+type ProviderGroupRows = Record<ProviderGroup, JsonObject[]>
 
-export type ProviderComparisonMarkdownOptions = {
+type ProviderComparisonMarkdownOptions = {
   title: string
   runDir: string
   providerCount: number

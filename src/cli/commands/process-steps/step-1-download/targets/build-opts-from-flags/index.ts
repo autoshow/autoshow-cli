@@ -148,7 +148,11 @@ export const buildOptsFromFlags = (
     runwayVideoModel,
   } = modelOptions
   const allUrlSelected = allShortcutFlags['all-url']
-  const urlOptions = resolveUrlOptions(mergedFlags, allUrlSelected)
+  const urlOptions = resolveUrlOptions(mergedFlags, allUrlSelected, {
+    explicitFlags,
+    configuredFlags,
+    rawArgs
+  })
   const useReverb = isStep2BooleanProviderSelected('reverb-stt', mergedFlags, allShortcutFlags)
   const step2SelectionOrigins = resolveStep2SelectionOrigins(mergedFlags, explicitFlags, rawModelOccurrences, allShortcutFlags)
   const whisperExplicit = step2SelectionOrigins['whisper-stt'] === 'explicit' || step2SelectionOrigins['whisper-stt'] === 'all-shortcut'

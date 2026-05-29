@@ -10,6 +10,7 @@ import type {
 import { getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { preflightToEstimated } from '~/utils/pricing/compute-costs'
+import { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
 import {
   ANTHROPIC_OCR_PRICE_NOTE,
   DEEPINFRA_OCR_PRICE_NOTE,
@@ -53,40 +54,7 @@ const OCR_DIAGNOSTIC_PROVIDERS = new Set([
 
 const toArray = <T,>(value: T | T[]): T[] => Array.isArray(value) ? value : [value]
 
-export const resolveExtractionProviderModel = (
-  metadata: ExtractionMetadata
-): { provider: string, model: string } => {
-  if (metadata.extractionMethod.includes('html+defuddle')) {
-    return { provider: 'defuddle', model: 'defuddle' }
-  }
-  if (metadata.extractionMethod.includes('html+firecrawl')) {
-    return { provider: 'firecrawl', model: 'firecrawl' }
-  }
-  if (metadata.extractionMethod.includes('html+glm-reader')) {
-    return { provider: 'glm-reader', model: 'glm-reader' }
-  }
-  if (metadata.extractionMethod.includes('html+spider')) {
-    return { provider: 'spider', model: 'spider' }
-  }
-  if (metadata.extractionMethod.includes('html+zyte')) {
-    return { provider: 'zyte', model: 'zyte' }
-  }
-
-  if (typeof metadata.ocrService === 'string' && typeof metadata.ocrModel === 'string') {
-    return { provider: metadata.ocrService, model: metadata.ocrModel }
-  }
-
-  if (metadata.extractionMethod.includes('paddle-ocr')) {
-    return { provider: 'paddle-ocr', model: 'paddle-ocr' }
-  }
-  if (metadata.extractionMethod.includes('ocrmypdf')) {
-    return { provider: 'ocrmypdf', model: 'ocrmypdf' }
-  }
-  if (metadata.extractionMethod.includes('tesseract')) {
-    return { provider: 'tesseract', model: 'tesseract' }
-  }
-  return { provider: 'extract', model: metadata.extractionMethod }
-}
+export { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
 
 const buildTokenTarget = (
   provider: Extract<'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra', ExtractEstimateProvider>,

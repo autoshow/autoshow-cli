@@ -1,6 +1,7 @@
 import { l } from '~/utils/logger'
 import { formatCost, formatDuration } from '~/utils/logger/formatters'
 import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
+import { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
 import { resolveReverbModelLabel } from './step-2-extract/step-2-stt/stt-model-labels'
 import type {
   ActualCostBreakdown,
@@ -169,39 +170,6 @@ const buildMatchKey = (step: WriteStepKind, provider: string, model: string): st
   const normalizedProvider = normalizeProviderForMatch(step, provider)
   const normalizedModel = normalizeModelForMatch(step, normalizedProvider, model)
   return `${step}::${normalizedProvider}::${normalizedModel}`
-}
-
-const resolveExtractionProviderModel = (metadata: ExtractionMetadata): { provider: string, model: string } => {
-  if (metadata.extractionMethod.includes('html+defuddle')) {
-    return { provider: 'defuddle', model: 'defuddle' }
-  }
-  if (metadata.extractionMethod.includes('html+firecrawl')) {
-    return { provider: 'firecrawl', model: 'firecrawl' }
-  }
-  if (metadata.extractionMethod.includes('html+glm-reader')) {
-    return { provider: 'glm-reader', model: 'glm-reader' }
-  }
-  if (metadata.extractionMethod.includes('html+spider')) {
-    return { provider: 'spider', model: 'spider' }
-  }
-  if (metadata.extractionMethod.includes('html+zyte')) {
-    return { provider: 'zyte', model: 'zyte' }
-  }
-
-  if (typeof metadata.ocrService === 'string' && typeof metadata.ocrModel === 'string') {
-    return { provider: metadata.ocrService, model: metadata.ocrModel }
-  }
-
-  if (metadata.extractionMethod.includes('paddle-ocr')) {
-    return { provider: 'paddle-ocr', model: 'paddle-ocr' }
-  }
-  if (metadata.extractionMethod.includes('ocrmypdf')) {
-    return { provider: 'ocrmypdf', model: 'ocrmypdf' }
-  }
-  if (metadata.extractionMethod.includes('tesseract')) {
-    return { provider: 'tesseract', model: 'tesseract' }
-  }
-  return { provider: 'extract', model: metadata.extractionMethod }
 }
 
 const buildProviderModelLabel = (provider: string, model: string): string => {

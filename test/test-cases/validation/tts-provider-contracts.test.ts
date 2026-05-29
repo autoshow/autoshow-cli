@@ -15,6 +15,7 @@ import { runSpeechifyTts } from '~/cli/commands/process-steps/step-4-tts/tts-ser
 import { runTts } from '~/cli/commands/process-steps/step-4-tts/run-tts'
 import { splitTextIntoUtf8ByteChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
 import type { TtsOptions } from '~/types'
+import { createMockWavBase64 } from '../../test-utils/media-fixtures'
 
 const SHORT_AUDIO_URL = 'https://ajc.pics/autoshow/examples/0-audio-short.mp3'
 const LOCAL_SHORT_AUDIO_PATH = join('input/examples/audio', '0-audio-short.mp3')
@@ -53,31 +54,6 @@ const makeTempDir = async (prefix: string): Promise<string> => {
 
 const readMockMp3Base64 = async (): Promise<string> =>
   Buffer.from(await Bun.file(LOCAL_SHORT_AUDIO_PATH).arrayBuffer()).toString('base64')
-
-const createMockWavBase64 = (): string => {
-  const sampleRate = 16000
-  const channels = 1
-  const bitsPerSample = 16
-  const samples = 1600
-  const dataSize = samples * channels * (bitsPerSample / 8)
-  const buffer = Buffer.alloc(44 + dataSize)
-
-  buffer.write('RIFF', 0)
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write('WAVE', 8)
-  buffer.write('fmt ', 12)
-  buffer.writeUInt32LE(16, 16)
-  buffer.writeUInt16LE(1, 20)
-  buffer.writeUInt16LE(channels, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(sampleRate * channels * (bitsPerSample / 8), 28)
-  buffer.writeUInt16LE(channels * (bitsPerSample / 8), 32)
-  buffer.writeUInt16LE(bitsPerSample, 34)
-  buffer.write('data', 36)
-  buffer.writeUInt32LE(dataSize, 40)
-
-  return buffer.toString('base64')
-}
 
 beforeEach(() => {
   for (const key of envKeys) {
