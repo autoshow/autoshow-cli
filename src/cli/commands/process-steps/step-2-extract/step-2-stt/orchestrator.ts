@@ -2,8 +2,7 @@ export {
   classifySttSplitLimitError,
   extractSttSplitDurationCapSecondsFromError,
   resolveAdaptiveSplitSegmentDurationMinutes,
-  shouldRetrySplitTranscriptionAfterError,
-  isPayloadTooLargeTranscriptionError
+  shouldRetrySplitTranscriptionAfterError
 } from './run-stt/split-limits'
 export {
   resolveSttSplitPolicy,

@@ -4,7 +4,7 @@ const SPACE_URL_PATTERN = /\b(?:https?:\/\/)?(?:mobile\.)?(?:www\.)?(?:x|twitter
 const POST_URL_PATTERN = /\b(?:https?:\/\/)?(?:mobile\.)?(?:www\.)?(?:x|twitter)\.com\/(?:(?:([A-Za-z0-9_]{1,15})\/status(?:es)?)|(?:i\/web\/status))\/(\d+)(?=[/?#\s]|$)/gi;
 const RAW_SPACE_ID_PATTERN = /^[A-Za-z0-9]{1,13}$/;
 
-export function isSpaceId(value: string): boolean {
+function isSpaceId(value: string): boolean {
   return RAW_SPACE_ID_PATTERN.test(value);
 }
 

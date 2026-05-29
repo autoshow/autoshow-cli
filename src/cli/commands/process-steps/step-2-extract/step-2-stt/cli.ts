@@ -1,7 +1,7 @@
 import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, Step2ProviderSelectionFilter, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { collectStep2ProviderSpecs } from '../step-2-shared/provider-registry'
 
-export const STT_ENGINE_CAPABILITIES = {
+const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   deepinfra: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true },

@@ -1,10 +1,8 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
+import { stat } from 'node:fs/promises'
+import { basename } from 'node:path'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
-import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
-import { getCachedRenderedPageImage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
+import { runWithRenderedOcrPdfPages } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-page-rendering'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import {
   KIMI_OCR_IMAGE_BYTES,
@@ -182,58 +180,20 @@ export const runKimiOcr = async (
   }
 
   const totalPages = Math.max(1, step1Metadata.pageCount)
-  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-kimi-ocr-'))
-  try {
-    for (let page = 1; page <= totalPages; page++) {
-      const imagePath = join(tempDir, `page-${String(page).padStart(3, '0')}.png`)
-      let renderedImagePath = imagePath
-      let removeRenderedImage = true
-      if (opts.ocrPreparationCache) {
-        const rendered = await getCachedRenderedPageImage(
-          opts.ocrPreparationCache,
-          {
-            filePath,
-            page,
-            dpi: opts.dpi,
-            password: opts.password
-          },
-          async (outputPath) => {
-            const renderResult = await renderPageToImage(
-              filePath,
-              page,
-              opts.dpi,
-              outputPath,
-              opts.password
-            )
-            if (renderResult.exitCode !== 0) {
-              throw new Error(renderResult.stderr || `Failed rendering page ${page} for Kimi OCR`)
-            }
-          }
-        )
-        renderedImagePath = rendered.imagePath
-        removeRenderedImage = false
-      } else {
-        const renderResult = await renderPageToImage(
-          filePath,
-          page,
-          opts.dpi,
-          imagePath,
-          opts.password
-        )
-        if (renderResult.exitCode !== 0) {
-          throw new Error(renderResult.stderr || `Failed rendering page ${page} for Kimi OCR`)
-        }
-      }
-      const result = await runKimiOcrImage(config, renderedImagePath, 'png', model, page, `page ${page}`)
+  pages.push(...await runWithRenderedOcrPdfPages({
+    filePath,
+    totalPages,
+    dpi: opts.dpi,
+    password: opts.password,
+    ocrPreparationCache: opts.ocrPreparationCache,
+    tempDirPrefix: 'autoshow-kimi-ocr-',
+    providerLabel: 'Kimi OCR',
+    onPage: async ({ imagePath, page }) => {
+      const result = await runKimiOcrImage(config, imagePath, 'png', model, page, `page ${page}`)
       addUsage(result)
-      pages.push(result.page)
-      if (removeRenderedImage) {
-        await rm(imagePath, { force: true })
-      }
+      return result.page
     }
-  } finally {
-    await rm(tempDir, { recursive: true, force: true })
-  }
+  }))
 
   return {
     pages,

@@ -76,7 +76,7 @@ const isRequestBudgetTranscriptionError = (error: unknown): boolean => {
   return /\binput_too_large\b|input too large|maximum context length|context length|too many input tokens|exceeds? .*token/i.test(message)
 }
 
-export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
+const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
   if (error instanceof Error) {
     return error.message.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds|\binput_too_large\b|input too large/i.test(error.message)
   }

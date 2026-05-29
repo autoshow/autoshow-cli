@@ -7,6 +7,7 @@ import {
   formatSpeakerLabel,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 
 const SILENCE_BREAK_MS = 1500
 const MIN_SENTENCE_SEGMENT_CHARS = 80
@@ -123,17 +124,6 @@ export const normalizeSonioxTranscript = (
   return {
     text,
     segments: finalSegments,
-    evidence: {
-      ...(evidenceWords.length > 0 ? {
-        words: evidenceWords
-      } : {}),
-      capabilities: {
-        hasNativeWordTiming: evidenceWords.length > 0,
-        hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
-        hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-      },
-      timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-      rawResponse: transcript
-    }
+    evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
   }
 }

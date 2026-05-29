@@ -48,19 +48,6 @@ const logAutoSplitDecision = (
   })
 }
 
-export const shouldSplitTranscriptionInput = (
-  target: SplitPolicyTarget,
-  audioFileSizeBytes: number,
-  audioDurationSeconds: number | undefined,
-  splitRequested: boolean
-): boolean => {
-  return resolveTranscriptionSplitDecision(target, {
-    audioFileSizeBytes,
-    audioDurationSeconds,
-    splitRequested
-  }).shouldSplit
-}
-
 export const sttTarget = async (
   audioPath: string,
   outputDir: string,

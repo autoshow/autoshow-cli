@@ -2,7 +2,13 @@ import { validateGlmOcrModel } from '~/cli/commands/setup-and-utilities/models/m
 import { GLM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
-export const resolveGlmBaseUrl = (): string => GLM_DEFAULT_BASE_URL
+export const resolveGlmBaseUrl = (): string => {
+  const override = readEnv('ZAI_BASE_URL')?.replace(/\/$/, '')
+  if (!override) return GLM_DEFAULT_BASE_URL
+  return override.endsWith('/api/paas/v4')
+    ? override
+    : `${override}/api/paas/v4`
+}
 
 const getGlmApiKey = (): string | undefined => {
   return readEnv('GLM_API_KEY')

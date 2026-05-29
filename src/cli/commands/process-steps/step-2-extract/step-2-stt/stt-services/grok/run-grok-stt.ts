@@ -17,6 +17,7 @@ import {
   formatTranscriptText,
   resolveTranscriptionOutput
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -324,16 +325,7 @@ export const runGrokStt = async (
     result: {
       text: finalText,
       segments: finalSegments,
-      evidence: {
-        ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
-        capabilities: {
-          hasNativeWordTiming: evidenceWords.length > 0,
-          hasConfidence: evidenceWords.some((word) => word.confidence !== undefined),
-          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-        },
-        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-        rawResponse: payload
-      }
+      evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: payload })
     },
     metadata
   }

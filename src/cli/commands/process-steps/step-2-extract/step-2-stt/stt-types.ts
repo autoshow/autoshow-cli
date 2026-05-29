@@ -339,7 +339,7 @@ export type AvailabilityWaiter = {
   timer?: ReturnType<typeof setTimeout> | undefined
 }
 
-export type ProviderStats = {
+type ProviderStats = {
   launchedCount: number
   completedCount: number
   blockedCount: number
@@ -399,7 +399,7 @@ export type WhisperProgressWindow = {
   totalDurationSeconds: number
 }
 
-export type AsyncSttPollMode = 'fresh' | 'resume-probe'
+type AsyncSttPollMode = 'fresh' | 'resume-probe'
 
 export type AsyncSttLifecycleHooks = {
   onJobReady?: ((runtime: Step2RuntimeMetadata) => Promise<void> | void) | undefined
@@ -529,8 +529,8 @@ export type GladiaNormalizedWord = {
   confidence?: number | undefined
 }
 
-export type GladiaResult = NonNullable<GladiaStatusResponse['result']>
-export type GladiaTranscription = NonNullable<GladiaResult['transcription']>
+type GladiaResult = NonNullable<GladiaStatusResponse['result']>
+type GladiaTranscription = NonNullable<GladiaResult['transcription']>
 export type GladiaUtterance = NonNullable<GladiaTranscription['utterances']>[number]
 
 export type SplitPolicyTarget = Pick<SttTarget, 'service' | 'model'>
@@ -608,7 +608,7 @@ export type HappyScribeHttpError = Error & {
   rawResponse?: unknown
 }
 
-export type HappyScribeOrderState =
+type HappyScribeOrderState =
   | 'incomplete'
   | 'waiting_for_payment'
   | 'submitted'

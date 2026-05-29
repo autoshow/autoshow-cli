@@ -43,7 +43,7 @@ export type EpubManifestItem = {
   properties?: string
 }
 
-export type EpubSpineItem = {
+type EpubSpineItem = {
   index: number
   idref: string
   linear: string
@@ -204,7 +204,7 @@ export type TextArtifactFile = {
   text: string
 }
 
-export type ChapterExportSummary = {
+type ChapterExportSummary = {
   sourceFormat: 'epub' | 'pdf'
   mode: 'chapters' | 'chunks'
   chunkLimitChars?: number
@@ -224,7 +224,7 @@ export type ChapterExportSummary = {
 
 export type EpubArtifactFile = TextArtifactFile
 
-export type EpubExportPlan = {
+type EpubExportPlan = {
   files: TextArtifactFile[]
   summary: {
     sourceFormat: 'epub'

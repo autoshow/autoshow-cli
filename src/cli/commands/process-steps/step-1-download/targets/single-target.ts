@@ -186,8 +186,8 @@ export const processSingleTarget = async (
   const exists = await fileExists(item)
 
   if (!exists) {
-    const { isSpaceId } = await import('~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/x-spaces/input')
-    if (isSpaceId(item) && isExtractCommand(command)) {
+    const { extractSpaceIdsFromText } = await import('~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/x-spaces/input')
+    if (extractSpaceIdsFromText(item).includes(item.trim()) && isExtractCommand(command)) {
       return await processXSpace(item, baseDir, opts, batchChildContext)
     }
     throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help ${displayCommand}`)

@@ -63,6 +63,11 @@ const runCapture = async (
 }
 
 const resolveDefuddleCli = async (): Promise<ResolvedDefuddleCli | undefined> => {
+  const overrideBin = process.env['AUTOSHOW_DEFUDDLE_BIN']?.trim()
+  if (overrideBin) {
+    return { path: overrideBin, source: 'path' }
+  }
+
   if (await pathExists(defuddleRuntimeBinaryPath)) {
     return { path: defuddleRuntimeBinaryPath, source: 'runtime' }
   }

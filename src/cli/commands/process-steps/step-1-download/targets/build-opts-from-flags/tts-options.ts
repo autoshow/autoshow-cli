@@ -25,10 +25,11 @@ import {
   readStringFlag
 } from '../options/flag-readers'
 import {
-  DEFAULT_KITTEN_TTS_SPEAKER,
   type readRuntimeModelOptions,
   validateCliValue
 } from '../options/model-options'
+
+const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
 type RuntimeModelOptions = ReturnType<typeof readRuntimeModelOptions>
 

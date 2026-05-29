@@ -18,10 +18,12 @@ import {
   formatTranscriptText
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import {
+  createAsyncSttJobReadyNotifier,
+  createAsyncSttProgressMetadataPersister,
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
 import { readSttProviderCheckpoint } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/manifest'
 import { getSupadataBaseUrl, isSupadataSupportedSourceUrl } from './supadata'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -119,7 +121,6 @@ export const runSupadataStt = async (
   let creditRateCents = persistedBilling?.creditRateCents ?? getSupadataCreditRateCents()
   let billingSource = persistedBilling?.source
   let jobId = runtime?.remoteJobId
-  let jobReadyNotified = false
   let resumedExistingJob = false
   const requestMetrics = {
     onRequest: () => {
@@ -158,38 +159,35 @@ export const runSupadataStt = async (
     billingSource = 'response-header'
   }
 
+  const buildTimingMetadata = (): Step2Metadata['timings'] =>
+    buildStep2TimingMetadata({
+      createMs,
+      createCount,
+      pollMs,
+      pollSleepMs,
+      pollCount,
+      requestCount,
+      retryCount,
+      rateLimitCount,
+      backfillCount
+    })
+
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'supadata',
     transcriptionModel: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
-    timings: {
-      ...(createMs > 0 ? { createMs } : {}),
-      ...(createCount > 0 ? { createCount } : {}),
-      ...(pollMs > 0 ? { pollMs } : {}),
-      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-      ...(pollCount > 0 ? { pollCount } : {}),
-      ...(requestCount > 0 ? { requestCount } : {}),
-      ...(retryCount > 0 ? { retryCount } : {}),
-      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-      ...(backfillCount > 0 ? { backfillCount } : {})
-    },
+    timings: buildTimingMetadata() ?? {},
     runtime: nextRuntime,
     ...(buildBillingMetadata() ? { billing: buildBillingMetadata() } : {})
   })
 
-  const persistProgressMetadata = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    runtime = nextRuntime
-    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(nextRuntime))
-  }
-
-  const notifyJobReady = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    if (jobReadyNotified) {
-      return
-    }
-    jobReadyNotified = true
-    await lifecycle?.onJobReady?.(nextRuntime)
-  }
+  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+    outputDir,
+    buildProgressMetadata,
+    (nextRuntime) => { runtime = nextRuntime }
+  )
+  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
 
   let finalPayload: SupadataTranscriptPayload | undefined
 
@@ -368,22 +366,13 @@ export const runSupadataStt = async (
   })
 
   const processingTime = Date.now() - startTime
+  const timings = buildTimingMetadata()
   const metadata: Step2Metadata = {
     transcriptionService: 'supadata',
     transcriptionModel: modelName,
     processingTime,
     tokenCount: countTokens(result.text),
-    timings: {
-      ...(createMs > 0 ? { createMs } : {}),
-      ...(createCount > 0 ? { createCount } : {}),
-      ...(pollMs > 0 ? { pollMs } : {}),
-      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-      ...(pollCount > 0 ? { pollCount } : {}),
-      ...(requestCount > 0 ? { requestCount } : {}),
-      ...(retryCount > 0 ? { retryCount } : {}),
-      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-      ...(backfillCount > 0 ? { backfillCount } : {})
-    },
+    ...(timings ? { timings } : {}),
     ...(runtime ? { runtime } : {}),
     ...(buildBillingMetadata() ? { billing: buildBillingMetadata() } : {})
   }

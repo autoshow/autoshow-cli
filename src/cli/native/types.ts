@@ -1,4 +1,4 @@
-export type CliFlagType =
+type CliFlagType =
   | BooleanConstructor
   | StringConstructor
   | [StringConstructor]
@@ -22,9 +22,9 @@ export type CliParameterDefinition = {
   description?: string
 }
 
-export type CliHelpGroup = readonly [key: string, label: string]
+type CliHelpGroup = readonly [key: string, label: string]
 
-export type CliHelpDefinition = {
+type CliHelpDefinition = {
   group?: string
   examples?: ReadonlyArray<readonly [command: string, description: string]>
   notes?: readonly string[]

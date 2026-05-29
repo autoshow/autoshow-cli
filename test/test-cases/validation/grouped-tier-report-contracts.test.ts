@@ -20,6 +20,32 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`)
 }
 
+const runConsensusBuildReport = async (
+  category: 'ocr' | 'stt' | 'tts' | 'url',
+  runDir: string,
+  extraArgs: string[] = []
+): Promise<{ stdout: string, stderr: string }> => {
+  const proc = Bun.spawn([
+    process.execPath,
+    '.codex/skills/consensus/scripts/run.ts',
+    category,
+    'build-report',
+    runDir,
+    ...extraArgs
+  ], {
+    stdout: 'pipe',
+    stderr: 'pipe'
+  })
+  const [stdout, stderr, exitCode] = await Promise.all([
+    readStreamText(proc.stdout),
+    readStreamText(proc.stderr),
+    proc.exited
+  ])
+  expect(stdout).toContain('Rewrote')
+  expect(exitCode).toBe(0)
+  return { stdout, stderr }
+}
+
 const deprecatedTierSplitKey = 'tier' + 'Split'
 const deprecatedOverallTierKey = 'overall' + 'Tier'
 
@@ -154,24 +180,8 @@ describe('grouped report contracts', () => {
       })
     }
 
-    const proc = Bun.spawn([
-      process.execPath,
-      '.codex/skills/consensus/scripts/run.ts',
-      'ocr',
-      'build-report',
-      runDir
-    ], {
-      stdout: 'pipe',
-      stderr: 'pipe'
-    })
-    const [stdout, stderr, exitCode] = await Promise.all([
-      readStreamText(proc.stdout),
-      readStreamText(proc.stderr),
-      proc.exited
-    ])
-    expect(stdout).toContain('Rewrote')
+    const { stderr } = await runConsensusBuildReport('ocr', runDir)
     expect(stderr).toBe('')
-    expect(exitCode).toBe(0)
 
 	    const report = await Bun.file(join(runDir, 'provider-comparison-report.json')).json() as {
 	      rankingSurfaces?: unknown
@@ -333,24 +343,8 @@ describe('grouped report contracts', () => {
       })
     }
 
-    const proc = Bun.spawn([
-      process.execPath,
-      '.codex/skills/consensus/scripts/run.ts',
-      'stt',
-      'build-report',
-      runDir
-    ], {
-      stdout: 'pipe',
-      stderr: 'pipe'
-    })
-    const [stdout, stderr, exitCode] = await Promise.all([
-      readStreamText(proc.stdout),
-      readStreamText(proc.stderr),
-      proc.exited
-    ])
-    expect(stdout).toContain('Rewrote')
+    const { stderr } = await runConsensusBuildReport('stt', runDir)
     expect(stderr).toBe('')
-    expect(exitCode).toBe(0)
 
 	    const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
 	      rankingSurfaces?: unknown
@@ -469,24 +463,8 @@ describe('grouped report contracts', () => {
       })
     }
 
-    const proc = Bun.spawn([
-      process.execPath,
-      '.codex/skills/consensus/scripts/run.ts',
-      'url',
-      'build-report',
-      runDir
-    ], {
-      stdout: 'pipe',
-      stderr: 'pipe'
-    })
-    const [stdout, stderr, exitCode] = await Promise.all([
-      readStreamText(proc.stdout),
-      readStreamText(proc.stderr),
-      proc.exited
-    ])
-    expect(stdout).toContain('Rewrote')
+    const { stderr } = await runConsensusBuildReport('url', runDir)
     expect(stderr).toBe('')
-    expect(exitCode).toBe(0)
 
     const report = await Bun.file(join(runDir, 'provider-comparison-report.json')).json() as {
       overall?: unknown
@@ -622,26 +600,8 @@ describe('grouped report contracts', () => {
       })
     })
 
-    const proc = Bun.spawn([
-      process.execPath,
-      '.codex/skills/consensus/scripts/run.ts',
-      'tts',
-      'build-report',
-      runDir,
-      '--input-text',
-      inputTextPath
-    ], {
-      stdout: 'pipe',
-      stderr: 'pipe'
-    })
-    const [stdout, stderr, exitCode] = await Promise.all([
-      readStreamText(proc.stdout),
-      readStreamText(proc.stderr),
-      proc.exited
-    ])
-    expect(stdout).toContain('Rewrote')
+    const { stderr } = await runConsensusBuildReport('tts', runDir, ['--input-text', inputTextPath])
     expect(stderr).toContain('Missing audio files')
-    expect(exitCode).toBe(0)
 
     const report = await Bun.file(join(runDir, 'provider-comparison-report.json')).json() as {
       rankingSurfaces: Record<'local' | 'service', Record<RankingSurfaceName, TtsRankingEntry[]>>

@@ -7,7 +7,7 @@ export type TranscriptionSegment = {
   speaker?: string | undefined
 }
 
-export type TranscriptionEvidenceTimingSource = 'native' | 'interpolated'
+type TranscriptionEvidenceTimingSource = 'native' | 'interpolated'
 
 export type TranscriptionEvidenceSegment = {
   startSeconds: number
@@ -70,7 +70,7 @@ export type Step2RuntimeMetadata = {
   } | undefined
 }
 
-export type Step2BillingMetadata = {
+type Step2BillingMetadata = {
   creditsUsed?: number | undefined
   creditRateCents?: number | undefined
   totalCost?: number | undefined

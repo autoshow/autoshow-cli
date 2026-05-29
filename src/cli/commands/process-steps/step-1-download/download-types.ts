@@ -31,8 +31,8 @@ export type Step1SourceRef = {
   filePath?: string
 }
 
-export type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
-export type AudioDownloadStatus = 'started' | 'downloaded'
+type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
+type AudioDownloadStatus = 'started' | 'downloaded'
 
 export type AudioDownloadSummary = {
   source: AudioDownloadSource
@@ -57,8 +57,8 @@ export type YtDlpListOptions = {
 }
 
 export type BatchOrder = 'newest' | 'oldest'
-export type TopLevelTargetKind = 'directory' | 'input_list' | 'single'
-export type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
+type TopLevelTargetKind = 'directory' | 'input_list' | 'single'
+type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
 
 export type BatchOptions = {
   limit: number
@@ -361,7 +361,7 @@ export type BatchManifestErrorEntry = {
   skipped?: boolean
 }
 
-export type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
+type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
 
 export type SttManifestProviderSummary = {
   label: string

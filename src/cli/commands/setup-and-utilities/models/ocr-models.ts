@@ -49,7 +49,7 @@ export const SUPPORTED_GEMINI_OCR_MODELS = [
 
 export const validateGeminiOcrModel = createModelValidator<GeminiOcrModel>(SUPPORTED_GEMINI_OCR_MODELS, 'gemini-ocr')
 
-export const DEFAULT_DEEPINFRA_OCR_MODEL = 'Qwen/Qwen3-VL-30B-A3B-Instruct'
+const DEFAULT_DEEPINFRA_OCR_MODEL = 'Qwen/Qwen3-VL-30B-A3B-Instruct'
 
 export const SUPPORTED_DEEPINFRA_OCR_MODELS = [
   'Qwen/Qwen3-VL-235B-A22B-Instruct',

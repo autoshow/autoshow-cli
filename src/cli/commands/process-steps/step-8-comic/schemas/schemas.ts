@@ -20,8 +20,8 @@ const CHARACTER_FILES = {
   '16': 'input/uss/characters/16-village-guards.webp',
 } as const
 
-export type CharacterFileNumber = keyof typeof CHARACTER_FILES
-export type CharacterFilePath = (typeof CHARACTER_FILES)[CharacterFileNumber]
+type CharacterFileNumber = keyof typeof CHARACTER_FILES
+type CharacterFilePath = (typeof CHARACTER_FILES)[CharacterFileNumber]
 
 const CHARACTER_FILE_PATHS = Object.values(CHARACTER_FILES) as [CharacterFilePath, ...CharacterFilePath[]]
 const CHARACTER_REFERENCE_IMAGE_PATH_PATTERN = /^input\/uss\/characters\/.+\.(?:png|webp|jpg|jpeg)$/
@@ -38,8 +38,6 @@ export const CHARACTER_REFERENCE_ALIASES = {
 } as const
 
 const STRUCTURED_SCRIPT_BEAT_TYPES = ['narration', 'dialogue', 'direction', 'transition', 'panel-note'] as const
-
-export type StructuredScriptBeatType = typeof STRUCTURED_SCRIPT_BEAT_TYPES[number]
 
 const CharacterReferenceImagePathSchema = v.pipe(
   v.string(),

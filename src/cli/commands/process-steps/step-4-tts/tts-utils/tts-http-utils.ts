@@ -2,7 +2,7 @@ import { extractRestErrorMessage, parseJsonOrText } from '~/utils/rest-client'
 
 export const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '')
 
-export const readTtsHttpError = async (response: Response): Promise<string> => {
+const readTtsHttpError = async (response: Response): Promise<string> => {
   const rawText = await response.text()
   if (!rawText.trim()) {
     return `HTTP ${response.status}`

@@ -52,7 +52,7 @@ export type Step2ResolvedProviderSelection = {
   origin: Step2ProviderSelectionOrigin
 }
 
-export type Step2ProviderRegistryEntryBase = {
+type Step2ProviderRegistryEntryBase = {
   step: Step2Command
   modality: Step2Modality
   flagName: string

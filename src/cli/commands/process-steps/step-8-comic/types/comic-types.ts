@@ -5,12 +5,6 @@ import type {
   DraftScenesCommandOptions,
   GenerateImagesCommandOptions,
 } from './comic-command-types'
-export type {
-  CharacterFileNumber,
-  CharacterFilePath,
-  StructuredScriptBeatType
-} from '../schemas/schemas'
-
 type OpenAiImageRequestTarget = {
   provider: 'openai'
   model: OpenAiImageGenerationModel

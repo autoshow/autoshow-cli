@@ -19,7 +19,7 @@ export type BatchChildRunContext = {
   outputDir?: string
 }
 
-export type BatchSourceKind = 'podcast_rss' | 'youtube_channel' | 'youtube_playlist' | 'url_list'
+type BatchSourceKind = 'podcast_rss' | 'youtube_channel' | 'youtube_playlist' | 'url_list'
 
 export type BatchSource = {
   sourceKind: BatchSourceKind

@@ -9,6 +9,7 @@ import {
   logSttTranscriptOutput
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, formatTranscriptText } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import { parseReverbWithSpeakers, parseReverbTextOutput } from './parse-reverb-output'
 import { exec } from '~/utils/cli-utils'
 import { resolveDiarizationModel, runDiarization, mergeASRWithDiarization, findCTMFile } from './run-reverb-diarization'
@@ -279,16 +280,11 @@ export const runReverbTranscribe = async (
             await Bun.$`rm -f ${jsonOutputPath}`.quiet()
             logSttCleanupArtifacts(l, 'Reverb Cleanup', [{ artifact: 'json', path: jsonOutputPath }], 'success')
             transcription = parseReverbWithSpeakers(diarizedData, segmentOffset)
-            evidence = {
-              ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
-              capabilities: {
-                hasNativeWordTiming: evidenceWords.length > 0,
-                hasConfidence: false,
-                hasSpeakerLabels: transcription.segments.some((segment) => segment.speaker !== undefined)
-              },
-              timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+            evidence = buildTranscriptionWordEvidence({
+              words: evidenceWords,
+              segments: transcription.segments,
               rawResponse: diarizedData
-            }
+            })
           } else {
             const textContent = await findAndReadOutputFile(resultDir)
             if (!textContent) throw new Error('Reverb transcription produced no readable output')

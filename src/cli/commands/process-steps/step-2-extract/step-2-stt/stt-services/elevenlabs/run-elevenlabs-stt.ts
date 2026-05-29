@@ -14,6 +14,7 @@ import {
   logSttSegmentLifecycle
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -292,18 +293,7 @@ export const runElevenLabsTranscribe = async (
     result: {
       text: finalText,
       segments: finalSegments,
-      evidence: {
-        ...(evidenceWords.length > 0 ? {
-          words: evidenceWords
-        } : {}),
-        capabilities: {
-          hasNativeWordTiming: evidenceWords.length > 0,
-          hasConfidence: false,
-          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-        },
-        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-        rawResponse: payload
-      }
+      evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: payload })
     },
     metadata
   }

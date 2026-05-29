@@ -74,7 +74,7 @@ export type DownloadInfo = {
   destinationPath: string
 }
 
-export type JsonSchemaObject = Record<string, unknown>
+type JsonSchemaObject = Record<string, unknown>
 
 export type StructuredStrategy = 'native' | 'schema-guided'
 
@@ -85,7 +85,7 @@ export type StructuredRequestOptions = {
   strategy: StructuredStrategy
 }
 
-export type StructuredOutputContext = {
+type StructuredOutputContext = {
   songLyricsTitle?: string | undefined
 }
 
@@ -164,7 +164,7 @@ export type CompatStructuredResponse = {
   metadata: Step3Metadata
 }
 
-export type AnthropicCompatibleService = Extract<Step3Metadata['llmService'], 'anthropic' | 'minimax'>
+type AnthropicCompatibleService = Extract<Step3Metadata['llmService'], 'anthropic' | 'minimax'>
 
 export type RunAnthropicCompatibleModelOptions = {
   prompt: string
@@ -177,7 +177,7 @@ export type RunAnthropicCompatibleModelOptions = {
   supportsStructuredOutput?: boolean
 }
 
-export type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok' | 'glm' | 'kimi'>
+type OpenAICompatibleChatService = Extract<Step3Metadata['llmService'], 'groq' | 'grok' | 'glm' | 'kimi'>
 
 export type RunOpenAICompatibleChatModelOptions = {
   prompt: string

@@ -92,7 +92,7 @@ export const readPersistedAsyncSttRuntime = async (
   return await readCheckpointRuntime()
 }
 
-export const writeAsyncSttProgressMetadata = async (
+const writeAsyncSttProgressMetadata = async (
   outputDir: string,
   metadata: Step2Metadata
 ): Promise<void> => {
@@ -102,6 +102,30 @@ export const writeAsyncSttProgressMetadata = async (
     metadata.transcriptionModel,
     metadata as unknown as Record<string, unknown>
   )
+}
+
+export const createAsyncSttProgressMetadataPersister = (
+  outputDir: string,
+  buildProgressMetadata: (runtime: Step2RuntimeMetadata) => Step2Metadata,
+  setRuntime: (runtime: Step2RuntimeMetadata) => void
+): (runtime: Step2RuntimeMetadata) => Promise<void> =>
+  async (runtime) => {
+    setRuntime(runtime)
+    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(runtime))
+  }
+
+export const createAsyncSttJobReadyNotifier = (
+  onJobReady: ((runtime: Step2RuntimeMetadata) => Promise<void> | void) | undefined
+): (runtime: Step2RuntimeMetadata) => Promise<void> => {
+  let notified = false
+
+  return async (runtime) => {
+    if (notified) {
+      return
+    }
+    notified = true
+    await onJobReady?.(runtime)
+  }
 }
 
 const resolveAsyncSttPollDeadlineMs = (

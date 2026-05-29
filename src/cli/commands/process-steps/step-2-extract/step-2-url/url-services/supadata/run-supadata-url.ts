@@ -78,7 +78,7 @@ const runSupadataScrape = async (
     capabilities: SUPADATA_CAPABILITIES
   }, options)
 
-  const baseUrl = SUPADATA_DEFAULT_BASE_URL
+  const baseUrl = readEnv('SUPADATA_BASE_URL') ?? SUPADATA_DEFAULT_BASE_URL
   const apiKey = readEnv('SUPADATA_API_KEY')
 
   if (!apiKey) {

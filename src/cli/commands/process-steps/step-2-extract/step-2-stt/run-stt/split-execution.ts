@@ -37,7 +37,7 @@ const persistTranscriptionStructuredArtifact = async (
   await writeSttResultArtifact(outputDir, metadata, result)
 }
 
-export const resolveEffectiveSegmentConcurrency = (
+const resolveEffectiveSegmentConcurrency = (
   target: Pick<SttTarget, 'local' | 'service'>,
   requestedConcurrency: number | undefined
 ): number => {
@@ -48,7 +48,7 @@ export const resolveEffectiveSegmentConcurrency = (
   return Math.max(1, requestedConcurrency ?? 2)
 }
 
-export const mergeSplitTranscriptionChunks = (
+const mergeSplitTranscriptionChunks = (
   chunks: IndexedTranscriptionChunk[]
 ): { result: TranscriptionResult, metadata: Step2Metadata } => {
   const orderedChunks = [...chunks].sort((left, right) => left.segmentIndex - right.segmentIndex)

@@ -23,6 +23,20 @@ const STT_TIMING_KEYS = [
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
+export const buildStep2TimingMetadata = (
+  value: Partial<Record<keyof Step2TimingMetadata, number | undefined>>
+): Step2TimingMetadata | undefined => {
+  const timings: Step2TimingMetadata = {}
+  for (const key of STT_TIMING_KEYS) {
+    const timingValue = value[key]
+    if (typeof timingValue === 'number' && Number.isFinite(timingValue) && timingValue > 0) {
+      timings[key] = timingValue
+    }
+  }
+
+  return Object.keys(timings).length > 0 ? timings : undefined
+}
+
 export const mergeStep2TimingMetadata = (
   values: Array<Step2TimingMetadata | undefined>
 ): Step2TimingMetadata | undefined => {

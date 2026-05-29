@@ -6,7 +6,7 @@ type NativeCliUsageErrorCode =
   | 'no-such-command'
   | 'unknown-flag'
 
-export class NativeCliUsageError extends Error {
+class NativeCliUsageError extends Error {
   readonly code: NativeCliUsageErrorCode
   readonly exitCode = 2
 

@@ -68,7 +68,6 @@ import { readStringFlag } from './flag-readers'
 import { appendUnique, expandAllShortcutModels } from './model-flag-selection'
 
 const DEFAULT_KITTEN_TTS_MODEL = 'kitten-tts-nano-0.8-int8'
-export const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
 export const validateCliValue = <T>(validator: (value: string) => T, value: string): T => {
   try {

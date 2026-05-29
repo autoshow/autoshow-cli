@@ -29,11 +29,14 @@ import {
   resolveTranscriptionOutput,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import {
+  createAsyncSttJobReadyNotifier,
+  createAsyncSttProgressMetadataPersister,
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
 import { getRevBaseUrl } from './rev'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -370,41 +373,38 @@ export const runRevStt = async (
   let jobId = runtime?.remoteJobId
   let lastKnownJobStatus: RevJob | undefined
   let resumedExistingJob = false
-  let jobReadyNotified = false
   let metadata: Step2Metadata | undefined
+
+  const buildTimingMetadata = (remoteProcessingMs = 0): Step2Metadata['timings'] =>
+    buildStep2TimingMetadata({
+      createMs,
+      createCount,
+      pollMs,
+      pollSleepMs,
+      pollCount,
+      transcriptMs,
+      remoteProcessingMs,
+      requestCount,
+      retryCount,
+      rateLimitCount,
+      backfillCount
+    })
 
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'rev',
     transcriptionModel: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
-    timings: {
-      ...(createMs > 0 ? { createMs } : {}),
-      ...(createCount > 0 ? { createCount } : {}),
-      ...(pollMs > 0 ? { pollMs } : {}),
-      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-      ...(pollCount > 0 ? { pollCount } : {}),
-      ...(transcriptMs > 0 ? { transcriptMs } : {}),
-      ...(requestCount > 0 ? { requestCount } : {}),
-      ...(retryCount > 0 ? { retryCount } : {}),
-      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-      ...(backfillCount > 0 ? { backfillCount } : {})
-    },
+    timings: buildTimingMetadata() ?? {},
     runtime: nextRuntime
   })
 
-  const persistProgressMetadata = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    runtime = nextRuntime
-    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(nextRuntime))
-  }
-
-  const notifyJobReady = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    if (jobReadyNotified) {
-      return
-    }
-    jobReadyNotified = true
-    await lifecycle?.onJobReady?.(nextRuntime)
-  }
+  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+    outputDir,
+    buildProgressMetadata,
+    (nextRuntime) => { runtime = nextRuntime }
+  )
+  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
 
   try {
     if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
@@ -625,32 +625,17 @@ export const runRevStt = async (
 
     await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
-    const processingTime = Date.now() - startTime
-    const remoteProcessingMs = Math.max(0, processingTime - createMs - pollMs - transcriptMs)
-    metadata = {
-      transcriptionService: 'rev',
-      transcriptionModel: modelName,
-      processingTime,
-      tokenCount: countTokens(finalText),
-      runtime: completedRuntime,
-      ...((createMs > 0 || pollMs > 0 || pollSleepMs > 0 || transcriptMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
-        ? {
-            timings: {
-              ...(createMs > 0 ? { createMs } : {}),
-              ...(createCount > 0 ? { createCount } : {}),
-              ...(pollMs > 0 ? { pollMs } : {}),
-              ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-              ...(pollCount > 0 ? { pollCount } : {}),
-              ...(transcriptMs > 0 ? { transcriptMs } : {}),
-              ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-              ...(requestCount > 0 ? { requestCount } : {}),
-              ...(retryCount > 0 ? { retryCount } : {}),
-              ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-              ...(backfillCount > 0 ? { backfillCount } : {})
-            }
-          }
-        : {})
-    }
+  const processingTime = Date.now() - startTime
+  const remoteProcessingMs = Math.max(0, processingTime - createMs - pollMs - transcriptMs)
+  const timings = buildTimingMetadata(remoteProcessingMs)
+  metadata = {
+    transcriptionService: 'rev',
+    transcriptionModel: modelName,
+    processingTime,
+    tokenCount: countTokens(finalText),
+    runtime: completedRuntime,
+    ...(timings ? { timings } : {})
+  }
 
     if (segmentNumber && totalSegments) {
       logSttSegmentLifecycle(l, { provider: 'rev', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
@@ -660,18 +645,7 @@ export const runRevStt = async (
       result: {
         text: finalText,
         segments: finalSegments,
-        evidence: {
-          ...(evidenceWords.length > 0 ? {
-            words: evidenceWords
-          } : {}),
-          capabilities: {
-            hasNativeWordTiming: evidenceWords.length > 0,
-            hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
-            hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-          },
-          timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-          rawResponse: transcript
-        }
+        evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
       },
       metadata
     }
@@ -722,7 +696,7 @@ export const runRevStt = async (
           ...(shouldDeleteRemoteJob ? { remoteJobDeleted } : {})
         }
       }
-      await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(cleanupRuntime))
+      await persistProgressMetadata(cleanupRuntime)
     }
   }
 }

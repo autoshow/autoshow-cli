@@ -6,23 +6,6 @@ export const DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES = 30
 export const SPLIT_DURATION_SAFETY_SECONDS = 1
 const SPLIT_ATTACHMENT_CAP_SAFETY_RATIO = 0.95
 
-const resolveRequiredEffectiveBytes = (
-  service: string,
-  model: string
-): number => {
-  const effectiveBytes = getSttLimits(service, model).effectiveBytes
-  if (effectiveBytes === undefined) {
-    throw new Error(`Missing STT effectiveBytes limit for ${service}/${model}`)
-  }
-
-  return effectiveBytes
-}
-
-export const GROQ_MAX_ATTACHMENT_BYTES = resolveRequiredEffectiveBytes('groq', 'whisper-large-v3-turbo')
-export const SPEECHMATICS_MAX_ATTACHMENT_BYTES = resolveRequiredEffectiveBytes('speechmatics', 'standard')
-export const REV_MAX_ATTACHMENT_BYTES = resolveRequiredEffectiveBytes('rev', 'low_cost')
-export const GLADIA_MAX_ATTACHMENT_BYTES = resolveRequiredEffectiveBytes('gladia', 'default')
-
 export const resolveSttSplitPolicy = (
   target: Pick<SttTarget, 'service' | 'model'>
 ): SttSplitPolicy => {
