@@ -1,4 +1,3 @@
-import { validateKimiOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { KIMI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
@@ -23,5 +22,3 @@ export const ensureKimiApiKey = (serviceName: string): string => {
 export const ensureKimiOcrSetup = async (): Promise<void> => {
   ensureKimiApiKey('Kimi OCR')
 }
-
-export { validateKimiOcrModel }

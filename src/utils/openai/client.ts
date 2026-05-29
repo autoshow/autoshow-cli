@@ -8,8 +8,6 @@ import {
   readJsonResponse
 } from '~/utils/rest-client'
 
-export { OPENAI_DEFAULT_BASE_URL }
-
 export type OpenAIRestConfig = {
   apiKey: string
   baseURL?: string | undefined

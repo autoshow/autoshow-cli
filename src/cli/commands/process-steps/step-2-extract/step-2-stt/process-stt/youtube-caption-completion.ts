@@ -12,8 +12,7 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { logRunManifestLocation } from '../../../write-manifest-log'
 import {
   readStoredYoutubeCaptionSuccess,
-  tryResolveYoutubeCaptionTranscription,
-  YOUTUBE_CAPTIONS_SERVICE
+  tryResolveYoutubeCaptionTranscription
 } from '../youtube-captions'
 import { formatSttTargetLabel } from '../stt-targets'
 import { writeSttRunManifest } from '../manifest'
@@ -144,5 +143,3 @@ export const completeYoutubeCaptionStt = async ({
 
   return outputDir
 }
-
-export { YOUTUBE_CAPTIONS_SERVICE }

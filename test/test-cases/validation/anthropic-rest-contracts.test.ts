@@ -8,9 +8,14 @@ import {
   deleteAnthropicFile,
   uploadAnthropicFile
 } from '~/utils/anthropic/client'
+import {
+  clearEnv,
+  restoreEnv,
+  snapshotEnv
+} from '../../test-utils/rest-contract-helpers'
 
 const originalFetch = globalThis.fetch
-const previousEnv: Record<string, string | undefined> = {}
+let previousEnv: Record<string, string | undefined> = {}
 const envKeys = ['ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL', 'MINIMAX_API_KEY']
 
 const structuredOpts: StructuredRequestOptions = {
@@ -27,25 +32,13 @@ const structuredOpts: StructuredRequestOptions = {
   strategy: 'native'
 }
 
-const restoreEnv = (): void => {
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-}
-
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(() => {
-  restoreEnv()
+  restoreEnv(previousEnv)
   globalThis.fetch = originalFetch
 })
 

@@ -5,11 +5,9 @@ import type {
   DiarizationOptions,
   RetryClass,
   SpeechmaticsHttpError,
-  SpeechmaticsCreateJobResponse,
   SpeechmaticsJob,
   SpeechmaticsTranscriptResponse,
   Step2Metadata,
-  Step2RuntimeMetadata,
   TranscriptionSegment,
   TranscriptionResult
 } from '~/types'
@@ -19,7 +17,6 @@ import {
   SpeechmaticsTranscriptResponseSchema
 } from '~/types'
 import {
-  logSttAsyncJobLifecycle,
   logSttCleanupFailure,
   logSttSegmentLifecycle
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
@@ -33,12 +30,12 @@ import {
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import {
-  createAsyncSttJobReadyNotifier,
-  createAsyncSttProgressMetadataPersister,
-  pollAsyncSttJobUntilComplete,
-  readPersistedAsyncSttRuntime,
+  attachAsyncSttErrorContext,
+  attachAsyncSttValidationContext,
+  getAsyncSttErrorStatus,
+  runAsyncSttJobLifecycle,
+  type AsyncSttLifecycleMetrics
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
-import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
 import { getSpeechmaticsBaseUrl } from './speechmatics'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -51,11 +48,6 @@ const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
 
 const buildSpeechmaticsUrl = (baseURL: string, path: string): string =>
   new URL(path, baseURL).toString()
-
-const getErrorStatus = (error: unknown): number | undefined =>
-  error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
-    ? (error as { status: number }).status
-    : undefined
 
 const toSpeechmaticsHttpError = (
   stage: 'create' | 'poll' | 'transcript',
@@ -71,36 +63,6 @@ const toSpeechmaticsHttpError = (
     retryClass
   }
 )
-
-const attachSpeechmaticsErrorContext = (
-  error: unknown,
-  stage: 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass
-): never => {
-  if (error instanceof Error && error.cause instanceof Error) {
-    ;(error.cause as SpeechmaticsHttpError).stage = stage
-    ;(error.cause as SpeechmaticsHttpError).retryClass = retryClass
-    throw error.cause
-  }
-
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as SpeechmaticsHttpError).stage = stage
-  ;(source as SpeechmaticsHttpError).retryClass = retryClass
-  throw source
-}
-
-const attachSpeechmaticsValidationContext = (
-  error: unknown,
-  stage: 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass,
-  rawResponse: unknown
-): never => {
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as SpeechmaticsHttpError).stage = stage
-  ;(source as SpeechmaticsHttpError).retryClass = retryClass
-  ;(source as SpeechmaticsHttpError).rawResponse = rawResponse
-  throw source
-}
 
 const buildCreateForm = (
   audioPath: string,
@@ -202,19 +164,19 @@ const getTranscript = async (
       (error) => {
         const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
         if (decision.shouldRetry) {
-          metrics?.onRetry?.(getErrorStatus(error))
+          metrics?.onRetry?.(getAsyncSttErrorStatus(error))
         }
         return decision
       }
     )
   } catch (error) {
-    attachSpeechmaticsErrorContext(error, 'transcript', 'runtime_http_read')
+    attachAsyncSttErrorContext<SpeechmaticsHttpError>(error, 'transcript', 'runtime_http_read')
   }
 
   try {
     return validateData(SpeechmaticsTranscriptResponseSchema, rawPayload, 'Speechmatics transcript response')
   } catch (error) {
-    return attachSpeechmaticsValidationContext(error, 'transcript', 'runtime_http_read', rawPayload)
+    return attachAsyncSttValidationContext<SpeechmaticsHttpError>(error, 'transcript', 'runtime_http_read', rawPayload)
   }
 }
 
@@ -367,6 +329,125 @@ const evidenceWordsFromTranscript = (
   })
   .filter((word): word is NonNullable<typeof word> => word !== null)
 
+const createSpeechmaticsJob = async (
+  baseURL: string,
+  apiKey: string,
+  audioPath: string,
+  modelName: string,
+  metrics: AsyncSttLifecycleMetrics
+): Promise<{ jobId: string, status?: SpeechmaticsJob | undefined }> => {
+  let rawPayload: unknown
+  try {
+    rawPayload = await withRetry(
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'speechmatics-create-job',
+        policy: { maxAttempts: 4 },
+        timeoutMs: REQUEST_TIMEOUT_MS
+      },
+      async (signal) => {
+        metrics.requestCount += 1
+        const response = await fetch(buildSpeechmaticsUrl(baseURL, '/v2/jobs'), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          },
+          body: buildCreateForm(audioPath, modelName),
+          signal: signal ?? null
+        })
+
+        if (!response.ok) {
+          throw toSpeechmaticsHttpError('create', 'runtime_http_create_conservative', response, await response.text())
+        }
+
+        return await response.json()
+      },
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          metrics.retryCount += 1
+          if (getAsyncSttErrorStatus(error) === 429) {
+            metrics.rateLimitCount += 1
+          }
+        }
+        return decision
+      }
+    )
+  } catch (error) {
+    return attachAsyncSttErrorContext<SpeechmaticsHttpError>(error, 'create', 'runtime_http_create_conservative')
+  }
+
+  try {
+    const createResponse = validateData(SpeechmaticsCreateJobResponseSchema, rawPayload, 'Speechmatics create job response')
+    return {
+      jobId: 'job' in createResponse ? createResponse.job.id : createResponse.id,
+      ...('job' in createResponse ? { status: createResponse.job } : {})
+    }
+  } catch (error) {
+    return attachAsyncSttValidationContext<SpeechmaticsHttpError>(error, 'create', 'runtime_http_create_conservative', rawPayload)
+  }
+}
+
+const pollSpeechmaticsJob = async (
+  baseURL: string,
+  apiKey: string,
+  jobId: string,
+  metrics: AsyncSttLifecycleMetrics
+): Promise<{ status: SpeechmaticsJob, retryAfterMs: number | null }> => {
+  let result!: { payload: unknown, retryAfterMs: number | null }
+  try {
+    result = await withRetry(
+      {
+        retryClass: 'runtime_http_read',
+        operationName: 'speechmatics-poll-job',
+        policy: { maxAttempts: 6 },
+        timeoutMs: POLL_REQUEST_TIMEOUT_MS
+      },
+      async (signal) => {
+        metrics.requestCount += 1
+        const response = await fetch(buildSpeechmaticsUrl(baseURL, `/v2/jobs/${jobId}`), {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${apiKey}`
+          },
+          signal: signal ?? null
+        })
+
+        if (!response.ok) {
+          throw toSpeechmaticsHttpError('poll', 'runtime_http_read', response, await response.text())
+        }
+
+        return {
+          payload: await response.json(),
+          retryAfterMs: parseRetryAfterMs(response.headers) ?? null
+        }
+      },
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          metrics.retryCount += 1
+          if (getAsyncSttErrorStatus(error) === 429) {
+            metrics.rateLimitCount += 1
+          }
+        }
+        return decision
+      }
+    )
+  } catch (error) {
+    return attachAsyncSttErrorContext<SpeechmaticsHttpError>(error, 'poll', 'runtime_http_read')
+  }
+
+  try {
+    const statusResponse = validateData(SpeechmaticsJobResponseSchema, result.payload, 'Speechmatics job status response')
+    return {
+      status: statusResponse.job,
+      retryAfterMs: result.retryAfterMs
+    }
+  } catch (error) {
+    return attachAsyncSttValidationContext<SpeechmaticsHttpError>(error, 'poll', 'runtime_http_read', result.payload)
+  }
+}
+
 export const runSpeechmaticsStt = async (
   audioPath: string,
   outputDir: string,
@@ -400,348 +481,70 @@ export const runSpeechmaticsStt = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
-  let createMs = 0
-  let pollMs = 0
-  let pollSleepMs = 0
-  let transcriptMs = 0
-  let createCount = 0
-  let pollCount = 0
-  let requestCount = 0
-  let retryCount = 0
-  let rateLimitCount = 0
-  const backfillCount = runMode === 'backfill' ? 1 : 0
-
-  let runtime = await readPersistedAsyncSttRuntime(outputDir, {
-    transcriptionService: 'speechmatics',
-    transcriptionModel: modelName
-  })
-  let jobId = runtime?.remoteJobId
-  let lastKnownJobStatus: SpeechmaticsJob | undefined
-  let resumedExistingJob = false
-  let metadata: Step2Metadata | undefined
-
-  const buildTimingMetadata = (remoteProcessingMs = 0): Step2Metadata['timings'] =>
-    buildStep2TimingMetadata({
-      createMs,
-      createCount,
-      pollMs,
-      pollSleepMs,
-      pollCount,
-      transcriptMs,
-      remoteProcessingMs,
-      requestCount,
-      retryCount,
-      rateLimitCount,
-      backfillCount
-    })
-
-  const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
-    transcriptionService: 'speechmatics',
-    transcriptionModel: modelName,
-    processingTime: Date.now() - startTime,
-    tokenCount: 0,
-    timings: buildTimingMetadata() ?? {},
-    runtime: nextRuntime
-  })
-
-  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+  return await runAsyncSttJobLifecycle<SpeechmaticsJob, SpeechmaticsTranscriptResponse>({
     outputDir,
-    buildProgressMetadata,
-    (nextRuntime) => { runtime = nextRuntime }
-  )
-  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
-
-  try {
-    if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
-      resumedExistingJob = true
-      runtime = {
-        ...runtime,
-        mode: 'resumed',
-        stage: 'polling'
-      }
-      jobId = runtime.remoteJobId
-      await persistProgressMetadata(runtime)
-      await notifyJobReady(runtime)
-    } else {
-      let rawPayload: unknown
-      try {
-        const createStartedAt = Date.now()
-        rawPayload = await withRetry(
-          {
-            retryClass: 'runtime_http_create_conservative',
-            operationName: 'speechmatics-create-job',
-            policy: { maxAttempts: 4 },
-            timeoutMs: REQUEST_TIMEOUT_MS
-          },
-          async (signal) => {
-            requestCount += 1
-            const response = await fetch(buildSpeechmaticsUrl(baseURL, '/v2/jobs'), {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${apiKey}`
-              },
-              body: buildCreateForm(audioPath, modelName),
-              signal: signal ?? null
-            })
-
-            if (!response.ok) {
-              throw toSpeechmaticsHttpError('create', 'runtime_http_create_conservative', response, await response.text())
-            }
-
-            return await response.json()
-          },
-          (error) => {
-            const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
-            if (decision.shouldRetry) {
-              retryCount += 1
-              if (getErrorStatus(error) === 429) {
-                rateLimitCount += 1
-              }
-            }
-            return decision
-          }
-        )
-        createMs += Date.now() - createStartedAt
-        createCount += 1
-      } catch (error) {
-        attachSpeechmaticsErrorContext(error, 'create', 'runtime_http_create_conservative')
-      }
-
-      let createResponse!: SpeechmaticsCreateJobResponse
-      try {
-        createResponse = validateData(SpeechmaticsCreateJobResponseSchema, rawPayload, 'Speechmatics create job response')
-      } catch (error) {
-        attachSpeechmaticsValidationContext(error, 'create', 'runtime_http_create_conservative', rawPayload)
-      }
-
-      jobId = 'job' in createResponse ? createResponse.job.id : createResponse.id
-      lastKnownJobStatus = 'job' in createResponse ? createResponse.job : undefined
-      const createdRuntime: Step2RuntimeMetadata = {
-        mode: 'fresh',
-        stage: 'polling',
-        remoteJobId: jobId,
-        createCompletedAt: new Date().toISOString()
-      }
-      await persistProgressMetadata(createdRuntime)
-      await notifyJobReady(createdRuntime)
-    }
-
-    if (!jobId) {
-      throw new Error('Speechmatics job creation did not produce a job id')
-    }
-
-    const activeJobId = jobId
-    logSttAsyncJobLifecycle(l, {
-      provider: `speechmatics/${modelName}`,
-      action: resumedExistingJob ? 'resumed' : 'created',
-      remoteId: activeJobId,
-      state: 'polling'
-    })
-
-    const pollResult = await pollAsyncSttJobUntilComplete({
-      jobId: activeJobId,
-      initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
-      maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
-      audioDurationSeconds,
-      pollMode: resumedExistingJob ? 'resume-probe' : 'fresh',
-      buildDeadlineError: (nextJobId, pollDeadlineMs) => buildPollingDeadlineError(nextJobId, pollDeadlineMs),
-      buildResumeProbeError: (nextJobId, probeCount, totalWaitMs) => buildResumeProbeError(nextJobId, probeCount, totalWaitMs),
-      poll: async () => {
-        let result!: { payload: unknown, retryAfterMs: number | null }
-        try {
-          const pollStartedAt = Date.now()
-          result = await withRetry(
-            {
-              retryClass: 'runtime_http_read',
-              operationName: 'speechmatics-poll-job',
-              policy: { maxAttempts: 6 },
-              timeoutMs: POLL_REQUEST_TIMEOUT_MS
-            },
-            async (signal) => {
-              requestCount += 1
-              const response = await fetch(buildSpeechmaticsUrl(baseURL, `/v2/jobs/${activeJobId}`), {
-                method: 'GET',
-                headers: {
-                  Authorization: `Bearer ${apiKey}`
-                },
-                signal: signal ?? null
-              })
-
-              if (!response.ok) {
-                throw toSpeechmaticsHttpError('poll', 'runtime_http_read', response, await response.text())
-              }
-
-              return {
-                payload: await response.json(),
-                retryAfterMs: parseRetryAfterMs(response.headers) ?? null
-              }
-            },
-            (error) => {
-              const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
-              if (decision.shouldRetry) {
-                retryCount += 1
-                if (getErrorStatus(error) === 429) {
-                  rateLimitCount += 1
-                }
-              }
-              return decision
-            }
-          )
-          pollMs += Date.now() - pollStartedAt
-        } catch (error) {
-          attachSpeechmaticsErrorContext(error, 'poll', 'runtime_http_read')
-        }
-
-        let statusResponse!: { job: SpeechmaticsJob }
-        try {
-          statusResponse = validateData(SpeechmaticsJobResponseSchema, result.payload, 'Speechmatics job status response')
-        } catch (error) {
-          attachSpeechmaticsValidationContext(error, 'poll', 'runtime_http_read', result.payload)
-        }
-
-        return {
-          status: statusResponse.job,
-          retryAfterMs: result.retryAfterMs
-        }
+    providerService: 'speechmatics',
+    providerLogLabel: 'speechmatics',
+    providerDisplayName: 'Speechmatics',
+    modelName,
+    startTime,
+    runMode,
+    lifecycle,
+    audioDurationSeconds,
+    initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
+    maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
+    createJob: async (metrics) => await createSpeechmaticsJob(baseURL, apiKey, audioPath, modelName, metrics),
+    pollJob: async (jobId, metrics) => await pollSpeechmaticsJob(baseURL, apiKey, jobId, metrics),
+    getTranscript: async (jobId, metrics) => await getTranscript(baseURL, apiKey, jobId, {
+      onRequest: () => {
+        metrics.requestCount += 1
       },
-      isComplete: (status) => status.status === 'done',
-      isFailed: (status) => status.status === 'rejected' ? buildRejectedJobMessage(status) : undefined,
-      onProgress: async (status) => {
-        lastKnownJobStatus = status
-        await persistProgressMetadata({
-          ...(runtime ?? {
-            mode: 'fresh',
-            stage: 'polling',
-            remoteJobId: activeJobId
-          }),
-          mode: runtime?.mode ?? 'fresh',
-          stage: 'polling',
-          remoteJobId: activeJobId,
-          ...(runtime?.createCompletedAt ? { createCompletedAt: runtime.createCompletedAt } : {}),
-          lastPollAt: new Date().toISOString()
-        })
-      },
-      withPollSlot: lifecycle?.withPollSlot
-    })
+      onRetry: (status) => {
+        metrics.retryCount += 1
+        if (status === 429) {
+          metrics.rateLimitCount += 1
+        }
+      }
+    }),
+    isComplete: (status) => status.status === 'done',
+    isFailed: (status) => status.status === 'rejected' ? buildRejectedJobMessage(status) : undefined,
+    buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
+    buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
+    deleteJob: async (jobId) => await deleteJob(baseURL, apiKey, jobId),
+    shouldDeleteRemoteJob: ({ metadata, lastKnownStatus }) =>
+      metadata !== undefined || lastKnownStatus?.status === 'done' || lastKnownStatus?.status === 'rejected',
+    buildResult: async ({ transcript, runtime, processingTime, timings }) => {
+      const transcriptOutput = toTranscriptOutput(transcript, offsetSeconds)
+      const evidenceWords = evidenceWordsFromTranscript(transcript, offsetSeconds)
+      const { finalSegments, finalText } = resolveTranscriptionOutput(
+        transcriptOutput.segments,
+        transcriptOutput.text,
+        offsetSeconds
+      )
 
-    pollSleepMs += pollResult.pollSleepMs
-    pollCount += pollResult.pollCount
+      await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
-    const completedRuntime: Step2RuntimeMetadata = {
-      ...(runtime ?? {
-        mode: 'fresh',
-        stage: 'completed',
-        remoteJobId: activeJobId
-      }),
-      mode: runtime?.mode ?? 'fresh',
-      stage: 'completed',
-      remoteJobId: activeJobId,
-      ...(runtime?.createCompletedAt ? { createCompletedAt: runtime.createCompletedAt } : {}),
-      ...(runtime?.lastPollAt ? { lastPollAt: runtime.lastPollAt } : {}),
-      completedAt: new Date().toISOString()
-    }
+      const metadata: Step2Metadata = {
+        transcriptionService: 'speechmatics',
+        transcriptionModel: modelName,
+        processingTime,
+        tokenCount: countTokens(finalText),
+        runtime,
+        ...(timings ? { timings } : {})
+      }
 
-    let transcript!: SpeechmaticsTranscriptResponse
-    try {
-      const transcriptStartedAt = Date.now()
-      transcript = await getTranscript(baseURL, apiKey, activeJobId, {
-        onRequest: () => {
-          requestCount += 1
+      if (segmentNumber && totalSegments) {
+        logSttSegmentLifecycle(l, { provider: 'speechmatics', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
+      }
+
+      return {
+        result: {
+          text: finalText,
+          segments: finalSegments,
+          evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
         },
-        onRetry: (status) => {
-          retryCount += 1
-          if (status === 429) {
-            rateLimitCount += 1
-          }
-        }
-      })
-      transcriptMs += Date.now() - transcriptStartedAt
-    } catch (error) {
-      attachSpeechmaticsErrorContext(error, 'transcript', 'runtime_http_read')
-    }
-
-    const transcriptOutput = toTranscriptOutput(transcript, offsetSeconds)
-    const evidenceWords = evidenceWordsFromTranscript(transcript, offsetSeconds)
-    const { finalSegments, finalText } = resolveTranscriptionOutput(
-      transcriptOutput.segments,
-      transcriptOutput.text,
-      offsetSeconds
-    )
-
-    await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
-
-  const processingTime = Date.now() - startTime
-  const remoteProcessingMs = Math.max(0, processingTime - createMs - pollMs - transcriptMs)
-  const timings = buildTimingMetadata(remoteProcessingMs)
-  metadata = {
-    transcriptionService: 'speechmatics',
-    transcriptionModel: modelName,
-    processingTime,
-    tokenCount: countTokens(finalText),
-    runtime: completedRuntime,
-    ...(timings ? { timings } : {})
-  }
-
-    if (segmentNumber && totalSegments) {
-      logSttSegmentLifecycle(l, { provider: 'speechmatics', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
-    }
-
-    return {
-      result: {
-        text: finalText,
-        segments: finalSegments,
-        evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
-      },
-      metadata
-    }
-  } finally {
-    const cleanupStartedAt = Date.now()
-    const shouldDeleteRemoteJob = jobId !== undefined
-      && (metadata !== undefined || lastKnownJobStatus?.status === 'done' || lastKnownJobStatus?.status === 'rejected')
-    const remoteJobDeleted = shouldDeleteRemoteJob && jobId ? await deleteJob(baseURL, apiKey, jobId) : false
-    const cleanupMs = Date.now() - cleanupStartedAt
-
-    if (metadata) {
-      const processingTime = metadata.processingTime
-      metadata.timings = {
-        ...(metadata.timings ?? {}),
-        ...(cleanupMs > 0 ? { cleanupMs } : {}),
-        remoteProcessingMs: Math.max(0, processingTime
-          - ((metadata.timings?.createMs ?? 0)
-          + (metadata.timings?.pollMs ?? 0)
-          + (metadata.timings?.transcriptMs ?? 0)
-          + cleanupMs))
+        metadata
       }
-      metadata.runtime = {
-        ...(metadata.runtime ?? {
-          mode: runtime?.mode ?? 'fresh',
-          stage: 'cleanup-complete',
-          remoteJobId: jobId ?? ''
-        }),
-        mode: metadata.runtime?.mode ?? runtime?.mode ?? 'fresh',
-        stage: 'cleanup-complete',
-        remoteJobId: metadata.runtime?.remoteJobId ?? jobId ?? '',
-        ...(metadata.runtime?.createCompletedAt ? { createCompletedAt: metadata.runtime.createCompletedAt } : {}),
-        ...(metadata.runtime?.lastPollAt ? { lastPollAt: metadata.runtime.lastPollAt } : {}),
-        ...(metadata.runtime?.completedAt ? { completedAt: metadata.runtime.completedAt } : {}),
-        cleanupCompletedAt: new Date().toISOString(),
-        cleanup: {
-          ...(metadata.runtime?.cleanup ?? {}),
-          ...(jobId ? { remoteJobDeleted } : {})
-        }
-      }
-    } else if (runtime && jobId) {
-      const cleanupRuntime: Step2RuntimeMetadata = {
-        ...runtime,
-        stage: shouldDeleteRemoteJob ? 'cleanup-complete' : runtime.stage,
-        remoteJobId: jobId,
-        ...(shouldDeleteRemoteJob ? { cleanupCompletedAt: new Date().toISOString() } : {}),
-        cleanup: {
-          ...(runtime.cleanup ?? {}),
-          ...(shouldDeleteRemoteJob ? { remoteJobDeleted } : {})
-        }
-      }
-      await persistProgressMetadata(cleanupRuntime)
     }
-  }
+  })
 }

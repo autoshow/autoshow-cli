@@ -1,83 +1,7 @@
 import type { Step2Metadata, TranscriptionResult } from '~/types'
 import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
-import {
-  buildTranscriptionOutputBase,
-  countTokens,
-  formatTranscriptText,
-  resolveTranscriptionOutput
-} from '../../stt-utils/stt-utils'
-
-const normalizeBaseURL = (baseURL: string): string =>
-  baseURL.replace(/\/+$/, '')
-
-const runJsonOpenaiStt = async (
-  audioPath: string,
-  outputDir: string,
-  options: {
-    apiKey: string
-    baseURL: string
-    model: string
-    segmentOffsetMinutes: number
-    segmentNumber?: number | undefined
-  }
-): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const startTime = Date.now()
-  const offsetSeconds = options.segmentOffsetMinutes * 60
-  const outputBase = buildTranscriptionOutputBase(outputDir, options.segmentNumber)
-  const form = new FormData()
-  form.append('model', options.model)
-  form.append('response_format', 'json')
-  form.append('file', Bun.file(audioPath))
-
-  const response = await fetch(`${normalizeBaseURL(options.baseURL)}/audio/transcriptions`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${options.apiKey}`
-    },
-    body: form
-  })
-
-  const rawText = await response.text()
-  let payload: unknown = rawText
-  try {
-    payload = JSON.parse(rawText) as unknown
-  } catch {
-    payload = rawText
-  }
-
-  if (!response.ok) {
-    throw new Error(`OpenAI transcription failed (${response.status}): ${rawText}`)
-  }
-
-  const text = typeof payload === 'object' && payload !== null && 'text' in payload
-    ? String((payload as { text?: unknown }).text ?? '').trim()
-    : rawText.trim()
-  const { finalSegments, finalText } = resolveTranscriptionOutput([], text, offsetSeconds)
-  await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
-
-  return {
-    result: {
-      text: finalText,
-      segments: finalSegments,
-      evidence: {
-        capabilities: {
-          hasNativeWordTiming: false,
-          hasConfidence: false,
-          hasSpeakerLabels: false
-        },
-        timingQuality: 'coarse',
-        rawResponse: payload
-      }
-    },
-    metadata: {
-      transcriptionService: 'openai-stt',
-      transcriptionModel: options.model,
-      processingTime: Date.now() - startTime,
-      tokenCount: countTokens(finalText)
-    }
-  }
-}
+import { runOpenAICompatibleTextOnlyStt } from '../openai-compatible-single-speaker'
 
 export const runOpenaiStt = async (
   audioPath: string,
@@ -97,11 +21,14 @@ export const runOpenaiStt = async (
   }
 
   const baseURL = OPENAI_DEFAULT_BASE_URL
-  return await runJsonOpenaiStt(audioPath, outputDir, {
+  return await runOpenAICompatibleTextOnlyStt(audioPath, outputDir, {
+    service: 'openai-stt',
     apiKey,
     baseURL,
     model,
     segmentOffsetMinutes,
-    segmentNumber
+    segmentNumber,
+    formFields: { response_format: 'json' },
+    errorMessagePrefix: 'OpenAI transcription failed'
   })
 }

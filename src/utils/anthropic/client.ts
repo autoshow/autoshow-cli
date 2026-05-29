@@ -8,7 +8,6 @@ import {
   readJsonResponse
 } from '~/utils/rest-client'
 
-export { ANTHROPIC_DEFAULT_BASE_URL }
 const ANTHROPIC_VERSION = '2023-06-01'
 export const ANTHROPIC_FILES_API_BETA = 'files-api-2025-04-14'
 

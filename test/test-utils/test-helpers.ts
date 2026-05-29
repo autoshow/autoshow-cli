@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { mkdir, readdir, rm, appendFile, copyFile, stat } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 import { parseCommandEstimatedTotal } from '../test-runner/utils'
+import { parseConfiguredEnvValueFromDotEnv } from './env-file'
 import { readOutputMetadataSummary } from './output-metadata-summary'
 import { E2E_TEST_TIMEOUT_MS } from './timeouts'
 import { LLAMA_PROCESS_LOCK_NAME, stopDefaultLlamaServer } from '~/cli/commands/process-steps/step-3-write/write-local/llama/run-llama'
@@ -476,24 +477,7 @@ export const readConfiguredEnvVar = async (key: string): Promise<string | undefi
 
   try {
     const text = await Bun.file('.env').text()
-    for (const line of text.split('\n')) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) {
-        continue
-      }
-      const idx = trimmed.indexOf('=')
-      if (idx <= 0) {
-        continue
-      }
-      const k = trimmed.slice(0, idx).trim()
-      if (k !== key) {
-        continue
-      }
-      const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
-      if (value.length > 0) {
-        return value
-      }
-    }
+    return parseConfiguredEnvValueFromDotEnv(text, key)
   } catch {
   }
 
@@ -508,24 +492,7 @@ export const readConfiguredEnvVarSync = (key: string): string | undefined => {
 
   try {
     const text = readFileSync('.env', 'utf8')
-    for (const line of text.split('\n')) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) {
-        continue
-      }
-      const idx = trimmed.indexOf('=')
-      if (idx <= 0) {
-        continue
-      }
-      const k = trimmed.slice(0, idx).trim()
-      if (k !== key) {
-        continue
-      }
-      const value = trimmed.slice(idx + 1).trim().replace(/^['"]|['"]$/g, '')
-      if (value.length > 0) {
-        return value
-      }
-    }
+    return parseConfiguredEnvValueFromDotEnv(text, key)
   } catch {
   }
 

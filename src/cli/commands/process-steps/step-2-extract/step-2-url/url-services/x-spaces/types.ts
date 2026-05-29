@@ -61,7 +61,7 @@ export interface XPost {
   text: string;
 }
 
-export interface XIncludes {
+interface XIncludes {
   tweets?: XPost[] | undefined;
   users?: XUser[] | undefined;
 }

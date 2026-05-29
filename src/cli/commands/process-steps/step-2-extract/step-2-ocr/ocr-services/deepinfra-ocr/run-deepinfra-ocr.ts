@@ -1,8 +1,11 @@
-import { stat } from 'node:fs/promises'
-import { basename } from 'node:path'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import { withOcrPageRequestRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
-import { runWithRenderedOcrPdfPages } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-page-rendering'
+import {
+  assertHostedOcrImageWithinLimits,
+  readHostedOcrImageDataUrl,
+  runHostedOcrDocument,
+  type HostedOcrImageResult
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/hosted-ocr-utils'
 import {
   DEEPINFRA_OCR_IMAGE_BYTES,
   getDeepinfraOcrClientConfig
@@ -14,18 +17,10 @@ import {
 } from '~/utils/openai/client'
 
 const DEEPINFRA_OCR_MAX_TOKENS = 4092
-
-const getImageMimeType = (format: DocumentMetadata['format']): string => {
-  switch (format) {
-    case 'png':
-      return 'image/png'
-    case 'jpg':
-      return 'image/jpeg'
-    case 'webp':
-      return 'image/webp'
-    default:
-      throw new Error(`Unsupported DeepInfra OCR image format: ${format}`)
-  }
+const DEEPINFRA_OCR_IMAGE_MIME_TYPES: Partial<Record<DocumentMetadata['format'], string>> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  webp: 'image/webp'
 }
 
 const buildOcrPrompt = (): string => [
@@ -37,22 +32,6 @@ const buildOcrPrompt = (): string => [
   'If the page is blank or unreadable, return an empty string.'
 ].join(' ')
 
-const assertImageWithinLimits = async (filePath: string, pageLabel: string): Promise<void> => {
-  const fileStats = await stat(filePath)
-  if (fileStats.size > DEEPINFRA_OCR_IMAGE_BYTES) {
-    throw new Error(`DeepInfra OCR image input exceeds the 20 MB image limit for ${basename(filePath)} (${pageLabel}).`)
-  }
-}
-
-const readImageDataUrl = async (
-  filePath: string,
-  format: DocumentMetadata['format']
-): Promise<string> => {
-  const bytes = await Bun.file(filePath).arrayBuffer()
-  const base64 = Buffer.from(bytes).toString('base64')
-  return `data:${getImageMimeType(format)};base64,${base64}`
-}
-
 const runDeepinfraOcrImage = async (
   config: OpenAIRestConfig,
   imagePath: string,
@@ -60,9 +39,16 @@ const runDeepinfraOcrImage = async (
   model: string,
   pageNumber: number,
   pageLabel: string
-): Promise<{ page: PageResult, promptTokens?: number, completionTokens?: number }> => {
-  await assertImageWithinLimits(imagePath, pageLabel)
-  const imageUrl = await readImageDataUrl(imagePath, format)
+): Promise<HostedOcrImageResult> => {
+  await assertHostedOcrImageWithinLimits(imagePath, pageLabel, {
+    providerLabel: 'DeepInfra OCR',
+    maxBytes: DEEPINFRA_OCR_IMAGE_BYTES,
+    limitLabel: '20 MB'
+  })
+  const imageUrl = await readHostedOcrImageDataUrl(imagePath, format, {
+    providerLabel: 'DeepInfra OCR',
+    supportedMimeTypes: DEEPINFRA_OCR_IMAGE_MIME_TYPES
+  })
   return await withOcrPageRequestRetry(
     `deepinfra-ocr ${pageLabel}`,
     async (signal) => {
@@ -105,56 +91,11 @@ export const runDeepinfraOcr = async (
   completionTokens?: number
 }> => {
   const config = getDeepinfraOcrClientConfig()
-  let promptTokens = 0
-  let completionTokens = 0
-  let hasPromptTokens = false
-  let hasCompletionTokens = false
-  const pages: PageResult[] = []
-
-  const addUsage = (result: { promptTokens?: number, completionTokens?: number }): void => {
-    if (typeof result.promptTokens === 'number') {
-      promptTokens += result.promptTokens
-      hasPromptTokens = true
-    }
-    if (typeof result.completionTokens === 'number') {
-      completionTokens += result.completionTokens
-      hasCompletionTokens = true
-    }
-  }
-
-  if (step1Metadata.format !== 'pdf') {
-    const result = await runDeepinfraOcrImage(config, filePath, step1Metadata.format, model, 1, 'input image')
-    addUsage(result)
-    return {
-      pages: [result.page],
-      extractionMethod: 'deepinfra-ocr',
-      totalPages: 1,
-      ...(hasPromptTokens ? { promptTokens } : {}),
-      ...(hasCompletionTokens ? { completionTokens } : {})
-    }
-  }
-
-  const totalPages = Math.max(1, step1Metadata.pageCount)
-  pages.push(...await runWithRenderedOcrPdfPages({
-    filePath,
-    totalPages,
-    dpi: opts.dpi,
-    password: opts.password,
-    ocrPreparationCache: opts.ocrPreparationCache,
+  return await runHostedOcrDocument(filePath, step1Metadata, opts, {
+    extractionMethod: 'deepinfra-ocr',
     tempDirPrefix: 'autoshow-deepinfra-ocr-',
     providerLabel: 'DeepInfra OCR',
-    onPage: async ({ imagePath, page }) => {
-      const result = await runDeepinfraOcrImage(config, imagePath, 'png', model, page, `page ${page}`)
-      addUsage(result)
-      return result.page
-    }
-  }))
-
-  return {
-    pages,
-    extractionMethod: 'deepinfra-ocr',
-    totalPages,
-    ...(hasPromptTokens ? { promptTokens } : {}),
-    ...(hasCompletionTokens ? { completionTokens } : {})
-  }
+    runImage: async (imagePath, format, pageNumber, pageLabel) =>
+      await runDeepinfraOcrImage(config, imagePath, format, model, pageNumber, pageLabel)
+  })
 }

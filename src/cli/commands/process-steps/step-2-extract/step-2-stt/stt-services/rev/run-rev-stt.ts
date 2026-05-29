@@ -8,7 +8,6 @@ import type {
   RevJob,
   RevTranscriptResponse,
   Step2Metadata,
-  Step2RuntimeMetadata,
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
@@ -17,7 +16,6 @@ import {
   RevTranscriptResponseSchema
 } from '~/types'
 import {
-  logSttAsyncJobLifecycle,
   logSttCleanupFailure,
   logSttSegmentLifecycle
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
@@ -31,12 +29,12 @@ import {
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import {
-  createAsyncSttJobReadyNotifier,
-  createAsyncSttProgressMetadataPersister,
-  pollAsyncSttJobUntilComplete,
-  readPersistedAsyncSttRuntime,
+  attachAsyncSttErrorContext,
+  attachAsyncSttValidationContext,
+  getAsyncSttErrorStatus,
+  runAsyncSttJobLifecycle,
+  type AsyncSttLifecycleMetrics
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
-import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
 import { getRevBaseUrl } from './rev'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -49,11 +47,6 @@ const POLL_REQUEST_TIMEOUT_MS = 60 * 1000
 
 const buildRevUrl = (baseURL: string, path: string): string =>
   new URL(path.replace(/^\/+/, ''), baseURL.endsWith('/') ? baseURL : `${baseURL}/`).toString()
-
-const getErrorStatus = (error: unknown): number | undefined =>
-  error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
-    ? (error as { status: number }).status
-    : undefined
 
 const toRevHttpError = (
   stage: 'create' | 'poll' | 'transcript',
@@ -69,36 +62,6 @@ const toRevHttpError = (
     retryClass
   }
 )
-
-const attachRevErrorContext = (
-  error: unknown,
-  stage: 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass
-): never => {
-  if (error instanceof Error && error.cause instanceof Error) {
-    ;(error.cause as RevHttpError).stage = stage
-    ;(error.cause as RevHttpError).retryClass = retryClass
-    throw error.cause
-  }
-
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as RevHttpError).stage = stage
-  ;(source as RevHttpError).retryClass = retryClass
-  throw source
-}
-
-const attachRevValidationContext = (
-  error: unknown,
-  stage: 'create' | 'poll' | 'transcript',
-  retryClass: RetryClass,
-  rawResponse: unknown
-): never => {
-  const source = error instanceof Error ? error : new Error(String(error))
-  ;(source as RevHttpError).stage = stage
-  ;(source as RevHttpError).retryClass = retryClass
-  ;(source as RevHttpError).rawResponse = rawResponse
-  throw source
-}
 
 const buildCreateForm = (
   audioPath: string,
@@ -194,19 +157,19 @@ const getTranscript = async (
       (error) => {
         const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
         if (decision.shouldRetry) {
-          metrics?.onRetry?.(getErrorStatus(error))
+          metrics?.onRetry?.(getAsyncSttErrorStatus(error))
         }
         return decision
       }
     )
   } catch (error) {
-    attachRevErrorContext(error, 'transcript', 'runtime_http_read')
+    attachAsyncSttErrorContext<RevHttpError>(error, 'transcript', 'runtime_http_read')
   }
 
   try {
     return validateData(RevTranscriptResponseSchema, rawPayload, 'Rev transcript response')
   } catch (error) {
-    return attachRevValidationContext(error, 'transcript', 'runtime_http_read', rawPayload)
+    return attachAsyncSttValidationContext<RevHttpError>(error, 'transcript', 'runtime_http_read', rawPayload)
   }
 }
 
@@ -322,6 +285,122 @@ const evidenceWordsFromTranscript = (
   }))
   .filter((word): word is NonNullable<typeof word> => word !== null)
 
+const createRevJob = async (
+  baseURL: string,
+  accessToken: string,
+  audioPath: string,
+  modelName: string,
+  metrics: AsyncSttLifecycleMetrics
+): Promise<{ jobId: string, status: RevJob }> => {
+  let rawPayload: unknown
+  try {
+    rawPayload = await withRetry(
+      {
+        retryClass: 'runtime_http_create_conservative',
+        operationName: 'rev-create-job',
+        policy: { maxAttempts: 4 },
+        timeoutMs: REQUEST_TIMEOUT_MS
+      },
+      async (signal) => {
+        metrics.requestCount += 1
+        const response = await fetch(buildRevUrl(baseURL, '/jobs'), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: buildCreateForm(audioPath, modelName),
+          signal: signal ?? null
+        })
+
+        if (!response.ok) {
+          throw toRevHttpError('create', 'runtime_http_create_conservative', response, await response.text())
+        }
+
+        return await response.json()
+      },
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          metrics.retryCount += 1
+          if (getAsyncSttErrorStatus(error) === 429) {
+            metrics.rateLimitCount += 1
+          }
+        }
+        return decision
+      }
+    )
+  } catch (error) {
+    return attachAsyncSttErrorContext<RevHttpError>(error, 'create', 'runtime_http_create_conservative')
+  }
+
+  try {
+    const createResponse = validateData(RevJobSchema, rawPayload, 'Rev create job response')
+    return { jobId: createResponse.id, status: createResponse }
+  } catch (error) {
+    return attachAsyncSttValidationContext<RevHttpError>(error, 'create', 'runtime_http_create_conservative', rawPayload)
+  }
+}
+
+const pollRevJob = async (
+  baseURL: string,
+  accessToken: string,
+  jobId: string,
+  metrics: AsyncSttLifecycleMetrics
+): Promise<{ status: RevJob, retryAfterMs: number | null }> => {
+  let result!: { payload: unknown, retryAfterMs: number | null }
+  try {
+    result = await withRetry(
+      {
+        retryClass: 'runtime_http_read',
+        operationName: 'rev-poll-job',
+        policy: { maxAttempts: 6 },
+        timeoutMs: POLL_REQUEST_TIMEOUT_MS
+      },
+      async (signal) => {
+        metrics.requestCount += 1
+        const response = await fetch(buildRevUrl(baseURL, `/jobs/${jobId}`), {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          },
+          signal: signal ?? null
+        })
+
+        if (!response.ok) {
+          throw toRevHttpError('poll', 'runtime_http_read', response, await response.text())
+        }
+
+        return {
+          payload: await response.json(),
+          retryAfterMs: parseRetryAfterMs(response.headers) ?? null
+        }
+      },
+      (error) => {
+        const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
+        if (decision.shouldRetry) {
+          metrics.retryCount += 1
+          if (getAsyncSttErrorStatus(error) === 429) {
+            metrics.rateLimitCount += 1
+          }
+        }
+        return decision
+      }
+    )
+  } catch (error) {
+    return attachAsyncSttErrorContext<RevHttpError>(error, 'poll', 'runtime_http_read')
+  }
+
+  try {
+    const statusResponse = validateData(RevJobSchema, result.payload, 'Rev job status response')
+    return {
+      status: statusResponse,
+      retryAfterMs: result.retryAfterMs
+    }
+  } catch (error) {
+    return attachAsyncSttValidationContext<RevHttpError>(error, 'poll', 'runtime_http_read', result.payload)
+  }
+}
+
 export const runRevStt = async (
   audioPath: string,
   outputDir: string,
@@ -355,348 +434,70 @@ export const runRevStt = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
-  let createMs = 0
-  let pollMs = 0
-  let pollSleepMs = 0
-  let transcriptMs = 0
-  let createCount = 0
-  let pollCount = 0
-  let requestCount = 0
-  let retryCount = 0
-  let rateLimitCount = 0
-  const backfillCount = runMode === 'backfill' ? 1 : 0
-
-  let runtime = await readPersistedAsyncSttRuntime(outputDir, {
-    transcriptionService: 'rev',
-    transcriptionModel: modelName
-  })
-  let jobId = runtime?.remoteJobId
-  let lastKnownJobStatus: RevJob | undefined
-  let resumedExistingJob = false
-  let metadata: Step2Metadata | undefined
-
-  const buildTimingMetadata = (remoteProcessingMs = 0): Step2Metadata['timings'] =>
-    buildStep2TimingMetadata({
-      createMs,
-      createCount,
-      pollMs,
-      pollSleepMs,
-      pollCount,
-      transcriptMs,
-      remoteProcessingMs,
-      requestCount,
-      retryCount,
-      rateLimitCount,
-      backfillCount
-    })
-
-  const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
-    transcriptionService: 'rev',
-    transcriptionModel: modelName,
-    processingTime: Date.now() - startTime,
-    tokenCount: 0,
-    timings: buildTimingMetadata() ?? {},
-    runtime: nextRuntime
-  })
-
-  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+  return await runAsyncSttJobLifecycle<RevJob, RevTranscriptResponse>({
     outputDir,
-    buildProgressMetadata,
-    (nextRuntime) => { runtime = nextRuntime }
-  )
-  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
-
-  try {
-    if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
-      resumedExistingJob = true
-      runtime = {
-        ...runtime,
-        mode: 'resumed',
-        stage: 'polling'
-      }
-      jobId = runtime.remoteJobId
-      await persistProgressMetadata(runtime)
-      await notifyJobReady(runtime)
-    } else {
-      let rawPayload: unknown
-      try {
-        const createStartedAt = Date.now()
-        rawPayload = await withRetry(
-          {
-            retryClass: 'runtime_http_create_conservative',
-            operationName: 'rev-create-job',
-            policy: { maxAttempts: 4 },
-            timeoutMs: REQUEST_TIMEOUT_MS
-          },
-          async (signal) => {
-            requestCount += 1
-            const response = await fetch(buildRevUrl(baseURL, '/jobs'), {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${accessToken}`
-              },
-              body: buildCreateForm(audioPath, modelName),
-              signal: signal ?? null
-            })
-
-            if (!response.ok) {
-              throw toRevHttpError('create', 'runtime_http_create_conservative', response, await response.text())
-            }
-
-            return await response.json()
-          },
-          (error) => {
-            const decision = classifyFetchRetry(error, 'runtime_http_create_conservative', { retryAbortOnConservative: true })
-            if (decision.shouldRetry) {
-              retryCount += 1
-              if (getErrorStatus(error) === 429) {
-                rateLimitCount += 1
-              }
-            }
-            return decision
-          }
-        )
-        createMs += Date.now() - createStartedAt
-        createCount += 1
-      } catch (error) {
-        attachRevErrorContext(error, 'create', 'runtime_http_create_conservative')
-      }
-
-      let createResponse!: RevJob
-      try {
-        createResponse = validateData(RevJobSchema, rawPayload, 'Rev create job response')
-      } catch (error) {
-        attachRevValidationContext(error, 'create', 'runtime_http_create_conservative', rawPayload)
-      }
-
-      jobId = createResponse.id
-      lastKnownJobStatus = createResponse
-      const createdRuntime: Step2RuntimeMetadata = {
-        mode: 'fresh',
-        stage: 'polling',
-        remoteJobId: jobId,
-        createCompletedAt: new Date().toISOString()
-      }
-      await persistProgressMetadata(createdRuntime)
-      await notifyJobReady(createdRuntime)
-    }
-
-    if (!jobId) {
-      throw new Error('Rev job creation did not produce a job id')
-    }
-
-    const activeJobId = jobId
-    logSttAsyncJobLifecycle(l, {
-      provider: `rev/${modelName}`,
-      action: resumedExistingJob ? 'resumed' : 'created',
-      remoteId: activeJobId,
-      state: 'polling'
-    })
-
-    const pollResult = await pollAsyncSttJobUntilComplete({
-      jobId: activeJobId,
-      initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
-      maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
-      audioDurationSeconds,
-      pollMode: resumedExistingJob ? 'resume-probe' : 'fresh',
-      buildDeadlineError: (nextJobId, pollDeadlineMs) => buildPollingDeadlineError(nextJobId, pollDeadlineMs),
-      buildResumeProbeError: (nextJobId, probeCount, totalWaitMs) => buildResumeProbeError(nextJobId, probeCount, totalWaitMs),
-      poll: async () => {
-        let result!: { payload: unknown, retryAfterMs: number | null }
-        try {
-          const pollStartedAt = Date.now()
-          result = await withRetry(
-            {
-              retryClass: 'runtime_http_read',
-              operationName: 'rev-poll-job',
-              policy: { maxAttempts: 6 },
-              timeoutMs: POLL_REQUEST_TIMEOUT_MS
-            },
-            async (signal) => {
-              requestCount += 1
-              const response = await fetch(buildRevUrl(baseURL, `/jobs/${activeJobId}`), {
-                method: 'GET',
-                headers: {
-                  Authorization: `Bearer ${accessToken}`
-                },
-                signal: signal ?? null
-              })
-
-              if (!response.ok) {
-                throw toRevHttpError('poll', 'runtime_http_read', response, await response.text())
-              }
-
-              return {
-                payload: await response.json(),
-                retryAfterMs: parseRetryAfterMs(response.headers) ?? null
-              }
-            },
-            (error) => {
-              const decision = classifyFetchRetry(error, 'runtime_http_read', { retryAbortOnConservative: true })
-              if (decision.shouldRetry) {
-                retryCount += 1
-                if (getErrorStatus(error) === 429) {
-                  rateLimitCount += 1
-                }
-              }
-              return decision
-            }
-          )
-          pollMs += Date.now() - pollStartedAt
-        } catch (error) {
-          attachRevErrorContext(error, 'poll', 'runtime_http_read')
-        }
-
-        let statusResponse!: RevJob
-        try {
-          statusResponse = validateData(RevJobSchema, result.payload, 'Rev job status response')
-        } catch (error) {
-          attachRevValidationContext(error, 'poll', 'runtime_http_read', result.payload)
-        }
-
-        return {
-          status: statusResponse,
-          retryAfterMs: result.retryAfterMs
-        }
+    providerService: 'rev',
+    providerLogLabel: 'rev',
+    providerDisplayName: 'Rev',
+    modelName,
+    startTime,
+    runMode,
+    lifecycle,
+    audioDurationSeconds,
+    initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
+    maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
+    createJob: async (metrics) => await createRevJob(baseURL, accessToken, audioPath, modelName, metrics),
+    pollJob: async (jobId, metrics) => await pollRevJob(baseURL, accessToken, jobId, metrics),
+    getTranscript: async (jobId, metrics) => await getTranscript(baseURL, accessToken, jobId, {
+      onRequest: () => {
+        metrics.requestCount += 1
       },
-      isComplete: (status) => status.status === 'transcribed',
-      isFailed: (status) => status.status === 'failed' ? buildFailedJobMessage(status) : undefined,
-      onProgress: async (status) => {
-        lastKnownJobStatus = status
-        await persistProgressMetadata({
-          ...(runtime ?? {
-            mode: 'fresh',
-            stage: 'polling',
-            remoteJobId: activeJobId
-          }),
-          mode: runtime?.mode ?? 'fresh',
-          stage: 'polling',
-          remoteJobId: activeJobId,
-          ...(runtime?.createCompletedAt ? { createCompletedAt: runtime.createCompletedAt } : {}),
-          lastPollAt: new Date().toISOString()
-        })
-      },
-      withPollSlot: lifecycle?.withPollSlot
-    })
+      onRetry: (status) => {
+        metrics.retryCount += 1
+        if (status === 429) {
+          metrics.rateLimitCount += 1
+        }
+      }
+    }),
+    isComplete: (status) => status.status === 'transcribed',
+    isFailed: (status) => status.status === 'failed' ? buildFailedJobMessage(status) : undefined,
+    buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
+    buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
+    deleteJob: async (jobId) => await deleteJob(baseURL, accessToken, jobId),
+    shouldDeleteRemoteJob: ({ metadata, lastKnownStatus }) =>
+      metadata !== undefined || lastKnownStatus?.status === 'transcribed' || lastKnownStatus?.status === 'failed',
+    buildResult: async ({ transcript, runtime, processingTime, timings }) => {
+      const transcriptOutput = normalizeTranscriptOutput(transcript, offsetSeconds)
+      const evidenceWords = evidenceWordsFromTranscript(transcript, offsetSeconds)
+      const { finalSegments, finalText } = resolveTranscriptionOutput(
+        transcriptOutput.segments,
+        transcriptOutput.text,
+        offsetSeconds
+      )
 
-    pollSleepMs += pollResult.pollSleepMs
-    pollCount += pollResult.pollCount
+      await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
 
-    const completedRuntime: Step2RuntimeMetadata = {
-      ...(runtime ?? {
-        mode: 'fresh',
-        stage: 'completed',
-        remoteJobId: activeJobId
-      }),
-      mode: runtime?.mode ?? 'fresh',
-      stage: 'completed',
-      remoteJobId: activeJobId,
-      ...(runtime?.createCompletedAt ? { createCompletedAt: runtime.createCompletedAt } : {}),
-      ...(runtime?.lastPollAt ? { lastPollAt: runtime.lastPollAt } : {}),
-      completedAt: new Date().toISOString()
-    }
+      const metadata: Step2Metadata = {
+        transcriptionService: 'rev',
+        transcriptionModel: modelName,
+        processingTime,
+        tokenCount: countTokens(finalText),
+        runtime,
+        ...(timings ? { timings } : {})
+      }
 
-    let transcript!: RevTranscriptResponse
-    try {
-      const transcriptStartedAt = Date.now()
-      transcript = await getTranscript(baseURL, accessToken, activeJobId, {
-        onRequest: () => {
-          requestCount += 1
+      if (segmentNumber && totalSegments) {
+        logSttSegmentLifecycle(l, { provider: 'rev', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
+      }
+
+      return {
+        result: {
+          text: finalText,
+          segments: finalSegments,
+          evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
         },
-        onRetry: (status) => {
-          retryCount += 1
-          if (status === 429) {
-            rateLimitCount += 1
-          }
-        }
-      })
-      transcriptMs += Date.now() - transcriptStartedAt
-    } catch (error) {
-      attachRevErrorContext(error, 'transcript', 'runtime_http_read')
-    }
-
-    const transcriptOutput = normalizeTranscriptOutput(transcript, offsetSeconds)
-    const evidenceWords = evidenceWordsFromTranscript(transcript, offsetSeconds)
-    const { finalSegments, finalText } = resolveTranscriptionOutput(
-      transcriptOutput.segments,
-      transcriptOutput.text,
-      offsetSeconds
-    )
-
-    await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
-
-  const processingTime = Date.now() - startTime
-  const remoteProcessingMs = Math.max(0, processingTime - createMs - pollMs - transcriptMs)
-  const timings = buildTimingMetadata(remoteProcessingMs)
-  metadata = {
-    transcriptionService: 'rev',
-    transcriptionModel: modelName,
-    processingTime,
-    tokenCount: countTokens(finalText),
-    runtime: completedRuntime,
-    ...(timings ? { timings } : {})
-  }
-
-    if (segmentNumber && totalSegments) {
-      logSttSegmentLifecycle(l, { provider: 'rev', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
-    }
-
-    return {
-      result: {
-        text: finalText,
-        segments: finalSegments,
-        evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
-      },
-      metadata
-    }
-  } finally {
-    const cleanupStartedAt = Date.now()
-    const shouldDeleteRemoteJob = jobId !== undefined
-      && (metadata !== undefined || lastKnownJobStatus?.status === 'transcribed' || lastKnownJobStatus?.status === 'failed')
-    const remoteJobDeleted = shouldDeleteRemoteJob && jobId ? await deleteJob(baseURL, accessToken, jobId) : false
-    const cleanupMs = Date.now() - cleanupStartedAt
-
-    if (metadata) {
-      const processingTime = metadata.processingTime
-      metadata.timings = {
-        ...(metadata.timings ?? {}),
-        ...(cleanupMs > 0 ? { cleanupMs } : {}),
-        remoteProcessingMs: Math.max(0, processingTime
-          - ((metadata.timings?.createMs ?? 0)
-          + (metadata.timings?.pollMs ?? 0)
-          + (metadata.timings?.transcriptMs ?? 0)
-          + cleanupMs))
+        metadata
       }
-      metadata.runtime = {
-        ...(metadata.runtime ?? {
-          mode: runtime?.mode ?? 'fresh',
-          stage: 'cleanup-complete',
-          remoteJobId: jobId ?? ''
-        }),
-        mode: metadata.runtime?.mode ?? runtime?.mode ?? 'fresh',
-        stage: 'cleanup-complete',
-        remoteJobId: metadata.runtime?.remoteJobId ?? jobId ?? '',
-        ...(metadata.runtime?.createCompletedAt ? { createCompletedAt: metadata.runtime.createCompletedAt } : {}),
-        ...(metadata.runtime?.lastPollAt ? { lastPollAt: metadata.runtime.lastPollAt } : {}),
-        ...(metadata.runtime?.completedAt ? { completedAt: metadata.runtime.completedAt } : {}),
-        cleanupCompletedAt: new Date().toISOString(),
-        cleanup: {
-          ...(metadata.runtime?.cleanup ?? {}),
-          ...(jobId ? { remoteJobDeleted } : {})
-        }
-      }
-    } else if (runtime && jobId) {
-      const cleanupRuntime: Step2RuntimeMetadata = {
-        ...runtime,
-        stage: shouldDeleteRemoteJob ? 'cleanup-complete' : runtime.stage,
-        remoteJobId: jobId,
-        ...(shouldDeleteRemoteJob ? { cleanupCompletedAt: new Date().toISOString() } : {}),
-        cleanup: {
-          ...(runtime.cleanup ?? {}),
-          ...(shouldDeleteRemoteJob ? { remoteJobDeleted } : {})
-        }
-      }
-      await persistProgressMetadata(cleanupRuntime)
     }
-  }
+  })
 }

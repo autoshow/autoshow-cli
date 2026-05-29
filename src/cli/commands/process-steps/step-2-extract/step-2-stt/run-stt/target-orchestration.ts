@@ -1,7 +1,5 @@
 import * as l from '~/utils/logger'
 import type {
-  ProcessingOptions,
-  RuntimeOptions,
   Step2Metadata,
   SttTarget,
   SttTargetOptions,
@@ -17,7 +15,6 @@ import {
   resolveSttSplitPolicy,
   resolveTranscriptionSplitDecision
 } from '../stt-split-policy'
-import { collectSttTargets } from '../stt-targets'
 import { createMistralSttPassController } from '../stt-services/mistral/mistral-stt-pass-controller'
 import { logSttSplitDecision } from '../stt-logging'
 import { classifySttSplitLimitError } from './split-limits'
@@ -127,33 +124,4 @@ export const sttTarget = async (
 
     throw error
   }
-}
-
-export const stt = async (
-  audioPath: string,
-  options: ProcessingOptions
-): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const targets = collectSttTargets({
-    ...(options as unknown as RuntimeOptions),
-    step2SelectionOrigins: {
-      whisper: 'explicit'
-    }
-  })
-  if (targets.length !== 1) {
-    throw new Error(`stt() expects exactly one STT target, received ${targets.length}`)
-  }
-  const target = targets[0] as SttTarget
-
-  return await sttTarget(audioPath, options.outputDir, target, {
-    split: options.split,
-    reverbVerbatimicity: options.reverbVerbatimicity,
-    sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,
-    audioDurationSeconds: (options as ProcessingOptions & { audioDurationSeconds?: number }).audioDurationSeconds,
-    sourceUrl: options.url,
-    language: target.service === 'scrapecreators'
-      ? (options as ProcessingOptions & { scrapecreatorsLang?: string }).scrapecreatorsLang
-      : (options as ProcessingOptions & { supadataLang?: string }).supadataLang,
-    happyscribeOrganizationId: (options as ProcessingOptions & { happyscribeOrganizationId?: string }).happyscribeOrganizationId,
-    runMode: 'initial'
-  })
 }

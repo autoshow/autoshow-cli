@@ -96,26 +96,18 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
-function mergeSpacesResponse(target: XSpacesResponse, response: XSpacesResponse): void {
-  target.data ??= [];
-  target.includes ??= {};
-  target.includes.users ??= [];
-  target.errors ??= [];
+type MergeableXListResponse<TData> = {
+  data?: TData[] | undefined;
+  errors?: XApiProblem[] | undefined;
+  includes?: {
+    users?: XUser[] | undefined;
+  } | undefined;
+};
 
-  if (response.data) {
-    target.data.push(...response.data);
-  }
-
-  if (response.includes?.users) {
-    target.includes.users.push(...response.includes.users);
-  }
-
-  if (response.errors) {
-    target.errors.push(...response.errors);
-  }
-}
-
-function mergePostLookupResponse(target: XPostLookupResponse, response: XPostLookupResponse): void {
+function mergeXListResponse<TData, TResponse extends MergeableXListResponse<TData>>(
+  target: TResponse,
+  response: TResponse
+): void {
   target.data ??= [];
   target.includes ??= {};
   target.includes.users ??= [];
@@ -170,7 +162,7 @@ export class XApiClient implements SpacesClientContract {
     const combined: XSpacesResponse = { data: [], errors: [], includes: { users: [] } };
 
     for (const userIdBatch of chunk(userIds, 100)) {
-      mergeSpacesResponse(
+      mergeXListResponse(
         combined,
         await this.xGet<XSpacesResponse>("/2/spaces/by/creator_ids", {
           expansions: SPACE_EXPANSIONS,
@@ -192,7 +184,7 @@ export class XApiClient implements SpacesClientContract {
     const combined: XSpacesResponse = { data: [], errors: [], includes: { users: [] } };
 
     for (const spaceIdBatch of chunk(spaceIds, 100)) {
-      mergeSpacesResponse(
+      mergeXListResponse(
         combined,
         await this.xGet<XSpacesResponse>("/2/spaces", {
           expansions: SPACE_EXPANSIONS,
@@ -214,7 +206,7 @@ export class XApiClient implements SpacesClientContract {
     const combined: XPostLookupResponse = { data: [], errors: [], includes: { users: [] } };
 
     for (const postIdBatch of chunk(postIds, 100)) {
-      mergePostLookupResponse(
+      mergeXListResponse(
         combined,
         await this.xGet<XPostLookupResponse>("/2/tweets", {
           expansions: "author_id",

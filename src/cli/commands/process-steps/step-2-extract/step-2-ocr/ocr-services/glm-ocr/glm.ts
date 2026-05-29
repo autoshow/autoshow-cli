@@ -1,4 +1,3 @@
-import { validateGlmOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { GLM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
@@ -25,5 +24,3 @@ export const ensureGlmApiKey = (serviceName: string): string => {
 export const ensureGlmOcrSetup = async (): Promise<void> => {
   ensureGlmApiKey('GLM OCR')
 }
-
-export { validateGlmOcrModel }

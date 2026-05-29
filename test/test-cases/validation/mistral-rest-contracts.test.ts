@@ -1,44 +1,29 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { runMistralOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/run-mistral-ocr'
 import { runMistralStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/mistral/run-mistral-stt'
 import type { DocumentMetadata } from '~/types'
 import { mistralJsonRequest, normalizeMistralBaseUrl } from '~/utils/mistral/client'
+import {
+  clearEnv,
+  createTempDirTracker,
+  restoreEnv,
+  snapshotEnv
+} from '../../test-utils/rest-contract-helpers'
 
 const originalFetch = globalThis.fetch
-const tempDirs: string[] = []
-const previousEnv: Record<string, string | undefined> = {}
+const tempDirs = createTempDirTracker('autoshow-mistral-rest-')
+let previousEnv: Record<string, string | undefined> = {}
 const envKeys = ['MISTRAL_API_KEY', 'MISTRAL_BASE_URL']
 
-const restoreEnv = (): void => {
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-}
-
-const makeTempDir = async (prefix: string): Promise<string> => {
-  const dir = await mkdtemp(join(tmpdir(), prefix))
-  tempDirs.push(dir)
-  return dir
-}
-
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(async () => {
-  restoreEnv()
+  restoreEnv(previousEnv)
   globalThis.fetch = originalFetch
-  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  await tempDirs.cleanup()
 })
 
 describe('Mistral REST contracts', () => {
@@ -49,7 +34,7 @@ describe('Mistral REST contracts', () => {
   })
 
   test('STT sends documented multipart fields and parses segment responses', async () => {
-    const dir = await makeTempDir('autoshow-mistral-stt-rest-')
+    const dir = await tempDirs.make('autoshow-mistral-stt-rest-')
     const calls: Array<{
       url: string
       method: string

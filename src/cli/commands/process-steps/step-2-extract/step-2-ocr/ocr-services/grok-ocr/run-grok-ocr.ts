@@ -1,8 +1,11 @@
-import { stat } from 'node:fs/promises'
-import { basename } from 'node:path'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
 import { withOcrPageRequestRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
-import { runWithRenderedOcrPdfPages } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-page-rendering'
+import {
+  assertHostedOcrImageWithinLimits,
+  readHostedOcrImageDataUrl,
+  runHostedOcrDocument,
+  type HostedOcrImageResult
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/hosted-ocr-utils'
 import {
   createOpenAIChatCompletion,
   extractOpenAIChatCompletionText,
@@ -14,16 +17,9 @@ import {
 } from './grok'
 
 const GROK_OCR_MAX_COMPLETION_TOKENS = 4096
-
-const getImageMimeType = (format: DocumentMetadata['format']): string => {
-  switch (format) {
-    case 'png':
-      return 'image/png'
-    case 'jpg':
-      return 'image/jpeg'
-    default:
-      throw new Error(`Unsupported Grok OCR image format: ${format}`)
-  }
+const GROK_OCR_IMAGE_MIME_TYPES: Partial<Record<DocumentMetadata['format'], string>> = {
+  png: 'image/png',
+  jpg: 'image/jpeg'
 }
 
 const buildOcrPrompt = (): string => [
@@ -35,22 +31,6 @@ const buildOcrPrompt = (): string => [
   'If the page is blank or unreadable, return an empty string.'
 ].join(' ')
 
-const assertImageWithinLimits = async (filePath: string, pageLabel: string): Promise<void> => {
-  const fileStats = await stat(filePath)
-  if (fileStats.size > GROK_OCR_IMAGE_BYTES) {
-    throw new Error(`Grok OCR image input exceeds the 20 MiB image limit for ${basename(filePath)} (${pageLabel}).`)
-  }
-}
-
-const readImageDataUrl = async (
-  filePath: string,
-  format: DocumentMetadata['format']
-): Promise<string> => {
-  const bytes = await Bun.file(filePath).arrayBuffer()
-  const base64 = Buffer.from(bytes).toString('base64')
-  return `data:${getImageMimeType(format)};base64,${base64}`
-}
-
 const runGrokOcrImage = async (
   config: OpenAIRestConfig,
   imagePath: string,
@@ -58,9 +38,16 @@ const runGrokOcrImage = async (
   model: string,
   pageNumber: number,
   pageLabel: string
-): Promise<{ page: PageResult, promptTokens?: number, completionTokens?: number }> => {
-  await assertImageWithinLimits(imagePath, pageLabel)
-  const imageUrl = await readImageDataUrl(imagePath, format)
+): Promise<HostedOcrImageResult> => {
+  await assertHostedOcrImageWithinLimits(imagePath, pageLabel, {
+    providerLabel: 'Grok OCR',
+    maxBytes: GROK_OCR_IMAGE_BYTES,
+    limitLabel: '20 MiB'
+  })
+  const imageUrl = await readHostedOcrImageDataUrl(imagePath, format, {
+    providerLabel: 'Grok OCR',
+    supportedMimeTypes: GROK_OCR_IMAGE_MIME_TYPES
+  })
   return await withOcrPageRequestRetry(
     `grok-ocr ${pageLabel}`,
     async (signal) => {
@@ -99,56 +86,11 @@ export const runGrokOcr = async (
   completionTokens?: number
 }> => {
   const config = getGrokOcrClientConfig()
-  let promptTokens = 0
-  let completionTokens = 0
-  let hasPromptTokens = false
-  let hasCompletionTokens = false
-  const pages: PageResult[] = []
-
-  const addUsage = (result: { promptTokens?: number, completionTokens?: number }): void => {
-    if (typeof result.promptTokens === 'number') {
-      promptTokens += result.promptTokens
-      hasPromptTokens = true
-    }
-    if (typeof result.completionTokens === 'number') {
-      completionTokens += result.completionTokens
-      hasCompletionTokens = true
-    }
-  }
-
-  if (step1Metadata.format !== 'pdf') {
-    const result = await runGrokOcrImage(config, filePath, step1Metadata.format, model, 1, 'input image')
-    addUsage(result)
-    return {
-      pages: [result.page],
-      extractionMethod: 'grok-ocr',
-      totalPages: 1,
-      ...(hasPromptTokens ? { promptTokens } : {}),
-      ...(hasCompletionTokens ? { completionTokens } : {})
-    }
-  }
-
-  const totalPages = Math.max(1, step1Metadata.pageCount)
-  pages.push(...await runWithRenderedOcrPdfPages({
-    filePath,
-    totalPages,
-    dpi: opts.dpi,
-    password: opts.password,
-    ocrPreparationCache: opts.ocrPreparationCache,
+  return await runHostedOcrDocument(filePath, step1Metadata, opts, {
+    extractionMethod: 'grok-ocr',
     tempDirPrefix: 'autoshow-grok-ocr-',
     providerLabel: 'Grok OCR',
-    onPage: async ({ imagePath, page }) => {
-      const result = await runGrokOcrImage(config, imagePath, 'png', model, page, `page ${page}`)
-      addUsage(result)
-      return result.page
-    }
-  }))
-
-  return {
-    pages,
-    extractionMethod: 'grok-ocr',
-    totalPages,
-    ...(hasPromptTokens ? { promptTokens } : {}),
-    ...(hasCompletionTokens ? { completionTokens } : {})
-  }
+    runImage: async (imagePath, format, pageNumber, pageLabel) =>
+      await runGrokOcrImage(config, imagePath, format, model, pageNumber, pageLabel)
+  })
 }
