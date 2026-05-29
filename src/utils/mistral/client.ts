@@ -7,8 +7,6 @@ import {
   trimTrailingSlashes
 } from '~/utils/rest-client'
 
-export { MISTRAL_DEFAULT_BASE_URL }
-
 type MistralRestError = Error & {
   status: number
   headers: Headers

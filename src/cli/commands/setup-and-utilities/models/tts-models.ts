@@ -52,7 +52,7 @@ export const SUPPORTED_ELEVENLABS_TTS_MODELS = [
 ] as const satisfies readonly string[]
 
 export const ELEVENLABS_DEFAULT_VOICE_ID = 'hpp4J3VqNfWAUOO0d1Us'
-export const SUPPORTED_ELEVENLABS_TTS_TEXT_NORMALIZATIONS = [
+const SUPPORTED_ELEVENLABS_TTS_TEXT_NORMALIZATIONS = [
   'auto',
   'on',
   'off'
@@ -77,7 +77,7 @@ export const SUPPORTED_MINIMAX_TTS_MODELS = [
 
 export const validateMinimaxTtsModel = createModelValidator<MinimaxTtsModel>(SUPPORTED_MINIMAX_TTS_MODELS, 'minimax-tts')
 
-export const SUPPORTED_MINIMAX_TTS_LANGUAGE_BOOSTS = [
+const SUPPORTED_MINIMAX_TTS_LANGUAGE_BOOSTS = [
   'Chinese',
   'Chinese,Yue',
   'English',
@@ -121,7 +121,7 @@ export const SUPPORTED_MINIMAX_TTS_LANGUAGE_BOOSTS = [
   'auto'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_MINIMAX_TTS_EMOTIONS = [
+const SUPPORTED_MINIMAX_TTS_EMOTIONS = [
   'happy',
   'sad',
   'angry',
@@ -171,8 +171,8 @@ export const SUPPORTED_GROQ_ENGLISH_TTS_VOICES = [
   'troy'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_GROQ_TTS_VOICES = getGroqTtsVoices()
-export const GROQ_DEFAULT_TTS_VOICE = 'troy'
+const SUPPORTED_GROQ_TTS_VOICES = getGroqTtsVoices()
+const GROQ_DEFAULT_TTS_VOICE = 'troy'
 
 export const validateGroqTtsModel = createModelValidator<GroqTtsModel>(SUPPORTED_GROQ_TTS_MODELS, 'groq-tts')
 
@@ -209,7 +209,7 @@ export const SUPPORTED_GROK_TTS_MODELS = [
 
 export const SUPPORTED_GROK_TTS_VOICES = getGrokTtsVoices()
 export const GROK_DEFAULT_TTS_VOICE = 'eve'
-export const SUPPORTED_GROK_TTS_LANGUAGES = [
+const SUPPORTED_GROK_TTS_LANGUAGES = [
   'auto',
   'en',
   'ar-EG',
@@ -304,7 +304,7 @@ export const SUPPORTED_SPEECHIFY_TTS_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SPEECHIFY_DEFAULT_TTS_VOICE = 'george'
-export const SUPPORTED_SPEECHIFY_TTS_AUDIO_FORMATS = [
+const SUPPORTED_SPEECHIFY_TTS_AUDIO_FORMATS = [
   'mp3',
   'ogg',
   'aac',
@@ -337,7 +337,7 @@ export const SUPPORTED_HUME_TTS_MODELS = [
 ] as const satisfies readonly string[]
 
 export const HUME_DEFAULT_TTS_VOICE = 'Male English Actor'
-export const SUPPORTED_HUME_TTS_VOICE_PROVIDERS = [
+const SUPPORTED_HUME_TTS_VOICE_PROVIDERS = [
   'HUME_AI',
   'CUSTOM_VOICE'
 ] as const satisfies readonly string[]

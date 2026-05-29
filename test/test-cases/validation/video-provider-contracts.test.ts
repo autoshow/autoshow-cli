@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { runGeminiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/gemini/run-gemini-video-gen'
 import { runGrokVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/grok/run-grok-video-gen'
@@ -9,36 +8,29 @@ import { runMinimaxVideoGen } from '~/cli/commands/process-steps/step-6-video/vi
 import { runRunwayVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/runway/run-runway-video-gen'
 import { GLM_DEFAULT_BASE_URL, MINIMAX_DEFAULT_BASE_URL, XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
-
-type FetchCall = {
-  url: string
-  method: string
-  headers: Headers
-  bodyText: string
-  bodyJson?: Record<string, unknown> | undefined
-}
+import {
+  bytesResponse,
+  clearEnv,
+  createTempDirTracker,
+  installMockFetch,
+  jsonResponse,
+  restoreEnv,
+  snapshotEnv,
+  type EnvSnapshot
+} from '../../test-utils/rest-contract-helpers'
 
 const originalFetch = globalThis.fetch
-const previousEnv: Record<string, string | undefined> = {}
+let previousEnv: EnvSnapshot = {}
 const envKeys = ['GEMINI_API_KEY', 'XAI_API_KEY', 'GLM_API_KEY', 'MINIMAX_API_KEY', 'RUNWAYML_API_SECRET']
-const tempDirs: string[] = []
+const tempDirs = createTempDirTracker('autoshow-video-provider-contracts-')
 const videoBytes = new Uint8Array([9, 8, 7])
 const inlineVideo = Buffer.from(videoBytes).toString('base64')
 
-const jsonResponse = (body: unknown, init?: ResponseInit): Response =>
-  new Response(JSON.stringify(body), {
-    status: init?.status ?? 200,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers instanceof Headers ? Object.fromEntries(init.headers.entries()) : init?.headers as Record<string, string> | undefined)
-    }
-  })
-
 const videoResponse = (): Response =>
-  new Response(videoBytes, { headers: { 'content-type': 'video/mp4' } })
+  bytesResponse(videoBytes, { headers: { 'content-type': 'video/mp4' } })
 
 const transientVideoReadFailureResponse = (): Response => {
-  const response = new Response(videoBytes, { headers: { 'content-type': 'video/mp4' } })
+  const response = videoResponse()
   Object.defineProperty(response, 'arrayBuffer', {
     value: async () => {
       throw new TypeError('socket connection was closed unexpectedly')
@@ -47,29 +39,8 @@ const transientVideoReadFailureResponse = (): Response => {
   return response
 }
 
-const installFetch = (
-  handler: (call: FetchCall) => Promise<Response> | Response
-): FetchCall[] => {
-  const calls: FetchCall[] = []
-  globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-    const bodyText = typeof init?.body === 'string' ? init.body : ''
-    const call: FetchCall = {
-      url: String(input),
-      method: init?.method ?? 'GET',
-      headers: new Headers(init?.headers),
-      bodyText,
-      ...(bodyText.trim().startsWith('{') ? { bodyJson: JSON.parse(bodyText) as Record<string, unknown> } : {})
-    }
-    calls.push(call)
-    return await handler(call)
-  }) as typeof fetch
-  return calls
-}
-
 const withTempDir = async <T,>(fn: (dir: string) => Promise<T>): Promise<T> => {
-  const dir = await mkdtemp(join(tmpdir(), 'autoshow-video-provider-contracts-'))
-  tempDirs.push(dir)
-  return await fn(dir)
+  return await tempDirs.withDir(fn)
 }
 
 const writeMediaFixtures = async (dir: string): Promise<{ imagePath: string, lastFramePath: string, videoPath: string }> => {
@@ -83,28 +54,20 @@ const writeMediaFixtures = async (dir: string): Promise<{ imagePath: string, las
 }
 
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(async () => {
   globalThis.fetch = originalFetch
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  restoreEnv(previousEnv)
+  await tempDirs.cleanup()
 })
 
 describe('video provider REST contracts', () => {
   test('Gemini Veo sends media inputs for image, reference, interpolation, extension, and 4k modes', async () => {
     process.env['GEMINI_API_KEY'] = 'gemini-key'
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         return jsonResponse({ name: 'operations/veo-test', done: false })
       }
@@ -189,7 +152,7 @@ describe('video provider REST contracts', () => {
   test('GLM sends text, image, interpolation, and reference request bodies', async () => {
     process.env['GLM_API_KEY'] = 'glm-key'
     let requestIndex = 0
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         requestIndex += 1
         return jsonResponse({ id: `glm-${requestIndex}`, task_status: 'PROCESSING' })
@@ -265,7 +228,7 @@ describe('video provider REST contracts', () => {
   test('MiniMax sends text, image, and subject-reference request bodies', async () => {
     process.env['MINIMAX_API_KEY'] = 'minimax-key'
     let requestIndex = 0
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         requestIndex += 1
         return jsonResponse({ task_id: `minimax-${requestIndex}`, base_resp: { status_code: 0, status_msg: 'success' } })
@@ -330,7 +293,7 @@ describe('video provider REST contracts', () => {
   test('MiniMax retries transient video download body read failures after task success', async () => {
     process.env['MINIMAX_API_KEY'] = 'minimax-key'
     let downloadAttempts = 0
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         return jsonResponse({ task_id: 'minimax-retry', base_resp: { status_code: 0, status_msg: 'success' } })
       }
@@ -371,7 +334,7 @@ describe('video provider REST contracts', () => {
 
   test('Grok sends generation media, storage options, and extracts poll metadata cost', async () => {
     process.env['XAI_API_KEY'] = 'xai-key'
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') return jsonResponse({ request_id: 'grok-123' })
       if (call.url === `${XAI_DEFAULT_BASE_URL}/videos/grok-123`) {
         return jsonResponse({
@@ -441,7 +404,7 @@ describe('video provider REST contracts', () => {
   test('Grok sends reference, edit, and extension endpoint shapes', async () => {
     process.env['XAI_API_KEY'] = 'xai-key'
     let requestIndex = 0
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         requestIndex += 1
         return jsonResponse({ request_id: `grok-${requestIndex}` })
@@ -507,7 +470,7 @@ describe('video provider REST contracts', () => {
 
   test('Grok fails clearly when moderation blocks video output', async () => {
     process.env['XAI_API_KEY'] = 'xai-key'
-    installFetch((call) => {
+    installMockFetch((call) => {
       if (call.method === 'POST') return jsonResponse({ request_id: 'grok-blocked' })
       if (call.url === `${XAI_DEFAULT_BASE_URL}/videos/grok-blocked`) {
         return jsonResponse({
@@ -530,7 +493,7 @@ describe('video provider REST contracts', () => {
 
   test('Runway Gen-4.5 uses text_to_video request shape and downloads output', async () => {
     process.env['RUNWAYML_API_SECRET'] = 'runway-key'
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.url === 'https://api.dev.runwayml.com/v1/text_to_video' && call.method === 'POST') {
         return jsonResponse({ id: 'runway-task-123' })
       }

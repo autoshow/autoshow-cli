@@ -13,12 +13,12 @@ import {
   logSttDiarizationConfig,
   logSttSegmentLifecycle
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
-import { countTokens, toTimestamp, parseSeconds, appendToken, buildTranscriptionOutputBase, formatTranscriptText, resolveTranscriptionOutput, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
-import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
+import { toTimestamp, parseSeconds, appendToken, formatSpeakerLabel, buildSegmentsFromWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { finalizeHostedSttResult } from '../finalize-hosted-stt'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 
@@ -188,7 +188,6 @@ export const runElevenLabsTranscribe = async (
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
   const baseURL = ELEVENLABS_DEFAULT_BASE_URL
   let transcribeMs = 0
@@ -259,42 +258,21 @@ export const runElevenLabsTranscribe = async (
   const segmentsFromWordTiming = segmentsFromWords(payload.words, offsetSeconds)
   const segments = segmentsFromApi.length > 0 ? segmentsFromApi : segmentsFromWordTiming
   const evidenceWords = evidenceWordsFromApi(payload.words, offsetSeconds)
-
-  const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
-
-  const formattedTranscriptPath = `${outputBase}.txt`
-  await Bun.write(formattedTranscriptPath, formatTranscriptText(finalSegments))
-
-  const processingTime = Date.now() - startTime
-  const remoteProcessingMs = Math.max(0, processingTime - transcribeMs)
-  const metadata: Step2Metadata = {
-    transcriptionService: 'elevenlabs',
-    transcriptionModel: modelName,
-    processingTime,
-    tokenCount: countTokens(finalText),
-    ...((transcribeMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0 || remoteProcessingMs > 0)
-      ? {
-          timings: {
-            ...(transcribeMs > 0 ? { transcribeMs } : {}),
-            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-            ...(requestCount > 0 ? { requestCount } : {}),
-            ...(retryCount > 0 ? { retryCount } : {}),
-            ...(rateLimitCount > 0 ? { rateLimitCount } : {})
-          }
-        }
-      : {})
-  }
-
-  if (segmentNumber && totalSegments) {
-    logSttSegmentLifecycle(l, { provider: 'elevenlabs', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
-  }
-
-  return {
-    result: {
-      text: finalText,
-      segments: finalSegments,
-      evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: payload })
-    },
-    metadata
-  }
+  return await finalizeHostedSttResult({
+    provider: 'elevenlabs',
+    model: modelName,
+    outputDir,
+    segmentNumber,
+    totalSegments,
+    offsetSeconds,
+    startTime,
+    transcribeMs,
+    requestCount,
+    retryCount,
+    rateLimitCount,
+    text,
+    segments,
+    evidenceWords,
+    rawResponse: payload
+  })
 }

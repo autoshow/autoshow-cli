@@ -1,95 +1,58 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { runBflImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/run-bfl-image-gen'
 import { runReveImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/reve/run-reve-image-gen'
-
-type FetchCall = {
-  url: string
-  method: string
-  headers: Headers
-  bodyText: string
-  bodyJson?: Record<string, unknown> | undefined
-}
+import {
+  bytesResponse,
+  clearEnv,
+  createTempDirTracker,
+  installMockFetch,
+  jsonResponse,
+  restoreEnv,
+  snapshotEnv,
+  type EnvSnapshot
+} from '../../test-utils/rest-contract-helpers'
 
 const originalFetch = globalThis.fetch
-const previousEnv: Record<string, string | undefined> = {}
+let previousEnv: EnvSnapshot = {}
 const envKeys = [
   'BFL_API_KEY',
   'BFL_BASE_URL',
   'REVE_API_KEY',
   'REVE_BASE_URL'
 ]
-const tempDirs: string[] = []
+const tempDirs = createTempDirTracker('autoshow-image-provider-rest-')
 
-const jsonResponse = (body: unknown, init?: ResponseInit): Response =>
-  new Response(JSON.stringify(body), {
-    status: init?.status ?? 200,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers instanceof Headers ? Object.fromEntries(init.headers.entries()) : init?.headers as Record<string, string> | undefined)
-    }
-  })
-
-const imageResponse = (bytes: Uint8Array, contentType: string): Response =>
-  new Response(bytes, { headers: { 'content-type': contentType } })
-
-const installFetch = (
-  handler: (call: FetchCall) => Promise<Response> | Response
-): FetchCall[] => {
-  const calls: FetchCall[] = []
-  globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-    const bodyText = typeof init?.body === 'string' ? init.body : ''
-    const call: FetchCall = {
-      url: String(input),
-      method: init?.method ?? 'GET',
-      headers: new Headers(init?.headers),
-      bodyText,
-      ...(bodyText.trim().startsWith('{') ? { bodyJson: JSON.parse(bodyText) as Record<string, unknown> } : {})
-    }
-    calls.push(call)
-    return await handler(call)
-  }) as typeof fetch
-  return calls
-}
+const imageResponse = (
+  bytes: Uint8Array,
+  contentType: string,
+  headers?: Record<string, string>
+): Response => bytesResponse(bytes, { headers: { 'content-type': contentType, ...headers } })
 
 const withTempDir = async <T,>(fn: (dir: string) => Promise<T>): Promise<T> => {
-  const dir = await mkdtemp(join(tmpdir(), 'autoshow-image-provider-rest-'))
-  tempDirs.push(dir)
-  return await fn(dir)
+  return await tempDirs.withDir(fn)
 }
 
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(async () => {
   globalThis.fetch = originalFetch
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  restoreEnv(previousEnv)
+  await tempDirs.cleanup()
 })
 
 describe('image provider REST contracts', () => {
   test('Reve create sends JSON body, image accept header, and records returned version and credit cost', async () => {
     process.env['REVE_API_KEY'] = 'reve-key'
     process.env['REVE_BASE_URL'] = 'https://mock.reve.local'
-    const calls = installFetch(() =>
-      new Response(new Uint8Array([1, 2, 3]), {
-        headers: {
-          'content-type': 'image/webp',
-          'x-reve-version': 'reve-create@20250915',
-          'x-reve-credits-used': '15'
-        }
+    const calls = installMockFetch(() =>
+      imageResponse(new Uint8Array([1, 2, 3]), 'image/webp', {
+        'x-reve-version': 'reve-create@20250915',
+        'x-reve-credits-used': '15'
       })
     )
 
@@ -136,7 +99,7 @@ describe('image provider REST contracts', () => {
   test('Reve edit sends one bare base64 reference image', async () => {
     process.env['REVE_API_KEY'] = 'reve-key'
     process.env['REVE_BASE_URL'] = 'https://mock.reve.local'
-    const calls = installFetch(() => imageResponse(new Uint8Array([9, 8, 7]), 'image/png'))
+    const calls = installMockFetch(() => imageResponse(new Uint8Array([9, 8, 7]), 'image/png'))
 
     await withTempDir(async (dir) => {
       const refPath = join(dir, 'reference.png')
@@ -162,7 +125,7 @@ describe('image provider REST contracts', () => {
   test('Reve remix sends multiple bare base64 reference images', async () => {
     process.env['REVE_API_KEY'] = 'reve-key'
     process.env['REVE_BASE_URL'] = 'https://mock.reve.local'
-    const calls = installFetch(() => imageResponse(new Uint8Array([3, 2, 1]), 'image/jpeg'))
+    const calls = installMockFetch(() => imageResponse(new Uint8Array([3, 2, 1]), 'image/jpeg'))
 
     await withTempDir(async (dir) => {
       const firstRef = join(dir, 'first.png')
@@ -197,12 +160,9 @@ describe('image provider REST contracts', () => {
     process.env['REVE_BASE_URL'] = 'https://mock.reve.local'
 
     await withTempDir(async (dir) => {
-      installFetch(() =>
-        new Response(new Uint8Array([1, 2, 3]), {
-          headers: {
-            'content-type': 'image/png',
-            'x-reve-content-violation': 'true'
-          }
+      installMockFetch(() =>
+        imageResponse(new Uint8Array([1, 2, 3]), 'image/png', {
+          'x-reve-content-violation': 'true'
         })
       )
       await expect(runReveImageGen('Unsafe prompt', dir, {
@@ -211,12 +171,9 @@ describe('image provider REST contracts', () => {
     })
 
     await withTempDir(async (dir) => {
-      installFetch(() =>
-        new Response(new Uint8Array([1, 2, 3]), {
-          headers: {
-            'content-type': 'image/png',
-            'x-reve-error-code': 'policy_blocked'
-          }
+      installMockFetch(() =>
+        imageResponse(new Uint8Array([1, 2, 3]), 'image/png', {
+          'x-reve-error-code': 'policy_blocked'
         })
       )
       await expect(runReveImageGen('Another blocked prompt', dir, {
@@ -228,7 +185,7 @@ describe('image provider REST contracts', () => {
   test('BFL image generation sends numbered reference image fields', async () => {
     process.env['BFL_API_KEY'] = 'bfl-key'
     process.env['BFL_BASE_URL'] = 'https://mock.bfl.local'
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         return jsonResponse({
           id: 'bfl-request',
@@ -276,7 +233,7 @@ describe('image provider REST contracts', () => {
     process.env['BFL_API_KEY'] = 'bfl-key'
     process.env['BFL_BASE_URL'] = 'https://mock.bfl.local'
     let resultDownloadAttempts = 0
-    const calls = installFetch((call) => {
+    const calls = installMockFetch((call) => {
       if (call.method === 'POST') {
         return jsonResponse({
           id: 'bfl-request',

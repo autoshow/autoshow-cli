@@ -4,7 +4,7 @@ import { REVE_DEFAULT_BASE_URL } from '~/utils/base-urls'
 const getReveApiKey = (): string | undefined => readEnv('REVE_API_KEY')
 
 export const getReveBaseUrl = (): string => {
-  return REVE_DEFAULT_BASE_URL.replace(/\/+$/, '')
+  return (readEnv('REVE_BASE_URL') ?? REVE_DEFAULT_BASE_URL).replace(/\/+$/, '')
 }
 
 export const ensureReveImageGenSetup = async (): Promise<string> => {

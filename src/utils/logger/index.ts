@@ -3,7 +3,7 @@ import { runWithLogContext } from '~/utils/logger/context-store'
 import { createReporter } from '~/utils/logger/reporter'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
-import { enableJsonResult, emitResult, isJsonResultActive } from '~/utils/logger/result-emitter'
+import { enableJsonResult, isJsonResultActive } from '~/utils/logger/result-emitter'
 import type {
   GlobalLogger,
   LogFormat,
@@ -13,12 +13,8 @@ import type {
   ReconfigureOptions
 } from '~/types'
 
-export { createLogger } from '~/utils/logger/core'
-export { createHumanSink } from '~/utils/logger/sinks/human-sink'
-export { createJsonSink } from '~/utils/logger/sinks/json-sink'
 export { runWithLogContext }
-export { createReporter }
-export { emitResult, isJsonResultActive }
+export { isJsonResultActive }
 
 const resolveLogFormat = (format: LogFormat): Exclude<LogFormat, 'auto'> => {
   if (format !== 'auto') {

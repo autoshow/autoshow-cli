@@ -27,7 +27,6 @@ import {
   RevTranscriptResponseSchema,
   SonioxTranscriptionStatusSchema,
   SonioxTranscriptResponseSchema,
-  SpeechmaticsCreateJobResponseSchema,
   SpeechmaticsJobSchema,
   SpeechmaticsTranscriptResponseSchema,
   WhisperJsonOutputSchema
@@ -80,7 +79,6 @@ export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscription
 export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
 export type RevJob = v.InferOutput<typeof RevJobSchema>
 export type RevTranscriptResponse = v.InferOutput<typeof RevTranscriptResponseSchema>
-export type SpeechmaticsCreateJobResponse = v.InferOutput<typeof SpeechmaticsCreateJobResponseSchema>
 export type SpeechmaticsJob = v.InferOutput<typeof SpeechmaticsJobSchema>
 export type SpeechmaticsTranscriptResponse = v.InferOutput<typeof SpeechmaticsTranscriptResponseSchema>
 

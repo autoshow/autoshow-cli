@@ -65,7 +65,7 @@ export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   note?: string
 }
 
-export type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'supadata' | 'zyte'
+type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'supadata' | 'zyte'
 
 export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured'> & {
   step: 'extract'
@@ -99,7 +99,7 @@ export type AggregatedPriceEstimate = {
   notes?: string[]
 }
 
-export type ActualPipelineInputsBase<TStep1> = {
+type ActualPipelineInputsBase<TStep1> = {
   step1?: TStep1 | undefined
   step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined

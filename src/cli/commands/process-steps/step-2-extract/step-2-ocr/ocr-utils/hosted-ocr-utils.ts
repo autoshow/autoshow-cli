@@ -9,7 +9,7 @@ export type HostedOcrImageResult = {
   completionTokens?: number
 }
 
-export const getHostedOcrImageMimeType = (
+const getHostedOcrImageMimeType = (
   format: DocumentMetadata['format'],
   providerLabel: string,
   supported: Partial<Record<DocumentMetadata['format'], string>>
@@ -49,7 +49,7 @@ export const readHostedOcrImageDataUrl = async (
   return `data:${getHostedOcrImageMimeType(format, options.providerLabel, options.supportedMimeTypes)};base64,${base64}`
 }
 
-export const createHostedOcrUsageAccumulator = (): {
+const createHostedOcrUsageAccumulator = (): {
   add: (result: Pick<HostedOcrImageResult, 'promptTokens' | 'completionTokens'>) => void
   values: () => { promptTokens?: number, completionTokens?: number }
 } => {

@@ -28,9 +28,6 @@ import {
   type ExtractSelectorInputRoutes
 } from '~/cli/commands/process-steps/service-selector-normalization'
 
-export { buildExpectedFilesList } from './expected-output'
-export { shouldRunCommandPreflight } from './process-target-preflight'
-
 type ResolvedProcessTargetDoubleDash =
   | { kind: 'target', resolvedTarget: string, ytDlpPassthroughArgs?: string[] | undefined }
   | { kind: 'raw-yt-dlp', ytDlpPassthroughArgs: string[] }

@@ -46,7 +46,7 @@ export type HumanLogTable = {
   details?: readonly HumanLogTableDetail[]
 }
 
-export type LogEvent = {
+type LogEvent = {
   timestamp: string
   level: LogLevel
   message: string
@@ -87,7 +87,7 @@ export type CreateLoggerOptions = {
   minLevel?: LogLevel
 }
 
-export type BaseLogFn = (message: string, ...args: unknown[]) => void
+type BaseLogFn = (message: string, ...args: unknown[]) => void
 
 export interface Logger {
   write: (level: LogLevel, message: string, options?: LogWriteOptions) => void
@@ -147,7 +147,7 @@ export type HumanCompletionTables = {
   timing?: HumanLogTable
 }
 
-export type HumanCompletionSection = keyof HumanCompletionTables
+type HumanCompletionSection = keyof HumanCompletionTables
 
 export type CompleteOptions = {
   metrics?: Record<string, ReporterMetricValue>

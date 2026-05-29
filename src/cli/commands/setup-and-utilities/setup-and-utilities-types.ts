@@ -164,7 +164,7 @@ export type GlmVideoModel = typeof SUPPORTED_GLM_VIDEO_MODELS[number]
 export type GrokVideoModel = typeof SUPPORTED_GROK_VIDEO_MODELS[number]
 export type RunwayVideoModel = typeof SUPPORTED_RUNWAY_VIDEO_MODELS[number]
 
-export type CostEstimation = {
+type CostEstimation = {
   costMultiplier: number
 }
 

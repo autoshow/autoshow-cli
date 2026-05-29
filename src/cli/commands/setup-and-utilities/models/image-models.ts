@@ -8,7 +8,7 @@ export const SUPPORTED_GEMINI_IMAGE_MODELS = [
 
 export const validateGeminiImageModel = createModelValidator<GeminiImageModel>(SUPPORTED_GEMINI_IMAGE_MODELS, 'gemini-image')
 
-export const isNativeGeminiImageModel = (model: GeminiImageModel): boolean =>
+const isNativeGeminiImageModel = (model: GeminiImageModel): boolean =>
   isNativeGeminiImage(model)
 
 export const supportsGeminiImageSize = (model: GeminiImageModel): boolean =>
