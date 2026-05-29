@@ -1,4 +1,3 @@
-export { priceFlag, generationOutputFlags, batchFlags, transcriptionFlags, llmProviderFlags, mediaFlags, promptFlag, ocrInputFlags, ocrTuningFlags, articleFlags, allArticleFlags } from './shared-flags'
 export { sttFlags } from './stt-flags'
 export { ttsFlags, ttsCommandFlags } from './tts-flags'
 export { imageGenFlags, imageCommandFlags } from './image-flags'

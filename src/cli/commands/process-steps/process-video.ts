@@ -49,14 +49,16 @@ import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
+import { classifySttProviderFailure } from './step-2-extract/step-2-stt/stt-provider-failures'
+import {
+  logSpeakerCountHintSummary,
+  prioritizeCloudSttTargetIndices
+} from './step-2-extract/step-2-stt/stt-provider-pool'
 import {
   buildProviderModelLabel,
   buildTimingProviderModelLabel,
-  classifySttProviderFailure,
-  logSpeakerCountHintSummary,
-  prioritizeCloudSttTargetIndices,
   selectPrimaryPromptProvider
-} from './step-2-extract/step-2-stt/process-stt'
+} from './step-2-extract/step-2-stt/stt-prompt'
 import { writeRunManifest } from './manifest-utils'
 import { logWriteManifestConsoleSummary } from './write-manifest-log'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-extract/step-2-stt/youtube-captions'

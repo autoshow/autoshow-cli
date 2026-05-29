@@ -128,7 +128,7 @@ export const runMistralStt = async (
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
   const fileBytes = await Bun.file(audioPath).arrayBuffer()
-  const baseURL = MISTRAL_DEFAULT_BASE_URL
+  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
   const passController = options.passController ?? createMistralSttPassController()
   let transcribeMs = 0
 

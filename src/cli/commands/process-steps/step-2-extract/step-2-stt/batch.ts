@@ -1,6 +1,5 @@
 export {
   runSttBatch,
-  SttBatchIncompleteError,
   throwIfSttBatchIncomplete
 } from './stt-batch/stt-batch'
 
@@ -10,8 +9,7 @@ export {
 } from './stt-batch/stt-batch-policy'
 
 export {
-  runCoordinatedSttTargetPool,
-  SttBatchCoordinator
+  runCoordinatedSttTargetPool
 } from './stt-batch/stt-batch-coordinator'
 
 export {

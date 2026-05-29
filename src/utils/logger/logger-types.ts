@@ -1,6 +1,6 @@
 import type { AggregatedPriceEstimate } from '~/utils/pricing/pricing-types'
 
-export const LOG_LEVELS = ['debug', 'info', 'success', 'warn', 'error'] as const
+const LOG_LEVELS = ['debug', 'info', 'success', 'warn', 'error'] as const
 
 export type LogLevel = typeof LOG_LEVELS[number]
 
@@ -12,7 +12,7 @@ export const LOG_LEVEL_PRIORITY: Readonly<Record<LogLevel, number>> = {
   error: 50
 }
 
-export const LOG_CATEGORIES = [
+const LOG_CATEGORIES = [
   'general',
   'command',
   'artifact',

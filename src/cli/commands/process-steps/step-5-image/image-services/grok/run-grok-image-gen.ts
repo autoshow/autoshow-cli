@@ -3,6 +3,7 @@ import type { GrokImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { createOpenAIImage, openAIJsonRequest, type OpenAIImageResponse } from '~/utils/openai/client'
 import { imageReferenceToDataUrl, isHttpUrl } from '../../image-utils/image-inputs'
 import {
@@ -11,8 +12,6 @@ import {
   getProviderReturnedModel,
   writeOpenAIImageResponseData
 } from '../../image-utils/image-output'
-
-const XAI_BASE_URL = 'https://api.x.ai/v1'
 
 export const normalizeGrokImageResolution = (size: string | undefined): string | undefined => {
   if (size === undefined || size.length === 0) return undefined
@@ -51,7 +50,13 @@ export const runGrokImageGen = async (
     detail: mode
   })
 
-  const clientConfig = { apiKey, baseURL: XAI_BASE_URL }
+  const configuredBaseURL = (readEnv('XAI_BASE_URL') ?? XAI_DEFAULT_BASE_URL).trim().replace(/\/+$/, '')
+  const clientConfig = {
+    apiKey,
+    baseURL: configuredBaseURL.endsWith('/chat/completions')
+      ? configuredBaseURL.slice(0, -'/chat/completions'.length)
+      : configuredBaseURL
+  }
   const result = mode === 'edit'
     ? await (async () => {
         const imageRefs = await Promise.all((options.inputs ?? []).map(async (input) => ({

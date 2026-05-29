@@ -8,5 +8,5 @@ export const getAnthropicClientConfig = (): AnthropicRestConfig => {
     throw new Error('ANTHROPIC_API_KEY environment variable is required')
   }
 
-  return { apiKey, baseURL: ANTHROPIC_DEFAULT_BASE_URL }
+  return { apiKey, baseURL: readEnv('ANTHROPIC_BASE_URL') ?? ANTHROPIC_DEFAULT_BASE_URL }
 }

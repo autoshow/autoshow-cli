@@ -167,7 +167,7 @@ export const runMistralTts = async (
   const referenceAudio = voiceSource.kind === 'refAudio'
     ? await prepareReferenceAudio(materializedRefAudio?.path ?? voiceSource.path, outputDir)
     : undefined
-  const baseURL = MISTRAL_DEFAULT_BASE_URL
+  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
   const savedVoice = referenceAudio && voiceName
     ? await createMistralSavedVoice(apiKey, baseURL, referenceAudio, voiceName)
     : undefined

@@ -48,7 +48,7 @@ const USER_FIELDS = [
 ].join(",");
 const TWEET_FIELDS = "author_id,created_at,entities";
 
-export class XApiError extends Error {
+class XApiError extends Error {
   constructor(
     message: string,
     readonly status: number,

@@ -26,7 +26,7 @@ export const runMistralOcr = async (
     throw new Error('MISTRAL_API_KEY environment variable is required for Mistral OCR')
   }
 
-  const baseURL = MISTRAL_DEFAULT_BASE_URL
+  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
   const bytes = await Bun.file(filePath).arrayBuffer()
   const base64 = Buffer.from(bytes).toString('base64')
 

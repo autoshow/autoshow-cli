@@ -1,5 +1,4 @@
 import sys
-import os
 
 if len(sys.argv) != 3:
     print("Usage: download-reverb-diarization.py <model_name> <hf_token>", file=sys.stderr)

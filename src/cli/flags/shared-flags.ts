@@ -185,11 +185,6 @@ export const llmProviderFlags = {
   llm: stepProviderSelectorFlags.llm
 } as const satisfies CliFlagsDefinition
 
-export const mediaFlags = {
-  ...transcriptionFlags,
-  ...llmProviderFlags
-} as const satisfies CliFlagsDefinition
-
 export const promptFlag = {
   prompt: {
     description: 'Named prompt(s) discovered under src/prompts/entries/ (default: "default")',

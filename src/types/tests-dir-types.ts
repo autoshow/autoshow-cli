@@ -1,10 +1,3 @@
-import type { VideoProvider } from './provider-types'
-
-export type ApiCheapPriceCommand = {
-  name: string
-  args: string[]
-}
-
 export type PriceCommandSpec = {
   name: string
   key: string
@@ -15,15 +8,6 @@ export type PriceCommandSpec = {
 export type PriceSelectionEntry = PriceCommandSpec & {
   selector: string
   selectorKind: 'file' | 'prefix'
-}
-
-export type VideoSelection = {
-  provider: VideoProvider
-  model: string
-  duration: number
-  size?: string
-  resolution?: string
-  totalCost: number
 }
 
 export type TestStatus = 'passed' | 'failed' | 'skipped'

@@ -19,7 +19,6 @@ export { createJsonSink } from '~/utils/logger/sinks/json-sink'
 export { runWithLogContext }
 export { createReporter }
 export { emitResult, isJsonResultActive }
-export { CLIUsageError, usageError } from '~/utils/logger/usage-error'
 
 const resolveLogFormat = (format: LogFormat): Exclude<LogFormat, 'auto'> => {
   if (format !== 'auto') {

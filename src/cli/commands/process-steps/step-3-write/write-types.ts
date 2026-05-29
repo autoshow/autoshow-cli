@@ -166,16 +166,6 @@ export type CompatStructuredResponse = {
 
 export type AnthropicCompatibleService = Extract<Step3Metadata['llmService'], 'anthropic' | 'minimax'>
 
-export type CompatibleModelRunOptionsBase<TClient, TService> = {
-  prompt: string
-  model: string
-  structuredOpts?: StructuredRequestOptions | undefined
-  client: TClient
-  service: TService
-  providerLabel: string
-  operationName: string
-}
-
 export type RunAnthropicCompatibleModelOptions = {
   prompt: string
   model: string

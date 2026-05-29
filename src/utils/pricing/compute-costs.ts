@@ -3,7 +3,6 @@ import type {
   EstimatedCostBreakdown,
   EstimatedStepEntry
 } from '~/types'
-export { parseDurationToSeconds } from './cost-helpers'
 
 export const preflightToEstimated = (estimate: AggregatedPriceEstimate): EstimatedCostBreakdown => {
   const steps: EstimatedStepEntry[] = []

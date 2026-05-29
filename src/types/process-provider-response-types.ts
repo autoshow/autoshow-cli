@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-export const GladiaWordSchema = v.object({
+const GladiaWordSchema = v.object({
   word: v.string(),
   start: v.number(),
   end: v.number(),
@@ -8,7 +8,7 @@ export const GladiaWordSchema = v.object({
   speaker: v.optional(v.union([v.string(), v.number()]), undefined)
 })
 
-export const GladiaUtteranceSchema = v.object({
+const GladiaUtteranceSchema = v.object({
   start: v.number(),
   end: v.number(),
   confidence: v.number(),
@@ -19,7 +19,7 @@ export const GladiaUtteranceSchema = v.object({
   speaker: v.optional(v.union([v.string(), v.number()]), undefined)
 })
 
-export const GladiaUploadAudioMetadataSchema = v.object({
+const GladiaUploadAudioMetadataSchema = v.object({
   id: v.string(),
   filename: v.optional(v.nullable(v.string()), undefined),
   source: v.optional(v.string(), undefined),
@@ -39,13 +39,13 @@ export const GladiaCreateResponseSchema = v.object({
   result_url: v.string()
 })
 
-export const GladiaTranscriptionResultSchema = v.looseObject({
+const GladiaTranscriptionResultSchema = v.looseObject({
   full_transcript: v.optional(v.string(), undefined),
   languages: v.optional(v.array(v.string()), undefined),
   utterances: v.optional(v.array(GladiaUtteranceSchema), undefined)
 })
 
-export const GladiaDiarizationResultSchema = v.looseObject({
+const GladiaDiarizationResultSchema = v.looseObject({
   results: v.optional(v.array(GladiaUtteranceSchema), undefined)
 })
 
@@ -69,31 +69,7 @@ export const GladiaStatusResponseSchema = v.looseObject({
   })), undefined)
 })
 
-export const GoogleCloudWordInfoSchema = v.looseObject({
-  startOffset: v.optional(v.string(), undefined),
-  endOffset: v.optional(v.string(), undefined),
-  word: v.string(),
-  confidence: v.optional(v.number(), undefined),
-  speakerLabel: v.optional(v.string(), undefined)
-})
-
-export const GoogleCloudSpeechAlternativeSchema = v.looseObject({
-  transcript: v.optional(v.string(), undefined),
-  confidence: v.optional(v.number(), undefined),
-  words: v.optional(v.array(GoogleCloudWordInfoSchema), undefined)
-})
-
-export const GoogleCloudSpeechResultSchema = v.looseObject({
-  languageCode: v.optional(v.string(), undefined),
-  alternatives: v.optional(v.array(GoogleCloudSpeechAlternativeSchema), undefined)
-})
-
-export const GoogleCloudRecognizeResponseSchema = v.looseObject({
-  results: v.optional(v.array(GoogleCloudSpeechResultSchema), undefined),
-  metadata: v.optional(v.looseObject({}), undefined)
-})
-
-export const MistralTranscriptionSegmentSchema = v.looseObject({
+const MistralTranscriptionSegmentSchema = v.looseObject({
   start: v.number(),
   end: v.number(),
   text: v.string(),
@@ -113,7 +89,7 @@ export const MistralTranscriptionResponseSchema = v.looseObject({
   }), undefined),
 })
 
-export const MistralOcrPageSchema = v.object({
+const MistralOcrPageSchema = v.object({
   index: v.number(),
   markdown: v.string()
 })
@@ -127,7 +103,7 @@ export const MistralOcrResponseSchema = v.object({
   }), undefined)
 })
 
-export const GlmOcrLayoutDetailSchema = v.looseObject({
+const GlmOcrLayoutDetailSchema = v.looseObject({
   index: v.number(),
   label: v.string(),
   bbox_2d: v.optional(v.array(v.number()), undefined),
@@ -157,7 +133,7 @@ export const GlmOcrResponseSchema = v.looseObject({
   request_id: v.optional(v.string(), undefined)
 })
 
-export const WhisperJsonSegmentSchema = v.object({
+const WhisperJsonSegmentSchema = v.object({
   timestamps: v.object({
     from: v.string(),
     to: v.string()
@@ -173,14 +149,14 @@ export const WhisperJsonOutputSchema = v.object({
   transcription: v.array(WhisperJsonSegmentSchema)
 })
 
-export const ReverbWordSchema = v.object({
+const ReverbWordSchema = v.object({
   word: v.string(),
   start: v.number(),
   end: v.number(),
   speaker: v.optional(v.string(), undefined)
 })
 
-export const ReverbSegmentSchema = v.object({
+const ReverbSegmentSchema = v.object({
   start: v.number(),
   end: v.number(),
   text: v.string(),
@@ -194,9 +170,9 @@ export const ReverbOutputSchema = v.object({
   speakers: v.optional(v.array(v.string()), undefined)
 })
 
-export const ElevenLabsTimestampSchema = v.union([v.number(), v.string()])
+const ElevenLabsTimestampSchema = v.union([v.number(), v.string()])
 
-export const ElevenLabsWordSchema = v.object({
+const ElevenLabsWordSchema = v.object({
   text: v.optional(v.string(), undefined),
   word: v.optional(v.string(), undefined),
   start: v.optional(ElevenLabsTimestampSchema, undefined),
@@ -205,7 +181,7 @@ export const ElevenLabsWordSchema = v.object({
   type: v.optional(v.string(), undefined)
 })
 
-export const ElevenLabsSegmentSchema = v.object({
+const ElevenLabsSegmentSchema = v.object({
   text: v.optional(v.string(), undefined),
   start: v.optional(ElevenLabsTimestampSchema, undefined),
   end: v.optional(ElevenLabsTimestampSchema, undefined),
@@ -218,7 +194,7 @@ export const ElevenLabsSttResponseSchema = v.object({
   segments: v.optional(v.array(ElevenLabsSegmentSchema), undefined)
 })
 
-export const AssemblyAiUtteranceSchema = v.object({
+const AssemblyAiUtteranceSchema = v.object({
   confidence: v.number(),
   start: v.number(),
   end: v.number(),
@@ -227,7 +203,7 @@ export const AssemblyAiUtteranceSchema = v.object({
   channel: v.optional(v.string(), undefined)
 })
 
-export const AssemblyAiWordSchema = v.object({
+const AssemblyAiWordSchema = v.object({
   confidence: v.number(),
   start: v.number(),
   end: v.number(),
@@ -244,7 +220,7 @@ export const AssemblyAiTranscriptResponseSchema = v.object({
   error: v.optional(v.nullable(v.string()), undefined)
 })
 
-export const DeepgramWordSchema = v.object({
+const DeepgramWordSchema = v.object({
   word: v.optional(v.string(), undefined),
   punctuated_word: v.optional(v.string(), undefined),
   start: v.optional(v.number(), undefined),
@@ -252,16 +228,16 @@ export const DeepgramWordSchema = v.object({
   speaker: v.optional(v.number(), undefined)
 })
 
-export const DeepgramAlternativeSchema = v.object({
+const DeepgramAlternativeSchema = v.object({
   transcript: v.optional(v.string(), undefined),
   words: v.optional(v.array(DeepgramWordSchema), undefined)
 })
 
-export const DeepgramChannelSchema = v.object({
+const DeepgramChannelSchema = v.object({
   alternatives: v.optional(v.array(DeepgramAlternativeSchema), undefined)
 })
 
-export const DeepgramUtteranceSchema = v.object({
+const DeepgramUtteranceSchema = v.object({
   start: v.number(),
   end: v.number(),
   transcript: v.string(),
@@ -292,7 +268,7 @@ export const SonioxTranscriptionStatusSchema = v.object({
   error_message: v.optional(v.nullable(v.string()), undefined)
 })
 
-export const SonioxTranscriptTokenSchema = v.object({
+const SonioxTranscriptTokenSchema = v.object({
   text: v.string(),
   start_ms: v.optional(v.number(), undefined),
   end_ms: v.optional(v.number(), undefined),
@@ -316,7 +292,7 @@ export const RevJobSchema = v.object({
   failure_detail: v.optional(v.string(), undefined)
 })
 
-export const RevTranscriptElementSchema = v.object({
+const RevTranscriptElementSchema = v.object({
   type: v.picklist(['text', 'punct']),
   value: v.string(),
   ts: v.optional(v.number(), undefined),
@@ -324,7 +300,7 @@ export const RevTranscriptElementSchema = v.object({
   confidence: v.optional(v.number(), undefined)
 })
 
-export const RevTranscriptMonologueSchema = v.object({
+const RevTranscriptMonologueSchema = v.object({
   speaker: v.number(),
   elements: v.array(RevTranscriptElementSchema)
 })
@@ -333,7 +309,7 @@ export const RevTranscriptResponseSchema = v.object({
   monologues: v.array(RevTranscriptMonologueSchema)
 })
 
-export const SpeechmaticsJobErrorSchema = v.object({
+const SpeechmaticsJobErrorSchema = v.object({
   type: v.optional(v.string(), undefined),
   message: v.optional(v.string(), undefined)
 })
@@ -359,21 +335,21 @@ export const SpeechmaticsCreateJobResponseSchema = v.union([
   SpeechmaticsJobResponseSchema
 ])
 
-export const SpeechmaticsTranscriptJobSchema = v.object({
+const SpeechmaticsTranscriptJobSchema = v.object({
   id: v.string(),
   created_at: v.optional(v.string(), undefined),
   duration: v.optional(v.number(), undefined),
   data_name: v.optional(v.string(), undefined)
 })
 
-export const SpeechmaticsTranscriptAlternativeSchema = v.object({
+const SpeechmaticsTranscriptAlternativeSchema = v.object({
   content: v.string(),
   confidence: v.optional(v.number(), undefined),
   language: v.optional(v.string(), undefined),
   speaker: v.optional(v.string(), undefined)
 })
 
-export const SpeechmaticsTranscriptResultSchema = v.object({
+const SpeechmaticsTranscriptResultSchema = v.object({
   type: v.string(),
   start_time: v.number(),
   end_time: v.number(),

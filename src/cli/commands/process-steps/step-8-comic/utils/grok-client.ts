@@ -3,7 +3,7 @@ import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import type { OpenAIRestConfig } from '~/utils/openai/client'
 
 const resolveGrokBaseUrl = (): string => {
-  const trimmed = XAI_DEFAULT_BASE_URL.trim().replace(/\/+$/, '')
+  const trimmed = (readEnv('XAI_BASE_URL') ?? XAI_DEFAULT_BASE_URL).trim().replace(/\/+$/, '')
   return trimmed.endsWith('/chat/completions')
     ? trimmed.slice(0, -'/chat/completions'.length)
     : trimmed

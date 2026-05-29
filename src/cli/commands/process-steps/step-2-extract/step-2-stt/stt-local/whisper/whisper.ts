@@ -250,8 +250,7 @@ const coremlConvert = async (modelName: string): Promise<void> => {
   await runInherit(`${whisperCoremlEnvDir}/bin/python`, [
     convertScript,
     '--model', modelName,
-    '--models-dir', whisperModelsDir,
-    '--encoder-only', 'true'
+    '--models-dir', whisperModelsDir
   ])
 
   await compileCoremlPackage(modelName)

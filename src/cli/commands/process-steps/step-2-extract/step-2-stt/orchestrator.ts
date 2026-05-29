@@ -1,23 +1,13 @@
 export {
-  DEFAULT_SPLIT_SEGMENT_DURATION_MINUTES,
-  GLADIA_MAX_ATTACHMENT_BYTES,
-  GROQ_MAX_ATTACHMENT_BYTES,
-  SPEECHMATICS_MAX_ATTACHMENT_BYTES,
-  REV_MAX_ATTACHMENT_BYTES,
-  ensureSttTargetSetup,
   classifySttSplitLimitError,
   extractSttSplitDurationCapSecondsFromError,
-  getSttEngineCapabilities,
-  isPayloadTooLargeTranscriptionError,
-  mergeSplitTranscriptionChunks,
-  resolveDiarizationOptions,
   resolveAdaptiveSplitSegmentDurationMinutes,
-  resolveEffectiveSegmentConcurrency,
-  resolveEffectiveSplitSegmentDurationMinutes,
-  resolveSttSplitPolicy,
-  resolveTranscriptionSplitDecision,
   shouldRetrySplitTranscriptionAfterError,
-  shouldSplitTranscriptionInput,
-  stt,
-  sttTarget
-} from './run-stt'
+  isPayloadTooLargeTranscriptionError
+} from './run-stt/split-limits'
+export {
+  resolveSttSplitPolicy,
+  resolveTranscriptionSplitDecision
+} from './stt-split-policy'
+export { getSttEngineCapabilities } from './cli'
+export { sttTarget } from './run-stt/target-orchestration'

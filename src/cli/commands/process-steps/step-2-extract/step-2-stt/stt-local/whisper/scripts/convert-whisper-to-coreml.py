@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import os
-import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -77,7 +75,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
     parser.add_argument("--models-dir", required=True)
-    parser.add_argument("--encoder-only", default="true")
     args = parser.parse_args()
     
     convert_encoder_to_coreml(args.model, args.models_dir)

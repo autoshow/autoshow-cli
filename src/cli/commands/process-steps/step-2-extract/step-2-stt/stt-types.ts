@@ -424,11 +424,6 @@ export type IndexedTranscriptionChunk = {
   data: { result: TranscriptionResult, metadata: Step2Metadata }
 }
 
-export type TokenizedWord = {
-  text: string
-  normalized: string
-}
-
 export type AsyncSttPollLoopOptions<TStatus> = {
   jobId: string
   initialPollIntervalMs: number
@@ -588,8 +583,6 @@ export type SttProviderConcurrencySummary = {
   providerSlots: string
 }
 
-export type EvidenceWord = NonNullable<NonNullable<TranscriptionResult['evidence']>['words']>[number]
-
 export type HappyScribeOrganization = {
   id: string
   name?: string | undefined
@@ -704,11 +697,6 @@ export type SttSplitDecision = {
   policy: SttSplitPolicy
   reasons: SttSplitDecisionReason[]
   segmentDurationMinutes: number
-}
-
-export type SttArtifactIdentity = {
-  transcriptionService: string
-  transcriptionModel: string
 }
 
 export type YoutubeCaptionTrack = NonNullable<YtDlpVideoInfo['subtitles']>[string][number]

@@ -81,7 +81,7 @@ export const ExtractionOptionsSchema = v.object({
   htmlArticleBackend: v.optional(v.picklist(['defuddle', 'firecrawl', 'glm-reader', 'spider', 'supadata', 'zyte']), undefined)
 })
 
-export const PageResultSchema = v.object({
+const PageResultSchema = v.object({
   pageNumber: v.number(),
   method: v.picklist(['text', 'ocr', 'skipped']),
   text: v.string(),

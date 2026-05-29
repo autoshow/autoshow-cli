@@ -43,18 +43,6 @@ export type TranscriptionEvidence = {
   rawResponse?: unknown
 }
 
-export type PersistedTranscriptionEvidence = {
-  service: string
-  model: string
-  label: string
-  transcriptText: string
-  segments: TranscriptionEvidenceSegment[]
-  words: TranscriptionEvidenceWord[]
-  capabilities: TranscriptionEvidenceCapabilities
-  timingQuality: TranscriptionEvidenceTimingQuality
-  speakerInventory: string[]
-}
-
 export type TranscriptionResult = {
   text: string
   segments: TranscriptionSegment[]

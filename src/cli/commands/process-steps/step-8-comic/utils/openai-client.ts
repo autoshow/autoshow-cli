@@ -8,5 +8,5 @@ export const getOpenAIClientConfig = (): OpenAIRestConfig => {
     throw new Error('OPENAI_API_KEY environment variable is required')
   }
 
-  return { apiKey, baseURL: OPENAI_DEFAULT_BASE_URL }
+  return { apiKey, baseURL: readEnv('OPENAI_BASE_URL') ?? OPENAI_DEFAULT_BASE_URL }
 }

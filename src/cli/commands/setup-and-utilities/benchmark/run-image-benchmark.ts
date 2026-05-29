@@ -1,13 +1,32 @@
-import { stat } from 'node:fs/promises'
 import { basename, extname, isAbsolute, join, resolve } from 'node:path'
 import { getOpenAIClientConfig } from '~/cli/commands/process-steps/step-3-write/write-services/openai/openai-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import * as l from '~/utils/logger'
 import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { createOpenAIResponse, extractOpenAIResponseText } from '~/utils/openai/client'
+import {
+  average,
+  costFromRunCostSteps,
+  ensureDirectory,
+  ensureFile,
+  escapeCell,
+  formatCost,
+  formatScore,
+  formatSeconds,
+  getArray,
+  getNumber,
+  getObject,
+  getString,
+  isRecord,
+  parseJsonObjectFromText,
+  providerGroup,
+  providerKey,
+  round2,
+  stringArray,
+  uniqueStrings,
+  type JsonObject
+} from './benchmark-utils'
 import type { BenchmarkFlags } from './benchmark-types'
-
-type JsonObject = Record<string, unknown>
 
 type ImageRunEntry = {
   imageService: string
@@ -147,39 +166,6 @@ const IMAGE_JUDGE_SCHEMA = {
   }
 } as const
 
-const isRecord = (value: unknown): value is JsonObject =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const getObject = (object: JsonObject, key: string): JsonObject | undefined => {
-  const value = object[key]
-  return isRecord(value) ? value : undefined
-}
-
-const getString = (object: JsonObject, key: string): string | undefined => {
-  const value = object[key]
-  return typeof value === 'string' && value.trim().length > 0 ? value : undefined
-}
-
-const getNumber = (object: JsonObject, key: string): number | undefined => {
-  const value = object[key]
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
-const getArray = (object: JsonObject, key: string): unknown[] => {
-  const value = object[key]
-  return Array.isArray(value) ? value : []
-}
-
-const round2 = (value: number): number => Math.round(value * 100) / 100
-
-const average = (values: readonly number[]): number =>
-  values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length
-
-const providerKey = (service: string, model: string): string => `${service}/${model}`
-
-const providerGroup = (service: string): 'local' | 'service' =>
-  service === 'local' ? 'local' : 'service'
-
 const imageMimeType = (fileName: string): string => {
   switch (extname(fileName).toLowerCase()) {
     case '.png':
@@ -192,60 +178,6 @@ const imageMimeType = (fileName: string): string => {
     default:
       throw CLIUsageError(`Unsupported image benchmark file type for ${fileName}. Expected PNG, JPEG, or WebP.`)
   }
-}
-
-const ensureDirectory = async (path: string, label: string): Promise<void> => {
-  try {
-    const pathStat = await stat(path)
-    if (!pathStat.isDirectory()) {
-      throw CLIUsageError(`${label} must be a run directory: ${path}`)
-    }
-  } catch (error) {
-    if (error instanceof Error && error.name === 'CLIUsageError') {
-      throw error
-    }
-    throw CLIUsageError(`${label} not found: ${path}`)
-  }
-}
-
-const ensureFile = async (path: string, message: string): Promise<void> => {
-  try {
-    const pathStat = await stat(path)
-    if (!pathStat.isFile()) {
-      throw CLIUsageError(message)
-    }
-  } catch (error) {
-    if (error instanceof Error && error.name === 'CLIUsageError') {
-      throw error
-    }
-    throw CLIUsageError(message)
-  }
-}
-
-const costFromRunCostSteps = (runJson: JsonObject, service: string, model: string): number | undefined => {
-  const metadata = getObject(runJson, 'metadata')
-  const cost = metadata ? getObject(metadata, 'cost') : undefined
-  const sources = [
-    cost ? getObject(cost, 'actual') : undefined,
-    cost ? getObject(cost, 'estimated') : undefined
-  ]
-
-  for (const source of sources) {
-    if (!source) {
-      continue
-    }
-
-    for (const step of getArray(source, 'steps').filter(isRecord)) {
-      if (getString(step, 'provider') === service && getString(step, 'model') === model) {
-        const value = getNumber(step, 'cost') ?? getNumber(step, 'costCents') ?? getNumber(step, 'actualCostCents')
-        if (value !== undefined) {
-          return value
-        }
-      }
-    }
-  }
-
-  return undefined
 }
 
 const parseImageRunEntry = (
@@ -372,38 +304,6 @@ const resolveImageProviders = async (
   return [...providers.values()].sort((left, right) => left.providerKey.localeCompare(right.providerKey))
 }
 
-const stripJsonCodeFence = (rawText: string): string => {
-  const trimmed = rawText.trim()
-  if (!trimmed.startsWith('```')) {
-    return trimmed
-  }
-
-  return trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
-}
-
-const parseJsonObjectFromText = (rawText: string): JsonObject => {
-  const direct = stripJsonCodeFence(rawText)
-
-  try {
-    const parsed = JSON.parse(direct) as unknown
-    if (isRecord(parsed)) {
-      return parsed
-    }
-  } catch {
-  }
-
-  const start = direct.indexOf('{')
-  const end = direct.lastIndexOf('}')
-  if (start >= 0 && end > start) {
-    const parsed = JSON.parse(direct.slice(start, end + 1)) as unknown
-    if (isRecord(parsed)) {
-      return parsed
-    }
-  }
-
-  throw new Error('OpenAI image judge response was not a JSON object.')
-}
-
 const requireScore = (object: JsonObject, key: keyof ImageCriterionScores): number => {
   const value = getNumber(object, key)
   if (value === undefined || value < 1 || value > 10) {
@@ -412,13 +312,8 @@ const requireScore = (object: JsonObject, key: keyof ImageCriterionScores): numb
   return value
 }
 
-const stringArray = (object: JsonObject, key: string): string[] =>
-  getArray(object, key)
-    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-    .map((value) => value.trim())
-
 const parseImageJudgeResponse = (rawText: string, fileName: string): ImageEvaluation => {
-  const parsed = parseJsonObjectFromText(rawText)
+  const parsed = parseJsonObjectFromText(rawText, 'OpenAI image judge response was not a JSON object.')
   const criterionScores: ImageCriterionScores = {
     promptAdherence: requireScore(parsed, 'promptAdherence'),
     visualQuality: requireScore(parsed, 'visualQuality'),
@@ -532,8 +427,6 @@ const averageCriterionScores = (evaluations: readonly ImageEvaluation[]): ImageC
   detailTextHandling: round2(average(evaluations.map((evaluation) => evaluation.criterionScores.detailTextHandling)))
 })
 
-const uniqueStrings = (values: readonly string[]): string[] => [...new Set(values)]
-
 const providerEvidence = (evaluations: readonly ImageEvaluation[]): ImageQualityProviderReport['evidence'] => ({
   summary: evaluations.map((evaluation) => `${evaluation.fileName}: ${evaluation.summary}`).join(' '),
   strengths: uniqueStrings(evaluations.flatMap((evaluation) => evaluation.strengths)),
@@ -580,16 +473,6 @@ const rankProviders = (
     .slice()
     .sort((left, right) => right.qualityScore - left.qualityScore || left.providerKey.localeCompare(right.providerKey))
     .map((provider, index) => ({ rank: index + 1, ...provider }))
-
-const escapeCell = (value: string): string => value.replaceAll('|', '\\|').replaceAll('\n', ' ')
-
-const formatScore = (value: number): string => value.toFixed(2)
-
-const formatSeconds = (value: number | undefined): string =>
-  value === undefined ? 'n/a' : `${(value / 1000).toFixed(2)}s`
-
-const formatCost = (value: number | undefined): string =>
-  value === undefined ? 'n/a' : `$${(value / 100).toFixed(4)}`
 
 const writeImageQualityMarkdown = async (path: string, report: ImageQualityReport): Promise<void> => {
   const lines = [

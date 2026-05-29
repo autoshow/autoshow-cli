@@ -18,7 +18,6 @@ export {
   NativeCliUsageError,
   NativeInvalidParametersError,
   NativeMissingFlagValueError,
-  NativeNoCommandSpecifiedError,
   NativeNoSuchCommandError,
   NativeUnknownFlagError,
   isNativeUsageError,

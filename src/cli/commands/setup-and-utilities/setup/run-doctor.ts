@@ -36,7 +36,6 @@ import {
   getMissingReverbDiarizationFiles,
   getMissingReverbAsrFiles
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/reverb/reverb-assets'
-export { HOSTED_PROVIDER_ENV_CHECKS } from './hosted-provider-config'
 
 type DoctorStatus = 'OK' | 'MISSING' | 'WARN' | 'INFO'
 type DoctorSeverity = 'warn' | 'info'
