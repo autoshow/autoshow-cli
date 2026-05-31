@@ -200,10 +200,10 @@
       },
       "grok-4.20-reasoning": {
         "description": "Grok 4.2 — reasoning model",
-        "inputCostPer1MUSD": 2,
-        "inputCostPer1MCents": 200,
-        "outputCostPer1MUSD": 6,
-        "outputCostPer1MCents": 600,
+        "inputCostPer1MUSD": 1.25,
+        "inputCostPer1MCents": 125,
+        "outputCostPer1MUSD": 2.5,
+        "outputCostPer1MCents": 250,
         "estimation": {
           "msPer1KTokens": 25913,
           "costMultiplier": 1
@@ -211,10 +211,10 @@
       },
       "grok-4.20-non-reasoning": {
         "description": "Grok 4.2 — non-reasoning model",
-        "inputCostPer1MUSD": 2,
-        "inputCostPer1MCents": 200,
-        "outputCostPer1MUSD": 6,
-        "outputCostPer1MCents": 600,
+        "inputCostPer1MUSD": 1.25,
+        "inputCostPer1MCents": 125,
+        "outputCostPer1MUSD": 2.5,
+        "outputCostPer1MCents": 250,
         "estimation": {
           "msPer1KTokens": 9839,
           "costMultiplier": 1

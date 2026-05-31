@@ -4,9 +4,9 @@
     "type": "api",
     "models": {
       "music_v1": {
-        "description": "music_v1 — text prompt to complete song generation (business-tier starting rate)",
-        "costPerMinuteUSD": 0.28,
-        "costPerMinuteCents": 28,
+        "description": "music_v1 — text prompt to complete song generation",
+        "costPerMinuteUSD": 0.15,
+        "costPerMinuteCents": 15,
         "estimation": {
           "costMultiplier": 1,
           "msPerSecond": 1820

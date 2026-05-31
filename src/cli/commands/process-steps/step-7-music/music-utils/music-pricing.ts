@@ -49,7 +49,7 @@ export const estimateMusicCosts = (options: EstimateMusicCostOptions): MusicCost
       totalCost: ratePerMinute * (durationSeconds / 60),
       lyricsSource,
       note: options.musicDuration !== undefined
-        ? `Estimated using ${formatRate(ratePerMinute)}/minute (business-tier starting rate)`
+        ? `Estimated using ${formatRate(ratePerMinute)}/minute (standard API rate)`
         : `Estimated using default ${DEFAULT_ELEVENLABS_MUSIC_DURATION_SECONDS}s duration at ${formatRate(ratePerMinute)}/minute`
     })
   }

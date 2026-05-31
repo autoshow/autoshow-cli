@@ -5,8 +5,8 @@
     "models": {
       "voxtral-mini-2602": {
         "description": "Voxtral Mini Transcribe 2",
-        "costPerHourUSD": 0.18,
-        "costPerHourCents": 18,
+        "costPerHourUSD": 0.12,
+        "costPerHourCents": 12,
         "limits": {
           "effectiveBytes": 524288000,
           "directUploadBytes": 524288000,
