@@ -10,7 +10,6 @@ import { runReverbTranscribe } from '../stt-local/reverb/run-reverb'
 import { runGroqTranscribe } from '../stt-services/groq/run-whisper-groq'
 import { runGrokStt } from '../stt-services/grok/run-grok-stt'
 import { runDeepinfraTranscribe } from '../stt-services/deepinfra/run-deepinfra-stt'
-import { runDeapiStt } from '../stt-services/deapi/run-deapi-stt'
 import { runElevenLabsTranscribe } from '../stt-services/elevenlabs/run-elevenlabs-stt'
 import { runDeepgramTranscribe } from '../stt-services/deepgram/run-deepgram-stt'
 import { runSonioxStt } from '../stt-services/soniox/run-soniox-stt'
@@ -26,8 +25,6 @@ import { runOpenaiStt } from '../stt-services/openai-stt/run-openai-stt'
 import { runGeminiStt } from '../stt-services/gemini-stt/run-gemini-stt'
 import { runGlmStt } from '../stt-services/glm-stt/run-glm-stt'
 import { runTogetherStt } from '../stt-services/together/run-together-stt'
-import { runGcloudStt } from '../stt-services/gcloud/run-gcloud-stt'
-import { runAwsStt } from '../stt-services/aws/run-aws-stt'
 import { ensureSttTargetSetup as ensureSttTargetSetupViaBroker } from '../bootstrap'
 import { assertNever } from '~/utils/validate/assert-never'
 
@@ -65,16 +62,6 @@ export const dispatchStt = async (
     })
   }
 
-  if (target.service === 'gcloud') {
-    return await runGcloudStt(audioPath, outputDir, {
-      model: target.model,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      diarizationOptions: target.diarizationOptions
-    })
-  }
-
   if (target.service === 'deepgram') {
     return await runDeepgramTranscribe(audioPath, outputDir, {
       model: target.model,
@@ -91,19 +78,6 @@ export const dispatchStt = async (
       segmentNumber,
       totalSegments,
       audioDurationSeconds: options.audioDurationSeconds
-    })
-  }
-
-  if (target.service === 'deapi') {
-    return await runDeapiStt(audioPath, outputDir, {
-      model: target.model,
-      sourceUrl: options.sourceUrl,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      audioDurationSeconds: options.audioDurationSeconds,
-      runMode: options.runMode,
-      lifecycle: options.asyncLifecycle
     })
   }
 
@@ -136,21 +110,6 @@ export const dispatchStt = async (
   if (target.service === 'rev') {
     return await runRevStt(audioPath, outputDir, {
       model: target.model,
-      segmentOffsetMinutes,
-      segmentNumber,
-      totalSegments,
-      diarizationOptions: target.diarizationOptions,
-      audioDurationSeconds: options.audioDurationSeconds,
-      runMode: options.runMode,
-      lifecycle: options.asyncLifecycle
-    })
-  }
-
-  if (target.service === 'aws') {
-    return await runAwsStt(audioPath, outputDir, {
-      model: target.model,
-      region: target.awsRegion,
-      bucket: target.awsBucket,
       segmentOffsetMinutes,
       segmentNumber,
       totalSegments,

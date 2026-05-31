@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import { collectMusicTargets } from '~/cli/commands/process-steps/step-7-music/music-targets'
-import { runDeapiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/run-deapi-music-gen'
 import { runElevenLabsMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/run-elevenlabs-music-gen'
 import { writeGeminiMusicInlineAudio } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/run-gemini-music-gen'
 import { runMinimaxMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/run-minimax-music-gen'
@@ -243,84 +242,6 @@ describe('music provider contracts', () => {
         audioMimeType: 'audio/mpeg',
         outputFormat: 'mp3',
         generatedText: '[Verse]\nSilver static in the sky'
-      })
-    })
-  })
-
-  test('deAPI music metadata records request, seed, steps, guidance, and format', async () => {
-    const formRequests: Array<Record<string, unknown>> = []
-
-    await withTempDir(async (dir) => {
-      await withEnvAndFetch({
-        DEAPI_API_KEY: 'test-key',
-        DEAPI_BASE_URL: 'https://mock.deapi.local'
-      }, (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-        const url = String(input)
-        if (url.endsWith('/api/v2/audio/music/price')) {
-          return new Response(JSON.stringify({ data: { price: 0.123 } }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-          })
-        }
-        if (url.endsWith('/api/v2/audio/music') && init?.body instanceof FormData) {
-          formRequests.push({
-            caption: init.body.get('caption'),
-            model: init.body.get('model'),
-            lyrics: init.body.get('lyrics'),
-            duration: init.body.get('duration'),
-            inference_steps: init.body.get('inference_steps'),
-            guidance_scale: init.body.get('guidance_scale'),
-            seed: init.body.get('seed'),
-            format: init.body.get('format')
-          })
-          return new Response(JSON.stringify({ request_id: 'deapi-request-123' }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-          })
-        }
-        if (url.endsWith('/api/v2/jobs/deapi-request-123')) {
-          return new Response(JSON.stringify({
-            data: {
-              status: 'done',
-              result_url: 'https://mock.deapi.local/result.mp3'
-            }
-          }), { status: 200, headers: { 'content-type': 'application/json' } })
-        }
-        if (url === 'https://mock.deapi.local/result.mp3') {
-          return new Response(audioBytes, {
-            status: 200,
-            headers: { 'content-type': 'audio/mpeg' }
-          })
-        }
-        throw new Error(`Unexpected deAPI mock fetch: ${init?.method ?? 'GET'} ${url}`)
-      }) as typeof fetch, async () => {
-        const result = await runDeapiMusicGen('bright synth pop', dir, {
-          model: 'AceStep_1_5_Turbo',
-          durationSeconds: 20,
-          forceInstrumental: true
-        })
-
-        expect(formRequests).toEqual([{
-          caption: 'bright synth pop',
-          model: 'AceStep_1_5_Turbo',
-          lyrics: '[Instrumental]',
-          duration: '20',
-          inference_steps: '8',
-          guidance_scale: '1',
-          seed: '-1',
-          format: 'mp3'
-        }])
-        expect(result.metadata).toMatchObject({
-          providerRequestId: 'deapi-request-123',
-          providerCostCents: 12.3,
-          providerCostSource: 'provider_quote',
-          seed: -1,
-          inferenceSteps: 8,
-          guidanceScale: 1,
-          outputFormat: 'mp3',
-          providerAudioByteSize: audioBytes.byteLength,
-          audioMimeType: 'audio/mpeg'
-        })
       })
     })
   })

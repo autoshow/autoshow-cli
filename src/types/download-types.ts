@@ -1,8 +1,8 @@
-export type BunFetchProfileId = 'bun-fetch-default'
+type BunFetchProfileId = 'bun-fetch-default'
 
 export type DownloadProfileId = BunFetchProfileId
 
-export type ResolvedEngine = 'bun-fetch'
+type ResolvedEngine = 'bun-fetch'
 
 export type DownloadProfile = {
   engine: ResolvedEngine
@@ -19,7 +19,7 @@ export type DownloadFlowId =
   | 'reverb-source'
   | 'reverb-model'
 
-export type DownloadMode = 'file' | 'tar-gz'
+type DownloadMode = 'file' | 'tar-gz'
 
 export type DownloadRequest = {
   url: string

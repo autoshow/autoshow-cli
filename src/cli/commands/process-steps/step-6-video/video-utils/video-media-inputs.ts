@@ -1,17 +1,23 @@
 import { existsSync } from 'node:fs'
 import { basename, extname } from 'node:path'
 import { CLIUsageError } from '~/utils/error-handler'
+import { exec } from '~/utils/cli-utils'
 
-export type VideoMediaKind = 'image' | 'video'
+type VideoMediaKind = 'image' | 'video'
 
-export type GeminiInlineMedia = {
+type GeminiInlineMedia = {
   inlineData: {
     mimeType: string
     data: string
   }
 }
 
-export type GrokUrlMedia = {
+type GeminiVideoImageMedia = {
+  mimeType: string
+  bytesBase64Encoded: string
+}
+
+type GrokUrlMedia = {
   url: string
 }
 
@@ -38,7 +44,7 @@ const allowedMimeTypes = (kind: VideoMediaKind): readonly string[] =>
 const prettyMimeList = (kind: VideoMediaKind): string =>
   kind === 'image' ? 'JPEG, PNG, or WebP' : 'MP4'
 
-export const isHttpMediaUrl = (value: string): boolean => {
+const isHttpMediaUrl = (value: string): boolean => {
   try {
     const url = new URL(value)
     return url.protocol === 'http:' || url.protocol === 'https:'
@@ -47,7 +53,7 @@ export const isHttpMediaUrl = (value: string): boolean => {
   }
 }
 
-export const isVideoMediaDataUrl = (value: string): boolean =>
+const isVideoMediaDataUrl = (value: string): boolean =>
   /^data:(image\/(?:jpeg|jpg|png|webp)|video\/mp4);base64,/i.test(value)
 
 const getLocalMimeType = (value: string): string | undefined =>
@@ -70,11 +76,30 @@ const parseDataUrl = (value: string): { mimeType: string, base64: string } | und
   return { mimeType, base64 }
 }
 
+const parseDurationSeconds = (value: string): number | undefined => {
+  const durationSeconds = Number.parseFloat(value.trim())
+  return Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : undefined
+}
+
 const getReferenceMimeType = (value: string): string | undefined => {
   if (isVideoMediaDataUrl(value)) return parseDataUrl(value)?.mimeType
   if (isHttpMediaUrl(value)) return getUrlMimeType(value)
   return getLocalMimeType(value)
 }
+
+export const isSupportedVideoImageDataUrl = (value: string): boolean => {
+  const mimeType = parseDataUrl(value)?.mimeType
+  return mimeType !== undefined && IMAGE_MIME_TYPES.includes(mimeType as typeof IMAGE_MIME_TYPES[number])
+}
+
+export const isSupportedVideoImageUrl = (value: string): boolean =>
+  isHttpMediaUrl(value) && IMAGE_MIME_TYPES.includes(getUrlMimeType(value) as typeof IMAGE_MIME_TYPES[number])
+
+export const isSupportedVideoImagePathLike = (value: string): boolean =>
+  IMAGE_MIME_TYPES.includes(getLocalMimeType(value) as typeof IMAGE_MIME_TYPES[number])
+
+export const isFirstClassVideoImageInput = (value: string): boolean =>
+  isSupportedVideoImageDataUrl(value) || isSupportedVideoImageUrl(value) || isSupportedVideoImagePathLike(value)
 
 const assertSupportedMimeType = (
   flagName: string,
@@ -204,11 +229,81 @@ export const videoMediaReferenceToGeminiInlineData = async (
   }
 }
 
+export const videoMediaReferenceToGeminiVideoImage = async (
+  value: string,
+  kind: VideoMediaKind
+): Promise<GeminiVideoImageMedia> => {
+  if (isVideoMediaDataUrl(value)) {
+    const { bytes, mimeType } = dataUrlToBytes(value, kind)
+    return {
+      mimeType,
+      bytesBase64Encoded: Buffer.from(bytes).toString('base64')
+    }
+  }
+
+  if (isHttpMediaUrl(value)) {
+    const { bytes, mimeType } = await fetchMediaBytes(value, kind)
+    return {
+      mimeType,
+      bytesBase64Encoded: Buffer.from(bytes).toString('base64')
+    }
+  }
+
+  const mimeType = getLocalMimeType(value)
+  if (!mimeType || !allowedMimeTypes(kind).includes(mimeType)) {
+    throw CLIUsageError(`Unsupported local media input "${value}". Expected ${prettyMimeList(kind)} content for ${kind} input.`)
+  }
+  const bytes = await Bun.file(value).arrayBuffer()
+  return {
+    mimeType,
+    bytesBase64Encoded: Buffer.from(bytes).toString('base64')
+  }
+}
+
 export const videoMediaReferenceToGrokUrlObject = async (
   value: string,
   kind: VideoMediaKind
 ): Promise<GrokUrlMedia> => {
   return { url: await videoMediaReferenceToUrlOrDataUrl(value, kind) }
+}
+
+export const tryResolveLocalVideoDurationSeconds = async (value: string): Promise<number | undefined> => {
+  if (isHttpMediaUrl(value) || isVideoMediaDataUrl(value) || !existsSync(value) || Bun.which('ffprobe') === null) {
+    return undefined
+  }
+
+  const result = await exec('ffprobe', [
+    '-v', 'error',
+    '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1',
+    value
+  ])
+  if (result.exitCode !== 0) {
+    return undefined
+  }
+
+  return parseDurationSeconds(result.stdout)
+}
+
+export const videoMediaReferenceToUrlOrBase64 = async (
+  value: string,
+  kind: VideoMediaKind
+): Promise<string> => {
+  if (isHttpMediaUrl(value)) {
+    return value
+  }
+
+  if (isVideoMediaDataUrl(value)) {
+    const { bytes } = dataUrlToBytes(value, kind)
+    return Buffer.from(bytes).toString('base64')
+  }
+
+  const mimeType = getLocalMimeType(value)
+  if (!mimeType || !allowedMimeTypes(kind).includes(mimeType)) {
+    throw CLIUsageError(`Unsupported local media input "${value}". Expected ${prettyMimeList(kind)} content for ${kind} input.`)
+  }
+  const bytes = await Bun.file(value).arrayBuffer()
+  return Buffer.from(bytes).toString('base64')
 }
 
 export const videoMediaReferenceToUrlOrDataUrl = async (

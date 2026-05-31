@@ -6,7 +6,7 @@ import {
   classifyInputFamily,
   classifyUrlInput
 } from '~/cli/commands/process-steps/step-1-download/targets/target-utils'
-import { STABLE_LOCAL_AUDIO_PATH, runCommand } from '../../test-utils/test-helpers'
+import { STABLE_EXAMPLE_AUDIO_URL, runCommand } from '../../test-utils/test-helpers'
 
 const tempDirs: string[] = []
 
@@ -46,11 +46,11 @@ describe('input classification contracts', () => {
     const result = await runCommand([
       'src/cli/create-cli.ts',
       'write',
-      STABLE_LOCAL_AUDIO_PATH,
-      '--whisper-stt',
-      'tiny',
-      '--assemblyai-stt',
-      'universal-3-pro',
+      STABLE_EXAMPLE_AUDIO_URL,
+      '--stt',
+      'whisper=tiny',
+      '--stt',
+      'assemblyai=universal-3-pro',
       '--price'
     ])
 

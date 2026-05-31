@@ -70,8 +70,18 @@ const renderFlagRows = (flags: CliFlagsDefinition, indent = '  '): string[] => {
   })
   const nameWidth = rows.reduce((width, [name]) => Math.max(width, visibleLength(name)), 0)
   const typeWidth = rows.reduce((width, [, type]) => Math.max(width, visibleLength(type)), 0)
-  return rows.map(([name, type, description]) =>
-    `${indent}${padRight(name, nameWidth)}  ${padRight(type, typeWidth)}  ${description}`)
+  return rows.map(([name, type, description]) => {
+    const prefix = `${indent}${padRight(name, nameWidth)}  ${padRight(type, typeWidth)}  `
+    if (!description.includes('\n')) {
+      return `${prefix}${description}`
+    }
+    const continuationPadding = ' '.repeat(visibleLength(prefix))
+    const [firstLine, ...rest] = description.split('\n')
+    return [
+      `${prefix}${firstLine}`,
+      ...rest.map((line) => `${continuationPadding}${line}`)
+    ].join('\n')
+  })
 }
 
 const orderGlobalFlags = (flags: CliFlagsDefinition): CliFlagsDefinition => {

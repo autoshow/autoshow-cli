@@ -5,7 +5,7 @@ import { resolveProcessLockRoot } from '~/utils/process-lock'
 import { LLAMA_PROCESS_LOCK_NAME } from './llama-constants'
 import { describeLlamaServerTarget } from './llama-server-identity'
 
-export type LlamaServerState = {
+type LlamaServerState = {
   pid: number
   host: string
   port: number

@@ -1,6 +1,6 @@
 import * as v from 'valibot'
 
-export const VideoChapterSchema = v.object({
+const VideoChapterSchema = v.object({
   startTime: v.number(),
   endTime: v.number(),
   title: v.string()

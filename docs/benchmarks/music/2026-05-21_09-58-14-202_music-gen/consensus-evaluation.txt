@@ -1,0 +1,98 @@
+Music consensus evaluation
+
+Run directory:
+docs/benchmarks/music/2026-05-21_09-58-14-202_music-gen
+
+Input prompt:
+indie pop, nostalgic summer road trip vibe song about cats
+
+Evidence basis:
+This evaluation uses only packet and run metadata: artifact existence, file size, duration metadata, MIME/format fields, processing time, and recorded cost. It does not assess musical or audio quality, and it does not use file size, duration, bitrate, cost, or speed as quality proxies.
+
+Provider evidence:
+
+1. elevenlabs/music_v1
+   Artifact: generated-music-elevenlabs-music_v1.mp3
+   Exists: yes
+   File size: 960097 bytes
+   Duration: 60000 ms
+   MIME/format: audio/mpeg, mp3_44100_128
+   Sample rate: 44100 Hz
+   Channels: n/a
+   Bitrate: 128000 bps
+   Processing time: 16633 ms
+   Cost: 28 cents
+
+2. minimax/music-2.6
+   Artifact: generated-music-minimax-music-2.6.mp3
+   Exists: yes
+   File size: 5667686 bytes
+   Duration: 176875 ms
+   MIME/format: audio/mpeg, mp3
+   Sample rate: 44100 Hz
+   Channels: 2
+   Bitrate: 256000 bps
+   Processing time: 115966 ms
+   Cost: 16 cents
+
+3. minimax/music-2.6-free
+   Artifact: generated-music-minimax-music-2.6-free.mp3
+   Exists: yes
+   File size: 7275928 bytes
+   Duration: 227082 ms
+   MIME/format: audio/mpeg, mp3
+   Sample rate: 44100 Hz
+   Channels: 2
+   Bitrate: 256000 bps
+   Processing time: 144199 ms
+   Cost: 1 cent
+
+4. gemini/lyria-3-clip-preview
+   Artifact: generated-music-gemini-lyria-3-clip-preview.mp3
+   Exists: yes
+   File size: 744609 bytes
+   Duration: 30000 ms
+   MIME/format: audio/mpeg, mp3
+   Sample rate: n/a
+   Channels: n/a
+   Bitrate: n/a
+   Processing time: 20049 ms
+   Cost: 4 cents
+
+5. gemini/lyria-3-pro-preview
+   Artifact: generated-music-gemini-lyria-3-pro-preview.mp3
+   Exists: yes
+   File size: 1485651 bytes
+   Duration: 60000 ms
+   MIME/format: audio/mpeg, mp3
+   Sample rate: n/a
+   Channels: n/a
+   Bitrate: n/a
+   Processing time: 36488 ms
+   Cost: 8 cents
+
+Measured rankings:
+
+Price, lower cost first:
+1. minimax/music-2.6-free: 1 cent
+2. gemini/lyria-3-clip-preview: 4 cents
+3. gemini/lyria-3-pro-preview: 8 cents
+4. minimax/music-2.6: 16 cents
+5. elevenlabs/music_v1: 28 cents
+
+Speed, lower wall-clock processing time first:
+1. elevenlabs/music_v1: 16633 ms
+2. gemini/lyria-3-clip-preview: 20049 ms
+3. gemini/lyria-3-pro-preview: 36488 ms
+4. minimax/music-2.6: 115966 ms
+5. minimax/music-2.6-free: 144199 ms
+
+Artifact duration, longest first:
+1. minimax/music-2.6-free: 227082 ms
+2. minimax/music-2.6: 176875 ms
+3. elevenlabs/music_v1: 60000 ms
+4. gemini/lyria-3-pro-preview: 60000 ms
+5. gemini/lyria-3-clip-preview: 30000 ms
+
+Quality evidence:
+No provider entry includes an explicit qualityScore or humanQualityScore. Automated quality and human quality rankings should therefore be unavailable in the report, with unavailable reasons. Artifact metadata is evidence only and is not a quality signal.

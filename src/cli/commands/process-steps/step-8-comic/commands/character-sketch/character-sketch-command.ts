@@ -16,20 +16,26 @@ import {
 } from './character-sketch-sheet'
 import {
   createImage,
+} from '../../image-services/image-targets'
+import {
   createImageRunStats,
   updateImageRunStatsWithCostFallback,
+} from '../../image-services/image-costs'
+import {
   writeGeneratedImage,
-} from '../../image-services'
+} from '../../image-services/image-writer'
 import { DEFAULT_IMAGE_MODEL } from '../../models/model-registry'
 import { validateImageSizeForModels } from '../../utils/image-size'
 import { loadPromptsConfig } from '../../utils/scene-utils'
 import type {
+  ImageGenerationQuality,
+  ImageGenerationSize,
+} from '../../types/comic-types'
+import type {
   CharacterDetails,
   CharacterSketchCommandOptions,
   CharacterSketchView,
-  ImageGenerationQuality,
-  ImageGenerationSize,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
 

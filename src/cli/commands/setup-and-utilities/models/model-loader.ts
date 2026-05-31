@@ -26,6 +26,32 @@ const SttBillingSchema = v.object({
   minimumSeconds: v.optional(v.number(), undefined)
 })
 
+const PricingProvenanceFields = {
+  pricingSourceUrl: v.optional(v.string(), undefined),
+  pricingCheckedAt: v.optional(v.string(), undefined),
+  pricingCurrency: v.optional(v.string(), undefined),
+  pricingTier: v.optional(v.string(), undefined),
+  pricingNotes: v.optional(v.string(), undefined)
+}
+
+const TokenPricingBandSchema = v.object({
+  label: v.optional(v.string(), undefined),
+  minInputTokens: v.optional(v.pipe(v.number(), v.minValue(0)), undefined),
+  maxInputTokens: v.optional(v.pipe(v.number(), v.minValue(0)), undefined),
+  inputCostPer1MUSD: v.optional(v.number(), undefined),
+  inputCostPer1MCents: v.number(),
+  cachedInputCostPer1MUSD: v.optional(v.number(), undefined),
+  cachedInputCostPer1MCents: v.optional(v.number(), undefined),
+  outputCostPer1MUSD: v.optional(v.number(), undefined),
+  outputCostPer1MCents: v.number(),
+  note: v.optional(v.string(), undefined)
+})
+
+const HigherContextPricingSchema = v.object({
+  thresholdInputTokens: v.pipe(v.number(), v.minValue(0)),
+  note: v.string()
+})
+
 export const SttLimitsSchema = v.object({
   effectiveBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
   directUploadBytes: v.optional(v.pipe(v.number(), v.minValue(1)), undefined),
@@ -37,6 +63,7 @@ export const SttLimitsSchema = v.object({
 
 const SttModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPerHourUSD: v.optional(v.number(), undefined),
   costPerHourCents: v.optional(v.number(), undefined),
   costPerThreeHours: v.optional(v.number(), undefined),
@@ -61,14 +88,19 @@ export const ExtractLimitsSchema = v.object({
 
 const ExtractModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPer1kPagesUSD: v.optional(v.number(), undefined),
   costPer1kPagesCents: v.optional(v.number(), undefined),
   costPer1kOutputCharsUSD: v.optional(v.number(), undefined),
   costPer1kOutputCharsCents: v.optional(v.number(), undefined),
   costPerMInputTokensUSD: v.optional(v.number(), undefined),
   costPerMInputTokensCents: v.optional(v.number(), undefined),
+  costPerMCachedInputTokensUSD: v.optional(v.number(), undefined),
+  costPerMCachedInputTokensCents: v.optional(v.number(), undefined),
   costPerMOutputTokensUSD: v.optional(v.number(), undefined),
   costPerMOutputTokensCents: v.optional(v.number(), undefined),
+  tokenPricingBands: v.optional(v.array(TokenPricingBandSchema), undefined),
+  higherContextPricing: v.optional(HigherContextPricingSchema, undefined),
   limits: v.optional(ExtractLimitsSchema, undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
@@ -86,10 +118,13 @@ const ExtractServiceSchema = v.object({
 
 const LlmModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   inputCostPer1MUSD: v.number(),
   inputCostPer1MCents: v.number(),
   outputCostPer1MUSD: v.number(),
   outputCostPer1MCents: v.number(),
+  tokenPricingBands: v.optional(v.array(TokenPricingBandSchema), undefined),
+  higherContextPricing: v.optional(HigherContextPricingSchema, undefined),
   hfDownloadRepo: v.optional(v.string(), undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
@@ -106,6 +141,7 @@ const LlmServiceSchema = v.object({
 
 const TtsModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPer1kCharsUSD: v.optional(v.number(), undefined),
   costPer1kCharsCents: v.optional(v.number(), undefined),
   characterBillingBlockSize: v.optional(v.number(), undefined),
@@ -134,6 +170,7 @@ const TtsServiceSchema = v.object({
 
 const ImageModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPerImageUSD: v.number(),
   costPerImageCents: v.number(),
   costPerImage720pCents: v.optional(v.number(), undefined),
@@ -153,6 +190,7 @@ const ImageServiceSchema = v.object({
 
 const MusicModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   costPerTrackUSD: v.optional(v.number(), undefined),
   costPerTrackCents: v.optional(v.number(), undefined),
   providerPricing: v.optional(v.picklist(['quote']), undefined),
@@ -172,8 +210,14 @@ const MusicServiceSchema = v.object({
   models: v.record(v.string(), MusicModelSchema)
 })
 
+const VideoFixedCostMatrixSchema = v.record(
+  v.string(),
+  v.record(v.string(), v.number())
+)
+
 const VideoModelSchema = v.object({
   description: v.string(),
+  ...PricingProvenanceFields,
   baseCostPerSecondUSD: v.optional(v.number(), undefined),
   baseCostPerSecondCents: v.optional(v.number(), undefined),
   baseJobFeeUSD: v.optional(v.number(), undefined),
@@ -187,6 +231,11 @@ const VideoModelSchema = v.object({
   blockCost720pCents: v.optional(v.number(), undefined),
   blockCost1080pUSD: v.optional(v.number(), undefined),
   blockCost1080pCents: v.optional(v.number(), undefined),
+  fixedCostByResolutionDurationCents: v.optional(VideoFixedCostMatrixSchema, undefined),
+  inputImageCostUSD: v.optional(v.number(), undefined),
+  inputImageCostCents: v.optional(v.number(), undefined),
+  inputVideoCostPerSecondUSD: v.optional(v.number(), undefined),
+  inputVideoCostPerSecondCents: v.optional(v.number(), undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
     msPerSecond: v.optional(v.number(), undefined)
@@ -415,7 +464,17 @@ export const getExtractPricing = (
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
   inputCostPer1MCents?: number
+  cachedInputCostPer1MCents?: number
   outputCostPer1MCents?: number
+  tokenPricingBands?: Array<{
+    label?: string | undefined
+    minInputTokens?: number | undefined
+    maxInputTokens?: number | undefined
+    inputCostPer1MCents: number
+    outputCostPer1MCents: number
+    note?: string | undefined
+  }> | undefined
+  higherContextPricing?: { thresholdInputTokens: number, note: string } | undefined
 } => {
   const extractModel = getModelRegistry().extract[service]?.models[model]
   if (!extractModel) return {}
@@ -435,11 +494,18 @@ export const getExtractPricing = (
       : extractModel.costPerMInputTokensUSD !== undefined
         ? { inputCostPer1MCents: extractModel.costPerMInputTokensUSD * 100 }
         : {}),
+    ...(extractModel.costPerMCachedInputTokensCents !== undefined
+      ? { cachedInputCostPer1MCents: extractModel.costPerMCachedInputTokensCents }
+      : extractModel.costPerMCachedInputTokensUSD !== undefined
+        ? { cachedInputCostPer1MCents: extractModel.costPerMCachedInputTokensUSD * 100 }
+        : {}),
     ...(extractModel.costPerMOutputTokensCents !== undefined
       ? { outputCostPer1MCents: extractModel.costPerMOutputTokensCents }
       : extractModel.costPerMOutputTokensUSD !== undefined
         ? { outputCostPer1MCents: extractModel.costPerMOutputTokensUSD * 100 }
-        : {})
+        : {}),
+    ...(extractModel.tokenPricingBands !== undefined ? { tokenPricingBands: extractModel.tokenPricingBands } : {}),
+    ...(extractModel.higherContextPricing !== undefined ? { higherContextPricing: extractModel.higherContextPricing } : {})
   }
 }
 
@@ -483,12 +549,26 @@ export const getExtractEstimation = (service: string, model: string): ExtractEst
 export const getLlmCost = (
   service: string,
   model: string
-): { inputCostPer1MCents: number, outputCostPer1MCents: number } | undefined => {
+): {
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  tokenPricingBands?: Array<{
+    label?: string | undefined
+    minInputTokens?: number | undefined
+    maxInputTokens?: number | undefined
+    inputCostPer1MCents: number
+    outputCostPer1MCents: number
+    note?: string | undefined
+  }> | undefined
+  higherContextPricing?: { thresholdInputTokens: number, note: string } | undefined
+} | undefined => {
   const llmModel = getModelRegistry().llm[service]?.models[model]
   if (!llmModel) return undefined
   return {
     inputCostPer1MCents: llmModel.inputCostPer1MCents,
-    outputCostPer1MCents: llmModel.outputCostPer1MCents
+    outputCostPer1MCents: llmModel.outputCostPer1MCents,
+    ...(llmModel.tokenPricingBands !== undefined ? { tokenPricingBands: llmModel.tokenPricingBands } : {}),
+    ...(llmModel.higherContextPricing !== undefined ? { higherContextPricing: llmModel.higherContextPricing } : {})
   }
 }
 

@@ -1,7 +1,5 @@
-import type {
-  ImagePromptVariation,
-  PromptsConfig,
-} from '../../types'
+import type { PromptsConfig } from '../../types/comic-types'
+import type { ImagePromptVariation } from '../../types/comic-command-types'
 
 export const IMAGE_PROMPT_VARIATIONS: ImagePromptVariation[] = [
   'canonical',

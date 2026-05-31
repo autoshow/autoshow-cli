@@ -4,21 +4,7 @@ const SPACE_URL_PATTERN = /\b(?:https?:\/\/)?(?:mobile\.)?(?:www\.)?(?:x|twitter
 const POST_URL_PATTERN = /\b(?:https?:\/\/)?(?:mobile\.)?(?:www\.)?(?:x|twitter)\.com\/(?:(?:([A-Za-z0-9_]{1,15})\/status(?:es)?)|(?:i\/web\/status))\/(\d+)(?=[/?#\s]|$)/gi;
 const RAW_SPACE_ID_PATTERN = /^[A-Za-z0-9]{1,13}$/;
 
-export function normalizeUsername(handle: string): string {
-  return handle.trim().replace(/^@+/, "");
-}
-
-export function validateUsername(handle: string): string {
-  const username = normalizeUsername(handle);
-
-  if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
-    throw new Error("Expected --user to be an X handle with 1-15 letters, numbers, or underscores");
-  }
-
-  return username;
-}
-
-export function isSpaceId(value: string): boolean {
+function isSpaceId(value: string): boolean {
   return RAW_SPACE_ID_PATTERN.test(value);
 }
 
@@ -42,7 +28,7 @@ function canonicalPostUrl(postId: string, username?: string): string {
   return username ? `https://x.com/${username}/status/${postId}` : `https://x.com/i/web/status/${postId}`;
 }
 
-export function extractPostReferencesFromText(
+function extractPostReferencesFromText(
   text: string,
   lineNumber = 1,
   raw = text,
@@ -141,8 +127,4 @@ export function parseSpaceInput(text: string, path?: string): ParsedSpaceInput {
     postIds: [...postIds],
     posts: [...postsById.values()],
   };
-}
-
-export function createInputErrors(input: ParsedSpaceInput): ParsedSpaceInputEntry[] {
-  return input.invalidEntries;
 }

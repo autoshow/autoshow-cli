@@ -29,17 +29,27 @@ import {
 import { buildResumeSummaryTable } from '~/cli/commands/process-steps/resume/resume-logging'
 import { buildSuitePriceSummaryRows } from '~/cli/commands/process-steps/suite-price-logging'
 import { buildWriteManifestConsoleSummary, logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
-import { buildProviderReadinessTable } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import {
+  buildProviderReadinessTable,
+  buildSetupToolStatusTable
+} from '~/cli/commands/setup-and-utilities/setup/setup-logging'
+import {
+  buildHostedProviderConfigurationLogTable,
+  buildHostedProviderConfigurationRows,
+  buildHostedProviderConfigurationSummaryTable,
+  buildHostedProviderConfigurationTable,
+  summarizeHostedProviderRows
+} from '~/cli/commands/setup-and-utilities/setup/hosted-provider-config'
 import { createLogger } from '~/utils/logger/core'
 import { formatCost } from '~/utils/logger/formatters'
 import { createReporter } from '~/utils/logger/reporter'
-import { createHumanTable, createKeyValueTable, createLocationsTable, renderHumanTable } from '~/utils/logger/human-table'
+import { createDetailTable, createHumanTable, createKeyValueTable, createLocationsTable, renderHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
 import { buildRetryAttemptTable } from '~/utils/retries'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
 import { stripAnsi } from '~/utils/terminal-colors'
-import type { Logger, LogSinkEvent, LogWriteOptions } from '~/types'
+import type { Logger, LogSinkEvent, LogWriteOptions, StepEstimate } from '~/types'
 
 const makeEvent = (level: LogSinkEvent['level']): LogSinkEvent => ({
   timestamp: '2026-01-01T00:00:00.000Z',
@@ -171,7 +181,7 @@ describe('logging contracts', () => {
 
     const output = captured.stdout[0] as string
     expect(hasAnsi(output)).toBe(true)
-    expect(stripAnsi(output)).toContain('[2026-01-01T00:00:00.000Z] \u2713   Complete!')
+    expect(stripAnsi(output)).toContain('[00:00:00] \u2713 Complete!')
   })
 
   test('colored human table output strips back to plain output', () => {
@@ -302,10 +312,51 @@ describe('logging contracts', () => {
       ['provider', 'gemini']
     ])))
 
-    expect(rendered).toContain('\u2502 mediaType \u2502 video')
-    expect(rendered).toContain('\u2502 provider  \u2502 gemini')
+    expect(rendered).toContain('\u2502 media type \u2502 video')
+    expect(rendered).toContain('\u2502 provider   \u2502 gemini')
     expect(rendered).not.toContain('\u2502   \u2502 key')
     expect(rendered).not.toContain('\u2502 0 \u2502')
+  })
+
+  test('human table labels and millisecond durations render for display only', () => {
+    const table = createKeyValueTable([
+      ['outputDir', 'output/run'],
+      ['processingTimeMs', 760412],
+      ['providerModel', 'grok/grok-tts']
+    ])
+    const rendered = stripAnsi(renderHumanTable(table))
+
+    expect(table.rows).toEqual([
+      { key: 'outputDir', value: 'output/run' },
+      { key: 'processingTimeMs', value: 760412 },
+      { key: 'providerModel', value: 'grok/grok-tts' }
+    ])
+    expect(rendered).toContain('output dir')
+    expect(rendered).toContain('time')
+    expect(rendered).toContain('12m 40s')
+    expect(rendered).toContain('provider/model')
+    expect(rendered).not.toContain('760412')
+  })
+
+  test('human sink renders multiple titled sections on one event', () => {
+    const sink = createHumanSink({ interactive: true })
+    const captured = captureConsole(() => {
+      sink({
+        ...makeEvent('info'),
+        message: 'Complete',
+        humanTable: createDetailTable([['total', '12m 40s, 18.81\u00a2']]),
+        humanSections: [{
+          title: 'Artifacts',
+          table: createHumanTable([{ artifact: 'speech', path: 'speech.wav' }], ['artifact', 'path'])
+        }]
+      })
+    })
+
+    const output = stripAnsi(captured.stdout[0] as string)
+    expect(output).toContain('[00:00:00] \u2022 Complete')
+    expect(output).toContain('total: 12m 40s, 18.81\u00a2')
+    expect(output).toContain('Artifacts')
+    expect(output).toContain('\u2502 speech \u2502 speech.wav')
   })
 
   test('long Locations paths render as sidecar details outside the boxed table', () => {
@@ -315,7 +366,7 @@ describe('logging contracts', () => {
 
     expect(table.rows).toEqual([])
     expect(table.details).toEqual([{ label: 'runManifest', value: longPath }])
-    expect(rendered).toBe(`  runManifest: ${longPath}`)
+    expect(rendered).toBe(`  run manifest: ${longPath}`)
     expect(rendered).not.toContain('\u250c')
     expect(rendered).not.toContain(`\u2502 ${longPath}`)
   })
@@ -333,7 +384,8 @@ describe('logging contracts', () => {
       'result-groq': 'providers/groq/result.json'
     })
 
-    const providersTable = writes.find(write => write.message === 'Providers')?.options?.humanTable
+    const providersTable = writes.find(write => write.message === 'Complete')?.options?.humanSections
+      ?.find(section => section.title === 'Providers')?.table
     if (!providersTable) throw new Error('Expected Providers human table')
 
     const rendered = stripAnsi(renderHumanTable(providersTable))
@@ -341,10 +393,23 @@ describe('logging contracts', () => {
     expect(providersTable.rows).toEqual([{ transcripts: 0, results: 5 }])
     expect(providersTable.details).toEqual([{ label: 'dir', value: `${outputDir}/providers` }])
     expect(rendered).toContain('\u2502 transcripts \u2502 results')
-    expect(rendered).toContain('\u2502 0           \u2502 5')
+    expect(rendered).toContain('\u2502           0 \u2502       5')
     expect(rendered).toContain(`\n  dir: ${outputDir}/providers`)
     expect(rendered).not.toContain('\u2502 dir ')
     expect(rendered).not.toContain(`\u2502 ${outputDir}/providers`)
+  })
+
+  test('reporter completion can omit output directory section after Run already announced it', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+
+    reporter.complete('output/run', { speech: 'speech.wav', run: 'run.json' }, {
+      includeOutputDir: false
+    })
+
+    const sections = writes[0]?.options?.humanSections ?? []
+    expect(writes.map(write => write.message)).toEqual(['Complete'])
+    expect(sections.map(section => section.title)).toEqual(['Artifacts'])
   })
 
   test('short filenames and short paths remain inline in human tables', () => {
@@ -399,10 +464,10 @@ describe('logging contracts', () => {
     expect(renderedStderr).toContain('second diagnostic line')
 
     const progressTable = createHumanTable([
-      { provider: 'aws-textract', detail: 'attempt 10' }
+      { provider: 'unstructured', detail: 'attempt 10' }
     ], ['provider', 'detail'])
     expect(progressTable.details).toBeUndefined()
-    expect(stripAnsi(renderHumanTable(progressTable))).toContain('\u2502 aws-textract \u2502 attempt 10')
+    expect(stripAnsi(renderHumanTable(progressTable))).toContain('\u2502 unstructured \u2502 attempt 10')
   })
 
   test('lifted path details are redacted like table cells', () => {
@@ -436,7 +501,7 @@ describe('logging contracts', () => {
       effective: 2,
       batchConcurrency: 1,
       hostedProviders: 27,
-      providerSlots: 'aws/standard:create=2,poll=1, deepgram/nova-3:launch=4'
+      providerSlots: 'assemblyai/universal-3-pro:create=2,poll=1, deepgram/nova-3:launch=4'
     })
 
     expect(table).toEqual({
@@ -452,7 +517,7 @@ describe('logging contracts', () => {
 
     const rendered = stripAnsi(renderHumanTable(table))
     expect(rendered).not.toContain('providerSlots')
-    expect(rendered).not.toContain('aws/standard')
+    expect(rendered).not.toContain('assemblyai/universal-3-pro')
   })
 
   test('STT provider slot details render as provider rows', () => {
@@ -466,9 +531,9 @@ describe('logging contracts', () => {
         pollSlots: null
       },
       {
-        service: 'aws',
-        model: 'standard',
-        provider: 'aws/standard',
+        service: 'assemblyai',
+        model: 'universal-3-pro',
+        provider: 'assemblyai/universal-3-pro',
         kind: 'async',
         launchSlots: 2,
         pollSlots: 1
@@ -479,18 +544,20 @@ describe('logging contracts', () => {
       columns: ['provider', 'kind', 'launch', 'poll'],
       rows: [
         { provider: 'deepgram/nova-3', kind: 'sync', launch: 4, poll: '' },
-        { provider: 'aws/standard', kind: 'async', launch: 2, poll: 1 }
+        { provider: 'assemblyai/universal-3-pro', kind: 'async', launch: 2, poll: 1 }
       ]
     })
 
     const rendered = stripAnsi(renderHumanTable(table))
-    expect(rendered).toContain('\u2502 deepgram/nova-3 \u2502 sync')
-    expect(rendered).toContain('\u2502 aws/standard    \u2502 async \u2502 2      \u2502 1')
+    expect(rendered).toContain('deepgram/nova-3')
+    expect(rendered).toContain('sync')
+    expect(rendered).toContain('assemblyai/universal-3-pro')
+    expect(rendered).toContain('async')
   })
 
   test('STT provider concurrency log emits compact summary and slot tables', () => {
     const { logger, writes } = createCapturingLogger()
-    const providerSlots = 'deepgram/nova-3:launch=4, aws/standard:create=2,poll=1'
+    const providerSlots = 'deepgram/nova-3:launch=4, assemblyai/universal-3-pro:create=2,poll=1'
     const providerSlotDetails = [
       {
         service: 'deepgram',
@@ -501,9 +568,9 @@ describe('logging contracts', () => {
         pollSlots: null
       },
       {
-        service: 'aws',
-        model: 'standard',
-        provider: 'aws/standard',
+        service: 'assemblyai',
+        model: 'universal-3-pro',
+        provider: 'assemblyai/universal-3-pro',
         kind: 'async',
         launchSlots: 2,
         pollSlots: 1
@@ -615,14 +682,14 @@ describe('logging contracts', () => {
     })
 
     expect(buildSttDiarizationConfigTable({
-      provider: 'aws',
-      model: 'standard',
+      provider: 'assemblyai',
+      model: 'universal-3-pro',
       enabled: true,
       speakerCount: 3,
       maxSpeakers: 3
     }).rows).toEqual([
-      { key: 'provider', value: 'aws' },
-      { key: 'model', value: 'standard' },
+      { key: 'provider', value: 'assemblyai' },
+      { key: 'model', value: 'universal-3-pro' },
       { key: 'enabled', value: true },
       { key: 'speakerCount', value: 3 },
       { key: 'maxSpeakers', value: 3 }
@@ -655,7 +722,7 @@ describe('logging contracts', () => {
     expect(cleanupRendered).not.toContain('\u2502 artifact \u2502 path')
 
     expect(buildSttProviderSpeakerCountHintsTable([
-      { provider: 'aws/standard', speakerCount: 2, support: 'honored' },
+      { provider: 'assemblyai/universal-3-pro', speakerCount: 2, support: 'honored' },
       { provider: 'reverb/reverb_asr_v1', speakerCount: 2, support: 'ignored' }
     ]).columns).toEqual(['provider', 'speakerCount', 'support'])
   })
@@ -741,7 +808,7 @@ describe('logging contracts', () => {
     expect(buildProviderReadinessTable({
       provider: 'supadata',
       capability: 'transcription',
-      status: 'ready',
+      status: 'configured',
       envKey: 'SUPADATA_API_KEY',
       detail: 'https://api.supadata.ai/v1'
     })).toEqual({
@@ -749,10 +816,71 @@ describe('logging contracts', () => {
       rows: [{
         provider: 'supadata',
         capability: 'transcription',
-        status: 'ready',
+        status: 'configured',
         envKey: 'SUPADATA_API_KEY',
         detail: 'https://api.supadata.ai/v1'
       }]
+    })
+
+    const providerRows = buildHostedProviderConfigurationRows(
+      { OPENAI_API_KEY: 'sk-test' },
+      { envVars: ['OPENAI_API_KEY', 'GEMINI_API_KEY'] }
+    )
+    expect(providerRows).toEqual([
+      {
+        provider: 'OpenAI write/STT/OCR/TTS/image',
+        status: 'configured',
+        envKey: 'OPENAI_API_KEY',
+        detail: 'set'
+      },
+      {
+        provider: 'Gemini write/STT/OCR/TTS/image/video/music',
+        status: 'missing',
+        envKey: 'GEMINI_API_KEY',
+        detail: 'set GEMINI_API_KEY to enable'
+      }
+    ])
+    expect(summarizeHostedProviderRows(providerRows)).toEqual({
+      configured: 1,
+      missing: 1,
+      total: 2
+    })
+    expect(buildHostedProviderConfigurationTable(providerRows)).toEqual({
+      columns: ['provider', 'status', 'envKey', 'detail'],
+      rows: providerRows
+    })
+
+    expect(buildHostedProviderConfigurationLogTable(providerRows, { mode: 'missing' })).toEqual({
+      columns: ['provider', 'status', 'envKey', 'detail'],
+      rows: [providerRows[1]!],
+      details: [{ label: 'configured', value: '1/2' }]
+    })
+
+    expect(buildHostedProviderConfigurationSummaryTable({
+      configured: 2,
+      missing: 0,
+      total: 2
+    })).toEqual({
+      columns: ['configured', 'missing', 'detail'],
+      rows: [{
+        configured: '2/2',
+        missing: 0,
+        detail: 'all env vars set'
+      }]
+    })
+
+    const longRuntimePath = '/Users/ajc/c/as/autoshow-cli/runtime/bin/whisper-cli'
+    expect(buildSetupToolStatusTable({
+      tool: 'whisper-cli',
+      status: 'ready',
+      detail: longRuntimePath
+    })).toEqual({
+      columns: ['tool', 'status'],
+      rows: [{
+        tool: 'whisper-cli',
+        status: 'ready'
+      }],
+      details: [{ label: 'path', value: longRuntimePath }]
     })
   })
 
@@ -790,7 +918,7 @@ describe('logging contracts', () => {
     })
 
     expect(buildOcrJobProgressTable({
-      provider: 'aws-textract',
+      provider: 'unstructured',
       action: 'poll',
       remoteId: 'job-123',
       state: 'in_progress',
@@ -799,7 +927,7 @@ describe('logging contracts', () => {
     })).toEqual({
       columns: ['key', 'value'],
       rows: [
-        { key: 'provider', value: 'aws-textract' },
+        { key: 'provider', value: 'unstructured' },
         { key: 'action', value: 'poll' },
         { key: 'remoteId', value: 'job-123' },
         { key: 'state', value: 'in_progress' },
@@ -809,11 +937,11 @@ describe('logging contracts', () => {
     })
 
     expect(buildOcrJobProgressTable({
-      provider: 'aws-textract',
+      provider: 'unstructured',
       action: 'launch',
       state: 'queued'
     }).rows).toEqual([
-      { key: 'provider', value: 'aws-textract' },
+      { key: 'provider', value: 'unstructured' },
       { key: 'action', value: 'launch' },
       { key: 'state', value: 'queued' }
     ])
@@ -913,10 +1041,13 @@ describe('logging contracts', () => {
     })
 
     expect(writes.map(write => write.message)).toEqual([
-      'Total estimated cost: free (0.000\u00a2)',
-      'Cost Estimate'
+      'Estimate'
     ])
-    expect(writes[1]?.options?.humanTable).toBeDefined()
+    expect(writes[0]?.options?.humanTable?.details).toEqual([
+      { label: 'Total estimated cost', value: 'free (0.000\u00a2)' }
+    ])
+    expect(writes[0]?.options?.humanSections?.[0]?.title).toBe('Cost Estimate')
+    expect(writes[0]?.options?.humanSections?.[0]?.table).toBeDefined()
     expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
   })
 
@@ -935,7 +1066,9 @@ describe('logging contracts', () => {
       }]
     })
 
-    expect(writes[1]?.options?.humanTable?.rows[0]).toMatchObject({
+    const estimateTable = writes[0]?.options?.humanSections
+      ?.find(section => section.title === 'Cost Estimate')?.table
+    expect(estimateTable?.rows[0]).toMatchObject({
       provider: 'reverb',
       model: 'reverb_asr_v1'
     })
@@ -1122,6 +1255,7 @@ describe('logging contracts', () => {
           step: 'video',
           provider: 'gemini',
           model: 'veo-3.1-lite-generate-preview',
+          durationSeconds: 4,
           totalCost: 200
         },
         {
@@ -1143,17 +1277,21 @@ describe('logging contracts', () => {
       notes: ['Aggregate caveat.']
     })
 
-    const humanTable = writes[1]?.options?.humanTable
+    const humanTable = writes[0]?.options?.humanSections
+      ?.find(section => section.title === 'Cost Estimate')?.table
     expect(humanTable).toEqual({
-      columns: ['step', 'provider', 'model', 'details', 'cost'],
+      columns: ['step', 'provider', 'model', 'cost'],
       align: { cost: 'right' },
       rows: [
         { step: 'video', provider: 'gemini', model: 'veo-3.1-lite-generate-preview', cost: '$2.00' },
-        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', details: 'characters 100', cost: '1.25\u00a2' },
+        { step: 'tts', provider: 'kitten', model: 'kitten-tts-mini', cost: '1.25\u00a2' },
         { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2' }
       ]
     })
-    expect(writes[0]?.message).toBe('Total estimated cost: $2.01 (201.255\u00a2)')
+    expect(writes[0]?.message).toBe('Estimate')
+    expect(writes[0]?.options?.humanTable?.details).toEqual([
+      { label: 'Total estimated cost', value: '$2.01 (201.255\u00a2)' }
+    ])
     expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
 
     if (!humanTable) throw new Error('Expected cost estimate human table')
@@ -1163,6 +1301,91 @@ describe('logging contracts', () => {
     expect(rendered).toContain('\u2502 <0.01\u00a2 \u2502')
     expect(rendered).not.toContain('[1]')
     expect(rendered).not.toContain('\u2502 key')
+  })
+
+  test('reporter omits human cost details for detail-heavy estimate types', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+    const steps = [
+      {
+        step: 'stt',
+        provider: 'deepgram',
+        model: 'nova-3',
+        durationSeconds: 123,
+        estimateType: 'heuristic',
+        totalCost: 4.1
+      },
+      {
+        step: 'llm',
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        inputCostPer1MCents: 20,
+        outputCostPer1MCents: 125,
+        estimatedInputTokens: 600,
+        estimatedOutputTokens: 400,
+        totalCost: 0.062
+      },
+      {
+        step: 'extract',
+        provider: 'openai',
+        model: 'gpt-5.4-nano',
+        inputCostPer1MCents: 20,
+        outputCostPer1MCents: 125,
+        pageCount: 2,
+        promptTokens: 5972,
+        completionTokens: 3688,
+        estimateType: 'heuristic',
+        totalCost: 0.58044
+      },
+      {
+        step: 'extract',
+        provider: 'glm-reader',
+        model: 'glm-reader',
+        costPer1kPagesCents: 1000,
+        pageCount: 1,
+        totalCost: 1
+      },
+      {
+        step: 'tts',
+        provider: 'mistral',
+        model: 'voxtral-mini-tts-2603',
+        inputCostPer1MCharactersCents: 0,
+        outputCostPer1MCharactersCents: 1600,
+        characterCount: 1000,
+        setupCostCents: 0,
+        estimateType: 'heuristic',
+        totalCost: 1.6
+      },
+      {
+        step: 'music',
+        provider: 'minimax',
+        model: 'music-2.6',
+        durationSeconds: 180,
+        lyricsSource: 'generated',
+        totalCost: 500
+      }
+    ] satisfies StepEstimate[]
+
+    reporter.estimate({
+      totalEstimatedCost: steps.reduce((total, step) => total + step.totalCost, 0),
+      steps
+    })
+
+    const humanTable = writes[0]?.options?.humanSections
+      ?.find(section => section.title === 'Cost Estimate')?.table
+    if (!humanTable) throw new Error('Expected cost estimate human table')
+
+    expect(humanTable.columns).toEqual(['step', 'provider', 'model', 'setup', 'cost'])
+    expect(humanTable.details).toBeUndefined()
+    expect(humanTable.rows.every(row => row['details'] === undefined)).toBe(true)
+
+    const rendered = stripAnsi(renderHumanTable(humanTable))
+    expect(rendered).not.toContain('details')
+    expect(rendered).not.toContain('see details')
+    expect(rendered).not.toContain('rate $10.00/1K pages')
+    expect(rendered).not.toContain('lyrics generated')
+    expect(rendered).not.toContain('tokens')
+    expect(rendered).not.toContain('characters')
   })
 
   test('audio normalize table uses vertical key/value display rows', () => {

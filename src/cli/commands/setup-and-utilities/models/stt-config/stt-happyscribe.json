@@ -5,6 +5,11 @@
     "models": {
       "auto": {
         "description": "Automatic Happy Scribe STT with fixed en-US language and diarization enabled by default",
+        "pricingSourceUrl": "https://www.happyscribe.com/api/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Happy Scribe Product API automatic transcription reference pricing",
+        "pricingNotes": "Happy Scribe automatic transcription is estimated at $0.60/hour. Subscription differences, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.6,
         "costPerHourCents": 60,
         "limits": {

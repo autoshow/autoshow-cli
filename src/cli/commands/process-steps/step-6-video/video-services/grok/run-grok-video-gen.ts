@@ -1,5 +1,5 @@
-import * as v from 'valibot'
 import * as l from '~/utils/logger'
+import * as v from 'valibot'
 import type { GrokVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
@@ -9,14 +9,17 @@ import {
   normalizeGrokVideoExtensionDuration,
   normalizeGrokVideoResolution
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
-import { videoMediaReferenceToGrokUrlObject } from '../../video-utils/video-media-inputs'
+import {
+  tryResolveLocalVideoDurationSeconds,
+  videoMediaReferenceToGrokUrlObject
+} from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
-
-const DEFAULT_XAI_BASE_URL = 'https://api.x.ai/v1'
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
@@ -52,7 +55,7 @@ const formatGrokError = (value: unknown): string => {
 }
 
 export const runGrokVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: {
     model: GrokVideoModel
@@ -72,7 +75,7 @@ export const runGrokVideoGen = async (
     throw new Error('XAI_API_KEY environment variable is required for Grok video generation')
   }
 
-  const baseURL = (readEnv('XAI_BASE_URL') ?? DEFAULT_XAI_BASE_URL).replace(/\/+$/, '')
+  const baseURL = XAI_DEFAULT_BASE_URL
   const mode = options.mode ?? 'text'
   const duration = mode === 'extend'
     ? normalizeGrokVideoExtensionDuration(options.durationSeconds)
@@ -98,11 +101,17 @@ export const runGrokVideoGen = async (
     status: 'started'
   })
 
+  const inputVideoDurationSeconds = options.inputVideo
+    ? await tryResolveLocalVideoDurationSeconds(options.inputVideo)
+    : undefined
+  const inputImageCount = (options.inputImage ? 1 : 0) + (options.referenceImages?.length ?? 0)
   const estimate = estimateVideoCost({
     grokVideoModel: options.model,
     videoDuration: options.durationSeconds,
     videoResolution: options.resolution,
-    videoMode: options.mode
+    videoMode: options.mode,
+    grokInputImageCount: inputImageCount,
+    ...(inputVideoDurationSeconds !== undefined ? { grokInputVideoDurationSeconds: inputVideoDurationSeconds } : {})
   })
   logVideoEstimate(estimate)
 
@@ -119,7 +128,7 @@ export const runGrokVideoGen = async (
 
   const requestBody: Record<string, unknown> = {
     model: options.model,
-    prompt,
+    ...(prompt !== undefined ? { prompt } : {}),
     ...(storageOptions ? { storage_options: storageOptions } : {})
   }
   if (mode === 'edit') {
@@ -200,13 +209,8 @@ export const runGrokVideoGen = async (
     throw new Error('Grok video generation succeeded but no video.url was returned')
   }
 
-  const downloadResp = await fetch(videoUrl)
-  if (!downloadResp.ok) {
-    throw new Error(`Grok video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  await Bun.write(outputPath, new Uint8Array(await downloadResp.arrayBuffer()))
+  await Bun.write(outputPath, await downloadVideoOutputBytes(videoUrl, 'Grok'))
 
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)
@@ -217,7 +221,8 @@ export const runGrokVideoGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   return {
@@ -235,6 +240,7 @@ export const runGrokVideoGen = async (
       ...(options.inputImage ? { inputImage: options.inputImage } : {}),
       ...(options.referenceImages && options.referenceImages.length > 0 ? { referenceImages: options.referenceImages } : {}),
       ...(options.inputVideo ? { inputVideo: options.inputVideo } : {}),
+      ...(inputVideoDurationSeconds !== undefined ? { inputVideoDurationSeconds } : {}),
       providerRequestId: createData.request_id,
       ...(taskData.model ? { providerReturnedModel: taskData.model } : {}),
       providerVideoUrl: videoUrl,

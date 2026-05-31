@@ -1,46 +1,16 @@
-import * as l from '~/utils/logger'
-import { validateGlmOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import { GLM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 
-const DEFAULT_GLM_BASE_URL = 'https://api.z.ai/api/paas/v4'
-
-const normalizeGlmBaseUrl = (value: string): string => {
-  const normalized = value.trim().replace(/\/+$/, '')
-  if (normalized.endsWith('/paas/v4')) {
-    return normalized
-  }
-  if (normalized.endsWith('/api/paas')) {
-    return `${normalized}/v4`
-  }
-  if (normalized.endsWith('/api')) {
-    return `${normalized}/paas/v4`
-  }
-  if (/^https?:\/\/[^/]+$/i.test(normalized)) {
-    return `${normalized}/api/paas/v4`
-  }
-  return normalized
-}
-
 export const resolveGlmBaseUrl = (): string => {
-  const configured = readEnv('ZAI_BASE_URL')
-  if (!configured) {
-    return DEFAULT_GLM_BASE_URL
-  }
-  return normalizeGlmBaseUrl(configured)
+  const override = readEnv('ZAI_BASE_URL')?.replace(/\/$/, '')
+  if (!override) return GLM_DEFAULT_BASE_URL
+  return override.endsWith('/api/paas/v4')
+    ? override
+    : `${override}/api/paas/v4`
 }
 
-export const getGlmApiKey = (): string | undefined => {
+const getGlmApiKey = (): string | undefined => {
   return readEnv('GLM_API_KEY')
-}
-
-export const setupGlmOcr = async (): Promise<void> => {
-  const apiKey = getGlmApiKey()
-  if (apiKey) {
-    l.write('success', 'GLM_API_KEY found - GLM OCR/Reader/Text ready')
-  } else {
-    l.warn('GLM_API_KEY not set - GLM OCR/Reader/Text will not work until set')
-    l.write('info', 'Set GLM_API_KEY environment variable to use GLM OCR, GLM Reader, and GLM text models')
-  }
 }
 
 export const ensureGlmApiKey = (serviceName: string): string => {
@@ -54,5 +24,3 @@ export const ensureGlmApiKey = (serviceName: string): string => {
 export const ensureGlmOcrSetup = async (): Promise<void> => {
   ensureGlmApiKey('GLM OCR')
 }
-
-export { validateGlmOcrModel }

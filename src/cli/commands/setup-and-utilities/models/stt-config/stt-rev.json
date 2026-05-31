@@ -5,6 +5,11 @@
     "models": {
       "machine": {
         "description": "Reverb Transcription via Rev async REST API with diarization enabled by default",
+        "pricingSourceUrl": "https://www.rev.ai/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Rev AI pay-as-you-go speech-to-text pricing",
+        "pricingNotes": "Rev AI speech-to-text estimates use published per-hour pricing for the selected Reverb model and apply the registry billing minimum and per-second rounding. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.2,
         "costPerHourCents": 20,
         "limits": {
@@ -25,6 +30,11 @@
       },
       "low_cost": {
         "description": "Reverb Turbo transcription via Rev async REST API with diarization enabled by default",
+        "pricingSourceUrl": "https://www.rev.ai/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Rev AI pay-as-you-go speech-to-text pricing",
+        "pricingNotes": "Rev AI speech-to-text estimates use published per-hour pricing for the selected Reverb model and apply the registry billing minimum and per-second rounding. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.1,
         "costPerHourCents": 10,
         "limits": {

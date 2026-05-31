@@ -1,7 +1,7 @@
 import type { LLMTarget } from '~/types'
 import { runProviderTargetScheduler } from '~/cli/commands/process-steps/provider-target-scheduler'
 
-export type LlmProviderPoolConcurrency = {
+type LlmProviderPoolConcurrency = {
   provider: number
   local: number
 }
@@ -15,7 +15,7 @@ export const isLocalLlmTarget = (
   target: Pick<LLMTarget, 'service'>
 ): boolean => target.service === 'llama.cpp'
 
-export const isHostedLlmTarget = (
+const isHostedLlmTarget = (
   target: Pick<LLMTarget, 'service'>
 ): boolean =>
   target.service === 'openai'

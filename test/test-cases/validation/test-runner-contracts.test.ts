@@ -2,19 +2,23 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { parseRunnerArgs } from '../../test-runner/args'
+import { DEFAULT_TEST_RUNNER_CONCURRENCY, parseRunnerArgs, withDefaultTestConcurrency } from '../../test-runner/args'
 import { cleanupTestOutputRoot, createRunArtifacts, writeDashboardReportFiles, writeLatestRunLog } from '../../test-runner/artifacts'
-import { applyModelConfigCalibrations } from '../../test-runner/model-calibration'
+import { buildModelCalibrationReport } from '../../test-runner/model-calibration'
 import { parseJunit } from '../../test-runner/parsers'
 import { EMPTY_PRICE_CONFIG_PATH, withEmptyPriceConfig } from '../../test-runner/price-command-config'
-import { resolvePriceSelection } from '../../test-runner/price-commands'
+import { resolvePriceSelection } from '../../test-runner/price-commands/resolve'
 import { BUDGET_PRICE_SELECTION_REGISTRY } from '../../test-runner/price-commands/registry'
 import { evaluatePriceObservations } from '../../test-runner/price-evaluation'
-import { buildDashboardReportData } from '../../test-runner/reports'
-import { formatSelectedPathsLabel, formatSelectedPriceSuitesLabel } from '../../test-runner/path-selection'
+import { buildDashboardReportData } from '../../test-runner/reports/dashboard-report'
+import { formatSelectedPathsLabel } from '../../test-runner/path-selection'
 import { parseCommandEstimatedTotal } from '../../test-runner/utils'
 import { shouldSkipBudgetKeys } from '../../test-utils/budget'
 import type { ParsedCommandMetric, ParsedJunitCase } from '~/types'
+import {
+  MINIMAX_INSTRUMENTAL_MUSIC_MODELS,
+  DEEPGRAM_DEFAULT_VOICE,
+} from '~/cli/commands/setup-and-utilities/models/model-options'
 
 const tempDirs: string[] = []
 
@@ -189,7 +193,8 @@ const extractHelperGeneratedBudgetKeys = (source: string): string[] => {
   for (const spec of helperBudgetKeySpecs) {
     for (const callBody of extractCallBodies(source, spec.callName)) {
       const service = spec.serviceFromCliFlag
-        ? readStringProperty(callBody, 'cliFlag')?.replace(/^--/, '').replace(/-ocr$/, '')
+        ? readStringProperty(callBody, 'expectedService')
+          ?? readStringProperty(callBody, 'provider')
         : readStringProperty(callBody, spec.serviceProperty)
       if (!service) {
         continue
@@ -204,26 +209,11 @@ const extractHelperGeneratedBudgetKeys = (source: string): string[] => {
   return keys
 }
 
-const extractTemplateLoopBudgetKeys = (file: string, source: string): string[] => {
-  if (!file.endsWith('whisper-models-price.test.ts') || !source.includes('`transcribe-whisper-${model}`')) {
-    return []
-  }
-
-  const modelsMatch = /const\s+models\s*=\s*\[([\s\S]*?)\]\s*as const/.exec(source)
-  const modelsSource = modelsMatch?.[1]
-  if (!modelsSource) {
-    return []
-  }
-
-  return [...modelsSource.matchAll(/(['"`])([^'"`]+)\1/g)].map(match => `transcribe-whisper-${match[2]}`)
-}
-
-const extractE2EBudgetKeys = (file: string, source: string): string[] => {
+const extractE2EBudgetKeys = (_file: string, source: string): string[] => {
   return [
     ...extractExplicitBudgetedTestKeys(source),
     ...extractBudgetKeyVariableLiterals(source),
     ...extractHelperGeneratedBudgetKeys(source),
-    ...extractTemplateLoopBudgetKeys(file, source)
   ]
 }
 
@@ -250,6 +240,27 @@ describe('test-runner contracts', () => {
     expect(parsed.passthroughArgs).toEqual(['--bail'])
   })
 
+  test('arg parsing rejects the --testprice typo', () => {
+    expect(() => parseRunnerArgs([
+      'bun',
+      'test/test-runner.ts',
+      '--testprice',
+    ])).toThrow('Use --test-price')
+  })
+
+  test('arg parsing rejects legacy --concurrency spelling', () => {
+    for (const args of [
+      ['--concurrency', '50'],
+      ['--concurrency=50'],
+    ]) {
+      expect(() => parseRunnerArgs([
+        'bun',
+        'test/test-runner.ts',
+        ...args,
+      ])).toThrow('Use --max-concurrency=<n> for per-file test concurrency and --parallel=<n> for file-level worker parallelism')
+    }
+  })
+
   test('arg parsing uses --no-cleanup as the explicit keep flag', () => {
     const parsed = parseRunnerArgs([
       'bun',
@@ -263,8 +274,26 @@ describe('test-runner contracts', () => {
     expect(parsed.preserveTestOutput).toBe(true)
   })
 
+  test('normal test mode defaults bun test max concurrency', () => {
+    expect(withDefaultTestConcurrency(['--bail'])).toEqual([
+      `--max-concurrency=${DEFAULT_TEST_RUNNER_CONCURRENCY}`,
+      '--bail',
+    ])
+  })
+
+  test('normal test mode preserves explicit bun test max concurrency', () => {
+    expect(withDefaultTestConcurrency(['--max-concurrency=8', '--bail'])).toEqual([
+      '--max-concurrency=8',
+      '--bail',
+    ])
+    expect(withDefaultTestConcurrency(['--max-concurrency', '8'])).toEqual([
+      '--max-concurrency',
+      '8',
+    ])
+  })
+
   test('price config isolation appends empty config to mapped write price commands', () => {
-    const args = ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4', '--price']
+    const args = ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--openai', 'gpt-5.4', '--price']
 
     expect(withEmptyPriceConfig(args)).toEqual([
       ...args,
@@ -287,7 +316,7 @@ describe('test-runner contracts', () => {
     const separateConfigArgs = [
       'src/cli/create-cli.ts',
       'write',
-      'input/examples/audio/1-audio.mp3',
+      'https://ajc.pics/autoshow/examples/1-audio.mp3',
       '--openai',
       'gpt-5.4',
       '--price',
@@ -309,7 +338,7 @@ describe('test-runner contracts', () => {
   })
 
   test('price config isolation leaves non-CLI runner commands unchanged', () => {
-    const args = ['test/test-runner.ts', 'test/test-cases/e2e/step-3-write-e2e', '--test-price']
+    const args = ['test/test-runner.ts', 'test/test-cases/e2e/local/step-3-write-e2e', '--test-price']
 
     expect(withEmptyPriceConfig(args)).toEqual(args)
   })
@@ -415,7 +444,7 @@ describe('test-runner contracts', () => {
   test('path-selection labels strip the test/test-cases prefix for validation paths', () => {
     expect(formatSelectedPathsLabel(['test/test-cases/validation-next/'])).toBe('Selected paths: validation-next')
     expect(formatSelectedPathsLabel(['test/test-cases/validation/'])).toBe('Selected paths: validation')
-    expect(formatSelectedPriceSuitesLabel(['test/test-price/step-4-tts/services'])).toBe('Selected price suites: step-4-tts/services')
+    expect(formatSelectedPathsLabel(['test/test-cases/e2e/service/step-4-tts-e2e/tts-services/'])).toBe('Selected paths: service/step-4-tts-e2e/tts-services')
   })
 
   test('JUnit XML parsing returns pass, fail, and skip counts', async () => {
@@ -438,7 +467,7 @@ describe('test-runner contracts', () => {
     expect(cases.filter((entry) => entry.status === 'skipped')).toHaveLength(1)
   })
 
-  test('model calibration scans copied run manifests', async () => {
+  test('model calibration scans copied run manifests and reports recommendations', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-calibration-run-manifest-'))
     tempDirs.push(dir)
 
@@ -460,6 +489,7 @@ describe('test-runner contracts', () => {
         }
       }
     }, null, 2)}\n`)
+    const originalConfig = await readFile(configPath, 'utf8')
 
     const runDir = join(dir, '2026-05-01_00-00-00_test-run')
     const copiedRunDir = join(runDir, 'run')
@@ -496,6 +526,8 @@ describe('test-runner contracts', () => {
               provider: 'openai',
               model: 'gpt-image-1.5',
               processingTimeMs: 3000,
+              msPerUnit: 1800,
+              timingScope: 'wall',
               inputMetric: 'images',
               inputValue: 1
             }]
@@ -504,18 +536,21 @@ describe('test-runner contracts', () => {
       }
     }, null, 2)}\n`)
 
-    const report = await applyModelConfigCalibrations(dir, { image: configPath })
-    const updatedConfig = await Bun.file(configPath).json() as {
-      openai: { models: { 'gpt-image-1.5': { estimation: { msPerImage: number } } } }
-    }
+    const report = await buildModelCalibrationReport(dir, { image: configPath })
+    const configAfterCalibration = await readFile(configPath, 'utf8')
 
     expect(report.runsScanned).toBe(1)
     expect(report.metadataFilesScanned).toBe(1)
-    expect(report.updatedModels).toBe(1)
-    expect(updatedConfig.openai.models['gpt-image-1.5'].estimation.msPerImage).toBe(1500)
+    expect(report.recommendedModels).toBe(1)
+    expect(configAfterCalibration).toBe(originalConfig)
+    expect(report.recommendations[0]?.timeSamples).toBe(1)
+    expect(report.recommendations[0]?.medianTimeValue).toBe(1800)
+    expect(report.recommendations[0]?.recommendedTimeValue).toBe(1280)
+    expect(report.recommendations[0]?.recommendedCostMultiplier).toBeNull()
+    expect(report.recommendations[0]?.notes).toEqual(['Timing calibration uses wall-clock latency observations.'])
   })
 
-  test('model calibration writes split STT provider fragments', async () => {
+  test('model calibration reads split STT provider fragments without writing back', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-calibration-stt-fragment-'))
     tempDirs.push(dir)
 
@@ -557,6 +592,8 @@ describe('test-runner contracts', () => {
         }
       }
     }, null, 2)}\n`)
+    const originalDeepgramConfig = await readFile(deepgramConfigPath, 'utf8')
+    const originalOpenaiConfig = await readFile(openaiConfigPath, 'utf8')
 
     const runDir = join(runsRoot, '2026-05-01_00-00-00_test-run')
     const copiedRunDir = join(runDir, 'run')
@@ -580,19 +617,18 @@ describe('test-runner contracts', () => {
       }
     }, null, 2)}\n`)
 
-    const report = await applyModelConfigCalibrations(runsRoot, { stt: configDir })
-    const updatedDeepgramConfig = await Bun.file(deepgramConfigPath).json() as {
-      deepgram: { models: { 'nova-3': { estimation: { msPerSecond: number } } } }
-    }
-    const untouchedOpenaiConfig = await Bun.file(openaiConfigPath).json() as {
-      'openai-stt': { models: { 'gpt-4o-mini-transcribe': { estimation: { msPerSecond: number } } } }
-    }
+    const report = await buildModelCalibrationReport(runsRoot, { stt: configDir })
 
     expect(report.runsScanned).toBe(1)
     expect(report.metadataFilesScanned).toBe(1)
-    expect(report.updatedModels).toBe(1)
-    expect(updatedDeepgramConfig.deepgram.models['nova-3'].estimation.msPerSecond).toBe(1500)
-    expect(untouchedOpenaiConfig['openai-stt'].models['gpt-4o-mini-transcribe'].estimation.msPerSecond).toBe(2000)
+    expect(report.recommendedModels).toBe(1)
+    expect(await readFile(deepgramConfigPath, 'utf8')).toBe(originalDeepgramConfig)
+    expect(await readFile(openaiConfigPath, 'utf8')).toBe(originalOpenaiConfig)
+    expect(report.recommendations[0]?.kind).toBe('stt')
+    expect(report.recommendations[0]?.service).toBe('deepgram')
+    expect(report.recommendations[0]?.model).toBe('nova-3')
+    expect(report.recommendations[0]?.oldTimeValue).toBe(1000)
+    expect(report.recommendations[0]?.recommendedTimeValue).toBe(1500)
   })
 
   test('dashboard report builder expands manifest rows and converts cents to USD', async () => {
@@ -603,13 +639,13 @@ describe('test-runner contracts', () => {
     const runManifestDir = join(artifacts.runDir, 'run')
     await mkdir(runManifestDir, { recursive: true })
 
-    const urlFile = 'test/test-cases/e2e/step-2-ocr-e2e/url-backends.test.ts'
+    const urlFile = 'test/test-cases/e2e/service/step-2-ocr-e2e/url-backends.test.ts'
     const urlName = 'extract url with all backends'
-    const docFile = 'test/test-cases/e2e/step-2-ocr-e2e/document.test.ts'
+    const docFile = 'test/test-cases/e2e/service/step-2-ocr-e2e/document.test.ts'
     const docName = 'extract pdf with tesseract'
-    const writeFilePath = 'test/test-cases/e2e/step-3-write-e2e/write-services/service-models.test.ts'
+    const writeFilePath = 'test/test-cases/e2e/service/step-3-write-e2e/write-services/openai-gpt-5.4-mini.test.ts'
     const writeName = 'gpt-5.4-mini model generates summary'
-    const downloadFile = 'test/test-cases/e2e/download.test.ts'
+    const downloadFile = 'test/test-cases/e2e/local/download.test.ts'
     const downloadName = 'download local document input'
     const urlOutputDir = join(artifacts.runDir, 'outputs', 'all-url-run')
     const docOutputDir = join(artifacts.runDir, 'outputs', 'document-run')
@@ -654,13 +690,13 @@ describe('test-runner contracts', () => {
           estimated: {
             steps: [
               { step: 'extract', provider: 'defuddle', model: 'defuddle', processingTimeMs: 90 },
-              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', processingTimeMs: 180 },
+              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', processingTimeMs: 180, msPerUnit: 45 },
             ],
           },
           actual: {
             steps: [
               { step: 'extract', provider: 'defuddle', model: 'defuddle', processingTimeMs: 100 },
-              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', processingTimeMs: 200 },
+              { step: 'extract', provider: 'firecrawl', model: 'firecrawl', processingTimeMs: 200, msPerUnit: 50 },
             ],
           },
         },
@@ -776,8 +812,8 @@ describe('test-runner contracts', () => {
     const metrics: ParsedCommandMetric[] = [
       {
         source: 'runCommand',
-        command: 'bun src/cli/create-cli.ts extract https://example.com --all-url',
-        args: ['src/cli/create-cli.ts', 'extract', 'https://example.com', '--all-url'],
+        command: 'bun src/cli/create-cli.ts extract https://example.com --all-providers',
+        args: ['src/cli/create-cli.ts', 'extract', 'https://example.com', '--all-providers'],
         exitCode: 0,
         durationMs: 5000,
         outputDir: urlOutputDir,
@@ -810,8 +846,8 @@ describe('test-runner contracts', () => {
       },
       {
         source: 'runCommand',
-        command: 'bun src/cli/create-cli.ts write input/examples/audio/1-audio.mp3 --openai gpt-5.4-mini',
-        args: ['src/cli/create-cli.ts', 'write', 'input/examples/audio/1-audio.mp3', '--openai', 'gpt-5.4-mini'],
+        command: 'bun src/cli/create-cli.ts write https://ajc.pics/autoshow/examples/1-audio.mp3 --openai gpt-5.4-mini',
+        args: ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--openai', 'gpt-5.4-mini'],
         exitCode: 0,
         durationMs: 2000,
         outputDir: writeOutputDir,
@@ -850,7 +886,7 @@ describe('test-runner contracts', () => {
       artifacts,
       '2026-05-14T12:00:10.000Z',
       artifacts.startedAtMs + 10_000,
-      ['test/test-cases/e2e/step-2-ocr-e2e']
+      ['test/test-cases/e2e/service/step-2-ocr-e2e']
     )
     const rows = report['tests'] as Array<Record<string, unknown>>
     const urlRows = rows.filter(row => row['category'] === 'url')
@@ -875,6 +911,7 @@ describe('test-runner contracts', () => {
     expect(firecrawlCost['estimatedUsd']).toBeCloseTo(0.00083)
     expect(firecrawlCost['runtimeEstimatedUsd']).toBeCloseTo(0.00085)
     expect(firecrawlDurations['primaryStep']?.['actualMs']).toBe(200)
+    expect(firecrawlDurations['primaryStep']?.['actualMsPerUnit']).toBe(50)
   })
 
   test('dashboard report writer copies results and maintains an index', async () => {
@@ -901,43 +938,116 @@ describe('test-runner contracts', () => {
     expect(index['files']).toEqual([`${artifacts.runId}-dashboard-report.json`])
   })
 
-  test('validation paths stay mappedless in price selection', () => {
+  test('validation and setup paths stay mappedless in price selection', () => {
     const allFiles = [
+      'test/test-cases/setup/tts-models/tts-setup.test.ts',
       'test/test-cases/validation-next/test-runner-contracts.test.ts',
       'test/test-cases/validation/test-runner-contracts.test.ts'
     ]
 
     expect(resolvePriceSelection(allFiles, ['test/test-cases/validation-next/'])).toEqual({
-      suiteName: 'Selected price suites: validation-next',
+      suiteName: 'Selected paths: validation-next',
       commands: []
     })
     expect(resolvePriceSelection(allFiles, ['test/test-cases/validation/'])).toEqual({
-      suiteName: 'Selected price suites: validation',
+      suiteName: 'Selected paths: validation',
+      commands: []
+    })
+    expect(resolvePriceSelection(allFiles, ['test/test-cases/setup/'])).toEqual({
+      suiteName: 'Selected paths: setup',
       commands: []
     })
   })
 
-  test('price mode uses test-price selectors and rejects e2e selectors', () => {
+  test('price mode uses e2e path selections', () => {
     const allFiles = [
-      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/mistral-ocr-2512.test.ts',
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts',
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-glm-reader.test.ts',
+      'test/test-cases/e2e/local/step-2-ocr-e2e/ocr-local/ocr-paddle-ocr-image.test.ts'
     ]
 
-    const selected = resolvePriceSelection(allFiles, ['test/test-price/step-4-tts/services'])
+    const selected = resolvePriceSelection(allFiles, ['test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/'])
     const keys = selected.commands.map((command) => command.key)
 
-    expect(selected.suiteName).toBe('Selected price suites: step-4-tts/services')
-    expect(keys).toContain('tts-openai-gpt-4o-mini-tts')
-    expect(keys).toContain('tts-minimax-speech-2.8-turbo')
-    expect(keys).not.toContain('tts-minimax-speech-2.8-turbo-clone')
-    expect(() => resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
-    ])).toThrow('Use --test-price test/test-price/step-4-tts/services instead')
+    expect(selected.suiteName).toBe('Selected paths: service/step-2-ocr-e2e/ocr-services')
+    expect(keys).toContain('extract-mistral-mistral-ocr-2512')
+    expect(keys).toContain('extract-firecrawl-url')
+    expect(keys).not.toContain('extract-paddle-ocr-image')
   })
 
-  test('price selectors match path boundaries', () => {
-    const musicKeys = resolvePriceSelection([], ['test/test-price/step-7-music'])
+  test('price mode with no path filters resolves all mapped tests', () => {
+    const selected = resolvePriceSelection([], [])
+    const keys = selected.commands.map((command) => command.key)
+
+    expect(selected.suiteName).toBe('All mapped tests')
+    expect(keys).toContain('extract-firecrawl-url')
+    expect(keys).toContain('music-elevenlabs-music_v1')
+    expect(keys).toContain('tts-openai-gpt-4o-mini-tts')
+  })
+
+  test('extract price registry commands use public selector flags', () => {
+    const internalExtractSelectorFlags = new Set([
+      '--gemini-ocr',
+      '--gemini-stt',
+      '--glm-stt',
+      '--openai-ocr',
+      '--openai-stt',
+      '--scrapecreators-stt',
+      '--supadata-stt',
+      '--unstructured-ocr'
+    ])
+
+    const offenders = BUDGET_PRICE_SELECTION_REGISTRY
+      .filter(entry => entry.args[0] === 'src/cli/create-cli.ts' && entry.args[1] === 'extract')
+      .flatMap(entry =>
+        entry.args
+          .filter(arg => internalExtractSelectorFlags.has(arg))
+          .map(arg => `${entry.key}: ${arg}`)
+      )
+
+    expect(offenders).toEqual([])
+  })
+
+  test('specific e2e files resolve only their mapped price commands', () => {
+    const allFiles = [
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/mistral-ocr-2512.test.ts',
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts'
+    ]
+
+    const serviceModelKeys = resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/mistral-ocr-2512.test.ts'
+    ]).commands.map((command) => command.key)
+    const firecrawlKeys = resolvePriceSelection(allFiles, [
+      'test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ocr-firecrawl.test.ts'
+    ]).commands.map((command) => command.key)
+
+    expect(serviceModelKeys).toContain('extract-mistral-mistral-ocr-2512')
+    expect(serviceModelKeys).not.toContain('extract-firecrawl-url')
+    expect(firecrawlKeys).toEqual(['extract-firecrawl-url'])
+  })
+
+  test('price mode rejects legacy test-price selectors', () => {
+    const allFiles = [
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/openai-gpt-4o-mini-tts.test.ts'
+    ]
+
+    expect(() => resolvePriceSelection(allFiles, [
+      'test/test-price/step-4-tts/services'
+    ])).toThrow('--test-price now uses normal test paths')
+  })
+
+  test('price path selections match path boundaries', () => {
+    const allFiles = [
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-v1.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-lyria-3-pro-preview.test.ts',
+      'test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/music-lyrics-video.test.ts'
+    ]
+
+    const musicKeys = resolvePriceSelection(allFiles, ['test/test-cases/e2e/service/step-7-music-gen-e2e/'])
       .commands.map((command) => command.key)
-    const lyricsVideoKeys = resolvePriceSelection([], ['test/test-price/step-7-music-lyrics-video'])
+    const lyricsVideoKeys = resolvePriceSelection(allFiles, ['test/test-cases/e2e/local/step-7-music-lyrics-video-e2e/'])
       .commands.map((command) => command.key)
 
     expect(musicKeys).toContain('music-elevenlabs-music_v1')
@@ -946,31 +1056,8 @@ describe('test-runner contracts', () => {
     expect(lyricsVideoKeys).not.toContain('music-elevenlabs-music_v1')
   })
 
-  test('catalog price selectors stay out of main e2e price suites', () => {
-    const defaultKeys = resolvePriceSelection([], [])
-      .commands.map((command) => command.key)
-    const imageKeys = resolvePriceSelection([], ['test/test-price/step-5-image'])
-      .commands.map((command) => command.key)
-    const bflCatalogKeys = resolvePriceSelection([], ['test/test-price/catalog/step-5-image/bfl'])
-      .commands.map((command) => command.key)
-    const videoKeys = resolvePriceSelection([], ['test/test-price/step-6-video'])
-      .commands.map((command) => command.key)
-    const deapiVideoCatalogKeys = resolvePriceSelection([], ['test/test-price/catalog/step-6-video/deapi'])
-      .commands.map((command) => command.key)
-
-    expect(defaultKeys).not.toContain('image-bfl-flux-2-max')
-    expect(defaultKeys).not.toContain('video-deapi-Ltx2_19B_Dist_FP8')
-    expect(imageKeys).toContain('image-bfl-flux-2-pro-preview')
-    expect(imageKeys).not.toContain('image-bfl-flux-2-max')
-    expect(bflCatalogKeys).toContain('image-bfl-flux-2-max')
-    expect(bflCatalogKeys).not.toContain('image-bfl-flux-2-pro-preview')
-    expect(videoKeys).toContain('video-multi-gemini-lite-deapi-ltxv')
-    expect(videoKeys).not.toContain('video-deapi-Ltx2_19B_Dist_FP8')
-    expect(deapiVideoCatalogKeys).toContain('video-deapi-Ltx2_19B_Dist_FP8')
-  })
-
   test('budget-skip entries are emitted from skipped entry keys', () => {
-    const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/service-models.test.ts', [
+    const evaluation = evaluatePriceObservations('Selected paths: step-3-write-e2e/write-services/openai-gpt-5.4.test.ts', [
       {
         name: 'write-openai-gpt-5.4',
         key: 'write-openai-gpt-5.4',
@@ -1098,41 +1185,54 @@ describe('test-runner contracts', () => {
     expect(filesWithPriceFlag).toEqual([])
   })
 
-  test('TTS service budget preflight includes remaining voice clone entries', () => {
+  test('TTS service budget preflight includes remaining service entries', () => {
     const allFiles = [
-      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/groq-canopylabs-orpheus-v1-english.test.ts',
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/cartesia-sonic-3.test.ts',
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/deepgram-aura-2-thalia-en.test.ts',
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/minimax-speech-2.8-turbo.test.ts',
     ]
 
     const keys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/step-4-tts-e2e/tts-services/service-models.test.ts'
+      'test/test-cases/e2e/service/step-4-tts-e2e/tts-services/'
     ], true).commands.map((command) => command.key)
 
-    expect(keys).toContain('tts-deapi-qwen3-voice-clone')
+    expect(keys).toContain('tts-groq-canopylabs/orpheus-v1-english')
+    expect(keys).not.toContain(['tts-groq-canopylabs/orpheus', 'arabic-saudi'].join('-'))
+    expect(keys).toContain('tts-cartesia-sonic-3')
+    expect(keys.filter((key) => key.startsWith('tts-deepgram-'))).toEqual([`tts-deepgram-${DEEPGRAM_DEFAULT_VOICE}`])
     expect(keys).not.toContain('tts-minimax-speech-2.8-turbo-clone')
   })
 
   test('music selected-file budget preflight includes keys for live ElevenLabs music skips', () => {
     const allFiles = [
-      'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts',
-      'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts',
-      'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-v1.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/elevenlabs-music-v1-pipeline.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-lyria-3-pro-preview.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6-free.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6-pipeline.test.ts',
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/minimax-music-2.6-gemini-lyria-3-clip-preview.test.ts'
     ]
 
     const elevenlabsKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/step-7-music-gen-e2e/elevenlabs-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/'
     ], true).commands.map((command) => command.key)
     expect(elevenlabsKeys).toContain('music-elevenlabs-music_v1')
     expect(elevenlabsKeys).toContain('music-pipeline-elevenlabs-music_v1')
 
     const minimaxKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/step-7-music-gen-e2e/minimax-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/'
     ], true).commands.map((command) => command.key)
-    expect(minimaxKeys).toContain('music-multi-minimax-music-2.5-gemini-lyria-3-clip-preview')
-    expect(minimaxKeys).toContain('music-pipeline-minimax-music-2.5')
-    expect(minimaxKeys).not.toContain('music-minimax-music-2.5')
+    expect(minimaxKeys).toContain('music-multi-minimax-music-2.6-gemini-lyria-3-clip-preview')
+    expect(minimaxKeys).toContain('music-pipeline-minimax-music-2.6')
+    for (const model of MINIMAX_INSTRUMENTAL_MUSIC_MODELS) {
+      expect(minimaxKeys).toContain(`music-minimax-${model}`)
+    }
+    expect(minimaxKeys).not.toContain('music-minimax-' + 'music-2' + '.5')
 
     const geminiKeys = resolvePriceSelection(allFiles, [
-      'test/test-cases/e2e/step-7-music-gen-e2e/gemini-music-gen.test.ts'
+      'test/test-cases/e2e/service/step-7-music-gen-e2e/gemini-lyria-3-pro-preview.test.ts'
     ], true).commands.map((command) => command.key)
     expect(geminiKeys).toContain('music-gemini-lyria-3-pro-preview')
     expect(geminiKeys).not.toContain('music-gemini-lyria-3-clip-preview')

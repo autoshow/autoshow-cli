@@ -9,12 +9,12 @@ import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import { writeRenderedTextArtifacts } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
 import { writeShowNoteArtifacts } from '~/cli/commands/process-steps/step-3-write/show-note-artifacts'
 import { logWriteManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
-import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumentWriteEstimatedCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
+import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumentWriteEstimatedCosts, resolveDocumentWriteObservedEstimateCosts } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import type { AggregatedPriceEstimate, BatchChildRunContext, ExtractionMetadata, ExtractionOptions, PreparedDocument, RuntimeOptions, Step1SourceRef, Step3Metadata, TranscriptionResult, VideoMetadata, WriteDocumentOutputMetadataOptions } from '~/types'
-import { isLikelyUrl } from '../input/input-classifier'
-import { resolveLLMDefaults } from '../llm-defaults'
+import { isLikelyUrl } from '../source-input/input-classifier'
+import { buildLLMModelOptions, resolveLLMDefaults } from '../llm-defaults'
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>
   [
@@ -48,17 +48,11 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
     outputDir: baseDir || opts.outputRootDir,
     dpi: opts.dpi,
     languages: opts.lang,
-    oem: opts.oem,
-    psm: opts.psm,
     outputFormat: opts.out,
     pdfChapterMode: opts.pdfChapterMode,
     ocrProviderConcurrency: opts.ocrProviderConcurrency,
     ocrLocalConcurrency: opts.ocrLocalConcurrency,
     primaryOcr: opts.primaryOcr,
-    preserveInterwordSpaces: opts.preserveSpaces,
-    rotate: opts.rotate,
-    awsRegion: opts.awsRegion,
-    awsBucket: opts.awsBucket,
     configPath: opts.configPath
   }
 
@@ -72,9 +66,6 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
 
   if (opts.password) {
     extractionOpts.password = opts.password
-  }
-  if (opts.pageSeparator) {
-    extractionOpts.pageSeparator = opts.pageSeparator
   }
   if (opts.useTesseract) {
     extractionOpts.useTesseract = true
@@ -109,6 +100,12 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
   if (opts.openaiOcrModels) {
     extractionOpts.openaiOcrModels = opts.openaiOcrModels
   }
+  if (opts.grokOcrModel) {
+    extractionOpts.grokOcrModel = opts.grokOcrModel
+  }
+  if (opts.grokOcrModels) {
+    extractionOpts.grokOcrModels = opts.grokOcrModels
+  }
   if (opts.anthropicOcrModel) {
     extractionOpts.anthropicOcrModel = opts.anthropicOcrModel
   }
@@ -126,18 +123,6 @@ export const buildExtractionCallOpts = (target: string, baseDir: string, opts: R
   }
   if (opts.deepinfraOcrModels) {
     extractionOpts.deepinfraOcrModels = opts.deepinfraOcrModels
-  }
-  if (opts.awsTextractModel) {
-    extractionOpts.awsTextractModel = opts.awsTextractModel
-  }
-  if (opts.awsTextractModels) {
-    extractionOpts.awsTextractModels = opts.awsTextractModels
-  }
-  if (opts.gcloudDocaiModel) {
-    extractionOpts.gcloudDocaiModel = opts.gcloudDocaiModel
-  }
-  if (opts.gcloudDocaiModels) {
-    extractionOpts.gcloudDocaiModels = opts.gcloudDocaiModels
   }
   if (opts.unstructuredOcrModel) {
     extractionOpts.unstructuredOcrModel = opts.unstructuredOcrModel
@@ -175,6 +160,7 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -193,6 +179,7 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -204,6 +191,18 @@ const writeDocumentOutputMetadata = async (
     glmOcrModel,
     kimiOcrModel,
     openaiOcrModel,
+    grokOcrModel,
+    anthropicOcrModel,
+    geminiOcrModel,
+    deepinfraOcrModel,
+    unstructuredOcrModel
+  })
+  const observedEstimate = resolveDocumentWriteObservedEstimateCosts(step2, step3, {
+    mistralOcrModel,
+    glmOcrModel,
+    kimiOcrModel,
+    openaiOcrModel,
+    grokOcrModel,
     anthropicOcrModel,
     geminiOcrModel,
     deepinfraOcrModel,
@@ -213,6 +212,7 @@ const writeDocumentOutputMetadata = async (
   const ocrDiagnostics = buildOcrCostDiagnostics(step2, estimated, actual)
   const cost = {
     estimated,
+    ...(preflightEstimate ? { observedEstimate } : {}),
     actual,
     ...(ocrDiagnostics.length > 0 ? { ocrDiagnostics } : {})
   }
@@ -318,24 +318,7 @@ export const runDocumentWrite = async (
     outputDir: extraction.outputDir,
     prompts: opts.prompts,
     promptFile: opts.promptFile,
-    openaiModels: llmConfig.openaiModels,
-    openaiModel: llmConfig.openaiModel,
-    groqModels: llmConfig.groqModels,
-    groqModel: llmConfig.groqModel,
-    geminiModels: llmConfig.geminiModels,
-    geminiModel: llmConfig.geminiModel,
-    anthropicModels: llmConfig.anthropicModels,
-    anthropicModel: llmConfig.anthropicModel,
-    minimaxModels: llmConfig.minimaxModels,
-    minimaxModel: llmConfig.minimaxModel,
-    grokModels: llmConfig.grokModels,
-    grokModel: llmConfig.grokModel,
-    glmModels: llmConfig.glmModels,
-    glmModel: llmConfig.glmModel,
-    kimiModels: llmConfig.kimiModels,
-    kimiModel: llmConfig.kimiModel,
-    llamaModels: llmConfig.llamaModels,
-    llamaModel: llmConfig.llamaModel,
+    ...buildLLMModelOptions(llmConfig),
     llmProviderConcurrency: opts.llmProviderConcurrency,
     llmLocalConcurrency: opts.llmLocalConcurrency,
     promptBuilder: (instruction: string) =>
@@ -399,6 +382,7 @@ export const runDocumentWrite = async (
     glmOcrModel: opts.glmOcrModel,
     kimiOcrModel: opts.kimiOcrModel,
     openaiOcrModel: opts.openaiOcrModel,
+    grokOcrModel: opts.grokOcrModel,
     anthropicOcrModel: opts.anthropicOcrModel,
     geminiOcrModel: opts.geminiOcrModel,
     deepinfraOcrModel: opts.deepinfraOcrModel,

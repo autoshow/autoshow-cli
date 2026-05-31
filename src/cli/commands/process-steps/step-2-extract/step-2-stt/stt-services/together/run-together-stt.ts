@@ -1,4 +1,5 @@
 import type { Step2Metadata, TranscriptionResult } from '~/types'
+import { TOGETHER_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { runOpenAICompatibleSingleSpeakerStt } from '../openai-compatible-single-speaker'
 
@@ -23,7 +24,7 @@ export const runTogetherStt = async (
     service: 'together',
     providerLabel: 'Together',
     apiKey,
-    baseURL: readEnv('TOGETHER_BASE_URL') ?? 'https://api.together.xyz/v1',
+    baseURL: TOGETHER_DEFAULT_BASE_URL,
     model,
     segmentOffsetMinutes,
     segmentNumber,

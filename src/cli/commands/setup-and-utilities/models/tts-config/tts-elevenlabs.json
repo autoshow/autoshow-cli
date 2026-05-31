@@ -5,6 +5,11 @@
     "models": {
       "eleven_v3": {
         "description": "ElevenLabs v3 — latest generation",
+        "pricingSourceUrl": "https://elevenlabs.io/pricing/api",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "ElevenLabs API text-to-speech pricing",
+        "pricingNotes": "ElevenLabs v3 TTS is estimated at $0.10/1K characters. Voice cloning setup costs are handled separately when a normal CLI option requests cloning; subscription inclusions, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kCharsUSD": 0.1,
         "costPer1kCharsCents": 10,
         "estimation": {

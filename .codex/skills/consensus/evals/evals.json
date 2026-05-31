@@ -6,10 +6,12 @@
       "category": "image",
       "prompt": "Use the consensus skill to generate an image provider comparison report.",
       "assertions": [
-        "JSON report contains rankingSurfaces.local and rankingSurfaces.service",
-        "service fastest and cheapest surfaces are populated when timing and cost exist",
-        "highest-quality surfaces are unavailable without explicit quality metrics",
-        "markdown has separate local and service sections"
+        "JSON report contains full price, speed, automatedQuality, and humanQuality arrays for local and service groups",
+        "price and speed surfaces include every provider in the group, with missing values last as n/a",
+        "automatedQuality uses image judge qualityScore when present",
+        "humanQuality is unavailable without explicit humanQualityScore",
+        "fastest, cheapest, and highestQuality compatibility aliases point at full arrays",
+        "markdown has separate local and service Price, Speed, Automated Quality, and Human Quality sections without Top 3 labels"
       ],
       "files": []
     },
@@ -18,9 +20,11 @@
       "category": "music",
       "prompt": "Use the consensus skill to generate a music provider comparison report.",
       "assertions": [
-        "JSON report contains all six ranking surface arrays",
-        "highest-quality surfaces are unavailable without explicit quality metrics",
-        "markdown does not include a combined local-vs-service leaderboard"
+        "JSON report contains full price, speed, automatedQuality, and humanQuality arrays for local and service groups",
+        "price and speed surfaces include every provider in the group, with missing values last as n/a",
+        "automatedQuality is unavailable without explicit qualityScore",
+        "humanQuality is unavailable without explicit humanQualityScore",
+        "markdown does not include Top 3, Overall Ranking, Tier Breakdown, or combined Ranking sections"
       ],
       "files": []
     },
@@ -29,11 +33,13 @@
       "category": "ocr",
       "prompt": "Use the consensus skill to generate OCR provider comparison reports from the fixture run.",
       "assertions": [
-        "provider-comparison-report.md has STT-style Overall Ranking, Tier Breakdown, and combined Ranking sections",
-        "provider-comparison-report.json contains all six ranking surface arrays",
-        "provider-comparison-report.json preserves overall, providers, and tiering data with combined balanced-overall scores",
-        "OCR highest-quality rankings use WER/CER evidence",
-        "local cheapest ranking surfaces use zero monetary cost"
+        "provider-comparison-report.md has a Metric Rankings section with Local and Third-Party Service groups",
+        "provider-comparison-report.md does not have Overall Ranking, Tier Breakdown, combined Ranking, or Top 3 sections",
+        "provider-comparison-report.json contains metricRankings.local.price, speed, and qualityScore arrays",
+        "provider-comparison-report.json contains metricRankings.thirdPartyService.price, speed, and qualityScore arrays",
+        "provider-comparison-report.json omits rankingSurfaces, overall, overallMetric, overallWeights, and tiering",
+        "OCR qualityScore rankings use score, WER, and CER evidence",
+        "local price rankings use zero monetary cost and service rankings keep missing price entries last"
       ],
       "files": [
         "evals/files/ocr/run.json",
@@ -47,11 +53,14 @@
       "category": "stt",
       "prompt": "Use the consensus skill to generate STT provider comparison reports from the fixture run.",
       "assertions": [
-        "reference-comparison-report.md has Overall Ranking, Tier Breakdown, and combined Ranking sections",
-        "reference-comparison-report.json contains all six ranking surface arrays",
-        "reference-comparison-report.json preserves overall, providers, and tiering data with combined balanced-overall scores",
-        "STT highest-quality rankings use speaker-aware WER evidence",
-        "local cheapest ranking surfaces use zero monetary cost"
+        "reference-comparison-report.md has a Metric Rankings section with Local, Third-Party Service Non-Diarization, and Third-Party Service Diarization groups",
+        "reference-comparison-report.md does not have Overall Ranking, Tier Breakdown, combined Ranking, or Top 3 sections",
+        "reference-comparison-report.json contains metricRankings.local.price, speed, and qualityScore arrays",
+        "reference-comparison-report.json contains metricRankings.thirdPartyServiceNonDiarization.price, speed, and qualityScore arrays",
+        "reference-comparison-report.json contains metricRankings.thirdPartyServiceDiarization.price, speed, and qualityScore arrays",
+        "reference-comparison-report.json omits rankingSurfaces, overall, overallMetric, overallWeights, and tiering",
+        "STT qualityScore rankings use score, speaker-aware WER, text-only WER, and diarization evidence",
+        "local price rankings use zero monetary cost and service rankings keep missing price entries last"
       ],
       "files": [
         "evals/files/stt/run.json",
@@ -65,8 +74,11 @@
       "category": "tts",
       "prompt": "Use the consensus skill to generate TTS provider comparison reports with existing roundtrip transcripts.",
       "assertions": [
-        "TTS highest-quality rankings use roundtrip WER when available",
-        "local and service cheapest rankings are separate",
+        "TTS JSON contains complete local and service price, speed, automatedQuality, and humanQuality arrays",
+        "TTS automatedQuality rankings use roundtrip WER-derived accuracy, including voice-quality-report median WER when present",
+        "TTS humanQuality rankings use humanSpeechScore from voice-quality-report.json",
+        "TTS fastest, cheapest, and highestQuality compatibility aliases are preserved",
+        "TTS markdown does not label ranking sections as Top 3",
         "duration and file size are not used as quality proxies"
       ],
       "files": []
@@ -76,10 +88,12 @@
       "category": "url",
       "prompt": "Use the consensus skill to generate URL provider comparison reports from the fixture run.",
       "assertions": [
-        "provider-comparison-report.md has separate Local Providers and Service Providers sections",
-        "provider-comparison-report.json contains all six ranking surface arrays",
-        "URL highest-quality rankings use WER/CER/coverage evidence",
-        "no combined local-vs-service ranked leaderboard remains"
+        "provider-comparison-report.md has separate Local Providers and Service Providers sections with Price, Speed, Automated Quality, and Human Quality tables",
+        "provider-comparison-report.md does not have Top 3, Overall Ranking, Tier Breakdown, or combined Ranking sections",
+        "provider-comparison-report.json contains full price, speed, automatedQuality, and humanQuality arrays plus compatibility aliases",
+        "price and speed surfaces include every provider in the group, with missing values last as n/a",
+        "URL automatedQuality rankings use WER/CER/coverage-derived accuracy evidence",
+        "URL normalized JSON omits overall, overallMetric, overallWeights, and tiering"
       ],
       "files": [
         "evals/files/url/run.json",
@@ -92,9 +106,11 @@
       "category": "video",
       "prompt": "Use the consensus skill to generate a video provider comparison report.",
       "assertions": [
-        "JSON report contains all six ranking surface arrays",
-        "highest-quality surfaces are unavailable without explicit quality metrics",
-        "markdown does not include a combined local-vs-service leaderboard"
+        "JSON report contains full price, speed, automatedQuality, and humanQuality arrays for local and service groups",
+        "price and speed surfaces include every provider in the group, with missing values last as n/a",
+        "automatedQuality is unavailable without explicit qualityScore",
+        "humanQuality is unavailable without explicit humanQualityScore",
+        "markdown does not include Top 3, Overall Ranking, Tier Breakdown, or combined Ranking sections"
       ],
       "files": []
     }

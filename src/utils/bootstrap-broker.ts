@@ -1,10 +1,7 @@
 import { ensureAssemblyAiSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/assemblyai/assemblyai'
-import { ensureAwsSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/aws/aws'
 import { ensureDeepgramSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deepgram/deepgram'
 import { ensureDeepinfraSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deepinfra/deepinfra'
-import { ensureDeapiSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi'
 import { ensureElevenLabsSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/elevenlabs/elevenlabs'
-import { ensureGcloudSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gcloud/gcloud'
 import { ensureGladiaSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gladia/gladia'
 import { ensureGrokSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/grok/grok-stt'
 import { ensureGroqSttSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/groq/groq'
@@ -24,6 +21,7 @@ import { ensureWhisperReady } from '~/cli/commands/process-steps/step-2-extract/
 import { ensureGlmOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/glm-ocr/glm'
 import { ensureKimiOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/kimi-ocr/kimi'
 import { ensureGeminiOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/gemini'
+import { ensureGrokOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/grok-ocr/grok'
 import { ensureMistralOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/mistral-ocr/mistral'
 import { ensureOpenAIOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/openai-ocr'
 import { ensureAnthropicOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/anthropic-ocr/anthropic-ocr'
@@ -33,12 +31,10 @@ import { ensureOcrmypdfSetup } from '~/cli/commands/process-steps/step-2-extract
 import { ensurePaddleOcrSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/paddle-ocr'
 import { ensureTesseractSetup } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/tesseract-utils'
 import { ensureDeepgramTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deepgram/deepgram-tts'
-import { ensureDeapiTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/deapi/deapi-tts'
 import { ensureHumeTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/hume/hume-tts'
 import { ensureCartesiaTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/cartesia/cartesia-tts'
 import { ensureGrokTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/grok/grok-tts'
 import { ensureMistralTtsSetup } from '~/cli/commands/process-steps/step-4-tts/tts-services/mistral/mistral-tts'
-import { ensureDeapiMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
 import type { BootstrapHandler } from '~/types'
 
 const DEFAULT_WHISPER_MODEL = 'tiny'
@@ -73,12 +69,6 @@ const handlers: Record<string, BootstrapHandler> = {
   reverb: {
     ensure: async () => await ensureReverbRuntimeSetup()
   },
-  'aws-stt': {
-    ensure: async () => { await ensureAwsSttSetup() }
-  },
-  'gcloud-stt': {
-    ensure: async () => { await ensureGcloudSttSetup() }
-  },
   'elevenlabs-stt': {
     ensure: async () => await ensureElevenLabsSttSetup()
   },
@@ -87,9 +77,6 @@ const handlers: Record<string, BootstrapHandler> = {
   },
   'deepinfra-stt': {
     ensure: async () => await ensureDeepinfraSttSetup()
-  },
-  'deapi-stt': {
-    ensure: async () => await ensureDeapiSttSetup()
   },
   'soniox-stt': {
     ensure: async () => await ensureSonioxSttSetup()
@@ -157,6 +144,9 @@ const handlers: Record<string, BootstrapHandler> = {
   'openai-ocr': {
     ensure: async () => await ensureOpenAIOcrSetup()
   },
+  'grok-ocr': {
+    ensure: async () => await ensureGrokOcrSetup()
+  },
   'anthropic-ocr': {
     ensure: async () => await ensureAnthropicOcrSetup()
   },
@@ -178,18 +168,12 @@ const handlers: Record<string, BootstrapHandler> = {
   'cartesia-tts': {
     ensure: async () => await ensureCartesiaTtsSetup()
   },
-  'deapi-tts': {
-    ensure: async () => await ensureDeapiTtsSetup()
-  },
   'grok-tts': {
     ensure: async () => await ensureGrokTtsSetup()
   },
   'mistral-tts': {
     ensure: async () => await ensureMistralTtsSetup()
   },
-  'deapi-music': {
-    ensure: async () => await ensureDeapiMusicGenSetup()
-  }
 }
 
 const resolveHandler = (provider: string): { cacheKey: string, handler: BootstrapHandler, model?: string } => {

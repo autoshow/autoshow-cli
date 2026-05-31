@@ -3,8 +3,6 @@ import type {
   HostedExtractOcrEngine,
   LocalExtractOcrEngine
 } from '~/types'
-import * as l from '~/utils/logger'
-
 export const resolveExtractEngine = (opts: ExtractionOptions): LocalExtractOcrEngine => {
   if (opts.useOcrmypdf === true) return 'ocrmypdf'
   if (opts.usePaddleOcr === true) return 'paddle-ocr'
@@ -23,6 +21,9 @@ export const hasKimiOcr = (opts: ExtractionOptions): boolean =>
 export const hasOpenAIOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.openaiOcrModel === 'string' && opts.openaiOcrModel.length > 0
 
+export const hasGrokOcr = (opts: ExtractionOptions): boolean =>
+  typeof opts.grokOcrModel === 'string' && opts.grokOcrModel.length > 0
+
 export const hasAnthropicOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.anthropicOcrModel === 'string' && opts.anthropicOcrModel.length > 0
 
@@ -32,12 +33,6 @@ export const hasGeminiOcr = (opts: ExtractionOptions): boolean =>
 export const hasDeepinfraOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.deepinfraOcrModel === 'string' && opts.deepinfraOcrModel.length > 0
 
-export const hasAwsTextract = (opts: ExtractionOptions): boolean =>
-  typeof opts.awsTextractModel === 'string' && opts.awsTextractModel.length > 0
-
-export const hasGcloudDocai = (opts: ExtractionOptions): boolean =>
-  typeof opts.gcloudDocaiModel === 'string' && opts.gcloudDocaiModel.length > 0
-
 export const hasUnstructuredOcr = (opts: ExtractionOptions): boolean =>
   typeof opts.unstructuredOcrModel === 'string' && opts.unstructuredOcrModel.length > 0
 
@@ -46,11 +41,10 @@ export const hasHostedOcr = (opts: ExtractionOptions): boolean =>
   || hasGlmOcr(opts)
   || hasKimiOcr(opts)
   || hasOpenAIOcr(opts)
+  || hasGrokOcr(opts)
   || hasAnthropicOcr(opts)
   || hasGeminiOcr(opts)
   || hasDeepinfraOcr(opts)
-  || hasAwsTextract(opts)
-  || hasGcloudDocai(opts)
   || hasUnstructuredOcr(opts)
 
 export const hasOcrFlag = (opts: ExtractionOptions): boolean =>
@@ -67,11 +61,10 @@ export const countSelectedOcrEngines = (opts: ExtractionOptions): number =>
     hasGlmOcr(opts),
     hasKimiOcr(opts),
     hasOpenAIOcr(opts),
+    hasGrokOcr(opts),
     hasAnthropicOcr(opts),
     hasGeminiOcr(opts),
     hasDeepinfraOcr(opts),
-    hasAwsTextract(opts),
-    hasGcloudDocai(opts),
     hasUnstructuredOcr(opts)
   ].filter(Boolean).length
 
@@ -80,11 +73,10 @@ export const getHostedOcrEngine = (opts: ExtractionOptions): HostedExtractOcrEng
   if (hasGlmOcr(opts)) return 'glm-ocr'
   if (hasKimiOcr(opts)) return 'kimi-ocr'
   if (hasOpenAIOcr(opts)) return 'openai-ocr'
+  if (hasGrokOcr(opts)) return 'grok-ocr'
   if (hasAnthropicOcr(opts)) return 'anthropic-ocr'
   if (hasGeminiOcr(opts)) return 'gemini-ocr'
   if (hasDeepinfraOcr(opts)) return 'deepinfra-ocr'
-  if (hasAwsTextract(opts)) return 'aws-textract'
-  if (hasGcloudDocai(opts)) return 'gcloud-docai'
   if (hasUnstructuredOcr(opts)) return 'unstructured-ocr'
   return undefined
 }
@@ -100,32 +92,3 @@ export const engineSuffix = (engine: LocalExtractOcrEngine): string => {
   }
 }
 
-export const warnTesseractOnlyFlags = (
-  engine: Exclude<LocalExtractOcrEngine, 'tesseract'>,
-  opts: ExtractionOptions
-): void => {
-  if (opts.psm !== 3) {
-    l.warn(`Flag --psm is Tesseract-specific and has no effect with the ${engine} engine`)
-  }
-  if (opts.oem !== 1) {
-    l.warn(`Flag --oem is Tesseract-specific and has no effect with the ${engine} engine`)
-  }
-  if (opts.preserveInterwordSpaces === true) {
-    l.warn(`Flag --preserve-spaces is Tesseract-specific and has no effect with the ${engine} engine`)
-  }
-}
-
-export const warnHostedOnlyFlags = (
-  engineName: HostedExtractOcrEngine,
-  opts: ExtractionOptions
-): void => {
-  if (opts.psm !== 3) {
-    l.warn(`Flag --psm is Tesseract-specific and has no effect with the ${engineName} engine`)
-  }
-  if (opts.oem !== 1) {
-    l.warn(`Flag --oem is Tesseract-specific and has no effect with the ${engineName} engine`)
-  }
-  if (opts.preserveInterwordSpaces === true) {
-    l.warn(`Flag --preserve-spaces is Tesseract-specific and has no effect with the ${engineName} engine`)
-  }
-}

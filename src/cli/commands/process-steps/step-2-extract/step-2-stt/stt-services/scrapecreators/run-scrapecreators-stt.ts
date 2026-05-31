@@ -1,10 +1,10 @@
+import * as l from '~/utils/logger'
 import type {
   RetryClass,
   Step2Metadata,
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
-import * as l from '~/utils/logger'
 import { classifyFetchRetry, withRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import {
@@ -94,7 +94,7 @@ const parseTranscriptEntry = (value: unknown): ScrapeCreatorsTranscriptEntry | u
   }
 }
 
-export const parseScrapeCreatorsTranscriptPayload = (
+const parseScrapeCreatorsTranscriptPayload = (
   value: unknown
 ): ScrapeCreatorsTranscriptPayload | undefined => {
   if (!isRecord(value)) {
@@ -228,7 +228,7 @@ const buildSegmentsFromTranscript = (
     }]
   })
 
-export const normalizeScrapeCreatorsTranscript = (
+const normalizeScrapeCreatorsTranscript = (
   payload: ScrapeCreatorsTranscriptPayload,
   offsetSeconds: number
 ): TranscriptionResult => {

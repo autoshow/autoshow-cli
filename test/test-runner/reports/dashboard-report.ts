@@ -43,6 +43,8 @@ type DashboardRow = {
     primaryStep: {
       estimatedMs: number | null
       actualMs: number | null
+      estimatedMsPerUnit: number | null
+      actualMsPerUnit: number | null
     }
   }
   cost: {
@@ -59,6 +61,8 @@ type PartialDashboardRow = {
   actualCostCents: number | null
   estimatedProcessingTimeMs: number | null
   actualProcessingTimeMs: number | null
+  estimatedMsPerUnit: number | null
+  actualMsPerUnit: number | null
 }
 
 type StepPatch = {
@@ -69,6 +73,8 @@ type StepPatch = {
   actualCostCents?: number | null
   estimatedProcessingTimeMs?: number | null
   actualProcessingTimeMs?: number | null
+  estimatedMsPerUnit?: number | null
+  actualMsPerUnit?: number | null
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -175,6 +181,8 @@ const mergePatch = (
     actualCostCents: null,
     estimatedProcessingTimeMs: null,
     actualProcessingTimeMs: null,
+    estimatedMsPerUnit: null,
+    actualMsPerUnit: null,
   }
 
   if ('estimatedCostCents' in patch && patch.estimatedCostCents !== null && patch.estimatedCostCents !== undefined) {
@@ -188,6 +196,12 @@ const mergePatch = (
   }
   if ('actualProcessingTimeMs' in patch && patch.actualProcessingTimeMs !== null && patch.actualProcessingTimeMs !== undefined) {
     current.actualProcessingTimeMs = patch.actualProcessingTimeMs
+  }
+  if ('estimatedMsPerUnit' in patch && patch.estimatedMsPerUnit !== null && patch.estimatedMsPerUnit !== undefined) {
+    current.estimatedMsPerUnit = patch.estimatedMsPerUnit
+  }
+  if ('actualMsPerUnit' in patch && patch.actualMsPerUnit !== null && patch.actualMsPerUnit !== undefined) {
+    current.actualMsPerUnit = patch.actualMsPerUnit
   }
 
   rows.set(key, current)
@@ -237,6 +251,7 @@ const mergeTimingSteps = (
     const provider = getString(stepRecord['provider'])
     const model = getString(stepRecord['model']) ?? provider
     const processingTimeMs = getFiniteNumber(stepRecord['processingTimeMs'])
+    const msPerUnit = getFiniteNumber(stepRecord['msPerUnit'])
     if (!step || !provider || !model || processingTimeMs === null) continue
 
     mergePatch(rows, {
@@ -244,8 +259,14 @@ const mergeTimingSteps = (
       serviceName: provider,
       modelName: model,
       ...(phase === 'estimated'
-        ? { estimatedProcessingTimeMs: processingTimeMs }
-        : { actualProcessingTimeMs: processingTimeMs }),
+        ? {
+            estimatedProcessingTimeMs: processingTimeMs,
+            ...(msPerUnit !== null ? { estimatedMsPerUnit: msPerUnit } : {})
+          }
+        : {
+            actualProcessingTimeMs: processingTimeMs,
+            ...(msPerUnit !== null ? { actualMsPerUnit: msPerUnit } : {})
+          }),
     })
   }
 }
@@ -261,8 +282,6 @@ const providerFromExtractionMethod = (method: string): string | null => {
   if (method.includes('openai-ocr')) return 'openai'
   if (method.includes('anthropic-ocr')) return 'anthropic'
   if (method.includes('gemini-ocr')) return 'gemini'
-  if (method.includes('aws-textract')) return 'aws-textract'
-  if (method.includes('gcloud-docai')) return 'gcloud-docai'
   return null
 }
 
@@ -472,6 +491,8 @@ const fallbackRowsFromMetric = async (
     actualCostCents: useMetricTotals ? metric.actualCostCents : null,
     estimatedProcessingTimeMs: useMetricTotals ? metric.estimatedProcessingTimeMs : null,
     actualProcessingTimeMs: useMetricTotals ? metric.actualProcessingTimeMs : null,
+    estimatedMsPerUnit: null,
+    actualMsPerUnit: null,
   }))
 }
 
@@ -531,6 +552,8 @@ export const buildDashboardReportData = async (
             primaryStep: {
               estimatedMs: partial.estimatedProcessingTimeMs,
               actualMs: partial.actualProcessingTimeMs ?? (usesManifestRows ? null : metric.actualProcessingTimeMs),
+              estimatedMsPerUnit: partial.estimatedMsPerUnit,
+              actualMsPerUnit: partial.actualMsPerUnit,
             },
           },
           cost: {

@@ -9,25 +9,210 @@ import {
   getVideoEstimation,
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
+import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
+import { estimateTtsSynthesisProcessingTimeMs } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
+import { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
 import type {
   ComputeActualProcessingTimesInput,
   ComputeEstimatedProcessingTimesInput,
   ExtractionMetadata,
   Step2Metadata,
+  TimingBreakdown,
+  TimingRateBasis,
+  TimingScope,
   StepTimingBreakdown,
   TimingStepEntry,
+  TimingThroughputUnit,
 } from '~/types'
 
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
 const GEMINI_CLIP_MUSIC_DURATION_SECONDS = 30
 const GEMINI_PRO_DEFAULT_MUSIC_DURATION_SECONDS = 120
+const ELEVENLABS_DEFAULT_MUSIC_DURATION_SECONDS = 180
 const MINIMAX_DEFAULT_MUSIC_DURATION_SECONDS = 120
 
 const roundMs = (value: number): number => Math.max(0, Math.round(value))
+const roundTimingMetric = (value: number): number => {
+  const rounded = Math.round(value * 1000) / 1000
+  return Object.is(rounded, -0) ? 0 : rounded
+}
+
+type NormalizedTimingFields = {
+  rateBasis: TimingRateBasis
+  msPerUnit: number
+  throughputValue: number
+  throughputUnit: TimingThroughputUnit
+}
+
+type TimingBasisDefinition = {
+  rateBasis: TimingRateBasis
+  units: number
+  throughputInputValue: number
+  throughputUnit: TimingThroughputUnit
+  throughputScaleMs: number
+}
+
+const defaultTimingMetricForStep = (step: TimingStepEntry['step']): string => {
+  switch (step) {
+    case 'stt':
+    case 'video':
+    case 'music':
+      return 'durationSeconds'
+    case 'extract':
+      return 'pages'
+    case 'llm':
+      return 'tokens'
+    case 'tts':
+      return 'characters'
+    case 'image':
+      return 'images'
+  }
+}
+
+const resolveTimingBasis = (
+  step: TimingStepEntry['step'],
+  inputMetric: string | undefined,
+  inputValue: number
+): TimingBasisDefinition | undefined => {
+  const metric = inputMetric ?? defaultTimingMetricForStep(step)
+  switch (metric) {
+    case 'durationMs': {
+      const seconds = inputValue / 1000
+      return {
+        rateBasis: 'durationSecond',
+        units: seconds,
+        throughputInputValue: seconds,
+        throughputUnit: 'x',
+        throughputScaleMs: 1000,
+      }
+    }
+    case 'durationSeconds':
+      return {
+        rateBasis: 'durationSecond',
+        units: inputValue,
+        throughputInputValue: inputValue,
+        throughputUnit: 'x',
+        throughputScaleMs: 1000,
+      }
+    case 'pages':
+      return {
+        rateBasis: 'page',
+        units: inputValue,
+        throughputInputValue: inputValue,
+        throughputUnit: 'pagesPerMinute',
+        throughputScaleMs: 60_000,
+      }
+    case 'tokens':
+      return {
+        rateBasis: '1KTokens',
+        units: inputValue / 1000,
+        throughputInputValue: inputValue,
+        throughputUnit: 'tokensPerSecond',
+        throughputScaleMs: 1000,
+      }
+    case 'characters':
+    case 'outputCharacters':
+      return {
+        rateBasis: '1KCharacters',
+        units: inputValue / 1000,
+        throughputInputValue: inputValue,
+        throughputUnit: 'charactersPerSecond',
+        throughputScaleMs: 1000,
+      }
+    case 'images':
+      return {
+        rateBasis: 'image',
+        units: inputValue,
+        throughputInputValue: inputValue,
+        throughputUnit: 'imagesPerMinute',
+        throughputScaleMs: 60_000,
+      }
+    default:
+      return undefined
+  }
+}
+
+const computeNormalizedTimingFields = (
+  step: TimingStepEntry['step'],
+  inputMetric: string | undefined,
+  inputValue: number | undefined,
+  processingTimeMs: number
+): NormalizedTimingFields | undefined => {
+  if (
+    typeof inputValue !== 'number'
+    || !Number.isFinite(inputValue)
+    || inputValue <= 0
+    || !Number.isFinite(processingTimeMs)
+    || processingTimeMs <= 0
+  ) {
+    return undefined
+  }
+
+  const basis = resolveTimingBasis(step, inputMetric, inputValue)
+  if (!basis || basis.units <= 0) {
+    return undefined
+  }
+
+  return {
+    rateBasis: basis.rateBasis,
+    msPerUnit: roundTimingMetric(processingTimeMs / basis.units),
+    throughputValue: roundTimingMetric(basis.throughputInputValue / (processingTimeMs / basis.throughputScaleMs)),
+    throughputUnit: basis.throughputUnit,
+  }
+}
+
+const TIMING_BREAKDOWN_KEYS = [
+  'queueWaitMs',
+  'transcribeMs',
+  'uploadMs',
+  'createMs',
+  'pollMs',
+  'pollSleepMs',
+  'transcriptMs',
+  'remoteProcessingMs',
+  'cleanupMs',
+] as const satisfies readonly (keyof TimingBreakdown)[]
+
+const normalizeTimingBreakdown = (
+  value: Partial<Record<keyof TimingBreakdown, number | undefined>> | undefined
+): TimingBreakdown | undefined => {
+  if (!value) return undefined
+
+  const out: TimingBreakdown = {}
+  for (const key of TIMING_BREAKDOWN_KEYS) {
+    const entry = value[key]
+    if (typeof entry === 'number' && Number.isFinite(entry) && entry >= 0) {
+      out[key] = roundMs(entry)
+    }
+  }
+
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+const withNormalizedTiming = (
+  entry: Omit<TimingStepEntry, 'timingScope'>,
+  timingScope: TimingScope
+): TimingStepEntry => {
+  const normalized = computeNormalizedTimingFields(
+    entry.step,
+    entry.inputMetric,
+    entry.inputValue,
+    entry.processingTimeMs
+  )
+  return {
+    ...entry,
+    ...(normalized ?? {}),
+    timingScope,
+  }
+}
 
 const resolveMusicTimingDurationSeconds = (
   target: { service: string, model: string, durationSeconds?: number | undefined }
 ): number | undefined => {
+  if (target.service === 'elevenlabs') {
+    return target.durationSeconds ?? ELEVENLABS_DEFAULT_MUSIC_DURATION_SECONDS
+  }
+
   if (target.service === 'minimax') {
     return MINIMAX_DEFAULT_MUSIC_DURATION_SECONDS
   }
@@ -44,77 +229,29 @@ const resolveMusicTimingDurationSeconds = (
   return target.durationSeconds
 }
 
+const resolveVideoTimingDurationSeconds = (
+  target: NonNullable<ComputeEstimatedProcessingTimesInput['videoTargets']>[number],
+  input: Pick<ComputeEstimatedProcessingTimesInput, 'videoResolution' | 'videoMode'>
+): number | undefined => {
+  const estimates = estimateVideoCosts({
+    ...(target.service === 'gemini' ? { geminiVideoModels: [target.model] } : {}),
+    ...(target.service === 'minimax' ? { minimaxVideoModels: [target.model] } : {}),
+    ...(target.service === 'glm' ? { glmVideoModels: [target.model] } : {}),
+    ...(target.service === 'grok' ? { grokVideoModels: [target.model] } : {}),
+    ...(target.service === 'runway' ? { runwayVideoModels: [target.model] } : {}),
+    videoDuration: target.durationSeconds,
+    videoResolution: input.videoResolution,
+    videoMode: input.videoMode,
+  })
+  return estimates.find((estimate) => estimate.provider === target.service && estimate.model === target.model)?.durationSeconds
+}
+
 const isTranscriptionMetadata = (value: unknown): value is Step2Metadata => {
   return typeof value === 'object' && value !== null && 'transcriptionService' in value
 }
 
 const isExtractionMetadata = (value: unknown): value is ExtractionMetadata => {
   return typeof value === 'object' && value !== null && 'extractionMethod' in value
-}
-
-const resolveExtractionProviderModel = (
-  metadata: ExtractionMetadata
-): { provider: string, model: string } => {
-  if (metadata.extractionMethod.includes('html+defuddle')) {
-    return {
-      provider: 'defuddle',
-      model: 'defuddle'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+firecrawl')) {
-    return {
-      provider: 'firecrawl',
-      model: 'firecrawl'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+glm-reader')) {
-    return {
-      provider: 'glm-reader',
-      model: 'glm-reader'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+spider')) {
-    return {
-      provider: 'spider',
-      model: 'spider'
-    }
-  }
-  if (metadata.extractionMethod.includes('html+zyte')) {
-    return {
-      provider: 'zyte',
-      model: 'zyte'
-    }
-  }
-
-  if (typeof metadata.ocrService === 'string' && typeof metadata.ocrModel === 'string') {
-    return {
-      provider: metadata.ocrService,
-      model: metadata.ocrModel
-    }
-  }
-
-  if (metadata.extractionMethod.includes('paddle-ocr')) {
-    return {
-      provider: 'paddle-ocr',
-      model: 'paddle-ocr'
-    }
-  }
-  if (metadata.extractionMethod.includes('ocrmypdf')) {
-    return {
-      provider: 'ocrmypdf',
-      model: 'ocrmypdf'
-    }
-  }
-  if (metadata.extractionMethod.includes('tesseract')) {
-    return {
-      provider: 'tesseract',
-      model: 'tesseract'
-    }
-  }
-  return {
-    provider: 'extract',
-    model: metadata.extractionMethod
-  }
 }
 
 const resolveTranscriptionModel = (metadata: Step2Metadata): string => {
@@ -144,14 +281,14 @@ export const computeEstimatedProcessingTimes = (
         continue
       }
       const estimation = getSttEstimation(target.service, target.model)
-      steps.push({
+      steps.push(withNormalizedTiming({
         step: 'stt',
         provider: target.service,
         model: target.model,
         processingTimeMs: roundMs(input.audioDurationSeconds * estimation.msPerSecond),
         inputMetric: 'durationSeconds',
         inputValue: input.audioDurationSeconds,
-      })
+      }, 'estimated'))
     }
   } else if (
     input.transcriptionService
@@ -160,14 +297,14 @@ export const computeEstimatedProcessingTimes = (
     && typeof input.audioDurationSeconds === 'number'
   ) {
     const estimation = getSttEstimation(input.transcriptionService, input.transcriptionModel)
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'stt',
       provider: input.transcriptionService,
       model: input.transcriptionModel,
       processingTimeMs: roundMs(input.audioDurationSeconds * estimation.msPerSecond),
       inputMetric: 'durationSeconds',
       inputValue: input.audioDurationSeconds,
-    })
+    }, 'estimated'))
   }
 
   const extractTargets = input.extractTargets && input.extractTargets.length > 0
@@ -184,6 +321,9 @@ export const computeEstimatedProcessingTimes = (
           : []),
         ...(input.openaiOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'openai' as const, model: input.openaiOcrModel, pageCount: input.extractPageCount }]
+          : []),
+        ...(input.grokOcrModel && typeof input.extractPageCount === 'number'
+          ? [{ provider: 'grok' as const, model: input.grokOcrModel, pageCount: input.extractPageCount }]
           : []),
         ...(input.anthropicOcrModel && typeof input.extractPageCount === 'number'
           ? [{ provider: 'anthropic' as const, model: input.anthropicOcrModel, pageCount: input.extractPageCount }]
@@ -202,14 +342,14 @@ export const computeEstimatedProcessingTimes = (
   for (const target of extractTargets) {
     const pageCount = Math.max(0, target.pageCount ?? input.extractPageCount ?? 0)
     const estimation = getExtractEstimation(target.provider, target.model)
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'extract',
       provider: target.provider,
       model: target.model,
       processingTimeMs: roundMs(pageCount * estimation.msPerPage),
       inputMetric: 'pages',
       inputValue: pageCount,
-    })
+    }, 'estimated'))
   }
 
   const llmTargets = input.llmTargets && input.llmTargets.length > 0
@@ -228,14 +368,14 @@ export const computeEstimatedProcessingTimes = (
       const registryService = llmTarget.service === 'llama.cpp' ? 'llama' : llmTarget.service
       const estimation = getLlmEstimation(registryService, llmTarget.model)
       const tokenCount = Math.max(0, (llmTarget.inputTokens ?? 0) + (llmTarget.outputTokens ?? 0))
-      steps.push({
+      steps.push(withNormalizedTiming({
         step: 'llm',
         provider: llmTarget.service,
         model: llmTarget.model,
         processingTimeMs: roundMs((tokenCount / 1000) * estimation.msPer1KTokens),
         inputMetric: 'tokens',
         inputValue: tokenCount,
-      })
+      }, 'estimated'))
     }
   }
 
@@ -248,14 +388,21 @@ export const computeEstimatedProcessingTimes = (
   for (const ttsTarget of ttsTargets) {
     const estimation = getTtsEstimation(ttsTarget.service, ttsTarget.model)
     const characterCount = Math.max(0, input.ttsCharacterCount ?? 0)
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'tts',
       provider: ttsTarget.service,
       model: ttsTarget.model,
-      processingTimeMs: roundMs((characterCount / 1000) * estimation.msPer1KChars + (ttsTarget.setupTimeMs ?? 0)),
+      processingTimeMs: roundMs(estimateTtsSynthesisProcessingTimeMs({
+        provider: ttsTarget.service,
+        text: input.ttsInputText,
+        characterCount,
+        msPer1KChars: estimation.msPer1KChars,
+        setupTimeMs: ttsTarget.setupTimeMs,
+        chunkConcurrency: ttsTarget.chunkConcurrency ?? input.ttsChunkConcurrency,
+      })),
       inputMetric: 'characters',
       inputValue: characterCount,
-    })
+    }, 'estimated'))
   }
 
   const imageTargets = input.imageTargets && input.imageTargets.length > 0
@@ -267,54 +414,63 @@ export const computeEstimatedProcessingTimes = (
   for (const imageTarget of imageTargets) {
     const estimation = getImageEstimation(imageTarget.service, imageTarget.model)
     const imageCount = Math.max(1, imageTarget.count)
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'image',
       provider: imageTarget.service,
       model: imageTarget.model,
       processingTimeMs: roundMs(imageCount * estimation.msPerImage),
       inputMetric: 'images',
       inputValue: imageCount,
-    })
+    }, 'estimated'))
   }
 
   const videoTargets = input.videoTargets && input.videoTargets.length > 0
     ? input.videoTargets
     : input.videoService && input.videoModel
-      ? [{ service: input.videoService, model: input.videoModel, durationSeconds: input.videoDurationSeconds }]
+      ? [{
+          service: input.videoService,
+          model: input.videoModel,
+          ...(input.videoDurationSeconds !== undefined ? { durationSeconds: input.videoDurationSeconds } : {})
+        }]
       : []
 
   for (const videoTarget of videoTargets) {
-    if (typeof videoTarget.durationSeconds === 'number') {
+    const durationSeconds = resolveVideoTimingDurationSeconds(videoTarget, input)
+    if (typeof durationSeconds === 'number') {
       const estimation = getVideoEstimation(videoTarget.service, videoTarget.model)
-      steps.push({
+      steps.push(withNormalizedTiming({
         step: 'video',
         provider: videoTarget.service,
         model: videoTarget.model,
-        processingTimeMs: roundMs(videoTarget.durationSeconds * estimation.msPerSecond),
+        processingTimeMs: roundMs(durationSeconds * estimation.msPerSecond),
         inputMetric: 'durationSeconds',
-        inputValue: videoTarget.durationSeconds,
-      })
+        inputValue: durationSeconds,
+      }, 'estimated'))
     }
   }
 
   const musicTargets = input.musicTargets && input.musicTargets.length > 0
     ? input.musicTargets
     : input.musicService && input.musicModel
-      ? [{ service: input.musicService, model: input.musicModel, durationSeconds: input.musicDurationSeconds }]
+      ? [{
+          service: input.musicService,
+          model: input.musicModel,
+          ...(input.musicDurationSeconds !== undefined ? { durationSeconds: input.musicDurationSeconds } : {})
+        }]
       : []
 
   for (const musicTarget of musicTargets) {
     const durationSeconds = resolveMusicTimingDurationSeconds(musicTarget)
     if (typeof durationSeconds === 'number') {
       const estimation = getMusicEstimation(musicTarget.service, musicTarget.model)
-      steps.push({
+      steps.push(withNormalizedTiming({
         step: 'music',
         provider: musicTarget.service,
         model: musicTarget.model,
         processingTimeMs: roundMs(durationSeconds * estimation.msPerSecond),
         inputMetric: 'durationSeconds',
         inputValue: durationSeconds,
-      })
+      }, 'estimated'))
     }
   }
 
@@ -333,23 +489,25 @@ export const computeActualProcessingTimes = (
     if (input.step2.every(isExtractionMetadata)) {
       for (const step2Entry of input.step2) {
         const { provider, model } = resolveExtractionProviderModel(step2Entry)
-        steps.push({
+        steps.push(withNormalizedTiming({
           step: 'extract',
           provider,
           model,
           processingTimeMs: roundMs(step2Entry.processingTime),
           inputMetric: 'pages',
           inputValue: step2Entry.totalPages,
-        })
+        }, 'wall'))
       }
     } else {
       for (const step2Entry of input.step2) {
         const model = resolveTranscriptionModel(step2Entry)
-        steps.push({
+        const timingBreakdown = normalizeTimingBreakdown(step2Entry.timings)
+        steps.push(withNormalizedTiming({
           step: 'stt',
           provider: step2Entry.transcriptionService,
           model,
           processingTimeMs: roundMs(step2Entry.processingTime),
+          ...(timingBreakdown ? { timingBreakdown } : {}),
           ...(typeof input.audioDurationSeconds === 'number'
             ? {
                 inputMetric: 'durationSeconds' as const,
@@ -359,16 +517,18 @@ export const computeActualProcessingTimes = (
                 inputMetric: 'tokens' as const,
                 inputValue: step2Entry.tokenCount,
               }),
-        })
+        }, 'wall'))
       }
     }
   } else if (input.step2 && isTranscriptionMetadata(input.step2)) {
     const model = resolveTranscriptionModel(input.step2)
-    steps.push({
+    const timingBreakdown = normalizeTimingBreakdown(input.step2.timings)
+    steps.push(withNormalizedTiming({
       step: 'stt',
       provider: input.step2.transcriptionService,
       model,
       processingTimeMs: roundMs(input.step2.processingTime),
+      ...(timingBreakdown ? { timingBreakdown } : {}),
       ...(typeof input.audioDurationSeconds === 'number'
         ? {
             inputMetric: 'durationSeconds',
@@ -378,62 +538,62 @@ export const computeActualProcessingTimes = (
             inputMetric: 'tokens',
             inputValue: input.step2.tokenCount,
           }),
-    })
+    }, 'wall'))
   } else if (
     input.step2
     && isExtractionMetadata(input.step2)
   ) {
     const { provider, model } = resolveExtractionProviderModel(input.step2)
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'extract',
       provider,
       model,
       processingTimeMs: roundMs(input.step2.processingTime),
       inputMetric: 'pages',
       inputValue: input.step2.totalPages,
-    })
+    }, 'wall'))
   }
 
   for (const step3 of toArray(input.step3)) {
     const tokenCount = step3.inputTokenCount + step3.outputTokenCount
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'llm',
       provider: step3.llmService,
       model: step3.llmModel,
       processingTimeMs: roundMs(step3.processingTime),
       inputMetric: 'tokens',
       inputValue: tokenCount,
-    })
+    }, 'wall'))
   }
 
   const step4Array = toArray(input.step4)
 
   if (step4Array.length > 0 && typeof input.ttsCharacterCount === 'number') {
     for (const step4 of step4Array) {
-      steps.push({
+      steps.push(withNormalizedTiming({
         step: 'tts',
         provider: step4.ttsService,
         model: step4.ttsModel,
         processingTimeMs: roundMs(step4.processingTime),
         inputMetric: 'characters',
         inputValue: input.ttsCharacterCount,
-      })
+      }, 'wall'))
     }
   }
 
   for (const step5 of toArray(input.step5)) {
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'image',
       provider: step5.imageService,
       model: step5.imageModel,
       processingTimeMs: roundMs(step5.processingTime),
       inputMetric: 'images',
       inputValue: step5.imageCount,
-    })
+    }, 'wall'))
   }
 
   for (const s6 of toArray(input.step6)) {
-    steps.push({
+    steps.push(withNormalizedTiming({
       step: 'video',
       provider: s6.videoGenService,
       model: s6.videoGenModel,
@@ -444,12 +604,12 @@ export const computeActualProcessingTimes = (
             inputValue: s6.videoDuration,
           }
         : {}),
-    })
+    }, 'wall'))
   }
 
   if (input.step7) {
     for (const item of toArray(input.step7)) {
-      steps.push({
+      steps.push(withNormalizedTiming({
         step: 'music',
         provider: item.musicService,
         model: item.musicModel,
@@ -460,7 +620,7 @@ export const computeActualProcessingTimes = (
               inputValue: item.musicDurationMs / 1000,
             }
           : {}),
-      })
+      }, 'wall'))
     }
   }
 

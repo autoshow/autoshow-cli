@@ -1,5 +1,5 @@
-import * as v from 'valibot'
 import * as l from '~/utils/logger'
+import * as v from 'valibot'
 import type { GlmVideoModel, Step6VideoMetadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
@@ -12,15 +12,57 @@ import {
   normalizeGlmQuality,
   normalizeGlmSize
 } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
-import { videoMediaReferenceToUrlOrDataUrl } from '../../video-utils/video-media-inputs'
+import { videoMediaReferenceToUrlOrBase64, videoMediaReferenceToUrlOrDataUrl } from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
 
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const GLM_PROMPT_MAX_CHARS = 512
+const DEFAULT_IMAGE_VIDEO_PROMPT = 'Animate the provided image with natural, subtle motion while preserving its subject and composition.'
+
+const isViduVideoModel = (model: GlmVideoModel): boolean => model.startsWith('vidu')
+
+const resolveGlmImageReference = async (
+  model: GlmVideoModel,
+  value: string
+): Promise<string> => {
+  return isViduVideoModel(model)
+    ? await videoMediaReferenceToUrlOrDataUrl(value, 'image')
+    : await videoMediaReferenceToUrlOrBase64(value, 'image')
+}
+
+const buildGlmVideoRequestBodies = (
+  baseBody: Record<string, unknown>,
+  model: GlmVideoModel,
+  imageUrl: string | string[] | undefined
+): Record<string, unknown>[] => {
+  if (!imageUrl) return [baseBody]
+  if (!isViduVideoModel(model)) return [{ ...baseBody, image_url: imageUrl }]
+
+  const images = Array.isArray(imageUrl) ? imageUrl : [imageUrl]
+  const variants: Record<string, unknown>[] = [{ ...baseBody, images }]
+  if (Array.isArray(imageUrl)) {
+    variants.push({ ...baseBody, image_url: imageUrl })
+  } else {
+    variants.push({ ...baseBody, image_url: [imageUrl] })
+    variants.push({ ...baseBody, image_url: imageUrl })
+  }
+  return variants
+}
+
+const shouldRetryViduCreateRequest = (
+  model: GlmVideoModel,
+  status: number,
+  body: string
+): boolean => {
+  return isViduVideoModel(model)
+    && status === 400
+    && /1210|field is missing or empty|image_url|images/i.test(body)
+}
 
 const GlmCreateVideoResponseSchema = v.object({
   id: v.string(),
@@ -49,7 +91,7 @@ const formatGlmError = (value: unknown): string => {
 }
 
 export const runGlmVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: {
     model: GlmVideoModel
@@ -62,16 +104,19 @@ export const runGlmVideoGen = async (
     referenceImages?: string[] | undefined
   }
 ): Promise<{ videoPath: string, metadata: Step6VideoMetadata }> => {
-  if (prompt.length > GLM_PROMPT_MAX_CHARS) {
-    throw CLIUsageError(`GLM video prompts must be ${GLM_PROMPT_MAX_CHARS} characters or fewer. Received ${prompt.length}.`)
-  }
-
   const apiKey = ensureGlmApiKey('GLM video generation')
   const baseURL = resolveGlmBaseUrl()
   const duration = normalizeGlmDuration(options.model, options.durationSeconds)
   const size = normalizeGlmSize(options.model, options.size)
   const aspectRatio = normalizeGlmAspectRatio(options.aspectRatio)
   const mode = options.mode ?? 'text'
+  const resolvedPrompt = prompt ?? (mode === 'image-to-video' || mode === 'interpolate' || mode === 'reference-to-video'
+    ? DEFAULT_IMAGE_VIDEO_PROMPT
+    : undefined)
+
+  if (resolvedPrompt !== undefined && resolvedPrompt.length > GLM_PROMPT_MAX_CHARS) {
+    throw CLIUsageError(`GLM video prompts must be ${GLM_PROMPT_MAX_CHARS} characters or fewer. Received ${resolvedPrompt.length}.`)
+  }
 
   logMediaGenerationStatus(l, {
     mediaType: 'video',
@@ -88,13 +133,13 @@ export const runGlmVideoGen = async (
   logVideoEstimate(estimate)
 
   const inputImageUrl = options.inputImage
-    ? await videoMediaReferenceToUrlOrDataUrl(options.inputImage, 'image')
+    ? await resolveGlmImageReference(options.model, options.inputImage)
     : undefined
   const lastFrameUrl = options.lastFrameImage
-    ? await videoMediaReferenceToUrlOrDataUrl(options.lastFrameImage, 'image')
+    ? await resolveGlmImageReference(options.model, options.lastFrameImage)
     : undefined
   const referenceImageUrls = options.referenceImages && options.referenceImages.length > 0
-    ? await Promise.all(options.referenceImages.map(async (input) => await videoMediaReferenceToUrlOrDataUrl(input, 'image')))
+    ? await Promise.all(options.referenceImages.map(async (input) => await resolveGlmImageReference(options.model, input)))
     : undefined
 
   const imageUrl = mode === 'interpolate'
@@ -103,48 +148,62 @@ export const runGlmVideoGen = async (
       ? referenceImageUrls
       : inputImageUrl
 
-  const requestBody: Record<string, unknown> = options.model === 'cogvideox-3'
+  const requestBodyBase: Record<string, unknown> = options.model === 'cogvideox-3'
     ? {
         model: options.model,
-        prompt,
+        ...(resolvedPrompt !== undefined ? { prompt: resolvedPrompt } : {}),
         quality: normalizeGlmQuality(undefined),
         with_audio: false,
         size,
         fps: normalizeGlmFps(undefined),
-        duration,
-        ...(imageUrl ? { image_url: imageUrl } : {})
+        duration
       }
     : {
         model: options.model,
-        prompt,
+        ...(resolvedPrompt !== undefined ? { prompt: resolvedPrompt } : {}),
         duration,
         size,
         movement_amplitude: 'auto',
         ...(options.model === 'viduq1-text' ? { style: 'general', aspect_ratio: aspectRatio } : {}),
-        ...(options.model === 'vidu2-reference' ? { aspect_ratio: aspectRatio, with_audio: false } : {}),
-        ...(imageUrl ? { image_url: imageUrl } : {})
+        ...(options.model === 'vidu2-reference' ? { aspect_ratio: aspectRatio, with_audio: false } : {})
       }
+  const requestBodies = buildGlmVideoRequestBodies(requestBodyBase, options.model, imageUrl)
 
   const startTime = Date.now()
-  const createResp = await fetch(`${baseURL}/videos/generations`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(requestBody)
-  })
+  let createData: v.InferOutput<typeof GlmCreateVideoResponseSchema> | undefined
+  const createErrors: string[] = []
 
-  if (!createResp.ok) {
-    const body = await createResp.text()
-    throw new Error(`GLM video generation request failed (${createResp.status}): ${body || 'No response body'}`)
+  for (let index = 0; index < requestBodies.length; index += 1) {
+    const createResp = await fetch(`${baseURL}/videos/generations`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBodies[index])
+    })
+
+    if (!createResp.ok) {
+      const body = await createResp.text()
+      const message = `GLM video generation request failed (${createResp.status}): ${body || 'No response body'}`
+      createErrors.push(message)
+      if (index < requestBodies.length - 1 && shouldRetryViduCreateRequest(options.model, createResp.status, body)) {
+        continue
+      }
+      throw new Error(message)
+    }
+
+    createData = validateData(
+      GlmCreateVideoResponseSchema,
+      await createResp.json() as unknown,
+      'GLM video generation create response'
+    )
+    break
   }
 
-  const createData = validateData(
-    GlmCreateVideoResponseSchema,
-    await createResp.json() as unknown,
-    'GLM video generation create response'
-  )
+  if (!createData) {
+    throw new Error(createErrors.at(-1) ?? 'GLM video generation request failed: no create response was returned')
+  }
 
   if (createData.task_status === 'FAIL') {
     throw new Error(`GLM video generation failed: ${formatGlmError(createData.error)}`)
@@ -192,13 +251,8 @@ export const runGlmVideoGen = async (
     throw new Error('GLM video generation succeeded but no video_result[0].url was returned')
   }
 
-  const downloadResp = await fetch(videoUrl)
-  if (!downloadResp.ok) {
-    throw new Error(`GLM video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  await Bun.write(outputPath, new Uint8Array(await downloadResp.arrayBuffer()))
+  await Bun.write(outputPath, await downloadVideoOutputBytes(videoUrl, 'GLM'))
 
   const processingTime = Date.now() - startTime
   const videoFile = Bun.file(outputPath)
@@ -209,7 +263,8 @@ export const runGlmVideoGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   return {

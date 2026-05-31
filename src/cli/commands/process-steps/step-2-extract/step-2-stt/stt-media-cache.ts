@@ -14,6 +14,7 @@ import {
 import { hostname, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import * as l from '~/utils/logger'
+import { getDefaultCacheDir } from '~/utils/process-lock'
 import type {
   AcquireArtifactOptions,
   AudioNormalizationProfile,
@@ -51,10 +52,8 @@ const CURRENT_HOSTNAME = hostname()
 // New hosted STT providers default to shared mp3 artifacts until .m4a support is explicitly confirmed.
 const HOSTED_STT_SHARED_SOURCE_MEDIA_SERVICES = new Set<SttTarget['service']>([
   'assemblyai',
-  'aws',
   'deepgram',
   'elevenlabs',
-  'gcloud',
   'gladia',
   'groq',
   'mistral',
@@ -69,23 +68,13 @@ let activeSourceMediaAcquireCount = 0
 const sleep = async (ms: number): Promise<void> =>
   await new Promise((resolvePromise) => setTimeout(resolvePromise, ms))
 
-const parsePositiveIntegerEnv = (key: string, fallback: number): number => {
-  const value = Number.parseInt(process.env[key] ?? '', 10)
-  if (!Number.isFinite(value) || value < 1) {
-    return fallback
-  }
-
-  return value
-}
-
-const getSourceMediaAcquireConcurrency = (): number =>
-  Math.max(1, parsePositiveIntegerEnv('AUTOSHOW_STT_ACQUIRE_CONCURRENCY', DEFAULT_STT_ACQUIRE_CONCURRENCY))
+const getSourceMediaAcquireConcurrency = (): number => DEFAULT_STT_ACQUIRE_CONCURRENCY
 
 const getCacheLockStaleMs = (): number =>
-  Math.max(LOCK_HEARTBEAT_MS * 2, parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_STALE_MS', DEFAULT_LOCK_STALE_MS))
+  Math.max(LOCK_HEARTBEAT_MS * 2, DEFAULT_LOCK_STALE_MS)
 
 const getCacheLockWaitTimeoutMs = (): number =>
-  Math.max(getCacheLockStaleMs(), parsePositiveIntegerEnv('AUTOSHOW_MEDIA_CACHE_LOCK_WAIT_MS', DEFAULT_LOCK_WAIT_TIMEOUT_MS))
+  Math.max(getCacheLockStaleMs(), DEFAULT_LOCK_WAIT_TIMEOUT_MS)
 
 const isHostedSttTarget = (target: SttTarget): boolean =>
   !target.local
@@ -174,13 +163,17 @@ const canonicalizeUrl = (url: string): string => {
 }
 
 const getCacheRootDir = (): string =>
-  join(process.env['AUTOSHOW_CACHE_DIR'] ?? join(process.env['HOME'] ?? resolve('.'), '.cache', 'autoshow-cli'), 'media')
+  join(getDefaultCacheDir(), 'media')
 
 const getEntryDir = (cacheKey: string): string => join(getCacheRootDir(), cacheKey)
 const getEntryJsonPath = (cacheKey: string): string => join(getEntryDir(cacheKey), 'entry.json')
 const getEntryMetadataPath = (cacheKey: string): string => join(getEntryDir(cacheKey), 'metadata.json')
 const getLockDir = (cacheKey: string): string => join(getEntryDir(cacheKey), '.lock')
 const getLockOwnerPath = (lockDir: string): string => join(lockDir, LOCK_OWNER_FILE)
+const getProfiledSourceMediaCacheKey = (
+  cacheKey: string,
+  profile: AudioNormalizationProfile
+): string => sha256(`source-media|${cacheKey}|${profile}`)
 
 const isCacheRecoverableError = (error: unknown): boolean => {
   const code = error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
@@ -589,17 +582,9 @@ const removeStaleSourceMediaArtifacts = async (
   }))
 }
 
-const getMaxCacheBytes = (): number => {
-  const value = Number.parseFloat(process.env['AUTOSHOW_CACHE_MAX_GB'] ?? '')
-  const maxGb = Number.isFinite(value) && value > 0 ? value : DEFAULT_CACHE_MAX_GB
-  return maxGb * 1024 * 1024 * 1024
-}
+const getMaxCacheBytes = (): number => DEFAULT_CACHE_MAX_GB * 1024 * 1024 * 1024
 
-const getMaxCacheAgeMs = (): number => {
-  const value = Number.parseFloat(process.env['AUTOSHOW_CACHE_MAX_AGE_DAYS'] ?? '')
-  const days = Number.isFinite(value) && value > 0 ? value : DEFAULT_CACHE_MAX_AGE_DAYS
-  return days * 24 * 60 * 60 * 1000
-}
+const getMaxCacheAgeMs = (): number => DEFAULT_CACHE_MAX_AGE_DAYS * 24 * 60 * 60 * 1000
 
 export const pruneMediaCache = async (): Promise<void> => {
   const rootDir = getCacheRootDir()
@@ -665,11 +650,12 @@ export const prepareSttMedia = async (
   const sourceMediaProfile = resolveSourceMediaProfile(targets)
 
   const cacheLookup = await resolveCacheLookup(source)
+  const sourceMediaCacheKey = getProfiledSourceMediaCacheKey(cacheLookup.cacheKey, sourceMediaProfile)
   if (cacheLookup.weakFingerprint) {
     logSttCacheEvent(l, {
       artifact: 'source_media',
       status: 'weak_fingerprint',
-      key: cacheLookup.cacheKey,
+      key: sourceMediaCacheKey,
       detail: 'metadata-derived fingerprint'
     })
   }
@@ -691,7 +677,7 @@ export const prepareSttMedia = async (
       logSttCacheEvent(l, {
         artifact: 'source_media',
         status: 'bypass',
-        key: cacheLookup.cacheKey,
+        key: sourceMediaCacheKey,
         detail: 'no-cache requested'
       })
 
@@ -747,19 +733,19 @@ export const prepareSttMedia = async (
   try {
     await mkdir(getCacheRootDir(), { recursive: true })
 
-    return await withCacheLock(cacheLookup.cacheKey, async () => {
+    return await withCacheLock(sourceMediaCacheKey, async () => {
       const timings: PreparedSttMedia['timings'] = {}
-      const entryDir = getEntryDir(cacheLookup.cacheKey)
-      const entryMetadataPath = getEntryMetadataPath(cacheLookup.cacheKey)
-      let entry = await readEntryJson(cacheLookup.cacheKey)
+      const entryDir = getEntryDir(sourceMediaCacheKey)
+      const entryMetadataPath = getEntryMetadataPath(sourceMediaCacheKey)
+      let entry = await readEntryJson(sourceMediaCacheKey)
       if (!entry) {
-        entry = buildEmptyEntry(cacheLookup.cacheKey, cacheLookup.weakFingerprint)
+        entry = buildEmptyEntry(sourceMediaCacheKey, cacheLookup.weakFingerprint)
       }
 
       await writeFile(entryMetadataPath, JSON.stringify(cacheLookup.metadata, null, 2))
 
       const sourceMediaRecord = entry.artifacts?.source_media
-      let sourceMediaExecutionPath = getEntryArtifactPath(cacheLookup.cacheKey, sourceMediaRecord)
+      let sourceMediaExecutionPath = getEntryArtifactPath(sourceMediaCacheKey, sourceMediaRecord)
       let sourceMediaStatus: CacheArtifactStatus = 'hit'
 
       const sourceMediaValid = sourceMediaExecutionPath
@@ -799,7 +785,7 @@ export const prepareSttMedia = async (
           logSttCacheEvent(l, {
             artifact: 'source_media',
             status: refreshCache ? 'rebuild' : 'miss',
-            key: cacheLookup.cacheKey
+            key: sourceMediaCacheKey
           })
         } finally {
           await rm(workspaceDir, { recursive: true, force: true })
@@ -808,7 +794,7 @@ export const prepareSttMedia = async (
         logSttCacheEvent(l, {
           artifact: 'source_media',
           status: 'hit',
-          key: cacheLookup.cacheKey
+          key: sourceMediaCacheKey
         })
       }
 
@@ -829,8 +815,8 @@ export const prepareSttMedia = async (
         : await probeDurationSeconds(sourceMediaExecutionPath, cacheLookup.metadata)
       entry.lastAccessedAt = new Date().toISOString()
       entry.metadataSchemaVersion = METADATA_SCHEMA_VERSION
-      await writeEntryJson(cacheLookup.cacheKey, entry)
-      await updateLastAccessed(cacheLookup.cacheKey, entry)
+      await writeEntryJson(sourceMediaCacheKey, entry)
+      await updateLastAccessed(sourceMediaCacheKey, entry)
 
       const outputPaths = buildPrimaryOutputPaths(
         cacheLookup.metadata,

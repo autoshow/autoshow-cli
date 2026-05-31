@@ -65,43 +65,40 @@ Accepted provider selectors are the lowercase names below.
 
 | Provider selector | Sections |
 |-------------------|----------|
-| `--elevenlabs` | `general`, `stt`, `tts`, `music`, `image`, `video` |
-| `--groq` | `general`, `text`, `stt`, `tts` |
-| `--together` | `general`, `stt` |
-| `--drive` | `general` |
-| `--openai` | `general`, `text`, `ocr`, `stt`, `tts`, `image` |
-| `--gemini` | `general`, `text`, `ocr`, `stt`, `tts`, `image`, `video`, `music` |
-| `--gladia` | `general`, `stt` |
-| `--glm` | `general`, `text`, `ocr`, `url`, `video`, `stt` |
-| `--grok` | `general`, `text`, `image`, `video`, `tts`, `stt` |
-| `--x` | `general`, `url` |
-| `--kimi` | `general`, `text`, `ocr` |
-| `--mistral` | `general`, `stt`, `ocr`, `tts` |
-| `--minimax` | `general`, `text`, `tts`, `music`, `image`, `video` |
-| `--claude` | `general`, `text`, `ocr` |
 | `--assembly` | `stt` |
-| `--aws` | `stt`, `ocr` |
 | `--better-auth` | `general` |
 | `--bfl` | `image` |
 | `--cartesia` | `general`, `tts` |
-| `--gcloud` | `stt`, `tts`, `ocr` |
+| `--claude` | `general`, `text`, `ocr` |
 | `--deepgram` | `stt`, `tts` |
 | `--deepinfra` | `general`, `stt`, `ocr` |
-| `--soniox` | `stt` |
-| `--speechmatics` | `general`, `stt` |
-| `--speechify` | `tts` |
-| `--rev` | `general`, `stt` |
-| `--runway` | `general` |
-| `--resend` | `general` |
+| `--drive` | `general` |
+| `--elevenlabs` | `general`, `music`, `stt`, `tts` |
+| `--firecrawl` | `general`, `url` |
+| `--gemini` | `general`, `image`, `music`, `ocr`, `stt`, `text`, `tts`, `video` |
+| `--gladia` | `general`, `stt` |
+| `--glm` | `general`, `ocr`, `stt`, `text`, `url`, `video` |
+| `--grok` | `general`, `image`, `stt`, `text`, `tts`, `video` |
+| `--groq` | `general`, `stt`, `text`, `tts` |
 | `--happyscribe` | `stt` |
 | `--hume` | `general`, `tts` |
-| `--deapi` | `general`, `image`, `ocr`, `video`, `tts`, `music`, `stt` |
-| `--supadata` | `stt` |
-| `--unstructured` | `ocr` |
+| `--kimi` | `general`, `ocr`, `text` |
+| `--minimax` | `general`, `music`, `text`, `tts`, `video` |
+| `--mistral` | `general`, `ocr`, `stt`, `tts` |
+| `--openai` | `general`, `image`, `ocr`, `stt`, `text`, `tts` |
+| `--resend` | `general` |
+| `--rev` | `general`, `stt` |
+| `--runway` | `general` |
 | `--scrapecreators` | `general`, `stt`, `url` |
-| `--zyte` | `general`, `url` |
-| `--firecrawl` | `general`, `url` |
+| `--soniox` | `stt` |
+| `--speechify` | `tts` |
+| `--speechmatics` | `general`, `stt` |
 | `--spider` | `general`, `url` |
+| `--supadata` | `general`, `stt`, `url` |
+| `--together` | `general`, `stt` |
+| `--unstructured` | `ocr` |
+| `--x` | `general`, `url` |
+| `--zyte` | `general`, `url` |
 
 ## Global sections
 

@@ -46,7 +46,7 @@ export const runMusicGen = async (
 ): Promise<{ musicPaths: string[], metadata: Step7MusicMetadata[] }> => {
   const targets = collectMusicTargets(options)
   if (targets.length === 0) {
-    throw new Error('Specify a music generation provider: --elevenlabs-music <model>, --minimax-music <model>, --deapi-music <model>, or --gemini-music <model>')
+    throw new Error('Specify a music generation provider with --provider elevenlabs|minimax|gemini[=model].')
   }
 
   return await runMusicTargets(targets, prompt, outputDir, options)

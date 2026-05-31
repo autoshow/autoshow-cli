@@ -5,13 +5,18 @@
     "models": {
       "gemini-3.1-flash-tts-preview": {
         "description": "Gemini 3.1 Flash TTS Preview — expressive low-latency speech synthesis",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard speech-generation pricing",
+        "pricingNotes": "Gemini TTS estimates use published character pricing of $1/1M input characters and $20/1M output characters. Free tier, batch/flex/priority prices, taxes, and provider credits are ignored.",
         "inputCostPer1MCharsUSD": 1,
         "inputCostPer1MCharsCents": 100,
         "outputCostPer1MCharsUSD": 20,
         "outputCostPer1MCharsCents": 2000,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 42246
+          "msPer1KChars": 67053
         }
       }
     }

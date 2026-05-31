@@ -74,7 +74,7 @@ const installCalibreTools = async (): Promise<void> => {
   throw new Error('Unsupported platform for calibre setup')
 }
 
-export const setupCalibreTools = async (): Promise<void> => {
+const setupCalibreTools = async (): Promise<void> => {
   await installCalibreTools()
 
   if (shouldPrintCompletion()) {
@@ -89,12 +89,4 @@ export const setupCalibreDocumentTools = async (): Promise<void> => {
   if (shouldPrintCompletion()) {
     l.write('success', 'Document foundation tools setup complete')
   }
-}
-
-export const ensureCalibreDocumentTools = async (): Promise<void> => {
-  if (hasCalibreCliTools() && commandExists('mutool')) {
-    return
-  }
-  l.write('info', 'Document conversion tools missing. Running setup step: calibre')
-  await setupCalibreDocumentTools()
 }

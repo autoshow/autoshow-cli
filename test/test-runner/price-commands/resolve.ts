@@ -1,17 +1,11 @@
 import type { PriceCommandSpec } from '~/types'
 import {
   formatSelectedPathsLabel,
-  formatSelectedPriceSuitesLabel,
-  matchPathFilters,
   normalizePathFilter,
   resolveSelectedFiles
 } from '../path-selection'
 import { dedupeResolvedCommands, selectorMatchesFile } from './helpers'
-import {
-  BUDGET_PRICE_SELECTION_REGISTRY,
-  PRICE_SELECTION_REGISTRY,
-  resolvePriceSuiteSelectorsForE2eSelector
-} from './registry'
+import { BUDGET_PRICE_SELECTION_REGISTRY } from './registry'
 
 type PriceSelectionMode = 'price' | 'budget'
 
@@ -20,8 +14,7 @@ type ResolvePriceSelectionOptions = {
   budgetSkippableOnly?: boolean
 }
 
-const E2E_PREFIX = 'test/test-cases/e2e/'
-const PRICE_CATALOG_PREFIX = 'test/test-price/catalog/'
+const TEST_PRICE_PREFIX = 'test/test-price/'
 
 const parseResolveOptions = (
   optionsOrBudgetSkippableOnly: boolean | ResolvePriceSelectionOptions
@@ -39,36 +32,30 @@ const parseResolveOptions = (
   }
 }
 
-const rejectE2eSelectorsInPriceMode = (pathFilters: string[]): void => {
-  const e2eFilters = pathFilters.filter((pathFilter) => {
+const rejectLegacyPriceSelectors = (pathFilters: string[]): void => {
+  const legacyPriceFilters = pathFilters.filter((pathFilter) => {
     const normalized = normalizePathFilter(pathFilter)
-    return normalized === 'test/test-cases/e2e' || normalized.startsWith(E2E_PREFIX)
+    return normalized === 'test/test-price' || normalized.startsWith(TEST_PRICE_PREFIX)
   })
-  if (e2eFilters.length === 0) {
+  if (legacyPriceFilters.length === 0) {
     return
   }
 
-  const suggestedSelectors = [
-    ...new Set(e2eFilters.flatMap((pathFilter) => resolvePriceSuiteSelectorsForE2eSelector(pathFilter)))
-  ].sort()
-  const suggestion = suggestedSelectors.length === 0
-    ? 'Use selectors under test/test-price/... with --test-price.'
-    : suggestedSelectors.length === 1
-      ? `Use --test-price ${suggestedSelectors[0]} instead.`
-      : `Use one of these --test-price selectors instead: ${suggestedSelectors.join(', ')}.`
-
-  throw new Error(`--test-price no longer accepts e2e test paths: ${e2eFilters.join(', ')}. ${suggestion}`)
+  throw new Error(
+    `--test-price now uses normal test paths, not test/test-price selectors: ${legacyPriceFilters.join(', ')}. ` +
+    'Use the matching test/test-cases/e2e/... path and append --test-price.'
+  )
 }
 
-const resolvePriceSuiteEntries = (pathFilters: string[]) => {
+const resolveEntriesForSelectedFiles = (allFiles: string[], pathFilters: string[]) => {
   if (pathFilters.length === 0) {
-    return PRICE_SELECTION_REGISTRY.filter(entry => !entry.selector.startsWith(PRICE_CATALOG_PREFIX))
+    return BUDGET_PRICE_SELECTION_REGISTRY
   }
 
-  rejectE2eSelectorsInPriceMode(pathFilters)
-  return PRICE_SELECTION_REGISTRY.filter(entry =>
-    pathFilters.some(pathFilter => matchPathFilters(entry.selector, [pathFilter]))
-  )
+  const selectedFiles = resolveSelectedFiles(allFiles, pathFilters)
+  return BUDGET_PRICE_SELECTION_REGISTRY.filter(entry => {
+    return selectedFiles.some(file => selectorMatchesFile(entry, file))
+  })
 }
 
 export const resolvePriceSelection = (
@@ -77,14 +64,11 @@ export const resolvePriceSelection = (
   optionsOrBudgetSkippableOnly: boolean | ResolvePriceSelectionOptions = false
 ): { suiteName: string, commands: PriceCommandSpec[] } => {
   const options = parseResolveOptions(optionsOrBudgetSkippableOnly)
-  const matchingEntries = options.mode === 'budget'
-    ? (() => {
-        const selectedFiles = resolveSelectedFiles(allFiles, pathFilters)
-        return BUDGET_PRICE_SELECTION_REGISTRY.filter(entry => {
-          return selectedFiles.some(file => selectorMatchesFile(entry, file))
-        })
-      })()
-    : resolvePriceSuiteEntries(pathFilters)
+  if (options.mode === 'price') {
+    rejectLegacyPriceSelectors(pathFilters)
+  }
+
+  const matchingEntries = resolveEntriesForSelectedFiles(allFiles, pathFilters)
 
   const filteredEntries = options.budgetSkippableOnly
     ? matchingEntries.filter(entry => entry.budgetSkippable)
@@ -92,8 +76,8 @@ export const resolvePriceSelection = (
 
   return {
     suiteName: pathFilters.length === 0
-      ? options.mode === 'budget' ? 'All mapped tests' : 'All mapped price suites'
-      : options.mode === 'budget' ? formatSelectedPathsLabel(pathFilters) : formatSelectedPriceSuitesLabel(pathFilters),
+      ? 'All mapped tests'
+      : formatSelectedPathsLabel(pathFilters),
     commands: dedupeResolvedCommands(filteredEntries),
   }
 }

@@ -1,12 +1,9 @@
 import type { DiarizationOptions, DiarizationFlagOptions, ProviderSpec, RuntimeOptions, Step2ProviderSelectionFilter, TranscribeEngine, TranscribeEngineCapabilities } from '~/types'
 import { collectStep2ProviderSpecs } from '../step-2-shared/provider-registry'
 
-export const STT_ENGINE_CAPABILITIES = {
+const STT_ENGINE_CAPABILITIES = {
   reverb: { diarizationByDefault: true, supportsSpeakerCountHint: false },
-  gcloud: { diarizationByDefault: true, supportsSpeakerCountHint: true },
-  aws: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   deepinfra: { diarizationByDefault: false, supportsSpeakerCountHint: false },
-  deapi: { diarizationByDefault: false, supportsSpeakerCountHint: false },
   elevenlabs: { diarizationByDefault: true, supportsSpeakerCountHint: true },
   deepgram: { diarizationByDefault: true, supportsSpeakerCountHint: false },
   soniox: { diarizationByDefault: true, supportsSpeakerCountHint: false },
@@ -61,14 +58,8 @@ export const collectSttProviderSpecs = (
     | 'step2SelectionOrigins'
     | 'whisperModel'
     | 'whisperModels'
-    | 'gcloudSttModel'
-    | 'gcloudSttModels'
-    | 'awsSttModel'
-    | 'awsSttModels'
     | 'deepinfraSttModel'
     | 'deepinfraSttModels'
-    | 'deapiSttModel'
-    | 'deapiSttModels'
     | 'elevenlabsSttModel'
     | 'elevenlabsSttModels'
     | 'deepgramSttModel'

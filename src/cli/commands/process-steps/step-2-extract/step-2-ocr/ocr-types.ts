@@ -43,7 +43,7 @@ export type EpubManifestItem = {
   properties?: string
 }
 
-export type EpubSpineItem = {
+type EpubSpineItem = {
   index: number
   idref: string
   linear: string
@@ -145,25 +145,25 @@ export type ZipXmlFormat = 'docx' | 'pptx' | 'xlsx' | 'odf'
 export type OcrFn = (imagePath: string) => Promise<{ text: string, confidence?: number }>
 export type OcrFnProvider = OcrFn | { getOcrFn: () => Promise<OcrFn> }
 
-export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'aws-textract' | 'gcloud-docai' | 'unstructured-ocr'
+export type HostedExtractOcrEngine = 'mistral-ocr' | 'glm-ocr' | 'kimi-ocr' | 'openai-ocr' | 'grok-ocr' | 'anthropic-ocr' | 'gemini-ocr' | 'deepinfra-ocr' | 'unstructured-ocr'
 export type LocalExtractOcrEngine = 'tesseract' | 'ocrmypdf' | 'paddle-ocr'
 
 export type HostedOcrRun = {
   pages: PageResult[]
   extractionMethod: HostedExtractOcrEngine
-  ocrService: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai' | 'unstructured'
+  ocrService: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'
   ocrModel: string
   canonicalText?: string
   totalPages?: number
   promptTokens?: number
   completionTokens?: number
   providerCostCents?: number
-  providerCostSource?: 'provider_quote' | 'registry_fallback'
+  providerCostSource?: 'provider_usage' | 'provider_quote' | 'registry_fallback'
   providerUsage?: Array<Record<string, unknown>>
 }
 
 export type OcrTarget = {
-  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'aws-textract' | 'gcloud-docai' | 'unstructured'
+  service: 'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'
   model: string
 }
 
@@ -204,7 +204,7 @@ export type TextArtifactFile = {
   text: string
 }
 
-export type ChapterExportSummary = {
+type ChapterExportSummary = {
   sourceFormat: 'epub' | 'pdf'
   mode: 'chapters' | 'chunks'
   chunkLimitChars?: number
@@ -224,7 +224,7 @@ export type ChapterExportSummary = {
 
 export type EpubArtifactFile = TextArtifactFile
 
-export type EpubExportPlan = {
+type EpubExportPlan = {
   files: TextArtifactFile[]
   summary: {
     sourceFormat: 'epub'

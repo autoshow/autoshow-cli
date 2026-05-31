@@ -1,18 +1,24 @@
-import { AppError } from '~/utils/error-handler'
-
-export const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
+import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
+import {
+  extractRestErrorMessage,
+  isRecord,
+  joinRestUrl,
+  normalizeFetchAbortError,
+  parseJsonOrText,
+  readJsonResponse
+} from '~/utils/rest-client'
 
 export type OpenAIRestConfig = {
   apiKey: string
   baseURL?: string | undefined
 }
 
-export type OpenAIRequestOptions = {
+type OpenAIRequestOptions = {
   signal?: AbortSignal | undefined
   errorMessagePrefix?: string | undefined
 }
 
-export type OpenAIResponsesResponse = {
+type OpenAIResponsesResponse = {
   id?: string | undefined
   model?: string | undefined
   status?: string | undefined
@@ -29,6 +35,7 @@ export type OpenAIResponsesResponse = {
 }
 
 export type OpenAIChatCompletionResponse = {
+  model?: string | undefined
   choices?: Array<{
     finish_reason?: string | null | undefined
     message?: {
@@ -111,65 +118,8 @@ export class OpenAIRestError extends Error {
   }
 }
 
-const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '')
-
-export const buildOpenAIUrl = (baseURL: string | undefined, path: string): string => {
-  const base = trimTrailingSlashes((baseURL ?? OPENAI_DEFAULT_BASE_URL).trim() || OPENAI_DEFAULT_BASE_URL)
-  const pathWithoutLeadingSlash = path.replace(/^\/+/, '')
-
-  try {
-    const url = new URL(base)
-    url.hash = ''
-    url.search = ''
-    const basePath = trimTrailingSlashes(url.pathname)
-    const requestPath = basePath.endsWith('/v1') && pathWithoutLeadingSlash.startsWith('v1/')
-      ? pathWithoutLeadingSlash.slice('v1/'.length)
-      : pathWithoutLeadingSlash
-    url.pathname = `${basePath}/${requestPath}`.replace(/\/{2,}/g, '/')
-    return url.toString()
-  } catch {
-    const requestPath = base.endsWith('/v1') && pathWithoutLeadingSlash.startsWith('v1/')
-      ? pathWithoutLeadingSlash.slice('v1/'.length)
-      : pathWithoutLeadingSlash
-    return `${base}/${requestPath}`
-  }
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null
-
-const parseJsonOrText = (rawText: string): unknown => {
-  if (rawText.trim().length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch {
-    return rawText
-  }
-}
-
-const extractErrorMessage = (payload: unknown, rawText: string, status: number): string => {
-  if (isRecord(payload)) {
-    const error = payload['error']
-    if (isRecord(error)) {
-      const message = error['message']
-      if (typeof message === 'string' && message.trim().length > 0) {
-        return message.trim()
-      }
-    }
-
-    for (const key of ['message', 'detail', 'error'] as const) {
-      const value = payload[key]
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim()
-      }
-    }
-  }
-
-  return rawText.trim() || `HTTP ${status}`
-}
+const buildOpenAIUrl = (baseURL: string | undefined, path: string): string =>
+  joinRestUrl(baseURL, path, OPENAI_DEFAULT_BASE_URL, { collapseVersionPrefix: 'v1' })
 
 const extractErrorFields = (payload: unknown): OpenAIErrorFields => {
   if (!isRecord(payload)) return {}
@@ -183,13 +133,13 @@ const extractErrorFields = (payload: unknown): OpenAIErrorFields => {
   return fields
 }
 
-export const createOpenAIHttpError = async (
+const createOpenAIHttpError = async (
   response: Response,
   errorMessagePrefix: string
 ): Promise<OpenAIRestError> => {
   const rawText = await response.text()
   const rawResponse = parseJsonOrText(rawText)
-  const message = extractErrorMessage(rawResponse, rawText, response.status)
+  const message = extractRestErrorMessage(rawResponse, rawText, response.status)
   return new OpenAIRestError(
     `${errorMessagePrefix} (${response.status}): ${message}`,
     response.status,
@@ -198,22 +148,6 @@ export const createOpenAIHttpError = async (
     rawResponse,
     extractErrorFields(rawResponse)
   )
-}
-
-const normalizeOpenAIFetchError = (error: unknown): unknown => {
-  if (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  return error
 }
 
 const openAIFetch = async (options: OpenAIFetchOptions): Promise<Response> => {
@@ -234,28 +168,7 @@ const openAIFetch = async (options: OpenAIFetchOptions): Promise<Response> => {
 
     return response
   } catch (error) {
-    throw normalizeOpenAIFetchError(error)
-  }
-}
-
-const readJsonResponse = async (response: Response, errorMessagePrefix: string): Promise<unknown> => {
-  const rawText = await response.text()
-  if (rawText.trim().length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch (error) {
-    throw new AppError(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`, {
-      kind: 'validation',
-      cause: error instanceof Error ? error : new Error(String(error)),
-      status: response.status,
-      metadata: {
-        body: rawText,
-        rawResponse: rawText
-      }
-    })
+    throw normalizeFetchAbortError(error)
   }
 }
 
@@ -277,7 +190,7 @@ export const openAIJsonRequest = async <T = Record<string, unknown>>(
   return await readJsonResponse(response, options.errorMessagePrefix ?? 'OpenAI response') as T
 }
 
-export const openAIBinaryJsonRequest = async (
+const openAIBinaryJsonRequest = async (
   config: OpenAIRestConfig,
   path: string,
   body: Record<string, unknown>,
@@ -295,7 +208,7 @@ export const openAIBinaryJsonRequest = async (
   return new Uint8Array(await response.arrayBuffer())
 }
 
-export const openAIMultipartRequest = async <T = Record<string, unknown>>(
+const openAIMultipartRequest = async <T = Record<string, unknown>>(
   config: OpenAIRestConfig,
   path: string,
   form: FormData,

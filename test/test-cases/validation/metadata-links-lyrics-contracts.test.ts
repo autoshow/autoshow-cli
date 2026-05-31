@@ -32,7 +32,6 @@ const RUNWAY_ALL_LINKS = [
 const BETTER_AUTH_GENERAL_LINKS = [
   'https://www.better-auth.com/llms.txt',
   'https://www.better-auth.com/llms.txt/docs/introduction.md',
-  'https://www.better-auth.com/llms.txt/docs/comparison.md',
   'https://www.better-auth.com/llms.txt/docs/installation.md',
   'https://www.better-auth.com/llms.txt/docs/basic-usage.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/api.md',
@@ -40,77 +39,19 @@ const BETTER_AUTH_GENERAL_LINKS = [
   'https://www.better-auth.com/llms.txt/docs/concepts/database.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/session-management.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/users-accounts.md',
-  'https://www.better-auth.com/llms.txt/docs/concepts/oauth.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/email.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/cookies.md',
-  'https://www.better-auth.com/llms.txt/docs/concepts/hooks.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/rate-limit.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/typescript.md',
-  'https://www.better-auth.com/llms.txt/docs/concepts/plugins.md',
   'https://www.better-auth.com/llms.txt/docs/concepts/cli.md',
-  'https://www.better-auth.com/llms.txt/docs/plugins.md',
   'https://www.better-auth.com/llms.txt/docs/reference/options.md',
   'https://www.better-auth.com/llms.txt/docs/reference/security.md',
   'https://www.better-auth.com/llms.txt/docs/reference/errors.md',
-  'https://www.better-auth.com/llms.txt/docs/reference/faq.md',
-  'https://www.better-auth.com/llms.txt/docs/ai-resources.md',
-  'https://www.better-auth.com/llms.txt/docs/ai-resources/mcp.md',
-  'https://www.better-auth.com/llms.txt/docs/ai-resources/skills.md'
+  'https://www.better-auth.com/llms.txt/docs/reference/faq.md'
 ]
 
 const BETTER_AUTH_ALL_LINKS = [
   ...BETTER_AUTH_GENERAL_LINKS
-]
-
-const AWS_STT_LINKS = [
-  'https://docs.aws.amazon.com/transcribe/latest/dg/what-is.md',
-  'https://docs.aws.amazon.com/transcribe/latest/dg/getting-started-cli.md',
-  'https://docs.aws.amazon.com/transcribe/latest/dg/diarization.md',
-  'https://docs.aws.amazon.com/transcribe/latest/dg/diarization-output-batch.md'
-]
-
-const AWS_OCR_LINKS = [
-  'https://docs.aws.amazon.com/textract/latest/dg/what-is.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/setting-up.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/setup-awscli-sdk.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/program-access.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/get-started-exercise.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/how-it-works-detecting.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/how-it-works-analyzing.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/how-it-works-custom-queries.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/document-response.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/how-it-works-document-layout.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/how-it-works-pages.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/how-it-works-lines-words.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/async.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/textract-using-adapters.md',
-  'https://docs.aws.amazon.com/textract/latest/dg/textract-best-practices.md'
-]
-
-const GCLOUD_STT_LINKS = [
-  'https://docs.cloud.google.com/speech-to-text/docs/quickstarts/transcribe-api.md.txt',
-  'https://docs.cloud.google.com/speech-to-text/docs/sync-recognize.md.txt',
-  'https://docs.cloud.google.com/speech-to-text/docs/batch-recognize.md.txt',
-  'https://docs.cloud.google.com/speech-to-text/docs/models/chirp-3.md.txt'
-]
-
-const GCLOUD_TTS_LINKS = [
-  'https://docs.cloud.google.com/text-to-speech/docs/chirp3-instant-custom-voice.md.txt',
-  'https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd.md.txt',
-  'https://docs.cloud.google.com/text-to-speech/docs/create-audio.md.txt',
-  'https://docs.cloud.google.com/text-to-speech/docs/basics.md.txt',
-  'https://docs.cloud.google.com/text-to-speech/docs/list-voices-and-types.md.txt'
-]
-
-const GCLOUD_OCR_LINKS = [
-  'https://docs.cloud.google.com/document-ai/docs/overview.md.txt',
-  'https://docs.cloud.google.com/document-ai/docs/setup.md.txt',
-  'https://docs.cloud.google.com/document-ai/docs/enrichment.md.txt',
-  'https://docs.cloud.google.com/document-ai/docs/normalization.md.txt',
-  'https://docs.cloud.google.com/document-ai/docs/enterprise-document-ocr.md.txt#ocr-processing',
-  'https://docs.cloud.google.com/document-ai/docs/layout-parse-chunk.md.txt',
-  'https://docs.cloud.google.com/document-ai/docs/layout-parse-quickstart.md.txt',
-  'https://docs.cloud.google.com/document-ai/docs/reference/rest.md.txt'
 ]
 
 const GLM_OCR_LINKS = [
@@ -129,7 +70,9 @@ const GROK_GENERAL_LINKS = [
 
 const GROK_TTS_LINKS = [
   'https://docs.x.ai/developers/model-capabilities/audio/text-to-speech.md',
-  'https://docs.x.ai/developers/rest-api-reference/inference/voice.md'
+  'https://docs.x.ai/developers/rest-api-reference/inference/voice.md',
+  'https://docs.x.ai/developers/model-capabilities/audio/voice.md',
+  'https://docs.x.ai/developers/model-capabilities/audio/custom-voices.md'
 ]
 
 const GROK_STT_LINKS = [
@@ -189,6 +132,61 @@ const SCRAPECREATORS_URL_LINKS = [
   'blob:https://docs.scrapecreators.com/c4c8f88d-ed85-40d0-a9fc-b33f0fb72a1e',
   'blob:https://docs.scrapecreators.com/ddec819d-87c4-45e1-b602-e552c5de4fd8',
   'blob:https://docs.scrapecreators.com/bdc7fb25-6ba7-4992-8d07-dd5edf4a3d6c'
+]
+
+const SUPADATA_GENERAL_LINKS = [
+  'https://docs.supadata.ai/.md',
+  'https://docs.supadata.ai/api-reference/endpoint/account/me.md',
+  'https://docs.supadata.ai/errors/list.md',
+  'https://docs.supadata.ai/errors/invalid-request.md',
+  'https://docs.supadata.ai/errors/unauthorized.md',
+  'https://docs.supadata.ai/errors/not-found.md',
+  'https://docs.supadata.ai/errors/limit-exceeded.md',
+  'https://docs.supadata.ai/errors/upgrade-required.md',
+  'https://docs.supadata.ai/errors/transcript-unavailable.md',
+  'https://docs.supadata.ai/errors/internal-error.md'
+]
+
+const SUPADATA_STT_LINKS = [
+  'https://docs.supadata.ai/get-transcript.md',
+  'https://docs.supadata.ai/get-metadata.md',
+  'https://docs.supadata.ai/get-extract.md',
+  'https://docs.supadata.ai/youtube/search.md',
+  'https://docs.supadata.ai/youtube/get-transcript-translation.md',
+  'https://docs.supadata.ai/youtube/channel.md',
+  'https://docs.supadata.ai/youtube/playlist.md',
+  'https://docs.supadata.ai/youtube/channel-videos.md',
+  'https://docs.supadata.ai/youtube/playlist-videos.md',
+  'https://docs.supadata.ai/youtube/batch.md',
+  'https://docs.supadata.ai/youtube/supported-url-formats.md',
+  'https://docs.supadata.ai/youtube/supported-language-codes.md',
+  'https://docs.supadata.ai/api-reference/introduction.md',
+  'https://docs.supadata.ai/api-reference/endpoint/metadata/metadata.md',
+  'https://docs.supadata.ai/api-reference/endpoint/extract/extract.md',
+  'https://docs.supadata.ai/api-reference/endpoint/extract/extract-get.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/search.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/video-get.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/video-batch.md',
+  'https://docs.supadata.ai/api-reference/endpoint/transcript/transcript.md',
+  'https://docs.supadata.ai/api-reference/endpoint/transcript/transcript-get.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/transcript.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/transcript-batch.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/translation.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/channel.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/playlist.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/channel-videos.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/playlist-videos.md',
+  'https://docs.supadata.ai/api-reference/endpoint/youtube/batch-get.md'
+]
+
+const SUPADATA_URL_LINKS = [
+  'https://docs.supadata.ai/web/scrape.md',
+  'https://docs.supadata.ai/web/map.md',
+  'https://docs.supadata.ai/web/crawl.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/scrape.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/map.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/crawl.md',
+  'https://docs.supadata.ai/api-reference/endpoint/web/crawl-get.md'
 ]
 
 const ZYTE_GENERAL_LINKS = [
@@ -918,34 +916,6 @@ test('links selector accepts better-auth provider with general section', async (
   ])).rejects.toThrow('Unknown links section(s) for --better-auth: tts')
 })
 
-test('links selector accepts aws provider with stt and ocr sections', () => {
-  const awsSelection = parseLinksArgv([
-    'bun',
-    'src/cli/create-cli.ts',
-    'links',
-    '--aws'
-  ])
-
-  expect(awsSelection.serviceSelections.get('aws')).toEqual([])
-  expect(collectLinks(
-    awsSelection.serviceSelections,
-    awsSelection.globalSections
-  )).toEqual([...AWS_STT_LINKS, ...AWS_OCR_LINKS])
-
-  const awsOcrSelection = parseLinksArgv([
-    'bun',
-    'src/cli/create-cli.ts',
-    'links',
-    '--aws',
-    'ocr'
-  ])
-
-  expect(collectLinks(
-    awsOcrSelection.serviceSelections,
-    awsOcrSelection.globalSections
-  )).toEqual(AWS_OCR_LINKS)
-})
-
 test('links selector accepts bfl provider with image section', async () => {
   const bflSelection = parseLinksArgv([
     'bun',
@@ -1170,60 +1140,6 @@ test('links selector accepts hume provider with general and tts sections', async
   ])).rejects.toThrow('Unknown links section(s) for --hume: stt')
 })
 
-test('links selector accepts gcloud provider with stt and ocr sections', () => {
-  const gcloudSelection = parseLinksArgv([
-    'bun',
-    'src/cli/create-cli.ts',
-    'links',
-    '--gcloud'
-  ])
-
-  expect(gcloudSelection.serviceSelections.get('gcloud')).toEqual([])
-  expect(collectLinks(
-    gcloudSelection.serviceSelections,
-    gcloudSelection.globalSections
-  )).toEqual([...GCLOUD_STT_LINKS, ...GCLOUD_TTS_LINKS, ...GCLOUD_OCR_LINKS])
-
-  const gcloudSttSelection = parseLinksArgv([
-    'bun',
-    'src/cli/create-cli.ts',
-    'links',
-    '--gcloud',
-    'stt'
-  ])
-
-  expect(collectLinks(
-    gcloudSttSelection.serviceSelections,
-    gcloudSttSelection.globalSections
-  )).toEqual(GCLOUD_STT_LINKS)
-
-  const gcloudOcrSelection = parseLinksArgv([
-    'bun',
-    'src/cli/create-cli.ts',
-    'links',
-    '--gcloud',
-    'ocr'
-  ])
-
-  expect(collectLinks(
-    gcloudOcrSelection.serviceSelections,
-    gcloudOcrSelection.globalSections
-  )).toEqual(GCLOUD_OCR_LINKS)
-
-  const gcloudTtsSelection = parseLinksArgv([
-    'bun',
-    'src/cli/create-cli.ts',
-    'links',
-    '--gcloud',
-    'tts'
-  ])
-
-  expect(collectLinks(
-    gcloudTtsSelection.serviceSelections,
-    gcloudTtsSelection.globalSections
-  )).toEqual(GCLOUD_TTS_LINKS)
-})
-
 test('links selector accepts grok provider with stt and tts sections', () => {
   const grokSelection = parseLinksArgv([
     'bun',
@@ -1302,7 +1218,15 @@ test('links selector accepts glm provider with separate ocr and url sections', (
   expect(collectLinks(
     globalUrlSelection.serviceSelections,
     globalUrlSelection.globalSections
-  )).toEqual([...GLM_URL_LINKS, ...X_URL_LINKS, ...SCRAPECREATORS_URL_LINKS, ...ZYTE_URL_LINKS, ...FIRECRAWL_URL_LINKS, ...SPIDER_URL_LINKS])
+  )).toEqual([
+    ...GLM_URL_LINKS,
+    ...X_URL_LINKS,
+    ...SUPADATA_URL_LINKS,
+    ...SCRAPECREATORS_URL_LINKS,
+    ...ZYTE_URL_LINKS,
+    ...FIRECRAWL_URL_LINKS,
+    ...SPIDER_URL_LINKS
+  ])
 })
 
 test('links selector accepts x provider with general and url sections', () => {
@@ -1344,6 +1268,72 @@ test('links selector accepts x provider with general and url sections', () => {
     xUrlSelection.serviceSelections,
     xUrlSelection.globalSections
   )).toEqual(X_URL_LINKS)
+})
+
+test('links selector accepts supadata provider with general stt and url sections', async () => {
+  const supadataSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata'
+  ])
+
+  expect(supadataSelection.serviceSelections.get('supadata')).toEqual([])
+  expect(collectLinks(
+    supadataSelection.serviceSelections,
+    supadataSelection.globalSections
+  )).toEqual([
+    ...SUPADATA_GENERAL_LINKS,
+    ...SUPADATA_STT_LINKS,
+    ...SUPADATA_URL_LINKS
+  ])
+
+  const supadataGeneralSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'general'
+  ])
+
+  expect(collectLinks(
+    supadataGeneralSelection.serviceSelections,
+    supadataGeneralSelection.globalSections
+  )).toEqual(SUPADATA_GENERAL_LINKS)
+
+  const supadataSttSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'stt'
+  ])
+
+  expect(collectLinks(
+    supadataSttSelection.serviceSelections,
+    supadataSttSelection.globalSections
+  )).toEqual(SUPADATA_STT_LINKS)
+
+  const supadataUrlSelection = parseLinksArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'url'
+  ])
+
+  expect(collectLinks(
+    supadataUrlSelection.serviceSelections,
+    supadataUrlSelection.globalSections
+  )).toEqual(SUPADATA_URL_LINKS)
+
+  await expect(runLinksWithArgv([
+    'bun',
+    'src/cli/create-cli.ts',
+    'links',
+    '--supadata',
+    'tts'
+  ])).rejects.toThrow('Unknown links section(s) for --supadata: tts')
 })
 
 test('links selector accepts scrapecreators provider with general stt and url sections', async () => {
@@ -1683,7 +1673,7 @@ test('music lyric-video render mode rejects generation-only price mode', async (
     'src/cli/create-cli.ts',
     'music',
     '--audio',
-    'input/examples/audio/0-audio-short.mp3',
+    'https://ajc.pics/autoshow/examples/0-audio-short.mp3',
     '--price'
   ])
 

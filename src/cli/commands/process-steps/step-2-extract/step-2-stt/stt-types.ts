@@ -20,10 +20,6 @@ import type {
 import type { ElevenlabsSttModel } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
 import type { ProviderRunStateBase } from '../step-2-shared/step-2-shared-types'
 import { SttBatchCoordinator } from './stt-batch/stt-batch-coordinator'
-import { AwsCallerIdentitySchema } from './stt-services/aws/aws'
-import { AwsTranscribeOutputSchema } from './stt-services/aws/parse-aws-transcribe-output'
-import { AwsTranscriptionStatusSchema } from './stt-services/aws/run-aws-stt'
-import { GCLOUD_STT_DEFAULT_LOCATION } from './stt-services/gcloud/gcloud'
 import { MistralSttPassController } from './stt-services/mistral/mistral-stt-pass-controller'
 import {
   ElevenLabsSttResponseSchema,
@@ -31,7 +27,6 @@ import {
   RevTranscriptResponseSchema,
   SonioxTranscriptionStatusSchema,
   SonioxTranscriptResponseSchema,
-  SpeechmaticsCreateJobResponseSchema,
   SpeechmaticsJobSchema,
   SpeechmaticsTranscriptResponseSchema,
   WhisperJsonOutputSchema
@@ -84,7 +79,6 @@ export type SonioxTranscriptionStatus = v.InferOutput<typeof SonioxTranscription
 export type SonioxTranscriptResponse = v.InferOutput<typeof SonioxTranscriptResponseSchema>
 export type RevJob = v.InferOutput<typeof RevJobSchema>
 export type RevTranscriptResponse = v.InferOutput<typeof RevTranscriptResponseSchema>
-export type SpeechmaticsCreateJobResponse = v.InferOutput<typeof SpeechmaticsCreateJobResponseSchema>
 export type SpeechmaticsJob = v.InferOutput<typeof SpeechmaticsJobSchema>
 export type SpeechmaticsTranscriptResponse = v.InferOutput<typeof SpeechmaticsTranscriptResponseSchema>
 
@@ -117,8 +111,6 @@ export type SttTarget = {
   service: TranscribeEngine
   model: string
   local: boolean
-  awsRegion?: string | undefined
-  awsBucket?: string | undefined
   diarizationOptions?: DiarizationOptions | undefined
 }
 
@@ -216,7 +208,7 @@ export type PreparedSttMedia = {
 
 export type SttCompletionStatus = 'full' | 'incomplete' | 'failed'
 
-export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'awsRegion' | 'awsBucket' | 'diarizationOptions'>
+export type SttRequestedProvider = Pick<SttTarget, 'service' | 'model' | 'local' | 'diarizationOptions'>
 
 export type SttRecordedProviderError = {
   message: string
@@ -345,7 +337,7 @@ export type AvailabilityWaiter = {
   timer?: ReturnType<typeof setTimeout> | undefined
 }
 
-export type ProviderStats = {
+type ProviderStats = {
   launchedCount: number
   completedCount: number
   blockedCount: number
@@ -405,7 +397,7 @@ export type WhisperProgressWindow = {
   totalDurationSeconds: number
 }
 
-export type AsyncSttPollMode = 'fresh' | 'resume-probe'
+type AsyncSttPollMode = 'fresh' | 'resume-probe'
 
 export type AsyncSttLifecycleHooks = {
   onJobReady?: ((runtime: Step2RuntimeMetadata) => Promise<void> | void) | undefined
@@ -430,17 +422,11 @@ export type IndexedTranscriptionChunk = {
   data: { result: TranscriptionResult, metadata: Step2Metadata }
 }
 
-export type TokenizedWord = {
-  text: string
-  normalized: string
-}
-
 export type AsyncSttPollLoopOptions<TStatus> = {
   jobId: string
   initialPollIntervalMs: number
   maxPollIntervalMs: number
   audioDurationSeconds?: number | undefined
-  envSpecificDeadlineKey: string
   pollMode?: AsyncSttPollMode | undefined
   poll: () => Promise<{ status: TStatus, retryAfterMs: number | null }>
   isComplete: (status: TStatus) => boolean
@@ -505,35 +491,11 @@ export type AssemblyAiHttpError = Error & {
   rawResponse?: unknown
 }
 
-export type GcloudHttpError = Error & {
-  status: number
-  headers: Headers
-  stage?: 'transcribe'
-  retryClass?: RetryClass
-  rawResponse?: unknown
-}
-
-export type AwsCliError = Error & {
-  stage?: 'upload' | 'create' | 'poll' | 'transcript' | 'cleanup'
-  retryable?: boolean
-  rawResponse?: unknown
-}
-
 export type DeepgramHttpError = Error & {
   status: number
   headers: Headers
   stage?: 'transcribe'
   retryClass?: RetryClass
-}
-
-export type DeapiHttpError = Error & {
-  status?: number
-  headers?: Headers
-  stage?: 'create' | 'poll' | 'result' | 'price'
-  retryClass?: RetryClass
-  retryable?: boolean
-  body?: unknown
-  rawResponse?: unknown
 }
 
 export type DeepgramAlternative = NonNullable<DeepgramResponse['results']['channels'][number]['alternatives']>[number]
@@ -565,8 +527,8 @@ export type GladiaNormalizedWord = {
   confidence?: number | undefined
 }
 
-export type GladiaResult = NonNullable<GladiaStatusResponse['result']>
-export type GladiaTranscription = NonNullable<GladiaResult['transcription']>
+type GladiaResult = NonNullable<GladiaStatusResponse['result']>
+type GladiaTranscription = NonNullable<GladiaResult['transcription']>
 export type GladiaUtterance = NonNullable<GladiaTranscription['utterances']>[number]
 
 export type SplitPolicyTarget = Pick<SttTarget, 'service' | 'model'>
@@ -619,110 +581,6 @@ export type SttProviderConcurrencySummary = {
   providerSlots: string
 }
 
-export type AwsCallerIdentity = v.InferOutput<typeof AwsCallerIdentitySchema>
-
-export type AwsSttRuntimeConfig = {
-  region: string
-  bucket: string
-}
-
-export type AwsSttConfigDefaults = {
-  preferredRegion?: string | undefined
-  preferredBucket?: string | undefined
-}
-
-export type AwsSttReadiness = {
-  hasCli: boolean
-  authConfigured: boolean
-  region?: string | undefined
-  bucket?: string | undefined
-  bucketAccessible?: boolean | undefined
-  transcribeAccessible?: boolean | undefined
-  callerIdentity?: AwsCallerIdentity | undefined
-  details: {
-    cli: string
-    auth: string
-    region: string
-    bucket: string
-    transcribe: string
-  }
-}
-
-export type AwsTranscribeOutput = v.InferOutput<typeof AwsTranscribeOutputSchema>
-
-export type AwsTranscriptionStatus = v.InferOutput<typeof AwsTranscriptionStatusSchema>
-
-export type AwsCliStage = NonNullable<AwsCliError['stage']>
-
-export type DeapiQuoteMode = 'url' | 'duration'
-
-export type DeapiResolvedPrice = {
-  totalCost: number
-  source: 'provider_quote' | 'registry_fallback'
-  mode: DeapiQuoteMode
-  estimateType: 'heuristic' | 'exact'
-  warning?: string | undefined
-}
-
-export type DeapiQuoteError = Error & {
-  status?: number
-  headers?: Headers
-  stage?: 'price'
-  retryClass?: 'runtime_http_read'
-  rawResponse?: unknown
-}
-
-export type DeapiStatusPayload = {
-  status: string
-  result?: unknown
-  resultUrl?: string | undefined
-  raw: unknown
-}
-
-export type GcloudSttRuntimeConfig = {
-  accessToken: string
-  projectId: string
-  location: typeof GCLOUD_STT_DEFAULT_LOCATION
-}
-
-export type GcloudSttReadiness = {
-  hasCli: boolean
-  authConfigured: boolean
-  projectId?: string | undefined
-  billingAccountId?: string | undefined
-  billingEnabled?: boolean | undefined
-  speechApiEnabled?: boolean | undefined
-  textToSpeechApiEnabled?: boolean | undefined
-  documentAiApiEnabled?: boolean | undefined
-  storageApiEnabled?: boolean | undefined
-  details: {
-    cli: string
-    auth: string
-    project: string
-    billing: string
-    speechApi: string
-    textToSpeechApi: string
-    documentAiApi: string
-    storageApi: string
-  }
-}
-
-export type GcloudProjectLookup = {
-  exists: boolean
-  detail: string
-  projectId?: string | undefined
-  missing?: boolean | undefined
-  permissionDenied?: boolean | undefined
-}
-
-export type GcloudProjectBillingState = {
-  detail: string
-  billingEnabled?: boolean | undefined
-  billingAccountId?: string | undefined
-}
-
-export type EvidenceWord = NonNullable<NonNullable<TranscriptionResult['evidence']>['words']>[number]
-
 export type HappyScribeOrganization = {
   id: string
   name?: string | undefined
@@ -748,7 +606,7 @@ export type HappyScribeHttpError = Error & {
   rawResponse?: unknown
 }
 
-export type HappyScribeOrderState =
+type HappyScribeOrderState =
   | 'incomplete'
   | 'waiting_for_payment'
   | 'submitted'
@@ -837,11 +695,6 @@ export type SttSplitDecision = {
   policy: SttSplitPolicy
   reasons: SttSplitDecisionReason[]
   segmentDurationMinutes: number
-}
-
-export type SttArtifactIdentity = {
-  transcriptionService: string
-  transcriptionModel: string
 }
 
 export type YoutubeCaptionTrack = NonNullable<YtDlpVideoInfo['subtitles']>[string][number]

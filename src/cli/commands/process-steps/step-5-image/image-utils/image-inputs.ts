@@ -33,7 +33,7 @@ export const isHttpUrl = (value: string): boolean => {
   }
 }
 
-export const isDataImageUrl = (value: string): boolean =>
+const isDataImageUrl = (value: string): boolean =>
   /^data:image\/[a-z0-9.+-]+;base64,/i.test(value)
 
 const getLocalMimeType = (value: string): string | undefined =>
@@ -189,6 +189,20 @@ export const imageReferenceToDataUrl = async (value: string): Promise<string> =>
 export const imageReferenceToUrlOrDataUrl = async (value: string): Promise<string> =>
   isHttpUrl(value) ? value : await imageReferenceToDataUrl(value)
 
+export const imageReferenceToBase64 = async (value: string): Promise<string> => {
+  if (isDataImageUrl(value)) {
+    return value.slice(value.indexOf(',') + 1)
+  }
+
+  if (isHttpUrl(value)) {
+    const { bytes } = await fetchImageBytes(value)
+    return Buffer.from(bytes).toString('base64')
+  }
+
+  const bytes = await Bun.file(value).arrayBuffer()
+  return Buffer.from(bytes).toString('base64')
+}
+
 export const imageReferenceToInlineDataPart = async (value: string): Promise<GeminiPart> => {
   if (isDataImageUrl(value)) {
     const { bytes, mimeType } = dataUrlToBytes(value)
@@ -225,4 +239,4 @@ export const OPENAI_IMAGE_MASK_MIME_TYPES = ['image/png'] as const
 export const GROK_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg'] as const
 export const GEMINI_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'] as const
 export const BFL_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const
-export const MINIMAX_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const
+export const REVE_IMAGE_INPUT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const

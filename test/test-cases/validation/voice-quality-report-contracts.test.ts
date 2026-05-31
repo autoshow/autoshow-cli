@@ -13,6 +13,7 @@ import {
   parseOpenAiAudioJudgeResponseContent
 } from '~/cli/commands/setup-and-utilities/benchmark/tts-voice-quality-report'
 import { runCommand } from '../../test-utils/test-helpers'
+import { writeSyntheticWav } from '../../test-utils/media-fixtures'
 
 const tempDirs: string[] = []
 const originalFetch = globalThis.fetch
@@ -32,40 +33,6 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
 const makeMockFetch = (
   fn: (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => Promise<Response>
 ): typeof fetch => Object.assign(fn, { preconnect: () => undefined }) as typeof fetch
-
-const writeSyntheticWav = async (
-  path: string,
-  options: { durationSeconds: number, amplitude: number, frequencyHz: number }
-): Promise<void> => {
-  const sampleRate = 16000
-  const sampleCount = Math.floor(sampleRate * options.durationSeconds)
-  const bytesPerSample = 2
-  const dataSize = sampleCount * bytesPerSample
-  const buffer = Buffer.alloc(44 + dataSize)
-
-  buffer.write('RIFF', 0, 'ascii')
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write('WAVE', 8, 'ascii')
-  buffer.write('fmt ', 12, 'ascii')
-  buffer.writeUInt32LE(16, 16)
-  buffer.writeUInt16LE(1, 20)
-  buffer.writeUInt16LE(1, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(sampleRate * bytesPerSample, 28)
-  buffer.writeUInt16LE(bytesPerSample, 32)
-  buffer.writeUInt16LE(16, 34)
-  buffer.write('data', 36, 'ascii')
-  buffer.writeUInt32LE(dataSize, 40)
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const seconds = index / sampleRate
-    const envelope = seconds < 0.08 || seconds > options.durationSeconds - 0.08 ? 0 : 1
-    const sample = Math.round(Math.sin(2 * Math.PI * options.frequencyHz * seconds) * options.amplitude * envelope * 32767)
-    buffer.writeInt16LE(sample, 44 + index * bytesPerSample)
-  }
-
-  await writeFile(path, buffer)
-}
 
 afterEach(async () => {
   globalThis.fetch = originalFetch
@@ -94,18 +61,18 @@ const makeSingleProviderTtsRun = async (): Promise<{
       input: inputText,
       tts: [
         {
-          ttsService: 'gcloud',
-          ttsModel: 'chirp3-hd',
-          speaker: 'en-US-Chirp3-HD-Charon',
+          ttsService: 'openai',
+          ttsModel: 'gpt-4o-mini-tts',
+          speaker: 'alloy',
           processingTime: 1000,
-          audioFileName: 'speech-gcloud-chirp3-hd.wav',
+          audioFileName: 'speech-openai-gpt-4o-mini-tts.wav',
           audioFileSize: 100,
           chunkCount: 1
         }
       ]
     }
   })
-  await writeSyntheticWav(join(runDir, 'speech-gcloud-chirp3-hd.wav'), {
+  await writeSyntheticWav(join(runDir, 'speech-openai-gpt-4o-mini-tts.wav'), {
     durationSeconds: 4.5,
     amplitude: 0.35,
     frequencyHz: 220
@@ -167,7 +134,7 @@ describe('voice quality scoring contracts', () => {
     ])
   })
 
-  test('OpenAI audio judge request body uses audio input without response_format', () => {
+  test('OpenAI audio judge request body uses audio input with text-only JSON output', () => {
     const body = buildOpenAiAudioJudgeRequestBody({
       model: 'gpt-audio',
       audioBase64: 'UklGRg==',
@@ -176,10 +143,9 @@ describe('voice quality scoring contracts', () => {
 
     expect(body['model']).toBe('gpt-audio')
     expect(body['store']).toBe(false)
-    expect(body['modalities']).toEqual(['text', 'audio'])
-    expect(body['audio']).toEqual({ voice: 'alloy', format: 'wav' })
-    expect(body['response_format']).toBeUndefined()
-    expect(JSON.stringify(body)).not.toContain('response_format')
+    expect(body['modalities']).toEqual(['text'])
+    expect(body['audio']).toBeUndefined()
+    expect(body['response_format']).toEqual({ type: 'json_object' })
     const messages = body['messages'] as Array<Record<string, unknown>>
     const userContent = messages[1]?.['content'] as Array<Record<string, unknown>>
     expect(userContent.find((part) => part['type'] === 'input_audio')).toEqual({
@@ -190,6 +156,35 @@ describe('voice quality scoring contracts', () => {
       }
     })
     expect(JSON.stringify(body)).toContain('Return exactly one compact JSON object')
+  })
+
+  test('OpenAI audio judge compatibility request uses documented audio output shape', () => {
+    const body = buildOpenAiAudioJudgeRequestBody({
+      model: 'gpt-audio',
+      audioBase64: 'UklGRg==',
+      inputText: 'Hello world.',
+      jsonMode: false,
+      audioOutput: true,
+      toolMode: true
+    })
+
+    expect(body['modalities']).toEqual(['text', 'audio'])
+    expect(body['audio']).toEqual({ voice: 'alloy', format: 'wav' })
+    expect(body['response_format']).toBeUndefined()
+    expect(body['tool_choice']).toEqual({
+      type: 'function',
+      function: { name: 'record_tts_voice_quality' }
+    })
+    expect(JSON.stringify(body['tools'])).toContain('record_tts_voice_quality')
+    const messages = body['messages'] as Array<Record<string, unknown>>
+    const userContent = messages[1]?.['content'] as Array<Record<string, unknown>>
+    expect(userContent.find((part) => part['type'] === 'input_audio')).toEqual({
+      type: 'input_audio',
+      input_audio: {
+        data: 'UklGRg==',
+        format: 'wav'
+      }
+    })
   })
 
   test('OpenAI audio judge parser accepts fenced or prose-wrapped JSON', () => {
@@ -210,12 +205,21 @@ describe('voice quality scoring contracts', () => {
     )
   })
 
-  test('full TTS mode reads OpenAI audio judge JSON from audio transcript when content is null', async () => {
+  test('OpenAI audio judge parser reports malformed and truncated JSON clearly', () => {
+    expect(() => parseOpenAiAudioJudgeResponseContent('{naturalnessScore:91}')).toThrow(
+      'OpenAI audio judge returned malformed JSON object'
+    )
+    expect(() => parseOpenAiAudioJudgeResponseContent('{"naturalnessScore":91')).toThrow(
+      'OpenAI audio judge returned truncated JSON object'
+    )
+  })
+
+  test('full TTS mode reads OpenAI audio judge JSON from content before legacy audio transcript', async () => {
     const { runDir, inputText } = await makeSingleProviderTtsRun()
     const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
     await writeJson(fixturesPath, {
       providers: {
-        'gcloud/chirp3-hd': {
+        'openai/gpt-4o-mini-tts': {
           stt: {
             'openai-stt/gpt-4o-transcribe': inputText
           }
@@ -230,15 +234,16 @@ describe('voice quality scoring contracts', () => {
       fetchCount += 1
       expect(String(input)).toContain('/chat/completions')
       const requestBody = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
-      expect(requestBody['modalities']).toEqual(['text', 'audio'])
-      expect(requestBody['audio']).toEqual({ voice: 'alloy', format: 'wav' })
+      expect(requestBody['modalities']).toEqual(['text'])
+      expect(requestBody['audio']).toBeUndefined()
+      expect(requestBody['response_format']).toEqual({ type: 'json_object' })
       return new Response(JSON.stringify({
         choices: [
           {
             message: {
-              content: null,
+              content: '{"naturalnessScore":91,"pronunciationScore":89,"prosodyScore":88,"artifactScore":94,"confidence":0.82,"notes":"clear"}',
               audio: {
-                transcript: '{"naturalnessScore":91,"pronunciationScore":89,"prosodyScore":88,"artifactScore":94,"confidence":0.82,"notes":"clear"}'
+                transcript: '{"naturalnessScore":12'
               }
             }
           }
@@ -263,6 +268,152 @@ describe('voice quality scoring contracts', () => {
     })
   })
 
+  test('full TTS mode retries OpenAI audio judge without response_format when JSON mode is unsupported', async () => {
+    const { runDir, inputText } = await makeSingleProviderTtsRun()
+    const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
+    await writeJson(fixturesPath, {
+      providers: {
+        'openai/gpt-4o-mini-tts': {
+          stt: {
+            'openai-stt/gpt-4o-transcribe': inputText
+          }
+        }
+      }
+    })
+    process.env['OPENAI_API_KEY'] = 'test-openai-key'
+    delete process.env['ASSEMBLYAI_API_KEY']
+    const requestBodies: Array<Record<string, unknown>> = []
+
+    globalThis.fetch = makeMockFetch(async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      const requestBody = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      requestBodies.push(requestBody)
+
+      if (requestBodies.length === 1) {
+        expect(requestBody['response_format']).toEqual({ type: 'json_object' })
+        return new Response(JSON.stringify({
+          error: {
+            message: "Invalid parameter: 'response_format' of type 'json_object' is not supported with this model.",
+            type: 'invalid_request_error',
+            param: 'response_format',
+            code: null
+          }
+        }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      expect(requestBody['modalities']).toEqual(['text', 'audio'])
+      expect(requestBody['audio']).toEqual({ voice: 'alloy', format: 'wav' })
+      expect(requestBody['response_format']).toBeUndefined()
+      expect(requestBody['tool_choice']).toEqual({
+        type: 'function',
+        function: { name: 'record_tts_voice_quality' }
+      })
+      return new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              tool_calls: [
+                {
+                  type: 'function',
+                  function: {
+                    name: 'record_tts_voice_quality',
+                    arguments: '{"naturalnessScore":88,"pronunciationScore":86,"prosodyScore":87,"artifactScore":91,"confidence":0.77,"notes":"clear"}'
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    })
+
+    const report = await buildSingleProviderReport(runDir, inputText, {
+      metricFixturesPath: fixturesPath
+    })
+
+    expect(requestBodies).toHaveLength(2)
+    expect(report.reportJson.providers[0]?.componentScores.naturalness['paidAudioJudgeRubric']?.score).toBe(88)
+  })
+
+  test('full TTS mode retries OpenAI audio judge with audio output when text-only response says audio is missing', async () => {
+    const { runDir, inputText } = await makeSingleProviderTtsRun()
+    const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
+    await writeJson(fixturesPath, {
+      providers: {
+        'openai/gpt-4o-mini-tts': {
+          stt: {
+            'openai-stt/gpt-4o-transcribe': inputText
+          }
+        }
+      }
+    })
+    process.env['OPENAI_API_KEY'] = 'test-openai-key'
+    delete process.env['ASSEMBLYAI_API_KEY']
+    const requestBodies: Array<Record<string, unknown>> = []
+
+    globalThis.fetch = makeMockFetch(async (_input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+      const requestBody = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      requestBodies.push(requestBody)
+
+      if (requestBodies.length === 1) {
+        expect(requestBody['modalities']).toEqual(['text'])
+        expect(requestBody['response_format']).toEqual({ type: 'json_object' })
+        return new Response(JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: "I currently don't have an audio sample to evaluate. Please provide the audio sample."
+              }
+            }
+          ]
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      expect(requestBody['modalities']).toEqual(['text', 'audio'])
+      expect(requestBody['audio']).toEqual({ voice: 'alloy', format: 'wav' })
+      expect(requestBody['response_format']).toBeUndefined()
+      expect(requestBody['tool_choice']).toEqual({
+        type: 'function',
+        function: { name: 'record_tts_voice_quality' }
+      })
+      return new Response(JSON.stringify({
+        choices: [
+          {
+            message: {
+              tool_calls: [
+                {
+                  type: 'function',
+                  function: {
+                    name: 'record_tts_voice_quality',
+                    arguments: '{"naturalnessScore":84,"pronunciationScore":82,"prosodyScore":83,"artifactScore":89,"confidence":0.72,"notes":"clear"}'
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+      })
+    })
+
+    const report = await buildSingleProviderReport(runDir, inputText, {
+      metricFixturesPath: fixturesPath
+    })
+
+    expect(requestBodies).toHaveLength(2)
+    expect(report.reportJson.providers[0]?.componentScores.naturalness['paidAudioJudgeRubric']?.score).toBe(84)
+  })
+
   test('full TTS mode fails when OpenAI audio judge returns prose-only text', async () => {
     const { runDir, inputText } = await makeSingleProviderTtsRun()
     process.env['OPENAI_API_KEY'] = 'test-openai-key'
@@ -282,7 +433,7 @@ describe('voice quality scoring contracts', () => {
     }))
 
     await expect(buildSingleProviderReport(runDir, inputText)).rejects.toThrow(
-      'gcloud/chirp3-hd: OpenAI audio judge failed: OpenAI audio judge returned text without a JSON object'
+      'openai/gpt-4o-mini-tts: OpenAI audio judge failed: OpenAI audio judge returned text without a JSON object'
     )
   })
 
@@ -297,7 +448,7 @@ describe('voice quality scoring contracts', () => {
     })
 
     await expect(buildSingleProviderReport(runDir, inputText)).rejects.toThrow(
-      'gcloud/chirp3-hd: AssemblyAI roundtrip STT failed: AssemblyAI upload failed (503): upload unavailable'
+      'openai/gpt-4o-mini-tts: AssemblyAI roundtrip STT failed: AssemblyAI upload failed (503): upload unavailable'
     )
   })
 
@@ -339,6 +490,96 @@ describe('voice quality scoring contracts', () => {
     expect(fetchCount).toBe(0)
     expect(report.reportJson.mode).toBe('local')
     expect(report.reportJson.providers[0]?.componentScores.naturalness['paidAudioJudgeRubric']?.source).toBe('paid-audio-judge-omitted')
+  })
+
+  test('full TTS mode low-coverage recommendation points to external metrics instead of rerunning full mode', async () => {
+    const { runDir, inputText } = await makeSingleProviderTtsRun()
+    let fetchCount = 0
+    delete process.env['OPENAI_API_KEY']
+    delete process.env['ASSEMBLYAI_API_KEY']
+
+    globalThis.fetch = makeMockFetch(async (): Promise<Response> => {
+      fetchCount += 1
+      throw new Error('paid endpoint should not be called')
+    })
+
+    const report = await buildSingleProviderReport(runDir, inputText, {
+      mode: 'full',
+      allowPaid: true
+    })
+
+    expect(fetchCount).toBe(0)
+    expect(report.markdown).toContain('low score coverage')
+    expect(report.markdown).toContain('Full mode already ran')
+    expect(report.markdown).toContain('external MOS/DNS metrics')
+    expect(report.markdown).toContain('`utmosv2Mos`')
+    expect(report.markdown).toContain('`nisqaTtsNaturalnessMos`')
+    expect(report.markdown).toContain('`nisqaQualityMos`')
+    expect(report.markdown).toContain('`dnsmosMos`')
+    expect(report.markdown).toContain('`--tts-metric-fixtures`')
+    expect(report.markdown).not.toContain('Run with `--tts-mode full`')
+  })
+
+  test('local TTS mode low-coverage recommendation still offers full mode as paid scoring upgrade path', async () => {
+    const { runDir, inputText } = await makeSingleProviderTtsRun()
+    let fetchCount = 0
+    process.env['OPENAI_API_KEY'] = 'test-openai-key'
+    process.env['ASSEMBLYAI_API_KEY'] = 'test-assemblyai-key'
+
+    globalThis.fetch = makeMockFetch(async (): Promise<Response> => {
+      fetchCount += 1
+      throw new Error('paid endpoint should not be called')
+    })
+
+    const report = await buildSingleProviderReport(runDir, inputText, {
+      mode: 'local',
+      allowPaid: false
+    })
+
+    expect(fetchCount).toBe(0)
+    expect(report.markdown).toContain('low score coverage')
+    expect(report.markdown).toContain('Run with `--tts-mode full`')
+    expect(report.markdown).toContain('supply `--tts-metric-fixtures`')
+  })
+
+  test('full TTS mode with complete fixture coverage omits low-coverage recommendation', async () => {
+    const { runDir, inputText } = await makeSingleProviderTtsRun()
+    const fixturesPath = join(runDir, 'voice-quality-fixtures.json')
+    await writeJson(fixturesPath, {
+      providers: {
+        'openai/gpt-4o-mini-tts': {
+          utmosv2Mos: 4.7,
+          nisqaTtsNaturalnessMos: 4.6,
+          nisqaQualityMos: 4.5,
+          dnsmosMos: 4.4,
+          paidAudioJudge: { naturalnessScore: 92, confidence: 0.9 },
+          stt: {
+            'assemblyai/universal-3-pro': inputText,
+            'openai-stt/gpt-4o-transcribe': inputText
+          }
+        }
+      }
+    })
+    let fetchCount = 0
+    delete process.env['OPENAI_API_KEY']
+    delete process.env['ASSEMBLYAI_API_KEY']
+
+    globalThis.fetch = makeMockFetch(async (): Promise<Response> => {
+      fetchCount += 1
+      throw new Error('paid endpoint should not be called')
+    })
+
+    const report = await buildSingleProviderReport(runDir, inputText, {
+      mode: 'full',
+      allowPaid: true,
+      metricFixturesPath: fixturesPath
+    })
+
+    expect(fetchCount).toBe(0)
+    expect(report.reportJson.providers[0]?.missingMetrics).toEqual([])
+    expect(report.markdown).not.toContain('low score coverage')
+    expect(report.markdown).not.toContain('Run with `--tts-mode full`')
+    expect(report.markdown).not.toContain('Full mode already ran')
   })
 
   test('benchmark --tts builds JSON and markdown reports with mocked model and STT metrics', async () => {

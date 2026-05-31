@@ -31,7 +31,7 @@ import {
 } from '../../utils/source-coverage-utils'
 
 
-export type ProcessSceneOptions = {
+type ProcessSceneOptions = {
   sceneSlug: string
   sceneJsonPath: string
   outputDir: string

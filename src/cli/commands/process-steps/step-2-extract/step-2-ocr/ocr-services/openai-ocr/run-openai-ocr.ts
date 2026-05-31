@@ -6,8 +6,10 @@ import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/pr
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import type { OpenAIOcrInputContent } from '~/types'
 import { createOpenAIResponse, extractOpenAIResponseText } from '~/utils/openai/client'
+import { buildHostedOcrJsonPrompt, normalizeHostedOcrPages } from '../../ocr-utils/hosted-ocr-json'
 
 const OPENAI_NATIVE_STRUCTURED_MODELS = new Set([
+  'gpt-5.5',
   'gpt-5.4',
   'gpt-5.4-mini',
   'gpt-5.4-nano'
@@ -63,18 +65,8 @@ const getImageMimeType = (format: DocumentMetadata['format']): string => {
 const supportsNativeStructuredOutput = (model: string): boolean =>
   OPENAI_NATIVE_STRUCTURED_MODELS.has(model)
 
-const buildOcrPrompt = (expectedPageCount: number): string => [
-  'Perform OCR on the provided document or image.',
-  'Return only JSON.',
-  'Do not summarize, explain, or translate.',
-  'Preserve the visible reading order.',
-  'Preserve paragraph breaks and line breaks when they are meaningful.',
-  'If a page is blank or unreadable, return that page with an empty string for text.',
-  `Return exactly ${expectedPageCount} page objects with contiguous pageNumber values from 1 through ${expectedPageCount}.`
-].join(' ')
-
 const buildSchemaGuidedPrompt = (expectedPageCount: number): string => [
-  buildOcrPrompt(expectedPageCount),
+  buildHostedOcrJsonPrompt(expectedPageCount),
   'Use this exact JSON shape:',
   JSON.stringify(OPENAI_OCR_JSON_SCHEMA)
 ].join('\n\n')
@@ -97,31 +89,11 @@ const normalizePages = (
     throw new Error('OpenAI OCR response did not match the expected page schema.')
   }
 
-  const pages = parsed.output.pages
-    .slice()
-    .sort((a, b) => a.pageNumber - b.pageNumber)
-    .map((page) => ({
-      pageNumber: page.pageNumber,
-      method: 'ocr' as const,
-      text: page.text
-    }))
-
-  if (pages.length === 0) {
-    throw new Error('OpenAI OCR returned no pages.')
-  }
-
-  if (pages.length !== expectedPageCount) {
-    throw new Error(`OpenAI OCR returned ${pages.length} pages, expected ${expectedPageCount}.`)
-  }
-
-  for (let i = 0; i < pages.length; i++) {
-    const expectedPageNumber = i + 1
-    if (pages[i]?.pageNumber !== expectedPageNumber) {
-      throw new Error('OpenAI OCR returned non-contiguous page numbers.')
-    }
-  }
-
-  return pages
+  return normalizeHostedOcrPages(parsed.output.pages, expectedPageCount, {
+    emptyPagesMessage: 'OpenAI OCR returned no pages.',
+    countMismatchMessage: (actual, expected) => `OpenAI OCR returned ${actual} pages, expected ${expected}.`,
+    nonContiguousMessage: 'OpenAI OCR returned non-contiguous page numbers.'
+  })
 }
 
 const parseOcrResponse = (
@@ -195,7 +167,7 @@ const createRequestBody = async (
           text: singlePageText
             ? buildSinglePageTextPrompt()
             : nativeStructured
-            ? buildOcrPrompt(expectedPageCount)
+            ? buildHostedOcrJsonPrompt(expectedPageCount)
             : buildSchemaGuidedPrompt(expectedPageCount)
         },
         inputContent

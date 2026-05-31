@@ -43,79 +43,81 @@ bun as download "https://www.youtube.com/watch?v=u1-WHqATSQU"
 bun as extract "https://www.youtube.com/watch?v=u1-WHqATSQU"
 
 # Hosted Grok speech-to-text
-bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider grok=speech-to-text
 
 # Render a synced speaker transcript video from a previous media extract run
 bun as extract output/<extract-run-dir> --transcript-video
 
 # Render a transcript video from explicit local artifacts
-bun as extract --transcript-video --audio input/examples/audio/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
+bun as extract --transcript-video --audio https://ajc.pics/autoshow/examples/1-audio.mp3 --transcript-result output/<extract-run-dir>/result.json
 
 # Compare every URL article backend for one remote article
-bun as extract https://example.com/article --all-url
+bun as extract https://example.com/article --all-providers
 
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 
 # Full write pipeline: download/extract/transcribe + summary output
-bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --openai gpt-5.4
+bun as write "https://www.youtube.com/watch?v=u1-WHqATSQU" --llm openai=gpt-5.5
+
+# Full write pipeline with xAI Grok 4.3
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm grok=grok-4.3
 
 # Full write pipeline with Z.AI GLM 5.1
-bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm glm=glm-5.1
 
 # Full write pipeline with Kimi K2.6
-bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm kimi=kimi-k2.6
 
 # Document OCR / extraction
-bun as extract input/examples/document/1-document.pdf --out json
+bun as extract input/examples/document/1-document.pdf --format json
 
 # Hosted Kimi OCR for a document
-bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+bun as extract input/examples/document/1-document.pdf --provider kimi=kimi-k2.6
+
+# Hosted Grok OCR for a document
+bun as extract input/examples/document/1-document.pdf --provider grok=grok-4.3
 
 # Standalone text-to-speech from local text
-bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts
+bun as tts input/examples/tts/1-tts.md --provider openai=gpt-4o-mini-tts
 
 # OpenAI custom voice from reference audio and an existing consent recording
-bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+bun as tts input/examples/tts/1-tts.md --provider openai=gpt-4o-mini-tts --tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
 # ElevenLabs Instant Voice Cloning
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
-
-# ElevenLabs Professional Voice Clone synthesis
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --provider elevenlabs=eleven_v3 --tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # Hosted Grok text-to-speech
-bun as tts input/examples/tts/1-tts.md --grok grok-tts --grok-tts-voice eve
+bun as tts input/examples/tts/1-tts.md --provider grok=grok-tts --tts-voice eve
 
 # Hosted Mistral Voxtral text-to-speech
-bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/examples/tts/1-tts.md --provider mistral=voxtral-mini-tts-2603 --tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # MiniMax hosted text-to-speech
-bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+bun as tts input/examples/tts/1-tts.md --provider minimax=speech-2.8-turbo --tts-voice English_expressive_narrator
 
 # Hume Octave 2 text-to-speech
-bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male English Actor"
+bun as tts input/examples/tts/1-tts.md --provider hume=octave-2 --tts-voice "Male English Actor"
 
 # Cartesia Sonic text-to-speech
-bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+bun as tts input/examples/tts/1-tts.md --provider cartesia=sonic-3.5 --tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
-# deAPI Qwen3 voice cloning
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
 # Prompt-driven generation, then edit/reference the generated image; run this block in order
-bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
-bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
-bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
-bun as image "a cinematic product photo of a red enamel camping mug" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --provider openai=gpt-image-1.5 --size 1024x1024 --format png --output-dir output/mug-base
+bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --provider openai=gpt-image-1.5 --input output/mug-base/generated-image.png --format webp --compression 80 --output-dir output/mug-edit
+bun as image "restyle this product image as a 1960s travel poster" --provider gemini=gemini-3.1-flash-image-preview --input output/mug-base/generated-image.png --output-dir output/mug-gemini
+bun as image "a cinematic product photo of a red enamel camping mug" --provider bfl=flux-2-pro --input output/mug-base/generated-image.png --size 1024x1024 --output-dir output/mug-bfl
+bun as image "place the same mug in a minimalist editorial product scene" --provider reve=latest --input output/mug-base/generated-image.png --size 1024x1024 --output-dir output/mug-reve
 
 # Video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
-bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
-bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
-bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
+bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --provider gemini=veo-3.1-fast-generate-preview --mode image-to-video --input-image output/mug-base/generated-image.png --output-dir output/mug-video-base
+bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --provider gemini=veo-3.1-fast-generate-preview --mode extend --input-video output/mug-video-base/generated-video.mp4 --output-dir output/mug-video-extend
+bun as video "make the lighting moonlit blue while keeping the mug motion intact" --provider grok=grok-imagine-video --mode edit --input-video output/mug-video-base/generated-video.mp4 --output-dir output/mug-video-edit
 
-bun as video "a timelapse storm over downtown chicago" --gemini veo-3.1-lite-generate-preview --runway gen4.5
-bun as music "an ambient piano instrumental" --minimax music-2.5
-bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
+bun as video "a timelapse storm over downtown chicago" --provider gemini=veo-3.1-lite-generate-preview --provider runway=gen4.5
+bun as music "an ambient piano instrumental" --provider minimax=music-2.6
+bun as music "bright 90s pop rock with a huge chorus" --provider gemini=lyria-3-clip-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
 bun as extract output/<extract-run-dir> --transcript-video
 
@@ -140,8 +142,8 @@ bun as links urls.md
 | Area | Commands |
 |------|----------|
 | Inspect and process | `metadata`, `download`, `extract`, `write` |
-| Generate | `tts`, `image`, `video`, `music` |
-| Setup & Utilities | `config`, `cache`, `setup`, `links`, `resume`, `benchmark` |
+| Generate | `tts`, `image`, `video`, `music`, `comic` |
+| Setup & Utilities | `config`, `cache`, `setup`, `sock`, `links`, `resume`, `benchmark` |
 
 High-value notes:
 
@@ -160,7 +162,7 @@ bun as <command> --help
 bun as --version
 ```
 
-- Use `bun as extract <input> --whisper tiny`, not `bun as --whisper tiny extract <input>`.
+- Use `bun as extract <input> --provider whisper=tiny`, not `bun as --provider whisper=tiny extract <input>`.
 - Inputs can be URLs, local files, directories, `.md`/`.txt` URL lists, or prompt strings for `image`, `video`, and `music`.
 - If an input begins with `-`, end flag parsing first: `bun as write -- -myfile`.
 - If the literal input collides with a command name, use the explicit command form: `bun as metadata setup`.
@@ -193,13 +195,11 @@ Persistent defaults live in `config/autoshow.json`. You can save provider choice
 
 ```bash
 bun as config --show
-bun as config --openai gpt-5.4 --batch-limit 20 --max-cents 50
-bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
-bun as config --elevenlabs-tts eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
-bun as config --minimax-tts speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
-bun as config --hume-tts octave-2 --hume-tts-voice "Male English Actor"
-bun as config --cartesia-tts sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
-bun as config --deapi-tts Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
+bun as config --llm openai=gpt-5.5 --batch-limit 20 --max-cents 50
+bun as config --tts elevenlabs=eleven_v3 --tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as config --tts minimax=speech-2.8-turbo --tts-voice English_expressive_narrator
+bun as config --tts hume=octave-2 --tts-voice "Male English Actor"
+bun as config --tts cartesia=sonic-3.5 --tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 bun as config --reset
 ```
 
@@ -214,9 +214,9 @@ Logging controls:
 
 ```bash
 # CLI flags
-bun as write input/examples/audio/1-audio.mp3 --verbose
-bun as write input/examples/audio/1-audio.mp3 --quiet
-bun as write input/examples/audio/1-audio.mp3 --json
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --verbose
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --quiet
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --json
 
 # Environment variables
 AUTOSHOW_LOG_FORMAT=auto   # auto | human | json | both
@@ -232,7 +232,7 @@ FORCE_COLOR=1              # force ANSI color in redirected output
 
 ## Output Layout
 
-Most artifact-producing runs write a timestamped directory under `output/` with `run.json` plus the files for the steps that actually ran. Standalone `tts`, `image`, `video`, and hosted `music` also accept `--out <dir>` or `--output-dir <dir>` to choose the run directory exactly.
+Most artifact-producing runs write a timestamped directory under `output/` with `run.json` plus the files for the steps that actually ran. Standalone `tts`, `image`, `video`, and hosted `music` accept `--output-dir <dir>` to choose the run directory exactly.
 
 Typical artifacts include:
 
@@ -240,7 +240,7 @@ Typical artifacts include:
 - `prompt.md`
 - `transcription.txt`
 - extracted text or OCR output
-- `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for `extract <url> --all-url`
+- `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for `extract <url> --all-providers`
 - `text.json`
 - generated speech, image, video, or music files
 - `run.json`
@@ -258,7 +258,11 @@ Notable exceptions:
 
 ```bash
 bun run check
-bun t
+bun test test/test-cases/validation/cli-help-contracts.test.ts
+bun test test/test-cases/validation/cli-usage-errors.test.ts
+bun test test/test-cases/validation/option-resolution-contracts.test.ts
 ```
 
-- `bun t` uses the repo's custom test runner, so run `bun as setup` first if local dependencies are missing.
+- `bun run check` is the default verification pass for docs and code changes.
+- The three targeted `bun test` commands above are the no-cost smoke set for CLI help, usage errors, and option resolution.
+- `bun t`, `bun run t`, and `AGENT=1 bun test/test-runner.ts` are full-runner commands for human service/e2e coverage. They may call paid or quota-limited providers and should only be run when that exact run is explicitly approved.

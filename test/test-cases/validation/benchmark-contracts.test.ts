@@ -2,10 +2,14 @@ import { describe, expect, test } from 'bun:test'
 import { buildBenchmarkAttemptRecord } from '~/cli/commands/setup-and-utilities/benchmark/run-benchmark'
 import {
   buildEstimatedCostCentsByProviderModel,
+  combinedRankingRows,
   isExcludedService,
+  resolveDashboardSpeedMsForRanking,
+  resolveRawSpeedMsForRanking,
   resolveRawCostUsd,
   selectTopBenchmarkPicks
 } from '~/cli/commands/setup-and-utilities/benchmark/benchmark-ranking-report/bench-rank-report'
+import type { ReleaseDateMap } from '~/cli/commands/setup-and-utilities/benchmark/benchmark-ranking-report/bench-rank-types'
 
 const rankingRow = (rank: number, key: string, average: number, count = 1, metricName?: string) => ({
   rank,
@@ -20,6 +24,15 @@ const pickKeys = (
   bucket: 'Best' | 'Cheapest' | 'Fastest'
 ): string[] => selection.rows.filter((row) => row.bucket === bucket).map((row) => row.key)
 
+const releaseDatesFor = (keys: readonly string[]): ReleaseDateMap =>
+  Object.fromEntries(keys.map((key, index) => [
+    key,
+    {
+      date: `2026-01-${String(index + 1).padStart(2, '0')}`,
+      sourceUrl: `https://example.test/releases/${encodeURIComponent(key)}`
+    }
+  ]))
+
 describe('benchmark contracts', () => {
   test('benchmark attempt records identify provider, variant, status, and redact secrets', () => {
     const record = buildBenchmarkAttemptRecord(
@@ -30,9 +43,9 @@ describe('benchmark contracts', () => {
         speedMultiplier: 3
       },
       {
-        service: 'deapi',
-        model: 'WhisperLargeV3',
-        envVar: 'DEAPI_API_KEY'
+        service: 'deepgram',
+        model: 'nova-3',
+        envVar: 'DEEPGRAM_API_KEY'
       },
       'error',
       1250,
@@ -49,8 +62,8 @@ describe('benchmark contracts', () => {
         bitrateKbps: undefined,
         speedMultiplier: 3
       },
-      service: 'deapi',
-      model: 'WhisperLargeV3',
+      service: 'deepgram',
+      model: 'nova-3',
       processingTimeMs: 1250,
       error: 'request failed: https://api.example.test/jobs?api_key=REDACTED'
     })
@@ -123,6 +136,26 @@ describe('benchmark contracts', () => {
       priceUsd: 0,
       usedEstimateFallback: false
     })
+  })
+
+  test('benchmark ranking prefers normalized speed over absolute wall time', () => {
+    expect(resolveRawSpeedMsForRanking({
+      msPerUnit: 125,
+      actualProcessingTimeMs: 5000,
+      processingTimeMs: 6000
+    })).toBe(125)
+
+    expect(resolveDashboardSpeedMsForRanking({
+      durations: {
+        primaryStep: {
+          actualMs: 5000,
+          actualMsPerUnit: 250
+        },
+        endToEnd: {
+          actualMs: 9000
+        }
+      }
+    })).toBe(250)
   })
 
   test('benchmark Top 6 assigns an overlapping model to Best first', () => {
@@ -206,5 +239,93 @@ describe('benchmark contracts', () => {
     expect(keys).toHaveLength(2)
     expect(new Set(keys).size).toBe(keys.length)
     expect(selection.note).toBe('Only 2 picks are shown because only 2 unique provider/models had eligible ranking rows for this step.')
+  })
+
+  test('benchmark combined ranking uses 50/25/25 scoring when quality is present', () => {
+    const rows = combinedRankingRows({
+      qualityRows: [
+        rankingRow(1, 'balanced/a', 80, 1, 'quality score'),
+        rankingRow(2, 'balanced/b', 60, 1, 'quality score')
+      ],
+      priceRows: [
+        rankingRow(1, 'balanced/a', 10),
+        rankingRow(2, 'balanced/b', 20)
+      ],
+      speedRows: [
+        rankingRow(1, 'balanced/b', 2),
+        rankingRow(2, 'balanced/a', 4)
+      ],
+      releaseDates: releaseDatesFor(['balanced/a', 'balanced/b'])
+    })
+
+    expect(rows.map((row) => [row.key, row.rank, row.combinedScore])).toEqual([
+      ['balanced/a', 1, 65],
+      ['balanced/b', 2, 55]
+    ])
+  })
+
+  test('benchmark combined ranking renormalizes price and speed when quality is absent', () => {
+    const rows = combinedRankingRows({
+      qualityRows: [],
+      priceRows: [
+        rankingRow(1, 'no-quality/cheap', 10),
+        rankingRow(2, 'no-quality/mid', 15),
+        rankingRow(3, 'no-quality/expensive', 20)
+      ],
+      speedRows: [
+        rankingRow(1, 'no-quality/cheap', 2),
+        rankingRow(2, 'no-quality/mid', 3),
+        rankingRow(3, 'no-quality/expensive', 4)
+      ],
+      releaseDates: releaseDatesFor(['no-quality/cheap', 'no-quality/mid', 'no-quality/expensive'])
+    })
+
+    expect(rows.map((row) => [row.key, row.combinedScore])).toEqual([
+      ['no-quality/cheap', 100],
+      ['no-quality/mid', 50],
+      ['no-quality/expensive', 0]
+    ])
+  })
+
+  test('benchmark combined ranking uses neutral 50 for missing active provider metrics', () => {
+    const rows = combinedRankingRows({
+      qualityRows: [],
+      priceRows: [
+        rankingRow(1, 'missing/complete', 10),
+        rankingRow(2, 'missing/no-speed', 20)
+      ],
+      speedRows: [
+        rankingRow(1, 'missing/complete', 2)
+      ],
+      releaseDates: releaseDatesFor(['missing/complete', 'missing/no-speed'])
+    })
+
+    const missing = rows.find((row) => row.key === 'missing/no-speed')
+    expect(missing?.speed.score).toBe(50)
+    expect(missing?.speed.rank).toBeUndefined()
+    expect(missing?.combinedScore).toBe(25)
+  })
+
+  test('benchmark combined ranking orders ties deterministically by provider/model key', () => {
+    const rows = combinedRankingRows({
+      qualityRows: [],
+      priceRows: [
+        rankingRow(1, 'tie/b', 1),
+        rankingRow(2, 'tie/a', 1)
+      ],
+      speedRows: [],
+      releaseDates: releaseDatesFor(['tie/a', 'tie/b'])
+    })
+
+    expect(rows.map((row) => row.key)).toEqual(['tie/a', 'tie/b'])
+  })
+
+  test('benchmark combined ranking fails when release-date metadata is missing', () => {
+    expect(() => combinedRankingRows({
+      qualityRows: [],
+      priceRows: [rankingRow(1, 'missing/date', 1)],
+      speedRows: [],
+      releaseDates: {}
+    })).toThrow('Missing benchmark release-date metadata for provider/model: missing/date')
   })
 })

@@ -44,17 +44,27 @@ export const reportSuitePriceEstimate = async (
   let suiteTotalEstimatedCost = 0
   const concurrency = isExtractCommand(command) ? opts.sttPreflightConcurrency : 1
 
+  let skipped = 0
   await runWithConcurrency(targets, concurrency, async (item) => {
-    const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
-    l.report.estimate(estimate)
-    suiteTotalEstimatedCost += estimate.totalEstimatedCost
+    try {
+      const estimate = await buildAggregatedPriceEstimate(command, item, opts, undefined)
+      l.report.estimate(estimate)
+      suiteTotalEstimatedCost += estimate.totalEstimatedCost
+    } catch (error) {
+      skipped++
+      const message = error instanceof Error ? error.message : String(error)
+      l.warn(`Price estimate failed for ${item}: ${message}`)
+    }
   })
 
   logSuitePriceSummary(l, {
     checkedLabel: targets.length === 1 ? 'command' : 'commands',
-    checkedCount: targets.length,
+    checkedCount: targets.length - skipped,
     totalEstimatedCost: suiteTotalEstimatedCost
   })
+  if (skipped > 0) {
+    l.warn(`${skipped} item(s) skipped due to price estimation errors`)
+  }
 
   return suiteTotalEstimatedCost
 }

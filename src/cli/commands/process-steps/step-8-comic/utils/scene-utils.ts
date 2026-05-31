@@ -5,11 +5,13 @@ import { PromptsConfigSchema } from '../schemas/schemas'
 import { parseJsonFile } from './json-prompt-utils'
 import { getPanelsDirectory, getSketchesDirectory, getPagesDirectory } from './project-paths'
 import type {
-  ImagePromptVariation,
   ImageGenerationModel,
   PromptsConfig,
+} from '../types/comic-types'
+import type {
+  ImagePromptVariation,
   ScenePrompts,
-} from '../types'
+} from '../types/comic-command-types'
 
 
 export const PANEL_FILENAME_PADDING = 2

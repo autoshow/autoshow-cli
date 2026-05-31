@@ -1,10 +1,11 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { basename, join } from 'node:path'
 import type { DocumentMetadata, ExtractionOptions, PageResult } from '~/types'
-import { renderPageToImage } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
-import { getCachedRenderedPageImage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/preparation-cache'
+import {
+  assertHostedOcrImageWithinLimits,
+  readHostedOcrImageDataUrl,
+  runHostedOcrDocument,
+  type HostedOcrImageResult
+} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/hosted-ocr-utils'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import {
   KIMI_OCR_IMAGE_BYTES,
@@ -18,20 +19,11 @@ import {
 } from '~/utils/openai/client'
 
 const KIMI_OCR_MAX_COMPLETION_TOKENS = 8192
-
-const getImageMimeType = (format: DocumentMetadata['format']): string => {
-  switch (format) {
-    case 'png':
-      return 'image/png'
-    case 'jpg':
-      return 'image/jpeg'
-    case 'webp':
-      return 'image/webp'
-    case 'gif':
-      return 'image/gif'
-    default:
-      throw new Error(`Unsupported Kimi OCR image format: ${format}`)
-  }
+const KIMI_OCR_IMAGE_MIME_TYPES: Partial<Record<DocumentMetadata['format'], string>> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif'
 }
 
 const buildOcrPrompt = (): string => [
@@ -44,22 +36,6 @@ const buildOcrPrompt = (): string => [
   'Collapse long runs of spaces or tabs used only for visual alignment.',
   'If the page is blank or unreadable, return an empty response.'
 ].join(' ')
-
-const assertImageWithinLimits = async (filePath: string, pageLabel: string): Promise<void> => {
-  const fileStats = await stat(filePath)
-  if (fileStats.size > KIMI_OCR_IMAGE_BYTES) {
-    throw new Error(`Kimi OCR image input exceeds the 100 MB image limit for ${basename(filePath)} (${pageLabel}).`)
-  }
-}
-
-const readImageDataUrl = async (
-  filePath: string,
-  format: DocumentMetadata['format']
-): Promise<string> => {
-  const bytes = await Bun.file(filePath).arrayBuffer()
-  const base64 = Buffer.from(bytes).toString('base64')
-  return `data:${getImageMimeType(format)};base64,${base64}`
-}
 
 const isLengthFinishReason = (
   finishReason: string | null | undefined
@@ -85,9 +61,16 @@ const runKimiOcrImage = async (
   model: string,
   pageNumber: number,
   pageLabel: string
-): Promise<{ page: PageResult, promptTokens?: number, completionTokens?: number }> => {
-  await assertImageWithinLimits(imagePath, pageLabel)
-  const imageUrl = await readImageDataUrl(imagePath, format)
+): Promise<HostedOcrImageResult> => {
+  await assertHostedOcrImageWithinLimits(imagePath, pageLabel, {
+    providerLabel: 'Kimi OCR',
+    maxBytes: KIMI_OCR_IMAGE_BYTES,
+    limitLabel: '100 MB'
+  })
+  const imageUrl = await readHostedOcrImageDataUrl(imagePath, format, {
+    providerLabel: 'Kimi OCR',
+    supportedMimeTypes: KIMI_OCR_IMAGE_MIME_TYPES
+  })
   let lastError: Error | undefined
 
   for (let attempt = 0; attempt < OCR_SCHEMA_RETRY_ATTEMPTS; attempt++) {
@@ -142,7 +125,7 @@ export const runKimiOcr = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   model: string,
-  opts: Pick<ExtractionOptions, 'dpi' | 'password' | 'rotate' | 'ocrPreparationCache'>
+  opts: Pick<ExtractionOptions, 'dpi' | 'password' | 'ocrPreparationCache'>
 ): Promise<{
   pages: PageResult[]
   extractionMethod: 'kimi-ocr'
@@ -152,97 +135,11 @@ export const runKimiOcr = async (
 }> => {
   const apiKey = ensureKimiApiKey('Kimi OCR')
   const config = { apiKey, baseURL: resolveKimiBaseUrl() }
-  let promptTokens = 0
-  let completionTokens = 0
-  let hasPromptTokens = false
-  let hasCompletionTokens = false
-  const pages: PageResult[] = []
-
-  const addUsage = (result: { promptTokens?: number, completionTokens?: number }): void => {
-    if (typeof result.promptTokens === 'number') {
-      promptTokens += result.promptTokens
-      hasPromptTokens = true
-    }
-    if (typeof result.completionTokens === 'number') {
-      completionTokens += result.completionTokens
-      hasCompletionTokens = true
-    }
-  }
-
-  if (step1Metadata.format !== 'pdf') {
-    const result = await runKimiOcrImage(config, filePath, step1Metadata.format, model, 1, 'input image')
-    addUsage(result)
-    return {
-      pages: [result.page],
-      extractionMethod: 'kimi-ocr',
-      totalPages: 1,
-      ...(hasPromptTokens ? { promptTokens } : {}),
-      ...(hasCompletionTokens ? { completionTokens } : {})
-    }
-  }
-
-  const totalPages = Math.max(1, step1Metadata.pageCount)
-  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-kimi-ocr-'))
-  try {
-    for (let page = 1; page <= totalPages; page++) {
-      const imagePath = join(tempDir, `page-${String(page).padStart(3, '0')}.png`)
-      let renderedImagePath = imagePath
-      let removeRenderedImage = true
-      if (opts.ocrPreparationCache) {
-        const rendered = await getCachedRenderedPageImage(
-          opts.ocrPreparationCache,
-          {
-            filePath,
-            page,
-            dpi: opts.dpi,
-            password: opts.password,
-            rotate: opts.rotate
-          },
-          async (outputPath) => {
-            const renderResult = await renderPageToImage(
-              filePath,
-              page,
-              opts.dpi,
-              outputPath,
-              opts.password,
-              opts.rotate
-            )
-            if (renderResult.exitCode !== 0) {
-              throw new Error(renderResult.stderr || `Failed rendering page ${page} for Kimi OCR`)
-            }
-          }
-        )
-        renderedImagePath = rendered.imagePath
-        removeRenderedImage = false
-      } else {
-        const renderResult = await renderPageToImage(
-          filePath,
-          page,
-          opts.dpi,
-          imagePath,
-          opts.password,
-          opts.rotate
-        )
-        if (renderResult.exitCode !== 0) {
-          throw new Error(renderResult.stderr || `Failed rendering page ${page} for Kimi OCR`)
-        }
-      }
-      const result = await runKimiOcrImage(config, renderedImagePath, 'png', model, page, `page ${page}`)
-      addUsage(result)
-      pages.push(result.page)
-      if (removeRenderedImage) {
-        await rm(imagePath, { force: true })
-      }
-    }
-  } finally {
-    await rm(tempDir, { recursive: true, force: true })
-  }
-
-  return {
-    pages,
+  return await runHostedOcrDocument(filePath, step1Metadata, opts, {
     extractionMethod: 'kimi-ocr',
-    totalPages,
-    ...(hasPromptTokens ? { promptTokens } : {}),
-    ...(hasCompletionTokens ? { completionTokens } : {})
-  }
+    tempDirPrefix: 'autoshow-kimi-ocr-',
+    providerLabel: 'Kimi OCR',
+    runImage: async (imagePath, format, pageNumber, pageLabel) =>
+      await runKimiOcrImage(config, imagePath, format, model, pageNumber, pageLabel)
+  })
 }

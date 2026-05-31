@@ -1,6 +1,6 @@
-import { mkdir, stat } from 'node:fs/promises'
 import * as l from '~/utils/logger'
-import { createKeyValueTable, logLocationsTable } from '~/utils/logger/human-table'
+import { mkdir, stat } from 'node:fs/promises'
+import { createDetailTable } from '~/utils/logger/human-table'
 import { ensureDirectory } from '~/utils/cli-utils'
 import { createUniqueDirectoryName } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { resolveConfigPath, loadConfig, resolveMaxCents } from '~/cli/commands/setup-and-utilities/config/config-loader'
@@ -9,26 +9,48 @@ import { writeRunManifest } from './manifest-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type {
   CostStep,
-  HumanLogTable,
   LogLevel,
   MediaGenerationStatus,
   StepTimingCost,
   TableLogger
 } from '~/types'
 
-export const buildMediaGenerationStatusTable = (
+const mediaLabels: Readonly<Record<MediaGenerationStatus['mediaType'], string>> = {
+  tts: 'TTS',
+  image: 'Image',
+  video: 'Video',
+  music: 'Music'
+}
+
+const outputCountLabels: Readonly<Record<MediaGenerationStatus['mediaType'], string>> = {
+  tts: 'chunks',
+  image: 'images',
+  video: 'outputs',
+  music: 'outputs'
+}
+
+const getMediaLogMessage = (summary: MediaGenerationStatus): string =>
+  summary.status === 'completed'
+    ? `${mediaLabels[summary.mediaType]} Result`
+    : `${mediaLabels[summary.mediaType]} Status`
+
+const buildMediaGenerationDetailEntries = (
   summary: MediaGenerationStatus
-): HumanLogTable => {
+): Array<readonly [string, unknown]> => {
   const entries: Array<readonly [string, unknown]> = [
-    ['mediaType', summary.mediaType],
-    ['provider', summary.provider],
-    ['model', summary.model],
+    ['providerModel', `${summary.provider}/${summary.model}`],
     ['status', summary.status]
   ]
   if (summary.processingTimeMs != null) entries.push(['processingTimeMs', summary.processingTimeMs])
   if (summary.outputCount != null) entries.push(['outputCount', summary.outputCount])
   if (summary.detail) entries.push(['detail', summary.detail])
-  return createKeyValueTable(entries)
+  for (const artifact of summary.artifacts ?? []) {
+    entries.push([artifact.artifact, artifact.path])
+    if (artifact.detail !== undefined) {
+      entries.push([`${artifact.artifact} detail`, artifact.detail])
+    }
+  }
+  return entries
 }
 
 export const logMediaGenerationStatus = (
@@ -36,9 +58,13 @@ export const logMediaGenerationStatus = (
   summary: MediaGenerationStatus,
   level: LogLevel = summary.status === 'completed' ? 'success' : 'info'
 ): void => {
-  logger.write(level, 'Media Generation', {
+  logger.write(level, getMediaLogMessage(summary), {
     category: 'pipeline',
-    humanTable: buildMediaGenerationStatusTable(summary),
+    humanTable: createDetailTable(buildMediaGenerationDetailEntries(summary), {
+      labels: {
+        outputCount: outputCountLabels[summary.mediaType]
+      }
+    }),
     metadata: summary
   })
 }
@@ -55,18 +81,12 @@ const ensureTrailingSlash = (path: string): string =>
 
 const readExplicitGenerationOutputDir = (flags: Record<string, unknown>): string | undefined => {
   const outputDir = typeof flags['output-dir'] === 'string' ? flags['output-dir'] : undefined
-  const out = typeof flags['out'] === 'string' ? flags['out'] : undefined
 
-  if (outputDir !== undefined && out !== undefined) {
-    throw CLIUsageError('Use only one of --output-dir or --out.')
-  }
-
-  const explicitOutputDir = outputDir ?? out
-  if (explicitOutputDir !== undefined && explicitOutputDir.trim().length === 0) {
+  if (outputDir !== undefined && outputDir.trim().length === 0) {
     throw CLIUsageError('Output directory cannot be empty.')
   }
 
-  return explicitOutputDir
+  return outputDir
 }
 
 const ensureExplicitOutputDirectory = async (outputDir: string): Promise<void> => {
@@ -103,14 +123,20 @@ export const createGenerationOutputDir = async (
   const explicitOutputDir = readExplicitGenerationOutputDir(flags)
   if (explicitOutputDir !== undefined) {
     await ensureExplicitOutputDirectory(explicitOutputDir)
-    logLocationsTable(l, [{ artifact: 'outputDir', path: explicitOutputDir }])
+    l.write('info', 'Run', {
+      category: 'command',
+      humanTable: createDetailTable([['outputDir', explicitOutputDir]])
+    })
     return explicitOutputDir
   }
 
   const uniqueDirName = createUniqueDirectoryName(label)
   const outputDir = joinOutputRoot(uniqueDirName)
   await ensureDirectory(outputDir)
-  logLocationsTable(l, [{ artifact: 'outputDir', path: outputDir }])
+  l.write('info', 'Run', {
+    category: 'command',
+    humanTable: createDetailTable([['outputDir', outputDir]])
+  })
   return outputDir
 }
 

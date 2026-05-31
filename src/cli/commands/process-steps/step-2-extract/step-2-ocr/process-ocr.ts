@@ -22,7 +22,7 @@ import {
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { downloadDocument } from '../../step-1-download/document/dl-document'
-import { runOcr } from './orchestrator'
+import { runOcr } from './run-ocr'
 import { l, runWithLogContext } from '~/utils/logger'
 import {
   buildExtractionOptionsForTarget,
@@ -45,7 +45,7 @@ import { serializeOneOrMany } from '../../target-runner'
 import { writeProviderResult } from '../../manifest-utils'
 import { resolveOcrStep2ExecutionFromFormat } from '../step-2-shared/resolved-step2'
 import { getOutputRoot } from '~/cli/commands/process-steps/output-root'
-import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtractEstimatedCosts } from './ocr-costs'
+import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts } from './ocr-costs'
 import { logExtractManifestConsoleSummary } from '../../write-manifest-log'
 import { logOcrProviderLifecycle } from './ocr-logging'
 import { cleanupOcrPreparationCache, createOcrPreparationCache } from './ocr-utils/preparation-cache'
@@ -255,10 +255,12 @@ const buildDocumentMetadataPayload = (
   const failures = options.failures ?? []
   const extractTargets = collectEstimatedExtractTargets(normalizedStep2)
   const estimated = resolveExtractEstimatedCosts(options.preflightEstimate, normalizedStep2)
+  const observedEstimate = resolveExtractObservedEstimateCosts(normalizedStep2)
   const actual = computeActualCosts({ step2: normalizedStep2 })
   const ocrDiagnostics = buildOcrCostDiagnostics(normalizedStep2, estimated, actual)
   const cost = {
     estimated,
+    ...(options.preflightEstimate ? { observedEstimate } : {}),
     actual,
     ...(ocrDiagnostics.length > 0 ? { ocrDiagnostics } : {})
   }
@@ -326,17 +328,12 @@ export const processOcr = async (
     outputDir: resolvedOutputDir,
     dpi: rawOpts.dpi ?? 300,
     languages: rawOpts.languages ?? 'eng',
-    oem: rawOpts.oem ?? 1,
-    psm: rawOpts.psm ?? 3,
     outputFormat: rawOpts.outputFormat ?? 'text',
     password: rawOpts.password,
-    pageSeparator: rawOpts.pageSeparator ?? '\n\n',
     renderConcurrency: rawOpts.renderConcurrency,
     ocrConcurrency: rawOpts.ocrConcurrency,
     ocrProviderConcurrency: rawOpts.ocrProviderConcurrency ?? 2,
     ocrLocalConcurrency: rawOpts.ocrLocalConcurrency ?? 1,
-    preserveInterwordSpaces: rawOpts.preserveInterwordSpaces ?? false,
-    rotate: rawOpts.rotate ?? 0,
     ...(rawOpts.useTesseract ? { useTesseract: true } : {}),
     ...(rawOpts.useOcrmypdf ? { useOcrmypdf: true } : {}),
     ...(rawOpts.usePaddleOcr ? { usePaddleOcr: true } : {}),
@@ -348,19 +345,15 @@ export const processOcr = async (
     ...(rawOpts.kimiOcrModels ? { kimiOcrModels: rawOpts.kimiOcrModels } : {}),
     ...(rawOpts.openaiOcrModel ? { openaiOcrModel: rawOpts.openaiOcrModel } : {}),
     ...(rawOpts.openaiOcrModels ? { openaiOcrModels: rawOpts.openaiOcrModels } : {}),
+    ...(rawOpts.grokOcrModel ? { grokOcrModel: rawOpts.grokOcrModel } : {}),
+    ...(rawOpts.grokOcrModels ? { grokOcrModels: rawOpts.grokOcrModels } : {}),
     ...(rawOpts.anthropicOcrModel ? { anthropicOcrModel: rawOpts.anthropicOcrModel } : {}),
     ...(rawOpts.anthropicOcrModels ? { anthropicOcrModels: rawOpts.anthropicOcrModels } : {}),
     ...(rawOpts.geminiOcrModel ? { geminiOcrModel: rawOpts.geminiOcrModel } : {}),
     ...(rawOpts.geminiOcrModels ? { geminiOcrModels: rawOpts.geminiOcrModels } : {}),
     ...(rawOpts.deepinfraOcrModel ? { deepinfraOcrModel: rawOpts.deepinfraOcrModel } : {}),
     ...(rawOpts.deepinfraOcrModels ? { deepinfraOcrModels: rawOpts.deepinfraOcrModels } : {}),
-    ...(rawOpts.awsTextractModel ? { awsTextractModel: rawOpts.awsTextractModel } : {}),
-    ...(rawOpts.awsTextractModels ? { awsTextractModels: rawOpts.awsTextractModels } : {}),
-    ...(rawOpts.awsRegion ? { awsRegion: rawOpts.awsRegion } : {}),
-    ...(rawOpts.awsBucket ? { awsBucket: rawOpts.awsBucket } : {}),
     ...(rawOpts.configPath ? { configPath: rawOpts.configPath } : {}),
-    ...(rawOpts.gcloudDocaiModel ? { gcloudDocaiModel: rawOpts.gcloudDocaiModel } : {}),
-    ...(rawOpts.gcloudDocaiModels ? { gcloudDocaiModels: rawOpts.gcloudDocaiModels } : {}),
     ...(rawOpts.unstructuredOcrModel ? { unstructuredOcrModel: rawOpts.unstructuredOcrModel } : {}),
     ...(rawOpts.unstructuredOcrModels ? { unstructuredOcrModels: rawOpts.unstructuredOcrModels } : {}),
     ...(rawOpts.primaryOcr ? { primaryOcr: rawOpts.primaryOcr } : {}),

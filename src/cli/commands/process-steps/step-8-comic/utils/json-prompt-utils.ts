@@ -9,9 +9,7 @@ import {
   resolveRecapMontageExpansions,
   type RecapMontageExpansion,
 } from './recap-montage-utils'
-import type {
-  StructuredScriptData,
-} from '../types'
+import type { StructuredScriptData } from '../types/comic-types'
 
 
 

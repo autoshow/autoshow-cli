@@ -2,7 +2,6 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { parseDeapiTimestampedTranscript, stripDeapiTimestampMarkers } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi-transcript-parser'
 import { parseWhisperJson, extractWhisperWords } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-local/whisper/parse-whisper-output'
 import {
   detectCompressedTimingCoverage,
@@ -29,30 +28,25 @@ const writeJson = async (path: string, value: unknown): Promise<void> => {
 const deprecatedTierSplitKey = 'tier' + 'Split'
 const deprecatedOverallTierKey = 'overall' + 'Tier'
 
+type MetricName = 'price' | 'speed' | 'qualityScore'
+
+interface MetricRankingEntry {
+  rank: number
+  providerKey: string
+  metric: MetricName
+  value: number | null
+  label: string
+  score: number | null
+  speakerAwareWER: number | null
+  textOnlyWER: number | null
+  diarizationSupport: string | null
+}
+
 afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
 })
 
 describe('STT normalization contracts', () => {
-  test('parses deAPI timestamp blocks, repairs malformed ranges, and strips markers', () => {
-    const input = [
-      '[0:00 - 0:03] Hello there.',
-      '[0:03 - 0:02] Reversed range.',
-      '[0:07 - 0:07] Zero duration final.'
-    ].join('\n')
-
-    const parsed = parseDeapiTimestampedTranscript(input, { audioDurationSeconds: 10 })
-
-    expect(stripDeapiTimestampMarkers(input)).toBe('Hello there. Reversed range. Zero duration final.')
-    expect(parsed.text).toBe('Hello there. Reversed range. Zero duration final.')
-    expect(parsed.repairedRangeCount).toBe(2)
-    expect(parsed.segments).toEqual([
-      { start: '00:00:00', end: '00:00:03', text: 'Hello there.' },
-      { start: '00:00:03', end: '00:00:07', text: 'Reversed range.' },
-      { start: '00:00:07', end: '00:00:10', text: 'Zero duration final.' }
-    ])
-  })
-
   test('repairs monotonic all-zero GLM/OpenAI-compatible segment durations', () => {
     const repaired = repairZeroDurationMonotonicSegments([
       { start: '00:00:00', end: '00:00:00', text: 'first' },
@@ -108,7 +102,6 @@ describe('STT normalization contracts', () => {
       metadata: {
         step1: { durationSeconds: 10, duration: '00:00:10' },
         providerStates: [
-          { artifactDir: 'providers/deapi-WhisperLargeV3' },
           { artifactDir: 'providers/openai-stt-gpt-4o-transcribe' },
           { artifactDir: 'providers/supadata-auto' },
           { artifactDir: 'providers/supadata-native' }
@@ -120,20 +113,6 @@ describe('STT normalization contracts', () => {
     await writeFile(join(runDir, 'consensus-transcription.txt'), '[00:00:00] [speaker-1] Hello world.\n')
 
     const providerArtifacts = [
-      {
-        dir: 'deapi-WhisperLargeV3',
-        provider: 'deapi',
-        model: 'WhisperLargeV3',
-        result: {
-          text: 'Hello world.',
-          segments: [{ start: '00:00:00', end: '00:00:05', text: 'Hello world.' }],
-          evidence: {
-            timingQuality: 'segment_interpolated',
-            capabilities: { hasSpeakerLabels: false },
-            rawResponse: { data: { result: '[0:00 - 0:05] Hello world.' } }
-          }
-        }
-      },
       {
         dir: 'openai-stt-gpt-4o-transcribe',
         provider: 'openai-stt',
@@ -198,69 +177,66 @@ describe('STT normalization contracts', () => {
     expect(stderr).toBe('')
     expect(exitCode).toBe(0)
 
-    const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
-      rankingSurfaces: Record<'local' | 'service', Record<'fastest' | 'cheapest' | 'highestQuality', unknown[]>>
-      duplicateGroups: Array<{ providers: string[] }>
-      tiering: {
-        metric: string
-        method: string
-        remainderPolicy: string
-        groups: {
-          local: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
-          thirdPartyDiarization: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
-          thirdPartyNonDiarization: { count: number, tiers: Array<{ tier: number, count: number, providers: Array<{ provider: string, groupTier: number }> }> }
-        }
-      }
-      providerGroups: {
-        local: { count: number, providers: Array<unknown> }
-        service: {
-          count: number
-          providers: Array<{
-            provider: string
-            supportsDiarization: boolean
-            diarizationSupport: string
-            tierGroup: string
-            groupOverallRank: number
-            groupTier: number
-            qualityWarnings: string[]
-            segmentStats: { segmentCount: number }
-            duplicateGroupId?: string
-          }>
-        }
-      }
-      overall: { count: number, providers: Array<{ overallRank: number, overallScore: number }> }
-      providers: Array<{ rank: number, provider: string, overallRank: number, overallScore: number }>
-    }
-    const serviceProviders = report.providerGroups.service.providers
-    expect(report.duplicateGroups).toHaveLength(1)
-    expect(report.overall.count).toBe(4)
-    expect(report.overall.providers.map((provider) => provider.overallRank)).toEqual([1, 2, 3, 4])
-    expect(report.providers.map((provider) => provider.rank)).toEqual([1, 2, 3, 4])
-    expect(report.providers.every((provider) => provider.overallRank > 0 && provider.overallScore >= 0)).toBe(true)
-    expect(Array.isArray(report.rankingSurfaces.local.fastest)).toBe(true)
-    expect(Array.isArray(report.rankingSurfaces.service.highestQuality)).toBe(true)
-    expect(serviceProviders.find((provider) => provider.provider === 'deapi-WhisperLargeV3')?.qualityWarnings.join(' ')).toContain('deAPI raw response')
-    expect(serviceProviders.find((provider) => provider.provider === 'openai-stt-gpt-4o-transcribe')?.qualityWarnings.join(' ')).toContain('coarse')
-    expect(serviceProviders.find((provider) => provider.provider === 'supadata-auto')?.duplicateGroupId).toBeDefined()
-    expect(serviceProviders[0]?.segmentStats.segmentCount).toBeGreaterThan(0)
-    expect(deprecatedTierSplitKey in report).toBe(false)
-    expect('tiers' in report).toBe(false)
-    expect(report.tiering.metric).toBe('balanced-overall')
-    expect(report.tiering.method).toBe('equal-thirds-by-group-overall-rank')
-    expect(report.tiering.groups.local.tiers).toHaveLength(3)
-    expect(report.tiering.groups.local.tiers.map((tier) => tier.count)).toEqual([0, 0, 0])
-    expect(report.tiering.groups.thirdPartyDiarization.tiers.map((tier) => tier.count)).toEqual([0, 0, 0])
-    expect(report.tiering.groups.thirdPartyNonDiarization.tiers.map((tier) => tier.count)).toEqual([1, 1, 2])
-    expect(report.tiering.groups.thirdPartyNonDiarization.tiers.flatMap((tier) => tier.providers).map((provider) => provider.groupTier)).toEqual([1, 2, 3, 3])
-    expect(serviceProviders.every((provider) => provider.tierGroup === 'thirdPartyNonDiarization')).toBe(true)
-    expect(serviceProviders.every((provider) => provider.supportsDiarization === false && provider.diarizationSupport === 'not-supported')).toBe(true)
-    expect(serviceProviders.every((provider) => provider.groupOverallRank > 0 && [1, 2, 3].includes(provider.groupTier))).toBe(true)
-    expect(serviceProviders.every((provider) => !(deprecatedOverallTierKey in provider))).toBe(true)
+	    const report = await Bun.file(join(runDir, 'reference-comparison-report.json')).json() as {
+	      rankingSurfaces?: unknown
+	      overall?: unknown
+	      overallMetric?: unknown
+	      overallWeights?: unknown
+	      tiering?: unknown
+	      providers?: unknown
+	      metricRankings: Record<'local' | 'thirdPartyServiceNonDiarization' | 'thirdPartyServiceDiarization', Record<MetricName, MetricRankingEntry[]>>
+	      duplicateGroups: Array<{ providers: string[] }>
+	      providerGroups: {
+	        local: { count: number, providers: Array<unknown> }
+	        thirdPartyServiceDiarization: { count: number, providers: Array<unknown> }
+	        thirdPartyServiceNonDiarization: {
+	          count: number
+	          providers: Array<{
+	            provider: string
+	            supportsDiarization: boolean
+	            diarizationSupport: string
+	            qualityWarnings: string[]
+	            segmentStats: { segmentCount: number }
+	            duplicateGroupId?: string
+	          }>
+	        }
+	      }
+	    }
+	    const serviceProviders = report.providerGroups.thirdPartyServiceNonDiarization.providers
+	    expect(report.duplicateGroups).toHaveLength(1)
+	    expect(report.rankingSurfaces).toBeUndefined()
+	    expect(report.overall).toBeUndefined()
+	    expect(report.overallMetric).toBeUndefined()
+	    expect(report.overallWeights).toBeUndefined()
+	    expect(report.tiering).toBeUndefined()
+	    expect(report.providers).toBeUndefined()
+	    expect(report.metricRankings.local.price).toHaveLength(0)
+	    expect(report.metricRankings.local.speed).toHaveLength(0)
+	    expect(report.metricRankings.local.qualityScore).toHaveLength(0)
+	    expect(report.metricRankings.thirdPartyServiceDiarization.price).toHaveLength(0)
+	    expect(report.metricRankings.thirdPartyServiceDiarization.speed).toHaveLength(0)
+	    expect(report.metricRankings.thirdPartyServiceDiarization.qualityScore).toHaveLength(0)
+	    expect(report.metricRankings.thirdPartyServiceNonDiarization.price).toHaveLength(3)
+	    expect(report.metricRankings.thirdPartyServiceNonDiarization.speed).toHaveLength(3)
+	    expect(report.metricRankings.thirdPartyServiceNonDiarization.qualityScore).toHaveLength(3)
+	    expect(report.metricRankings.thirdPartyServiceNonDiarization.price.every((entry) => entry.value === null && entry.label === 'n/a')).toBe(true)
+	    expect(report.metricRankings.thirdPartyServiceNonDiarization.speed.every((entry, index) => entry.rank === index + 1 && entry.metric === 'speed')).toBe(true)
+	    expect(report.metricRankings.thirdPartyServiceNonDiarization.qualityScore.every((entry) => entry.score !== null && entry.speakerAwareWER !== null && entry.textOnlyWER !== null && entry.diarizationSupport === 'not-supported')).toBe(true)
+	    expect(serviceProviders.find((provider) => provider.provider === 'openai-stt-gpt-4o-transcribe')?.qualityWarnings.join(' ')).toContain('coarse')
+	    expect(serviceProviders.find((provider) => provider.provider === 'supadata-auto')?.duplicateGroupId).toBeDefined()
+	    expect(serviceProviders[0]?.segmentStats.segmentCount).toBeGreaterThan(0)
+	    expect(deprecatedTierSplitKey in report).toBe(false)
+	    expect('tiers' in report).toBe(false)
+	    expect(serviceProviders.every((provider) => provider.supportsDiarization === false && provider.diarizationSupport === 'not-supported')).toBe(true)
+	    expect(serviceProviders.every((provider) => !(deprecatedOverallTierKey in provider))).toBe(true)
 
-    const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
-    expect(markdown).toContain('## Overall Ranking')
-    expect(markdown).toContain('## Tier Breakdown')
-    expect(markdown).toContain('## Ranking')
-    expect(markdown).toContain('| Rank | Provider | Tier Group | Group Rank | Group Tier | Diarization | Overall / 100 | Accuracy | Speed | Cost |')
+	    const markdown = await Bun.file(join(runDir, 'reference-comparison-report.md')).text()
+	    expect(markdown).toContain('## Metric Rankings')
+	    expect(markdown).toContain('### Third-Party Service Non-Diarization')
+	    expect(markdown).toContain('## Quality Flags')
+	    expect(markdown).toContain('## Duplicate Groups')
+	    expect(markdown).not.toContain('## Overall Ranking')
+	    expect(markdown).not.toContain('## Tier Breakdown')
+	    expect(markdown).not.toContain('## Ranking')
   })
 })

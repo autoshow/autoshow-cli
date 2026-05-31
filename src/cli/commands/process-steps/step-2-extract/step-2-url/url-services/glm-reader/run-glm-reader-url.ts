@@ -7,10 +7,13 @@ import {
   byteLength,
   cleanString,
   countWords,
+  createUrlProviderHttpError,
   ensureMeaningfulMarkdown,
   fallbackTitleFromSource,
+  getUrlRequestTimeoutMs,
   isRecord,
   tryFetchRemoteHtml,
+  withUrlProviderTimeout,
   type UrlArticleRunResult
 } from '../../url-utils'
 import {
@@ -44,24 +47,29 @@ const runGlmReader = async (
   }, options)
 
   const apiKey = ensureGlmApiKey('GLM Reader')
-  const response = await fetch(`${resolveGlmBaseUrl()}/reader`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      url: source,
-      return_format: 'markdown',
-      no_cache: false,
-      retain_images: false,
-      no_gfm: false,
-      keep_img_data_url: false,
-      with_images_summary: false,
-      with_links_summary: false,
-      timeout: typeof options?.timeoutMs === 'number' ? Math.ceil(options.timeoutMs / 1000) : 20
+  const timeoutMs = getUrlRequestTimeoutMs(options)
+  const requestOptions = { ...options, timeoutMs }
+  const response = await withUrlProviderTimeout('GLM Reader', requestOptions, async (signal) =>
+    await fetch(`${resolveGlmBaseUrl()}/reader`, {
+      method: 'POST',
+      signal,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        url: source,
+        return_format: 'markdown',
+        no_cache: false,
+        retain_images: false,
+        no_gfm: false,
+        keep_img_data_url: false,
+        with_images_summary: false,
+        with_links_summary: false,
+        timeout: Math.ceil(timeoutMs / 1000)
+      })
     })
-  })
+  )
 
   const rawText = await response.text()
   let payload: unknown = null
@@ -75,7 +83,7 @@ const runGlmReader = async (
     const message = isRecord(payload)
       ? cleanString(payload['message']) ?? cleanString(payload['error'])
       : undefined
-    throw new Error(`GLM Reader request failed (${response.status} ${response.statusText})${message ? `: ${message}` : ''}`)
+    throw createUrlProviderHttpError('GLM Reader', 'request', response, message)
   }
 
   const validated = validateData(GlmReaderResponseSchema, payload, 'GLM Reader response')

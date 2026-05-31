@@ -10,7 +10,7 @@ import { MinimaxMusicResponseSchema } from './music-services/minimax/run-minimax
 
 export type MusicGenOptions = Pick<
   ProcessingOptions,
-  'elevenlabsMusicModels' | 'elevenlabsMusicModel' | 'minimaxMusicModels' | 'minimaxMusicModel' | 'deapiMusicModels' | 'deapiMusicModel' | 'geminiMusicModels' | 'geminiMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental' | 'musicProviderConcurrency' | 'musicLocalConcurrency'
+  'elevenlabsMusicModels' | 'elevenlabsMusicModel' | 'minimaxMusicModels' | 'minimaxMusicModel' | 'geminiMusicModels' | 'geminiMusicModel' | 'musicDuration' | 'musicLyricsFile' | 'musicInstrumental' | 'musicProviderConcurrency' | 'musicLocalConcurrency'
 >
 
 export type MusicTarget = ProviderTargetBase<MusicProvider> & {
@@ -21,6 +21,7 @@ export type MinimaxMusicResponse = v.InferOutput<typeof MinimaxMusicResponseSche
 
 export type MusicCostEstimate = ProviderModelBase<MusicProvider> & {
   totalCost: number
+  durationSeconds: number
   lyricsSource: 'provided' | 'generated' | 'none'
   note?: string
 }
@@ -30,8 +31,6 @@ export type EstimateMusicCostOptions = {
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModels?: string[] | undefined
   minimaxMusicModel?: string | undefined
-  deapiMusicModels?: string[] | undefined
-  deapiMusicModel?: string | undefined
   geminiMusicModels?: string[] | undefined
   geminiMusicModel?: string | undefined
   musicDuration?: number | undefined

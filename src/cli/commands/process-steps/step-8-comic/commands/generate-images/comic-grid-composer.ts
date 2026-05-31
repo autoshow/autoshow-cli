@@ -5,9 +5,9 @@ import {
   COMIC_GRID_PANEL_SIZE,
   getComicGridCapacity,
 } from './comic-page-utils'
-import type { ComicGridSpec } from '../../types'
+import type { ComicGridSpec } from '../../types/comic-command-types'
 
-export type ComicGridCellSize = {
+type ComicGridCellSize = {
   width: number
   height: number
 }

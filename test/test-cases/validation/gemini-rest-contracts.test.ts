@@ -1,131 +1,46 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { DocumentMetadata } from '~/types'
 import { runGeminiOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/gemini-ocr/run-gemini-ocr'
 import { runGeminiStt } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/run-gemini-stt'
 import { runGeminiModel } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/run-gemini'
 import { runGeminiTts } from '~/cli/commands/process-steps/step-4-tts/tts-services/gemini/run-gemini-tts'
-import { runGeminiImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/run-gemini-image-gen'
 import { runGeminiVideoGen } from '~/cli/commands/process-steps/step-6-video/video-services/gemini/run-gemini-video-gen'
 import { runGeminiMusicGen } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/run-gemini-music-gen'
 import { createImageGemini } from '~/cli/commands/process-steps/step-8-comic/image-services/gemini/gemini-image-service'
 import { classifyGeminiRetry } from '~/cli/commands/process-steps/step-3-write/write-services/gemini/gemini-utils'
 import { geminiGenerateContent, GeminiRestError } from '~/utils/gemini/gemini-rest'
-
-type FetchCall = {
-  url: string
-  method: string
-  headers: Headers
-  bodyText: string
-  bodyJson?: Record<string, unknown> | undefined
-  bodyBytes?: number | undefined
-}
+import {
+  clearEnv,
+  createTempDirTracker,
+  installMockFetch as installFetch,
+  jsonResponse,
+  restoreEnv,
+  snapshotEnv
+} from '../../test-utils/rest-contract-helpers'
+import { createMockWavBase64 } from '../../test-utils/media-fixtures'
 
 const originalFetch = globalThis.fetch
-const previousEnv: Record<string, string | undefined> = {}
-const envKeys = ['GEMINI_API_KEY', 'GEMINI_TTS_VOICE']
-const tempDirs: string[] = []
+let previousEnv: Record<string, string | undefined> = {}
+const envKeys = ['GEMINI_API_KEY']
+const tempDirs = createTempDirTracker('autoshow-gemini-rest-')
+const withTempDir = tempDirs.withDir
 
 const audioBytes = new Uint8Array([1, 2, 3, 4])
 const audioBase64 = Buffer.from(audioBytes).toString('base64')
 const imageBase64 = Buffer.from(new Uint8Array([9, 8, 7])).toString('base64')
 const videoBytes = new Uint8Array([5, 4, 3, 2])
 
-const createMockWavBase64 = (): string => {
-  const sampleRate = 16000
-  const channels = 1
-  const bitsPerSample = 16
-  const samples = 1600
-  const dataSize = samples * channels * (bitsPerSample / 8)
-  const buffer = Buffer.alloc(44 + dataSize)
-
-  buffer.write('RIFF', 0)
-  buffer.writeUInt32LE(36 + dataSize, 4)
-  buffer.write('WAVE', 8)
-  buffer.write('fmt ', 12)
-  buffer.writeUInt32LE(16, 16)
-  buffer.writeUInt16LE(1, 20)
-  buffer.writeUInt16LE(channels, 22)
-  buffer.writeUInt32LE(sampleRate, 24)
-  buffer.writeUInt32LE(sampleRate * channels * (bitsPerSample / 8), 28)
-  buffer.writeUInt16LE(channels * (bitsPerSample / 8), 32)
-  buffer.writeUInt16LE(bitsPerSample, 34)
-  buffer.write('data', 36)
-  buffer.writeUInt32LE(dataSize, 40)
-
-  return buffer.toString('base64')
-}
-
-const withTempDir = async <T,>(fn: (dir: string) => Promise<T>): Promise<T> => {
-  const dir = await mkdtemp(join(tmpdir(), 'autoshow-gemini-rest-'))
-  tempDirs.push(dir)
-  return await fn(dir)
-}
-
-const readBodyText = async (body: RequestInit['body'] | null | undefined): Promise<{ text: string, bytes?: number | undefined }> => {
-  if (typeof body === 'string') {
-    return { text: body }
-  }
-  if (body instanceof ArrayBuffer) {
-    return { text: '', bytes: body.byteLength }
-  }
-  if (ArrayBuffer.isView(body)) {
-    return { text: '', bytes: body.byteLength }
-  }
-  if (body instanceof Blob) {
-    return { text: '', bytes: body.size }
-  }
-  return { text: '' }
-}
-
-const jsonResponse = (body: unknown, init?: ResponseInit): Response =>
-  new Response(JSON.stringify(body), {
-    status: init?.status ?? 200,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers instanceof Headers ? Object.fromEntries(init.headers.entries()) : init?.headers as Record<string, string> | undefined)
-    }
-  })
-
-const installFetch = (
-  handler: (call: FetchCall, input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) => Promise<Response> | Response
-): FetchCall[] => {
-  const calls: FetchCall[] = []
-  globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-    const { text, bytes } = await readBodyText(init?.body)
-    const call: FetchCall = {
-      url: String(input),
-      method: init?.method ?? 'GET',
-      headers: new Headers(init?.headers),
-      bodyText: text,
-      ...(text.trim().startsWith('{') ? { bodyJson: JSON.parse(text) as Record<string, unknown> } : {}),
-      ...(bytes !== undefined ? { bodyBytes: bytes } : {})
-    }
-    calls.push(call)
-    return await handler(call, input, init)
-  }) as typeof fetch
-  return calls
-}
-
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(async () => {
   globalThis.fetch = originalFetch
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  restoreEnv(previousEnv)
+  await tempDirs.cleanup()
 })
 
 describe('Gemini REST contracts', () => {
@@ -202,7 +117,7 @@ describe('Gemini REST contracts', () => {
       candidates: [{ content: { parts: [{ text: '{"title":"Done"}' }] } }]
     }))
 
-    const result = await runGeminiModel('Write a title.', 'gemini-3.1-flash-lite-preview', {
+    const result = await runGeminiModel('Write a title.', 'gemini-3.1-flash-lite', {
       strategy: 'schema-guided',
       schemaName: 'Title',
       strict: true,
@@ -215,7 +130,7 @@ describe('Gemini REST contracts', () => {
     })
 
     expect(result.result).toBe('{"title":"Done"}')
-    expect(calls[0]?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent')
+    expect(calls[0]?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent')
     expect(calls[0]?.bodyJson?.['generationConfig']).toEqual({
       responseMimeType: 'application/json',
       responseJsonSchema: {
@@ -288,7 +203,7 @@ describe('Gemini REST contracts', () => {
         format: 'png',
         fileSize: 3
       }
-      const result = await runGeminiOcr(imagePath, metadata, 'gemini-3.1-flash-lite-preview')
+      const result = await runGeminiOcr(imagePath, metadata, 'gemini-3.1-flash-lite')
 
       expect(result.pages).toEqual([{ pageNumber: 1, method: 'ocr', text: 'OCR text' }])
       expect(calls).toHaveLength(1)
@@ -444,37 +359,6 @@ describe('Gemini REST contracts', () => {
       }
     })
   }, 20_000)
-
-  test('Gemini image generation supports Imagen predict bodies', async () => {
-    process.env['GEMINI_API_KEY'] = 'gemini-key'
-    const calls = installFetch((call) => {
-      if (call.url.endsWith('/models/imagen-4.0-generate-001:predict')) {
-        return jsonResponse({
-          predictions: [{ bytesBase64Encoded: imageBase64, mimeType: 'image/png' }]
-        })
-      }
-      throw new Error(`Unexpected Gemini image fetch: ${call.method} ${call.url}`)
-    })
-
-    await withTempDir(async (dir) => {
-      const result = await runGeminiImageGen('a blue kite', dir, {
-        model: 'imagen-4.0-generate-001',
-        aspectRatio: '1:1',
-        imageSize: '2K',
-        imageCount: 2
-      })
-      expect(await Bun.file(result.imagePaths[0] as string).exists()).toBe(true)
-    })
-
-    expect(calls[0]?.bodyJson).toEqual({
-      instances: [{ prompt: 'a blue kite' }],
-      parameters: {
-        sampleCount: 2,
-        aspectRatio: '1:1',
-        sampleImageSize: '2K'
-      }
-    })
-  })
 
   test('Gemini comic image generation sends inline references and image modalities', async () => {
     process.env['GEMINI_API_KEY'] = 'gemini-key'

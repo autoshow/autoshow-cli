@@ -5,42 +5,17 @@
     "models": {
       "gemini-3.1-flash-image-preview": {
         "description": "Gemini 3.1 Flash Image Preview — native multimodal image generation and editing",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Paid tier standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published Gemini 3.1 Flash Image 1K output-image estimate. Text/image input tokens and other output resolutions are not estimated locally.",
         "costPerImageUSD": 0.067,
         "costPerImageCents": 6.7,
         "nativeGeminiImage": true,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 12000
-        }
-      },
-      "imagen-4.0-generate-001": {
-        "description": "Imagen 4.0 — dedicated image generation",
-        "costPerImageUSD": 0.04,
-        "costPerImageCents": 4,
-        "nativeGeminiImage": false,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 5823
-        }
-      },
-      "imagen-4.0-ultra-generate-001": {
-        "description": "Imagen 4.0 Ultra — highest quality image generation",
-        "costPerImageUSD": 0.06,
-        "costPerImageCents": 6,
-        "nativeGeminiImage": false,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 9496
-        }
-      },
-      "imagen-4.0-fast-generate-001": {
-        "description": "Imagen 4.0 Fast — fastest image generation",
-        "costPerImageUSD": 0.02,
-        "costPerImageCents": 2,
-        "nativeGeminiImage": false,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 4347
+          "msPerImage": 19416
         }
       }
     }
@@ -51,8 +26,13 @@
     "models": {
       "gpt-image-1.5": {
         "description": "GPT Image 1.5 — latest generation",
-        "costPerImageUSD": 0.08,
-        "costPerImageCents": 8,
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/guides/image-generation#calculating-costs",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published GPT Image 1.5 1024x1024 medium output-image estimate. Size/quality-specific estimates are handled in the OpenAI image pricing helper; text and image input tokens are not estimated locally.",
+        "costPerImageUSD": 0.034,
+        "costPerImageCents": 3.4,
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 40283
@@ -60,26 +40,16 @@
       },
       "gpt-image-2": {
         "description": "GPT Image 2 — state-of-the-art image generation",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/guides/image-generation#calculating-costs",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published GPT Image 2 1024x1024 medium output-image estimate. Flexible size/quality estimates are handled in the OpenAI image pricing helper; text and image input tokens are not estimated locally.",
         "costPerImageUSD": 0.053,
         "costPerImageCents": 5.3,
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 21594
-        }
-      }
-    }
-  },
-  "minimax": {
-    "description": "MiniMax image generation",
-    "type": "api",
-    "models": {
-      "image-01": {
-        "description": "image-01 — text-to-image generation",
-        "costPerImageUSD": 0.0035,
-        "costPerImageCents": 0.35,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 19482
         }
       }
     }
@@ -90,15 +60,25 @@
     "models": {
       "grok-imagine-image-quality": {
         "description": "Grok Imagine Image Quality — higher-fidelity image generation and editing",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published 1K output-image price. xAI bills image inputs separately for image editing; local estimates do not count input images.",
         "costPerImageUSD": 0.05,
         "costPerImageCents": 5,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 12000
+          "msPerImage": 6080
         }
       },
       "grok-imagine-image": {
         "description": "Grok Imagine text-to-image generation",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published 1K output-image price. xAI bills image inputs separately for image editing; local estimates do not count input images.",
         "costPerImageUSD": 0.02,
         "costPerImageCents": 2,
         "estimation": {
@@ -108,121 +88,84 @@
       }
     }
   },
-  "runway": {
-    "description": "Runway image generation",
-    "type": "api",
-    "models": {
-      "gen4_image": {
-        "description": "Runway Gen-4 Image text-to-image generation",
-        "costPerImageUSD": 0.05,
-        "costPerImageCents": 5,
-        "costPerImage720pCents": 5,
-        "costPerImage1080pCents": 8,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 30000
-        }
-      }
-    }
-  },
   "bfl": {
     "description": "BFL FLUX image generation",
     "type": "api",
     "models": {
-      "flux-2-klein-4b": {
-        "description": "FLUX.2 Klein 4B text-to-image generation",
-        "costPerImageUSD": 0.014,
-        "costPerImageCents": 1.4,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 30000
-        }
-      },
-      "flux-2-klein-9b-preview": {
-        "description": "FLUX.2 Klein 9B Preview text-to-image generation",
-        "costPerImageUSD": 0.015,
-        "costPerImageCents": 1.5,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 30000
-        }
-      },
-      "flux-2-klein-9b": {
-        "description": "FLUX.2 Klein 9B fixed snapshot text-to-image generation",
-        "costPerImageUSD": 0.015,
-        "costPerImageCents": 1.5,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 30000
-        }
-      },
-      "flux-2-pro-preview": {
-        "description": "FLUX.2 Pro Preview text-to-image generation",
-        "costPerImageUSD": 0.03,
-        "costPerImageCents": 3,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 14987
-        }
-      },
       "flux-2-pro": {
         "description": "FLUX.2 Pro fixed snapshot text-to-image generation",
+        "pricingSourceUrl": "https://docs.bfl.ai/quick_start/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "BFL FLUX.2 API megapixel pricing reference",
+        "pricingNotes": "BFL FLUX.2 prices scale with model variant, output megapixels, and image inputs. AutoShow keeps a model-level reference estimate for --price; actual provider quotes/usage should override when available. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerImageUSD": 0.03,
         "costPerImageCents": 3,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 16645
         }
       },
       "flux-2-max": {
         "description": "FLUX.2 Max highest-quality text-to-image generation",
+        "pricingSourceUrl": "https://docs.bfl.ai/quick_start/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "BFL FLUX.2 API megapixel pricing reference",
+        "pricingNotes": "BFL FLUX.2 prices scale with model variant, output megapixels, and image inputs. AutoShow keeps a model-level reference estimate for --price; actual provider quotes/usage should override when available. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerImageUSD": 0.07,
         "costPerImageCents": 7,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 23533
         }
       },
       "flux-2-flex": {
         "description": "FLUX.2 Flex text-to-image generation",
+        "pricingSourceUrl": "https://docs.bfl.ai/quick_start/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "BFL FLUX.2 API megapixel pricing reference",
+        "pricingNotes": "BFL FLUX.2 prices scale with model variant, output megapixels, and image inputs. AutoShow keeps a model-level reference estimate for --price; actual provider quotes/usage should override when available. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerImageUSD": 0.06,
         "costPerImageCents": 6,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 30000
+          "msPerImage": 23549
         }
       }
     }
   },
-  "deapi": {
-    "description": "deAPI image generation",
+  "reve": {
+    "description": "Reve image generation",
     "type": "api",
     "models": {
-      "Flux1schnell": {
-        "description": "FLUX.1 Schnell 12B NF4 text-to-image generation",
-        "costPerImageUSD": 0.00136,
-        "costPerImageCents": 0.136,
+      "latest": {
+        "description": "Reve latest image creation model",
+        "pricingSourceUrl": "https://app.reve.com/faq",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Reve API credit reference heuristic",
+        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
+        "costPerImageUSD": 0.0013333333333333333,
+        "costPerImageCents": 0.13333333333333333,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 15038
+          "msPerImage": 30000
         }
       },
-      "ZImageTurbo_INT8": {
-        "description": "Z-Image-Turbo INT8 text-to-image generation",
-        "costPerImageUSD": 0.00405,
-        "costPerImageCents": 0.405,
+      "reve-create@20250915": {
+        "description": "Reve Create fixed text-to-image snapshot",
+        "pricingSourceUrl": "https://app.reve.com/faq",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Reve API credit reference heuristic",
+        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
+        "costPerImageUSD": 0.0013333333333333333,
+        "costPerImageCents": 0.13333333333333333,
         "estimation": {
           "costMultiplier": 1,
-          "msPerImage": 20797
-        }
-      },
-      "Flux_2_Klein_4B_BF16": {
-        "description": "FLUX.2 Klein 4B BF16 text-to-image generation",
-        "costPerImageUSD": 0.00186,
-        "costPerImageCents": 0.186,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerImage": 9239
+          "msPerImage": 30000
         }
       }
     }

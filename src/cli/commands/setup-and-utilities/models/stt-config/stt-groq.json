@@ -5,6 +5,11 @@
     "models": {
       "whisper-large-v3": {
         "description": "Groq-hosted Whisper large v3",
+        "pricingSourceUrl": "https://groq.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Groq on-demand speech-to-text pricing",
+        "pricingNotes": "Groq hosted Whisper STT estimates use published per-hour rates for the selected model. Free tier, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.111,
         "costPerHourCents": 11.1,
         "limits": {
@@ -20,6 +25,11 @@
       },
       "whisper-large-v3-turbo": {
         "description": "Groq-hosted Whisper large v3 turbo",
+        "pricingSourceUrl": "https://groq.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Groq on-demand speech-to-text pricing",
+        "pricingNotes": "Groq hosted Whisper STT estimates use published per-hour rates for the selected model. Free tier, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.04,
         "costPerHourCents": 4,
         "limits": {

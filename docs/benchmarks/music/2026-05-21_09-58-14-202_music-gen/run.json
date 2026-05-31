@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 2,
+  "kind": "music",
+  "metadata": {
+    "music": [
+      {
+        "musicService": "elevenlabs",
+        "musicModel": "music_v1",
+        "processingTime": 16633,
+        "musicFileName": "generated-music-elevenlabs-music_v1.mp3",
+        "musicFileSize": 960097,
+        "musicDurationMs": 60000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioBitrate": 128000,
+        "providerAudioByteSize": 960097,
+        "outputFormat": "mp3_44100_128"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6",
+        "processingTime": 115966,
+        "musicFileName": "generated-music-minimax-music-2.6.mp3",
+        "musicFileSize": 5667686,
+        "musicDurationMs": 176875,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 5667686,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e509235a3ba7769f4dcebd9c6a96b",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nDusty dashboard, sunbeams bright\nWindow down, a perfect sight\nFurry shadow on my lap\nChasing dreams, no turning back\nLittle paws on faded jeans\nLiving out our summer scenes\n\n[Pre-Chorus]\nRadio hums a distant tune\nUnderneath the afternoon\nWish this feeling could just stay\nForever on our getaway\n\n[Chorus]\nOh, the purrs and the open road\nA story only we are told\nSun-drenched whiskers, a gentle sigh\nAs the world goes rushing by\n\n[Verse]\nFields of green, a blur of speed\nEvery moment that we need\nHeads out the window, wind in fur\nA happy, contented purr\nMapping out the miles ahead\nNo place else I'd rather be instead\n\n[Pre-Chorus]\nStreetlights start to paint the sky\nAs the golden hours fly\nWish this feeling could just stay\nForever on our getaway\n\n[Chorus]\nOh, the purrs and the open road\nA story only we are told\nSun-drenched whiskers, a gentle sigh\nAs the world goes rushing by\n\n[Bridge]\nLittle paws kneading the seat\nEvery journey feels so sweet\nNo destination, just the ride\nWith my feline friend by my side\n\n[Instrumental]\n\n[Chorus]\nOh, the purrs and the open road\nA story only we are told\nSun-drenched whiskers, a gentle sigh\nAs the world goes rushing by\n\n[Outro]",
+        "generatedSongTitle": "Sun-Drenched Whiskers",
+        "generatedStyleTags": "indie pop, nostalgic, summer, road trip, cats"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6-free",
+        "processingTime": 144199,
+        "musicFileName": "generated-music-minimax-music-2.6-free.mp3",
+        "musicFileSize": 7275928,
+        "musicDurationMs": 227082,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 7275928,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e50a3044ab82b75852e58e6916d20",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nDusty dashboard, windows down low\nRadio hummin' a song we know\nGot my best friend, fur soft and deep\nWhile the miles and memories sleep\nHe's got his paws up on the glass\nWatchin' the green world flyin' past\n\n[Pre-Chorus]\nEvery town a blur, a fleeting dream\nChasin' the sunbeams, it would seem\nHe purrs a rhythm, soft and true\nEverything feels brand new\n\n[Chorus]\nOh, sun-kissed whiskers, on the breeze\nThrough the fields and shady trees\nThis old car, a rolling home\nWith my feline, never alone\nSummer haze and open road\nLightenin' up my heavy load\n\n[Post-Chorus]\nYeah, never alone\nWith my feline, never alone\n\n[Break]\n\n[Verse]\nStopping for gas, he takes a peek\nA tiny yawn, a silent squeak\nHe likes the sunshine on his face\nFinds his own quiet little space\nWe share a snack, a gentle pat\nJust me and my adventurous cat\n\n[Pre-Chorus]\nEvery town a blur, a fleeting dream\nChasin' the sunbeams, it would seem\nHe purrs a rhythm, soft and true\nEverything feels brand new\n\n[Chorus]\nOh, sun-kissed whiskers, on the breeze\nThrough the fields and shady trees\nThis old car, a rolling home\nWith my feline, never alone\nSummer haze and open road\nLightenin' up my heavy load\n\n[Bridge]\nRemember that diner, late at night?\nHe slept right through, a peaceful sight\nUnder the glow of neon signs\nLost in his own feline designs\nThis simple joy, it fills my soul\nMakes this journey feel so whole\n\n[Verse]\nWe're heading west, no map in hand\nJust feelin' the pull of distant land\nHe stretches out, a lazy grace\nContentment on his furry face\nAnother sunset paints the sky\nAs another mile goes rolling by\n\n[Chorus]\nOh, sun-kissed whiskers, on the breeze\nThrough the fields and shady trees\nThis old car, a rolling home\nWith my feline, never alone\nSummer haze and open road\nLightenin' up my heavy load\n\n[Post-Chorus]\nYeah, never alone\nWith my feline, never alone\n\n[Outro]",
+        "generatedSongTitle": "Sun-Kissed Whiskers",
+        "generatedStyleTags": "indie pop, nostalgic, summer, road trip, cats"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-clip-preview",
+        "processingTime": 20049,
+        "musicFileName": "generated-music-gemini-lyria-3-clip-preview.mp3",
+        "musicFileSize": 744609,
+        "musicDurationMs": 30000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[0.0:] Golden hour in your furry face\n[3.7:] Takin' up the whole back space\n[7.5:] Got that window breeze in your whiskers wide\n[11.2:] Nowhere for your royal paws to hide\n[15.0:] Singin' our favorite harmony\n[18.7:] It's you and this endless highway\n[22.5:] Just a road trippin' kitty cat\n[26.2:] (A road trippin' kitty cat)"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-pro-preview",
+        "processingTime": 36488,
+        "musicFileName": "generated-music-gemini-lyria-3-pro-preview.mp3",
+        "musicFileSize": 1485651,
+        "musicDurationMs": 60000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[[A0]]\n[[B1]]\n[11.4:] Windows down and your tail is in the breeze,\n[:] (Tail in the breeze)\n[:] Golden light across the whiskers, feeling at ease.\n[:] (Feeling at ease)\n[:] We’re chasing the heat across the yellow lines,\n[:] Just a couple of kittens in the summer sunshine.\n[[C2]]\n[29.7:] Oh, kittens on the dashboard, chasing the sun,\n[:] Summer road trip has only just begun!\n[:] Meowing at the mountains, purring to the beat,\n[:] Life is just a bowl of cream and something sweet!\n[:] (Something sweet!)\n[[D3]]\n[48.0:] Yeah, kittens on the dashboard...\n[:] Just a couple of kittens...\n[:] Summer heat, so sweet...\n[:] Purr..."
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 57,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 28,
+            "costMultiplier": 1,
+            "durationSeconds": 60
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 60
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 57,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 28,
+            "costMultiplier": 1,
+            "durationSeconds": 60
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 60
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 57,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 28,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 60000
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 176875
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 227082
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 30000
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 60000
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 607650,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 109200,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1820,
+            "throughputValue": 0.549,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 187560,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1563,
+            "throughputValue": 0.64,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 241800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 2015,
+            "throughputValue": 0.496,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 14730,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 491,
+            "throughputValue": 2.037,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 54360,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 906,
+            "throughputValue": 1.104,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 333335,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 16633,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 277.217,
+            "throughputValue": 3.607,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 115966,
+            "inputMetric": "durationSeconds",
+            "inputValue": 176.875,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 655.638,
+            "throughputValue": 1.525,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 144199,
+            "inputMetric": "durationSeconds",
+            "inputValue": 227.082,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 635.008,
+            "throughputValue": 1.575,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 20049,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 668.3,
+            "throughputValue": 1.496,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 36488,
+            "inputMetric": "durationSeconds",
+            "inputValue": 60,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 608.133,
+            "throughputValue": 1.644,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "indie pop, nostalgic summer road trip vibe song about cats",
+    "requestedProviders": [
+      {
+        "service": "elevenlabs",
+        "model": "music_v1"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6-free"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-clip-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-pro-preview"
+      }
+    ]
+  }
+}

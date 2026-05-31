@@ -1,15 +1,17 @@
 import * as v from 'valibot'
 import { ExpandedScenePromptDataSchema } from '../../schemas/schemas'
 import type {
+  ExpandedScenePromptData,
+  ImageGenerationSize,
+} from '../../types/comic-types'
+import type {
   ComicGridChunk,
   ComicGridSpec,
   ComicPageChunk,
   ComicPanelSelection,
-  ExpandedScenePromptData,
   GenerateImagesTarget,
-  ImageGenerationSize,
   SketchPanelRange,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 const PANEL_SELECTOR_PART_PATTERN = /^(\d+)(?:-(\d+))?$/
 const GRID_SPEC_PATTERN = /^([1-9]\d*)x([1-9]\d*)$/i
@@ -97,7 +99,7 @@ export const parsePanelSelector = (value: string): ComicPanelSelection => {
   return Array.from(selectedPanels).sort((left, right) => left - right)
 }
 
-export const isContiguousPanelSelection = (panelNumbers: number[]): boolean => {
+const isContiguousPanelSelection = (panelNumbers: number[]): boolean => {
   return panelNumbers.every((panelNumber, index) => {
     return index === 0 || panelNumber === panelNumbers[index - 1]! + 1
   })
@@ -137,7 +139,7 @@ export const panelSelectionToSketchRange = (
   return { startPanelNumber: sorted[0]!, endPanelNumber: sorted.at(-1)! }
 }
 
-export const applyPanelLimit = <T>(
+const applyPanelLimit = <T>(
   panels: T[],
   panelLimit: number | undefined
 ): T[] => {

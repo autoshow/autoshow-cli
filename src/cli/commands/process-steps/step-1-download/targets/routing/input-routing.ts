@@ -1,7 +1,7 @@
 import { commandSupportsInputFamily, isExtractCommand } from '~/cli/commands/process-steps/process-command-kinds'
 import { resolveOcrStep2ExecutionFromFormat, resolveSttStep2Execution } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/resolved-step2'
 import type { InputFamily, ProcessCommand, ResolvedInputRouting, RuntimeOptions } from '~/types'
-import { classifyInputFamily, isLikelyUrl, resolveDocumentFormatHint } from '../input/input-classifier'
+import { classifyInputFamily, isLikelyUrl, resolveDocumentFormatHint } from '../source-input/input-classifier'
 
 export const describeUnsupportedInputForCommand = (
   command: ProcessCommand,
@@ -29,14 +29,8 @@ export const resolveInputRoutingForCommand = async (
     | 'useReverb'
     | 'whisperModel'
     | 'whisperModels'
-    | 'gcloudSttModel'
-    | 'gcloudSttModels'
-    | 'awsSttModel'
-    | 'awsSttModels'
     | 'deepinfraSttModel'
     | 'deepinfraSttModels'
-    | 'deapiSttModel'
-    | 'deapiSttModels'
     | 'elevenlabsSttModel'
     | 'elevenlabsSttModels'
     | 'deepgramSttModel'
@@ -74,6 +68,8 @@ export const resolveInputRoutingForCommand = async (
     | 'kimiOcrModels'
     | 'openaiOcrModel'
     | 'openaiOcrModels'
+    | 'grokOcrModel'
+    | 'grokOcrModels'
     | 'anthropicOcrModel'
     | 'anthropicOcrModels'
     | 'geminiOcrModel'

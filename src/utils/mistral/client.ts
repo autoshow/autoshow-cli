@@ -1,8 +1,13 @@
-import { AppError } from '~/utils/error-handler'
+import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
+import {
+  extractRestErrorMessage,
+  normalizeFetchAbortError,
+  parseJsonOrText,
+  readJsonResponse,
+  trimTrailingSlashes
+} from '~/utils/rest-client'
 
-export const MISTRAL_DEFAULT_BASE_URL = 'https://api.mistral.ai/v1'
-
-export type MistralRestError = Error & {
+type MistralRestError = Error & {
   status: number
   headers: Headers
   body: string
@@ -29,8 +34,6 @@ type MistralMultipartRequestOptions = Omit<MistralFetchOptions, 'body' | 'header
   form: FormData
 }
 
-const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '')
-
 export const normalizeMistralBaseUrl = (baseURL: string): string => {
   const trimmed = baseURL.trim()
   if (trimmed.length === 0) {
@@ -54,54 +57,18 @@ export const normalizeMistralBaseUrl = (baseURL: string): string => {
   }
 }
 
-export const buildMistralUrl = (baseURL: string | undefined, path: string): string => {
+const buildMistralUrl = (baseURL: string | undefined, path: string): string => {
   const normalizedBase = normalizeMistralBaseUrl(baseURL ?? MISTRAL_DEFAULT_BASE_URL)
   return new URL(path.replace(/^\/+/, ''), `${normalizedBase}/`).toString()
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const extractErrorMessage = (payload: unknown, rawText: string, status: number): string => {
-  if (isRecord(payload)) {
-    const error = payload['error']
-    if (isRecord(error)) {
-      const message = error['message']
-      if (typeof message === 'string' && message.trim().length > 0) {
-        return message.trim()
-      }
-    }
-
-    for (const key of ['message', 'detail', 'error'] as const) {
-      const value = payload[key]
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim()
-      }
-    }
-  }
-
-  return rawText.trim() || `HTTP ${status}`
-}
-
-const parseJsonOrText = (rawText: string): unknown => {
-  if (rawText.trim().length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch {
-    return rawText
-  }
-}
-
-export const createMistralHttpError = async (
+const createMistralHttpError = async (
   response: Response,
   errorMessagePrefix: string
 ): Promise<MistralRestError> => {
   const rawText = await response.text()
   const rawResponse = parseJsonOrText(rawText)
-  const message = extractErrorMessage(rawResponse, rawText, response.status)
+  const message = extractRestErrorMessage(rawResponse, rawText, response.status)
   return Object.assign(new Error(`${errorMessagePrefix} (${response.status}): ${message}`), {
     status: response.status,
     headers: response.headers,
@@ -110,23 +77,7 @@ export const createMistralHttpError = async (
   } satisfies Pick<MistralRestError, 'status' | 'headers' | 'body' | 'rawResponse'>)
 }
 
-const normalizeMistralFetchError = (error: unknown): unknown => {
-  if (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  return error
-}
-
-export const mistralFetch = async (options: MistralFetchOptions): Promise<Response> => {
+const mistralFetch = async (options: MistralFetchOptions): Promise<Response> => {
   const headers = new Headers(options.headers)
   if (!headers.has('accept')) {
     headers.set('accept', 'application/json')
@@ -150,28 +101,7 @@ export const mistralFetch = async (options: MistralFetchOptions): Promise<Respon
 
     return response
   } catch (error) {
-    throw normalizeMistralFetchError(error)
-  }
-}
-
-const readJsonResponse = async (response: Response, errorMessagePrefix: string): Promise<unknown> => {
-  const rawText = await response.text()
-  if (rawText.trim().length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch (error) {
-    throw new AppError(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`, {
-      kind: 'validation',
-      cause: error instanceof Error ? error : new Error(String(error)),
-      status: response.status,
-      metadata: {
-        body: rawText,
-        rawResponse: rawText
-      }
-    })
+    throw normalizeFetchAbortError(error)
   }
 }
 

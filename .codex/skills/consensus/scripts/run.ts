@@ -91,7 +91,7 @@ function categoryHelp(category: ConsensusCategory): string {
   const inputTextNote = category === "tts"
     ? "TTS requires --input-text <path> for both build-packet and build-report."
     : category === "ocr" || category === "stt" || category === "url"
-      ? "--input-text <path> may be used with build-report to point at the gold text file."
+      ? "--input-text <path> may be used with build-report to point at the already-authored consensus artifact."
       : "--input-text is not used by this category.";
 
   return [
@@ -100,7 +100,7 @@ function categoryHelp(category: ConsensusCategory): string {
     `  bun scripts/run.ts ${category} build-report <run_dir> [--input-text <path>] [--roundtrip-dir <path>]`,
     "",
     inputTextNote,
-    "Generated reports are normalized with local and service ranking surfaces; OCR and STT also preserve their combined overall reports.",
+    "Generated reports are normalized with local and service ranking surfaces; OCR and STT use grouped full metricRankings instead of combined overall reports.",
   ].join("\n");
 }
 

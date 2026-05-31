@@ -1,16 +1,13 @@
 import assemblyLinks from './model-links/assembly.json'
-import awsLinks from './model-links/aws.json'
 import betterAuthLinks from './model-links/better-auth.json'
 import bflLinks from './model-links/bfl.json'
 import cartesiaLinks from './model-links/cartesia.json'
 import claudeLinks from './model-links/claude.json'
-import deapiLinks from './model-links/deapi.json'
 import deepgramLinks from './model-links/deepgram.json'
 import deepinfraLinks from './model-links/deepinfra.json'
 import driveLinks from './model-links/drive.json'
 import elevenlabsLinks from './model-links/elevenlabs.json'
 import firecrawlLinks from './model-links/firecrawl.json'
-import gcloudLinks from './model-links/gcloud.json'
 import geminiLinks from './model-links/gemini.json'
 import gladiaLinks from './model-links/gladia.json'
 import glmLinks from './model-links/glm.json'
@@ -53,11 +50,9 @@ const providerLinks = [
   minimaxLinks,
   claudeLinks,
   assemblyLinks,
-  awsLinks,
   betterAuthLinks,
   bflLinks,
   cartesiaLinks,
-  gcloudLinks,
   deepgramLinks,
   deepinfraLinks,
   sonioxLinks,
@@ -68,7 +63,6 @@ const providerLinks = [
   resendLinks,
   happyscribeLinks,
   humeLinks,
-  deapiLinks,
   supadataLinks,
   unstructuredLinks,
   scrapecreatorsLinks,

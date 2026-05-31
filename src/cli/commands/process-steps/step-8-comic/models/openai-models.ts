@@ -4,18 +4,23 @@ import type {
   OpenAiImageGenerationModel,
   OpenAiLlmModel,
   TokenPricing,
-} from '../types'
+} from '../types/comic-types'
 
 export const GPT_IMAGE_2_MODEL = 'gpt-image-2'
-export const GPT_IMAGE_1_5_MODEL = 'gpt-image-1.5'
+const GPT_IMAGE_1_5_MODEL = 'gpt-image-1.5'
 export const OPENAI_IMAGE_MODELS = [GPT_IMAGE_2_MODEL, GPT_IMAGE_1_5_MODEL] as const
-export const OPENAI_LLM_MODELS = ['gpt-5.4-pro', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'] as const
+export const OPENAI_LLM_MODELS = ['gpt-5.5', 'gpt-5.4-pro', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'] as const
 
 
 
 
 
 export const LLM_MODEL_PRICING: Record<OpenAiLlmModel, TokenPricing> = {
+  'gpt-5.5': {
+    input: 5.0,
+    cachedInput: 0.5,
+    output: 30.0,
+  },
   'gpt-5.4-pro': {
     input: 30.0,
     cachedInput: 30.0,

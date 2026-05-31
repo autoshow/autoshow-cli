@@ -1,8 +1,12 @@
 import type { CliFlagsDefinition } from '~/cli/native'
 import { articleFlags, batchFlags } from './shared-flags'
+import { withHelpGroup } from './flag-utils'
 
-export const downloadFlags = {
-  password: { description: 'Password for encrypted PDFs', type: String },
+const downloadDocumentFlags = {
+  password: { description: 'Password for encrypted PDFs', type: String }
+} as const satisfies CliFlagsDefinition
+
+const mediaDownloadFlags = {
   'keep-original-media': {
     description: 'Keep downloaded media in its original/downloaded format instead of creating the normalized compressed audio artifact',
     type: Boolean,
@@ -20,7 +24,12 @@ export const downloadFlags = {
     type: Boolean,
     default: false,
     negatable: false
-  },
-  ...articleFlags,
-  ...batchFlags,
+  }
+} as const satisfies CliFlagsDefinition
+
+export const downloadFlags = {
+  ...withHelpGroup(downloadDocumentFlags, 'document-options'),
+  ...withHelpGroup(mediaDownloadFlags, 'media-download'),
+  ...withHelpGroup(articleFlags, 'article-extraction'),
+  ...withHelpGroup(batchFlags, 'batch-processing'),
 } as const satisfies CliFlagsDefinition

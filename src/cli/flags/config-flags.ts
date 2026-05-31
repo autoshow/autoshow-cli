@@ -1,5 +1,5 @@
 import type { CliFlagsDefinition } from '~/cli/native'
-import { withHelpGroup } from './flag-utils'
+import { omitFlags, withHelpGroup } from './flag-utils'
 import {
   transcriptionFlags,
   llmProviderFlags,
@@ -7,24 +7,59 @@ import {
   ocrTuningFlags,
   batchFlags,
   promptFlag,
-  priceFlag
+  priceFlag,
+  sharedConcurrencyFlags,
+  stepProviderSelectorFlags
 } from './shared-flags'
-import { ttsFlags } from './tts-flags'
+import { ttsCommandFlags } from './tts-flags'
 import { imageGenFlags } from './image-flags'
 import { musicGenFlags } from './music-flags'
 import { videoGenFlags } from './video-flags'
 
 export const CONFIG_COMMAND_HELP_FLAG_GROUPS = [
   ['config', 'Config'],
-  ['pricing', 'Pricing'],
+  ['document-options', 'Document Options'],
+  ['metadata-output', 'Metadata Output'],
+  ['media-download', 'Media Download Options'],
+  ['provider-selection', 'Provider Selection'],
+  ['pipeline', 'Pipeline Selection'],
   ['step-1-download', 'Step 1 - Download'],
+  ['batch-download', 'Batch / Download'],
   ['step-2-stt', 'Step 2 - Transcribe'],
+  ['transcription', 'Transcription / STT'],
   ['step-2-ocr', 'Step 2 - OCR'],
+  ['extraction', 'Extraction'],
+  ['ocr-document', 'OCR / Document Extraction'],
+  ['article-extraction', 'Article Extraction'],
+  ['batch-processing', 'Batch Processing'],
+  ['epub-inspect', 'EPUB Inspect'],
+  ['transcript-video', 'Transcript Video'],
   ['step-3-write', 'Step 3 - Write'],
+  ['writing', 'Writing'],
   ['step-4-tts', 'Step 4 - Text to Speech'],
+  ['tts-options', 'TTS Options'],
+  ['tts-minimax', 'MiniMax TTS'],
+  ['tts-openai', 'OpenAI TTS'],
+  ['tts-deepgram', 'Deepgram TTS'],
+  ['tts-speechify', 'Speechify TTS'],
+  ['tts-hume', 'Hume TTS'],
+  ['tts-groq', 'Groq TTS'],
+  ['tts-gemini', 'Gemini TTS'],
+  ['tts-dialogue', 'Multi-Speaker / Dialogue'],
+  ['tts-elevenlabs', 'ElevenLabs TTS'],
   ['step-5-image', 'Step 5 - Image'],
+  ['image-options', 'Image Options'],
+  ['image-inputs', 'Image Inputs'],
+  ['image-provider-options', 'Provider-Specific Image Options'],
   ['step-6-video', 'Step 6 - Video'],
-  ['step-7-music', 'Step 7 - Music']
+  ['video-options', 'Video Options'],
+  ['video-inputs', 'Video Inputs'],
+  ['grok-storage', 'Grok Storage Options'],
+  ['step-7-music', 'Step 7 - Music'],
+  ['hosted-music', 'Hosted Music'],
+  ['pricing', 'Pricing'],
+  ['output', 'Output'],
+  ['lyric-video', 'Lyric Video']
 ] as const
 
 
@@ -50,31 +85,35 @@ const pricingFlags = {
   }
 } as const satisfies CliFlagsDefinition
 
-const omitFlags = (
-  flags: CliFlagsDefinition,
-  omittedKeys: string[]
-): CliFlagsDefinition => Object.fromEntries(
-  Object.entries(flags).filter(([name]) => !omittedKeys.includes(name))
-)
-
-const configTtsFlags = omitFlags(ttsFlags, ['all-tts'])
-const configImageFlags = omitFlags(imageGenFlags, ['all-image'])
-const configVideoFlags = omitFlags(videoGenFlags, ['all-video'])
-const configMusicFlags = omitFlags(musicGenFlags, ['all-music'])
+const configTtsFlags = omitFlags(ttsCommandFlags, [
+  'provider',
+  'all-providers',
+  'provider-concurrency',
+  'local-concurrency',
+  'output-dir',
+  'price'
+])
 const configOcrInputFlags = omitFlags(ocrInputFlags, ['password'])
 
 export const configCommandFlags = {
   ...withHelpGroup(configFlags, 'config'),
   ...withHelpGroup(pricingFlags, 'pricing'),
   ...withHelpGroup(batchFlags, 'step-1-download'),
+  ...withHelpGroup(sharedConcurrencyFlags, 'pricing'),
+  ...withHelpGroup({ stt: stepProviderSelectorFlags.stt }, 'step-2-stt'),
   ...withHelpGroup(transcriptionFlags, 'step-2-stt'),
+  ...withHelpGroup({ ocr: stepProviderSelectorFlags.ocr }, 'step-2-ocr'),
   ...withHelpGroup(configOcrInputFlags, 'step-2-ocr'),
   ...withHelpGroup(ocrTuningFlags, 'step-2-ocr'),
   ...withHelpGroup(llmProviderFlags, 'step-3-write'),
   ...withHelpGroup(promptFlag, 'step-3-write'),
+  ...withHelpGroup({ tts: stepProviderSelectorFlags.tts }, 'step-4-tts'),
   ...withHelpGroup(configTtsFlags, 'step-4-tts'),
-  ...withHelpGroup(configImageFlags, 'step-5-image'),
-  ...withHelpGroup(configVideoFlags, 'step-6-video'),
-  ...withHelpGroup(configMusicFlags, 'step-7-music'),
+  ...withHelpGroup({ image: stepProviderSelectorFlags.image }, 'step-5-image'),
+  ...withHelpGroup(imageGenFlags, 'step-5-image'),
+  ...withHelpGroup({ video: stepProviderSelectorFlags.video }, 'step-6-video'),
+  ...withHelpGroup(videoGenFlags, 'step-6-video'),
+  ...withHelpGroup({ music: stepProviderSelectorFlags.music }, 'step-7-music'),
+  ...withHelpGroup(musicGenFlags, 'step-7-music'),
   ...withHelpGroup(priceFlag, 'pricing')
 } as const satisfies CliFlagsDefinition

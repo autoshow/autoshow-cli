@@ -1,7 +1,7 @@
 import { basename } from 'node:path'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration, formatEstimatedCost, formatEstimatedCostWithExactCents } from '~/utils/logger/formatters'
-import { createHumanTable, logLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
+import { createDetailTable, createHumanTable, createLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
 import { emitResult } from '~/utils/logger/result-emitter'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 import type {
@@ -53,6 +53,8 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       }
       if (typeof estimate.estimatedInputTokens === 'number') entry['estInputTokens'] = estimate.estimatedInputTokens
       if (typeof estimate.estimatedOutputTokens === 'number') entry['estOutputTokens'] = estimate.estimatedOutputTokens
+      if (typeof estimate.pricingBand === 'string') entry['pricingBand'] = estimate.pricingBand
+      if (typeof estimate.pricingNote === 'string') entry['pricingNote'] = estimate.pricingNote
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
       return entry
     }
@@ -77,6 +79,8 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       if (typeof estimate.estimatedOutputChars === 'number') entry['estOutputChars'] = estimate.estimatedOutputChars
       if (typeof estimate.promptTokens === 'number') entry['promptTokens'] = estimate.promptTokens
       if (typeof estimate.completionTokens === 'number') entry['completionTokens'] = estimate.completionTokens
+      if (typeof estimate.pricingBand === 'string') entry['pricingBand'] = estimate.pricingBand
+      if (typeof estimate.pricingNote === 'string') entry['pricingNote'] = estimate.pricingNote
       if (typeof estimate.estimateType === 'string') entry['estimateType'] = estimate.estimateType
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
       return entry
@@ -211,90 +215,51 @@ const buildHumanCompletionTables = (
   }
 }
 
-const formatRate = (amount: number, unit: string): string =>
-  `${formatEstimatedCost(amount)}/${unit}`
-
-const buildEstimateDetails = (estimate: StepEstimate): string => {
-  const details: string[] = []
-
-  switch (estimate.step) {
-    case 'stt':
-      details.push(`duration ${estimate.durationSeconds}s`)
-      if (typeof estimate.estimateType === 'string') details.push(`type ${estimate.estimateType}`)
-      break
-    case 'llm':
-      details.push(`input ${formatRate(estimate.inputCostPer1MCents, '1M')}`)
-      details.push(`output ${formatRate(estimate.outputCostPer1MCents, '1M')}`)
-      if (typeof estimate.estimatedInputTokens === 'number') details.push(`est input ${estimate.estimatedInputTokens} tokens`)
-      if (typeof estimate.estimatedOutputTokens === 'number') details.push(`est output ${estimate.estimatedOutputTokens} tokens`)
-      break
-    case 'extract':
-      if (typeof estimate.costPer1kPagesCents === 'number') {
-        details.push(`rate ${formatRate(estimate.costPer1kPagesCents, '1K pages')}`)
-      } else if (typeof estimate.costPer1kOutputCharsCents === 'number') {
-        details.push(`rate ${formatRate(estimate.costPer1kOutputCharsCents, '1K output chars')}`)
-      } else if (typeof estimate.inputCostPer1MCents === 'number' && typeof estimate.outputCostPer1MCents === 'number') {
-        details.push(`input ${formatRate(estimate.inputCostPer1MCents, '1M')}`)
-        details.push(`output ${formatRate(estimate.outputCostPer1MCents, '1M')}`)
-      }
-      if (typeof estimate.pageCount === 'number') details.push(`pages ${estimate.pageCount}`)
-      if (typeof estimate.estimatedOutputChars === 'number') details.push(`est output ${estimate.estimatedOutputChars} chars`)
-      if (typeof estimate.promptTokens === 'number') details.push(`prompt ${estimate.promptTokens} tokens`)
-      if (typeof estimate.completionTokens === 'number') details.push(`completion ${estimate.completionTokens} tokens`)
-      if (typeof estimate.estimateType === 'string') details.push(`type ${estimate.estimateType}`)
-      break
-    case 'tts':
-      if (typeof estimate.inputCostPer1MCharactersCents === 'number' && typeof estimate.outputCostPer1MCharactersCents === 'number') {
-        details.push(`input ${formatRate(estimate.inputCostPer1MCharactersCents, '1M chars')}`)
-        details.push(`output ${formatRate(estimate.outputCostPer1MCharactersCents, '1M chars')}`)
-      } else if (typeof estimate.costPer1kCharactersCents === 'number') {
-        details.push(`rate ${formatRate(estimate.costPer1kCharactersCents, '1K chars')}`)
-      }
-      if (typeof estimate.characterCount === 'number') details.push(`characters ${estimate.characterCount}`)
-      if (typeof estimate.setupCostCents === 'number') details.push(`setup ${formatEstimatedCost(estimate.setupCostCents)}`)
-      if (typeof estimate.estimateType === 'string') details.push(`type ${estimate.estimateType}`)
-      break
-    case 'image':
-    case 'video':
-      break
-    case 'music':
-      details.push(`lyrics ${estimate.lyricsSource}`)
-      break
-    default:
-      assertNever(estimate)
-  }
-
-  return details.join(', ')
-}
-
 const buildHumanEstimateRows = (
   estimate: AggregatedPriceEstimate
-): HumanLogTableRow[] =>
-  estimate.steps.map((step) => {
-    const details = buildEstimateDetails(step)
+): HumanLogTableRow[] => {
+  const timingRows = estimate.timing?.steps.map(mapTimingEstimate) ?? []
+
+  return estimate.steps.map((step, index) => {
+    const timing = timingRows[index]
     return {
       step: step.step,
       provider: step.step === 'stt' ? formatSttProvider(step.provider) : step.provider,
       model: step.step === 'stt' && step.provider === 'reverb'
         ? resolveReverbModelLabel(step.model)
         : step.model,
-      ...(details.length > 0 ? { details } : {}),
-      cost: formatEstimatedCost(step.totalCost)
+      ...(typeof timing?.['input'] === 'string' ? { input: timing['input'] } : {}),
+      ...(step.step === 'tts' && typeof step.setupCostCents === 'number'
+        ? { setup: formatEstimatedCost(step.setupCostCents) }
+        : {}),
+      cost: formatEstimatedCost(step.totalCost),
+      ...(typeof timing?.['estimatedTime'] === 'string' ? { estimatedTime: timing['estimatedTime'] } : {})
     }
   })
+}
 
 const buildHumanEstimateTable = (
   rows: readonly HumanLogTableRow[]
 ) => {
+  const hasSetup = rows.some((row) => 'setup' in row)
+  const hasInput = rows.some((row) => 'input' in row)
+  const hasEstimated = rows.some((row) => 'estimatedTime' in row)
   const columns = [
     'step',
     'provider',
     'model',
-    ...(rows.some(row => row['details'] !== undefined) ? ['details'] : []),
-    'cost'
+    ...(hasInput ? ['input'] : []),
+    ...(hasSetup ? ['setup'] : []),
+    'cost',
+    ...(hasEstimated ? ['estimatedTime'] : [])
   ]
-
-  return createHumanTable(rows, columns, { align: { cost: 'right' } })
+  return createHumanTable(rows, columns, {
+    align: {
+      cost: 'right',
+      ...(hasSetup ? { setup: 'right' } : {}),
+      ...(hasEstimated ? { estimatedTime: 'right' } : {})
+    }
+  })
 }
 
 const buildCompleteResultData = (
@@ -338,19 +303,21 @@ export const createReporter = (logger: Logger): Reporter => {
     },
     estimate: (estimate) => {
       const estimateRows = buildHumanEstimateRows(estimate)
-
-      logger.write('info', `Total estimated cost: ${formatEstimatedCostWithExactCents(estimate.totalEstimatedCost)}`, { category: 'pricing' })
-      logger.write('info', 'Cost Estimate', {
-        category: 'pricing',
-        humanTable: buildHumanEstimateTable(estimateRows)
-      })
+      const estimateSummary: Array<readonly [string, unknown]> = [
+        ['Total estimated cost', formatEstimatedCostWithExactCents(estimate.totalEstimatedCost)]
+      ]
       if (estimate.timing && estimate.timing.steps.length > 0) {
-        logger.write('info', `Total estimated processing time: ${formatDuration(estimate.timing.totalProcessingTimeMs)}`, { category: 'pricing' })
-        logger.write('info', 'Processing Time Estimate', {
-          category: 'pricing',
-          humanTable: createHumanTable(estimate.timing.steps.map(mapTimingEstimate), ['step', 'provider', 'model', 'input', 'estimatedTime'])
-        })
+        estimateSummary.push(['Total estimated processing time', formatDuration(estimate.timing.totalProcessingTimeMs)])
       }
+
+      logger.write('info', 'Estimate', {
+        category: 'pricing',
+        humanTable: createDetailTable(estimateSummary),
+        humanSections: [{
+          title: 'Cost Estimate',
+          table: buildHumanEstimateTable(estimateRows)
+        }]
+      })
 
       emitResult({
         dryRun: true,
@@ -362,22 +329,26 @@ export const createReporter = (logger: Logger): Reporter => {
       })
     },
     complete: (outputDir, files, options) => {
-      logLocationsTable(logger, [{ artifact: 'outputDir', path: outputDir }], { category: 'artifact' })
-      logger.write('success', options?.summaryMessage ?? 'Complete!', { category: 'artifact' })
       const tables = buildHumanCompletionTables(outputDir, files, options)
       const hiddenSections = new Set(options?.hideHumanSections ?? [])
-      if (tables.artifacts && !hiddenSections.has('artifacts')) {
-        logger.write('info', 'Artifacts', { category: 'artifact', humanTable: tables.artifacts })
-      }
-      if (tables.providers && !hiddenSections.has('providers')) {
-        logger.write('info', 'Providers', { category: 'artifact', humanTable: tables.providers })
-      }
-      if (tables.metrics && !hiddenSections.has('metrics')) {
-        logger.write('info', 'Metrics', { category: 'artifact', humanTable: tables.metrics })
-      }
-      if (tables.timing && !hiddenSections.has('timing')) {
-        logger.write('info', 'Timing', { category: 'artifact', humanTable: tables.timing })
-      }
+      const includeOutputDir = options?.includeOutputDir ?? true
+      const humanSections = [
+        ...(includeOutputDir
+          ? [{
+              title: 'Locations',
+              table: createLocationsTable([{ artifact: 'outputDir', path: outputDir }])
+            }]
+          : []),
+        ...(tables.artifacts && !hiddenSections.has('artifacts') ? [{ title: 'Artifacts', table: tables.artifacts }] : []),
+        ...(tables.metrics && !hiddenSections.has('metrics') ? [{ title: 'Metrics', table: tables.metrics }] : []),
+        ...(tables.providers && !hiddenSections.has('providers') ? [{ title: 'Providers', table: tables.providers }] : []),
+        ...(tables.timing && !hiddenSections.has('timing') ? [{ title: 'Timing', table: tables.timing }] : [])
+      ]
+
+      logger.write('success', options?.summaryMessage ?? 'Complete', {
+        category: 'artifact',
+        ...(humanSections.length > 0 ? { humanSections } : {})
+      })
 
       emitResult(buildCompleteResultData(outputDir, files, options))
     }

@@ -11,11 +11,13 @@ import {
   resolveCharacterInputAlias,
 } from '../../utils/project-paths'
 import type {
-  CharacterDetails,
   CharacterName,
-  CharacterSketchView,
   ImageGenerationModel,
-} from '../../types'
+} from '../../types/comic-types'
+import type {
+  CharacterDetails,
+  CharacterSketchView,
+} from '../../types/comic-command-types'
 
 
 const NON_CHARACTER_ENTRIES = ['SFX', 'SOUND', 'MUSIC', 'NARRATOR', 'TITLE', 'CAPTION']
@@ -191,7 +193,7 @@ export const getCharacterSketchesDirectory = (imagePath: string): string => {
   return getProjectCharacterSketchesDirectory(imagePath)
 }
 
-export const getCharacterSketchStemFromDirectory = (sketchesDirectory: string): string => {
+const getCharacterSketchStemFromDirectory = (sketchesDirectory: string): string => {
   const stem = basename(normalizeCharacterSketchesDirectoryPath(sketchesDirectory))
   if (!stem) {
     throw new Error(`Invalid character sketch directory "${sketchesDirectory}"`)
@@ -204,7 +206,7 @@ const getCharacterSketchVariantSuffix = (variant: CharacterSketchVariant): strin
   return variant === 'revised' ? '--revised' : ''
 }
 
-export const getCharacterSketchImageFilenameForStem = (
+const getCharacterSketchImageFilenameForStem = (
   stem: string,
   view: CharacterSketchView,
   variant: CharacterSketchVariant = 'canonical'
@@ -223,7 +225,7 @@ export const getCharacterSketchImagePathForDirectory = (
   )
 }
 
-export const getCharacterSketchSheetImageFilenameForStem = (
+const getCharacterSketchSheetImageFilenameForStem = (
   stem: string,
   variant: CharacterSketchVariant = 'canonical'
 ): string => {
@@ -240,14 +242,7 @@ export const getCharacterSketchSheetImagePathForDirectory = (
   )
 }
 
-export const getCharacterSketchSheetImagePath = (
-  imagePath: string,
-  variant: CharacterSketchVariant = 'canonical'
-): string => {
-  return getCharacterSketchSheetImagePathForDirectory(getCharacterSketchesDirectory(imagePath), variant)
-}
-
-export const getCharacterSketchImageFilename = (
+const getCharacterSketchImageFilename = (
   imagePath: string,
   view: CharacterSketchView,
 ): string => {
@@ -264,7 +259,7 @@ export const getCharacterSketchImagePath = (
   return model ? join(dir, model, filename) : join(dir, filename)
 }
 
-export const findCharacterSketchImages = async (imagePath: string): Promise<string[]> => {
+const findCharacterSketchImages = async (imagePath: string): Promise<string[]> => {
   const sketchesDirectory = getCharacterSketchesDirectory(imagePath)
   if (!existsSync(sketchesDirectory)) {
     return []

@@ -1,4 +1,4 @@
-import type { HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/types'
+import type { HumanLogSection, HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/types'
 
 const REDACTED = 'REDACTED'
 
@@ -17,7 +17,6 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
   'gemini-api-key',
   'groq-api-key',
   'mistral-api-key',
-  'deapi-api-key',
   'assemblyai-api-key',
   'gladia-api-key',
   'happyscribe-api-key',
@@ -25,13 +24,9 @@ const SENSITIVE_FLAG_NAMES = new Set<string>([
   'scrapecreators-api-key',
   'elevenlabs-api-key',
   'minimax-api-key',
-  'gcloud-tts-voice-cloning-key',
   'speechify-tts-consent-email'
 ])
 
-const SHORT_SENSITIVE_FLAGS = new Set<string>(['-p'])
-
-const TOKEN_LIKE_KEY_PATTERN = /(?:token|api[_-]?key|authorization|auth|secret|password)/i
 const SENSITIVE_OBJECT_KEY_PATTERN = /(?:token|api[_-]?key|authorization|secret|password|^auth$|[_-]auth$|auth[_-])/i
 
 const sanitizeHeaderAuthorization = (value: string): string => {
@@ -76,67 +71,9 @@ const normalizeFlagName = (flagName: string): string => {
   return flagName.replace(/^--?/, '').toLowerCase()
 }
 
-const isSensitiveFlag = (flagToken: string): boolean => {
-  if (SHORT_SENSITIVE_FLAGS.has(flagToken)) {
-    return true
-  }
-
-  if (!flagToken.startsWith('--')) {
-    return false
-  }
-
-  const eqIndex = flagToken.indexOf('=')
-  const rawName = eqIndex === -1 ? flagToken : flagToken.slice(0, eqIndex)
-  const normalized = normalizeFlagName(rawName)
-
-  return SENSITIVE_FLAG_NAMES.has(normalized) || TOKEN_LIKE_KEY_PATTERN.test(normalized)
-}
-
 const isSensitiveObjectKey = (key: string): boolean => {
   const normalized = normalizeFlagName(key)
   return SENSITIVE_FLAG_NAMES.has(normalized) || SENSITIVE_OBJECT_KEY_PATTERN.test(normalized)
-}
-
-const sanitizeArgToken = (token: string): string => {
-  if (token.length === 0) {
-    return token
-  }
-
-  if (token.startsWith('--') && token.includes('=')) {
-    const eqIndex = token.indexOf('=')
-    const flag = token.slice(0, eqIndex)
-    const value = token.slice(eqIndex + 1)
-    if (isSensitiveFlag(flag)) {
-      return `${flag}=${REDACTED}`
-    }
-    return `${flag}=${sanitizeLogText(value)}`
-  }
-
-  return sanitizeLogText(token)
-}
-
-export const redactCliArgv = (argv: readonly string[]): string[] => {
-  const redacted = argv.map(token => sanitizeArgToken(token))
-
-  for (let i = 0; i < redacted.length; i++) {
-    const token = redacted[i] as string
-
-    if (!isSensitiveFlag(token)) {
-      continue
-    }
-
-    if (token.startsWith('--') && token.includes('=')) {
-      continue
-    }
-
-    const next = redacted[i + 1]
-    if (next !== undefined) {
-      redacted[i + 1] = REDACTED
-      i += 1
-    }
-  }
-
-  return redacted
 }
 
 const sanitizeUnknown = (value: unknown, depth: number, seen: WeakSet<object>): unknown => {
@@ -284,5 +221,20 @@ export const sanitizeHumanTable = (table: HumanLogTable): HumanLogTable => ({
           Object.entries(table.align).map(([column, align]) => [sanitizeLogText(column), align])
         )
       }
+    : {}),
+  ...(table.labels
+    ? {
+        labels: Object.fromEntries(
+          Object.entries(table.labels).map(([column, label]) => [sanitizeLogText(column), sanitizeLogText(label)])
+        )
+      }
     : {})
 })
+
+export const sanitizeHumanSections = (
+  sections: readonly HumanLogSection[]
+): readonly HumanLogSection[] =>
+  sections.map(section => ({
+    title: sanitizeLogText(section.title),
+    table: sanitizeHumanTable(section.table)
+  }))

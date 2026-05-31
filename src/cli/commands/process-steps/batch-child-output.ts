@@ -32,7 +32,7 @@ const resolveBatchChildSlug = (
   return slug.length > 0 ? slug : 'item'
 }
 
-export const buildBatchChildDirectoryStem = (
+const buildBatchChildDirectoryStem = (
   identity: BatchChildDirectoryIdentity
 ): string => {
   const slug = resolveBatchChildSlug(identity)

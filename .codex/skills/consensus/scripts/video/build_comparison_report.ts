@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
@@ -40,6 +40,8 @@ interface RankedProvider {
   videoDurationSeconds: number | null;
   processingTimeMs: number | null;
   costCents: number | null;
+  qualityScore: number | null;
+  humanQualityScore: number | null;
 }
 
 function helpText(): string {
@@ -114,6 +116,82 @@ function joinProviderNames(providers: Array<{ providerKey: string }>): string {
   return `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringField(record: Record<string, unknown>, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function numberField(record: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function loadVideoQualityScores(
+  runDir: string,
+  warnings: string[],
+): Map<string, { qualityScore: number | null; humanQualityScore: number | null }> {
+  const qualityReportPath = resolve(runDir, "video-quality-report.json");
+  const scores = new Map<string, { qualityScore: number | null; humanQualityScore: number | null }>();
+
+  if (!existsSync(qualityReportPath)) {
+    return scores;
+  }
+
+  let report: unknown;
+  try {
+    report = JSON.parse(readFileSync(qualityReportPath, "utf8")) as unknown;
+  } catch (error) {
+    warnings.push(`Could not read video-quality-report.json: ${error instanceof Error ? error.message : String(error)}`);
+    return scores;
+  }
+
+  if (!isRecord(report) || !Array.isArray(report.providers)) {
+    warnings.push("video-quality-report.json did not contain a providers array.");
+    return scores;
+  }
+
+  for (const provider of report.providers) {
+    if (!isRecord(provider)) {
+      continue;
+    }
+
+    const providerKey = stringField(provider, ["providerKey"])
+      ?? (() => {
+        const service = stringField(provider, ["provider", "videoGenService", "videoService"]);
+        const model = stringField(provider, ["model", "videoGenModel", "videoModel"]);
+        return service && model ? makeProviderKey(service, model) : null;
+      })();
+
+    if (!providerKey) {
+      continue;
+    }
+
+    const metrics = isRecord(provider.metrics) ? provider.metrics : {};
+    const qualityScore = numberField(provider, ["qualityScore"]) ?? numberField(metrics, ["qualityScore"]);
+    const humanQualityScore = numberField(provider, ["humanQualityScore"]) ?? numberField(metrics, ["humanQualityScore"]);
+
+    if (qualityScore !== null || humanQualityScore !== null) {
+      scores.set(providerKey, { qualityScore, humanQualityScore });
+    }
+  }
+
+  return scores;
+}
+
 export async function buildReport(runDir: string) {
   const runJson = loadVideoRunJson(runDir);
   const warnings: string[] = [];
@@ -125,6 +203,7 @@ export async function buildReport(runDir: string) {
 
   const costLookup = buildCostLookup(runJson);
   const timingLookup = buildTimingLookup(runJson);
+  const qualityScores = loadVideoQualityScores(runDir, warnings);
   const providerData: Array<Omit<RankedProvider, "rank">> = [];
 
   for (const entry of runJson.metadata.video) {
@@ -133,6 +212,7 @@ export async function buildReport(runDir: string) {
     const videoExists = videoPath.length > 0;
     const costCents = costLookup.get(providerKey) ?? null;
     const processingTimeMs = timingLookup.get(providerKey) ?? entryProcessingTime(entry);
+    const quality = qualityScores.get(providerKey);
 
     providerData.push({
       providerKey,
@@ -148,6 +228,8 @@ export async function buildReport(runDir: string) {
       videoDurationSeconds: nullableNumber(entry.videoDuration),
       processingTimeMs,
       costCents,
+      qualityScore: quality?.qualityScore ?? null,
+      humanQualityScore: quality?.humanQualityScore ?? null,
     });
   }
 
@@ -189,7 +271,12 @@ export async function buildReport(runDir: string) {
   }
 
   notes.push("Ranking used price-speed scoring: cost efficiency (50%) and processing speed (50%).");
-  notes.push("Video artifact existence, file size, duration, dimensions, format, and bitrate are reported as evidence only; video quality is not assessed or scored.");
+  if (ranked.some((p) => p.qualityScore !== null || p.humanQualityScore !== null)) {
+    notes.push("Video quality rankings use only explicit qualityScore or humanQualityScore evidence when available.");
+  } else {
+    notes.push("No explicit qualityScore or humanQualityScore evidence was found; video quality is not inferred from artifact metadata.");
+  }
+  notes.push("Video artifact existence, file size, duration, dimensions, format, and bitrate are reported as evidence only and are not used as quality proxies.");
 
   const scoreFormula = "50% cost-efficiency + 50% processing-speed";
   const reportJson = {
@@ -243,7 +330,8 @@ export async function buildReport(runDir: string) {
 - Ranking uses price-speed scoring: 50% cost efficiency and 50% processing speed.
 - Lower cost and lower processing time are better; missing cost or timing receives a neutral component score of 50.
 - If all available values for a metric are equal, providers with that metric receive 100 for that component.
-- Artifact existence, file size, duration, dimensions, format, and bitrate are reported for context only; video quality is not assessed or scored.
+- Explicit qualityScore and humanQualityScore values are retained for grouped quality rankings when available.
+- Artifact existence, file size, duration, dimensions, format, and bitrate are reported for context only and are not used as quality proxies.
 
 ## Providers (${ranked.length})
 

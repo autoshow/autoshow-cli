@@ -1,7 +1,6 @@
 import { resolveLlamaDownloadRepo } from '~/cli/commands/setup-and-utilities/models/model-options'
 import * as l from '~/utils/logger'
 import { withProcessLock } from '~/utils/process-lock'
-import { readEnv } from '~/utils/validate/env-utils'
 import {
   getLlamaServerStartTimeoutMs,
   resolveLlamaServerBinary
@@ -27,11 +26,12 @@ import {
   stopSpawnedLlamaServer,
   waitForLlamaHealth
 } from './llama-server-process'
+import { recordSetupManagedLlamaModel } from './llama-model-metadata'
 
 const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> => {
   const llamaServerPath = resolveLlamaServerBinary()
 
-  const modelRepo = readEnv('LLAMA_MODEL_REPO') || resolveLlamaDownloadRepo(model)
+  const modelRepo = resolveLlamaDownloadRepo(model)
   l.write('info', `Downloading llama model: ${modelRepo}`)
 
   if (await checkLlamaHealthQuiet()) {
@@ -103,6 +103,7 @@ const ensureLlamaModelDownloadedUnlocked = async (model: string): Promise<void> 
     )
   }
 
+  await recordSetupManagedLlamaModel(model)
   l.write('success', `Model downloaded and ready: ${modelRepo}`)
 }
 

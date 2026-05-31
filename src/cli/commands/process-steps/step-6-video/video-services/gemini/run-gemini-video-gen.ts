@@ -1,21 +1,25 @@
+import * as l from '~/utils/logger'
 import { mkdir } from 'node:fs/promises'
 import type { GeminiVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
-import * as l from '~/utils/logger'
 import { normalizeGeminiDuration, normalizeGeminiResolution } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
 import { pollUntil } from '~/utils/retries'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { geminiDownloadFile, geminiGetOperation, geminiPredictLongRunning } from '~/utils/gemini/gemini-rest'
-import { videoMediaReferenceToGeminiInlineData } from '../../video-utils/video-media-inputs'
+import {
+  videoMediaReferenceToGeminiInlineData,
+  videoMediaReferenceToGeminiVideoImage
+} from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
 
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
+const DEFAULT_IMAGE_VIDEO_PROMPT = 'Animate the provided image with natural, subtle motion while preserving its subject and composition.'
 
 export const runGeminiVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: {
     model: GeminiVideoModel
@@ -53,8 +57,9 @@ export const runGeminiVideoGen = async (
   const mode = options.mode ?? 'text'
   const normalizedResolution = mode === 'extend' ? '720p' : normalizeGeminiResolution(options.resolution, options.model)
   const normalizedDuration = normalizeGeminiDuration(options.durationSeconds, normalizedResolution, mode)
+  const resolvedPrompt = prompt ?? (mode === 'image-to-video' || mode === 'interpolate' ? DEFAULT_IMAGE_VIDEO_PROMPT : undefined)
   const image = options.inputImage
-    ? await videoMediaReferenceToGeminiInlineData(options.inputImage, 'image')
+    ? await videoMediaReferenceToGeminiVideoImage(options.inputImage, 'image')
     : undefined
   const lastFrame = options.lastFrameImage
     ? await videoMediaReferenceToGeminiInlineData(options.lastFrameImage, 'image')
@@ -72,7 +77,7 @@ export const runGeminiVideoGen = async (
   const startTime = Date.now()
   let operation = await geminiPredictLongRunning(apiKey, {
     model: options.model,
-    prompt,
+    ...(resolvedPrompt !== undefined ? { prompt: resolvedPrompt } : {}),
     ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
     resolution: normalizedResolution,
     durationSeconds: normalizedDuration,
@@ -129,7 +134,8 @@ export const runGeminiVideoGen = async (
     status: 'completed',
     processingTimeMs: processingTime,
     outputCount: 1,
-    detail: `Actual billed cost was not returned by the API; estimate ${estimate.totalCost.toFixed(3)}¢`
+    detail: `Actual billed cost was not returned by the API; estimate ${estimate.totalCost.toFixed(3)}¢`,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   const metadata: Step6VideoMetadata = {

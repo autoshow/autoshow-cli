@@ -1,7 +1,6 @@
 import {
   validateDeepgramTtsVoice,
   validateElevenLabsTtsTextNormalization,
-  validateGcloudTtsVoice,
   validateGrokTtsLanguage,
   validateGrokTtsVoice,
   validateGroqTtsVoice,
@@ -26,10 +25,11 @@ import {
   readStringFlag
 } from '../options/flag-readers'
 import {
-  DEFAULT_KITTEN_TTS_SPEAKER,
   type readRuntimeModelOptions,
   validateCliValue
 } from '../options/model-options'
+
+const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
 type RuntimeModelOptions = ReturnType<typeof readRuntimeModelOptions>
 
@@ -52,6 +52,7 @@ type TtsRuntimeOptionKey =
   | 'mistralTtsVoiceName'
   | 'ttsDialogueFormat'
   | 'ttsSpeakerRefAudios'
+  | 'ttsSpeakers'
   | 'openaiTtsModels'
   | 'openaiTtsModel'
   | 'openaiVoiceId'
@@ -73,7 +74,6 @@ type TtsRuntimeOptionKey =
   | 'elevenlabsTtsModels'
   | 'elevenlabsTtsModel'
   | 'elevenlabsVoiceId'
-  | 'elevenlabsTtsPvcVoice'
   | 'elevenlabsTtsRefAudio'
   | 'elevenlabsTtsVoiceName'
   | 'elevenlabsTtsCloneRemoveBackgroundNoise'
@@ -88,14 +88,6 @@ type TtsRuntimeOptionKey =
   | 'elevenlabsTtsTextNormalization'
   | 'elevenlabsTtsPronunciationDictionaryLocators'
   | 'elevenlabsTtsOptimizeStreamingLatency'
-  | 'elevenlabsTtsPvcAsIvc'
-  | 'elevenlabsTtsPvcSamples'
-  | 'elevenlabsTtsPvcSampleDir'
-  | 'elevenlabsTtsPvcLanguage'
-  | 'elevenlabsTtsPvcDescription'
-  | 'elevenlabsTtsPvcCaptchaOut'
-  | 'elevenlabsTtsPvcVerifyAudio'
-  | 'elevenlabsTtsPvcWait'
   | 'deepgramTtsModels'
   | 'deepgramTtsModel'
   | 'deepgramVoiceId'
@@ -133,25 +125,6 @@ type TtsRuntimeOptionKey =
   | 'cartesiaTtsModel'
   | 'cartesiaTtsVoice'
   | 'cartesiaTtsLanguage'
-  | 'gcloudTtsModels'
-  | 'gcloudTtsModel'
-  | 'gcloudTtsVoice'
-  | 'gcloudTtsLanguage'
-  | 'gcloudTtsRefAudio'
-  | 'gcloudTtsConsentAudio'
-  | 'gcloudTtsConsentLanguage'
-  | 'gcloudTtsVoiceCloningKey'
-  | 'gcloudTtsVoiceCloningKeyOut'
-  | 'deapiTtsModels'
-  | 'deapiTtsModel'
-  | 'deapiTtsVoice'
-  | 'deapiTtsRefAudio'
-  | 'deapiTtsRefText'
-  | 'deapiTtsLanguage'
-  | 'deapiTtsSpeed'
-  | 'deapiTtsFormat'
-  | 'deapiTtsSampleRate'
-  | 'deapiTtsInstruction'
 
 type TtsRuntimeOptions = Pick<RuntimeOptions, TtsRuntimeOptionKey>
 
@@ -185,10 +158,6 @@ export const buildTtsOptions = (
     humeTtsModel,
     cartesiaTtsModels,
     cartesiaTtsModel,
-    gcloudTtsModels,
-    gcloudTtsModel,
-    deapiTtsModels,
-    deapiTtsModel,
   } = modelOptions
 
   return {
@@ -223,6 +192,7 @@ export const buildTtsOptions = (
     mistralTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'mistral-tts-voice-name') ?? readOptionalStringFlag(flags, 'mistral-tts-voice-name'),
     ttsDialogueFormat: parseTtsDialogueFormat(readOptionalStringFlag(flags, 'tts-dialogue-format')),
     ttsSpeakerRefAudios: readOptionalStringListFlag(flags, 'tts-speaker-ref-audio'),
+    ttsSpeakers: readOptionalStringListFlag(flags, 'tts-speaker'),
     openaiTtsModels,
     openaiTtsModel,
     geminiTtsModels,
@@ -271,30 +241,6 @@ export const buildTtsOptions = (
       return validateCliValue(validateCartesiaTtsVoice, value)
     })(),
     cartesiaTtsLanguage: readOptionalStringFlag(flags, 'cartesia-tts-language'),
-    gcloudTtsModels,
-    gcloudTtsModel,
-    gcloudTtsVoice: (() => {
-      const value = readOptionalStringFlag(flags, 'gcloud-tts-voice')
-      if (value === undefined) return undefined
-      if (gcloudTtsModels === undefined) return value
-      return validateCliValue(validateGcloudTtsVoice, value)
-    })(),
-    gcloudTtsLanguage: readOptionalStringFlag(flags, 'gcloud-tts-language'),
-    gcloudTtsRefAudio: readOptionalStringFlag(flags, 'gcloud-tts-ref-audio'),
-    gcloudTtsConsentAudio: readOptionalStringFlag(flags, 'gcloud-tts-consent-audio'),
-    gcloudTtsConsentLanguage: readOptionalStringFlag(flags, 'gcloud-tts-consent-language'),
-    gcloudTtsVoiceCloningKey: readOptionalStringFlag(flags, 'gcloud-tts-voice-cloning-key'),
-    gcloudTtsVoiceCloningKeyOut: readOptionalStringFlag(flags, 'gcloud-tts-voice-cloning-key-out'),
-    deapiTtsModels,
-    deapiTtsModel,
-    deapiTtsVoice: readOptionalStringFlag(flags, 'deapi-tts-voice'),
-    deapiTtsRefAudio: readOptionalStringFlag(flags, 'deapi-tts-ref-audio'),
-    deapiTtsRefText: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-ref-text') ?? readOptionalStringFlag(flags, 'deapi-tts-ref-text'),
-    deapiTtsLanguage: readOptionalStringFlag(flags, 'deapi-tts-language'),
-    deapiTtsSpeed: parseOptionalNumberFlag(readOptionalStringFlag(flags, 'deapi-tts-speed'), 'deapi-tts-speed', { min: 0.5, max: 2 }),
-    deapiTtsFormat: readOptionalStringFlag(flags, 'deapi-tts-format'),
-    deapiTtsSampleRate: parseOptionalNumberFlag(readOptionalStringFlag(flags, 'deapi-tts-sample-rate'), 'deapi-tts-sample-rate', { min: 1, max: 192000, integer: true }),
-    deapiTtsInstruction: readOptionalRawStringFlag(rawFlagArgs, 'deapi-tts-instruction') ?? readOptionalStringFlag(flags, 'deapi-tts-instruction'),
     groqVoiceId: (() => {
       const value = readOptionalStringFlag(flags, 'groq-voice')
       if (value === undefined) return undefined
@@ -328,7 +274,6 @@ export const buildTtsOptions = (
     geminiSpeaker2Voice: readOptionalRawStringFlag(rawFlagArgs, 'gemini-speaker-2-voice') ?? readOptionalStringFlag(flags, 'gemini-speaker-2-voice'),
     elevenlabsTtsModels,
     elevenlabsTtsModel,
-    elevenlabsTtsPvcVoice: readOptionalStringFlag(flags, 'elevenlabs-tts-pvc-voice'),
     elevenlabsTtsRefAudio: readOptionalStringFlag(flags, 'elevenlabs-tts-ref-audio'),
     elevenlabsTtsVoiceName: readOptionalRawStringFlag(rawFlagArgs, 'elevenlabs-tts-voice-name') ?? readOptionalStringFlag(flags, 'elevenlabs-tts-voice-name'),
     elevenlabsTtsCloneRemoveBackgroundNoise: readBooleanFlag(flags, 'elevenlabs-tts-clone-remove-background-noise'),
@@ -347,14 +292,6 @@ export const buildTtsOptions = (
     })(),
     elevenlabsTtsPronunciationDictionaryLocators: readOptionalStringListFlag(flags, 'elevenlabs-tts-pronunciation-dictionary-locator'),
     elevenlabsTtsOptimizeStreamingLatency: parseOptionalNumberFlag(readOptionalStringFlag(flags, 'elevenlabs-tts-optimize-streaming-latency'), 'elevenlabs-tts-optimize-streaming-latency', { min: 0, max: 4, integer: true }),
-    elevenlabsTtsPvcAsIvc: readBooleanFlag(flags, 'elevenlabs-tts-pvc-as-ivc'),
-    elevenlabsTtsPvcSamples: readOptionalStringListFlag(flags, 'elevenlabs-tts-pvc-sample'),
-    elevenlabsTtsPvcSampleDir: readOptionalStringFlag(flags, 'elevenlabs-tts-pvc-sample-dir'),
-    elevenlabsTtsPvcLanguage: readOptionalStringFlag(flags, 'elevenlabs-tts-pvc-language'),
-    elevenlabsTtsPvcDescription: readOptionalRawStringFlag(rawFlagArgs, 'elevenlabs-tts-pvc-description') ?? readOptionalStringFlag(flags, 'elevenlabs-tts-pvc-description'),
-    elevenlabsTtsPvcCaptchaOut: readOptionalStringFlag(flags, 'elevenlabs-tts-pvc-captcha-out'),
-    elevenlabsTtsPvcVerifyAudio: readOptionalStringFlag(flags, 'elevenlabs-tts-pvc-verify-audio'),
-    elevenlabsTtsPvcWait: readBooleanFlag(flags, 'elevenlabs-tts-pvc-wait'),
     minimaxTtsModels,
     minimaxTtsModel,
     minimaxTtsVoice: readOptionalStringFlag(flags, 'minimax-tts-voice'),

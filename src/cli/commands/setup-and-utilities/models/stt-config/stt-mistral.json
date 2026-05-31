@@ -5,8 +5,13 @@
     "models": {
       "voxtral-mini-2602": {
         "description": "Voxtral Mini Transcribe 2",
-        "costPerHourUSD": 0.18,
-        "costPerHourCents": 18,
+        "pricingSourceUrl": "https://mistral.ai/pricing/",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Mistral La Plateforme public pricing",
+        "pricingNotes": "Mistral lists Voxtral Mini Transcribe at $0.002/min, stored as $0.12/hr. Free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPerHourUSD": 0.12,
+        "costPerHourCents": 12,
         "limits": {
           "effectiveBytes": 524288000,
           "directUploadBytes": 524288000,

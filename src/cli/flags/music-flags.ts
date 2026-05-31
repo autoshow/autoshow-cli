@@ -1,61 +1,21 @@
 import type { CliFlagsDefinition } from '~/cli/native'
-import {
-  SUPPORTED_ELEVENLABS_MUSIC_MODELS,
-  SUPPORTED_MINIMAX_MUSIC_MODELS,
-  SUPPORTED_DEAPI_MUSIC_MODELS,
-  SUPPORTED_GEMINI_MUSIC_MODELS
-} from '~/cli/commands/setup-and-utilities/models/model-options'
 import { SUPPORTED_WHISPER_MODELS } from '~/cli/commands/setup-and-utilities/models/stt-models'
-import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { generationOutputFlags, priceFlag } from './shared-flags'
-import { renameFlags } from './flag-utils'
+import { booleanAllProvidersFlag, generationOutputFlags, priceFlag, sharedConcurrencyFlags } from './shared-flags'
+import { renameFlags, withHelpGroup } from './flag-utils'
 
 export const MUSIC_COMMAND_SELECTOR_FLAGS = {
   'elevenlabs-music': 'elevenlabs',
   'minimax-music': 'minimax',
-  'deapi-music': 'deapi',
   'gemini-music': 'gemini'
 } as const satisfies Record<string, string>
 
 export const musicGenFlags = {
-  'all-music': {
-    description: 'Enable every supported music provider/model for this command',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'music-provider-concurrency': {
-    description: 'Music: max hosted providers/models running in parallel for one item (default 2; --all-music defaults up to 8)',
-    type: String,
-    default: '2'
-  },
-  'music-local-concurrency': {
-    description: 'Music: max local providers running in parallel for one item (default 1)',
-    type: String,
-    default: '1'
-  },
-  'elevenlabs-music': {
-    description: buildModelDescription('ElevenLabs music model', SUPPORTED_ELEVENLABS_MUSIC_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'minimax-music': {
-    description: buildModelDescription('MiniMax music model', SUPPORTED_MINIMAX_MUSIC_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'deapi-music': {
-    description: buildModelDescription('deAPI music model', SUPPORTED_DEAPI_MUSIC_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'gemini-music': {
-    description: buildModelDescription('Gemini Lyria music model', SUPPORTED_GEMINI_MUSIC_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'music-duration': {
-    description: 'Music duration in seconds',
+    description: 'Music duration in seconds (ElevenLabs default: 180, MiniMax default: 120, Gemini default: 120)',
     type: String
   },
   'music-lyrics-file': {
-    description: 'Lyrics file path (.md or .txt) for MiniMax, deAPI, and Gemini music generation',
+    description: 'Lyrics file path (.md or .txt) for MiniMax and Gemini music generation',
     type: String
   },
   'music-instrumental': {
@@ -64,10 +24,13 @@ export const musicGenFlags = {
     default: false,
     negatable: false
   },
-  ...priceFlag
 } as const satisfies CliFlagsDefinition
 
 const musicLyricVideoFlags = {
+  'input-dir': {
+    description: 'Input directory for lyric video audio files',
+    type: String
+  },
   batch: {
     description: 'Render lyric videos for all supported audio files under input recursively',
     type: Boolean,
@@ -83,7 +46,7 @@ const musicLyricVideoFlags = {
     type: String
   },
   model: {
-    description: buildModelDescription('Local whisper.cpp model for lyric-video captions', SUPPORTED_WHISPER_MODELS),
+    description: `Local whisper.cpp model for lyric-video captions: ${SUPPORTED_WHISPER_MODELS.join('|')} (default: large-v3-turbo)`,
     type: String,
     default: 'large-v3-turbo'
   },
@@ -100,8 +63,23 @@ const musicLyricVideoFlags = {
   }
 } as const satisfies CliFlagsDefinition
 
+const musicProviderSelectionFlags = {
+  provider: {
+    description: 'Music provider[=model]: elevenlabs|minimax|gemini; repeatable',
+    type: [String] as [StringConstructor]
+  },
+  ...booleanAllProvidersFlag,
+  ...sharedConcurrencyFlags
+} as const satisfies CliFlagsDefinition
+
 export const musicCommandFlags = {
-  ...renameFlags(musicGenFlags, MUSIC_COMMAND_SELECTOR_FLAGS),
-  ...generationOutputFlags,
-  ...musicLyricVideoFlags
+  ...withHelpGroup(musicProviderSelectionFlags, 'provider-selection'),
+  ...withHelpGroup(renameFlags(musicGenFlags, {
+    'music-duration': 'duration',
+    'music-lyrics-file': 'lyrics-file',
+    'music-instrumental': 'instrumental'
+  }), 'hosted-music'),
+  ...withHelpGroup(priceFlag, 'pricing'),
+  ...withHelpGroup(generationOutputFlags, 'output'),
+  ...withHelpGroup(musicLyricVideoFlags, 'lyric-video')
 } as const satisfies CliFlagsDefinition

@@ -1,25 +1,14 @@
 import { basename } from 'node:path'
-import type { TtsOptions } from '~/types'
+import type { TtsOptions, SpeakerVoiceMapping, SpeakerVoiceRegistry } from '~/types'
 
-export type TtsDialogueFormat = 'screenplay' | 'labeled'
+type TtsDialogueFormat = 'screenplay' | 'labeled'
 
-export type DialogueTurn = {
+type DialogueTurn = {
   speaker: string
   text: string
 }
 
-export type SpeakerRefAudio = {
-  speaker: string
-  normalizedSpeaker: string
-  refAudioPath: string
-}
-
-export type SpeakerRefAudioRegistry = {
-  entries: SpeakerRefAudio[]
-  bySpeaker: Map<string, SpeakerRefAudio>
-}
-
-export type DialogueNormalization = {
+type DialogueNormalization = {
   turns: DialogueTurn[]
   normalizedText: string
   spokenCharacterCount: number
@@ -51,6 +40,8 @@ const ACTION_VERBS = new Set([
   'continues'
 ])
 
+const REF_AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.m4a', '.ogg', '.flac', '.aac', '.webm', '.mp4'])
+
 const normalizeSpeaker = (speaker: string): string =>
   speaker.trim().replace(/\s+/g, ' ').toUpperCase()
 
@@ -63,36 +54,52 @@ const isSceneOrTransitionLine = (line: string): boolean => {
     || /^(?:CUT TO|FADE IN|FADE OUT|DISSOLVE TO)\b/i.test(line)
 }
 
-const sortedSpeakerEntries = (registry: SpeakerRefAudioRegistry): SpeakerRefAudio[] =>
+const sortedSpeakerEntries = (registry: SpeakerVoiceRegistry): SpeakerVoiceMapping[] =>
   [...registry.entries].sort((a, b) => b.normalizedSpeaker.length - a.normalizedSpeaker.length)
 
-export const stripLeadingParentheticals = (text: string): string =>
+const stripLeadingParentheticals = (text: string): string =>
   text.replace(/^(?:\s*\([^)]*\)\s*)+/, '').trim()
 
-export const parseSpeakerRefAudioMappings = (
-  values: readonly string[] | undefined
-): SpeakerRefAudioRegistry => {
-  const entries: SpeakerRefAudio[] = []
-  const bySpeaker = new Map<string, SpeakerRefAudio>()
+export const detectVoiceKind = (value: string): 'id' | 'ref-audio' => {
+  if (value.includes('/') || value.includes('\\')) return 'ref-audio'
+  const dotIndex = value.lastIndexOf('.')
+  if (dotIndex > 0) {
+    const ext = value.slice(dotIndex).toLowerCase()
+    if (REF_AUDIO_EXTENSIONS.has(ext)) return 'ref-audio'
+  }
+  return 'id'
+}
+
+const parseSpeakerMappings = (
+  values: readonly string[] | undefined,
+  options: {
+    flagName: '--tts-speaker' | '--tts-speaker-ref-audio'
+    expectedShape: 'SPEAKER=VOICE' | 'SPEAKER=path'
+    resolveVoiceKind: (voice: string) => SpeakerVoiceMapping['voiceKind']
+  }
+): SpeakerVoiceRegistry => {
+  const entries: SpeakerVoiceMapping[] = []
+  const bySpeaker = new Map<string, SpeakerVoiceMapping>()
 
   for (const raw of values ?? []) {
     const idx = raw.indexOf('=')
     if (idx <= 0 || idx === raw.length - 1) {
-      throw new Error(`Invalid --tts-speaker-ref-audio value "${raw}". Expected SPEAKER=path.`)
+      throw new Error(`Invalid ${options.flagName} value "${raw}". Expected ${options.expectedShape}.`)
     }
 
     const speaker = raw.slice(0, idx).trim()
-    const refAudioPath = raw.slice(idx + 1).trim()
-    if (!speaker || !refAudioPath) {
-      throw new Error(`Invalid --tts-speaker-ref-audio value "${raw}". Expected SPEAKER=path.`)
+    const voice = raw.slice(idx + 1).trim()
+    if (!speaker || !voice) {
+      throw new Error(`Invalid ${options.flagName} value "${raw}". Expected ${options.expectedShape}.`)
     }
 
     const normalizedSpeaker = normalizeSpeaker(speaker)
     if (bySpeaker.has(normalizedSpeaker)) {
-      throw new Error(`Duplicate --tts-speaker-ref-audio mapping for speaker ${speaker}.`)
+      throw new Error(`Duplicate ${options.flagName} mapping for speaker ${speaker}.`)
     }
 
-    const entry = { speaker, normalizedSpeaker, refAudioPath }
+    const voiceKind = options.resolveVoiceKind(voice)
+    const entry: SpeakerVoiceMapping = { speaker, normalizedSpeaker, voice, voiceKind }
     bySpeaker.set(normalizedSpeaker, entry)
     entries.push(entry)
   }
@@ -100,8 +107,28 @@ export const parseSpeakerRefAudioMappings = (
   return { entries, bySpeaker }
 }
 
-export const isDialogueTtsRequested = (options: TtsOptions): boolean =>
-  options.ttsDialogueFormat !== undefined || (options.ttsSpeakerRefAudios?.length ?? 0) > 0
+export const parseSpeakerVoiceMappings = (
+  values: readonly string[] | undefined
+): SpeakerVoiceRegistry =>
+  parseSpeakerMappings(values, {
+    flagName: '--tts-speaker',
+    expectedShape: 'SPEAKER=VOICE',
+    resolveVoiceKind: detectVoiceKind
+  })
+
+export const parseSpeakerRefAudioMappings = (
+  values: readonly string[] | undefined
+): SpeakerVoiceRegistry =>
+  parseSpeakerMappings(values, {
+    flagName: '--tts-speaker-ref-audio',
+    expectedShape: 'SPEAKER=path',
+    resolveVoiceKind: () => 'ref-audio'
+  })
+
+export const isMultiSpeakerRequested = (options: TtsOptions): boolean =>
+  (options.ttsSpeakers?.length ?? 0) > 0
+  || options.ttsDialogueFormat !== undefined
+  || (options.ttsSpeakerRefAudios?.length ?? 0) > 0
 
 export const resolveDialogueFormat = (options: TtsOptions): TtsDialogueFormat => {
   if (options.ttsDialogueFormat === 'screenplay' || options.ttsDialogueFormat === 'labeled') {
@@ -113,15 +140,15 @@ export const resolveDialogueFormat = (options: TtsOptions): TtsDialogueFormat =>
 
 const getSpeakerCue = (
   line: string,
-  registry: SpeakerRefAudioRegistry
-): SpeakerRefAudio | undefined => {
+  registry: SpeakerVoiceRegistry
+): SpeakerVoiceMapping | undefined => {
   const normalizedLine = normalizeSpeaker(line)
   return registry.bySpeaker.get(normalizedLine)
 }
 
 const startsWithSpeakerAction = (
   line: string,
-  registry: SpeakerRefAudioRegistry
+  registry: SpeakerVoiceRegistry
 ): boolean => {
   const upperLine = line.toUpperCase()
   for (const speaker of sortedSpeakerEntries(registry)) {
@@ -130,7 +157,7 @@ const startsWithSpeakerAction = (
     }
 
     const rest = line.slice(speaker.speaker.length)
-    if (/^\s*['’]s\b/i.test(rest)) {
+    if (/^\s*['']s\b/i.test(rest)) {
       return true
     }
     if (/^\s+[a-z]/.test(rest)) {
@@ -143,7 +170,7 @@ const startsWithSpeakerAction = (
 
 const isLikelyScreenplayActionLine = (
   line: string,
-  registry: SpeakerRefAudioRegistry
+  registry: SpeakerVoiceRegistry
 ): boolean =>
   isSceneOrTransitionLine(line) || startsWithSpeakerAction(line, registry)
 
@@ -157,7 +184,7 @@ const isLikelyInlineDialogueText = (text: string): boolean => {
 
 const parseInlineScreenplayDialogue = (
   line: string,
-  registry: SpeakerRefAudioRegistry
+  registry: SpeakerVoiceRegistry
 ): DialogueTurn | undefined => {
   const upperLine = line.toUpperCase()
   for (const speaker of sortedSpeakerEntries(registry)) {
@@ -192,7 +219,7 @@ const parseInlineScreenplayDialogue = (
 
 const normalizeLabeledDialogue = (
   text: string,
-  registry: SpeakerRefAudioRegistry
+  registry: SpeakerVoiceRegistry
 ): DialogueTurn[] => {
   const turns: DialogueTurn[] = []
   const lines = text.split(/\r?\n/)
@@ -211,7 +238,7 @@ const normalizeLabeledDialogue = (
     const rawSpeaker = match[1]?.trim() ?? ''
     const speaker = registry.bySpeaker.get(normalizeSpeaker(rawSpeaker))
     if (!speaker) {
-      throw new Error(`No --tts-speaker-ref-audio mapping found for speaker ${rawSpeaker}.`)
+      throw new Error(`No --tts-speaker mapping found for speaker ${rawSpeaker}.`)
     }
 
     const turnText = normalizeDialogueWhitespace(match[2] ?? '')
@@ -230,11 +257,11 @@ const normalizeLabeledDialogue = (
 
 const normalizeScreenplayDialogue = (
   text: string,
-  registry: SpeakerRefAudioRegistry
+  registry: SpeakerVoiceRegistry
 ): DialogueTurn[] => {
   const turns: DialogueTurn[] = []
   const lines = text.split(/\r?\n/)
-  let currentSpeaker: SpeakerRefAudio | undefined
+  let currentSpeaker: SpeakerVoiceMapping | undefined
   let currentText: string[] = []
 
   const flush = (): void => {
@@ -293,16 +320,16 @@ const normalizeScreenplayDialogue = (
   return turns
 }
 
-export const formatDialogueTurns = (turns: readonly DialogueTurn[]): string =>
+const formatDialogueTurns = (turns: readonly DialogueTurn[]): string =>
   turns.map((turn) => `${turn.speaker}: ${turn.text}`).join('\n')
 
 export const normalizeDialogueText = (
   text: string,
   format: TtsDialogueFormat,
-  registry: SpeakerRefAudioRegistry
+  registry: SpeakerVoiceRegistry
 ): DialogueNormalization => {
   if (registry.entries.length === 0) {
-    throw new Error('Dialogue TTS requires at least one --tts-speaker-ref-audio SPEAKER=path mapping.')
+    throw new Error('Multi-speaker TTS requires at least one --tts-speaker SPEAKER=VOICE mapping.')
   }
 
   const turns = format === 'screenplay'
@@ -325,24 +352,28 @@ export const normalizeDialogueFromOptions = (
   text: string,
   options: TtsOptions
 ): DialogueNormalization => {
-  const registry = parseSpeakerRefAudioMappings(options.ttsSpeakerRefAudios)
+  const registry = (options.ttsSpeakers?.length ?? 0) > 0
+    ? parseSpeakerVoiceMappings(options.ttsSpeakers)
+    : parseSpeakerRefAudioMappings(options.ttsSpeakerRefAudios)
   return normalizeDialogueText(text, resolveDialogueFormat(options), registry)
 }
 
-export const formatSpeakerRefAudioSummary = (
-  registry: SpeakerRefAudioRegistry
+export const formatSpeakerVoiceSummary = (
+  registry: SpeakerVoiceRegistry
 ): string =>
   registry.entries
-    .map((entry) => `${entry.speaker}=ref_audio:${basename(entry.refAudioPath)}`)
+    .map((entry) => entry.voiceKind === 'ref-audio'
+      ? `${entry.speaker}=ref_audio:${basename(entry.voice)}`
+      : `${entry.speaker}=${entry.voice}`)
     .join(', ')
 
-export const getSpeakerRefAudio = (
-  registry: SpeakerRefAudioRegistry,
+export const getSpeakerVoice = (
+  registry: SpeakerVoiceRegistry,
   speaker: string
-): SpeakerRefAudio => {
+): SpeakerVoiceMapping => {
   const entry = registry.bySpeaker.get(normalizeSpeaker(speaker))
   if (!entry) {
-    throw new Error(`No --tts-speaker-ref-audio mapping found for speaker ${speaker}.`)
+    throw new Error(`No --tts-speaker mapping found for speaker ${speaker}.`)
   }
   return entry
 }

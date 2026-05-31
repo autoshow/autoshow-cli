@@ -1,62 +1,41 @@
-import type { CliFlagDefinition, CliFlagsDefinition } from '~/cli/native'
-import { EXTRACT_PUBLIC_SELECTOR_FLAGS } from '~/cli/commands/process-steps/service-selector-normalization'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
-  getStep2ProviderEntry,
-  getStep2ProviderSelectionFlagNames
-} from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
-import { ocrCommandFlags } from './ocr-flags'
-import { sttFlags } from './stt-flags'
-import { omitFlags } from './flag-utils'
+  allArticleFlags,
+  batchFlags,
+  booleanAllProvidersFlag,
+  ocrInputFlags,
+  ocrTuningFlags,
+  priceFlag,
+  sharedConcurrencyFlags,
+  transcriptionFlags
+} from './shared-flags'
+import { epubInspectFlags } from './ocr-flags'
+import { withHelpGroup } from './flag-utils'
 
-const STT_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('stt')
-const OCR_PROVIDER_FLAGS = getStep2ProviderSelectionFlagNames('ocr')
-
-const providerDisplayName = (publicName: string): string => {
-  switch (publicName) {
-    case 'gcloud':
-      return 'Google Cloud'
-    case 'aws':
-      return 'AWS'
-    case 'glm':
-      return 'GLM'
-    case 'ocrmypdf':
-      return 'OCRmyPDF'
-    default:
-      return publicName.charAt(0).toUpperCase() + publicName.slice(1)
-  }
-}
-
-const modelSelectorDefinition = (
-  publicName: string
-): CliFlagDefinition => {
-  const label = providerDisplayName(publicName)
-  return {
-    description: `${label} route-aware provider/model selector; media inputs use STT and document/image inputs use OCR. Omit the model for the cheapest supported route-specific model.`,
+const extractProviderSelectionFlags = {
+  provider: {
+    description: 'STT: whisper|reverb|deepinfra|elevenlabs|deepgram|soniox|speechmatics|rev|groq|grok|mistral|assemblyai|gladia|happyscribe|supadata|scrapecreators|openai|gemini|glm|together (default: whisper=tiny)\nOCR: tesseract|ocrmypdf|paddle-ocr|mistral|glm|kimi|openai|grok|anthropic|gemini|deepinfra|unstructured (default: tesseract)\nrepeatable as provider[=model]',
     type: [String] as [StringConstructor]
-  }
-}
+  },
+  ...booleanAllProvidersFlag,
+  ...sharedConcurrencyFlags
+} as const satisfies CliFlagsDefinition
 
-const buildExtractSelectorFlags = (): CliFlagsDefinition => {
-  const flags: CliFlagsDefinition = {}
-  for (const [publicName, target] of Object.entries(EXTRACT_PUBLIC_SELECTOR_FLAGS)) {
-    const sttEntry = target.stt ? getStep2ProviderEntry(target.stt) : undefined
-    const ocrEntry = target.ocr ? getStep2ProviderEntry(target.ocr) : undefined
-    const hasModelSelector = sttEntry?.selection.type === 'models' || ocrEntry?.selection.type === 'models'
-
-    flags[publicName] = hasModelSelector
-      ? modelSelectorDefinition(publicName)
-      : {
-          ...(sttEntry?.flag ?? ocrEntry?.flag),
-          description: sttEntry?.flag.description ?? ocrEntry?.flag.description ?? `${providerDisplayName(publicName)} provider selector`
-        } as CliFlagDefinition
+const extractDocumentFlags = {
+  ...ocrInputFlags,
+  ...ocrTuningFlags,
+  'primary-ocr': {
+    description: 'In multi-provider OCR, write top-level extraction artifacts from one requested provider: tesseract|ocrmypdf|paddle-ocr|mistral|glm|kimi|openai|grok|anthropic|gemini|deepinfra|unstructured (as service or service/model)',
+    type: String
   }
-  return flags
-}
+} as const satisfies CliFlagsDefinition
 
 export const extractStep2CommandFlags = {
-  'all-stt': sttFlags['all-stt'],
-  'all-ocr': ocrCommandFlags['all-ocr'],
-  ...buildExtractSelectorFlags(),
-  ...omitFlags(sttFlags, ['all-stt', ...STT_PROVIDER_FLAGS]),
-  ...omitFlags(ocrCommandFlags, ['all-ocr', ...OCR_PROVIDER_FLAGS])
+  ...withHelpGroup(extractProviderSelectionFlags, 'provider-selection'),
+  ...withHelpGroup(transcriptionFlags, 'transcription'),
+  ...withHelpGroup(extractDocumentFlags, 'ocr-document'),
+  ...withHelpGroup(allArticleFlags, 'article-extraction'),
+  ...withHelpGroup(batchFlags, 'batch-processing'),
+  ...withHelpGroup(epubInspectFlags, 'epub-inspect'),
+  ...withHelpGroup(priceFlag, 'pricing')
 } as const satisfies CliFlagsDefinition

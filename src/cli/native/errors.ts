@@ -1,13 +1,12 @@
-export type NativeCliUsageErrorCode =
+type NativeCliUsageErrorCode =
   | 'invalid-parameters'
   | 'invalid-schema'
   | 'missing-required-flag'
   | 'missing-required-value'
-  | 'no-command-specified'
   | 'no-such-command'
   | 'unknown-flag'
 
-export class NativeCliUsageError extends Error {
+class NativeCliUsageError extends Error {
   readonly code: NativeCliUsageErrorCode
   readonly exitCode = 2
 
@@ -25,13 +24,6 @@ export class NativeNoSuchCommandError extends NativeCliUsageError {
     super('no-such-command', `Unknown command "${commandName}"`)
     this.name = 'NativeNoSuchCommandError'
     this.commandName = commandName
-  }
-}
-
-export class NativeNoCommandSpecifiedError extends NativeCliUsageError {
-  constructor() {
-    super('no-command-specified', 'No command or input provided')
-    this.name = 'NativeNoCommandSpecifiedError'
   }
 }
 
@@ -73,9 +65,6 @@ export const isNativeUsageError = (error: unknown): boolean =>
 export const nativeUsageMessage = (error: unknown): string | undefined => {
   if (error instanceof NativeNoSuchCommandError) {
     return `Unknown command "${error.commandName}". Run: bun as help`
-  }
-  if (error instanceof NativeNoCommandSpecifiedError) {
-    return 'No command or input provided. Run: bun as --help'
   }
   if (error instanceof NativeInvalidParametersError || error instanceof NativeMissingFlagValueError) {
     return `${error.message}. Run: bun as help <command>`

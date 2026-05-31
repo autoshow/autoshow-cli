@@ -1,0 +1,37 @@
+# Consensus Evaluation
+
+Run directory: docs/benchmarks/music/2026-05-21_09-58-34-695_music-gen
+Category: music generation
+Provider count: 5
+
+This evaluation uses only measurable run metadata from the generated consensus packet. It does not assess musical quality and does not claim that the audio was listened to.
+
+All five referenced MP3 artifacts exist in the run directory. Cost, processing time, file size, duration, lyrics source, MIME type, and output format were available from run metadata. No provider exposed an explicit qualityScore or humanQualityScore, so automated quality and human quality rankings are unavailable from the evidence.
+
+## Providers
+
+- elevenlabs/music_v1: generated-music-elevenlabs-music_v1.mp3, 1,920,567 bytes, 120.00s duration, 23.02s processing time, 56.0000 cents, generated lyrics, audio/mpeg, mp3_44100_128, 44.1 kHz, 128 kbps.
+- minimax/music-2.6: generated-music-minimax-music-2.6.mp3, 5,968,081 bytes, 186.25s duration, 105.29s processing time, 16.0000 cents, generated lyrics, audio/mpeg, mp3, 44.1 kHz, 2 channels, 256 kbps.
+- minimax/music-2.6-free: generated-music-minimax-music-2.6-free.mp3, 5,937,122 bytes, 185.29s duration, 99.56s processing time, 1.0000 cents, generated lyrics, audio/mpeg, mp3, 44.1 kHz, 2 channels, 256 kbps.
+- gemini/lyria-3-clip-preview: generated-music-gemini-lyria-3-clip-preview.mp3, 743,983 bytes, 30.00s duration, 20.46s processing time, 4.0000 cents, generated lyrics, audio/mpeg, mp3.
+- gemini/lyria-3-pro-preview: generated-music-gemini-lyria-3-pro-preview.mp3, 2,860,528 bytes, 120.00s duration, 46.40s processing time, 8.0000 cents, generated lyrics, audio/mpeg, mp3.
+
+## Price Ranking
+
+1. minimax/music-2.6-free: 1.0000 cents
+2. gemini/lyria-3-clip-preview: 4.0000 cents
+3. gemini/lyria-3-pro-preview: 8.0000 cents
+4. minimax/music-2.6: 16.0000 cents
+5. elevenlabs/music_v1: 56.0000 cents
+
+## Speed Ranking
+
+1. gemini/lyria-3-clip-preview: 20.46s
+2. elevenlabs/music_v1: 23.02s
+3. gemini/lyria-3-pro-preview: 46.40s
+4. minimax/music-2.6-free: 99.56s
+5. minimax/music-2.6: 105.29s
+
+## Quality Evidence
+
+Automated quality is unavailable because no explicit qualityScore values were present. Human quality is unavailable because no explicit humanQualityScore values were present. File size, duration, bitrate, cost, and processing speed are retained as metadata only and are not used as quality proxies.

@@ -74,12 +74,11 @@ const qualityRank = (selection: { size?: string | undefined, resolution?: string
 }
 
 const isDefaultVideoSelectionModel = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi',
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway',
   model: string
 ): boolean => {
   if (provider === 'minimax') {
     return model === 'MiniMax-Hailuo-2.3'
-      || model === 'MiniMax-Hailuo-02'
       || model === 'T2V-01-Director'
       || model === 'T2V-01'
   }
@@ -91,7 +90,7 @@ const isDefaultVideoSelectionModel = (
   return true
 }
 
-export const selectCheapestSttModel = (service: string): string => {
+const selectCheapestSttModel = (service: string): string => {
   const serviceConfig = getModelRegistry().stt[service]
   if (!serviceConfig) {
     throw new Error(`Missing STT service config: ${service}`)
@@ -100,7 +99,7 @@ export const selectCheapestSttModel = (service: string): string => {
   return selectCheapestRegistryModel(serviceConfig.models, sttHourlyCost)
 }
 
-export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'): string => {
+const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | 'unstructured'): string => {
   const serviceConfig = getModelRegistry().extract[service]
   if (!serviceConfig) {
     throw new Error(`Missing extract service config: ${service}`)
@@ -129,7 +128,7 @@ export const selectCheapestExtractModel = (service: 'mistral' | 'glm' | 'kimi' |
   })
 }
 
-export const selectCheapestLlmModel = (service: string): string => {
+const selectCheapestLlmModel = (service: string): string => {
   const serviceConfig = getModelRegistry().llm[service]
   if (!serviceConfig) {
     throw new Error(`Missing LLM service config: ${service}`)
@@ -140,7 +139,7 @@ export const selectCheapestLlmModel = (service: string): string => {
   )
 }
 
-export const selectCheapestTtsModel = (service: string): string => {
+const selectCheapestTtsModel = (service: string): string => {
   const serviceConfig = getModelRegistry().tts[service]
   if (!serviceConfig) {
     throw new Error(`Missing TTS service config: ${service}`)
@@ -163,7 +162,7 @@ export const selectCheapestTtsModel = (service: string): string => {
   })
 }
 
-export const selectCheapestImageModel = (service: string): string => {
+const selectCheapestImageModel = (service: string): string => {
   const serviceConfig = getModelRegistry().image[service]
   if (!serviceConfig) {
     throw new Error(`Missing image service config: ${service}`)
@@ -176,7 +175,7 @@ export const selectCheapestImageModel = (service: string): string => {
   )
 }
 
-export const selectCheapestMusicModel = (service: string): string => {
+const selectCheapestMusicModel = (service: string): string => {
   const serviceConfig = getModelRegistry().music[service]
   if (!serviceConfig) {
     throw new Error(`Missing music service config: ${service}`)
@@ -200,7 +199,7 @@ export const selectCheapestMusicModel = (service: string): string => {
 }
 
 export const selectCheapestVideoSelection = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): CheapestVideoSelection => {
   const serviceConfig = getModelRegistry().video[provider]
   if (!serviceConfig) {
@@ -230,7 +229,6 @@ export const selectCheapestVideoSelection = (
               ...(provider === 'glm' ? { glmVideoModel: model } : {}),
               ...(provider === 'grok' ? { grokVideoModel: model } : {}),
               ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
-              ...(provider === 'deapi' ? { deapiVideoModel: model } : {}),
               videoDuration: duration,
               videoResolution: resolution
             })
@@ -282,9 +280,76 @@ export const selectCheapestVideoSelection = (
   return best
 }
 
-export const selectCheapestVideoModel = (
-  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway' | 'deapi'
+const selectCheapestVideoModel = (
+  provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): string => selectCheapestVideoSelection(provider).model
+
+const TEXT_VIDEO_PROVIDERS = ['gemini', 'minimax', 'glm', 'grok', 'runway'] as const
+
+const providerVideoEstimateOptions = (
+  provider: typeof TEXT_VIDEO_PROVIDERS[number],
+  model: string
+): Parameters<typeof estimateVideoCost>[0] => ({
+  ...(provider === 'gemini' ? { geminiVideoModel: model } : {}),
+  ...(provider === 'minimax' ? { minimaxVideoModel: model } : {}),
+  ...(provider === 'glm' ? { glmVideoModel: model } : {}),
+  ...(provider === 'grok' ? { grokVideoModel: model } : {}),
+  ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
+  videoMode: 'text'
+})
+
+export const selectCheapestDefaultTextVideoSelection = (): CheapestVideoSelection => {
+  let best: CheapestVideoSelection | null = null
+
+  for (const provider of TEXT_VIDEO_PROVIDERS) {
+    const serviceConfig = getModelRegistry().video[provider]
+    if (!serviceConfig) {
+      continue
+    }
+
+    const models = Object.keys(serviceConfig.models).filter((model) => isDefaultVideoSelectionModel(provider, model))
+    for (const model of models) {
+      let estimate: ReturnType<typeof estimateVideoCost>
+      try {
+        estimate = estimateVideoCost(providerVideoEstimateOptions(provider, model))
+      } catch {
+        continue
+      }
+
+      const candidate: CheapestVideoSelection = {
+        provider,
+        model,
+        duration: estimate.durationSeconds,
+        totalCost: estimate.totalCost
+      }
+
+      if (!best) {
+        best = candidate
+        continue
+      }
+
+      const candidateWinsByCost = candidate.totalCost < best.totalCost
+      const candidateWinsByDuration = candidate.totalCost === best.totalCost && candidate.duration < best.duration
+      const candidateWinsBySpeedHint = candidate.totalCost === best.totalCost
+        && candidate.duration === best.duration
+        && runtimeRank(candidate.model) < runtimeRank(best.model)
+      const candidateWinsByName = candidate.totalCost === best.totalCost
+        && candidate.duration === best.duration
+        && runtimeRank(candidate.model) === runtimeRank(best.model)
+        && `${candidate.provider}/${candidate.model}`.localeCompare(`${best.provider}/${best.model}`) < 0
+
+      if (candidateWinsByCost || candidateWinsByDuration || candidateWinsBySpeedHint || candidateWinsByName) {
+        best = candidate
+      }
+    }
+  }
+
+  if (!best) {
+    throw new Error('No default text-to-video candidates available')
+  }
+
+  return best
+}
 
 export const resolveCheapestModelForFlag = (flagName: string): string | undefined => {
   const localDefault = DEFAULT_LOCAL_MODEL_BY_FLAG[flagName as keyof typeof DEFAULT_LOCAL_MODEL_BY_FLAG]
@@ -293,14 +358,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
   }
 
   switch (flagName) {
-    case 'gcloud-stt':
-      return selectCheapestSttModel('gcloud')
-    case 'aws-stt':
-      return selectCheapestSttModel('aws')
     case 'deepinfra-stt':
       return selectCheapestSttModel('deepinfra')
-    case 'deapi-stt':
-      return selectCheapestSttModel('deapi')
     case 'elevenlabs-stt':
       return selectCheapestSttModel('elevenlabs')
     case 'deepgram-stt':
@@ -343,6 +402,8 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestExtractModel('kimi')
     case 'openai-ocr':
       return selectCheapestExtractModel('openai')
+    case 'grok-ocr':
+      return selectCheapestExtractModel('grok')
     case 'anthropic-ocr':
       return selectCheapestExtractModel('anthropic')
     case 'gemini-ocr':
@@ -362,7 +423,7 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
     case 'minimax':
       return selectCheapestLlmModel('minimax')
     case 'grok':
-      return selectCheapestLlmModel('grok')
+      return 'grok-4.20-non-reasoning'
     case 'glm':
       return selectCheapestLlmModel('glm')
     case 'kimi':
@@ -389,30 +450,20 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestTtsModel('hume')
     case 'cartesia-tts':
       return selectCheapestTtsModel('cartesia')
-    case 'gcloud-tts':
-      return selectCheapestTtsModel('gcloud')
-    case 'deapi-tts':
-      return selectCheapestTtsModel('deapi')
     case 'gemini-image':
       return selectCheapestImageModel('gemini')
     case 'openai-image':
       return selectCheapestImageModel('openai')
-    case 'minimax-image':
-      return selectCheapestImageModel('minimax')
     case 'grok-image':
       return selectCheapestImageModel('grok')
-    case 'runway-image':
-      return selectCheapestImageModel('runway')
     case 'bfl-image':
       return selectCheapestImageModel('bfl')
-    case 'deapi-image':
-      return selectCheapestImageModel('deapi')
+    case 'reve-image':
+      return selectCheapestImageModel('reve')
     case 'elevenlabs-music':
       return selectCheapestMusicModel('elevenlabs')
     case 'minimax-music':
       return selectCheapestMusicModel('minimax')
-    case 'deapi-music':
-      return selectCheapestMusicModel('deapi')
     case 'gemini-music':
       return selectCheapestMusicModel('gemini')
     case 'gemini-video':
@@ -425,8 +476,6 @@ export const resolveCheapestModelForFlag = (flagName: string): string | undefine
       return selectCheapestVideoModel('grok')
     case 'runway-video':
       return selectCheapestVideoModel('runway')
-    case 'deapi-video':
-      return selectCheapestVideoModel('deapi')
     default:
       return undefined
   }

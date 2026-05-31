@@ -1,23 +1,23 @@
+import * as l from '~/utils/logger'
 import { mkdir, rm, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { CheckResult, RunOptions, RunResult } from '~/types'
-import * as l from '~/utils/logger'
 import { logSetupToolStatus } from '~/cli/commands/setup-and-utilities/setup/setup-logging'
 
-export const DEFUDDLE_CLI_VERSION = '0.17.0'
+const DEFUDDLE_CLI_VERSION = '0.17.0'
 
 const PROJECT_ROOT = resolve(import.meta.dir, '../../../../../../../../')
 const RUNTIME = join(PROJECT_ROOT, 'runtime')
 
 export const defuddleRuntimeDir = join(RUNTIME, 'defuddle')
-export const defuddleRuntimeBinaryPath = join(
+const defuddleRuntimeBinaryPath = join(
   defuddleRuntimeDir,
   'node_modules',
   '.bin',
   process.platform === 'win32' ? 'defuddle.cmd' : 'defuddle'
 )
 
-type DefuddleCliSource = 'env' | 'runtime' | 'path'
+type DefuddleCliSource = 'runtime' | 'path'
 
 type ResolvedDefuddleCli = {
   path: string
@@ -62,15 +62,10 @@ const runCapture = async (
   return result
 }
 
-const cleanEnvPath = (value: string | undefined): string | undefined => {
-  const trimmed = value?.trim()
-  return trimmed && trimmed.length > 0 ? trimmed : undefined
-}
-
 const resolveDefuddleCli = async (): Promise<ResolvedDefuddleCli | undefined> => {
-  const envPath = cleanEnvPath(process.env['AUTOSHOW_DEFUDDLE_BIN'])
-  if (envPath) {
-    return { path: envPath, source: 'env' }
+  const overrideBin = process.env['AUTOSHOW_DEFUDDLE_BIN']?.trim()
+  if (overrideBin) {
+    return { path: overrideBin, source: 'path' }
   }
 
   if (await pathExists(defuddleRuntimeBinaryPath)) {
@@ -84,9 +79,6 @@ const resolveDefuddleCli = async (): Promise<ResolvedDefuddleCli | undefined> =>
 
   return undefined
 }
-
-export const resolveDefuddleCliBinary = async (): Promise<string | undefined> =>
-  (await resolveDefuddleCli())?.path
 
 const trimForError = (value: string): string => {
   const trimmed = value.trim()
@@ -178,7 +170,7 @@ export const setupDefuddleCli = async (): Promise<void> => {
     if (isPinnedDefuddleCli(verified)) {
       logSetupToolStatus(l, {
         tool: 'defuddle',
-        status: 'ok',
+        status: 'ready',
         detail: `${defuddleRuntimeBinaryPath} (${verified.detail})`
       })
       return
@@ -224,10 +216,6 @@ export const ensureDefuddleCliSetup = async (): Promise<string> => {
 
     if (resolved.source === 'runtime' && isPinnedDefuddleCli(verified)) {
       return resolved.path
-    }
-
-    if (resolved.source === 'env') {
-      throw new Error(`AUTOSHOW_DEFUDDLE_BIN is not usable: ${verified.detail}`)
     }
 
     if (resolved.source === 'runtime') {

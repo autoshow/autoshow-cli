@@ -2,7 +2,7 @@ import type { CliCommandDefinition } from './types'
 
 const noop = (): void => {}
 
-export const NATIVE_BUILTIN_COMMANDS = [
+const NATIVE_BUILTIN_COMMANDS = [
   {
     name: 'version',
     description: 'Prints current version',

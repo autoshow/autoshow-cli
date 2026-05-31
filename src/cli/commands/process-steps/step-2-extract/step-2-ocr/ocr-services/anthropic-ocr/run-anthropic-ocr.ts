@@ -10,6 +10,7 @@ import { getAnthropicClientConfig } from '~/cli/commands/process-steps/step-3-wr
 import { OCR_SCHEMA_RETRY_ATTEMPTS, withOcrCreateRetry } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/ocr-retry'
 import { OcrStructuredResponseError } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-structured-response-error'
 import { OCR_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
+import { buildHostedOcrJsonPrompt, normalizeHostedOcrPages } from '../../ocr-utils/hosted-ocr-json'
 import {
   createAnthropicMessage,
   deleteAnthropicFile,
@@ -70,13 +71,7 @@ const getImageMimeType = (format: DocumentMetadata['format']): 'image/jpeg' | 'i
 }
 
 const buildOcrPrompt = (expectedPageCount: number): string => [
-  'Perform OCR on the provided document or image.',
-  'Return only JSON.',
-  'Do not summarize, explain, or translate.',
-  'Preserve the visible reading order.',
-  'Preserve paragraph breaks and line breaks when they are meaningful.',
-  'If a page is blank or unreadable, return that page with an empty string for text.',
-  `Return exactly ${expectedPageCount} page objects with contiguous pageNumber values from 1 through ${expectedPageCount}.`,
+  buildHostedOcrJsonPrompt(expectedPageCount),
   `Use this exact JSON schema: ${JSON.stringify(ANTHROPIC_OCR_JSON_SCHEMA)}`
 ].join(' ')
 
@@ -96,27 +91,10 @@ const normalizePages = (
     throw new Error(`Anthropic OCR response for ${pageLabel} did not match the expected page schema.`)
   }
 
-  const pages = parsed.output.pages
-    .slice()
-    .sort((a, b) => a.pageNumber - b.pageNumber)
-    .map((page) => ({
-      pageNumber: page.pageNumber,
-      method: 'ocr' as const,
-      text: page.text
-    }))
-
-  if (pages.length !== expectedPageCount) {
-    throw new Error(`Anthropic OCR returned ${pages.length} pages for ${pageLabel}, expected ${expectedPageCount}. Split the document into smaller chunks and retry.`)
-  }
-
-  for (let i = 0; i < pages.length; i++) {
-    const expectedPageNumber = i + 1
-    if (pages[i]?.pageNumber !== expectedPageNumber) {
-      throw new Error(`Anthropic OCR returned non-contiguous page numbers for ${pageLabel}. Split the document into smaller chunks and retry.`)
-    }
-  }
-
-  return pages
+  return normalizeHostedOcrPages(parsed.output.pages, expectedPageCount, {
+    countMismatchMessage: (actual, expected) => `Anthropic OCR returned ${actual} pages for ${pageLabel}, expected ${expected}. Split the document into smaller chunks and retry.`,
+    nonContiguousMessage: `Anthropic OCR returned non-contiguous page numbers for ${pageLabel}. Split the document into smaller chunks and retry.`
+  })
 }
 
 const parseOcrResponse = (

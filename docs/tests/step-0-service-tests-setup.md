@@ -2,6 +2,8 @@
 
 Setup coverage for model downloads and service-adjacent runtime bootstrap checks.
 
+Safety: these `bun t` commands document human service/e2e coverage and may call paid or quota-limited providers. Do not run them for agent verification without explicit approval for that exact run.
+
 ## Outline
 
 - [Quick Start](#quick-start)
@@ -23,7 +25,7 @@ bun t test/test-cases/setup/tts-models/tts-setup.test.ts
 
 ## Price Preflight
 
-Step 0 setup does not currently add any mapped price selectors. `--test-price` and `--budget` do not provide step-specific setup preflight coverage today.
+Step 0 setup does not currently add any mapped price commands. `--test-price` and `--budget` do not provide step-specific setup preflight coverage today.
 
 ## Related Docs
 

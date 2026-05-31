@@ -2,29 +2,25 @@ import type { ImageStepEstimate, MusicStepEstimate, RuntimeOptions, VideoStepEst
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/music-utils/music-pricing'
-import { normalizeDeapiMusicParams, resolveDeapiMusicPrice } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-pricing'
 import {
   getImageEstimation,
   getMusicEstimation,
   getVideoEstimation
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
+import { tryResolveLocalVideoDurationSeconds } from '~/cli/commands/process-steps/step-6-video/video-utils/video-media-inputs'
 
 export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
   const hasImage = (opts.geminiImageModels?.length ?? 0) > 0
     || !!opts.geminiImageModel
     || (opts.openaiImageModels?.length ?? 0) > 0
     || !!opts.openaiImageModel
-    || (opts.minimaxImageModels?.length ?? 0) > 0
-    || !!opts.minimaxImageModel
     || (opts.grokImageModels?.length ?? 0) > 0
     || !!opts.grokImageModel
-    || (opts.runwayImageModels?.length ?? 0) > 0
-    || !!opts.runwayImageModel
     || (opts.bflImageModels?.length ?? 0) > 0
     || !!opts.bflImageModel
-    || (opts.deapiImageModels?.length ?? 0) > 0
-    || !!opts.deapiImageModel
+    || (opts.reveImageModels?.length ?? 0) > 0
+    || !!opts.reveImageModel
   if (!hasImage) return []
 
   return estimateImageCosts({
@@ -32,16 +28,12 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
     geminiImageModel: opts.geminiImageModel,
     openaiImageModels: opts.openaiImageModels,
     openaiImageModel: opts.openaiImageModel,
-    minimaxImageModels: opts.minimaxImageModels,
-    minimaxImageModel: opts.minimaxImageModel,
     grokImageModels: opts.grokImageModels,
     grokImageModel: opts.grokImageModel,
-    runwayImageModels: opts.runwayImageModels,
-    runwayImageModel: opts.runwayImageModel,
     bflImageModels: opts.bflImageModels,
     bflImageModel: opts.bflImageModel,
-    deapiImageModels: opts.deapiImageModels,
-    deapiImageModel: opts.deapiImageModel,
+    reveImageModels: opts.reveImageModels,
+    reveImageModel: opts.reveImageModel,
     imageSize: opts.imageSize,
     imageQuality: opts.imageQuality,
     imageCount: opts.imageCount
@@ -51,13 +43,17 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
       step: 'image' as const,
       provider: estimate.provider,
       model: estimate.model,
+      imageCount: estimate.imageCount,
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,
     }
   })
 }
 
-export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
+const countGrokInputImages = (opts: RuntimeOptions): number =>
+  (opts.videoInputImage ? 1 : 0) + (opts.videoReferenceImages?.length ?? 0)
+
+export const buildVideoEstimates = async (opts: RuntimeOptions): Promise<VideoStepEstimate[]> => {
   const hasVideo = (opts.geminiVideoModels?.length ?? 0) > 0
     || !!opts.geminiVideoModel
     || (opts.minimaxVideoModels?.length ?? 0) > 0
@@ -68,9 +64,12 @@ export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] =
     || !!opts.grokVideoModel
     || (opts.runwayVideoModels?.length ?? 0) > 0
     || !!opts.runwayVideoModel
-    || (opts.deapiVideoModels?.length ?? 0) > 0
-    || !!opts.deapiVideoModel
   if (!hasVideo) return []
+
+  const hasGrokVideo = (opts.grokVideoModels?.length ?? 0) > 0 || !!opts.grokVideoModel
+  const grokInputVideoDurationSeconds = hasGrokVideo && opts.videoInputVideo
+    ? await tryResolveLocalVideoDurationSeconds(opts.videoInputVideo)
+    : undefined
 
   return estimateVideoCosts({
     geminiVideoModels: opts.geminiVideoModels,
@@ -83,19 +82,20 @@ export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] =
     grokVideoModel: opts.grokVideoModel,
     runwayVideoModels: opts.runwayVideoModels,
     runwayVideoModel: opts.runwayVideoModel,
-    deapiVideoModels: opts.deapiVideoModels,
-    deapiVideoModel: opts.deapiVideoModel,
     videoDuration: opts.videoDuration,
     videoSize: opts.videoSize,
     videoAspectRatio: opts.videoAspectRatio,
     videoResolution: opts.videoResolution,
-    videoMode: opts.videoMode
+    videoMode: opts.videoMode,
+    ...(hasGrokVideo ? { grokInputImageCount: countGrokInputImages(opts) } : {}),
+    ...(grokInputVideoDurationSeconds !== undefined ? { grokInputVideoDurationSeconds } : {})
   }).map((estimate) => {
     const estimation = getVideoEstimation(estimate.provider, estimate.model)
     return {
       step: 'video' as const,
       provider: estimate.provider,
       model: estimate.model,
+      durationSeconds: estimate.durationSeconds,
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,
     }
@@ -107,8 +107,6 @@ export const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicSt
     || !!opts.elevenlabsMusicModel
     || (opts.minimaxMusicModels?.length ?? 0) > 0
     || !!opts.minimaxMusicModel
-    || (opts.deapiMusicModels?.length ?? 0) > 0
-    || !!opts.deapiMusicModel
     || (opts.geminiMusicModels?.length ?? 0) > 0
     || !!opts.geminiMusicModel
   if (!hasMusic) return []
@@ -118,8 +116,6 @@ export const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicSt
     elevenlabsMusicModel: opts.elevenlabsMusicModel,
     minimaxMusicModels: opts.minimaxMusicModels,
     minimaxMusicModel: opts.minimaxMusicModel,
-    deapiMusicModels: opts.deapiMusicModels,
-    deapiMusicModel: opts.deapiMusicModel,
     geminiMusicModels: opts.geminiMusicModels,
     geminiMusicModel: opts.geminiMusicModel,
     musicDuration: opts.musicDuration,
@@ -130,33 +126,11 @@ export const buildMusicEstimates = async (opts: RuntimeOptions): Promise<MusicSt
   const results: MusicStepEstimate[] = []
   for (const estimate of estimates) {
     const estimation = getMusicEstimation(estimate.provider, estimate.model)
-    if (estimate.provider === 'deapi') {
-      const params = normalizeDeapiMusicParams(
-        estimate.model as Parameters<typeof normalizeDeapiMusicParams>[0],
-        opts.musicDuration
-      )
-      const price = await resolveDeapiMusicPrice({
-        model: estimate.model as Parameters<typeof resolveDeapiMusicPrice>[0]['model'],
-        params
-      })
-      results.push({
-        step: 'music',
-        provider: estimate.provider,
-        model: estimate.model,
-        lyricsSource: estimate.lyricsSource,
-        totalCost: price.source === 'provider_quote'
-          ? price.totalCost
-          : applyCostMultiplier(price.totalCost, estimation.costMultiplier),
-        costMultiplier: price.source === 'provider_quote' ? 1 : estimation.costMultiplier,
-        ...(price.warning ? { note: price.warning } : estimate.note !== undefined ? { note: estimate.note } : {})
-      })
-      continue
-    }
-
     results.push({
       step: 'music',
       provider: estimate.provider,
       model: estimate.model,
+      durationSeconds: estimate.durationSeconds,
       lyricsSource: estimate.lyricsSource,
       totalCost: applyCostMultiplier(estimate.totalCost, estimation.costMultiplier),
       costMultiplier: estimation.costMultiplier,

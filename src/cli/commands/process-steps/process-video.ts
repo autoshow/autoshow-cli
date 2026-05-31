@@ -49,14 +49,16 @@ import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { preflightToEstimated } from '~/utils/pricing/compute-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { serializeOneOrMany } from './target-runner'
+import { classifySttProviderFailure } from './step-2-extract/step-2-stt/stt-provider-failures'
+import {
+  logSpeakerCountHintSummary,
+  prioritizeCloudSttTargetIndices
+} from './step-2-extract/step-2-stt/stt-provider-pool'
 import {
   buildProviderModelLabel,
   buildTimingProviderModelLabel,
-  classifySttProviderFailure,
-  logSpeakerCountHintSummary,
-  prioritizeCloudSttTargetIndices,
   selectPrimaryPromptProvider
-} from './step-2-extract/step-2-stt/process-stt'
+} from './step-2-extract/step-2-stt/stt-prompt'
 import { writeRunManifest } from './manifest-utils'
 import { logWriteManifestConsoleSummary } from './write-manifest-log'
 import { tryResolveYoutubeCaptionTranscription, YOUTUBE_CAPTIONS_SERVICE } from './step-2-extract/step-2-stt/youtube-captions'
@@ -384,6 +386,7 @@ export const processVideo = async (
 	    let step6Metadata: Step6VideoMetadata[] | null = null
 	    let step7Metadata: Step7MusicMetadata[] | null = null
 	    let ttsCharacterCount: number | undefined
+	    let ttsInputText: string | undefined
 	    const ttsTargets = collectTtsTargets(processingOptions)
 	    const imageTargets = collectImageTargets(processingOptions)
 	    const videoTargets = collectVideoTargets(processingOptions)
@@ -402,6 +405,7 @@ export const processVideo = async (
 	      } else {
 	        const textContent = step3RunResults[0]?.renderedText ?? ''
 	        ttsCharacterCount = textContent.length
+	        ttsInputText = textContent
 
 	        const [ttsResult, imageResult, musicResult, videoResult] = await Promise.all([
 	          ttsRequested
@@ -468,9 +472,7 @@ export const processVideo = async (
 	      model: entry.transcriptionModel
 	    }))
 
-	    const estimated = preflightEstimate
-	      ? preflightToEstimated(preflightEstimate)
-	      : computeEstimatedCosts({
+	    const observedEstimate = computeEstimatedCosts({
 	        applyCostMultipliers: false,
 	        sttTargets: selectedSttTargets,
 	        audioDurationSeconds: mediaDurationSeconds,
@@ -501,6 +503,9 @@ export const processVideo = async (
 	        musicLyricsFile: processingOptions.musicLyricsFile,
 	        musicInstrumental: processingOptions.musicInstrumental
 	      })
+	    const estimated = preflightEstimate
+	      ? preflightToEstimated(preflightEstimate)
+	      : observedEstimate
 
 	    const actual = computeActualCosts({
 	      step1: step1Metadata,
@@ -513,7 +518,9 @@ export const processVideo = async (
 	      ...(step7Metadata ? { step7: step7Metadata } : {})
 	    })
 
-	    const cost = { estimated, actual }
+	    const cost = preflightEstimate
+	      ? { estimated, observedEstimate, actual }
+	      : { estimated, actual }
 	    const estimatedTiming = computeEstimatedProcessingTimes({
 	      sttTargets: selectedSttTargets,
 	      audioDurationSeconds: mediaDurationSeconds,
@@ -521,6 +528,8 @@ export const processVideo = async (
 	      skipLLM: processingOptions.skipLLM,
 	      ttsTargets: ttsEstimateTargets,
 	      ttsCharacterCount,
+	      ...(ttsInputText !== undefined ? { ttsInputText } : {}),
+	      ttsChunkConcurrency: processingOptions.ttsChunkConcurrency,
 	      ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
 	      ...(attemptedVideoTargets.length > 0
 	        ? {
@@ -528,7 +537,9 @@ export const processVideo = async (
 	              service: t.service,
 	              model: t.model,
 	              ...(processingOptions.videoDuration !== undefined ? { durationSeconds: processingOptions.videoDuration } : {})
-	            }))
+	            })),
+	            ...(processingOptions.videoResolution !== undefined ? { videoResolution: processingOptions.videoResolution } : {}),
+	            ...(processingOptions.videoMode !== undefined ? { videoMode: processingOptions.videoMode } : {})
 	          }
 	        : {}),
 	      ...(attemptedMusicTargets.length > 0

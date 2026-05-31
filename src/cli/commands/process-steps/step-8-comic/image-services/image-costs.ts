@@ -1,4 +1,3 @@
-import { l } from '../utils/logger'
 import {
   calculateGeminiImageCost,
   estimateGeminiImageOutputCost,
@@ -14,7 +13,7 @@ import type {
   ImageUsage,
   OpenAiImageGenerationModel,
   TokenBreakdown,
-} from '../types'
+} from '../types/comic-types'
 
 type CommonOpenAiImageSize = '1024x1024' | '1024x1536' | '1536x1024'
 
@@ -163,20 +162,7 @@ const getOutputBreakdown = (
   }
 }
 
-const formatTokenBreakdown = (breakdown: TokenBreakdown): string => {
-  const parts = [
-    `${breakdown.textTokens.toLocaleString()} text`,
-    `${breakdown.imageTokens.toLocaleString()} image`,
-  ]
-
-  if (breakdown.unattributedTokens > 0) {
-    parts.push(`${breakdown.unattributedTokens.toLocaleString()} unattributed`)
-  }
-
-  return `(${parts.join(', ')})`
-}
-
-export const updateImageRunStatsFromUsage = (
+const updateImageRunStatsFromUsage = (
   model: ImageGenerationModel,
   usage: ImageUsage | undefined,
   stats: ImageRunStats
@@ -224,34 +210,4 @@ export const updateImageRunStatsWithCostFallback = (
   }
 
   return { costLabel: 'unavailable', estimated: false }
-}
-
-export const logUsageAndUpdateStats = (
-  model: ImageGenerationModel,
-  usage: ImageUsage | undefined,
-  stats: ImageRunStats
-): number | null => {
-  if (!usage) {
-    return null
-  }
-
-  const inputBreakdown = getInputBreakdown(model, usage)
-  const outputBreakdown = getOutputBreakdown(model, usage)
-  const cost = updateImageRunStatsFromUsage(model, usage, stats)
-
-  l.dim(
-    `  Input tokens:     ${usage.input_tokens.toLocaleString()} ` +
-    `${formatTokenBreakdown(inputBreakdown)}`
-  )
-  l.dim(
-    `  Output tokens:    ${usage.output_tokens.toLocaleString()} ` +
-    `${formatTokenBreakdown(outputBreakdown)}`
-  )
-  l.dim(`  Total tokens:     ${usage.total_tokens.toLocaleString()}`)
-
-  if (cost !== null) {
-    l.dim(`  Cost:             ${formatCost(cost)}`)
-  }
-
-  return cost
 }

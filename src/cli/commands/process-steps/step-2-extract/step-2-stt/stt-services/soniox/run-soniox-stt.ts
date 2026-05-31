@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   AsyncSttLifecycleHooks,
   DiarizationOptions,
@@ -5,7 +6,6 @@ import type {
   Step2RuntimeMetadata,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
   logSttSegmentLifecycle
@@ -16,10 +16,13 @@ import {
   formatTranscriptText
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import {
+  createAsyncSttJobReadyNotifier,
+  createAsyncSttProgressMetadataPersister,
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
+import { SONIOX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import {
   createTranscription,
@@ -74,7 +77,7 @@ export const runSonioxStt = async (
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
   const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const baseURL = readEnv('SONIOX_BASE_URL') ?? 'https://api.soniox.com'
+  const baseURL = SONIOX_DEFAULT_BASE_URL
   let uploadMs = 0
   let createMs = 0
   let pollMs = 0
@@ -106,41 +109,38 @@ export const runSonioxStt = async (
   let fileId = runtime?.remoteAssetId
   let transcriptionId = runtime?.remoteJobId
   let resumedExistingTranscription = false
-  let jobReadyNotified = false
+
+  const buildTimingMetadata = (remoteProcessingMs = 0): Step2Metadata['timings'] =>
+    buildStep2TimingMetadata({
+      uploadMs,
+      createMs,
+      createCount,
+      pollMs,
+      pollSleepMs,
+      pollCount,
+      transcriptMs,
+      remoteProcessingMs,
+      requestCount,
+      retryCount,
+      rateLimitCount,
+      backfillCount
+    })
 
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'soniox',
     transcriptionModel: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
-    timings: {
-      ...(uploadMs > 0 ? { uploadMs } : {}),
-      ...(createMs > 0 ? { createMs } : {}),
-      ...(createCount > 0 ? { createCount } : {}),
-      ...(pollMs > 0 ? { pollMs } : {}),
-      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-      ...(pollCount > 0 ? { pollCount } : {}),
-      ...(transcriptMs > 0 ? { transcriptMs } : {}),
-      ...(requestCount > 0 ? { requestCount } : {}),
-      ...(retryCount > 0 ? { retryCount } : {}),
-      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-      ...(backfillCount > 0 ? { backfillCount } : {})
-    },
+    timings: buildTimingMetadata() ?? {},
     runtime: nextRuntime
   })
 
-  const persistProgressMetadata = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    runtime = nextRuntime
-    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(nextRuntime))
-  }
-
-  const notifyJobReady = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    if (jobReadyNotified) {
-      return
-    }
-    jobReadyNotified = true
-    await lifecycle?.onJobReady?.(nextRuntime)
-  }
+  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+    outputDir,
+    buildProgressMetadata,
+    (nextRuntime) => { runtime = nextRuntime }
+  )
+  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
 
   try {
     if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
@@ -190,7 +190,6 @@ export const runSonioxStt = async (
       initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
       maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
       audioDurationSeconds,
-      envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_SONIOX',
       pollMode: resumedExistingTranscription ? 'resume-probe' : 'fresh',
       buildDeadlineError: (jobId, pollDeadlineMs) => buildSonioxPollingDeadlineError(jobId, pollDeadlineMs),
       buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildSonioxResumeProbeError(jobId, probeCount, totalWaitMs),
@@ -238,6 +237,7 @@ export const runSonioxStt = async (
 
     const processingTime = Date.now() - startTime
     const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs - transcriptMs)
+    const timings = buildTimingMetadata(remoteProcessingMs)
     const completedRuntime: Step2RuntimeMetadata = {
       ...(runtime ?? {
         mode: 'fresh',
@@ -258,24 +258,7 @@ export const runSonioxStt = async (
       processingTime,
       tokenCount: countTokens(result.text),
       runtime: completedRuntime,
-      ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || pollSleepMs > 0 || transcriptMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
-        ? {
-            timings: {
-              ...(uploadMs > 0 ? { uploadMs } : {}),
-              ...(createMs > 0 ? { createMs } : {}),
-              ...(createCount > 0 ? { createCount } : {}),
-              ...(pollMs > 0 ? { pollMs } : {}),
-              ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-              ...(pollCount > 0 ? { pollCount } : {}),
-              ...(transcriptMs > 0 ? { transcriptMs } : {}),
-              ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-              ...(requestCount > 0 ? { requestCount } : {}),
-              ...(retryCount > 0 ? { retryCount } : {}),
-              ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-              ...(backfillCount > 0 ? { backfillCount } : {})
-            }
-          }
-        : {})
+      ...(timings ? { timings } : {})
     }
 
     if (segmentNumber && totalSegments) {

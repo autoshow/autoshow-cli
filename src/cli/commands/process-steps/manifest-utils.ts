@@ -11,7 +11,7 @@ import type {
   RunManifest
 } from '~/types'
 
-export class UnsupportedArtifactSchemaError extends Error {
+class UnsupportedArtifactSchemaError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'CLIUsageError'
@@ -272,21 +272,6 @@ export const writeBatchManifest = async (
     ...(source ? { source } : {})
   }
   await Bun.write(join(batchDir, 'batch.json'), `${JSON.stringify(manifest, null, 2)}\n`)
-}
-
-export const readBatchManifestEntries = async (
-  batchDir: string,
-  expectedKind: BatchManifestKind
-): Promise<{ manifestPath: string, entries: BatchManifestEntry[] } | undefined> => {
-  const manifest = await readBatchManifest(batchDir, expectedKind)
-  if (!manifest) {
-    return undefined
-  }
-
-  return {
-    manifestPath: manifest.manifestPath,
-    entries: manifest.manifest.items
-  }
 }
 
 export const readBatchManifest = async (

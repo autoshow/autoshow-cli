@@ -1,7 +1,7 @@
 import type { RetryDecision } from '~/types'
 import { classifyFetchRetry } from '~/utils/retries'
 
-export const parseStatusFromGeminiError = (error: unknown): number | undefined => {
+const parseStatusFromGeminiError = (error: unknown): number | undefined => {
   if (error && typeof error === 'object') {
     if ('status' in error && typeof error.status === 'number') {
       return error.status

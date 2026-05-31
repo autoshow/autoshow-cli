@@ -1,7 +1,7 @@
 import { basename } from 'node:path'
 import { readRunManifest } from '~/cli/commands/process-steps/manifest-utils'
 import type { BatchItem, BatchManifestEntry, BatchManifestErrorEntry, ProcessCommand } from '~/types'
-import { isLikelyUrl } from '../input/input-classifier'
+import { isLikelyUrl } from '../source-input/input-classifier'
 
 export const toManifestKind = (command: ProcessCommand): 'metadata' | 'download' | 'extract' | 'write' => {
   if (command === 'metadata' || command === 'download' || command === 'extract' || command === 'write') {
@@ -24,7 +24,8 @@ export const buildBatchManifestEntryForItem = (
       title: batchItem.title ?? 'Untitled',
       channel: batchItem.author ?? 'Unknown',
       duration: batchItem.duration ?? 'Unknown',
-      ...(batchItem.publishedAt ? { publishedAt: batchItem.publishedAt } : {})
+      ...(batchItem.publishedAt ? { publishedAt: batchItem.publishedAt } : {}),
+      ...(batchItem.description ? { description: batchItem.description } : {})
     }
   }
 

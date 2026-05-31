@@ -7,7 +7,7 @@ import { selectBatchItems } from '~/cli/commands/process-steps/step-1-download/t
 import { resolveProcessTargetDoubleDash } from '~/cli/commands/process-steps/step-1-download/targets/handle-process-target'
 import { buildDownloadMediaOptions } from '~/cli/commands/process-steps/step-1-download/targets/single/media-runner'
 import { resolveYtDlpBinaryInfo } from '~/cli/commands/process-steps/step-1-download/audio/yt-dlp-binary'
-import { STABLE_LOCAL_AUDIO_PATH, runCommand } from '../../test-utils/test-helpers'
+import { runCommand } from '../../test-utils/test-helpers'
 
 const EMPTY_CONFIG_PATH = 'test/test-utils/fixtures/empty-autoshow-config.json'
 const tempDirs: string[] = []
@@ -83,20 +83,8 @@ afterEach(async () => {
 })
 
 describe('yt-dlp binary resolution', () => {
-  test('prefers AUTOSHOW_YTDLP_BIN before managed and PATH binaries', () => {
-    const resolved = resolveYtDlpBinaryInfo({
-      env: { AUTOSHOW_YTDLP_BIN: '/override/yt-dlp' },
-      managedPath: '/managed/yt-dlp',
-      exists: () => true,
-      which: () => '/path/yt-dlp'
-    })
-
-    expect(resolved).toEqual({ path: '/override/yt-dlp', source: 'env' })
-  })
-
   test('prefers managed binary before PATH', () => {
     const resolved = resolveYtDlpBinaryInfo({
-      env: {},
       managedPath: '/managed/yt-dlp',
       exists: (path) => path === '/managed/yt-dlp',
       which: () => '/path/yt-dlp'
@@ -105,9 +93,8 @@ describe('yt-dlp binary resolution', () => {
     expect(resolved).toEqual({ path: '/managed/yt-dlp', source: 'managed' })
   })
 
-  test('falls back to PATH when no override or managed binary exists', () => {
+  test('falls back to PATH when no managed binary exists', () => {
     const resolved = resolveYtDlpBinaryInfo({
-      env: {},
       managedPath: '/managed/yt-dlp',
       exists: () => false,
       which: () => '/path/yt-dlp'
@@ -274,7 +261,7 @@ describe('yt-dlp passthrough execution contracts', () => {
     const result = await runCommand([
       'src/cli/create-cli.ts',
       'download',
-      STABLE_LOCAL_AUDIO_PATH,
+      'input/examples/audio/0-audio-short.mp3',
       '--config-path',
       EMPTY_CONFIG_PATH,
       '--',

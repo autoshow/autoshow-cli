@@ -1,6 +1,11 @@
-import { test, expect, beforeAll, afterAll } from 'bun:test'
+import { test, expect, beforeAll } from 'bun:test'
 import { E2E_TEST_TIMEOUT_MS } from './budget'
-import { runCommand, findLatestDirectory, cleanupTestOutput, hasConfiguredEnvVar } from './test-helpers'
+import {
+  runCommand,
+  findLatestDirectory,
+  readConfiguredEnvVar,
+  type RunCommandOptions
+} from './test-helpers'
 import { stripAnsi } from '~/utils/terminal-colors'
 
 const RUNWAY_INSUFFICIENT_CREDITS_MESSAGE = 'You do not have enough credits to run this task.'
@@ -52,7 +57,43 @@ const isDeepInfraWhisperLargeV3CommandTimeout = (output: string): boolean =>
     /\bexit(?:ed)?(?:\s+with)?(?:\s+code)?\s*(?:143|-15)\b/i.test(output)
   )
 
-export const classifySkippableLiveProviderFailure = (output: string): string | null => {
+const GEMINI_IMAGE_TEMP_STATUS_PATTERN = '\\b(?:429|500|502|503|504)\\b'
+
+const hasGeminiImageSignal = (output: string): boolean =>
+  /\bgemini\b/i.test(output)
+  && (
+    /\bgemini-image(?:-generate)?\b/i.test(output)
+    || /\bGemini image\b/i.test(output)
+    || /\bgemini-[\w.\-]+-image-preview\b/i.test(output)
+  )
+
+const isGeminiImageAvailabilityFailure = (output: string): boolean => {
+  if (!hasGeminiImageSignal(output)) return false
+
+  const statusPattern = new RegExp(`(?:Gemini API request failed with status|retryable status|status)\\s+${GEMINI_IMAGE_TEMP_STATUS_PATTERN}`, 'i')
+  if (statusPattern.test(output)) return true
+
+  return new RegExp(`${GEMINI_IMAGE_TEMP_STATUS_PATTERN}[\\s\\S]{0,160}(?:service unavailable|temporar(?:y|ily) unavailable|rate limit|rate limited|gateway|backend)`, 'i').test(output)
+}
+
+const hasBflImageSignal = (output: string): boolean =>
+  /\bBFL\b/i.test(output)
+  || /\bbfl-image\b/i.test(output)
+  || /\bflux-2-/i.test(output)
+
+const isBflResultDownloadAvailabilityFailure = (output: string): boolean => {
+  if (!hasBflImageSignal(output)) return false
+  if (/BFL image result download failed \(504\)/i.test(output)) return true
+  if (
+    /\bbfl-image-result-download\b[\s\S]{0,240}\bfailed after \d+\/\d+ attempts\b/i.test(output)
+    && /(?:max attempts reached|retryable status 504|gateway timeout|network error|abort\/timeout)/i.test(output)
+  ) {
+    return true
+  }
+  return /\bbfl-image-result-download\b[\s\S]{0,240}(?:retryable status 504|status 504|gateway timeout|network error|abort\/timeout)/i.test(output)
+}
+
+export const classifyLiveProviderAvailabilityFailure = (output: string): string | null => {
   const cleanOutput = stripAnsi(output)
   if (cleanOutput.includes(RUNWAY_INSUFFICIENT_CREDITS_MESSAGE)) {
     return 'Runway account does not have enough credits to run this task'
@@ -72,22 +113,23 @@ export const classifySkippableLiveProviderFailure = (output: string): string | n
   if (isDeepInfraWhisperLargeV3CommandTimeout(cleanOutput)) {
     return 'DeepInfra openai/whisper-large-v3 transcription timed out'
   }
+  if (isGeminiImageAvailabilityFailure(cleanOutput)) {
+    return 'Gemini image provider is temporarily unavailable or rate limited'
+  }
+  if (isBflResultDownloadAvailabilityFailure(cleanOutput)) {
+    return 'BFL image result download hit a transient provider availability failure'
+  }
   return null
 }
 
 export const withOutputLifecycle = (
-  title: string,
+  _title: string,
   setup?: (() => Promise<void>) | undefined
 ): void => {
   beforeAll(async () => {
     if (setup) {
       await setup()
     }
-    await cleanupTestOutput(title)
-  })
-
-  afterAll(async () => {
-    await cleanupTestOutput(title)
   })
 }
 
@@ -98,45 +140,97 @@ export const defineInvalidModelTest = (name: string, args: string[]): void => {
   }, E2E_TEST_TIMEOUT_MS)
 }
 
-export const definePriceEstimateTest = (
-  _budgetKey: string,
-  name: string,
-  args: string[]
-): void => {
-  test(name, async () => {
-    const result = await runCommand(args)
-    expect(result.exitCode).toBe(0)
-  }, E2E_TEST_TIMEOUT_MS)
+export const requireConfiguredValue = <T>(
+  value: T | null | undefined,
+  message: string
+): NonNullable<T> => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.length > 0) {
+      return trimmed as NonNullable<T>
+    }
+  } else if (value !== null && value !== undefined) {
+    return value as NonNullable<T>
+  }
+
+  throw new Error(message)
 }
 
-export const shouldSkipMissingEnv = async (
+export const requireConfiguredEnvVar = async (
   envVarKey: string,
-  skipMessage: string
-): Promise<boolean> => {
-  if (!await hasConfiguredEnvVar(envVarKey)) {
-    console.log(`Skipping: ${skipMessage}`)
-    return true
-  }
-  return false
+  message = `${envVarKey} is required`
+): Promise<string> => {
+  const value = await readConfiguredEnvVar(envVarKey)
+  return requireConfiguredValue(value, message)
 }
+
+export const requireConfiguredEnvVars = async (
+  envVarKeys: readonly string[],
+  message?: string
+): Promise<Record<string, string>> => {
+  const values: Record<string, string> = {}
+  const missing: string[] = []
+
+  for (const envVarKey of envVarKeys) {
+    const value = await readConfiguredEnvVar(envVarKey)
+    if (value) {
+      values[envVarKey] = value
+    } else {
+      missing.push(envVarKey)
+    }
+  }
+
+  if (missing.length > 0) {
+    throw new Error(message ?? `${missing.join(', ')} required`)
+  }
+
+  return values
+}
+
+const COMMAND_FAILURE_TAIL_LINES = 80
+
+const formatCommandArg = (arg: string): string =>
+  /^[A-Za-z0-9_./:=@+-]+$/.test(arg) ? arg : JSON.stringify(arg)
+
+const tailLines = (text: string, lineCount: number): string => {
+  const trimmed = text.trimEnd()
+  if (trimmed.length === 0) return '(empty)'
+  return trimmed.split(/\r?\n/).slice(-lineCount).join('\n')
+}
+
+export const formatCommandFailureDiagnostics = (
+  args: string[],
+  result: { exitCode: number, stdout: string, stderr: string },
+  lineCount = COMMAND_FAILURE_TAIL_LINES
+): string => [
+  `Command failed with exit code ${result.exitCode}: bun ${args.map(formatCommandArg).join(' ')}`,
+  `--- stdout tail (${lineCount} lines) ---`,
+  tailLines(result.stdout, lineCount),
+  `--- stderr tail (${lineCount} lines) ---`,
+  tailLines(result.stderr, lineCount)
+].join('\n')
 
 export const runCommandAndExpectOutputDir = async (
   title: string,
-  args: string[]
-): Promise<string | null> => {
-  const result = await runCommand(args)
+  args: string[],
+  opts?: RunCommandOptions
+): Promise<string> => {
+  const result = await runCommand(args, opts)
   const combinedOutput = `${result.stdout}\n${result.stderr}`
   if (result.exitCode !== 0) {
-    const skipReason = classifySkippableLiveProviderFailure(combinedOutput)
-    if (skipReason) {
-      console.log(`Skipping: ${skipReason}`)
-      return null
+    const availabilityReason = classifyLiveProviderAvailabilityFailure(combinedOutput)
+    const diagnostics = formatCommandFailureDiagnostics(args, result)
+    if (availabilityReason) {
+      throw new Error(`Live provider availability failure: ${availabilityReason}\n${diagnostics}`)
     }
+    throw new Error(diagnostics)
   }
 
   expect(result.exitCode).toBe(0)
 
-  const outputDir = result.outputDir ?? await findLatestDirectory(title)
-  expect(outputDir).not.toBeNull()
+  const outputDir = result.outputDir ?? await findLatestDirectory(title, result.outputRoot)
+  if (!outputDir) {
+    throw new Error(`Expected output directory for ${title}`)
+  }
   return outputDir
 }

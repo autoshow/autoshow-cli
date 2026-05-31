@@ -35,8 +35,7 @@ describe("tts model setup", () => {
       const pythonPath = join(engine.envDir, "bin/python")
       const pythonExists = await fileExists(pythonPath)
       if (!pythonExists) {
-        console.log(`Skipping: ${engine.name} venv not set up (run: bun as setup)`)
-        return
+        throw new Error(`${engine.name} venv not set up (run: bun as setup)`)
       }
 
       expect(await fileExists(join(engine.envDir, `lib/python${engine.pythonVersion}/site-packages/kittentts`))).toBe(true)

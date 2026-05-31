@@ -12,20 +12,7 @@ import {
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/hosted-ocr'
 import { readPaddleImageDimensions } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-local/paddle-ocr/run-paddle-ocr'
 import type { HostedExtractOcrEngine } from '~/types'
-
-const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-const redDotPng = new Uint8Array([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-  0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-  0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
-  0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44, 0x41,
-  0x54, 0x78, 0x9c, 0x63, 0xf8, 0xcf, 0xc0, 0xf0,
-  0x1f, 0x00, 0x05, 0x00, 0x01, 0xff, 0x89, 0x99,
-  0x3d, 0x1d, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
-  0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
-])
+import { pngSignature, redDotPng } from '../../test-utils/media-fixtures'
 
 const whiteBmp = new Uint8Array([
   0x42, 0x4d, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -107,11 +94,9 @@ describe('OCR Bun.Image normalization contracts', () => {
       { engine: 'openai-ocr', format: 'bmp' },
       { engine: 'kimi-ocr', format: 'bmp' },
       { engine: 'gemini-ocr', format: 'gif' },
-      { engine: 'aws-textract', format: 'bmp' },
-      { engine: 'aws-textract', format: 'webp' },
-      { engine: 'aws-textract', format: 'gif' },
       { engine: 'deepinfra-ocr', format: 'bmp' },
       { engine: 'deepinfra-ocr', format: 'gif' },
+      { engine: 'unstructured-ocr', format: 'webp' },
     ]
     const imageMagickCases: Array<{ engine: HostedExtractOcrEngine; format: string }> = [
       { engine: 'anthropic-ocr', format: 'tif' },
@@ -127,8 +112,6 @@ describe('OCR Bun.Image normalization contracts', () => {
     for (const entry of imageMagickCases) {
       expect(resolveHostedDirectImageInputStrategy(entry.format, entry.engine)).toBe('imagemagick-png')
     }
-    expect(resolveHostedDirectImageInputStrategy('tif', 'aws-textract')).toBe('direct')
-    expect(resolveHostedDirectImageInputStrategy('bmp', 'gcloud-docai')).toBe('direct')
     expect(resolveHostedDirectImageInputStrategy('gif', 'glm-ocr')).toBe('unsupported')
   })
 
@@ -138,7 +121,7 @@ describe('OCR Bun.Image normalization contracts', () => {
     const fixtures: Array<{ engine: HostedExtractOcrEngine; name: string; bytes: Uint8Array }> = [
       { engine: 'anthropic-ocr', name: 'anthropic.bmp', bytes: whiteBmp },
       { engine: 'gemini-ocr', name: 'gemini.gif', bytes: transparentGif },
-      { engine: 'aws-textract', name: 'aws.webp', bytes: await new Image(redDotPng).webp().bytes() },
+      { engine: 'unstructured-ocr', name: 'unstructured.webp', bytes: await new Image(redDotPng).webp().bytes() },
     ]
 
     try {

@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   OpenAICompatibleTranscriptionResponse,
   OpenAICompatibleTranscriptionSegment,
@@ -5,7 +6,6 @@ import type {
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
@@ -49,6 +49,79 @@ const parseSegments = (
 
 const normalizeBaseURL = (baseURL: string): string =>
   baseURL.replace(/\/+$/, '')
+
+export const runOpenAICompatibleTextOnlyStt = async (
+  audioPath: string,
+  outputDir: string,
+  options: {
+    service: Step2Metadata['transcriptionService']
+    apiKey: string
+    baseURL: string
+    model: string
+    segmentOffsetMinutes: number
+    segmentNumber?: number | undefined
+    formFields: Record<string, string>
+    errorMessagePrefix: string
+  }
+): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
+  const startTime = Date.now()
+  const offsetSeconds = options.segmentOffsetMinutes * 60
+  const outputBase = buildTranscriptionOutputBase(outputDir, options.segmentNumber)
+  const form = new FormData()
+  form.append('model', options.model)
+  for (const [key, value] of Object.entries(options.formFields)) {
+    form.append(key, value)
+  }
+  form.append('file', Bun.file(audioPath))
+
+  const response = await fetch(`${normalizeBaseURL(options.baseURL)}/audio/transcriptions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${options.apiKey}`
+    },
+    body: form
+  })
+
+  const rawText = await response.text()
+  let payload: unknown = rawText
+  try {
+    payload = JSON.parse(rawText) as unknown
+  } catch {
+    payload = rawText
+  }
+
+  if (!response.ok) {
+    throw new Error(`${options.errorMessagePrefix} (${response.status}): ${rawText}`)
+  }
+
+  const text = typeof payload === 'object' && payload !== null && 'text' in payload
+    ? String((payload as { text?: unknown }).text ?? '').trim()
+    : rawText.trim()
+  const { finalSegments, finalText } = resolveTranscriptionOutput([], text, offsetSeconds)
+  await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
+
+  return {
+    result: {
+      text: finalText,
+      segments: finalSegments,
+      evidence: {
+        capabilities: {
+          hasNativeWordTiming: false,
+          hasConfidence: false,
+          hasSpeakerLabels: false
+        },
+        timingQuality: 'coarse',
+        rawResponse: payload
+      }
+    },
+    metadata: {
+      transcriptionService: options.service,
+      transcriptionModel: options.model,
+      processingTime: Date.now() - startTime,
+      tokenCount: countTokens(finalText)
+    }
+  }
+}
 
 export const runOpenAICompatibleSingleSpeakerStt = async (
   audioPath: string,

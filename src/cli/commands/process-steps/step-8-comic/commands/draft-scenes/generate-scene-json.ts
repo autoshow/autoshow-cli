@@ -1,8 +1,11 @@
 import { mkdir } from 'node:fs/promises'
 import { basename, dirname } from 'node:path'
 import {
+  createOpenAIChatCompletion,
   createOpenAIResponse,
+  extractOpenAIChatCompletionText,
   extractOpenAIResponseText,
+  type OpenAIChatCompletionResponse,
 } from '~/utils/openai/client'
 import {
   geminiGenerateContent,
@@ -19,21 +22,26 @@ import {
 } from '../../utils/project-paths'
 import { getGeminiApiKey } from '../../utils/gemini-client'
 import { calculateGeminiLlmCost } from '../../models/gemini-models'
-import { isGeminiLlmModel, isOpenAiLlmModel } from '../../models/model-registry'
+import { calculateGrokLlmCost } from '../../models/grok-models'
+import { isGeminiLlmModel, isGrokLlmModel, isOpenAiLlmModel } from '../../models/model-registry'
+import { getGrokClientConfig } from '../../utils/grok-client'
 import { getOpenAIClientConfig } from '../../utils/openai-client'
 import { LLM_MODEL_PRICING, openAiLlmSupportsStructuredOutputs } from '../../models/openai-models'
 import { parseJsonFile } from '../../utils/json-prompt-utils'
 import { validateSceneRecapMontageExpansion } from '../../utils/recap-montage-utils'
 import { validateSceneSourceSegmentCoverage } from '../../utils/source-coverage-utils'
 import type {
-  DraftSceneResponseUsage,
-  DraftSceneRunStats,
   GeminiLlmModel,
-  GenerateSceneJsonOptions,
+  GrokLlmModel,
   LlmModel,
   OpenAiLlmModel,
+} from '../../types/comic-types'
+import type {
+  DraftSceneResponseUsage,
+  DraftSceneRunStats,
+  GenerateSceneJsonOptions,
   SceneResponseResult,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
 const SCENE_JSON_RESPONSE_FORMAT = {
@@ -67,6 +75,10 @@ const calculateCost = (model: LlmModel, usage: DraftSceneResponseUsage): number 
 
   if (isGeminiLlmModel(model)) {
     return calculateGeminiLlmCost(model, usage)
+  }
+
+  if (isGrokLlmModel(model)) {
+    return calculateGrokLlmCost(model, usage)
   }
 
   throw new Error(`Unsupported LLM model "${model}"`)
@@ -184,6 +196,44 @@ const normalizeGeminiSceneUsage = (
   }
 }
 
+const readNumberField = (value: unknown, field: string): number | undefined => {
+  if (value !== null && typeof value === 'object' && field in value) {
+    const fieldValue = (value as Record<string, unknown>)[field]
+    return typeof fieldValue === 'number' ? fieldValue : undefined
+  }
+  return undefined
+}
+
+const normalizeChatCompletionSceneUsage = (
+  response: OpenAIChatCompletionResponse
+): DraftSceneResponseUsage | undefined => {
+  const usage = response.usage
+  if (!usage) {
+    return undefined
+  }
+
+  const inputTokens = usage.prompt_tokens ?? 0
+  const outputTokens = usage.completion_tokens ?? 0
+  const cachedTokens = readNumberField(usage['prompt_tokens_details'], 'cached_tokens') ?? 0
+  const reasoningTokens = readNumberField(usage['completion_tokens_details'], 'reasoning_tokens') ?? 0
+
+  return {
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    total_tokens: usage.total_tokens ?? inputTokens + outputTokens,
+    input_tokens_details: {
+      cached_tokens: cachedTokens,
+    },
+    ...(reasoningTokens > 0
+      ? {
+          output_tokens_details: {
+            reasoning_tokens: reasoningTokens,
+          },
+        }
+      : {}),
+  }
+}
+
 const createSceneResponseGemini = async (
   content: string,
   model: GeminiLlmModel
@@ -219,6 +269,51 @@ const createSceneResponseGemini = async (
   }
 }
 
+const createSceneResponseGrok = async (
+  content: string,
+  model: GrokLlmModel
+): Promise<SceneResponseResult> => {
+  const config = getGrokClientConfig()
+  const response = await createOpenAIChatCompletion(config, {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: 'Return only the requested scene JSON.',
+      },
+      {
+        role: 'user',
+        content,
+      },
+    ],
+    response_format: {
+      type: 'json_schema',
+      json_schema: {
+        name: SCENE_JSON_SCHEMA.name,
+        schema: SCENE_JSON_SCHEMA.schema,
+        strict: SCENE_JSON_SCHEMA.strict,
+      },
+    },
+  }, { errorMessagePrefix: 'Grok scene JSON request failed' })
+
+  const text = (extractOpenAIChatCompletionText(response) ?? '').trim()
+  if (!text) {
+    throw new Error(`Empty response from ${model}`)
+  }
+  const requestId = typeof response['id'] === 'string' ? response['id'] : undefined
+  const usage = normalizeChatCompletionSceneUsage(response)
+
+  return {
+    response: {
+      model: response.model ?? model,
+      text,
+      ...(requestId ? { requestId } : {}),
+      ...(usage ? { usage } : {}),
+    },
+    usesStructuredOutputs: true,
+  }
+}
+
 const createSceneResponse = async (
   content: string,
   model: LlmModel
@@ -229,6 +324,10 @@ const createSceneResponse = async (
 
   if (isGeminiLlmModel(model)) {
     return createSceneResponseGemini(content, model)
+  }
+
+  if (isGrokLlmModel(model)) {
+    return createSceneResponseGrok(content, model)
   }
 
   throw new Error(`Unsupported LLM model "${model}"`)

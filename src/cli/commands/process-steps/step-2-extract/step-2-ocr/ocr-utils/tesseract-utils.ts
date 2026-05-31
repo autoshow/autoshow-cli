@@ -29,18 +29,10 @@ export const ensureTesseractSetup = async (): Promise<void> => {
 export const ocrImage = async (
   imagePath: string,
   lang: string,
-  oem: number,
-  psm: number,
-  outputFormat: OcrOutputFormat,
-  extraConfig?: Record<string, string | number>
+  outputFormat: OcrOutputFormat
 ): Promise<OcrResult> => {
   await ensureTesseractSetup()
-  const args = [imagePath, 'stdout', '-l', lang, '--oem', String(oem), '--psm', String(psm)]
-  if (extraConfig) {
-    for (const [key, value] of Object.entries(extraConfig)) {
-      args.push('-c', `${key}=${String(value)}`)
-    }
-  }
+  const args = [imagePath, 'stdout', '-l', lang, '--oem', '1', '--psm', '3']
   if (outputFormat === 'tsv' || outputFormat === 'hocr') {
     args.push(outputFormat)
   }

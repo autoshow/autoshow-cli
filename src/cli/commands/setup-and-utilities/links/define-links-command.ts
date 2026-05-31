@@ -15,7 +15,7 @@ import type {
 } from '~/types'
 
 const data = modelLinks as ModelLinksData
-export const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)
+const LINKS_OUTPUT_DIR = new URL('../../../../../project/links/', import.meta.url)
 const HTML_MIME_HINTS = ['text/html', 'application/xhtml+xml'] as const
 type FetchUrlResult = {
   content: string
@@ -220,7 +220,7 @@ const normalizeExtractedUrl = (url: string): string =>
     .replace(/^<|>$/g, '')
     .replace(/[)\],.;!?]+$/g, '')
 
-export const extractLinksInputUrls = (content: string): string[] => {
+const extractLinksInputUrls = (content: string): string[] => {
   const searchableContent = stripLinksInputComments(content)
   const urls: string[] = []
   const seen = new Set<string>()

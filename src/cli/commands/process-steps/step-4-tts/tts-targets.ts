@@ -1,4 +1,3 @@
-export { DEFAULT_KITTEN_TTS_SPEAKER } from './tts-targets/providers/kitten'
 export {
   getTtsArtifactFileName,
   buildTtsArtifactMap,

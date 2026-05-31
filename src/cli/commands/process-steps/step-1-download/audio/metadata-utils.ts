@@ -33,7 +33,7 @@ export const getVideoInfo = async (url: string): Promise<YtDlpVideoInfo | null> 
   }
 }
 
-export const extractVideoMetadata = async (url: string): Promise<VideoMetadata> => {
+const extractVideoMetadata = async (url: string): Promise<VideoMetadata> => {
   try {
     const videoInfo = await getVideoInfo(url)
     
@@ -48,7 +48,7 @@ export const extractVideoMetadata = async (url: string): Promise<VideoMetadata> 
   }
 }
 
-export const formatUploadDate = (dateString: string): string => {
+const formatUploadDate = (dateString: string): string => {
   if (!dateString || dateString.length !== 8) {
     return dateString
   }
@@ -60,7 +60,7 @@ export const formatUploadDate = (dateString: string): string => {
   return `${year}-${month}-${day}`
 }
 
-export const formatDuration = (seconds: number): string => {
+const formatDuration = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)

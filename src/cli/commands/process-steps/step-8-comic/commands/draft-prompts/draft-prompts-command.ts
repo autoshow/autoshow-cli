@@ -1,8 +1,6 @@
 import { err } from '../../utils/logger'
 import { generateJsonPrompt } from '../../utils/json-prompt-utils'
-import type {
-  DraftPromptsCommandOptions,
-} from '../../types'
+import type { DraftPromptsCommandOptions } from '../../types/comic-command-types'
 
 
 

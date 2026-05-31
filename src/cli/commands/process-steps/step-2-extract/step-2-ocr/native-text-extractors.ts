@@ -13,12 +13,11 @@ export const isZipXmlFormat = (format: string): format is ZipXmlFormat =>
 
 export const buildCombinedText = (
   pages: PageResult[],
-  pageSeparator: string,
   includePageLabels = true
 ): string => {
   return pages
     .map(page => includePageLabels ? `Page ${page.pageNumber}\n${page.text.trim()}` : page.text.trim())
-    .join(pageSeparator)
+    .join('\n\n')
     .trim()
 }
 

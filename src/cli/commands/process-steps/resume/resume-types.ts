@@ -16,7 +16,7 @@ export type ResumeTotals = {
 }
 
 export type ResumeTargetKind = 'extract' | 'tts' | 'image' | 'video' | 'music'
-export type ResumeTargetScope = 'single' | 'batch'
+type ResumeTargetScope = 'single' | 'batch'
 
 export type ResumeTarget = {
   kind: ResumeTargetKind

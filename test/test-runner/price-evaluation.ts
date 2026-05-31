@@ -2,7 +2,7 @@ import type {
   PriceCommandSpec,
   PriceCommandResult,
 } from '~/types'
-import type { BudgetPreflightSummary } from './reports'
+import type { BudgetPreflightSummary } from './reports/types'
 
 export type PriceCommandObservation = {
   name: string
@@ -15,7 +15,7 @@ export type PriceCommandObservation = {
   budgetSkippable: boolean
 }
 
-export type PriceCommandKeySummary = {
+type PriceCommandKeySummary = {
   key: string
   budgetSkippable: boolean
   variantCount: number
@@ -25,7 +25,7 @@ export type PriceCommandKeySummary = {
   overBudget: boolean
 }
 
-export type BudgetSkippedEntry = {
+type BudgetSkippedEntry = {
   key: string
   selectedCostCents: number
 }
@@ -34,7 +34,7 @@ type KeyedEntry = {
   key: string
 }
 
-export type GroupedCommandEntries<T extends KeyedEntry> = {
+type GroupedCommandEntries<T extends KeyedEntry> = {
   key: string
   variants: T[]
 }

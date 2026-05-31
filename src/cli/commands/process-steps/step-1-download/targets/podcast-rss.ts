@@ -67,8 +67,8 @@ const parseRss2Episodes = (xml: string): ParsedEpisode[] =>
       enclosureUrl,
       title: firstTagText(block, 'title'),
       pubDate: firstTagText(block, 'pubDate'),
-
-      duration: firstTagText(block, 'itunes:duration') ?? firstTagText(block, 'duration')
+      duration: firstTagText(block, 'itunes:duration') ?? firstTagText(block, 'duration'),
+      description: firstTagText(block, 'description') ?? firstTagText(block, 'itunes:summary') ?? firstTagText(block, 'summary')
     }
   }).filter(ep => ep.enclosureUrl !== '')
 
@@ -81,7 +81,8 @@ const parseAtomEntries = (xml: string): ParsedEpisode[] =>
       enclosureUrl,
       title: firstTagText(block, 'title'),
       pubDate: firstTagText(block, 'published') ?? firstTagText(block, 'updated'),
-      duration: firstTagText(block, 'itunes:duration')
+      duration: firstTagText(block, 'itunes:duration'),
+      description: firstTagText(block, 'summary') ?? firstTagText(block, 'content')
     }
   }).filter(ep => ep.enclosureUrl !== '')
 

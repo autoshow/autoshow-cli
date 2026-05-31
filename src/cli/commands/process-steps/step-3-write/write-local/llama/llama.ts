@@ -26,7 +26,7 @@ export const checkLlamaInstalled = async (): Promise<boolean> => {
   return await pathExists(llamaBinaryPath)
 }
 
-export const installLlama = async (): Promise<void> => {
+const installLlama = async (): Promise<void> => {
   l.write('info', 'Installing llama.cpp')
   const platform = detectPlatform()
   const arch = detectArchitecture()
@@ -79,7 +79,7 @@ export const installLlama = async (): Promise<void> => {
   l.write('success', 'llama.cpp installed')
 }
 
-export const setupLlama = async (): Promise<void> => {
+const setupLlama = async (): Promise<void> => {
   if (!await checkLlamaInstalled()) {
     await installLlama()
   } else {

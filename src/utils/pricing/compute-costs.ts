@@ -3,7 +3,6 @@ import type {
   EstimatedCostBreakdown,
   EstimatedStepEntry
 } from '~/types'
-export { parseDurationToSeconds } from './cost-helpers'
 
 export const preflightToEstimated = (estimate: AggregatedPriceEstimate): EstimatedCostBreakdown => {
   const steps: EstimatedStepEntry[] = []
@@ -34,6 +33,8 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           ...(typeof s.estimatedOutputChars === 'number' ? { estimatedOutputChars: s.estimatedOutputChars } : {}),
           ...(typeof s.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: s.inputCostPer1MCents } : {}),
           ...(typeof s.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: s.outputCostPer1MCents } : {}),
+          ...(typeof s.pricingBand === 'string' ? { pricingBand: s.pricingBand } : {}),
+          ...(typeof s.pricingNote === 'string' ? { pricingNote: s.pricingNote } : {}),
           ...(typeof s.promptTokens === 'number' ? { promptTokens: s.promptTokens } : {}),
           ...(typeof s.completionTokens === 'number' ? { completionTokens: s.completionTokens } : {}),
           ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {})
@@ -49,7 +50,9 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           inputCostPer1MCents: s.inputCostPer1MCents,
           outputCostPer1MCents: s.outputCostPer1MCents,
           ...(typeof s.estimatedInputTokens === 'number' ? { estimatedInputTokens: s.estimatedInputTokens } : {}),
-          ...(typeof s.estimatedOutputTokens === 'number' ? { estimatedOutputTokens: s.estimatedOutputTokens } : {})
+          ...(typeof s.estimatedOutputTokens === 'number' ? { estimatedOutputTokens: s.estimatedOutputTokens } : {}),
+          ...(typeof s.pricingBand === 'string' ? { pricingBand: s.pricingBand } : {}),
+          ...(typeof s.pricingNote === 'string' ? { pricingNote: s.pricingNote } : {})
         })
         break
       case 'tts':
@@ -71,6 +74,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          imageCount: s.imageCount,
         })
         break
       case 'video':
@@ -80,6 +84,7 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           model: s.model,
           cost: s.totalCost,
           ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          durationSeconds: s.durationSeconds,
         })
         break
       case 'music':
@@ -88,7 +93,8 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           provider: s.provider,
           model: s.model,
           cost: s.totalCost,
-          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {})
+          ...(typeof s.costMultiplier === 'number' ? { costMultiplier: s.costMultiplier } : {}),
+          durationSeconds: s.durationSeconds
         })
         break
     }

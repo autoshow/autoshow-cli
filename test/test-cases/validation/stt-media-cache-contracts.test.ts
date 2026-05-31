@@ -1,8 +1,12 @@
 import { afterEach, expect, test } from 'bun:test'
 import { mkdir, mkdtemp, rm, stat, utimes } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { withCacheLock } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-media-cache'
+import { dirname, join } from 'node:path'
+import {
+  prepareSttMedia,
+  withCacheLock
+} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-media-cache'
+import { commandExists } from '~/utils/cli-utils'
 
 const tempDirs: string[] = []
 
@@ -64,5 +68,37 @@ test('media cache lock reaps stale ownerless directory locks', async () => {
 
     expect(ownerFileCreated).toBe(true)
     expect(await exists(lockDir)).toBe(false)
+  })
+})
+
+test('media cache keeps source artifacts separate for local and hosted STT profiles', async () => {
+  if (!commandExists('ffmpeg') || !commandExists('ffprobe')) {
+    throw new Error('ffmpeg and ffprobe are required for STT media cache profile coverage')
+  }
+
+  const cacheDir = await mkdtemp(join(tmpdir(), 'autoshow-stt-profile-cache-'))
+  tempDirs.push(cacheDir)
+
+  await withEnv({
+    AUTOSHOW_CACHE_DIR: cacheDir
+  }, async () => {
+    const source = { filePath: join(process.cwd(), 'input/examples/audio/0-audio-short.mp3') }
+
+    const localPrepared = await prepareSttMedia({
+      source,
+      targets: [{ service: 'whisper', model: 'tiny', local: true }]
+    })
+    const localSourceMediaPath = localPrepared.executionArtifacts.sourceMediaPath
+    expect(await exists(localSourceMediaPath)).toBe(true)
+
+    const hostedPrepared = await prepareSttMedia({
+      source,
+      targets: [{ service: 'gladia', model: 'default', local: false }]
+    })
+    const hostedSourceMediaPath = hostedPrepared.executionArtifacts.sourceMediaPath
+
+    expect(dirname(hostedSourceMediaPath)).not.toBe(dirname(localSourceMediaPath))
+    expect(await exists(localSourceMediaPath)).toBe(true)
+    expect(await exists(hostedSourceMediaPath)).toBe(true)
   })
 })

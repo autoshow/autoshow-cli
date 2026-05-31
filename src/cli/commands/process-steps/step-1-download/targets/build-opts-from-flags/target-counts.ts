@@ -7,7 +7,7 @@ const countSelectedTargets = (
   model: string | undefined
 ): number => models?.length ?? (model ? 1 : 0)
 
-export type TargetCounts = {
+type TargetCounts = {
   hostedOcrTargetCount: number
   hostedLlmTargetCount: number
   hostedTtsTargetCount: number
@@ -22,11 +22,10 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.glmOcrModels, modelOptions.glmOcrModel)
     + countSelectedTargets(modelOptions.kimiOcrModels, modelOptions.kimiOcrModel)
     + countSelectedTargets(modelOptions.openaiOcrModels, modelOptions.openaiOcrModel)
+    + countSelectedTargets(modelOptions.grokOcrModels, modelOptions.grokOcrModel)
     + countSelectedTargets(modelOptions.anthropicOcrModels, modelOptions.anthropicOcrModel)
     + countSelectedTargets(modelOptions.geminiOcrModels, modelOptions.geminiOcrModel)
     + countSelectedTargets(modelOptions.deepinfraOcrModels, modelOptions.deepinfraOcrModel)
-    + countSelectedTargets(modelOptions.awsTextractModels, modelOptions.awsTextractModel)
-    + countSelectedTargets(modelOptions.gcloudDocaiModels, modelOptions.gcloudDocaiModel)
     + countSelectedTargets(modelOptions.unstructuredOcrModels, modelOptions.unstructuredOcrModel)
   const hostedLlmTargetCount =
     countSelectedTargets(modelOptions.openaiModels, modelOptions.openaiModel)
@@ -49,27 +48,21 @@ export const resolveTargetCounts = (modelOptions: RuntimeModelOptions): TargetCo
     + countSelectedTargets(modelOptions.speechifyTtsModels, modelOptions.speechifyTtsModel)
     + countSelectedTargets(modelOptions.humeTtsModels, modelOptions.humeTtsModel)
     + countSelectedTargets(modelOptions.cartesiaTtsModels, modelOptions.cartesiaTtsModel)
-    + countSelectedTargets(modelOptions.gcloudTtsModels, modelOptions.gcloudTtsModel)
-    + countSelectedTargets(modelOptions.deapiTtsModels, modelOptions.deapiTtsModel)
   const hostedImageTargetCount =
     countSelectedTargets(modelOptions.geminiImageModels, modelOptions.geminiImageModel)
     + countSelectedTargets(modelOptions.openaiImageModels, modelOptions.openaiImageModel)
-    + countSelectedTargets(modelOptions.minimaxImageModels, modelOptions.minimaxImageModel)
     + countSelectedTargets(modelOptions.grokImageModels, modelOptions.grokImageModel)
-    + countSelectedTargets(modelOptions.runwayImageModels, modelOptions.runwayImageModel)
     + countSelectedTargets(modelOptions.bflImageModels, modelOptions.bflImageModel)
-    + countSelectedTargets(modelOptions.deapiImageModels, modelOptions.deapiImageModel)
+    + countSelectedTargets(modelOptions.reveImageModels, modelOptions.reveImageModel)
   const hostedVideoTargetCount =
     countSelectedTargets(modelOptions.geminiVideoModels, modelOptions.geminiVideoModel)
     + countSelectedTargets(modelOptions.minimaxVideoModels, modelOptions.minimaxVideoModel)
     + countSelectedTargets(modelOptions.glmVideoModels, modelOptions.glmVideoModel)
     + countSelectedTargets(modelOptions.grokVideoModels, modelOptions.grokVideoModel)
     + countSelectedTargets(modelOptions.runwayVideoModels, modelOptions.runwayVideoModel)
-    + countSelectedTargets(modelOptions.deapiVideoModels, modelOptions.deapiVideoModel)
   const hostedMusicTargetCount =
     countSelectedTargets(modelOptions.elevenlabsMusicModels, modelOptions.elevenlabsMusicModel)
     + countSelectedTargets(modelOptions.minimaxMusicModels, modelOptions.minimaxMusicModel)
-    + countSelectedTargets(modelOptions.deapiMusicModels, modelOptions.deapiMusicModel)
     + countSelectedTargets(modelOptions.geminiMusicModels, modelOptions.geminiMusicModel)
 
   return {

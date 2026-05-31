@@ -5,13 +5,14 @@ import {
   byteLength,
   cleanString,
   countWords,
+  createUrlProviderHttpError,
   ensureMeaningfulMarkdown,
   fallbackTitleFromSource,
-  HTML_FETCH_TIMEOUT_MS,
+  getUrlRequestTimeoutMs,
   isRecord,
   normalizeMarkdown,
   tryFetchRemoteHtml,
-  withTimeout,
+  withUrlProviderTimeout,
   type UrlArticleRunResult
 } from '../../url-utils'
 import {
@@ -108,12 +109,16 @@ const runFirecrawlScrape = async (
 
   if (usingHostedApi && !apiKey) {
     throw new Error(
-      'FIRECRAWL_API_KEY is required for --url-backend firecrawl when using the hosted API. ' +
+      'FIRECRAWL_API_KEY is required for --url-provider firecrawl when using the hosted API. ' +
       'Set FIRECRAWL_API_KEY or point FIRECRAWL_API_URL at a self-hosted instance.'
     )
   }
 
-  const response = await withTimeout(HTML_FETCH_TIMEOUT_MS, async (signal) =>
+  const requestOptions = {
+    ...options,
+    timeoutMs: getUrlRequestTimeoutMs(options)
+  }
+  const response = await withUrlProviderTimeout('Firecrawl', requestOptions, async (signal) =>
     await fetch(`${baseUrl.replace(/\/$/, '')}/v2/scrape`, {
       method: 'POST',
       signal,
@@ -121,7 +126,7 @@ const runFirecrawlScrape = async (
         'Content-Type': 'application/json',
         ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
       },
-      body: JSON.stringify(buildFirecrawlScrapeRequest(source, options))
+      body: JSON.stringify(buildFirecrawlScrapeRequest(source, requestOptions))
     })
   )
 
@@ -136,7 +141,7 @@ const runFirecrawlScrape = async (
     const errorMessage = isRecord(payload)
       ? cleanString(payload['error']) ?? cleanString(payload['message'])
       : undefined
-    throw new Error(`Firecrawl scrape failed (${response.status} ${response.statusText})${errorMessage ? `: ${errorMessage}` : ''}`)
+    throw createUrlProviderHttpError('Firecrawl', 'scrape', response, errorMessage)
   }
 
   return parseFirecrawlResponse(payload)

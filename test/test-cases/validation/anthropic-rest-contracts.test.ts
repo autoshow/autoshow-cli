@@ -8,9 +8,14 @@ import {
   deleteAnthropicFile,
   uploadAnthropicFile
 } from '~/utils/anthropic/client'
+import {
+  clearEnv,
+  restoreEnv,
+  snapshotEnv
+} from '../../test-utils/rest-contract-helpers'
 
 const originalFetch = globalThis.fetch
-const previousEnv: Record<string, string | undefined> = {}
+let previousEnv: Record<string, string | undefined> = {}
 const envKeys = ['ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL', 'MINIMAX_API_KEY']
 
 const structuredOpts: StructuredRequestOptions = {
@@ -27,25 +32,13 @@ const structuredOpts: StructuredRequestOptions = {
   strategy: 'native'
 }
 
-const restoreEnv = (): void => {
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-}
-
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(() => {
-  restoreEnv()
+  restoreEnv(previousEnv)
   globalThis.fetch = originalFetch
 })
 
@@ -136,7 +129,7 @@ describe('Anthropic REST contracts', () => {
       })
     }) as typeof fetch
 
-    const result = await runMinimaxModel('Draft this.', 'MiniMax-M2.5', structuredOpts)
+    const result = await runMinimaxModel('Draft this.', 'MiniMax-M2.7', structuredOpts)
 
     expect(result.result).toBe('MiniMax response.')
     expect(calls).toHaveLength(1)
@@ -145,7 +138,7 @@ describe('Anthropic REST contracts', () => {
       method: 'POST',
       apiKey: 'minimax-key',
       body: {
-        model: 'MiniMax-M2.5',
+        model: 'MiniMax-M2.7',
         max_tokens: 16000,
         messages: [{ role: 'user', content: 'Draft this.' }]
       }

@@ -1,17 +1,16 @@
 import type { CartesiaTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, runTtsChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import {
   CARTESIA_DEFAULT_TTS_VOICE,
   validateCartesiaTtsVoice
 } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
-
-const CARTESIA_DEFAULT_BASE_URL = 'https://api.cartesia.ai'
+import { CARTESIA_DEFAULT_BASE_URL } from '~/utils/base-urls'
 const CARTESIA_DEFAULT_VERSION = '2026-03-01'
-const MAX_CHARS_PER_CHUNK = 5000
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '')
 
@@ -27,6 +26,7 @@ export const runCartesiaTts = async (
     model: CartesiaTtsModel
     voiceId?: string | undefined
     language?: string | undefined
+    chunkConcurrency?: number | undefined
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('CARTESIA_API_KEY')
@@ -34,11 +34,11 @@ export const runCartesiaTts = async (
     throw new Error('CARTESIA_API_KEY environment variable is required for Cartesia TTS')
   }
 
-  const baseURL = trimTrailingSlash(readEnv('CARTESIA_BASE_URL') ?? CARTESIA_DEFAULT_BASE_URL)
-  const version = readEnv('CARTESIA_VERSION') ?? CARTESIA_DEFAULT_VERSION
-  const voice = validateCartesiaTtsVoice(options.voiceId?.trim() || readEnv('CARTESIA_TTS_VOICE') || CARTESIA_DEFAULT_TTS_VOICE)
+  const baseURL = trimTrailingSlash(CARTESIA_DEFAULT_BASE_URL)
+  const version = CARTESIA_DEFAULT_VERSION
+  const voice = validateCartesiaTtsVoice(options.voiceId?.trim() || CARTESIA_DEFAULT_TTS_VOICE)
   const language = options.language?.trim() || undefined
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.cartesia)
 
   if (chunks.length === 0) {
     throw new Error('Cartesia TTS input text is empty')
@@ -56,11 +56,11 @@ export const runCartesiaTts = async (
   const chunkPaths: string[] = []
 
   try {
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkIndex = i + 1
+    const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+      const chunkIndex = index + 1
       const chunkPath = `${outputDir}/speech-cartesia-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
-      const audioBytes = await withRetry(
-        { retryClass: 'runtime_http_create_conservative', operationName: `cartesia-tts-chunk-${chunkIndex}` },
+      const audioBytes = await withHostedTtsRetry(
+        { operationName: `cartesia-tts-chunk-${chunkIndex}` },
         async (signal) => {
           const response = await fetch(`${baseURL}/tts/bytes`, {
             method: 'POST',
@@ -72,7 +72,7 @@ export const runCartesiaTts = async (
             },
             body: JSON.stringify({
               model_id: options.model,
-              transcript: chunks[i] as string,
+              transcript: chunk,
               voice: {
                 mode: 'id',
                 id: voice
@@ -96,8 +96,7 @@ export const runCartesiaTts = async (
           }
 
           return new Uint8Array(await response.arrayBuffer())
-        },
-        (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+        }
       )
 
       if (audioBytes.byteLength === 0) {
@@ -106,9 +105,10 @@ export const runCartesiaTts = async (
 
       await Bun.write(chunkPath, audioBytes)
       chunkPaths.push(chunkPath)
-    }
+      return chunkPath
+    })
 
-    const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Cartesia')
+    const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir, 'Cartesia')
     return finalizeTtsRun({
       service: 'cartesia',
       model: options.model,

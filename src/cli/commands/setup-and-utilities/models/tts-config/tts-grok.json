@@ -12,8 +12,13 @@
     "models": {
       "grok-tts": {
         "description": "xAI Grok TTS REST synthesis with five expressive voices",
-        "costPer1kCharsUSD": 0.0042,
-        "costPer1kCharsCents": 0.42,
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "xAI public Voice API text-to-speech pricing",
+        "pricingNotes": "xAI Voice API Text to Speech pricing: $15.00 / 1M chars; stored as $0.015 / 1K chars.",
+        "costPer1kCharsUSD": 0.015,
+        "costPer1kCharsCents": 1.5,
         "estimation": {
           "costMultiplier": 1,
           "msPer1KChars": 22183

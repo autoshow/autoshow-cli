@@ -3,7 +3,7 @@ import { generateStructuredScript } from '../../utils/structured-script-utils'
 import type {
   StructureScriptsCommandOptions,
   StructuredScriptRunStats,
-} from '../../types'
+} from '../../types/comic-command-types'
 
 
 

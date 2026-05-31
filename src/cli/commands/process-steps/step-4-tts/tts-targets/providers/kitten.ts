@@ -11,7 +11,7 @@ import * as l from '~/utils/logger'
 
 const KITTEN_PYTHON_VERSION = '3.12'
 
-export const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
+const DEFAULT_KITTEN_TTS_SPEAKER = 'Jasper'
 
 const checkKittenTtsSetup = async (): Promise<boolean> => {
   if (!await pathExists(kittenTtsUvEnvDir)) {

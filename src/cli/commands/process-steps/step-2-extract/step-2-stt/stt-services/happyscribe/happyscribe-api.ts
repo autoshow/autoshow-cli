@@ -52,8 +52,6 @@ type HappyScribePollResult<TStatus> = {
   retryAfterMs: number | null
 }
 
-export type HappyScribeApiClient = ReturnType<typeof createHappyScribeApiClient>
-
 export const createHappyScribeApiClient = (
   options: HappyScribeApiClientOptions
 ) => {

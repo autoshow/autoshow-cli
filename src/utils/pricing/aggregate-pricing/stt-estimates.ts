@@ -2,33 +2,25 @@ import type { RuntimeOptions, SttStepEstimate } from '~/types'
 import { estimateElevenlabsSttRate } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/elevenlabs-stt-pricing'
 import { resolveSttInputDurationSeconds } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-duration'
 import { collectSttTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-targets'
-import { isDeapiSupportedSourceUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi'
-import {
-  logDeapiPricingFallbackWarning,
-  resolveDeapiTranscriptionPrice
-} from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/deapi/deapi-pricing'
 import {
   buildHappyScribeRegistryEstimate,
   resolveHappyScribePriceNotes
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/happyscribe/happyscribe-pricing'
 import { resolveYoutubeCaptionEstimateTargets } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/youtube-captions'
-import {
-  getSttCost,
-  getSttEstimation
-} from '~/cli/commands/setup-and-utilities/models/model-loader'
-import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
+import { getSttCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { estimateSupadataCost } from '~/utils/pricing/supadata-pricing'
 import { estimateScrapeCreatorsCost } from '~/utils/pricing/scrapecreators-pricing'
+
+const EXACT_COST_MULTIPLIER = 1
 
 const buildCloudSttEstimate = async (
   provider: string,
   model: string,
   durationSeconds: number
 ): Promise<SttStepEstimate> => {
-  const estimation = getSttEstimation(provider, model)
-  const totalCost = applyCostMultiplier(computeBilledSttCost(provider, model, durationSeconds).cost, estimation.costMultiplier)
-  return { step: 'stt', provider, model, durationSeconds, totalCost, costMultiplier: estimation.costMultiplier }
+  const totalCost = computeBilledSttCost(provider, model, durationSeconds).cost
+  return { step: 'stt', provider, model, durationSeconds, totalCost, costMultiplier: EXACT_COST_MULTIPLIER }
 }
 
 const buildSupadataSttEstimate = (
@@ -36,15 +28,14 @@ const buildSupadataSttEstimate = (
   durationSeconds: number,
   sourceUrl: string
 ): SttStepEstimate => {
-  const estimation = getSttEstimation('supadata', model)
   const cost = estimateSupadataCost(model, durationSeconds, { sourceUrl })
   return {
     step: 'stt',
     provider: 'supadata',
     model,
     durationSeconds,
-    totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
-    costMultiplier: estimation.costMultiplier,
+    totalCost: cost.totalCost,
+    costMultiplier: EXACT_COST_MULTIPLIER,
     note: cost.note
   }
 }
@@ -52,40 +43,15 @@ const buildSupadataSttEstimate = (
 const buildScrapeCreatorsSttEstimate = (
   model: string
 ): SttStepEstimate => {
-  const estimation = getSttEstimation('scrapecreators', model)
   const cost = estimateScrapeCreatorsCost()
   return {
     step: 'stt',
     provider: 'scrapecreators',
     model,
     durationSeconds: 0,
-    totalCost: applyCostMultiplier(cost.totalCost, estimation.costMultiplier),
-    costMultiplier: estimation.costMultiplier,
+    totalCost: cost.totalCost,
+    costMultiplier: EXACT_COST_MULTIPLIER,
     note: cost.note
-  }
-}
-
-const buildDeapiSttEstimate = async (
-  model: string,
-  resolvedTarget: string,
-  durationSeconds: number
-): Promise<SttStepEstimate> => {
-  const price = await resolveDeapiTranscriptionPrice({
-    model,
-    ...(isDeapiSupportedSourceUrl(resolvedTarget) ? { sourceUrl: resolvedTarget } : {}),
-    durationSeconds
-  })
-  logDeapiPricingFallbackWarning(price.warning)
-
-  return {
-    step: 'stt',
-    provider: 'deapi',
-    model,
-    durationSeconds,
-    totalCost: price.totalCost,
-    costMultiplier: price.source === 'provider_quote' ? 1 : getSttEstimation('deapi', model).costMultiplier,
-    estimateType: price.estimateType,
-    ...(price.warning ? { note: price.warning } : {})
   }
 }
 
@@ -94,8 +60,7 @@ const buildHappyScribeSttEstimate = async (
   durationSeconds: number,
   preferredOrganizationId: string | undefined
 ): Promise<SttStepEstimate> => {
-  const estimation = getSttEstimation('happyscribe', model)
-  const totalCost = applyCostMultiplier(buildHappyScribeRegistryEstimate(model, durationSeconds), estimation.costMultiplier)
+  const totalCost = buildHappyScribeRegistryEstimate(model, durationSeconds)
   const notes = await resolveHappyScribePriceNotes({ preferredOrganizationId })
 
   return {
@@ -104,7 +69,7 @@ const buildHappyScribeSttEstimate = async (
     model,
     durationSeconds,
     totalCost,
-    costMultiplier: estimation.costMultiplier,
+    costMultiplier: EXACT_COST_MULTIPLIER,
     ...(notes.length > 0 ? { note: notes.join(' ') } : {})
   }
 }
@@ -139,28 +104,26 @@ export const buildSttEstimates = async (
 
     if (target.service === 'whisper') {
       const sttCost = getSttCost('whisper', target.model)
-      const estimation = getSttEstimation('whisper', target.model)
       estimates.push({
         step: 'stt',
         provider: 'whisper',
         model: target.model,
         durationSeconds: 0,
-        totalCost: applyCostMultiplier(sttCost.costPerHourCents ?? 0, estimation.costMultiplier),
-        costMultiplier: estimation.costMultiplier,
+        totalCost: sttCost.costPerHourCents ?? 0,
+        costMultiplier: EXACT_COST_MULTIPLIER,
       })
       continue
     }
 
     if (target.service === 'elevenlabs') {
       const rate = estimateElevenlabsSttRate(target.model)
-      const estimation = getSttEstimation('elevenlabs', target.model)
       estimates.push({
         step: 'stt',
         provider: 'elevenlabs',
         model: rate.model,
         durationSeconds,
-        totalCost: applyCostMultiplier((durationSeconds / 3600) * rate.costPerHourCents, estimation.costMultiplier),
-        costMultiplier: estimation.costMultiplier
+        totalCost: (durationSeconds / 3600) * rate.costPerHourCents,
+        costMultiplier: EXACT_COST_MULTIPLIER
       })
       continue
     }
@@ -172,11 +135,6 @@ export const buildSttEstimates = async (
 
     if (target.service === 'scrapecreators') {
       estimates.push(buildScrapeCreatorsSttEstimate(target.model))
-      continue
-    }
-
-    if (target.service === 'deapi') {
-      estimates.push(await buildDeapiSttEstimate(target.model, resolvedTarget, durationSeconds))
       continue
     }
 

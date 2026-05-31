@@ -2,13 +2,13 @@ import { mkdir, rename, rm } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 
-export type HuggingFaceFileEntry = {
+type HuggingFaceFileEntry = {
   path: string
   type?: string
   size?: number
 }
 
-export type HuggingFaceDownloadOptions = {
+type HuggingFaceDownloadOptions = {
   repoId: string
   revision?: string
   token: string
@@ -30,10 +30,10 @@ const buildHeaders = (token: string): Record<string, string> => ({
   Authorization: `Bearer ${token}`
 })
 
-export const buildHuggingFaceTreeUrl = (repoId: string, revision = DEFAULT_REVISION): string =>
+const buildHuggingFaceTreeUrl = (repoId: string, revision = DEFAULT_REVISION): string =>
   `https://huggingface.co/api/models/${encodeRepoPath(repoId)}/tree/${encodeURIComponent(revision)}?recursive=1`
 
-export const buildHuggingFaceResolveUrl = (
+const buildHuggingFaceResolveUrl = (
   repoId: string,
   revision: string,
   path: string
@@ -50,7 +50,7 @@ const globToRegex = (pattern: string): RegExp => {
   return new RegExp(`^${source}$`)
 }
 
-export const matchesAllowPattern = (path: string, allowPatterns: readonly string[] | undefined): boolean => {
+const matchesAllowPattern = (path: string, allowPatterns: readonly string[] | undefined): boolean => {
   if (!allowPatterns || allowPatterns.length === 0) return true
   return allowPatterns.some((pattern) => globToRegex(pattern).test(path))
 }
@@ -108,7 +108,7 @@ const normalizeTreeEntry = (entry: unknown): HuggingFaceFileEntry | null => {
   }
 }
 
-export const listHuggingFaceRepoFiles = async (
+const listHuggingFaceRepoFiles = async (
   options: Pick<HuggingFaceDownloadOptions, 'repoId' | 'revision' | 'token' | 'fetchImpl' | 'maxAttempts' | 'retryDelayMs'>
 ): Promise<HuggingFaceFileEntry[]> => {
   const revision = options.revision ?? DEFAULT_REVISION

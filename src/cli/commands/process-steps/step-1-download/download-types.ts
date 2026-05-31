@@ -31,8 +31,8 @@ export type Step1SourceRef = {
   filePath?: string
 }
 
-export type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
-export type AudioDownloadStatus = 'started' | 'downloaded'
+type AudioDownloadSource = 'yt-dlp' | 'direct-audio-url' | 'direct-media-url'
+type AudioDownloadStatus = 'started' | 'downloaded'
 
 export type AudioDownloadSummary = {
   source: AudioDownloadSource
@@ -57,8 +57,8 @@ export type YtDlpListOptions = {
 }
 
 export type BatchOrder = 'newest' | 'oldest'
-export type TopLevelTargetKind = 'directory' | 'input_list' | 'single'
-export type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
+type TopLevelTargetKind = 'directory' | 'input_list' | 'single'
+type Step2Route = 'stt' | 'ocr' | 'article' | 'native-document' | 'unsupported'
 
 export type BatchOptions = {
   limit: number
@@ -173,6 +173,7 @@ export type ParsedEpisode = {
   title: string | undefined
   pubDate: string | undefined
   duration: string | undefined
+  description: string | undefined
 }
 
 export type ParsedFeed = {
@@ -209,10 +210,7 @@ export type BuildOptsDefaults = {
 
 export type RepeatableModelFlag =
   | 'whisper-stt'
-  | 'gcloud-stt'
-  | 'aws-stt'
   | 'deepinfra-stt'
-  | 'deapi-stt'
   | 'groq-stt'
   | 'grok-stt'
   | 'elevenlabs-stt'
@@ -234,11 +232,10 @@ export type RepeatableModelFlag =
   | 'glm-ocr'
   | 'kimi-ocr'
   | 'openai-ocr'
+  | 'grok-ocr'
   | 'anthropic-ocr'
   | 'gemini-ocr'
   | 'deepinfra-ocr'
-  | 'aws-textract'
-  | 'gcloud-docai'
   | 'unstructured-ocr'
   | 'llama'
   | 'openai'
@@ -261,25 +258,19 @@ export type RepeatableModelFlag =
   | 'speechify-tts'
   | 'hume-tts'
   | 'cartesia-tts'
-  | 'gcloud-tts'
-  | 'deapi-tts'
   | 'gemini-image'
   | 'openai-image'
-  | 'minimax-image'
   | 'grok-image'
-  | 'runway-image'
   | 'bfl-image'
-  | 'deapi-image'
+  | 'reve-image'
   | 'elevenlabs-music'
   | 'minimax-music'
-  | 'deapi-music'
   | 'gemini-music'
   | 'gemini-video'
   | 'minimax-video'
   | 'glm-video'
   | 'grok-video'
   | 'runway-video'
-  | 'deapi-video'
 
 export type FlagOccurrenceValue = string | boolean
 
@@ -343,6 +334,7 @@ export type WriteDocumentOutputMetadataOptions = {
   glmOcrModel: string | undefined
   kimiOcrModel: string | undefined
   openaiOcrModel: string | undefined
+  grokOcrModel: string | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModel: string | undefined
   deepinfraOcrModel: string | undefined
@@ -369,7 +361,7 @@ export type BatchManifestErrorEntry = {
   skipped?: boolean
 }
 
-export type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
+type SttManifestProviderStatus = 'succeeded' | 'missing' | 'failed' | 'skipped'
 
 export type SttManifestProviderSummary = {
   label: string

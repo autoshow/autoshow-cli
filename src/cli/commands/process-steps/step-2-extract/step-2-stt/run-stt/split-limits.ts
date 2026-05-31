@@ -5,12 +5,9 @@ import {
 } from '../stt-split-policy'
 
 const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
-  'gcloud',
-  'aws',
   'elevenlabs',
   'deepgram',
   'deepinfra',
-  'deapi',
   'speechmatics',
   'rev',
   'groq',
@@ -26,7 +23,7 @@ const SPLIT_RETRY_ON_TOO_LARGE_ENGINES = new Set<string>([
 
 const MIN_ADAPTIVE_SPLIT_SEGMENT_SECONDS = 60
 
-export type SplitRetryReason = 'attachment_cap' | 'duration_cap' | 'request_budget'
+type SplitRetryReason = 'attachment_cap' | 'duration_cap' | 'request_budget'
 export type SplitLimitClassification = {
   reason: SplitRetryReason
   durationCapSeconds?: number | undefined
@@ -79,7 +76,7 @@ const isRequestBudgetTranscriptionError = (error: unknown): boolean => {
   return /\binput_too_large\b|input too large|maximum context length|context length|too many input tokens|exceeds? .*token/i.test(message)
 }
 
-export const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
+const isPayloadTooLargeTranscriptionError = (error: unknown): boolean => {
   if (error instanceof Error) {
     return error.message.includes('(413)') || /payload too large|request size limit exceeded|file too large|maximum file size|max file size|file size exceeds|\binput_too_large\b|input too large/i.test(error.message)
   }

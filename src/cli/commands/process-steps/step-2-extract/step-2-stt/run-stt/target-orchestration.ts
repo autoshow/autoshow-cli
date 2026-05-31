@@ -1,14 +1,11 @@
+import * as l from '~/utils/logger'
 import type {
-  ProcessingOptions,
-  RuntimeOptions,
   Step2Metadata,
   SttTarget,
   SttTargetOptions,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import { dispatchStt, ensureSttTargetSetup } from './dispatch'
-import { isDeapiSupportedSourceUrl } from '../stt-services/deapi/deapi'
 import { isSupadataSupportedSourceUrl } from '../stt-services/supadata/supadata'
 import { isScrapeCreatorsSupportedSourceUrl } from '../stt-services/scrapecreators/scrapecreators'
 import { writeSttResultArtifact } from '../stt-utils/stt-result-artifacts'
@@ -18,7 +15,6 @@ import {
   resolveSttSplitPolicy,
   resolveTranscriptionSplitDecision
 } from '../stt-split-policy'
-import { collectSttTargets } from '../stt-targets'
 import { createMistralSttPassController } from '../stt-services/mistral/mistral-stt-pass-controller'
 import { logSttSplitDecision } from '../stt-logging'
 import { classifySttSplitLimitError } from './split-limits'
@@ -47,19 +43,6 @@ const logAutoSplitDecision = (
     trigger: 'auto',
     audioPath
   })
-}
-
-export const shouldSplitTranscriptionInput = (
-  target: SplitPolicyTarget,
-  audioFileSizeBytes: number,
-  audioDurationSeconds: number | undefined,
-  splitRequested: boolean
-): boolean => {
-  return resolveTranscriptionSplitDecision(target, {
-    audioFileSizeBytes,
-    audioDurationSeconds,
-    splitRequested
-  }).shouldSplit
 }
 
 export const sttTarget = async (
@@ -91,12 +74,6 @@ export const sttTarget = async (
   }
 
   if (target.service === 'scrapecreators') {
-    const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
-    await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
-    return transcription
-  }
-
-  if (target.service === 'deapi' && effectiveOptions.split !== true && isDeapiSupportedSourceUrl(effectiveOptions.sourceUrl)) {
     const transcription = await dispatchStt(target, audioPath, outputDir, 0, effectiveOptions)
     await persistTranscriptionStructuredArtifact(outputDir, transcription.result, transcription.metadata)
     return transcription
@@ -147,33 +124,4 @@ export const sttTarget = async (
 
     throw error
   }
-}
-
-export const stt = async (
-  audioPath: string,
-  options: ProcessingOptions
-): Promise<{ result: TranscriptionResult, metadata: Step2Metadata }> => {
-  const targets = collectSttTargets({
-    ...(options as unknown as RuntimeOptions),
-    step2SelectionOrigins: {
-      whisper: 'explicit'
-    }
-  })
-  if (targets.length !== 1) {
-    throw new Error(`stt() expects exactly one STT target, received ${targets.length}`)
-  }
-  const target = targets[0] as SttTarget
-
-  return await sttTarget(audioPath, options.outputDir, target, {
-    split: options.split,
-    reverbVerbatimicity: options.reverbVerbatimicity,
-    sttSegmentConcurrency: (options as ProcessingOptions & { sttSegmentConcurrency?: number }).sttSegmentConcurrency,
-    audioDurationSeconds: (options as ProcessingOptions & { audioDurationSeconds?: number }).audioDurationSeconds,
-    sourceUrl: options.url,
-    language: target.service === 'scrapecreators'
-      ? (options as ProcessingOptions & { scrapecreatorsLang?: string }).scrapecreatorsLang
-      : (options as ProcessingOptions & { supadataLang?: string }).supadataLang,
-    happyscribeOrganizationId: (options as ProcessingOptions & { happyscribeOrganizationId?: string }).happyscribeOrganizationId,
-    runMode: 'initial'
-  })
 }

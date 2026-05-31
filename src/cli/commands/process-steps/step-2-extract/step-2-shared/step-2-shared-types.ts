@@ -13,16 +13,14 @@ export type OcrSelectionState = {
   kimiOcrModel?: string | undefined
   openaiOcrModels?: string[] | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModels?: string[] | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModels?: string[] | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModels?: string[] | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModels?: string[] | undefined
   deepinfraOcrModel?: string | undefined
-  awsTextractModels?: string[] | undefined
-  awsTextractModel?: string | undefined
-  gcloudDocaiModels?: string[] | undefined
-  gcloudDocaiModel?: string | undefined
   unstructuredOcrModels?: string[] | undefined
   unstructuredOcrModel?: string | undefined
 }
@@ -54,7 +52,7 @@ export type Step2ResolvedProviderSelection = {
   origin: Step2ProviderSelectionOrigin
 }
 
-export type Step2ProviderRegistryEntryBase = {
+type Step2ProviderRegistryEntryBase = {
   step: Step2Command
   modality: Step2Modality
   flagName: string
@@ -110,14 +108,8 @@ export type SttStep2ResolutionOptions = Pick<
   | 'step2SelectionOrigins'
   | 'whisperModel'
   | 'whisperModels'
-  | 'gcloudSttModel'
-  | 'gcloudSttModels'
-  | 'awsSttModel'
-  | 'awsSttModels'
   | 'deepinfraSttModel'
   | 'deepinfraSttModels'
-  | 'deapiSttModel'
-  | 'deapiSttModels'
   | 'elevenlabsSttModel'
   | 'elevenlabsSttModels'
   | 'deepgramSttModel'
@@ -160,16 +152,14 @@ export type OcrStep2ResolutionOptions = Pick<
   | 'kimiOcrModels'
   | 'openaiOcrModel'
   | 'openaiOcrModels'
+  | 'grokOcrModel'
+  | 'grokOcrModels'
   | 'anthropicOcrModel'
   | 'anthropicOcrModels'
   | 'geminiOcrModel'
   | 'geminiOcrModels'
   | 'deepinfraOcrModel'
   | 'deepinfraOcrModels'
-  | 'awsTextractModel'
-  | 'awsTextractModels'
-  | 'gcloudDocaiModel'
-  | 'gcloudDocaiModels'
   | 'unstructuredOcrModel'
   | 'unstructuredOcrModels'
   | 'useEpubBun'

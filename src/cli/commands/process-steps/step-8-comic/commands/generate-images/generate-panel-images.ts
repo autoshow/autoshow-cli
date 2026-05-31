@@ -4,10 +4,14 @@ import { err, comicLog, formatDuration } from '../../utils/logger'
 import { getPanelPromptsDirectory, getPanelsDirectory } from '../../utils/project-paths'
 import {
   createImage,
+} from '../../image-services/image-targets'
+import {
   createImageRunStats,
   updateImageRunStatsWithCostFallback,
+} from '../../image-services/image-costs'
+import {
   writeGeneratedImage,
-} from '../../image-services'
+} from '../../image-services/image-writer'
 import {
   extractExpandedScenePromptData,
   getPanelNumberFromName,
@@ -23,7 +27,10 @@ import {
   applyImagePromptVariation,
   getImagePromptVariationLabel,
 } from './prompt-variations'
-import type { GeneratePanelImagesOptions, ImagePromptVariation } from '../../types'
+import type {
+  GeneratePanelImagesOptions,
+  ImagePromptVariation,
+} from '../../types/comic-command-types'
 
 
 

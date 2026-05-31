@@ -1,8 +1,6 @@
 import type {
   GeminiDurationSeconds,
   GeminiResolution,
-  DeapiVideoFps,
-  DeapiVideoModel,
   GlmVideoDurationSeconds,
   GlmVideoFps,
   GlmVideoModel,
@@ -51,7 +49,6 @@ export const normalizeGeminiResolution = (
 export const isMinimaxHailuoModel = (model: MinimaxVideoModel): boolean => {
   return model === 'MiniMax-Hailuo-2.3'
     || model === 'MiniMax-Hailuo-2.3-Fast'
-    || model === 'MiniMax-Hailuo-02'
 }
 
 export const normalizeMinimaxResolution = (
@@ -164,8 +161,8 @@ export const normalizeGrokVideoExtensionDuration = (duration: number | undefined
 
 export const normalizeGrokVideoResolution = (resolution: string | undefined): GrokVideoResolution => {
   if (resolution === undefined || resolution === '') return '480p'
-  if (resolution === '480p' || resolution === '720p' || resolution === '1080p') return resolution
-  throw CLIUsageError(`Invalid --video-resolution value "${resolution}" for Grok. Expected 480p, 720p, or 1080p.`)
+  if (resolution === '480p' || resolution === '720p') return resolution
+  throw CLIUsageError(`Invalid --video-resolution value "${resolution}" for Grok. Expected 480p or 720p.`)
 }
 
 export const normalizeGrokVideoAspectRatio = (aspectRatio: string | undefined): string => {
@@ -181,114 +178,4 @@ export const normalizeRunwayDuration = (duration: number | undefined): RunwayDur
 export const normalizeRunwayRatio = (aspectRatio: string | undefined): RunwayRatio => {
   if (aspectRatio === '9:16' || aspectRatio === '720:1280') return '720:1280'
   return '1280:720'
-}
-
-type DeapiVideoModelSpec = {
-  minWidth: number
-  maxWidth: number
-  defaultWidth: number
-  minHeight: number
-  maxHeight: number
-  defaultHeight: number
-  minFrames: number
-  maxFrames: number
-  defaultFrames: number
-  fps: DeapiVideoFps
-}
-
-const DEAPI_VIDEO_MODEL_SPECS: Record<DeapiVideoModel, DeapiVideoModelSpec> = {
-  Ltxv_13B_0_9_8_Distilled_FP8: {
-    minWidth: 256,
-    maxWidth: 768,
-    defaultWidth: 512,
-    minHeight: 256,
-    maxHeight: 768,
-    defaultHeight: 512,
-    minFrames: 30,
-    maxFrames: 120,
-    defaultFrames: 120,
-    fps: 30
-  },
-  Ltx2_19B_Dist_FP8: {
-    minWidth: 512,
-    maxWidth: 1024,
-    defaultWidth: 768,
-    minHeight: 512,
-    maxHeight: 1024,
-    defaultHeight: 768,
-    minFrames: 49,
-    maxFrames: 241,
-    defaultFrames: 120,
-    fps: 24
-  },
-  Ltx2_3_22B_Dist_INT8: {
-    minWidth: 512,
-    maxWidth: 1024,
-    defaultWidth: 768,
-    minHeight: 512,
-    maxHeight: 1024,
-    defaultHeight: 768,
-    minFrames: 49,
-    maxFrames: 241,
-    defaultFrames: 120,
-    fps: 24
-  }
-}
-
-const parseSize = (size: string): { width: number, height: number } | undefined => {
-  const match = /^(\d{2,5})x(\d{2,5})$/i.exec(size.trim())
-  if (!match) {
-    return undefined
-  }
-  return {
-    width: Number.parseInt(match[1]!, 10),
-    height: Number.parseInt(match[2]!, 10)
-  }
-}
-
-const clamp = (value: number, min: number, max: number): number =>
-  Math.max(min, Math.min(max, value))
-
-export const getDeapiVideoFps = (model: DeapiVideoModel): DeapiVideoFps =>
-  DEAPI_VIDEO_MODEL_SPECS[model].fps
-
-export const normalizeDeapiVideoFrames = (
-  model: DeapiVideoModel,
-  durationSeconds: number | undefined
-): number => {
-  const spec = DEAPI_VIDEO_MODEL_SPECS[model]
-  if (typeof durationSeconds !== 'number' || !Number.isFinite(durationSeconds)) {
-    return spec.defaultFrames
-  }
-
-  const requestedFrames = Math.round(Math.max(0, durationSeconds) * spec.fps)
-  return clamp(requestedFrames, spec.minFrames, spec.maxFrames)
-}
-
-export const normalizeDeapiVideoDuration = (
-  model: DeapiVideoModel,
-  durationSeconds: number | undefined
-): number => {
-  const frames = normalizeDeapiVideoFrames(model, durationSeconds)
-  return frames / getDeapiVideoFps(model)
-}
-
-export const normalizeDeapiVideoSize = (
-  model: DeapiVideoModel,
-  size: string | undefined
-): { width: number, height: number } => {
-  const spec = DEAPI_VIDEO_MODEL_SPECS[model]
-  if (size === undefined || size.length === 0) {
-    return { width: spec.defaultWidth, height: spec.defaultHeight }
-  }
-
-  const parsed = parseSize(size)
-  if (!parsed) {
-    throw CLIUsageError(`Invalid --video-size value "${size}" for deAPI. Expected WIDTHxHEIGHT, e.g. ${spec.defaultWidth}x${spec.defaultHeight}.`)
-  }
-
-  return {
-    width: clamp(parsed.width, spec.minWidth, spec.maxWidth),
-    height: clamp(parsed.height, spec.minHeight, spec.maxHeight)
-  }
 }

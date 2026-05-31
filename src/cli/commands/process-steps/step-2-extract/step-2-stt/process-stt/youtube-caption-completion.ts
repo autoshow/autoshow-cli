@@ -12,8 +12,7 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { logRunManifestLocation } from '../../../write-manifest-log'
 import {
   readStoredYoutubeCaptionSuccess,
-  tryResolveYoutubeCaptionTranscription,
-  YOUTUBE_CAPTIONS_SERVICE
+  tryResolveYoutubeCaptionTranscription
 } from '../youtube-captions'
 import { formatSttTargetLabel } from '../stt-targets'
 import { writeSttRunManifest } from '../manifest'
@@ -82,12 +81,13 @@ export const completeYoutubeCaptionStt = async ({
   })
 
   const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, [captionTranscription.target], prepared.durationSeconds, prepared.step1Metadata.url))
+  const observedEstimate = filterEstimatedSttCosts(resolveSttEstimatedCosts(undefined, [captionTranscription.target], prepared.durationSeconds, prepared.step1Metadata.url))
   const actual = computeActualCosts({
     step1: prepared.step1Metadata,
     step2: captionTranscription.metadata,
     audioDurationSeconds: prepared.durationSeconds
   })
-  const cost = { estimated, actual }
+  const cost = preflightEstimate ? { estimated, observedEstimate, actual } : { estimated, actual }
   const estimatedTiming = computeEstimatedProcessingTimes({
     sttTargets: [{
       service: captionTranscription.target.service,
@@ -143,5 +143,3 @@ export const completeYoutubeCaptionStt = async ({
 
   return outputDir
 }
-
-export { YOUTUBE_CAPTIONS_SERVICE }

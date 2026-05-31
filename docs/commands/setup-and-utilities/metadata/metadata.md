@@ -24,7 +24,7 @@ bun as metadata <input>
 | YouTube / Twitch / TikTok URL | `yt-dlp --dump-json` metadata extraction (no download) |
 | Direct media URL (`.mp3`, `.mp4`, etc.) | URL-based metadata extraction (no download) |
 | Direct document URL (`.pdf`, `.epub`, `.docx`, etc.) | HTTP fetch to temp file, detect format, extract metadata, clean up |
-| Remote article / HTML URL | Article metadata/extraction through `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` via `--url-backend` |
+| Remote article / HTML URL | Article metadata/extraction through `defuddle`, `firecrawl`, `glm-reader`, `spider`, `supadata`, or `zyte` via `--url-provider` |
 | Local `.html` / `.htm` file | Article metadata/extraction with local `defuddle` |
 | Local media file | `ffprobe` metadata extraction (duration, title) |
 | Local document file | Format detection + `mutool` metadata (title, author, page count) |
@@ -43,7 +43,7 @@ bun as metadata <input>
 --markdown           Output metadata as Markdown frontmatter YAML
 --save               Save run.json to disk (and metadata.md with --markdown)
 --password           Password for encrypted PDFs
---url-backend        Article/HTML extraction backend: defuddle|firecrawl|glm-reader|spider|zyte (default defuddle; local .html/.htm always use defuddle)
+--url-provider       Article/HTML extraction backend: defuddle|firecrawl|glm-reader|spider|supadata|zyte (default defuddle; local .html/.htm always use defuddle)
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
 --batch-order        Batch: item order newest|oldest (default newest)
@@ -130,7 +130,7 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown --save
 
 # Local media file metadata
-bun as metadata input/examples/audio/1-audio.mp3
+bun as metadata https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # Document metadata from a local PDF
 bun as metadata input/examples/document/1-document.pdf

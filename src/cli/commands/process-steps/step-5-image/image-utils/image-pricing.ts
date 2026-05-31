@@ -1,12 +1,9 @@
 import {
-  isNativeGeminiImageModel,
   validateBflImageModel,
   validateGeminiImageModel,
-  validateDeapiImageModel,
   validateGrokImageModel,
-  validateMinimaxImageModel,
   validateOpenAIImageModel,
-  validateRunwayImageModel
+  validateReveImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getImageCost } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import type { ImageCostEstimate, EstimateImageCostOptions } from '~/types'
@@ -15,26 +12,61 @@ import { createKeyValueTable } from '~/utils/logger/human-table'
 
 type OpenAIImageQuality = 'low' | 'medium' | 'high'
 
-const GPT_IMAGE_2_DEFAULT_COST_CENTS = 5.3
-const GPT_IMAGE_2_COMMON_SIZE_COSTS: Record<string, Record<OpenAIImageQuality, number>> = {
-  '1024x1024': {
-    low: 0.6,
-    medium: 5.3,
-    high: 21.1
+type OpenAIImageOutputPricing = {
+  defaultCostCents: number
+  commonSizeCosts: Record<string, Record<OpenAIImageQuality, number>>
+  label: string
+  supportsFlexibleSizes?: boolean
+}
+
+const OPENAI_IMAGE_OUTPUT_PRICE_CENTS: Partial<Record<string, OpenAIImageOutputPricing>> = {
+  'gpt-image-2': {
+    label: 'GPT Image 2',
+    defaultCostCents: 5.3,
+    supportsFlexibleSizes: true,
+    commonSizeCosts: {
+      '1024x1024': {
+        low: 0.6,
+        medium: 5.3,
+        high: 21.1
+      },
+      '1024x1536': {
+        low: 0.5,
+        medium: 4.1,
+        high: 16.5
+      },
+      '1536x1024': {
+        low: 0.5,
+        medium: 4.1,
+        high: 16.5
+      }
+    }
   },
-  '1024x1536': {
-    low: 0.5,
-    medium: 4.1,
-    high: 16.5
-  },
-  '1536x1024': {
-    low: 0.5,
-    medium: 4.1,
-    high: 16.5
+  'gpt-image-1.5': {
+    label: 'GPT Image 1.5',
+    defaultCostCents: 3.4,
+    commonSizeCosts: {
+      '1024x1024': {
+        low: 0.9,
+        medium: 3.4,
+        high: 13.3
+      },
+      '1024x1536': {
+        low: 1.3,
+        medium: 5,
+        high: 20
+      },
+      '1536x1024': {
+        low: 1.3,
+        medium: 5,
+        high: 20
+      }
+    }
   }
 }
 
-const OPENAI_GPT_IMAGE_2_LATENCY_NOTE = 'Low quality is fastest; square images are typically fastest; JPEG is faster than PNG; complex prompts can take up to about 2 minutes.'
+const OPENAI_IMAGE_LATENCY_NOTE = 'Low quality is fastest; square images are typically fastest; JPEG is faster than PNG; complex prompts can take up to about 2 minutes.'
+const OPENAI_IMAGE_INPUT_COST_NOTE = 'Estimate covers image output only; OpenAI also bills text and image input tokens when present.'
 
 const normalizeOpenAIQualityForEstimate = (quality: string | undefined): OpenAIImageQuality => {
   const normalized = quality?.toLowerCase()
@@ -56,27 +88,31 @@ const estimateOpenAIImageCost = (
   model: string,
   options: Pick<EstimateImageCostOptions, 'imageSize' | 'imageQuality'>
 ): { costPerImageCents: number, note: string } => {
-  if (model !== 'gpt-image-2') {
+  const pricing = OPENAI_IMAGE_OUTPUT_PRICE_CENTS[model]
+  if (!pricing) {
     return {
       costPerImageCents: getImageCost('openai', model) || 4,
-      note: 'Approximate cost; see OpenAI pricing for exact rates'
+      note: `Approximate cost; see OpenAI pricing for exact rates. ${OPENAI_IMAGE_INPUT_COST_NOTE}`
     }
   }
 
   const quality = normalizeOpenAIQualityForEstimate(options.imageQuality)
   const size = normalizeOpenAIImageSizeForEstimate(options.imageSize)
-  const documentedCost = GPT_IMAGE_2_COMMON_SIZE_COSTS[size]?.[quality]
+  const documentedCost = pricing.commonSizeCosts[size]?.[quality]
 
   if (typeof documentedCost === 'number') {
     return {
       costPerImageCents: documentedCost,
-      note: `Approximate OpenAI output estimate for ${size} ${quality} quality. ${OPENAI_GPT_IMAGE_2_LATENCY_NOTE}`
+      note: `Approximate ${pricing.label} output estimate for ${size} ${quality} quality. ${OPENAI_IMAGE_INPUT_COST_NOTE} ${OPENAI_IMAGE_LATENCY_NOTE}`
     }
   }
 
+  const sizeDescription = pricing.supportsFlexibleSizes
+    ? 'a flexible size'
+    : 'an unsupported size'
   return {
-    costPerImageCents: GPT_IMAGE_2_DEFAULT_COST_CENTS,
-    note: `Approximate OpenAI output estimate for a flexible gpt-image-2 size; using the 1024x1024 medium default. Check OpenAI's calculator for this exact resolution. ${OPENAI_GPT_IMAGE_2_LATENCY_NOTE}`
+    costPerImageCents: pricing.defaultCostCents,
+    note: `Approximate ${pricing.label} output estimate for ${sizeDescription}; using the 1024x1024 medium default. ${OPENAI_IMAGE_INPUT_COST_NOTE} Check OpenAI's calculator for this exact resolution. ${OPENAI_IMAGE_LATENCY_NOTE}`
   }
 }
 
@@ -84,22 +120,19 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
   const estimates: ImageCostEstimate[] = []
   const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
   const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
-  const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
-  const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
   const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
-  const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
+  const reveModels = options.reveImageModels ?? (options.reveImageModel ? [options.reveImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model = validateGeminiImageModel(rawModel)
-    const imageCount = isNativeGeminiImageModel(model) ? 1 : Math.max(1, options.imageCount ?? 1)
     const costPerImageCents = getImageCost('gemini', model) || 4
     estimates.push({
       provider: 'gemini',
       model,
-      imageCount,
+      imageCount: 1,
       costPerImageCents,
-      totalCost: costPerImageCents * imageCount,
+      totalCost: costPerImageCents,
       note: 'Approximate cost; see Google AI pricing for exact rates'
     })
   }
@@ -118,20 +151,6 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
     })
   }
 
-  for (const rawModel of minimaxModels) {
-    const model = validateMinimaxImageModel(rawModel)
-    const costPerImageCents = getImageCost('minimax', model)
-    const imageCount = Math.max(1, options.imageCount ?? 1)
-    estimates.push({
-      provider: 'minimax',
-      model,
-      imageCount,
-      costPerImageCents,
-      totalCost: costPerImageCents * imageCount,
-      note: 'Approximate cost; see MiniMax pricing for exact rates'
-    })
-  }
-
   for (const rawModel of grokModels) {
     const model = validateGrokImageModel(rawModel)
     const costPerImageCents = getImageCost('grok', model)
@@ -143,22 +162,6 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
       costPerImageCents,
       totalCost: costPerImageCents * imageCount,
       note: 'Approximate cost; xAI publishes flat per-image billing and exact account pricing may vary'
-    })
-  }
-
-  for (const rawModel of runwayModels) {
-    const model = validateRunwayImageModel(rawModel)
-    const normalizedSize = options.imageSize?.toLowerCase()
-    const costPerImageCents = normalizedSize === '1080p' ? 8 : getImageCost('runway', model)
-    estimates.push({
-      provider: 'runway',
-      model,
-      imageCount: 1,
-      costPerImageCents,
-      totalCost: costPerImageCents,
-      note: normalizedSize === '1080p'
-        ? 'Approximate cost; Runway Gen-4 Image is estimated at 8 credits for 1080p'
-        : 'Approximate cost; Runway Gen-4 Image defaults to 5 credits for 720p'
     })
   }
 
@@ -175,16 +178,16 @@ export const estimateImageCosts = (options: EstimateImageCostOptions): ImageCost
     })
   }
 
-  for (const rawModel of deapiModels) {
-    const model = validateDeapiImageModel(rawModel)
-    const costPerImageCents = getImageCost('deapi', model)
+  for (const rawModel of reveModels) {
+    const model = validateReveImageModel(rawModel)
+    const costPerImageCents = getImageCost('reve', model)
     estimates.push({
-      provider: 'deapi',
+      provider: 'reve',
       model,
       imageCount: 1,
       costPerImageCents,
       totalCost: costPerImageCents,
-      note: 'Approximate cost; deAPI image pricing varies by model, resolution, and steps'
+      note: 'Approximate fallback based on $10 / 7500 Reve credits; provider usage headers are used when returned'
     })
   }
 

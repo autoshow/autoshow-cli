@@ -30,8 +30,6 @@
     "Image": [
       "https://ai.google.dev/gemini-api/docs/image-generation.md.txt",
       "https://ai.google.dev/gemini-api/docs/image-understanding.md.txt",
-      "https://ai.google.dev/gemini-api/docs/imagen.md.txt",
-      "https://ai.google.dev/gemini-api/docs/models/imagen.md.txt",
       "https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image-preview.md.txt"
     ],
     "Video": [

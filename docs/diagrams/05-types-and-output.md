@@ -28,27 +28,26 @@ output/
     ├── transcription.txt
     ├── prompt.md
     ├── text.json                   # structured write output
-    ├── speech.wav                  # (if --kitten-tts/--elevenlabs-tts/... set)
-    ├── elevenlabs-pvc-status.json  # (if ElevenLabs PVC setup ran)
-    ├── generated-image.*           # (if --gemini-image/--openai-image/... set)
-    ├── generated-video.mp4         # (if --gemini-video/--minimax-video/... set)
-    ├── generated-music.mp3         # (if --elevenlabs-music/--minimax-music/... set)
+    ├── speech.wav                  # (if --tts provider[=model] set)
+    ├── generated-image.*           # (if --image provider[=model] set)
+    ├── generated-video.mp4         # (if --video provider[=model] set)
+    ├── generated-music.mp3         # (if --music provider[=model] set)
     ├── run.json                    # { step1, step2, step3[, step4, step5, step6, step7] }
     │
     │  ── Document (extract command routed to OCR) ──
-    ├── extraction.txt              # if --out text (default)
-    ├── result.json                 # if --out json
-    ├── extraction.tsv              # if --out tsv
-    ├── extraction.hocr             # if --out hocr
+    ├── extraction.txt              # if --format text (default)
+    ├── result.json                 # if --format json
+    ├── extraction.tsv              # if --format tsv
+    ├── extraction.hocr             # if --format hocr
     ├── run.json                    # { step1, step2 }
     │                               # EPUB inspect mode writes run.json only
     │
     │  ── Article URL / HTML (extract command) ──
-    ├── extraction.txt              # single-backend --out text
-    ├── result.json                 # single-backend --out json
-    ├── extraction.tsv              # single-backend --out tsv
-    ├── extraction.hocr             # single-backend --out hocr
-    ├── providers/<backend>/        # --all-url provider artifacts
+    ├── extraction.txt              # single-backend --format text
+    ├── result.json                 # single-backend --format json
+    ├── extraction.tsv              # single-backend --format tsv
+    ├── extraction.hocr             # single-backend --format hocr
+    ├── providers/<backend>/        # route-aware --all-providers artifacts
     │   ├── extraction.txt
     │   └── result.json
     ├── run.json                    # { step1, step2, completionStatus?, providerStates? }
@@ -128,14 +127,14 @@ src/types/
 │                                                                              │
 │  TtsProvider   = 'kitten'|'elevenlabs'|'minimax'|'groq'|'grok'|             │
 │                  'mistral'|'openai'|'gemini'|'deepgram'|'speechify'|        │
-│                  'gcloud'|'deapi'|'hume'|'cartesia'                         │
-│  ImageProvider = 'gemini'|'openai'|'minimax'|'grok'|'runway'|'bfl'|'deapi'   │
-│  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'|'deapi'            │
-│  MusicProvider = 'elevenlabs'|'minimax'|'deapi'|'gemini'                     │
+│                  'hume'|'cartesia'                                          │
+│  ImageProvider = 'gemini'|'openai'|'grok'|'bfl'|'reve'                       │
+│  VideoProvider = 'gemini'|'minimax'|'glm'|'grok'|'runway'                    │
+│  MusicProvider = 'elevenlabs'|'minimax'|'gemini'                             │
 │                                                                              │
 │  OcrProvider   = 'tesseract'|'ocrmypdf'|'paddle-ocr'|'mistral'|'glm'|       │
-│                  'kimi'|'openai'|'anthropic'|'gemini'|'deepinfra'|           │
-│                  'aws-textract'|'gcloud-docai'|'unstructured'               │
+│                  'kimi'|'openai'|'grok'|'anthropic'|'gemini'|'deepinfra'|    │
+│                  'unstructured'                                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -152,12 +151,12 @@ src/types/
 │  Step 2 (Transcribe/Extract):                                                │
 │  ├── TranscriptionResult  text + segments[]                                  │
 │  ├── TranscriptionSegment start, end, text, speaker?                         │
-│  ├── ExtractionOptions    filePath, outputDir, dpi, lang, oem, psm, ...      │
+│  ├── ExtractionOptions    filePath, outputDir, dpi, languages, format, ...   │
 │  ├── ExtractionResult     text + pages[] + totalPages/ocrPages/textPages     │
 │  ├── PageResult           pageNumber, method:'text'|'ocr'|'skipped', text    │
 │  ├── ExtractionMetadata   extractionMethod, pages, processingTime, ...       │
 │  ├── Step2Metadata        transcriptionService, model, time, tokenCount      │
-│  │    transcriptionService: 'whisper'|'reverb'|'elevenlabs'|'groq'|'grok'|'openai'|'mistral'|... │
+│  │    transcriptionService: 'whisper'|'reverb'|'elevenlabs'|'groq'|'grok'|'openai-stt'|'mistral'|... │
 │  ├── WhisperJsonOutput    whisper.cpp JSON output schema                     │
 │  ├── ReverbOutput         reverb segments + speakers                         │
 │  └── ElevenLabsSttResponse  ElevenLabs word/segment schema                   │

@@ -1,0 +1,1964 @@
+{
+  "schemaVersion": 2,
+  "kind": "tts-provider-comparison",
+  "category": "tts",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/tts/2026-05-21_06-15-24-012_tts-long",
+  "runName": "2026-05-21_06-15-24-012_tts-long",
+  "generatedAt": "2026-05-21T13:32:36.851Z",
+  "metric": "voice-quality",
+  "scoreFormula": "manual human quality ratings from voice-quality-report.json (1-10 ratings mapped to 0-100 humanSpeechScore)",
+  "tiering": {
+    "metric": "balanced-overall",
+    "method": "equal-thirds-by-group-overall-rank",
+    "remainderPolicy": "bottom-tier-extra",
+    "groups": {
+      "local": {
+        "count": 4,
+        "counts": {
+          "tier1": 1,
+          "tier2": 1,
+          "tier3": 2
+        },
+        "tiers": [
+          {
+            "tier": 1,
+            "label": "Tier 1",
+            "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
+            "rankRange": {
+              "start": 1,
+              "end": 1
+            },
+            "count": 1,
+            "providers": [
+              {
+                "providerKey": "kitten/kitten-tts-nano",
+                "tierGroup": "local",
+                "groupOverallRank": 1,
+                "groupTier": 1
+              }
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Tier 2",
+            "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+            "rankRange": {
+              "start": 2,
+              "end": 2
+            },
+            "count": 1,
+            "providers": [
+              {
+                "providerKey": "kitten/kitten-tts-micro",
+                "tierGroup": "local",
+                "groupOverallRank": 2,
+                "groupTier": 2
+              }
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "Tier 3",
+            "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
+            "rankRange": {
+              "start": 3,
+              "end": 4
+            },
+            "count": 2,
+            "providers": [
+              {
+                "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+                "tierGroup": "local",
+                "groupOverallRank": 3,
+                "groupTier": 3
+              },
+              {
+                "providerKey": "kitten/kitten-tts-mini",
+                "tierGroup": "local",
+                "groupOverallRank": 4,
+                "groupTier": 3
+              }
+            ]
+          }
+        ]
+      },
+      "thirdParty": {
+        "count": 15,
+        "counts": {
+          "tier1": 5,
+          "tier2": 5,
+          "tier3": 5
+        },
+        "tiers": [
+          {
+            "tier": 1,
+            "label": "Tier 1",
+            "description": "Best balanced options across accuracy, processing speed, and cost efficiency.",
+            "rankRange": {
+              "start": 1,
+              "end": 5
+            },
+            "count": 5,
+            "providers": [
+              {
+                "providerKey": "grok/grok-tts",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 1,
+                "groupTier": 1
+              },
+              {
+                "providerKey": "openai/gpt-4o-mini-tts",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 2,
+                "groupTier": 1
+              },
+              {
+                "providerKey": "speechify/simba-english",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 4,
+                "groupTier": 1
+              },
+              {
+                "providerKey": "deepgram/aura-2-thalia-en",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 5,
+                "groupTier": 1
+              }
+            ]
+          },
+          {
+            "tier": 2,
+            "label": "Tier 2",
+            "description": "Middle options that miss Tier 1 but may have a specific accuracy, speed, or cost advantage.",
+            "rankRange": {
+              "start": 6,
+              "end": 10
+            },
+            "count": 5,
+            "providers": [
+              {
+                "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 6,
+                "groupTier": 2
+              },
+              {
+                "providerKey": "minimax/speech-2.8-turbo",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 7,
+                "groupTier": 2
+              },
+              {
+                "providerKey": "groq/canopylabs/orpheus-v1-english",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 8,
+                "groupTier": 2
+              },
+              {
+                "providerKey": "cartesia/sonic-3.5",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 9,
+                "groupTier": 2
+              },
+              {
+                "providerKey": "speechify/simba-multilingual",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 10,
+                "groupTier": 2
+              }
+            ]
+          },
+          {
+            "tier": 3,
+            "label": "Tier 3",
+            "description": "Lowest balanced options, generally weaker across the combined benchmark categories.",
+            "rankRange": {
+              "start": 11,
+              "end": 15
+            },
+            "count": 5,
+            "providers": [
+              {
+                "providerKey": "elevenlabs/eleven_v3",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 11,
+                "groupTier": 3
+              },
+              {
+                "providerKey": "cartesia/sonic-3",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 12,
+                "groupTier": 3
+              },
+              {
+                "providerKey": "hume/octave-2",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 13,
+                "groupTier": 3
+              },
+              {
+                "providerKey": "minimax/speech-2.8-hd",
+                "tierGroup": "thirdParty",
+                "groupOverallRank": 15,
+                "groupTier": 3
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "duplicateGroups": [],
+  "normalization": null,
+  "providerCount": 19,
+  "providerGroups": {
+    "local": {
+      "count": 4,
+      "providers": [
+        {
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "processingTimeMs": 7867,
+          "costCents": 0,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 40,
+          "qualityLabel": "40.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.1404494382022472,
+            "contentCoverage": null,
+            "qualityScore": 40,
+            "humanSpeechScore": 40
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "local",
+          "groupOverallRank": 2,
+          "groupTier": 2
+        },
+        {
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "processingTimeMs": 12903,
+          "costCents": 0,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 40,
+          "qualityLabel": "40.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.03932584269662921,
+            "contentCoverage": null,
+            "qualityScore": 40,
+            "humanSpeechScore": 40
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "local",
+          "groupOverallRank": 4,
+          "groupTier": 3
+        },
+        {
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "processingTimeMs": 5133,
+          "costCents": 0,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 40,
+          "qualityLabel": "40.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.0898876404494382,
+            "contentCoverage": null,
+            "qualityScore": 40,
+            "humanSpeechScore": 40
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "local",
+          "groupOverallRank": 1,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "processingTimeMs": 10892,
+          "costCents": 0,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 40,
+          "qualityLabel": "40.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.03932584269662921,
+            "contentCoverage": null,
+            "qualityScore": 40,
+            "humanSpeechScore": 40
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "local",
+          "groupOverallRank": 3,
+          "groupTier": 3
+        }
+      ]
+    },
+    "service": {
+      "count": 15,
+      "providers": [
+        {
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "processingTimeMs": 7966,
+          "costCents": 1.9995625000000001,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 50,
+          "qualityLabel": "50.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.12359550561797752,
+            "contentCoverage": null,
+            "qualityScore": 50,
+            "humanSpeechScore": 50
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 12,
+          "groupTier": 3
+        },
+        {
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "processingTimeMs": 5835,
+          "costCents": 1.9995625000000001,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 60,
+          "qualityLabel": "60.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.12359550561797752,
+            "contentCoverage": null,
+            "qualityScore": 60,
+            "humanSpeechScore": 60
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 9,
+          "groupTier": 2
+        },
+        {
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "processingTimeMs": 17719,
+          "costCents": 1.605,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 70,
+          "qualityLabel": "70.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.06741573033707865,
+            "contentCoverage": null,
+            "qualityScore": 70,
+            "humanSpeechScore": 70
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 5,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "processingTimeMs": 19143,
+          "costCents": 5.3500000000000005,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 80,
+          "qualityLabel": "80.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.056179775280898875,
+            "contentCoverage": null,
+            "qualityScore": 80,
+            "humanSpeechScore": 80
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 11,
+          "groupTier": 3
+        },
+        {
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "processingTimeMs": 31183,
+          "costCents": 1.1235,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 70,
+          "qualityLabel": "70.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.0449438202247191,
+            "contentCoverage": null,
+            "qualityScore": 70,
+            "humanSpeechScore": 70
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 6,
+          "groupTier": 2
+        },
+        {
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "processingTimeMs": 9284,
+          "costCents": 0.2247,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 80,
+          "qualityLabel": "80.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.0449438202247191,
+            "contentCoverage": null,
+            "qualityScore": 80,
+            "humanSpeechScore": 80
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 1,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "processingTimeMs": 7451,
+          "costCents": 1.712,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 60,
+          "qualityLabel": "60.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.028089887640449437,
+            "contentCoverage": null,
+            "qualityScore": 60,
+            "humanSpeechScore": 60
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 8,
+          "groupTier": 2
+        },
+        {
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "processingTimeMs": 6316,
+          "costCents": 8.025,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 70,
+          "qualityLabel": "70.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.07303370786516854,
+            "contentCoverage": null,
+            "qualityScore": 70,
+            "humanSpeechScore": 70
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 13,
+          "groupTier": 3
+        },
+        {
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "processingTimeMs": 109594,
+          "costCents": 5.3500000000000005,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 70,
+          "qualityLabel": "70.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.016853932584269662,
+            "contentCoverage": null,
+            "qualityScore": 70,
+            "humanSpeechScore": 70
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 15,
+          "groupTier": 3
+        },
+        {
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "processingTimeMs": 27154,
+          "costCents": 3.21,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 80,
+          "qualityLabel": "80.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.12359550561797752,
+            "contentCoverage": null,
+            "qualityScore": 80,
+            "humanSpeechScore": 80
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 7,
+          "groupTier": 2
+        },
+        {
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "processingTimeMs": 8985,
+          "costCents": 0.6741,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 80,
+          "qualityLabel": "80.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.03932584269662921,
+            "contentCoverage": null,
+            "qualityScore": 80,
+            "humanSpeechScore": 80
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 2,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "processingTimeMs": 6697,
+          "costCents": 0.535,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 70,
+          "qualityLabel": "70.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.09550561797752809,
+            "contentCoverage": null,
+            "qualityScore": 70,
+            "humanSpeechScore": 70
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 4,
+          "groupTier": 1
+        },
+        {
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "processingTimeMs": 6120,
+          "costCents": 0.535,
+          "qualityMetric": "humanSpeechScore",
+          "qualityValue": 50,
+          "qualityLabel": "50.00 humanSpeechScore",
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": 0.05056179775280899,
+            "contentCoverage": null,
+            "qualityScore": 50,
+            "humanSpeechScore": 50
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": "thirdParty",
+          "groupOverallRank": 10,
+          "groupTier": 2
+        }
+      ]
+    }
+  },
+  "rankingSurfaces": {
+    "local": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 5133,
+          "label": "5.13s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 7867,
+          "label": "7.87s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 10892,
+          "label": "10.89s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 12903,
+          "label": "12.90s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        }
+      ],
+      "highestQuality": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        }
+      ],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": null,
+      "price": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "local monetary cost",
+          "value": 0,
+          "label": "$0.00 local monetary cost"
+        }
+      ],
+      "speed": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 5133,
+          "label": "5.13s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 7867,
+          "label": "7.87s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 10892,
+          "label": "10.89s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "processingTimeMs",
+          "value": 12903,
+          "label": "12.90s"
+        }
+      ],
+      "automatedQuality": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "roundtrip WER accuracy",
+          "value": 96.06741573033707,
+          "label": "96.07 accuracy (3.93% roundtrip WER)"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "roundtrip WER accuracy",
+          "value": 96.06741573033707,
+          "label": "96.07 accuracy (3.93% roundtrip WER)"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "roundtrip WER accuracy",
+          "value": 91.01123595505618,
+          "label": "91.01 accuracy (8.99% roundtrip WER)"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "roundtrip WER accuracy",
+          "value": 85.95505617977528,
+          "label": "85.96 accuracy (14.04% roundtrip WER)"
+        }
+      ],
+      "humanQuality": [
+        {
+          "rank": 1,
+          "providerKey": "kitten/kitten-tts-micro",
+          "provider": "kitten",
+          "model": "kitten-tts-micro",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        },
+        {
+          "rank": 2,
+          "providerKey": "kitten/kitten-tts-mini",
+          "provider": "kitten",
+          "model": "kitten-tts-mini",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        },
+        {
+          "rank": 3,
+          "providerKey": "kitten/kitten-tts-nano",
+          "provider": "kitten",
+          "model": "kitten-tts-nano",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        },
+        {
+          "rank": 4,
+          "providerKey": "kitten/kitten-tts-nano-0.8-int8",
+          "provider": "kitten",
+          "model": "kitten-tts-nano-0.8-int8",
+          "group": "local",
+          "metric": "humanSpeechScore",
+          "value": 40,
+          "label": "40.00 humanSpeechScore"
+        }
+      ],
+      "priceUnavailableReason": null,
+      "speedUnavailableReason": null,
+      "automatedQualityUnavailableReason": null,
+      "humanQualityUnavailableReason": null
+    },
+    "service": {
+      "fastest": [
+        {
+          "rank": 3,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 5835,
+          "label": "5.83s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 6120,
+          "label": "6.12s"
+        },
+        {
+          "rank": 5,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 6316,
+          "label": "6.32s"
+        },
+        {
+          "rank": 6,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 6697,
+          "label": "6.70s"
+        },
+        {
+          "rank": 7,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 7451,
+          "label": "7.45s"
+        },
+        {
+          "rank": 8,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 7966,
+          "label": "7.97s"
+        },
+        {
+          "rank": 9,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 8985,
+          "label": "8.98s"
+        },
+        {
+          "rank": 10,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 9284,
+          "label": "9.28s"
+        },
+        {
+          "rank": 11,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 17719,
+          "label": "17.72s"
+        },
+        {
+          "rank": 12,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 19143,
+          "label": "19.14s"
+        },
+        {
+          "rank": 13,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 27154,
+          "label": "27.15s"
+        },
+        {
+          "rank": 14,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 31183,
+          "label": "31.18s"
+        },
+        {
+          "rank": 15,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 109594,
+          "label": "109.59s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.2247,
+          "label": "$0.0022"
+        },
+        {
+          "rank": 2,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.535,
+          "label": "$0.0054"
+        },
+        {
+          "rank": 3,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.535,
+          "label": "$0.0054"
+        },
+        {
+          "rank": 4,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.6741,
+          "label": "$0.0067"
+        },
+        {
+          "rank": 5,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.1235,
+          "label": "$0.0112"
+        },
+        {
+          "rank": 6,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.605,
+          "label": "$0.0160"
+        },
+        {
+          "rank": 8,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.712,
+          "label": "$0.0171"
+        },
+        {
+          "rank": 9,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.9995625000000001,
+          "label": "$0.0200"
+        },
+        {
+          "rank": 10,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.9995625000000001,
+          "label": "$0.0200"
+        },
+        {
+          "rank": 11,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "costCents",
+          "value": 3.21,
+          "label": "$0.0321"
+        },
+        {
+          "rank": 12,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "costCents",
+          "value": 5.3500000000000005,
+          "label": "$0.0535"
+        },
+        {
+          "rank": 13,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "costCents",
+          "value": 5.3500000000000005,
+          "label": "$0.0535"
+        },
+        {
+          "rank": 14,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "costCents",
+          "value": 8.025,
+          "label": "$0.0803"
+        }
+      ],
+      "highestQuality": [
+        {
+          "rank": 1,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 3,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 4,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 5,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 6,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 8,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 9,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 10,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 11,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 12,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 60,
+          "label": "60.00 humanSpeechScore"
+        },
+        {
+          "rank": 13,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 60,
+          "label": "60.00 humanSpeechScore"
+        },
+        {
+          "rank": 14,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 50,
+          "label": "50.00 humanSpeechScore"
+        },
+        {
+          "rank": 15,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 50,
+          "label": "50.00 humanSpeechScore"
+        }
+      ],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": null,
+      "price": [
+        {
+          "rank": 1,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.2247,
+          "label": "$0.0022"
+        },
+        {
+          "rank": 2,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.535,
+          "label": "$0.0054"
+        },
+        {
+          "rank": 3,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.535,
+          "label": "$0.0054"
+        },
+        {
+          "rank": 4,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "costCents",
+          "value": 0.6741,
+          "label": "$0.0067"
+        },
+        {
+          "rank": 5,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.1235,
+          "label": "$0.0112"
+        },
+        {
+          "rank": 6,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.605,
+          "label": "$0.0160"
+        },
+        {
+          "rank": 8,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.712,
+          "label": "$0.0171"
+        },
+        {
+          "rank": 9,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.9995625000000001,
+          "label": "$0.0200"
+        },
+        {
+          "rank": 10,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "costCents",
+          "value": 1.9995625000000001,
+          "label": "$0.0200"
+        },
+        {
+          "rank": 11,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "costCents",
+          "value": 3.21,
+          "label": "$0.0321"
+        },
+        {
+          "rank": 12,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "costCents",
+          "value": 5.3500000000000005,
+          "label": "$0.0535"
+        },
+        {
+          "rank": 13,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "costCents",
+          "value": 5.3500000000000005,
+          "label": "$0.0535"
+        },
+        {
+          "rank": 14,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "costCents",
+          "value": 8.025,
+          "label": "$0.0803"
+        }
+      ],
+      "speed": [
+        {
+          "rank": 3,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 5835,
+          "label": "5.83s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 6120,
+          "label": "6.12s"
+        },
+        {
+          "rank": 5,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 6316,
+          "label": "6.32s"
+        },
+        {
+          "rank": 6,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 6697,
+          "label": "6.70s"
+        },
+        {
+          "rank": 7,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 7451,
+          "label": "7.45s"
+        },
+        {
+          "rank": 8,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 7966,
+          "label": "7.97s"
+        },
+        {
+          "rank": 9,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 8985,
+          "label": "8.98s"
+        },
+        {
+          "rank": 10,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 9284,
+          "label": "9.28s"
+        },
+        {
+          "rank": 11,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 17719,
+          "label": "17.72s"
+        },
+        {
+          "rank": 12,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 19143,
+          "label": "19.14s"
+        },
+        {
+          "rank": 13,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 27154,
+          "label": "27.15s"
+        },
+        {
+          "rank": 14,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 31183,
+          "label": "31.18s"
+        },
+        {
+          "rank": 15,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 109594,
+          "label": "109.59s"
+        }
+      ],
+      "automatedQuality": [
+        {
+          "rank": 1,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 98.31460674157303,
+          "label": "98.31 accuracy (1.69% roundtrip WER)"
+        },
+        {
+          "rank": 2,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 97.19101123595506,
+          "label": "97.19 accuracy (2.81% roundtrip WER)"
+        },
+        {
+          "rank": 3,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 96.06741573033707,
+          "label": "96.07 accuracy (3.93% roundtrip WER)"
+        },
+        {
+          "rank": 4,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 95.50561797752809,
+          "label": "95.51 accuracy (4.49% roundtrip WER)"
+        },
+        {
+          "rank": 5,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 95.50561797752809,
+          "label": "95.51 accuracy (4.49% roundtrip WER)"
+        },
+        {
+          "rank": 6,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 94.9438202247191,
+          "label": "94.94 accuracy (5.06% roundtrip WER)"
+        },
+        {
+          "rank": 7,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 94.3820224719101,
+          "label": "94.38 accuracy (5.62% roundtrip WER)"
+        },
+        {
+          "rank": 9,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 93.25842696629213,
+          "label": "93.26 accuracy (6.74% roundtrip WER)"
+        },
+        {
+          "rank": 10,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 92.69662921348315,
+          "label": "92.70 accuracy (7.30% roundtrip WER)"
+        },
+        {
+          "rank": 12,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 90.4494382022472,
+          "label": "90.45 accuracy (9.55% roundtrip WER)"
+        },
+        {
+          "rank": 13,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 87.64044943820225,
+          "label": "87.64 accuracy (12.36% roundtrip WER)"
+        },
+        {
+          "rank": 14,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 87.64044943820225,
+          "label": "87.64 accuracy (12.36% roundtrip WER)"
+        },
+        {
+          "rank": 15,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "roundtrip WER accuracy",
+          "value": 87.64044943820225,
+          "label": "87.64 accuracy (12.36% roundtrip WER)"
+        }
+      ],
+      "humanQuality": [
+        {
+          "rank": 1,
+          "providerKey": "elevenlabs/eleven_v3",
+          "provider": "elevenlabs",
+          "model": "eleven_v3",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 3,
+          "providerKey": "grok/grok-tts",
+          "provider": "grok",
+          "model": "grok-tts",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 4,
+          "providerKey": "minimax/speech-2.8-turbo",
+          "provider": "minimax",
+          "model": "speech-2.8-turbo",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 5,
+          "providerKey": "openai/gpt-4o-mini-tts",
+          "provider": "openai",
+          "model": "gpt-4o-mini-tts",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 80,
+          "label": "80.00 humanSpeechScore"
+        },
+        {
+          "rank": 6,
+          "providerKey": "deepgram/aura-2-thalia-en",
+          "provider": "deepgram",
+          "model": "aura-2-thalia-en",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 8,
+          "providerKey": "gemini/gemini-3.1-flash-tts-preview",
+          "provider": "gemini",
+          "model": "gemini-3.1-flash-tts-preview",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 9,
+          "providerKey": "hume/octave-2",
+          "provider": "hume",
+          "model": "octave-2",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 10,
+          "providerKey": "minimax/speech-2.8-hd",
+          "provider": "minimax",
+          "model": "speech-2.8-hd",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 11,
+          "providerKey": "speechify/simba-english",
+          "provider": "speechify",
+          "model": "simba-english",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 70,
+          "label": "70.00 humanSpeechScore"
+        },
+        {
+          "rank": 12,
+          "providerKey": "cartesia/sonic-3.5",
+          "provider": "cartesia",
+          "model": "sonic-3.5",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 60,
+          "label": "60.00 humanSpeechScore"
+        },
+        {
+          "rank": 13,
+          "providerKey": "groq/canopylabs/orpheus-v1-english",
+          "provider": "groq",
+          "model": "canopylabs/orpheus-v1-english",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 60,
+          "label": "60.00 humanSpeechScore"
+        },
+        {
+          "rank": 14,
+          "providerKey": "cartesia/sonic-3",
+          "provider": "cartesia",
+          "model": "sonic-3",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 50,
+          "label": "50.00 humanSpeechScore"
+        },
+        {
+          "rank": 15,
+          "providerKey": "speechify/simba-multilingual",
+          "provider": "speechify",
+          "model": "simba-multilingual",
+          "group": "service",
+          "metric": "humanSpeechScore",
+          "value": 50,
+          "label": "50.00 humanSpeechScore"
+        }
+      ],
+      "priceUnavailableReason": null,
+      "speedUnavailableReason": null,
+      "automatedQualityUnavailableReason": null,
+      "humanQualityUnavailableReason": null
+    }
+  },
+  "combinedLeaderboardPolicy": "omitted: local and service providers are not ranked against each other",
+  "notes": [
+    "Local human-quality scores were tied at 40.00 humanSpeechScore for all local Kitten models.",
+    "The cheapest cloud provider was `grok/grok-tts` at 0.2247¢ ($0.0022).",
+    "Fastest local model: `kitten/kitten-tts-nano` at 5.13s.",
+    "Manual human quality ratings supplied on 2026-05-21 were mapped from a 1-10 scale to 0-100 humanSpeechScore values."
+  ]
+}

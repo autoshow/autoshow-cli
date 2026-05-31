@@ -1,6 +1,9 @@
-import type { GeminiMultiSpeakerConfig, TtsOptions } from '~/types'
-import { isDialogueTtsRequested } from '../dialogue-normalizer'
-import { isElevenLabsTtsPvcSetupRequested } from '../tts-services/elevenlabs/elevenlabs-pvc'
+import type { GeminiMultiSpeakerConfig, SpeakerVoiceRegistry, TtsOptions } from '~/types'
+import {
+  isMultiSpeakerRequested,
+  parseSpeakerRefAudioMappings,
+  parseSpeakerVoiceMappings
+} from '../dialogue-normalizer'
 import { resolveGeminiMultiSpeakerConfig } from '../tts-services/gemini/gemini-tts-config'
 
 export type TtsTargetSelection = {
@@ -16,9 +19,9 @@ export type TtsTargetSelection = {
   speechifyModels: string[]
   humeModels: string[]
   cartesiaModels: string[]
-  gcloudModels: string[]
-  deapiModels: string[]
   geminiMultiSpeakerConfig: GeminiMultiSpeakerConfig | undefined
+  speakerVoiceRegistry: SpeakerVoiceRegistry | undefined
+  multiSpeakerRequested: boolean
   minimaxVoiceId: string | undefined
   minimaxLanguageBoost: string | undefined
   minimaxSpeed: number | undefined
@@ -45,7 +48,6 @@ export type TtsTargetSelection = {
   elevenLabsCloneVoiceName: string | undefined
   elevenLabsCloneRemoveBackgroundNoise: boolean
   elevenLabsVoiceId: string | undefined
-  elevenLabsPvcVoiceId: string | undefined
   elevenLabsOutputFormat: string | undefined
   elevenLabsLanguageCode: string | undefined
   elevenLabsStability: number | undefined
@@ -57,14 +59,6 @@ export type TtsTargetSelection = {
   elevenLabsTextNormalization: string | undefined
   elevenLabsPronunciationDictionaryLocators: string[] | undefined
   elevenLabsOptimizeStreamingLatency: number | undefined
-  elevenLabsPvcAsIvc: boolean
-  elevenLabsPvcSamplePaths: string[] | undefined
-  elevenLabsPvcSampleDir: string | undefined
-  elevenLabsPvcLanguage: string | undefined
-  elevenLabsPvcDescription: string | undefined
-  elevenLabsPvcCaptchaOut: string | undefined
-  elevenLabsPvcVerifyAudio: string | undefined
-  elevenLabsPvcWait: boolean
   speechifyCustomVoiceRefAudioPath: string | undefined
   speechifyCustomVoiceName: string | undefined
   speechifyCustomVoiceConsentName: string | undefined
@@ -78,13 +72,6 @@ export type TtsTargetSelection = {
   humeVoiceProvider: string | undefined
   cartesiaVoiceId: string | undefined
   cartesiaLanguage: string | undefined
-  gcloudVoiceCloningKey: string | undefined
-  gcloudRefAudioPath: string | undefined
-  gcloudConsentAudioPath: string | undefined
-  gcloudConsentLanguage: string | undefined
-  gcloudVoiceCloningKeyOut: string | undefined
-  gcloudVoiceId: string | undefined
-  gcloudLanguage: string | undefined
   groqVoiceId: string | undefined
   grokVoiceId: string | undefined
   grokLanguage: string | undefined
@@ -94,20 +81,9 @@ export type TtsTargetSelection = {
   mistralVoiceName: string | undefined
   geminiVoiceId: string | undefined
   deepgramVoiceId: string | undefined
-  deapiVoiceId: string | undefined
-  deapiRefAudioPath: string | undefined
-  deapiRefText: string | undefined
-  deapiLanguage: string | undefined
-  deapiSpeed: number | undefined
-  deapiFormat: string | undefined
-  deapiSampleRate: number | undefined
-  deapiInstruction: string | undefined
-  hasElevenLabsPvcActionFlags: boolean
-  hasElevenLabsPvcSetupFlags: boolean
   hasOpenAICloneFlags: boolean
   hasElevenLabsCloneFlags: boolean
   hasSpeechifyCustomVoiceFlags: boolean
-  hasGcloudIcvFlags: boolean
   hasElevenLabsVoiceNameOnly: boolean
   dialogueRequested: boolean
 }
@@ -128,13 +104,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
   const openaiCloneVoiceName = trimmed(options.openaiTtsVoiceName)
   const elevenLabsCloneRefAudioPath = trimmed(options.elevenlabsTtsRefAudio)
   const elevenLabsCloneVoiceName = trimmed(options.elevenlabsTtsVoiceName)
-  const elevenLabsPvcVoiceId = trimmed(options.elevenlabsTtsPvcVoice)
-  const elevenLabsPvcSamplePaths = options.elevenlabsTtsPvcSamples?.map((item) => item.trim()).filter(Boolean)
-  const elevenLabsPvcSampleDir = trimmed(options.elevenlabsTtsPvcSampleDir)
-  const elevenLabsPvcLanguage = trimmed(options.elevenlabsTtsPvcLanguage)
-  const elevenLabsPvcDescription = trimmed(options.elevenlabsTtsPvcDescription)
-  const elevenLabsPvcCaptchaOut = trimmed(options.elevenlabsTtsPvcCaptchaOut)
-  const elevenLabsPvcVerifyAudio = trimmed(options.elevenlabsTtsPvcVerifyAudio)
   const elevenLabsPronunciationDictionaryLocators = options.elevenlabsTtsPronunciationDictionaryLocators?.map((item) => item.trim()).filter(Boolean)
   const speechifyCustomVoiceRefAudioPath = trimmed(options.speechifyTtsRefAudio)
   const speechifyCustomVoiceName = trimmed(options.speechifyTtsVoiceName)
@@ -142,17 +111,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
   const speechifyCustomVoiceConsentEmail = trimmed(options.speechifyTtsConsentEmail)
   const speechifyCustomVoiceLocale = trimmed(options.speechifyTtsVoiceLocale)
   const speechifyCustomVoiceGender = trimmed(options.speechifyTtsVoiceGender)
-  const gcloudVoiceCloningKey = trimmed(options.gcloudTtsVoiceCloningKey)
-  const gcloudRefAudioPath = trimmed(options.gcloudTtsRefAudio)
-  const gcloudConsentAudioPath = trimmed(options.gcloudTtsConsentAudio)
-  const gcloudConsentLanguage = trimmed(options.gcloudTtsConsentLanguage)
-  const gcloudVoiceCloningKeyOut = trimmed(options.gcloudTtsVoiceCloningKeyOut)
-  const hasElevenLabsPvcActionFlags = isElevenLabsTtsPvcSetupRequested(options)
-  const hasElevenLabsPvcSetupFlags = Boolean(
-    hasElevenLabsPvcActionFlags
-    || elevenLabsPvcLanguage
-    || elevenLabsPvcDescription
-  )
   const hasOpenAICloneFlags = Boolean(
     openaiCloneRefAudioPath
     || openaiCloneConsentId
@@ -173,18 +131,17 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     || speechifyCustomVoiceLocale
     || speechifyCustomVoiceGender
   )
-  const hasGcloudIcvFlags = Boolean(
-    gcloudVoiceCloningKey
-    || gcloudRefAudioPath
-    || gcloudConsentAudioPath
-    || gcloudConsentLanguage
-    || gcloudVoiceCloningKeyOut
-  )
   const hasElevenLabsVoiceNameOnly = Boolean(
     elevenLabsCloneVoiceName
     && !hasElevenLabsCloneFlags
-    && !hasElevenLabsPvcActionFlags
   )
+
+  const multiSpeaker = isMultiSpeakerRequested(options)
+  const speakerVoiceRegistry = multiSpeaker
+    ? ((options.ttsSpeakers?.length ?? 0) > 0
+      ? parseSpeakerVoiceMappings(options.ttsSpeakers)
+      : parseSpeakerRefAudioMappings(options.ttsSpeakerRefAudios))
+    : undefined
 
   return {
     kittenModels: selectModels(options.kittenTtsModels, options.kittenTtsModel),
@@ -199,9 +156,9 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     speechifyModels: selectModels(options.speechifyTtsModels, options.speechifyTtsModel),
     humeModels: selectModels(options.humeTtsModels, options.humeTtsModel),
     cartesiaModels: selectModels(options.cartesiaTtsModels, options.cartesiaTtsModel),
-    gcloudModels: selectModels(options.gcloudTtsModels, options.gcloudTtsModel),
-    deapiModels: selectModels(options.deapiTtsModels, options.deapiTtsModel),
     geminiMultiSpeakerConfig: resolveGeminiMultiSpeakerConfig(options),
+    speakerVoiceRegistry,
+    multiSpeakerRequested: multiSpeaker,
     minimaxVoiceId: trimmed(options.minimaxTtsVoice),
     minimaxLanguageBoost: trimmed(options.minimaxTtsLanguageBoost),
     minimaxSpeed: options.minimaxTtsSpeed,
@@ -228,7 +185,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     elevenLabsCloneVoiceName,
     elevenLabsCloneRemoveBackgroundNoise: options.elevenlabsTtsCloneRemoveBackgroundNoise === true,
     elevenLabsVoiceId: trimmed(options.elevenlabsVoiceId),
-    elevenLabsPvcVoiceId,
     elevenLabsOutputFormat: trimmed(options.elevenlabsTtsOutputFormat),
     elevenLabsLanguageCode: trimmed(options.elevenlabsTtsLanguageCode),
     elevenLabsStability: options.elevenlabsTtsStability,
@@ -240,14 +196,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     elevenLabsTextNormalization: trimmed(options.elevenlabsTtsTextNormalization),
     elevenLabsPronunciationDictionaryLocators,
     elevenLabsOptimizeStreamingLatency: options.elevenlabsTtsOptimizeStreamingLatency,
-    elevenLabsPvcAsIvc: options.elevenlabsTtsPvcAsIvc === true,
-    elevenLabsPvcSamplePaths,
-    elevenLabsPvcSampleDir,
-    elevenLabsPvcLanguage,
-    elevenLabsPvcDescription,
-    elevenLabsPvcCaptchaOut,
-    elevenLabsPvcVerifyAudio,
-    elevenLabsPvcWait: options.elevenlabsTtsPvcWait === true,
     speechifyCustomVoiceRefAudioPath,
     speechifyCustomVoiceName,
     speechifyCustomVoiceConsentName,
@@ -261,13 +209,6 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     humeVoiceProvider: trimmed(options.humeTtsVoiceProvider),
     cartesiaVoiceId: trimmed(options.cartesiaTtsVoice),
     cartesiaLanguage: trimmed(options.cartesiaTtsLanguage),
-    gcloudVoiceCloningKey,
-    gcloudRefAudioPath,
-    gcloudConsentAudioPath,
-    gcloudConsentLanguage,
-    gcloudVoiceCloningKeyOut,
-    gcloudVoiceId: trimmed(options.gcloudTtsVoice),
-    gcloudLanguage: trimmed(options.gcloudTtsLanguage),
     groqVoiceId: trimmed(options.groqVoiceId),
     grokVoiceId: trimmed(options.grokTtsVoice),
     grokLanguage: trimmed(options.grokTtsLanguage),
@@ -277,21 +218,10 @@ export const createTtsTargetSelection = (options: TtsOptions): TtsTargetSelectio
     mistralVoiceName: trimmed(options.mistralTtsVoiceName),
     geminiVoiceId: trimmed(options.geminiVoiceId),
     deepgramVoiceId: trimmed(options.deepgramVoiceId),
-    deapiVoiceId: trimmed(options.deapiTtsVoice),
-    deapiRefAudioPath: trimmed(options.deapiTtsRefAudio),
-    deapiRefText: trimmed(options.deapiTtsRefText),
-    deapiLanguage: trimmed(options.deapiTtsLanguage),
-    deapiSpeed: options.deapiTtsSpeed,
-    deapiFormat: trimmed(options.deapiTtsFormat),
-    deapiSampleRate: options.deapiTtsSampleRate,
-    deapiInstruction: trimmed(options.deapiTtsInstruction),
-    hasElevenLabsPvcActionFlags,
-    hasElevenLabsPvcSetupFlags,
     hasOpenAICloneFlags,
     hasElevenLabsCloneFlags,
     hasSpeechifyCustomVoiceFlags,
-    hasGcloudIcvFlags,
     hasElevenLabsVoiceNameOnly,
-    dialogueRequested: isDialogueTtsRequested(options)
+    dialogueRequested: multiSpeaker
   }
 }

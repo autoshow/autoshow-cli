@@ -5,6 +5,11 @@
     "models": {
       "glm-asr-2512": {
         "description": "GLM ASR 2512 speech-to-text",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI standard ASR pricing",
+        "pricingNotes": "Z.AI lists GLM ASR 2512 at $0.144/hour. Free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.144,
         "costPerHourCents": 14.4,
         "limits": {
@@ -15,7 +20,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 200
+          "msPerSecond": 259
         }
       }
     }

@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import { basename } from 'node:path'
 import type {
   DiarizationOptions,
@@ -9,7 +10,6 @@ import {
   SonioxTranscriptResponseSchema,
   SonioxTranscriptionStatusSchema
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttCleanupFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import { classifyFetchRetry, parseRetryAfterMs, withRetry } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'

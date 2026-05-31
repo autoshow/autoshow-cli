@@ -17,7 +17,7 @@ const findEocd = (buf: Buffer): number => {
   throw new Error('Not a valid ZIP file: End of Central Directory not found')
 }
 
-export const readZipCentralDirectory = (buf: Buffer): ZipEntry[] => {
+const readZipCentralDirectory = (buf: Buffer): ZipEntry[] => {
   const eocd = findEocd(buf)
   const cdCount  = buf.readUInt16LE(eocd + 10)
   const cdOffset = buf.readUInt32LE(eocd + 16)

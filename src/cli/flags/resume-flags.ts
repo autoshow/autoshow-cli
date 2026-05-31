@@ -1,167 +1,133 @@
-import type { CliFlagDefinition, CliFlagsDefinition } from '~/cli/native'
+import type { CliFlagsDefinition } from '~/cli/native'
 import {
-  ocrTuningFlags,
   batchFlags,
-  ocrInputFlags,
+  booleanAllProvidersFlag,
   promptFlag,
-  transcriptionFlags
+  sharedConcurrencyFlags
 } from './shared-flags'
-import { epubInspectFlags } from './ocr-flags'
-import { ttsFlags } from './tts-flags'
+import { omitFlags } from './flag-utils'
+import { ocrCommandFlags } from './ocr-flags'
+import { sttFlags } from './stt-flags'
+import { genericTtsOptionFlags, ttsFlags } from './tts-flags'
 import { imageGenFlags } from './image-flags'
 import { videoGenFlags } from './video-flags'
 import { musicGenFlags } from './music-flags'
-import { getStep2ProviderSelectionFlagNames } from '~/cli/commands/process-steps/step-2-extract/step-2-shared/provider-registry'
 
-const pickFlags = (
-  flags: CliFlagsDefinition,
-  keys: readonly string[]
-): CliFlagsDefinition => {
-  const picked: CliFlagsDefinition = {}
-  for (const key of keys) {
-    const definition = flags[key]
-    if (definition !== undefined) {
-      picked[key] = definition as CliFlagDefinition
-    }
-  }
-  return picked
-}
-
-const resumeSttFlags = pickFlags(transcriptionFlags, [
-  ...getStep2ProviderSelectionFlagNames('stt'),
-  'youtube-captions',
-  'aws-region',
-  'aws-bucket',
-  'happyscribe-organization-id',
-  'supadata-lang',
-  'scrapecreators-lang',
-  'speaker-count',
-  'split',
-  'stt-provider-concurrency',
-  'stt-local-concurrency',
-  'stt-segment-concurrency',
-  'stt-preflight-concurrency',
-  'refresh-cache',
-  'no-cache'
-])
-
-const resumeOcrFlags = {
-  ...pickFlags(ocrInputFlags, [
-    ...getStep2ProviderSelectionFlagNames('ocr'),
-    'lang',
-    'out',
-    'password',
-    'ocr-provider-concurrency',
-    'ocr-local-concurrency'
-  ]),
-  ...pickFlags(ocrTuningFlags, [
-    'dpi',
-    'psm',
-    'oem',
-    'page-separator',
-    'preserve-spaces',
-    'rotate'
-  ]),
-  ...epubInspectFlags
+const resumeProviderSelectionFlags = {
+  ...booleanAllProvidersFlag,
+  provider: {
+    description: [
+      'STT: whisper|reverb|deepinfra|elevenlabs|deepgram|soniox|speechmatics|rev|groq|grok|mistral|assemblyai|gladia|happyscribe|supadata|scrapecreators|openai|gemini|glm|together (default: whisper=tiny)',
+      'OCR: tesseract|ocrmypdf|paddle-ocr|mistral|glm|kimi|openai|grok|anthropic|gemini|deepinfra|unstructured (default: tesseract)',
+      'TTS: kitten|elevenlabs|minimax|groq|grok|mistral|openai|gemini|deepgram|speechify|hume|cartesia',
+      'image: gemini|openai|grok|bfl|reve',
+      'video: gemini|minimax|glm|grok|runway',
+      'music: elevenlabs|minimax|gemini',
+      'repeatable as provider[=model]'
+    ].join('\n'),
+    type: [String] as [StringConstructor]
+  },
+  ...sharedConcurrencyFlags
 } as const satisfies CliFlagsDefinition
 
-const resumeTtsFlags = pickFlags(ttsFlags, [
-  'kitten-tts',
-  'elevenlabs-tts',
-  'minimax-tts',
-  'groq-tts',
-  'mistral-tts',
-  'openai-tts',
-  'gemini-tts',
-  'deepgram-tts',
-  'hume-tts',
-  'cartesia-tts',
-  'kitten-voice',
-  'elevenlabs-voice',
-  'elevenlabs-tts-pvc-voice',
-  'elevenlabs-tts-ref-audio',
-  'elevenlabs-tts-voice-name',
-  'elevenlabs-tts-clone-remove-background-noise',
-  'minimax-tts-voice',
-  'openai-voice',
-  'openai-tts-ref-audio',
-  'openai-tts-consent-id',
-  'openai-tts-consent-audio',
-  'openai-tts-consent-language',
-  'openai-tts-consent-name',
-  'openai-tts-voice-name',
-  'gemini-voice',
-  'deepgram-voice',
-  'hume-tts-voice',
-  'hume-tts-voice-provider',
-  'cartesia-tts-voice',
-  'cartesia-tts-language',
-  'groq-voice',
-  'mistral-tts-voice',
-  'mistral-tts-ref-audio',
-  'gemini-speaker-1-name',
-  'gemini-speaker-1-voice',
-  'gemini-speaker-2-name',
-  'gemini-speaker-2-voice',
-  'tts-provider-concurrency',
-  'tts-local-concurrency'
+const resumeSttFlags = omitFlags(sttFlags, [
+  'batch-limit',
+  'batch-all',
+  'batch-order',
+  'price',
+  'provider',
+  'all-providers',
+  'provider-concurrency',
+  'local-concurrency'
 ])
 
-const resumeImageFlags = pickFlags(imageGenFlags, [
-  'gemini-image',
-  'openai-image',
-  'minimax-image',
-  'grok-image',
-  'runway-image',
-  'bfl-image',
-  'deapi-image',
-  'image-aspect-ratio',
-  'image-size',
-  'image-quality',
-  'image-format',
-  'image-background',
-  'image-count',
-  'image-input',
-  'image-mask',
-  'image-response-mode',
-  'gemini-person-generation',
-  'gemini-search-grounding',
-  'image-compression',
-  'image-provider-concurrency',
-  'image-local-concurrency'
+const resumeOcrFlags = omitFlags(ocrCommandFlags, [
+  'batch-limit',
+  'batch-all',
+  'batch-order',
+  'all-url',
+  'url-backend',
+  'url-provider-concurrency',
+  'url-request-timeout-ms',
+  'url-request-attempts',
+  'primary-ocr',
+  'price',
+  'provider',
+  'all-providers',
+  'provider-concurrency',
+  'local-concurrency'
 ])
 
-const resumeVideoFlags = pickFlags(videoGenFlags, [
-  'gemini-video',
-  'minimax-video',
-  'glm-video',
-  'grok-video',
-  'runway-video',
-  'deapi-video',
-  'video-duration',
-  'video-size',
-  'video-aspect-ratio',
-  'video-resolution',
-  'video-provider-concurrency',
-  'video-local-concurrency'
-])
-
-const resumeMusicFlags = pickFlags(musicGenFlags, [
-  'elevenlabs-music',
-  'minimax-music',
-  'deapi-music',
-  'gemini-music',
-  'music-duration',
-  'music-lyrics-file',
-  'music-instrumental',
-  'music-provider-concurrency',
-  'music-local-concurrency'
-])
+const resumeTtsFlags = {
+  ...genericTtsOptionFlags,
+  ...omitFlags(ttsFlags, [
+    'price',
+    'all-tts',
+    'tts-provider-concurrency',
+    'tts-local-concurrency',
+    'kitten-tts',
+    'elevenlabs-tts',
+    'minimax-tts',
+    'groq-tts',
+    'grok-tts',
+    'mistral-tts',
+    'openai-tts',
+    'gemini-tts',
+    'deepgram-tts',
+    'speechify-tts',
+    'hume-tts',
+    'cartesia-tts',
+    'kitten-voice',
+    'minimax-tts-voice',
+    'minimax-tts-speed',
+    'openai-voice',
+    'openai-tts-instructions',
+    'openai-tts-speed',
+    'openai-tts-ref-audio',
+    'openai-tts-consent-audio',
+    'openai-tts-consent-language',
+    'openai-tts-consent-name',
+    'openai-tts-voice-name',
+    'gemini-voice',
+    'deepgram-voice',
+    'deepgram-tts-speed',
+    'speechify-voice',
+    'speechify-tts-language',
+    'speechify-tts-ref-audio',
+    'speechify-tts-voice-name',
+    'speechify-tts-consent-name',
+    'speechify-tts-consent-email',
+    'hume-tts-voice',
+    'cartesia-tts-voice',
+    'cartesia-tts-language',
+    'grok-tts-voice',
+    'grok-tts-language',
+    'grok-tts-text-normalization',
+    'groq-voice',
+    'mistral-tts-voice',
+    'mistral-tts-ref-audio',
+    'mistral-tts-voice-name',
+    'elevenlabs-voice',
+    'elevenlabs-tts-ref-audio',
+    'elevenlabs-tts-voice-name',
+    'elevenlabs-tts-language-code',
+    'elevenlabs-tts-speed',
+    'elevenlabs-tts-text-normalization',
+    'minimax-tts-english-normalization',
+    'elevenlabs-tts-output-format',
+    'speechify-tts-audio-format',
+    'deepgram-tts-encoding',
+  ])
+}
+const resumeImageFlags = omitFlags(imageGenFlags, ['price'])
+const resumeVideoFlags = omitFlags(videoGenFlags, ['price'])
+const resumeMusicFlags = omitFlags(musicGenFlags, ['price'])
 
 export const resumeFlags = {
+  ...resumeProviderSelectionFlags,
   ...resumeSttFlags,
   ...promptFlag,
-  ...pickFlags(batchFlags, ['batch-concurrency']),
+  'batch-concurrency': batchFlags['batch-concurrency'],
   ...resumeOcrFlags,
   ...resumeTtsFlags,
   ...resumeImageFlags,

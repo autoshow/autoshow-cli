@@ -462,6 +462,192 @@ function formatTierGroupName(group: TierGroupName): string {
   return group === "local" ? "Local" : "Third-Party";
 }
 
+type OcrMetricGroupName = "local" | "thirdPartyService";
+type MetricName = "price" | "speed" | "qualityScore";
+
+interface MetricRankingEntry {
+  rank: number;
+  providerKey: string;
+  provider: string;
+  model: string;
+  group: OcrMetricGroupName;
+  metric: MetricName;
+  value: number | null;
+  label: string;
+  actualCostCents: number | null;
+  processingTimeMs: number | null;
+  score: number;
+  wer: number;
+  cer: number;
+}
+
+type OcrMetricRankings = Record<OcrMetricGroupName, Record<MetricName, MetricRankingEntry[]>>;
+
+function metricGroupForProvider(provider: { group: ProviderGroup }): OcrMetricGroupName {
+  return provider.group === "local" ? "local" : "thirdPartyService";
+}
+
+function compareNullableAscending(left: number | null, right: number | null): number {
+  if (left === null && right === null) {
+    return 0;
+  }
+  if (left === null) {
+    return 1;
+  }
+  if (right === null) {
+    return -1;
+  }
+  return left - right;
+}
+
+function metricRankingEntry(
+  provider: ProviderData,
+  rank: number,
+  metric: MetricName,
+  value: number | null,
+  label: string,
+): MetricRankingEntry {
+  return {
+    rank,
+    providerKey: provider.providerKey,
+    provider: provider.provider,
+    model: provider.model,
+    group: metricGroupForProvider(provider),
+    metric,
+    value,
+    label,
+    actualCostCents: provider.group === "local" ? 0 : provider.costCents,
+    processingTimeMs: provider.processingTimeMs,
+    score: provider.score,
+    wer: provider.wer,
+    cer: provider.cer,
+  };
+}
+
+function buildMetricGroupRankings(providers: ProviderData[]): Record<MetricName, MetricRankingEntry[]> {
+  const price = [...providers]
+    .sort((left, right) => {
+      const leftCost = left.group === "local" ? 0 : left.costCents;
+      const rightCost = right.group === "local" ? 0 : right.costCents;
+      return compareNullableAscending(leftCost, rightCost) || left.providerKey.localeCompare(right.providerKey);
+    })
+    .map((provider, index) => {
+      const value = provider.group === "local" ? 0 : provider.costCents;
+      const label = provider.group === "local" ? "$0.00 local monetary cost" : formatCents(value);
+      return metricRankingEntry(provider, index + 1, "price", value, label);
+    });
+
+  const speed = [...providers]
+    .sort((left, right) => compareNullableAscending(left.processingTimeMs, right.processingTimeMs) || left.providerKey.localeCompare(right.providerKey))
+    .map((provider, index) =>
+      metricRankingEntry(provider, index + 1, "speed", provider.processingTimeMs, formatProcessingSeconds(provider.processingTimeMs))
+    );
+
+  const qualityScore = [...providers]
+    .sort((left, right) => {
+      if (left.score !== right.score) {
+        return right.score - left.score;
+      }
+      if (left.wer !== right.wer) {
+        return left.wer - right.wer;
+      }
+      if (left.cer !== right.cer) {
+        return left.cer - right.cer;
+      }
+      return left.providerKey.localeCompare(right.providerKey);
+    })
+    .map((provider, index) =>
+      metricRankingEntry(provider, index + 1, "qualityScore", provider.score, `${provider.score.toFixed(2)}/100 quality score`)
+    );
+
+  return { price, speed, qualityScore };
+}
+
+function buildMetricRankings(providers: ProviderData[]): OcrMetricRankings {
+  return {
+    local: buildMetricGroupRankings(providers.filter((provider) => metricGroupForProvider(provider) === "local")),
+    thirdPartyService: buildMetricGroupRankings(providers.filter((provider) => metricGroupForProvider(provider) === "thirdPartyService")),
+  };
+}
+
+function metricRankingTable(entries: MetricRankingEntry[]): string {
+  if (entries.length === 0) {
+    return "| Rank | Provider | Value | Evidence |\n| ---: | --- | ---: | --- |\n| n/a | n/a | n/a | No providers in this group. |";
+  }
+  return [
+    "| Rank | Provider | Value | Evidence |",
+    "| ---: | --- | ---: | --- |",
+    ...entries.map((entry) =>
+      `| ${entry.rank} | \`${entry.providerKey}\` | ${entry.label} | score ${entry.score.toFixed(2)}<br>WER ${percentage(entry.wer)}<br>CER ${percentage(entry.cer)}<br>time ${formatProcessingSeconds(entry.processingTimeMs)}<br>cost ${formatCents(entry.actualCostCents)} |`
+    ),
+  ].join("\n");
+}
+
+function metricRankingsBlock(metricRankings: OcrMetricRankings): string {
+  return [
+    "## Metric Rankings",
+    "",
+    "### Local",
+    "",
+    "#### Price",
+    "",
+    metricRankingTable(metricRankings.local.price),
+    "",
+    "#### Speed",
+    "",
+    metricRankingTable(metricRankings.local.speed),
+    "",
+    "#### Quality Score",
+    "",
+    metricRankingTable(metricRankings.local.qualityScore),
+    "",
+    "### Third-Party Service",
+    "",
+    "#### Price",
+    "",
+    metricRankingTable(metricRankings.thirdPartyService.price),
+    "",
+    "#### Speed",
+    "",
+    metricRankingTable(metricRankings.thirdPartyService.speed),
+    "",
+    "#### Quality Score",
+    "",
+    metricRankingTable(metricRankings.thirdPartyService.qualityScore),
+  ].join("\n");
+}
+
+function providerDetail(provider: ProviderData): Record<string, unknown> {
+  return {
+    providerKey: provider.providerKey,
+    provider: provider.provider,
+    model: provider.model,
+    group: metricGroupForProvider(provider),
+    score: provider.score,
+    wer: provider.wer,
+    cer: provider.cer,
+    processingTimeMs: provider.processingTimeMs,
+    costCents: provider.group === "local" ? 0 : provider.costCents,
+    tokenEstimate: provider.tokenEstimate,
+    werBreakdown: provider.werBreakdown,
+    cerBreakdown: provider.cerBreakdown,
+    metrics: {
+      score: provider.score,
+      wer: provider.wer,
+      cer: provider.cer,
+    },
+  };
+}
+
+function buildProviderGroups(providers: ProviderData[]) {
+  const local = providers.filter((provider) => metricGroupForProvider(provider) === "local");
+  const thirdPartyService = providers.filter((provider) => metricGroupForProvider(provider) === "thirdPartyService");
+  return {
+    local: { count: local.length, providers: local.map(providerDetail) },
+    thirdPartyService: { count: thirdPartyService.length, providers: thirdPartyService.map(providerDetail) },
+  };
+}
+
 export function buildReport(runDir: string, consensusPath: string) {
   const consensus = parseConsensusExtraction(consensusPath);
   const consensusFullText = consensus.pages.map((p) => p.text).join("\n\n");
@@ -510,11 +696,10 @@ export function buildReport(runDir: string, consensusPath: string) {
     });
   }
 
-  const providerDataWithOverall = addOverallScores(providerData);
-  const localData = providerDataWithOverall.filter((p) => p.group === "local");
-  const cloudData = providerDataWithOverall.filter((p) => p.group === "cloud");
+  const localData = providerData.filter((p) => p.group === "local");
+  const cloudData = providerData.filter((p) => p.group === "cloud");
 
-  function rankByAccuracy(providersToRank: OverallScoredProvider[]): RankedProviderWithoutTier[] {
+  function rankByAccuracy(providersToRank: ProviderData[]): Array<ProviderData & { rank: number }> {
     return [...providersToRank]
       .sort((left, right) => {
         if (left.wer !== right.wer) {
@@ -528,35 +713,13 @@ export function buildReport(runDir: string, consensusPath: string) {
       .map((provider, index) => ({ ...provider, rank: index + 1 }));
   }
 
-  const rankedProvidersWithoutTiers = rankByAccuracy(providerDataWithOverall);
-  const rankedLocalWithoutTiers = rankByAccuracy(localData);
-  const rankedCloudWithoutTiers = rankByAccuracy(cloudData);
-  const rankedOverallWithoutTiers = [...rankedLocalWithoutTiers, ...rankedCloudWithoutTiers].sort((left, right) => {
-    if (left.overallRank !== right.overallRank) {
-      return left.overallRank - right.overallRank;
-    }
-    return left.providerKey.localeCompare(right.providerKey);
-  });
-  const { tiering, providerAnnotations } = buildTiering(rankedOverallWithoutTiers);
-  const rankedProviders = addTierAnnotations(rankedProvidersWithoutTiers, providerAnnotations);
-  const rankedLocal = addTierAnnotations(rankedLocalWithoutTiers, providerAnnotations);
-  const rankedCloud = addTierAnnotations(rankedCloudWithoutTiers, providerAnnotations);
-  const rankedOverall = addTierAnnotations(rankedOverallWithoutTiers, providerAnnotations);
+  const rankedProviders = rankByAccuracy(providerData);
+  const rankedLocal = rankByAccuracy(localData);
+  const rankedCloud = rankByAccuracy(cloudData);
+  const metricRankings = buildMetricRankings(providerData);
+  const providerGroups = buildProviderGroups(providerData);
 
   const notes: string[] = [];
-
-  const bestOverall = rankedOverall[0];
-  const worstOverall = rankedOverall.at(-1);
-  if (bestOverall) {
-    notes.push(
-      `Best overall provider: \`${bestOverall.providerKey}\` scored ${bestOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
-    );
-  }
-  if (worstOverall) {
-    notes.push(
-      `Worst overall provider: \`${worstOverall.providerKey}\` scored ${worstOverall.overallScore.toFixed(2)}/100 using balanced overall weighting.`,
-    );
-  }
 
   if (rankedLocal.length > 0 && rankedLocal[0]) {
     notes.push(
@@ -609,22 +772,18 @@ export function buildReport(runDir: string, consensusPath: string) {
     metric: "wer",
     scoreFormula,
     werFormula: "(Substitutions + Deletions + Insertions) / Reference Word Count",
-    normalization: {
-      lowercase: true,
-      contractionsExpanded: true,
-      abbreviationsExpanded: true,
-      currencySymbolsExpanded: true,
-      punctuationStripped: true,
-    },
-    overallMetric: "balanced-overall",
-    overallWeights: OVERALL_WEIGHTS,
-    tiering,
-    overall: { count: rankedOverall.length, providers: rankedOverall },
-    providers: rankedProviders,
-    local: { count: rankedLocal.length, providers: rankedLocal },
-    cloud: { count: rankedCloud.length, providers: rankedCloud },
-    notes,
-  };
+	    normalization: {
+	      lowercase: true,
+	      contractionsExpanded: true,
+	      abbreviationsExpanded: true,
+	      currencySymbolsExpanded: true,
+	      punctuationStripped: true,
+	    },
+	    providerCount: providerData.length,
+	    providerGroups,
+	    metricRankings,
+	    notes,
+	  };
 
   function buildOverallRankingTable(rankedProviders: RankedProvider[]): string {
     const headerCols = ["Rank", "Provider", "Tier Group", "Group Rank", "Group Tier", "Overall / 100", "Accuracy", "Speed", "Cost"];
@@ -705,7 +864,6 @@ ${providerList}
 - Total providers: ${totalProviders} (${rankedLocal.length} local, ${rankedCloud.length} cloud)
 - Ranking metric: word error rate (WER) against consensus extraction
 - Score formula: \`${scoreFormula}\`
-- Overall metric: balanced-overall (50% accuracy, 25% processing speed, 25% cost efficiency)
 - WER formula: \`(Substitutions + Deletions + Insertions) / Reference Word Count\`
 
 ## Method
@@ -714,19 +872,14 @@ ${providerList}
 - Text normalization applied before comparison: lowercasing, curly quote/dash normalization, contraction expansion (it's -> it is), abbreviation expansion (mr. -> mister), currency symbol conversion ($50 -> 50 dollars), and remaining punctuation stripping.
 - WER compares the provider's full word stream against the gold extraction word stream.
 - CER compares normalized character sequences for finer-grained accuracy.
-- Ranking uses exact unrounded WER, with CER included for context and tie-breaking.
-- Overall ranking combines all providers using accuracy score, normalized processing speed, and normalized cost efficiency. Missing timing or missing cloud cost receives a neutral 50/100 component score.
-- Tier breakdown assigns local and third-party providers independently using balanced overall group rank.
+- Metric rankings keep local and third-party service providers separate.
+- Price rankings sort lower monetary cost first; local providers use zero monetary cost, and missing service price stays at the end.
+- Speed rankings sort lower processing time first, with missing timing retained at the end.
+- Quality Score rankings sort the existing WER-derived provider score highest first, with WER and CER included as evidence.
 
-## Overall Ranking
+${metricRankingsBlock(metricRankings)}
 
-${buildOverallRankingTable(rankedOverall)}
-
-## Tier Breakdown
-
-${buildTierBreakdownBlock(tiering.groups)}
-
-## Ranking
+## Provider Detail
 
 | Rank | Provider | Score / 100 | WER | CER | Token Est. | Processing Time | Actual Cost |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |

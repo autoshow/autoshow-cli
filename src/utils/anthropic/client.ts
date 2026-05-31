@@ -1,7 +1,14 @@
-import { AppError } from '~/utils/error-handler'
+import { ANTHROPIC_DEFAULT_BASE_URL } from '~/utils/base-urls'
+import {
+  extractRestErrorMessage,
+  isRecord,
+  joinRestUrl,
+  normalizeFetchAbortError,
+  parseJsonOrText,
+  readJsonResponse
+} from '~/utils/rest-client'
 
-export const ANTHROPIC_DEFAULT_BASE_URL = 'https://api.anthropic.com'
-export const ANTHROPIC_VERSION = '2023-06-01'
+const ANTHROPIC_VERSION = '2023-06-01'
 export const ANTHROPIC_FILES_API_BETA = 'files-api-2025-04-14'
 
 export type AnthropicRestConfig = {
@@ -9,12 +16,13 @@ export type AnthropicRestConfig = {
   baseURL?: string | undefined
 }
 
-export type AnthropicRequestOptions = {
+type AnthropicRequestOptions = {
   signal?: AbortSignal | undefined
   beta?: string | string[] | undefined
 }
 
-export type AnthropicMessageResponse = {
+type AnthropicMessageResponse = {
+  model?: string | undefined
   content?: Array<{ type: string, text?: string | undefined } & Record<string, unknown>> | undefined
   usage?: {
     input_tokens?: number | undefined
@@ -22,7 +30,7 @@ export type AnthropicMessageResponse = {
   } & Record<string, unknown> | undefined
 } & Record<string, unknown>
 
-export type AnthropicFileMetadata = {
+type AnthropicFileMetadata = {
   id: string
   type?: string | undefined
   filename?: string | undefined
@@ -32,12 +40,12 @@ export type AnthropicFileMetadata = {
   downloadable?: boolean | undefined
 } & Record<string, unknown>
 
-export type AnthropicDeletedFile = {
+type AnthropicDeletedFile = {
   id?: string | undefined
   type?: string | undefined
 } & Record<string, unknown>
 
-export type AnthropicRestError = Error & {
+type AnthropicRestError = Error & {
   status: number
   headers: Headers
   body: string
@@ -57,8 +65,6 @@ type AnthropicFetchOptions = {
   errorMessagePrefix: string
 }
 
-const trimTrailingSlashes = (value: string): string => value.replace(/\/+$/, '')
-
 const getBetaHeaderValue = (beta: string | string[] | undefined): string | undefined => {
   if (Array.isArray(beta)) {
     const values = beta.map((value) => value.trim()).filter(Boolean)
@@ -69,63 +75,8 @@ const getBetaHeaderValue = (beta: string | string[] | undefined): string | undef
   return value ? value : undefined
 }
 
-export const buildAnthropicUrl = (baseURL: string | undefined, path: string): string => {
-  const base = trimTrailingSlashes((baseURL ?? ANTHROPIC_DEFAULT_BASE_URL).trim() || ANTHROPIC_DEFAULT_BASE_URL)
-  const pathWithoutLeadingSlash = path.replace(/^\/+/, '')
-
-  try {
-    const url = new URL(base)
-    url.hash = ''
-    url.search = ''
-    const basePath = trimTrailingSlashes(url.pathname)
-    const requestPath = basePath.endsWith('/v1') && pathWithoutLeadingSlash.startsWith('v1/')
-      ? pathWithoutLeadingSlash.slice('v1/'.length)
-      : pathWithoutLeadingSlash
-    url.pathname = `${basePath}/${requestPath}`.replace(/\/{2,}/g, '/')
-    return url.toString()
-  } catch {
-    const requestPath = base.endsWith('/v1') && pathWithoutLeadingSlash.startsWith('v1/')
-      ? pathWithoutLeadingSlash.slice('v1/'.length)
-      : pathWithoutLeadingSlash
-    return `${base}/${requestPath}`
-  }
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-
-const parseJsonOrText = (rawText: string): unknown => {
-  if (rawText.trim().length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch {
-    return rawText
-  }
-}
-
-const extractErrorMessage = (payload: unknown, rawText: string, status: number): string => {
-  if (isRecord(payload)) {
-    const error = payload['error']
-    if (isRecord(error)) {
-      const message = error['message']
-      if (typeof message === 'string' && message.trim().length > 0) {
-        return message.trim()
-      }
-    }
-
-    for (const key of ['message', 'detail', 'error'] as const) {
-      const value = payload[key]
-      if (typeof value === 'string' && value.trim().length > 0) {
-        return value.trim()
-      }
-    }
-  }
-
-  return rawText.trim() || `HTTP ${status}`
-}
+const buildAnthropicUrl = (baseURL: string | undefined, path: string): string =>
+  joinRestUrl(baseURL, path, ANTHROPIC_DEFAULT_BASE_URL, { collapseVersionPrefix: 'v1' })
 
 const extractErrorType = (payload: unknown): string | undefined => {
   if (!isRecord(payload)) return undefined
@@ -141,13 +92,13 @@ const extractResponseType = (payload: unknown): string | undefined => {
   return typeof payload['type'] === 'string' ? payload['type'] : undefined
 }
 
-export const createAnthropicHttpError = async (
+const createAnthropicHttpError = async (
   response: Response,
   errorMessagePrefix: string
 ): Promise<AnthropicRestError> => {
   const rawText = await response.text()
   const rawResponse = parseJsonOrText(rawText)
-  const message = extractErrorMessage(rawResponse, rawText, response.status)
+  const message = extractRestErrorMessage(rawResponse, rawText, response.status)
   return Object.assign(new Error(`${errorMessagePrefix} (${response.status}): ${message}`), {
     status: response.status,
     headers: response.headers,
@@ -156,22 +107,6 @@ export const createAnthropicHttpError = async (
     ...(extractErrorType(rawResponse) ? { errorType: extractErrorType(rawResponse) } : {}),
     ...(extractResponseType(rawResponse) ? { responseType: extractResponseType(rawResponse) } : {})
   } satisfies Omit<AnthropicRestError, keyof Error>)
-}
-
-const normalizeAnthropicFetchError = (error: unknown): unknown => {
-  if (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
-    const abortError = new Error(error.message)
-    abortError.name = 'AbortError'
-    return abortError
-  }
-
-  return error
 }
 
 const anthropicFetch = async (options: AnthropicFetchOptions): Promise<Response> => {
@@ -201,28 +136,7 @@ const anthropicFetch = async (options: AnthropicFetchOptions): Promise<Response>
 
     return response
   } catch (error) {
-    throw normalizeAnthropicFetchError(error)
-  }
-}
-
-const readJsonResponse = async (response: Response, errorMessagePrefix: string): Promise<unknown> => {
-  const rawText = await response.text()
-  if (rawText.trim().length === 0) {
-    return {}
-  }
-
-  try {
-    return JSON.parse(rawText) as unknown
-  } catch (error) {
-    throw new AppError(`${errorMessagePrefix} returned invalid JSON: ${rawText.slice(0, 500)}`, {
-      kind: 'validation',
-      cause: error instanceof Error ? error : new Error(String(error)),
-      status: response.status,
-      metadata: {
-        body: rawText,
-        rawResponse: rawText
-      }
-    })
+    throw normalizeFetchAbortError(error)
   }
 }
 

@@ -9,7 +9,7 @@ import type {
   ImageGenerationSize,
   ImageRequestTarget,
   ImageServiceRunners,
-} from '../types'
+} from '../types/comic-types'
 
 
 
@@ -22,7 +22,7 @@ const defaultImageServiceRunners: ImageServiceRunners = {
   gemini: createImageGemini,
 }
 
-export const getImageRequestTarget = (model: ImageGenerationModel): ImageRequestTarget => {
+const getImageRequestTarget = (model: ImageGenerationModel): ImageRequestTarget => {
   if (isOpenAiImageModel(model)) {
     return { provider: 'openai', model }
   }
@@ -34,7 +34,7 @@ export const getImageRequestTarget = (model: ImageGenerationModel): ImageRequest
   throw new Error(`Unsupported image model "${model}"`)
 }
 
-export const createImageWithRunners = async (
+const createImageWithRunners = async (
   normalizedPrompt: string,
   referenceImages: string[],
   model: ImageGenerationModel,

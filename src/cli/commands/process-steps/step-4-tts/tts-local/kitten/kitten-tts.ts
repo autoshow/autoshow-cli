@@ -33,7 +33,7 @@ const envExistsAndValid = async (): Promise<boolean> => {
   return check.exitCode === 0
 }
 
-export const setupKittenTtsEnvironment = async (): Promise<void> => {
+const setupKittenTtsEnvironment = async (): Promise<void> => {
   l.write('info', 'Setting up Kitten TTS environment')
 
   await setupUv()
@@ -75,9 +75,7 @@ export const setupKittenTts = async (): Promise<void> => {
 
   await setupKittenTtsEnvironment()
 
-  if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') === '1') {
-    l.write('success', 'Kitten TTS setup complete')
-  } else {
+  if ((process.env['AUTOSHOW_COMPACT_SETUP'] || '0') !== '1') {
     l.write('success', 'Kitten TTS Setup', {
       category: 'command',
       humanTable: createHumanTable([

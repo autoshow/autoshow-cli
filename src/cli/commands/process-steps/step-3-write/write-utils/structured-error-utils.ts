@@ -1,13 +1,13 @@
-export const toRecord = (value: unknown): Record<string, unknown> | undefined =>
+const toRecord = (value: unknown): Record<string, unknown> | undefined =>
   typeof value === 'object' && value !== null ? value as Record<string, unknown> : undefined
 
-export const getStringField = (obj: Record<string, unknown> | undefined, key: string): string | undefined => {
+const getStringField = (obj: Record<string, unknown> | undefined, key: string): string | undefined => {
   if (!obj) return undefined
   const value = obj[key]
   return typeof value === 'string' ? value : undefined
 }
 
-export const getNumberField = (obj: Record<string, unknown> | undefined, key: string): number | undefined => {
+const getNumberField = (obj: Record<string, unknown> | undefined, key: string): number | undefined => {
   if (!obj) return undefined
   const value = obj[key]
   return typeof value === 'number' ? value : undefined

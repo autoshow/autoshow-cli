@@ -5,6 +5,11 @@
     "models": {
       "universal-3-pro": {
         "description": "Universal-3 Pro — 6 languages, advanced prompting, diarization",
+        "pricingSourceUrl": "https://www.assemblyai.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "AssemblyAI pay-as-you-go transcription pricing",
+        "pricingNotes": "AssemblyAI lists Universal-3 Pro at $0.21/hour, billed per second. Free allowance, volume discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.21,
         "costPerHourCents": 21,
         "limits": {
@@ -16,7 +21,7 @@
         },
         "estimation": {
           "costMultiplier": 0.9902,
-          "msPerSecond": 178
+          "msPerSecond": 188
         }
       }
     }

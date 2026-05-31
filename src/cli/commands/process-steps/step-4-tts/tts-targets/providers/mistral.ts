@@ -1,8 +1,18 @@
 import { basename } from 'node:path'
-import type { MistralTtsModel, TtsTarget } from '~/types'
+import type { MistralTtsModel, TtsOptions, TtsTarget } from '~/types'
 import { validateMistralTtsModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { runMistralTts } from '../../tts-services/mistral/run-mistral-tts'
 import type { TtsTargetSelection } from '../selection'
+
+const trimmed = (value: string | undefined): string | undefined => value?.trim() || undefined
+
+const resolveRuntimeMistralVoiceOptions = (
+  opts: TtsOptions
+): { voiceId: string | undefined, refAudioPath: string | undefined, voiceName: string | undefined } => ({
+  voiceId: trimmed(opts.mistralTtsVoice),
+  refAudioPath: trimmed(opts.mistralTtsRefAudio),
+  voiceName: trimmed(opts.mistralTtsVoiceName)
+})
 
 export const collectMistralTtsTargets = (
   selection: TtsTargetSelection
@@ -27,8 +37,12 @@ export const collectMistralTtsTargets = (
       service: 'mistral',
       model,
       ...(voiceId ? { voice: voiceId } : refAudioPath ? { voice: voiceName ? `saved_voice:${voiceName}` : `ref_audio:${basename(refAudioPath)}` } : {}),
-      run: async (text, outputDir) => {
-        return await runMistralTts(text, outputDir, { model, voiceId, refAudioPath, voiceName })
+      run: async (text, outputDir, opts) => {
+        return await runMistralTts(text, outputDir, {
+          model,
+          ...resolveRuntimeMistralVoiceOptions(opts),
+          chunkConcurrency: opts.ttsChunkConcurrency
+        })
       }
     })
   }

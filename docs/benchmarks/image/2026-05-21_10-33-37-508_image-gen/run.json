@@ -1,0 +1,727 @@
+{
+  "schemaVersion": 2,
+  "kind": "image",
+  "metadata": {
+    "image": [
+      {
+        "imageService": "gemini",
+        "imageModel": "gemini-3.1-flash-image-preview",
+        "processingTime": 16107,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-gemini-gemini-3.1-flash-image-preview.png"
+        ],
+        "imageFileSize": 175291,
+        "requestMode": "generation"
+      },
+      {
+        "imageService": "openai",
+        "imageModel": "gpt-image-1.5",
+        "processingTime": 40078,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-openai-gpt-image-1.5.png"
+        ],
+        "imageFileSize": 405416,
+        "imageSize": "auto",
+        "imageQuality": "auto",
+        "imageFormat": "png",
+        "requestMode": "generation"
+      },
+      {
+        "imageService": "openai",
+        "imageModel": "gpt-image-2",
+        "processingTime": 59035,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-openai-gpt-image-2.png"
+        ],
+        "imageFileSize": 1247608,
+        "imageSize": "auto",
+        "imageQuality": "auto",
+        "imageFormat": "png",
+        "requestMode": "generation"
+      },
+      {
+        "imageService": "grok",
+        "imageModel": "grok-imagine-image-quality",
+        "processingTime": 4709,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-grok-grok-imagine-image-quality.jpg"
+        ],
+        "imageFileSize": 266858,
+        "requestMode": "generation",
+        "usageCostRaw": 500000000,
+        "providerCostCents": 5,
+        "providerCostSource": "provider_usage"
+      },
+      {
+        "imageService": "grok",
+        "imageModel": "grok-imagine-image",
+        "processingTime": 5487,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-grok-grok-imagine-image.jpg"
+        ],
+        "imageFileSize": 108365,
+        "requestMode": "generation",
+        "usageCostRaw": 200000000,
+        "providerCostCents": 2,
+        "providerCostSource": "provider_usage"
+      },
+      {
+        "imageService": "bfl",
+        "imageModel": "flux-2-pro",
+        "processingTime": 16794,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-bfl-flux-2-pro.jpg"
+        ],
+        "imageFileSize": 188224,
+        "requestMode": "generation",
+        "providerCostCents": 3,
+        "providerCostSource": "provider_quote"
+      },
+      {
+        "imageService": "bfl",
+        "imageModel": "flux-2-max",
+        "processingTime": 47130,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-bfl-flux-2-max.jpg"
+        ],
+        "imageFileSize": 210925,
+        "requestMode": "generation",
+        "providerCostCents": 7.000000000000001,
+        "providerCostSource": "provider_quote"
+      },
+      {
+        "imageService": "bfl",
+        "imageModel": "flux-2-flex",
+        "processingTime": 16646,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-bfl-flux-2-flex.jpg"
+        ],
+        "imageFileSize": 187458,
+        "requestMode": "generation",
+        "providerCostCents": 5,
+        "providerCostSource": "provider_quote"
+      },
+      {
+        "imageService": "reve",
+        "imageModel": "latest",
+        "processingTime": 6873,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-reve-latest.png"
+        ],
+        "imageFileSize": 491368,
+        "imageFormat": "png",
+        "requestMode": "generation",
+        "providerReturnedModel": "reve-create@20250915",
+        "usageCostRaw": 18,
+        "providerCostCents": 2.4,
+        "providerCostSource": "provider_usage"
+      },
+      {
+        "imageService": "reve",
+        "imageModel": "reve-create@20250915",
+        "processingTime": 6339,
+        "imageCount": 1,
+        "imageFileNames": [
+          "generated-image-reve-reve-create@20250915.png"
+        ],
+        "imageFileSize": 668055,
+        "imageFormat": "png",
+        "requestMode": "generation",
+        "usageCostRaw": 18,
+        "providerCostCents": 2.4,
+        "providerCostSource": "provider_usage"
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 43.266666666666666,
+        "steps": [
+          {
+            "step": "image",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-image-preview",
+            "cost": 6.7,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-1.5",
+            "cost": 8,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-2",
+            "cost": 5.3,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image-quality",
+            "cost": 5,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image",
+            "cost": 2,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-pro",
+            "cost": 3,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-max",
+            "cost": 7,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-flex",
+            "cost": 6,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "latest",
+            "cost": 0.13333333333333333,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "reve-create@20250915",
+            "cost": 0.13333333333333333,
+            "costMultiplier": 1,
+            "imageCount": 1
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 43.266666666666666,
+        "steps": [
+          {
+            "step": "image",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-image-preview",
+            "cost": 6.7,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-1.5",
+            "cost": 8,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-2",
+            "cost": 5.3,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image-quality",
+            "cost": 5,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image",
+            "cost": 2,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-pro",
+            "cost": 3,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-max",
+            "cost": 7,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-flex",
+            "cost": 6,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "latest",
+            "cost": 0.13333333333333333,
+            "costMultiplier": 1,
+            "imageCount": 1
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "reve-create@20250915",
+            "cost": 0.13333333333333333,
+            "costMultiplier": 1,
+            "imageCount": 1
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 46.8,
+        "steps": [
+          {
+            "step": "image",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-image-preview",
+            "cost": 6.7,
+            "costSource": "registry_fallback",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-1.5",
+            "cost": 8,
+            "costSource": "registry_fallback",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-2",
+            "cost": 5.3,
+            "costSource": "registry_fallback",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image-quality",
+            "cost": 5,
+            "costSource": "provider_usage",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image",
+            "cost": 2,
+            "costSource": "provider_usage",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-pro",
+            "cost": 3,
+            "costSource": "provider_quote",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-max",
+            "cost": 7.000000000000001,
+            "costSource": "provider_quote",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-flex",
+            "cost": 5,
+            "costSource": "provider_quote",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "latest",
+            "cost": 2.4,
+            "costSource": "provider_usage",
+            "inputMetric": "images",
+            "inputValue": 1
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "reve-create@20250915",
+            "cost": 2.4,
+            "costSource": "provider_usage",
+            "inputMetric": "images",
+            "inputValue": 1
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 228178,
+        "steps": [
+          {
+            "step": "image",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-image-preview",
+            "processingTimeMs": 14895,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 14895,
+            "throughputValue": 4.028,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-1.5",
+            "processingTimeMs": 40283,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 40283,
+            "throughputValue": 1.489,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-2",
+            "processingTimeMs": 21594,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 21594,
+            "throughputValue": 2.779,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image-quality",
+            "processingTimeMs": 7713,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 7713,
+            "throughputValue": 7.779,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image",
+            "processingTimeMs": 4299,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 4299,
+            "throughputValue": 13.957,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-pro",
+            "processingTimeMs": 19394,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 19394,
+            "throughputValue": 3.094,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-max",
+            "processingTimeMs": 30000,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 30000,
+            "throughputValue": 2,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-flex",
+            "processingTimeMs": 30000,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 30000,
+            "throughputValue": 2,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "latest",
+            "processingTimeMs": 30000,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 30000,
+            "throughputValue": 2,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "reve-create@20250915",
+            "processingTimeMs": 30000,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 30000,
+            "throughputValue": 2,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 219198,
+        "steps": [
+          {
+            "step": "image",
+            "provider": "gemini",
+            "model": "gemini-3.1-flash-image-preview",
+            "processingTimeMs": 16107,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 16107,
+            "throughputValue": 3.725,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-1.5",
+            "processingTimeMs": 40078,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 40078,
+            "throughputValue": 1.497,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "openai",
+            "model": "gpt-image-2",
+            "processingTimeMs": 59035,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 59035,
+            "throughputValue": 1.016,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image-quality",
+            "processingTimeMs": 4709,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 4709,
+            "throughputValue": 12.742,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "grok",
+            "model": "grok-imagine-image",
+            "processingTimeMs": 5487,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 5487,
+            "throughputValue": 10.935,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-pro",
+            "processingTimeMs": 16794,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 16794,
+            "throughputValue": 3.573,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-max",
+            "processingTimeMs": 47130,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 47130,
+            "throughputValue": 1.273,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "bfl",
+            "model": "flux-2-flex",
+            "processingTimeMs": 16646,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 16646,
+            "throughputValue": 3.604,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "latest",
+            "processingTimeMs": 6873,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 6873,
+            "throughputValue": 8.73,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          },
+          {
+            "step": "image",
+            "provider": "reve",
+            "model": "reve-create@20250915",
+            "processingTimeMs": 6339,
+            "inputMetric": "images",
+            "inputValue": 1,
+            "rateBasis": "image",
+            "msPerUnit": 6339,
+            "throughputValue": 9.465,
+            "throughputUnit": "imagesPerMinute",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "A clean technical infographic of a media processing pipeline on a dark navy background. Seven numbered stages flow top to bottom connected by arrows. Stage 1 Download with a cloud icon, Stage 2 Extract splitting into speech-to-text and OCR paths, Stage 3 Write as a large central AI brain node, then four output arrows fan out to Stage 4 TTS with a speaker icon, Stage 5 Image with a paintbrush, Stage 6 Video with a film reel, Stage 7 Music with a note. Teal for inputs, gold for the AI stage, coral and purple for outputs. Flat design, geometric shapes, minimal text, monospace labels, developer documentation style.",
+    "requestedProviders": [
+      {
+        "service": "gemini",
+        "model": "gemini-3.1-flash-image-preview"
+      },
+      {
+        "service": "openai",
+        "model": "gpt-image-1.5"
+      },
+      {
+        "service": "openai",
+        "model": "gpt-image-2"
+      },
+      {
+        "service": "grok",
+        "model": "grok-imagine-image-quality"
+      },
+      {
+        "service": "grok",
+        "model": "grok-imagine-image"
+      },
+      {
+        "service": "bfl",
+        "model": "flux-2-pro"
+      },
+      {
+        "service": "bfl",
+        "model": "flux-2-max"
+      },
+      {
+        "service": "bfl",
+        "model": "flux-2-flex"
+      },
+      {
+        "service": "reve",
+        "model": "latest"
+      },
+      {
+        "service": "reve",
+        "model": "reve-create@20250915"
+      }
+    ]
+  }
+}

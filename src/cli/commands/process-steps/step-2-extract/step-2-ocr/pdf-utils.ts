@@ -84,7 +84,7 @@ export const buildHostedUploadMetadata = async (
   }
 }
 
-export const runOcrmypdfWithAutoPdf = async (
+const runOcrmypdfWithAutoPdf = async (
   filePath: string,
   step1Metadata: DocumentMetadata,
   opts: ExtractionOptions

@@ -42,7 +42,7 @@ Media inputs are downloaded, normalized when needed, and transcribed with local 
 
 Document and image inputs route through OCR or native text extraction depending on the file type. PDFs and images can use local or hosted OCR engines, EPUBs default to cleaned native text extraction, Office-style files use native ZIP/XML or text extraction, and CSV inputs are treated as raw text.
 
-Remote article URLs and local HTML files use article extraction instead of OCR engine flags. Remote URLs default to `defuddle` and can use `--url-backend firecrawl`, `--url-backend glm-reader`, `--url-backend spider`, or `--url-backend zyte`. Use `--all-url` to run the full URL backend set (`defuddle`, `firecrawl`, `glm-reader`, `spider`, `zyte`) and write per-provider artifacts under `providers/<backend>/`. Local `.html` and `.htm` files always use `defuddle`; with `--all-url`, hosted URL backends are recorded as skipped.
+Remote article URLs and local HTML files use article extraction instead of OCR engine flags. Remote URLs default to `defuddle` and can use `--url-provider firecrawl`, `--url-provider glm-reader`, `--url-provider spider`, `--url-provider supadata`, or `--url-provider zyte`. Use `--all-providers` to run the full URL backend set (`defuddle`, `firecrawl`, `glm-reader`, `spider`, `supadata`, `zyte`) and write per-provider artifacts under `providers/<backend>/`. Local `.html` and `.htm` files always use `defuddle`; with `--all-providers`, hosted URL backends are recorded as skipped.
 
 X/Twitter Space URLs, post URLs, and raw Space IDs are auto-detected and processed through the X v2 API. They produce metadata artifacts rather than an STT transcript.
 
@@ -55,7 +55,7 @@ Directory batches and URL-list batches classify each item independently. A singl
 bun as extract input/examples/batch/2-urls.md --batch-all
 
 # Compare every URL article backend for one remote article
-bun as extract https://example.com/article --all-url
+bun as extract https://example.com/article --all-providers
 
 # Process a whole YouTube channel batch with caption-first STT routing
 bun as extract https://www.youtube.com/@channelname --youtube-captions --batch-all

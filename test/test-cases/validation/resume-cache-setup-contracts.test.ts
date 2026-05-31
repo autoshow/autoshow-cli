@@ -11,8 +11,8 @@ test('resume surface is reachable through help', async () => {
   expect(result.exitCode).toBe(0)
   expect(result.stdout).toContain('bun as resume')
   expect(result.stdout).toContain('<outputDir>')
-  expect(result.stdout).toContain('--whisper-stt')
-  expect(result.stdout).toContain('--tesseract-ocr')
+  expect(result.stdout).toContain('--provider')
+  expect(result.stdout).toContain('--tts-voice')
 })
 
 test('resume requires an explicit output directory', async () => {
@@ -24,18 +24,18 @@ test('resume requires an explicit output directory', async () => {
   expect(`${result.stdout}\n${result.stderr}`).toContain('Missing required parameter: outputDir')
 })
 
-test('resume provider filter validation rejects invalid provider models', async () => {
+test('resume rejects a missing output directory before reaching provider validation', async () => {
   const missingDir = join(tmpdir(), `autoshow-missing-resume-${Date.now()}`)
   const result = await runCommand([
     'src/cli/create-cli.ts',
     'resume',
     missingDir,
-    '--deepgram-stt',
-    'not-a-deepgram-model'
+    '--provider',
+    'deepgram=not-a-deepgram-model'
   ])
 
   expect(result.exitCode).toBe(2)
-  expect(`${result.stdout}\n${result.stderr}`).toContain('Invalid --deepgram-stt model "not-a-deepgram-model"')
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Could not find')
 })
 
 test('cache command rejects unknown actions with a usage error', async () => {

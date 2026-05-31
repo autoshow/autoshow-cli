@@ -1,6 +1,6 @@
 import { appendFile } from 'node:fs/promises'
 import type { PriceCommandResult, PriceCommandSpec, TestRunArtifacts } from '~/types'
-import { parseRunnerArgs, type RunnerArgs } from './args'
+import { DEFAULT_TEST_RUNNER_CONCURRENCY, parseRunnerArgs, withDefaultTestConcurrency, type RunnerArgs } from './args'
 import {
   appendRunnerLog,
   appendCommandLog,
@@ -20,10 +20,13 @@ import {
   toObservation,
   type PriceCommandObservation,
 } from './price-evaluation'
-import { resolvePriceSelection } from './price-commands'
-import { buildDashboardReportData, buildPriceReportData, buildTestReportData, type BudgetPreflightSummary } from './reports'
+import { resolvePriceSelection } from './price-commands/resolve'
+import { buildDashboardReportData } from './reports/dashboard-report'
+import { buildPriceReportData } from './reports/price-report'
+import { buildTestReportData } from './reports/test-report'
+import type { BudgetPreflightSummary } from './reports/types'
 import { formatTimedOutputPrefix, normalizeRepoPath, parseCommandEstimatedTotal } from './utils'
-import { applyModelConfigCalibrations } from './model-calibration'
+import { buildModelCalibrationReport } from './model-calibration'
 import { resolveSelectedFiles } from './path-selection'
 import { withEmptyPriceConfig } from './price-command-config'
 import { E2E_TEST_TIMEOUT_MS } from '../test-utils/timeouts'
@@ -32,7 +35,7 @@ const formatCents = (cents: number): string => `${cents.toFixed(3)}¢`
 const budgetHundredthCentsToCents = (budgetHundredthCents: number): number => budgetHundredthCents / 100
 const formatBudgetHundredthCents = (budgetHundredthCents: number): string => formatCents(budgetHundredthCentsToCents(budgetHundredthCents))
 
-const PRICE_CONCURRENCY = 16
+const PRICE_CONCURRENCY = DEFAULT_TEST_RUNNER_CONCURRENCY
 
 const runWithConcurrency = async <T, R>(
   items: T[],
@@ -267,7 +270,7 @@ const runBunTest = async (
     'test',
     '--timeout',
     String(E2E_TEST_TIMEOUT_MS),
-    ...passthroughArgs,
+    ...withDefaultTestConcurrency(passthroughArgs),
     '--reporter',
     'junit',
     '--reporter-outfile',
@@ -550,11 +553,11 @@ const runStandardTestMode = async (
   const dashboardReport = await buildDashboardReportData(junitCases, metrics, artifacts, endedAtIso, endedAtMs, argv.slice(2))
   const dashboardPaths = await writeDashboardReportFiles(artifacts, dashboardReport)
   console.log(`Dashboard report JSON: ${normalizeRepoPath(dashboardPaths.resultsReportPath)}`)
-  const calibrationReport = await applyModelConfigCalibrations(artifacts.rootDir)
+  const calibrationReport = await buildModelCalibrationReport(artifacts.rootDir)
   await writeJsonFile(artifacts.calibrationReportJsonPath, calibrationReport as unknown as Record<string, unknown>)
   console.log(`Model calibration report: ${normalizeRepoPath(artifacts.calibrationReportJsonPath)}`)
-  if (calibrationReport.updatedModels > 0) {
-    console.log(`Auto-calibration updated ${calibrationReport.updatedModels} model entr${calibrationReport.updatedModels === 1 ? 'y' : 'ies'}`)
+  if (calibrationReport.recommendedModels > 0) {
+    console.log(`Model calibration recommendations found for ${calibrationReport.recommendedModels} model entr${calibrationReport.recommendedModels === 1 ? 'y' : 'ies'}`)
   }
 
   return exitCode
@@ -566,7 +569,7 @@ const runPriceMode = async (
   artifacts: TestRunArtifacts,
   argv: string[]
 ): Promise<number> => {
-  let suiteName = 'All mapped price suites'
+  let suiteName = 'All mapped tests'
   let results: PriceCommandResult[] = []
   let budgetSummary: BudgetPreflightSummary | undefined
   let exitCode = 0

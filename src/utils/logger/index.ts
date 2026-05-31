@@ -3,7 +3,7 @@ import { runWithLogContext } from '~/utils/logger/context-store'
 import { createReporter } from '~/utils/logger/reporter'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
 import { createJsonSink } from '~/utils/logger/sinks/json-sink'
-import { enableJsonResult, emitResult, isJsonResultActive } from '~/utils/logger/result-emitter'
+import { enableJsonResult, isJsonResultActive } from '~/utils/logger/result-emitter'
 import type {
   GlobalLogger,
   LogFormat,
@@ -12,23 +12,9 @@ import type {
   LogSink,
   ReconfigureOptions
 } from '~/types'
-import { LOG_LEVELS } from '~/utils/logger/logger-types'
 
-export { createLogger } from '~/utils/logger/core'
-export { createHumanSink } from '~/utils/logger/sinks/human-sink'
-export { createJsonSink } from '~/utils/logger/sinks/json-sink'
 export { runWithLogContext }
-export { createReporter }
-export { emitResult, isJsonResultActive }
-export { CLIUsageError, usageError } from '~/utils/logger/usage-error'
-
-const parseLogFormat = (value: string | undefined): LogFormat => {
-  const normalized = value?.trim().toLowerCase()
-  if (normalized === 'human' || normalized === 'json' || normalized === 'both' || normalized === 'auto') {
-    return normalized
-  }
-  return 'auto'
-}
+export { isJsonResultActive }
 
 const resolveLogFormat = (format: LogFormat): Exclude<LogFormat, 'auto'> => {
   if (format !== 'auto') {
@@ -36,15 +22,6 @@ const resolveLogFormat = (format: LogFormat): Exclude<LogFormat, 'auto'> => {
   }
 
   return process.env['NODE_ENV'] === 'production' ? 'json' : 'human'
-}
-
-const parseMinLogLevel = (value: string | undefined): LogLevel => {
-  const normalized = value?.trim().toLowerCase()
-  if (normalized && (LOG_LEVELS as readonly string[]).includes(normalized)) {
-    return normalized as LogLevel
-  }
-
-  return 'info'
 }
 
 const getHost = (): string | undefined => {
@@ -56,7 +33,7 @@ const getHost = (): string | undefined => {
 }
 
 const createConfiguredSinks = (formatOverride?: LogFormat): LogSink[] => {
-  const resolvedFormat = resolveLogFormat(formatOverride ?? parseLogFormat(process.env['AUTOSHOW_LOG_FORMAT']))
+  const resolvedFormat = resolveLogFormat(formatOverride ?? 'auto')
 
   if (resolvedFormat === 'human') {
     return [createHumanSink()]
@@ -89,7 +66,7 @@ const attachReport = (logger: Logger): GlobalLogger => {
 
 let activeLogger = attachReport(createLogger({
   context: baseContext,
-  minLevel: parseMinLogLevel(process.env['AUTOSHOW_LOG_LEVEL']),
+  minLevel: 'info',
   sinks: createConfiguredSinks()
 }))
 

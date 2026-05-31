@@ -1,3 +1,3 @@
-AutoShow TTS Test
+This is a short test passage used by AutoShow to demonstrate text-to-speech generation.
 
-This is a short test passage used by the AutoShow CLI end-to-end test suite to verify text-to-speech generation and voice cloning from a sample audio file.
+At 12:06 on February 29, the Worcestershire choir queued quietly beside Colonel Chiwetel Ejiofor, who asked an anemone, a mischievous isthmus, and a sixth squirrel to pronounce “rural juror,” “specific Pacific statistics,” “Irish wristwatch,” “red leather, yellow leather,” “toy boat,” and “unique New York” while delivering miniature aluminum crêpes, soufflés, piñatas, jalapeños, façades, naïve résumés, pâté, and crème brûlée to Massachusetts.

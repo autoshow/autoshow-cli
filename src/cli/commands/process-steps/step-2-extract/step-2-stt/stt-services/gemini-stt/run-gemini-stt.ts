@@ -12,7 +12,8 @@ import {
   geminiUploadFile,
   geminiUserContent,
   getGeminiFileState,
-  type GeminiContent
+  type GeminiContent,
+  type GeminiGenerateContentUsageMetadata
 } from '~/utils/gemini/gemini-rest'
 import {
   buildTranscriptionOutputBase,
@@ -25,6 +26,9 @@ import { detectCompressedTimingCoverage } from '../../stt-utils/stt-timing-quali
 
 const GEMINI_INLINE_AUDIO_BYTES = 14 * 1024 * 1024
 const GEMINI_FILE_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024
+const GEMINI_3_FLASH_TEXT_INPUT_COST_PER_1M_CENTS = 50
+const GEMINI_3_FLASH_AUDIO_INPUT_COST_PER_1M_CENTS = 100
+const GEMINI_3_FLASH_OUTPUT_COST_PER_1M_CENTS = 300
 
 const GEMINI_STT_JSON_SCHEMA = {
   type: 'object',
@@ -51,6 +55,65 @@ const GEMINI_STT_JSON_SCHEMA = {
 type GeminiSttPayload = {
   text?: unknown
   segments?: unknown
+}
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value)
+
+const getGeminiModalityTokenCount = (
+  details: GeminiGenerateContentUsageMetadata['promptTokensDetails'],
+  modality: string
+): number | undefined => {
+  if (!Array.isArray(details)) {
+    return undefined
+  }
+
+  const targetModality = modality.toUpperCase()
+  const total = details.reduce((sum, entry) => {
+    if (typeof entry.modality !== 'string' || entry.modality.toUpperCase() !== targetModality) {
+      return sum
+    }
+    return sum + (isFiniteNumber(entry.tokenCount) ? entry.tokenCount : 0)
+  }, 0)
+
+  return total > 0 ? total : undefined
+}
+
+export const computeGeminiSttBillingFromUsage = (
+  usage: GeminiGenerateContentUsageMetadata | undefined
+): NonNullable<Step2Metadata['billing']> | undefined => {
+  if (!usage) {
+    return undefined
+  }
+
+  const promptTokens = isFiniteNumber(usage.promptTokenCount) ? usage.promptTokenCount : undefined
+  const candidatesTokens = isFiniteNumber(usage.candidatesTokenCount) ? usage.candidatesTokenCount : undefined
+  const thinkingTokens = isFiniteNumber(usage.thoughtsTokenCount) ? usage.thoughtsTokenCount : 0
+  if (promptTokens === undefined && candidatesTokens === undefined && thinkingTokens === 0) {
+    return undefined
+  }
+
+  const inputTokens = promptTokens ?? 0
+  const audioInputTokens = getGeminiModalityTokenCount(usage.promptTokensDetails, 'AUDIO') ?? inputTokens
+  const textInputTokens = Math.max(0, inputTokens - audioInputTokens)
+  const outputTokens = (candidatesTokens ?? 0) + thinkingTokens
+  const totalTokens = isFiniteNumber(usage.totalTokenCount)
+    ? usage.totalTokenCount
+    : inputTokens + outputTokens
+  const totalCost = (audioInputTokens / 1_000_000) * GEMINI_3_FLASH_AUDIO_INPUT_COST_PER_1M_CENTS
+    + (textInputTokens / 1_000_000) * GEMINI_3_FLASH_TEXT_INPUT_COST_PER_1M_CENTS
+    + (outputTokens / 1_000_000) * GEMINI_3_FLASH_OUTPUT_COST_PER_1M_CENTS
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    audioInputTokens,
+    textInputTokens,
+    totalCost,
+    source: 'provider_usage',
+    mode: 'token'
+  }
 }
 
 const buildSttPrompt = (audioDurationSeconds?: number | undefined): string => [
@@ -284,6 +347,7 @@ export const runGeminiStt = async (
   }
 
   const usage = response.usageMetadata
+  const billing = computeGeminiSttBillingFromUsage(usage)
   return {
     result: {
       text: finalText,
@@ -303,6 +367,7 @@ export const runGeminiStt = async (
       transcriptionModel: model,
       processingTime,
       tokenCount: countTokens(finalText),
+      ...(billing ? { billing } : {}),
       ...(typeof usage?.promptTokenCount === 'number' || typeof usage?.candidatesTokenCount === 'number'
         ? {
             timings: {

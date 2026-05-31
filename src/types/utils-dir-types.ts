@@ -4,11 +4,6 @@ export type {
   MinimaxModel,
   GlmModel,
   KimiModel,
-  AwsSttModel,
-  DeapiSttModel,
-  DeapiTtsModel,
-  DeapiMusicModel,
-  GcloudSttModel,
   DeepgramSttModel,
   DeepinfraSttModel,
   ElevenlabsSttModel,
@@ -27,6 +22,7 @@ export type {
   GlmOcrModel,
   KimiOcrModel,
   OpenAIOcrModel,
+  GrokOcrModel,
   AnthropicOcrModel,
   GeminiOcrModel,
   KittenTtsModel,
@@ -43,17 +39,14 @@ export type {
   GeminiMusicModel,
   GeminiImageModel,
   OpenAIImageModel,
-  MinimaxImageModel,
   GrokImageModel,
-  RunwayImageModel,
   BflImageModel,
-  DeapiImageModel,
+  ReveImageModel,
   GeminiVideoModel,
   MinimaxVideoModel,
   GlmVideoModel,
   GrokVideoModel,
   RunwayVideoModel,
-  DeapiVideoModel
 } from '~/cli/commands/setup-and-utilities/setup-and-utilities-types'
 
 export type ScanBlocksOptions = {

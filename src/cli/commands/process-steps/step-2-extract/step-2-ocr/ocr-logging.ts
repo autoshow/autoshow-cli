@@ -1,9 +1,9 @@
 import { createKeyValueTable } from '~/utils/logger/human-table'
-import type { HumanLogTable, HumanLogTableRow, LogLevel, TableLogger } from '~/types'
+import type { HumanLogTable, LogLevel, TableLogger } from '~/types'
 
 const ANSI_PATTERN = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g
 
-export type OcrProviderLifecycle = {
+type OcrProviderLifecycle = {
   provider: string
   model: string
   status: string
@@ -12,7 +12,7 @@ export type OcrProviderLifecycle = {
   detail?: string | undefined
 }
 
-export type OcrPagesProgress = {
+type OcrPagesProgress = {
   status: string
   ocrPages: number
   totalPages: number
@@ -20,7 +20,7 @@ export type OcrPagesProgress = {
   ocrConcurrency: number
 }
 
-export type OcrJobProgress = {
+type OcrJobProgress = {
   provider: string
   action: string
   remoteId?: string | undefined
@@ -29,27 +29,27 @@ export type OcrJobProgress = {
   detail?: string | undefined
 }
 
-export type OcrTransferEvent = {
+type OcrTransferEvent = {
   action: string
   file: string
   destination: string
 }
 
-export type OcrmypdfRunConfig = {
+type OcrmypdfRunConfig = {
   status: string
   input: string
   jobs: number | string
   languages: string
 }
 
-export type OcrmypdfOutputEvent = {
+type OcrmypdfOutputEvent = {
   stream: 'stdout' | 'stderr'
   page?: number | undefined
   detail: string
   rawLine?: string | undefined
 }
 
-export type PaddleOcrPrepareEvent = {
+type PaddleOcrPrepareEvent = {
   status: string
   input: string
   dimensions?: string | { width: number, height: number } | undefined
@@ -122,16 +122,6 @@ export const parseOcrmypdfOutputLine = (
   }
 }
 
-export const buildOcrProviderLifecycleRows = (
-  lifecycle: OcrProviderLifecycle
-): Array<{ provider: string, model: string, status: string, elapsedMs: number | '', reason: string }> => [{
-  provider: lifecycle.provider,
-  model: lifecycle.model,
-  status: lifecycle.status,
-  elapsedMs: lifecycle.elapsedMs ?? '',
-  reason: lifecycle.reason ?? ''
-}]
-
 export const buildOcrProviderLifecycleTable = (
   lifecycle: OcrProviderLifecycle
 ): HumanLogTable => {
@@ -160,22 +150,6 @@ export const logOcrProviderLifecycle = (
   })
 }
 
-export const buildOcrPagesProgressRows = (
-  progress: OcrPagesProgress
-): Array<{
-  status: string
-  ocrPages: number
-  totalPages: number
-  renderConcurrency: number
-  ocrConcurrency: number
-}> => [{
-  status: progress.status,
-  ocrPages: progress.ocrPages,
-  totalPages: progress.totalPages,
-  renderConcurrency: progress.renderConcurrency,
-  ocrConcurrency: progress.ocrConcurrency
-}]
-
 export const buildOcrPagesProgressTable = (
   progress: OcrPagesProgress
 ): HumanLogTable =>
@@ -198,17 +172,6 @@ export const logOcrPagesProgress = (
     metadata: progress
   })
 }
-
-export const buildOcrJobProgressRows = (
-  job: OcrJobProgress
-): Array<{ provider: string, action: string, remoteId: string, state: string, pages: number | string, detail: string }> => [{
-  provider: job.provider,
-  action: job.action,
-  remoteId: job.remoteId ?? '',
-  state: job.state,
-  pages: job.pages ?? '',
-  detail: job.detail ?? ''
-}]
 
 export const buildOcrJobProgressTable = (
   job: OcrJobProgress
@@ -245,18 +208,6 @@ export const buildOcrTransferTable = (
     ['destination', event.destination]
   ])
 
-export const logOcrTransfer = (
-  logger: TableLogger,
-  event: OcrTransferEvent,
-  level: LogLevel = 'info'
-): void => {
-  logger.write(level, 'OCR Transfer', {
-    category: 'pipeline',
-    humanTable: buildOcrTransferTable(event),
-    metadata: event
-  })
-}
-
 export const buildOcrmypdfRunConfigTable = (
   config: OcrmypdfRunConfig
 ): HumanLogTable =>
@@ -278,14 +229,6 @@ export const logOcrmypdfRunConfig = (
     metadata: config
   })
 }
-
-export const buildOcrmypdfOutputRows = (
-  event: OcrmypdfOutputEvent
-): HumanLogTableRow[] => [{
-  stream: event.stream,
-  ...(event.page !== undefined ? { page: event.page } : {}),
-  detail: event.detail
-}]
 
 export const buildOcrmypdfOutputTable = (
   event: OcrmypdfOutputEvent

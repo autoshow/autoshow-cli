@@ -1,15 +1,13 @@
-import type { DeapiVideoModel, GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, Step6VideoMetadata, VideoGenOptions, VideoMode, VideoTarget } from '~/types'
-import { validateDeapiVideoModel, validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { GeminiVideoModel, GlmVideoModel, GrokVideoModel, MinimaxVideoModel, RunwayVideoModel, Step6VideoMetadata, VideoGenOptions, VideoMode, VideoTarget } from '~/types'
+import { validateGeminiVideoModel, validateGlmVideoModel, validateGrokVideoModel, validateMinimaxVideoModel, validateRunwayVideoModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import { CLIUsageError } from '~/utils/error-handler'
-import { ensureDeapiVideoGenSetup } from './video-services/deapi/deapi-video-gen'
-import { runDeapiVideoGen } from './video-services/deapi/run-deapi-video-gen'
 import { runGeminiVideoGen } from './video-services/gemini/run-gemini-video-gen'
 import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-gen'
 import { runGlmVideoGen } from './video-services/glm/run-glm-video-gen'
 import { runGrokVideoGen } from './video-services/grok/run-grok-video-gen'
 import { runRunwayVideoGen } from './video-services/runway/run-runway-video-gen'
-import { normalizeDeapiVideoSize, normalizeGeminiResolution } from './video-utils/video-normalization'
+import { normalizeGeminiResolution, normalizeGrokVideoResolution } from './video-utils/video-normalization'
 import { validateVideoMediaReferences } from './video-utils/video-media-inputs'
 
 const VIDEO_MODES = ['text', 'image-to-video', 'reference-to-video', 'interpolate', 'extend', 'edit'] as const
@@ -103,7 +101,6 @@ const isGeminiStandardOrFast = (model: GeminiVideoModel): boolean =>
 
 const getMinimaxSupportedVideoModes = (model: MinimaxVideoModel): readonly VideoMode[] => {
   if (model === 'S2V-01') return ['reference-to-video']
-  if (model === 'MiniMax-Hailuo-02') return ['text', 'image-to-video', 'interpolate']
   if (model === 'MiniMax-Hailuo-2.3') return ['text', 'image-to-video']
   if (model === 'MiniMax-Hailuo-2.3-Fast' || model === 'I2V-01' || model === 'I2V-01-Director' || model === 'I2V-01-live') return ['image-to-video']
   return ['text']
@@ -112,8 +109,8 @@ const getMinimaxSupportedVideoModes = (model: MinimaxVideoModel): readonly Video
 const getGlmSupportedVideoModes = (model: GlmVideoModel): readonly VideoMode[] => {
   if (model === 'cogvideox-3') return ['text', 'image-to-video', 'interpolate']
   if (model === 'viduq1-text') return ['text']
-  if (model === 'viduq1-image' || model === 'vidu2-image') return ['image-to-video']
-  if (model === 'viduq1-start-end' || model === 'vidu2-start-end') return ['interpolate']
+  if (model === 'vidu2-image') return ['image-to-video']
+  if (model === 'vidu2-start-end') return ['interpolate']
   if (model === 'vidu2-reference') return ['reference-to-video']
   return ['text']
 }
@@ -147,7 +144,6 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
   const glmModels = options.glmVideoModels ?? (options.glmVideoModel ? [options.glmVideoModel] : [])
   const grokModels = options.grokVideoModels ?? (options.grokVideoModel ? [options.grokVideoModel] : [])
   const runwayModels = options.runwayVideoModels ?? (options.runwayVideoModel ? [options.runwayVideoModel] : [])
-  const deapiModels = options.deapiVideoModels ?? (options.deapiVideoModel ? [options.deapiVideoModel] : [])
   const hasGrokStorageControls = options.grokVideoStorageFilename || options.grokVideoStorageExpiresAfter !== undefined
   if (hasGrokStorageControls && grokModels.length === 0) {
     throw CLIUsageError('Grok video storage flags require a Grok video provider target.')
@@ -268,6 +264,9 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
     if (!isSupportedOrSkippedForAllVideo(options, 'grok', model, mode, ['text', 'image-to-video', 'reference-to-video', 'extend', 'edit'])) {
       continue
     }
+    if (mode !== 'edit') {
+      normalizeGrokVideoResolution(options.videoResolution)
+    }
     if (options.videoInputImage) {
       validateVideoMediaReferences([options.videoInputImage], { flagName: '--video-input-image', provider: 'grok', model, kind: 'image' })
     }
@@ -308,37 +307,13 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
       service: 'runway',
       model,
       run: async (prompt, outputDir) => {
+        if (prompt === undefined) {
+          throw CLIUsageError('Runway video prompt cannot be empty.')
+        }
         return await runRunwayVideoGen(prompt, outputDir, {
           model,
           durationSeconds: options.videoDuration,
           aspectRatio: options.videoAspectRatio
-        })
-      }
-    })
-  }
-
-  for (const rawModel of deapiModels) {
-    const model: DeapiVideoModel = validateDeapiVideoModel(rawModel)
-    if (!isSupportedOrSkippedForAllVideo(options, 'deapi', model, mode, ['text'])) {
-      continue
-    }
-    const unsupported: string[] = []
-    if (options.videoAspectRatio) unsupported.push('--video-aspect-ratio')
-    if (options.videoResolution) unsupported.push('--video-resolution')
-    if (unsupported.length > 0) {
-      throw CLIUsageError(`${unsupported.join(', ')} ${unsupported.length === 1 ? 'is' : 'are'} not supported by deAPI video generation. Use --video-size WIDTHxHEIGHT for deAPI dimensions.`)
-    }
-    normalizeDeapiVideoSize(model, options.videoSize)
-
-    targets.push({
-      service: 'deapi',
-      model,
-      run: async (prompt, outputDir) => {
-        await ensureDeapiVideoGenSetup()
-        return await runDeapiVideoGen(prompt, outputDir, {
-          model,
-          durationSeconds: options.videoDuration,
-          videoSize: options.videoSize
         })
       }
     })

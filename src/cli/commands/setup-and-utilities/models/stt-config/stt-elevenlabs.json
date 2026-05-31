@@ -5,6 +5,11 @@
     "models": {
       "scribe_v2": {
         "description": "Scribe v2 — 90+ languages, diarization, word-level timestamps",
+        "pricingSourceUrl": "https://elevenlabs.io/pricing/api",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "ElevenLabs API pay-as-you-go transcription pricing",
+        "pricingNotes": "ElevenLabs Scribe v2 is estimated at $0.22/hour for standard speech-to-text. Free credits, subscription inclusions, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.22,
         "costPerHourCents": 22,
         "limits": {

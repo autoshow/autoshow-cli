@@ -19,37 +19,38 @@ bun as setup
 bun as sock
 
 # extract only (no LLM summary)
-bun as extract input/examples/audio/1-audio.mp3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # extract with Groq STT
-bun as extract input/examples/audio/1-audio.mp3 --groq whisper-large-v3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider groq=whisper-large-v3
 
 # extract with xAI Grok STT
-bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider grok=speech-to-text
 
 # extract with DeepInfra Whisper STT
-bun as extract input/examples/audio/1-audio.mp3 --deepinfra openai/whisper-large-v3-turbo
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider deepinfra=openai/whisper-large-v3-turbo
 
-# extract with deAPI STT
-bun as extract input/examples/audio/1-audio.mp3 --deapi WhisperLargeV3
 
 # extract with Happy Scribe STT
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe auto
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider happyscribe=auto
 
 # extract with Deepgram STT
-bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider deepgram=nova-3
 
 # extract with AssemblyAI STT
-bun as extract input/examples/audio/1-audio.mp3 --assemblyai universal-3-pro
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider assemblyai=universal-3-pro
 
 # full pipeline (download/transcribe + LLM write)
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm openai=gpt-5.5
+
+# full pipeline with xAI Grok 4.3
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm grok=grok-4.3
 
 # full pipeline with Z.AI GLM 5.1
-bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm glm=glm-5.1
 
 # full pipeline with Kimi K2.6
-bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm kimi=kimi-k2.6
 
 # metadata with save
 bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --save
@@ -61,13 +62,16 @@ bun as metadata "https://www.youtube.com/watch?v=u1-WHqATSQU" --markdown
 bun as extract input/examples/document/1-document.pdf
 
 # document OCR with DeepInfra
-bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct
+bun as extract input/examples/document/1-document.pdf --provider deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct
 
 # document OCR with Kimi
-bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
+bun as extract input/examples/document/1-document.pdf --provider kimi=kimi-k2.6
+
+# document OCR with Grok
+bun as extract input/examples/document/1-document.pdf --provider grok=grok-4.3
 
 # URL article extraction with every backend
-bun as extract https://example.com/article --all-url
+bun as extract https://example.com/article --all-providers
 
 # X Space metadata extraction (auto-detected, requires X_BEARER_TOKEN)
 bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
@@ -76,62 +80,58 @@ bun as extract "https://x.com/i/spaces/1DXxyRYNejbKM"
 bun as extract "https://x.com/user/status/1234567890"
 
 # text-to-speech from local markdown/txt
-bun as tts input/examples/tts/1-tts.md --kitten kitten-tts-mini
+bun as tts input/examples/tts/1-tts.md --provider kitten=kitten-tts-mini
 
 # text-to-speech with Gemini
-bun as tts input/examples/tts/1-tts.md --gemini gemini-3.1-flash-tts-preview
+bun as tts input/examples/tts/1-tts.md --provider gemini=gemini-3.1-flash-tts-preview
 
 # text-to-speech with OpenAI custom voice creation
-bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
+bun as tts input/examples/tts/1-tts.md --provider openai=gpt-4o-mini-tts --tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123
 
 # text-to-speech with ElevenLabs Instant Voice Cloning
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3
-
-# text-to-speech with a trained ElevenLabs Professional Voice Clone
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-voice pvc_voice_123
+bun as tts input/examples/tts/1-tts.md --provider elevenlabs=eleven_v3 --tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # text-to-speech with xAI Grok
-bun as tts input/examples/tts/1-tts.md --grok grok-tts --grok-tts-voice eve
+bun as tts input/examples/tts/1-tts.md --provider grok=grok-tts --tts-voice eve
 
-# text-to-speech with Groq Arabic Orpheus
-bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-arabic-saudi --groq-voice fahad
+# text-to-speech with Groq English Orpheus
+bun as tts input/examples/tts/1-tts.md --provider groq=canopylabs/orpheus-v1-english --tts-voice troy
 
 # text-to-speech with Mistral Voxtral reference audio
-bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --mistral-tts-ref-audio input/examples/audio/anthony-voice.mp3
+bun as tts input/examples/tts/1-tts.md --provider mistral=voxtral-mini-tts-2603 --tts-ref-audio input/examples/audio/anthony-voice.mp3
 
 # text-to-speech with MiniMax hosted voices
-bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --minimax-tts-voice English_expressive_narrator
+bun as tts input/examples/tts/1-tts.md --provider minimax=speech-2.8-turbo --tts-voice English_expressive_narrator
 
 # text-to-speech with Hume Octave 2
-bun as tts input/examples/tts/1-tts.md --hume octave-2 --hume-tts-voice "Male English Actor"
+bun as tts input/examples/tts/1-tts.md --provider hume=octave-2 --tts-voice "Male English Actor"
 
 # text-to-speech with Cartesia Sonic
-bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --cartesia-tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
+bun as tts input/examples/tts/1-tts.md --provider cartesia=sonic-3.5 --tts-voice f786b574-daa5-4673-aa0c-cbe3e8534c02
 
-# text-to-speech with deAPI Qwen3 voice cloning
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3
 
 # image generation, then edit/reference the generated image; run this block in order
-bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --openai gpt-image-1.5 --image-size 1024x1024 --image-format png --out output/mug-base
-bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --openai gpt-image-1.5 --image-input output/mug-base/generated-image.png --image-format webp --image-compression 80 --out output/mug-edit
+bun as image "a clean studio product photo of a red enamel camping mug on white seamless" --provider openai=gpt-image-1.5 --size 1024x1024 --format png --output-dir output/mug-base
+bun as image "make the mug matte black, keep the same camera angle, and place it on a walnut desk" --provider openai=gpt-image-1.5 --input output/mug-base/generated-image.png --format webp --compression 80 --output-dir output/mug-edit
 
 # image reference with native Gemini
-bun as image "restyle the generated mug as a 1960s travel poster" --gemini gemini-3.1-flash-image-preview --image-input output/mug-base/generated-image.png --out output/mug-gemini
+bun as image "restyle the generated mug as a 1960s travel poster" --provider gemini=gemini-3.1-flash-image-preview --input output/mug-base/generated-image.png --output-dir output/mug-gemini
 
-# image references with MiniMax and BFL
-bun as image "show the same mug held by a person in a winter cabin" --minimax image-01 --image-input output/mug-base/generated-image.png --image-size 1024x768 --image-count 3 --out output/mug-minimax
-bun as image "place the same mug on a rustic breakfast table" --bfl flux-2-pro-preview --image-input output/mug-base/generated-image.png --image-size 1024x1024 --out output/mug-bfl
+# image references with BFL and Reve
+bun as image "place the same mug on a rustic breakfast table" --provider bfl=flux-2-pro --input output/mug-base/generated-image.png --size 1024x1024 --output-dir output/mug-bfl
+bun as image "place the same mug in a minimalist editorial product scene" --provider reve=latest --input output/mug-base/generated-image.png --size 1024x1024 --output-dir output/mug-reve
 
 # video from the generated image, then extend/edit the generated video; run this block after output/mug-base exists
-bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --gemini veo-3.1-fast-generate-preview --video-mode image-to-video --video-input-image output/mug-base/generated-image.png --out output/mug-video-base
-bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --gemini veo-3.1-fast-generate-preview --video-mode extend --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-extend
-bun as video "make the lighting moonlit blue while keeping the mug motion intact" --grok grok-imagine-video --video-mode edit --video-input-video output/mug-video-base/generated-video.mp4 --out output/mug-video-edit
+bun as video "animate the red enamel mug on a slow turntable with glossy highlights" --provider gemini=veo-3.1-fast-generate-preview --mode image-to-video --input-image output/mug-base/generated-image.png --output-dir output/mug-video-base
+bun as video "continue the turntable move as the mug rotates toward a warm kitchen window" --provider gemini=veo-3.1-fast-generate-preview --mode extend --input-video output/mug-video-base/generated-video.mp4 --output-dir output/mug-video-extend
+bun as video "make the lighting moonlit blue while keeping the mug motion intact" --provider grok=grok-imagine-video --mode edit --input-video output/mug-video-base/generated-video.mp4 --output-dir output/mug-video-edit
 
-# image generation with deAPI
-bun as image "a sunset over mountains" --deapi Flux1schnell --image-size 768x768
 
 # image generation with BFL
-bun as image "a sunset over mountains" --bfl flux-2-pro-preview --image-size 1024x1024
+bun as image "a sunset over mountains" --provider bfl=flux-2-pro --size 1024x1024
+
+# image generation with Reve
+bun as image "a sunset over mountains" --provider reve=latest --aspect-ratio 16:9 --format webp
 
 # local lyric-video render from repo audio
 # bundled lyrics fixtures: input/examples/lyrics/01-example-song.mp3,
@@ -142,14 +142,14 @@ bun as music --audio input/examples/lyrics/01-example-song.mp3
 bun as write ./output/demo/text --prompt rockSong
 
 # music generation
-bun as music "an ambient piano instrumental with soft strings" --minimax music-2.6 --music-instrumental
-bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
+bun as music "an ambient piano instrumental with soft strings" --provider minimax=music-2.6 --instrumental
+bun as music "bright 90s pop rock with a huge chorus" --provider gemini=lyria-3-clip-preview
 
 # video generation
-bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview
+bun as video "a cinematic mountain sunrise" --provider gemini=veo-3.1-lite-generate-preview
 
 # video generation with multiple providers
-bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview --minimax MiniMax-Hailuo-2.3 --runway gen4.5 --deapi Ltxv_13B_0_9_8_Distilled_FP8
+bun as video "a timelapse storm over downtown chicago" --provider gemini=veo-3.1-lite-generate-preview --provider runway=gen4.5
 ```
 
 ## Command Map
@@ -185,55 +185,49 @@ bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-previ
 
 ## Pricing Preflight
 
-Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. `music --audio` and `music --batch` are local lyric-video modes and reject `--price`:
+Most hosted or mixed-provider runtime commands support `--price` to print estimated cost and exit. The human `Cost Estimate` table is intentionally compact and always uses `step`, `provider`, `model`, and `cost` columns; the `--json` dry-run result keeps the structured pricing basis fields such as token counts, page counts, character counts, and registry rates. `music --audio` and `music --batch` are local lyric-video modes and reject `--price`:
 
 ```bash
-bun as extract input/examples/audio/1-audio.mp3 --elevenlabs scribe_v2 --price
-bun as extract input/examples/audio/1-audio.mp3 --deepinfra openai/whisper-large-v3-turbo --price
-bun as extract https://www.youtube.com/watch?v=MORMZXEaONk --deapi WhisperLargeV3 --price
-bun as extract input/examples/audio/1-audio.mp3 --happyscribe auto --price
-bun as extract input/examples/audio/1-audio.mp3 --deepgram nova-3 --price
-bun as extract input/examples/audio/1-audio.mp3 --groq whisper-large-v3 --price
-bun as extract input/examples/audio/1-audio.mp3 --grok speech-to-text --price
-bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct --price
-bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6 --price
-bun as extract https://example.com/article --all-url --price
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4 --price
-bun as write input/examples/audio/1-audio.mp3 --glm glm-5.1 --price
-bun as write input/examples/audio/1-audio.mp3 --kimi kimi-k2.6 --price
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider elevenlabs=scribe_v2 --price
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider deepinfra=openai/whisper-large-v3-turbo --price
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider happyscribe=auto --price
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider deepgram=nova-3 --price
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider groq=whisper-large-v3 --price
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3 --provider grok=speech-to-text --price
+bun as extract input/examples/document/1-document.pdf --provider deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct --price
+bun as extract input/examples/document/1-document.pdf --provider kimi=kimi-k2.6 --price
+bun as extract https://example.com/article --all-providers --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm openai=gpt-5.5 --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm glm=glm-5.1 --price
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm kimi=kimi-k2.6 --price
 bun as write ./output/demo/text --price
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --price
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
-bun as tts input/examples/tts/1-tts.md --elevenlabs eleven_v3 --elevenlabs-tts-pvc-sample input/examples/audio/anthony-voice.mp3 --price
-bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-v1-english --price
-bun as tts input/examples/tts/1-tts.md --groq canopylabs/orpheus-arabic-saudi --price
-bun as tts input/examples/tts/1-tts.md --grok grok-tts --price
-bun as tts input/examples/tts/1-tts.md --mistral voxtral-mini-tts-2603 --price
-bun as tts input/examples/tts/1-tts.md --minimax speech-2.8-turbo --price
-bun as tts input/examples/tts/1-tts.md --hume octave-2 --price
-bun as tts input/examples/tts/1-tts.md --cartesia sonic-3.5 --price
-bun as tts input/examples/tts/1-tts.md --deapi Qwen3_TTS_12Hz_1_7B_Base --deapi-tts-ref-audio input/examples/audio/0-audio-short.mp3 --price
-bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --price
-bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-instructions "Warm documentary narration" --openai-tts-speed 1.1 --price
-bun as tts input/examples/tts/1-tts.md --openai gpt-4o-mini-tts --openai-tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
-bun as image "a sunset" --openai gpt-image-2 --image-size 1024x1024 --image-quality low --price
-bun as image "a sunset" --minimax image-01 --image-count 3 --price
-bun as image "a sunset" --bfl flux-2-klein-4b --price
-bun as image "a sunset" --deapi Flux1schnell --price
-bun as music "an ambient piano instrumental" --minimax music-2.6 --music-instrumental --price
-bun as music "an ambient piano instrumental" --minimax music-2.6-free --music-instrumental --price
-bun as music "an ambient piano instrumental" --gemini lyria-3-pro-preview --music-duration 120 --price
-bun as video "a sunset timelapse" --gemini veo-3.1-lite-generate-preview --price
-bun as video "a sunset timelapse" --minimax MiniMax-Hailuo-2.3 --price
-bun as video "a sunset timelapse" --glm cogvideox-3 --price
-bun as video "a sunset timelapse" --grok grok-imagine-video --price
-bun as video "a sunset timelapse" --runway gen4.5 --video-duration 5 --price
-bun as video "a sunset timelapse" --deapi Ltxv_13B_0_9_8_Distilled_FP8 --video-duration 2 --price
-bun as video "a sunset timelapse" --all-video --price
+bun as tts input/examples/tts/1-tts.md --provider elevenlabs=eleven_v3 --price
+bun as tts input/examples/tts/1-tts.md --provider elevenlabs=eleven_v3 --tts-ref-audio input/examples/audio/anthony-voice.mp3 --price
+bun as tts input/examples/tts/1-tts.md --provider groq=canopylabs/orpheus-v1-english --price
+bun as tts input/examples/tts/1-tts.md --provider grok=grok-tts --price
+bun as tts input/examples/tts/1-tts.md --provider mistral=voxtral-mini-tts-2603 --price
+bun as tts input/examples/tts/1-tts.md --provider minimax=speech-2.8-turbo --price
+bun as tts input/examples/tts/1-tts.md --provider hume=octave-2 --price
+bun as tts input/examples/tts/1-tts.md --provider cartesia=sonic-3.5 --price
+bun as tts input/examples/tts/1-tts.md --provider openai=gpt-4o-mini-tts --price
+bun as tts input/examples/tts/1-tts.md --provider openai=gpt-4o-mini-tts --tts-instructions "Warm documentary narration" --tts-speed 1.1 --price
+bun as tts input/examples/tts/1-tts.md --provider openai=gpt-4o-mini-tts --tts-ref-audio input/examples/audio/anthony-voice.mp3 --openai-tts-consent-id cons_123 --price
+bun as image "a sunset" --provider openai=gpt-image-2 --size 1024x1024 --quality low --price
+bun as image "a sunset" --provider bfl=flux-2-pro --price
+bun as image "a sunset" --provider reve=latest --price
+bun as music "an ambient piano instrumental" --provider minimax=music-2.6 --instrumental --price
+bun as music "an ambient piano instrumental" --provider minimax=music-2.6-free --instrumental --price
+bun as music "an ambient piano instrumental" --provider gemini=lyria-3-pro-preview --duration 120 --price
+bun as video "a sunset timelapse" --provider gemini=veo-3.1-lite-generate-preview --price
+bun as video "a sunset timelapse" --provider minimax=MiniMax-Hailuo-2.3 --price
+bun as video "a sunset timelapse" --provider glm=cogvideox-3 --price
+bun as video "a sunset timelapse" --provider grok=grok-imagine-video --price
+bun as video "a sunset timelapse" --provider runway=gen4.5 --duration 5 --price
+bun as video "a sunset timelapse" --all-providers --price
 bun as comic generate-images 02-01 --target images --panels 1-16 --price
 bun as comic draft-scenes input/episode-scripts/02-script/01-co-work-smarter.md --price
 bun as comic generate-images input/episode-scripts/02-script/01-co-work-smarter.md --target images --price
 bun as comic character-sketch --image input/characters/01-peaches.webp --price
 ```
 
-For token-priced hosted OCR providers, price preflight uses registry token rates with model-specific input/output token heuristics from recent OCR benchmark usage and adds page processing-time estimates. URL article estimates include the selected `--url-backend`, or every URL backend when `--all-url` is set. Kimi's estimate uses cache-miss K2.6 pricing, about `$0.0059/page`. For `extract --deapi`, `tts --deapi`, and `music --deapi`, price preflight uses deAPI's live quote endpoint when available and falls back to registry pricing when an exact quote is unavailable. MiniMax music estimates use current model rates, including the `music-2.6-free` zero-cost track estimate and any generated-lyrics add-on. For `extract --happyscribe`, price preflight is side-effect free and uses the published `$0.01/min` AI rate; exact billing is captured only during real runs with a resolvable USD organization. Supadata STT estimates use the Basic/Pro auto-recharge reference rate of `$10 / 1,000 credits`, with plan-pricing variance possible.
+Pricing preflight uses the same model registry and pricing helpers as post-run cost accounting. Token-priced hosted OCR and write estimates use provider/model input and output rates plus command-specific input heuristics; URL article estimates use the selected backend, or every backend when route-aware `--all-providers` is set. MiniMax music estimates include the zero-cost `music-2.6-free` track estimate and any generated-lyrics add-on. Happy Scribe preflight is side-effect free and uses the published AI rate; Supadata STT estimates use the Basic/Pro auto-recharge credit reference rate, with plan-pricing variance possible.

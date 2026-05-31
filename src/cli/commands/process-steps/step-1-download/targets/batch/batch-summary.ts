@@ -180,7 +180,7 @@ const summarizeSttBatchManifestEntries = (
     providers: parseSttManifestProviderSummaries(entry)
   }))
 
-export const buildSttBatchFinalSummaryTable = (
+const buildSttBatchFinalSummaryTable = (
   entries: BatchManifestEntry[]
 ) => {
   const summaries = summarizeSttBatchManifestEntries(entries)
@@ -309,7 +309,7 @@ export const logBatchItemStatus = (
   }], { level })
 }
 
-export const buildBatchCompletionTable = (
+const buildBatchCompletionTable = (
   command: ProcessCommand,
   ok: number,
   partial: number,

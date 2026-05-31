@@ -29,7 +29,10 @@ export const prepareArticleDocument = async (
   batchChildContext?: BatchChildRunContext
 ): Promise<PreparedDocument> => {
   const effectiveBaseDir = baseDir && baseDir.trim().length > 0 ? baseDir : opts.outputRootDir
-  const prepared = await prepareHtmlArticle(source, effectiveBaseDir, opts.urlBackend, batchChildContext)
+  const prepared = await prepareHtmlArticle(source, effectiveBaseDir, opts.urlBackend, batchChildContext, {
+    timeoutMs: opts.urlRequestTimeoutMs,
+    requestAttempts: opts.urlRequestAttempts
+  })
   warnHtmlArticleFlagBehavior(source, opts, prepared.htmlArticleBackend)
   return prepared
 }

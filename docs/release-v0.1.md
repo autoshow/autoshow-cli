@@ -93,24 +93,24 @@ Quick start:
 ```bash
 bun as setup --doctor
 bun as sock
-bun as extract input/examples/audio/1-audio.mp3
+bun as extract https://ajc.pics/autoshow/examples/1-audio.mp3
 bun as extract output/<extract-run-dir> --transcript-video
-bun as write input/examples/audio/1-audio.mp3 --openai gpt-5.4
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm openai=gpt-5.4
 bun as write ./output/demo/text --prompt rockSong
-bun as extract input/examples/document/1-document.pdf --out json
-bun as extract https://ajcwebdev.com --url-backend firecrawl
-bun as extract https://ajcwebdev.com --all-url
+bun as extract input/examples/document/1-document.pdf --format json
+bun as extract https://ajcwebdev.com --url-provider firecrawl
+bun as extract https://ajcwebdev.com --all-providers
 bun as extract https://x.com/i/spaces/1DXxyRYNejbKM
-bun as write ./notes/source.md --text-input --openai gpt-5.4 --prompt folkSong
-bun as tts input/examples/tts/1-tts.md --kitten kitten-tts-nano-0.8-int8
-bun as image "a clean product photo of a red enamel camping mug" --openai gpt-image-2 --image-size 1024x1024
-bun as video "a cinematic mountain sunrise" --gemini veo-3.1-lite-generate-preview
+bun as write ./notes/source.md --text-input --llm openai=gpt-5.4 --prompt folkSong
+bun as tts input/examples/tts/1-tts.md --provider kitten=kitten-tts-nano-0.8-int8
+bun as image "a clean product photo of a red enamel camping mug" --provider openai=gpt-image-2 --size 1024x1024
+bun as video "a cinematic mountain sunrise" --provider gemini=veo-3.1-lite-generate-preview
 bun as music --audio input/examples/lyrics/01-example-song.mp3
-bun as music "bright 90s pop rock with a huge chorus" --gemini lyria-3-clip-preview
+bun as music "bright 90s pop rock with a huge chorus" --provider gemini=lyria-3-clip-preview
 bun as benchmark docs/benchmarks/tts/<run> --tts --tts-mode local
 bun as comic draft-scenes 05-01
 bun as comic generate-images 05-01 --panels-per-image 6
-bun as resume ./output/<run-or-batch-dir> --deepinfra-stt
+bun as resume ./output/<run-or-batch-dir> --provider deepinfra
 ```
 
 `write` is the central orchestration command. STT is not a standalone top-level command in v0.1; it is the media route inside `extract` and `write`.
@@ -141,7 +141,7 @@ Local engines include:
 Service integrations and local utility surfaces span:
 
 - STT
-- OCR/article extraction, including `extract <url> --all-url` provider comparison runs
+- OCR/article extraction, including route-aware `extract <url> --all-providers` provider comparison runs
 - LLM writing
 - TTS
 - image generation
@@ -186,7 +186,6 @@ Persistent config lives in `config/autoshow.json` and can store selected default
 - generation options
 - concurrency
 - cache behavior
-- cloud staging
 - pricing thresholds
 
 Runtime-only flags are intentionally not persisted, including:
@@ -199,7 +198,7 @@ Runtime-only flags are intentionally not persisted, including:
 
 ```bash
 bun as config --show
-bun as config --openai gpt-5.4 --whisper-stt large-v3-turbo
+bun as config --llm openai=gpt-5.4 --stt whisper=large-v3-turbo
 bun as config --batch-limit 20 --batch-order oldest --max-cents 50
 bun as config --reset
 ```
@@ -219,8 +218,6 @@ Common setup modes include:
 ```bash
 bun as setup --doctor
 bun as setup
-bun as setup --gcloud
-bun as setup --aws
 bun as setup --models base --models ggml-org/gemma-3-270m-it-GGUF
 ```
 

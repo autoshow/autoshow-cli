@@ -6,9 +6,9 @@ import type {
   ScenePromptData,
   StructuredScriptData,
   StructuredScriptSourceSegment,
-} from '../types'
+} from '../types/comic-types'
 
-export type RecapMontageSceneEntry = {
+type RecapMontageSceneEntry = {
   scriptPath: string
   sceneTitle: string
   location: string
@@ -39,7 +39,7 @@ const formatExcerpt = (text: string, maxLength = 180): string => {
     : normalized
 }
 
-export const isRecapMontageCueText = (text: string): boolean => {
+const isRecapMontageCueText = (text: string): boolean => {
   return /\bepisode\b/i.test(text) && /\bmontage\b/i.test(text)
 }
 

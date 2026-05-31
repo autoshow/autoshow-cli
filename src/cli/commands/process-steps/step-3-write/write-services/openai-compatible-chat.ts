@@ -5,7 +5,7 @@ import type {
 } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { isStructuredFallbackError } from '~/cli/commands/process-steps/step-3-write/write-utils/structured-error-utils'
-import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
+import { runWithLLMInstrumentation, buildStep3Metadata, type LlmApiCallResult } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import { createOpenAIChatCompletion, extractOpenAIChatCompletionText } from '~/utils/openai/client'
 
@@ -26,7 +26,7 @@ export const runOpenAICompatibleChatModel = async ({
   buildStructuredResponseFormat
 }: RunOpenAICompatibleChatModelOptions): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
-    const apiCall = (): Promise<string> => withRetry(
+    const apiCall = (): Promise<LlmApiCallResult> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName },
       async (signal) => {
         const requestBody: Record<string, unknown> = {
@@ -35,7 +35,7 @@ export const runOpenAICompatibleChatModel = async ({
         }
         customizeRequestBody?.(requestBody, model)
 
-        const executeRequest = async (body: Record<string, unknown>): Promise<string> => {
+        const executeRequest = async (body: Record<string, unknown>): Promise<LlmApiCallResult> => {
           const response = await createOpenAIChatCompletion(config, body, {
             signal: createCombinedSignal(signal)
           })
@@ -44,7 +44,12 @@ export const runOpenAICompatibleChatModel = async ({
           if (!text) {
             throw new Error('No response text from model')
           }
-          return text
+          return {
+            text,
+            usage: response.usage,
+            rawProviderUsage: response.usage,
+            returnedModel: response.model
+          }
         }
 
         if (!structuredOpts) {
@@ -76,10 +81,10 @@ export const runOpenAICompatibleChatModel = async ({
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
     )
 
-    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
-    const metadata = buildStep3Metadata(service, model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
+    const instrumentation = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata(service, model, instrumentation, structuredOpts)
 
-    return { result: responseText, metadata }
+    return { result: instrumentation.responseText, metadata }
   } catch (error) {
     l.error(`Failed to run ${providerLabel} model`, error)
     throw error

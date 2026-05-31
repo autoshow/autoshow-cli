@@ -26,7 +26,7 @@ import type {
 } from '~/types'
 
 export const YOUTUBE_CAPTIONS_SERVICE = 'youtube-captions' as const
-export const YOUTUBE_CAPTIONS_MODEL = 'subtitle-track' as const
+const YOUTUBE_CAPTIONS_MODEL = 'subtitle-track' as const
 
 const YOUTUBE_HOSTS = new Set([
   'youtube.com',
@@ -103,7 +103,7 @@ const parseVttTimestampSeconds = (value: string): number | null => {
   return (hours * 3600) + (minutes * 60) + seconds
 }
 
-export const parseYoutubeVttCues = (input: string): ParsedYoutubeCue[] => {
+const parseYoutubeVttCues = (input: string): ParsedYoutubeCue[] => {
   const blocks = input
     .replace(/^\uFEFF/, '')
     .replace(/\r\n?/g, '\n')
@@ -273,7 +273,7 @@ const toTranscriptionResult = (
   }
 }
 
-export const buildYoutubeCaptionTranscription = (
+const buildYoutubeCaptionTranscription = (
   vttText: string,
   selection: YoutubeCaptionSelection
 ): TranscriptionResult | null => {
@@ -284,7 +284,7 @@ export const buildYoutubeCaptionTranscription = (
   return toTranscriptionResult(normalizedCues, selection)
 }
 
-export const resolveYoutubeWatchUrl = (url: string): string | null => {
+const resolveYoutubeWatchUrl = (url: string): string | null => {
   let parsed: URL
   try {
     parsed = new URL(url)
@@ -315,7 +315,7 @@ export const resolveYoutubeWatchUrl = (url: string): string | null => {
   return null
 }
 
-export const selectYoutubeCaptionTrack = (
+const selectYoutubeCaptionTrack = (
   videoInfo: Pick<YtDlpVideoInfo, 'subtitles' | 'automatic_captions'>
 ): YoutubeCaptionSelection | null => {
   const pickEnglishLanguage = (

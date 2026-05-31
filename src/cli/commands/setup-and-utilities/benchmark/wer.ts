@@ -1,6 +1,6 @@
 import type { WerScore } from './benchmark-types'
 
-export const normalizeText = (text: string): string =>
+const normalizeText = (text: string): string =>
   text
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, '')

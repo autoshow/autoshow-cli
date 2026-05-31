@@ -10,7 +10,7 @@ const isNameBoundary = (ch: string | undefined): boolean =>
 
 const stripBom = (s: string): string => (s.charCodeAt(0) === 0xfeff ? s.slice(1) : s)
 
-export const stripCdata = (s: string): string => {
+const stripCdata = (s: string): string => {
   const open = '<![CDATA['
   const close = ']]>'
   let out = ''

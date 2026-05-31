@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { DocumentMetadata, StructuredRequestOptions } from '~/types'
+import { runGrokOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/grok-ocr/run-grok-ocr'
 import { runOpenAIOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/openai-ocr/run-openai-ocr'
 import { runOpenAICompatibleChatModel } from '~/cli/commands/process-steps/step-3-write/write-services/openai-compatible-chat'
 import { runGrokImageGen } from '~/cli/commands/process-steps/step-5-image/image-services/grok/run-grok-image-gen'
@@ -16,20 +16,20 @@ import {
   createOpenAIVoiceConsent,
   extractOpenAIResponseText
 } from '~/utils/openai/client'
-
-type FetchCall = {
-  url: string
-  method: string
-  headers: Headers
-  bodyText: string
-  bodyJson?: Record<string, unknown> | undefined
-  form?: FormData | undefined
-}
+import {
+  clearEnv,
+  createTempDirTracker,
+  installMockFetch as installFetch,
+  jsonResponse,
+  restoreEnv,
+  snapshotEnv
+} from '../../test-utils/rest-contract-helpers'
 
 const originalFetch = globalThis.fetch
-const previousEnv: Record<string, string | undefined> = {}
-const envKeys = ['OPENAI_API_KEY', 'OPENAI_BASE_URL', 'XAI_API_KEY']
-const tempDirs: string[] = []
+let previousEnv: Record<string, string | undefined> = {}
+const envKeys = ['OPENAI_API_KEY', 'OPENAI_BASE_URL', 'XAI_API_KEY', 'XAI_BASE_URL']
+const tempDirs = createTempDirTracker('autoshow-openai-rest-')
+const withTempDir = tempDirs.withDir
 
 const structuredOpts: StructuredRequestOptions = {
   schemaName: 'summary',
@@ -45,68 +45,15 @@ const structuredOpts: StructuredRequestOptions = {
   strategy: 'native'
 }
 
-const jsonResponse = (body: unknown, init?: ResponseInit): Response =>
-  new Response(JSON.stringify(body), {
-    status: init?.status ?? 200,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers instanceof Headers ? Object.fromEntries(init.headers.entries()) : init?.headers as Record<string, string> | undefined)
-    }
-  })
-
-const readBody = async (body: RequestInit['body'] | null | undefined): Promise<{ text: string, form?: FormData | undefined }> => {
-  if (typeof body === 'string') {
-    return { text: body }
-  }
-  if (body instanceof FormData) {
-    return { text: '', form: body }
-  }
-  return { text: '' }
-}
-
-const installFetch = (
-  handler: (call: FetchCall) => Promise<Response> | Response
-): FetchCall[] => {
-  const calls: FetchCall[] = []
-  globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
-    const { text, form } = await readBody(init?.body)
-    const call: FetchCall = {
-      url: String(input),
-      method: init?.method ?? 'GET',
-      headers: new Headers(init?.headers),
-      bodyText: text,
-      ...(text.trim().startsWith('{') ? { bodyJson: JSON.parse(text) as Record<string, unknown> } : {}),
-      ...(form ? { form } : {})
-    }
-    calls.push(call)
-    return await handler(call)
-  }) as typeof fetch
-  return calls
-}
-
-const withTempDir = async <T,>(fn: (dir: string) => Promise<T>): Promise<T> => {
-  const dir = await mkdtemp(join(tmpdir(), 'autoshow-openai-rest-'))
-  tempDirs.push(dir)
-  return await fn(dir)
-}
-
 beforeEach(() => {
-  for (const key of envKeys) {
-    previousEnv[key] = process.env[key]
-    delete process.env[key]
-  }
+  previousEnv = snapshotEnv(envKeys)
+  clearEnv(envKeys)
 })
 
 afterEach(async () => {
   globalThis.fetch = originalFetch
-  for (const key of envKeys) {
-    if (previousEnv[key] === undefined) {
-      delete process.env[key]
-    } else {
-      process.env[key] = previousEnv[key]
-    }
-  }
-  await Promise.all(tempDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true })))
+  restoreEnv(previousEnv)
+  await tempDirs.cleanup()
 })
 
 describe('OpenAI REST contracts', () => {
@@ -495,6 +442,95 @@ describe('OpenAI REST contracts', () => {
         type: 'input_image',
         detail: 'high',
         image_url: `data:image/png;base64,${Buffer.from(new Uint8Array([1, 2, 3])).toString('base64')}`
+      })
+    })
+  })
+
+  test('OpenAI OCR uses native structured output for gpt-5.5 multi-page OCR', async () => {
+    process.env['OPENAI_API_KEY'] = 'openai-key'
+    process.env['OPENAI_BASE_URL'] = 'https://mock.openai.local/v1'
+    const calls = installFetch(() => jsonResponse({
+      output_text: JSON.stringify({
+        pages: [
+          { pageNumber: 1, text: 'First page' },
+          { pageNumber: 2, text: 'Second page' }
+        ]
+      }),
+      usage: { input_tokens: 234, output_tokens: 56 }
+    }))
+
+    await withTempDir(async (dir) => {
+      const imagePath = join(dir, 'document.png')
+      await writeFile(imagePath, new Uint8Array([1, 2, 3]))
+      const metadata: DocumentMetadata = {
+        slug: 'document',
+        pageCount: 2,
+        format: 'png',
+        fileSize: 3
+      }
+
+      const result = await runOpenAIOcr(imagePath, metadata, 'gpt-5.5')
+
+      expect(result.pages).toEqual([
+        { pageNumber: 1, method: 'ocr', text: 'First page' },
+        { pageNumber: 2, method: 'ocr', text: 'Second page' }
+      ])
+      const body = calls[0]?.bodyJson
+      expect(body?.['model']).toBe('gpt-5.5')
+      expect(body?.['text']).toMatchObject({
+        verbosity: 'low',
+        format: {
+          type: 'json_schema',
+          name: 'ocr_pages',
+          strict: true
+        }
+      })
+    })
+  })
+
+  test('Grok OCR sends xAI chat image input and returns usage token metadata', async () => {
+    process.env['XAI_API_KEY'] = 'xai-key'
+    process.env['XAI_BASE_URL'] = 'https://mock.x.ai/v1/chat/completions'
+    const calls = installFetch(() => jsonResponse({
+      choices: [{ message: { content: 'Grok OCR text' } }],
+      usage: { prompt_tokens: 4000, completion_tokens: 1000 }
+    }))
+
+    await withTempDir(async (dir) => {
+      const imagePath = join(dir, 'page.png')
+      await writeFile(imagePath, new Uint8Array([1, 2, 3]))
+      const metadata: DocumentMetadata = {
+        slug: 'page',
+        pageCount: 1,
+        format: 'png',
+        fileSize: 3
+      }
+
+      const result = await runGrokOcr(imagePath, metadata, 'grok-4.3', {
+        dpi: 300,
+        password: undefined,
+        ocrPreparationCache: undefined
+      })
+
+      expect(result.pages).toEqual([{ pageNumber: 1, method: 'ocr', text: 'Grok OCR text' }])
+      expect(result.promptTokens).toBe(4000)
+      expect(result.completionTokens).toBe(1000)
+      expect(calls).toHaveLength(1)
+      expect(calls[0]).toMatchObject({
+        url: 'https://mock.x.ai/v1/chat/completions',
+        method: 'POST'
+      })
+      expect(calls[0]?.headers.get('authorization')).toBe('Bearer xai-key')
+      const body = calls[0]?.bodyJson
+      expect(body?.['model']).toBe('grok-4.3')
+      const messages = body?.['messages'] as Array<Record<string, unknown>>
+      const content = messages[0]?.['content'] as Array<Record<string, unknown>>
+      expect(content[0]?.['type']).toBe('text')
+      expect(content[1]).toMatchObject({
+        type: 'image_url',
+        image_url: {
+          url: `data:image/png;base64,${Buffer.from(new Uint8Array([1, 2, 3])).toString('base64')}`
+        }
       })
     })
   })

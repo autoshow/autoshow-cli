@@ -9,18 +9,16 @@ import {
 import type {
   CharacterSketchVariant,
 } from '../process-scenes/character-utils'
-import type {
-  CharacterSketchView,
-} from '../../types'
+import type { CharacterSketchView } from '../../types/comic-command-types'
 
 
 
-export type CharacterSketchSheetSource = {
+type CharacterSketchSheetSource = {
   view: CharacterSketchView
   path: string
 }
 
-export type CharacterSketchSheetSelection = {
+type CharacterSketchSheetSelection = {
   variant: CharacterSketchVariant
   outputPath: string
   sources: CharacterSketchSheetSource[]

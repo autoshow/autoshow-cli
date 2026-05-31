@@ -3,14 +3,14 @@ import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
+import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { ELEVENLABS_DEFAULT_VOICE_ID } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import { readElevenLabsError } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-utils'
 import {
   ensureElevenLabsTtsIvcVoice,
   type ElevenLabsTtsIvcOptions
 } from './elevenlabs-ivc'
-import { pollElevenLabsTtsPvcTraining } from './elevenlabs-pvc'
 
 type ElevenLabsTtsVoiceSettings = {
   stability?: number | undefined
@@ -28,7 +28,6 @@ type ElevenLabsTtsRequestControls = {
   textNormalization?: string | undefined
   pronunciationDictionaryLocators?: string[] | undefined
   optimizeStreamingLatency?: number | undefined
-  pvcAsIvc?: boolean | undefined
 }
 
 const parsePronunciationDictionaryLocator = (
@@ -55,8 +54,6 @@ export const runElevenLabsTts = async (
   options: {
     model: ElevenlabsTtsModel
     voiceId?: string | undefined
-    pvcVoiceId?: string | undefined
-    pvcWait?: boolean | undefined
     clone?: ElevenLabsTtsIvcOptions | undefined
     controls?: ElevenLabsTtsRequestControls | undefined
   }
@@ -66,18 +63,14 @@ export const runElevenLabsTts = async (
     throw new Error('ELEVENLABS_API_KEY environment variable is required for ElevenLabs TTS')
   }
 
-  const baseURL = readEnv('ELEVENLABS_BASE_URL') ?? 'https://api.elevenlabs.io/v1'
+  const baseURL = ELEVENLABS_DEFAULT_BASE_URL
   const audioPath = `${outputDir}/speech.wav`
   const tempAudioPath = `${outputDir}/speech-elevenlabs.mp3`
   const startTime = Date.now()
   const cloneResult = options.clone
     ? await ensureElevenLabsTtsIvcVoice(baseURL, apiKey, options.clone)
     : undefined
-  const pvcVoiceId = options.pvcVoiceId?.trim() || undefined
-  if (pvcVoiceId && options.pvcWait === true) {
-    await pollElevenLabsTtsPvcTraining(baseURL, apiKey, pvcVoiceId, options.model)
-  }
-  const voiceId = cloneResult?.voiceId ?? pvcVoiceId ?? options.voiceId?.trim() ?? readEnv('ELEVENLABS_VOICE_ID') ?? ELEVENLABS_DEFAULT_VOICE_ID
+  const voiceId = cloneResult?.voiceId ?? options.voiceId?.trim() ?? ELEVENLABS_DEFAULT_VOICE_ID
   const outputFormat = options.controls?.outputFormat?.trim() || 'mp3_44100_128'
   const languageCode = options.controls?.languageCode?.trim() || undefined
   const pronunciationDictionaryLocators = options.controls?.pronunciationDictionaryLocators
@@ -86,14 +79,12 @@ export const runElevenLabsTts = async (
     .map(parsePronunciationDictionaryLocator)
   const speaker = cloneResult
     ? `ref_audio:${cloneResult.sourceAudio.basename}`
-    : pvcVoiceId
-      ? `pvc:${pvcVoiceId}`
-      : voiceId
+    : voiceId
 
   logTtsConfig('ElevenLabs', [
     { label: 'model', value: options.model },
     {
-      label: cloneResult ? 'reference audio' : pvcVoiceId ? 'PVC voice' : 'voice',
+      label: cloneResult ? 'reference audio' : 'voice',
       value: cloneResult ? cloneResult.sourceAudio.basename : voiceId
     },
     { label: 'output format', value: outputFormat },
@@ -101,9 +92,9 @@ export const runElevenLabsTts = async (
     ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : [])
   ])
 
-  const audioBytes = await withRetry(
-    { retryClass: 'runtime_http_create_conservative', operationName: 'elevenlabs-tts' },
-    async () => {
+  const audioBytes = await withHostedTtsRetry(
+    { operationName: 'elevenlabs-tts' },
+    async (signal) => {
       const params = new URLSearchParams({ output_format: outputFormat })
       if (typeof options.controls?.optimizeStreamingLatency === 'number') {
         params.set('optimize_streaming_latency', String(options.controls.optimizeStreamingLatency))
@@ -119,7 +110,6 @@ export const runElevenLabsTts = async (
         ...(pronunciationDictionaryLocators && pronunciationDictionaryLocators.length > 0
           ? { pronunciation_dictionary_locators: pronunciationDictionaryLocators }
           : {}),
-        ...(options.controls?.pvcAsIvc ? { use_pvc_as_ivc: true } : {})
       }
       const response = await fetch(`${baseURL}/text-to-speech/${encodeURIComponent(voiceId)}?${params.toString()}`, {
         method: 'POST',
@@ -128,19 +118,20 @@ export const runElevenLabsTts = async (
           'Content-Type': 'application/json',
           Accept: 'audio/mpeg'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        ...(signal ? { signal } : {})
       })
 
       if (!response.ok) {
         const errText = await readElevenLabsError(response)
-        const err = new Error(`ElevenLabs TTS failed (${response.status}): ${errText}`) as Error & { status: number }
+        const err = new Error(`ElevenLabs TTS failed (${response.status}): ${errText}`) as Error & { status: number, headers: Headers }
         err.status = response.status
+        err.headers = response.headers
         throw err
       }
 
       return await response.arrayBuffer()
-    },
-    (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+    }
   )
   if (audioBytes.byteLength === 0) {
     throw new Error('ElevenLabs TTS returned empty audio')

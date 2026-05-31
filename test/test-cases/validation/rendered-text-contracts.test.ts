@@ -44,9 +44,15 @@ test('text input song titles use tracks.md before falling back to the filename s
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-title-'))
   try {
     const tracksPath = join(tempDir, 'tracks.md')
+    const alphaPath = join(tempDir, 'chapter-alpha.txt')
+    const betaPath = join(tempDir, 'chapter-beta.txt')
     await writeFile(tracksPath, '1. Track One\n2. Track Two\n')
+    await writeFile(alphaPath, 'alpha source\n')
+    await writeFile(betaPath, 'beta source\n')
 
     expect(await resolveTextInputSongTitle(join(tempDir, '01-track-one.md'), tracksPath)).toBe('Track One')
+    expect(await resolveTextInputSongTitle(alphaPath, tracksPath)).toBe('Track One')
+    expect(await resolveTextInputSongTitle(betaPath, tracksPath)).toBe('Track Two')
     expect(await resolveTextInputSongTitle(join(tempDir, '03-bonus-track.md'), tracksPath)).toBe('03-bonus-track')
     expect(await resolveTextInputSongTitle(join(tempDir, '04-fallback.md'), undefined)).toBe('04-fallback')
   } finally {
@@ -113,6 +119,52 @@ test('rendered text track headers replace duplicate song title headings', async 
       expect(rendered).toContain('Verse 1\n\nLine one')
       expect(rendered).toContain('Chorus\n\nHook line')
       expect(rendered).not.toContain('# Track One')
+    }
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+})
+
+test('rendered text track headers use sorted sibling order for unnumbered inputs', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-render-sequential-'))
+  try {
+    const outputDir = join(tempDir, 'out')
+    const tracksPath = join(tempDir, 'tracks.md')
+    const alphaPath = join(tempDir, 'chapter-alpha.txt')
+    const betaPath = join(tempDir, 'chapter-beta.txt')
+    await mkdir(outputDir, { recursive: true })
+    await writeFile(tracksPath, '1. Track One\n2. Track Two\n')
+    await writeFile(alphaPath, 'alpha source\n')
+    await writeFile(betaPath, 'beta source\n')
+
+    const songData = {
+      title: 'Track Two',
+      verse1: 'Line one',
+      chorus: 'Hook line',
+      verse2: 'Line two',
+      bridge: 'Bridge line',
+      finalChorus: 'Final hook'
+    }
+    const renderedText = renderToPlainText(songData, ['rockSong'])
+    const artifacts = await writeRenderedTextArtifacts({
+      outputDir,
+      results: [{
+        metadata: buildStep3Metadata(),
+        renderedText,
+        parsedJson: songData
+      }],
+      writeInternal: true,
+      sourcePath: betaPath,
+      trackListPath: tracksPath
+    })
+
+    const renderedFileName = artifacts.internalArtifacts['rendered']
+    expect(renderedFileName).toBe('text.md')
+    if (renderedFileName) {
+      const rendered = await Bun.file(join(outputDir, renderedFileName)).text()
+      expect(rendered).toContain('02. Track Two (Gemini 3.1 Pro)')
+      expect(rendered).toContain('Verse 1\n\nLine one')
+      expect(rendered).not.toContain('# Track Two')
     }
   } finally {
     await rm(tempDir, { recursive: true, force: true })

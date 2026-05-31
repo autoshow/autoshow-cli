@@ -18,19 +18,17 @@ import { formatCents, reportSuitePriceEstimate, shouldRunCommandPreflight } from
 import { buildUnsupportedExtractInputMessage, validateWriteStep2ProviderSelection } from './process-target-validation'
 import { getYtDlpBinary, hasYtDlpBinary } from '../audio/yt-dlp-binary'
 import {
-  expandExtractPublicSelectorExplicitFlags,
-  hasExtractPublicSelectorFlags,
-  normalizeExtractPublicSelectorArgs,
-  normalizeExtractPublicSelectorFlags,
-  stripExtractPublicSelectorArgs,
-  stripExtractPublicSelectorFlags,
+  hasExtractGenericSelectorFlags,
+  normalizeExtractGenericSelectorArgs,
+  normalizeExtractGenericSelectorFlags,
+  normalizeGenericTtsOptionFlags,
+  normalizeWriteStepSelectorFlags,
+  stripExtractGenericSelectorArgs,
+  stripExtractGenericSelectorFlags,
   type ExtractSelectorInputRoutes
 } from '~/cli/commands/process-steps/service-selector-normalization'
 
-export { buildExpectedFilesList } from './expected-output'
-export { shouldRunCommandPreflight } from './process-target-preflight'
-
-export type ResolvedProcessTargetDoubleDash =
+type ResolvedProcessTargetDoubleDash =
   | { kind: 'target', resolvedTarget: string, ytDlpPassthroughArgs?: string[] | undefined }
   | { kind: 'raw-yt-dlp', ytDlpPassthroughArgs: string[] }
 
@@ -74,7 +72,7 @@ export const resolveProcessTargetDoubleDash = (
   throw CLIUsageError(`Missing input for "${displayCommand}". Run: bun as help ${displayCommand}`)
 }
 
-export const runRawYtDlp = async (args: string[]): Promise<void> => {
+const runRawYtDlp = async (args: string[]): Promise<void> => {
   if (!hasYtDlpBinary()) {
     await setupYtDependencies()
   }
@@ -100,6 +98,8 @@ const addExtractSelectorRoute = (
     routes.media = true
   } else if (family === 'document') {
     routes.document = true
+  } else if (family === 'html_article' || family === 'x_space') {
+    routes.article = true
   }
 }
 
@@ -109,7 +109,7 @@ const resolveExtractSelectorInputRoutes = async (
   opts: RuntimeOptions,
   resolvedTarget: string
 ): Promise<ExtractSelectorInputRoutes> => {
-  const routes: ExtractSelectorInputRoutes = { media: false, document: false }
+  const routes: ExtractSelectorInputRoutes = { media: false, document: false, article: false }
   if (!isExtractCommand(command)) {
     return routes
   }
@@ -144,18 +144,16 @@ export const handleProcessTarget = async (
   const config = await loadConfig(resolvedConfigPath)
   const rawArgv = Bun.argv.slice(2)
   const parsedExplicitFlags = extractExplicitFlags(rawArgv)
-  const configExplicitFlags = isExtractCommand(command)
-    ? expandExtractPublicSelectorExplicitFlags(parsedExplicitFlags)
-    : parsedExplicitFlags
+  const configExplicitFlags = parsedExplicitFlags
   const mergedFlags = mergeConfigIntoRawFlags(rawFlags, config, configExplicitFlags)
   let optionFlags = mergedFlags
   let explicitFlags = configExplicitFlags
   let optionArgv = rawArgv
   let selectorPlan: Awaited<ReturnType<typeof resolveProcessTargetPlan>> | undefined
 
-  if (isExtractCommand(command) && hasExtractPublicSelectorFlags(mergedFlags)) {
-    const preliminaryFlags = stripExtractPublicSelectorFlags(mergedFlags)
-    const preliminaryArgv = stripExtractPublicSelectorArgs(rawArgv)
+  if (isExtractCommand(command) && hasExtractGenericSelectorFlags(mergedFlags)) {
+    const preliminaryFlags = stripExtractGenericSelectorFlags(mergedFlags)
+    const preliminaryArgv = stripExtractGenericSelectorArgs(rawArgv)
     const preliminaryOpts: RuntimeOptions = {
       ...buildOptsFromFlags(
         true,
@@ -169,10 +167,18 @@ export const handleProcessTarget = async (
     }
     selectorPlan = await resolveProcessTargetPlan(command, resolvedDoubleDash.resolvedTarget, preliminaryOpts)
     const selectorRoutes = await resolveExtractSelectorInputRoutes(command, selectorPlan, preliminaryOpts, resolvedDoubleDash.resolvedTarget)
-    const normalized = normalizeExtractPublicSelectorFlags(mergedFlags, configExplicitFlags, selectorRoutes)
+    const normalized = normalizeExtractGenericSelectorFlags(mergedFlags, configExplicitFlags, selectorRoutes)
     optionFlags = normalized.flags
     explicitFlags = normalized.explicitFlags
-    optionArgv = normalizeExtractPublicSelectorArgs(rawArgv, selectorRoutes)
+    optionArgv = normalizeExtractGenericSelectorArgs(rawArgv, selectorRoutes)
+  }
+
+  if (command === 'write') {
+    const selectorNormalized = normalizeWriteStepSelectorFlags(optionFlags, explicitFlags, optionArgv)
+    const ttsNormalized = normalizeGenericTtsOptionFlags(selectorNormalized.flags, selectorNormalized.explicitFlags)
+    optionFlags = ttsNormalized.flags
+    explicitFlags = ttsNormalized.explicitFlags
+    optionArgv = selectorNormalized.rawArgs ?? optionArgv
   }
 
   const opts: RuntimeOptions = {

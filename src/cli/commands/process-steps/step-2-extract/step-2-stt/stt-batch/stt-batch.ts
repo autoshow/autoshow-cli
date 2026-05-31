@@ -9,7 +9,7 @@ import { logSttBatchFinalSummary, processBatch } from '../../../step-1-download/
 import { processSingleTarget } from '../../../step-1-download/targets/single-target'
 import { createMistralSttPassController } from '../stt-services/mistral/mistral-stt-pass-controller'
 
-export class SttBatchIncompleteError extends Error {
+class SttBatchIncompleteError extends Error {
   readonly exitCode: number
   readonly batchDir?: string
   readonly full: number

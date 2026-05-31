@@ -2,10 +2,16 @@ import {
   TOP_PICK_LIMIT_PER_BUCKET,
   TOP_PICK_TARGET_COUNT
 } from './bench-rank-config'
+import { assertValidReleaseDate, MODEL_RELEASE_DATES } from './bench-rank-release-dates'
 import { isExcludedService } from './bench-rank-sources'
 import type {
+  CombinedRankingComponent,
+  CombinedRankingMetric,
+  CombinedRankingRow,
   ProviderAggregate,
   RankingRow,
+  ReleaseDateMap,
+  ReleaseDateMetadata,
   StepKey,
   TopBenchmarkPick,
   TopBenchmarkPickSelection,
@@ -63,6 +69,166 @@ export const rankingRows = (
     .map((row, index) => ({ ...row, rank: index + 1 }))
 }
 
+const rankByKey = (rows: readonly RankingRow[]): Map<string, number> =>
+  new Map(rows.map((row) => [row.key, row.rank]))
+
+const rowByKey = (rows: readonly RankingRow[]): Map<string, RankingRow> =>
+  new Map(rows.map((row) => [row.key, row]))
+
+const clampScore = (score: number): number => Math.max(0, Math.min(100, score))
+
+const lowerIsBetterScore = (row: RankingRow, rows: readonly RankingRow[]): number => {
+  const values = rows.map((candidate) => candidate.average)
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+
+  if (min === max) {
+    return 100
+  }
+
+  return clampScore(((max - row.average) / (max - min)) * 100)
+}
+
+const qualityScore = (row: RankingRow): number => clampScore(row.average)
+
+const combinedMetricWeights = ({
+  priceRows,
+  speedRows,
+  qualityRows
+}: {
+  priceRows: readonly RankingRow[]
+  speedRows: readonly RankingRow[]
+  qualityRows: readonly RankingRow[]
+}): Map<CombinedRankingMetric, number> => {
+  const baseWeights = new Map<CombinedRankingMetric, number>()
+
+  if (qualityRows.length > 0) {
+    baseWeights.set('quality', 0.5)
+    if (speedRows.length > 0) {
+      baseWeights.set('speed', 0.25)
+    }
+    if (priceRows.length > 0) {
+      baseWeights.set('price', 0.25)
+    }
+  } else {
+    if (speedRows.length > 0) {
+      baseWeights.set('speed', 1)
+    }
+    if (priceRows.length > 0) {
+      baseWeights.set('price', 1)
+    }
+  }
+
+  const totalWeight = [...baseWeights.values()].reduce((sum, weight) => sum + weight, 0)
+  if (totalWeight === 0) {
+    return baseWeights
+  }
+
+  return new Map([...baseWeights.entries()].map(([metric, weight]) => [metric, weight / totalWeight]))
+}
+
+const component = ({
+  key,
+  rows,
+  rowsByKey,
+  metric
+}: {
+  key: string
+  rows: readonly RankingRow[]
+  rowsByKey: ReadonlyMap<string, RankingRow>
+  metric: CombinedRankingMetric
+}): CombinedRankingComponent => {
+  if (rows.length === 0) {
+    return {
+      active: false,
+      score: 0
+    }
+  }
+
+  const row = rowsByKey.get(key)
+  if (!row) {
+    return {
+      active: true,
+      score: 50
+    }
+  }
+
+  const score = metric === 'quality' ? qualityScore(row) : lowerIsBetterScore(row, rows)
+  return {
+    active: true,
+    score,
+    rank: row.rank,
+    average: row.average,
+    samples: row.count
+  }
+}
+
+const releaseMetadataForKey = (
+  key: string,
+  releaseDates: ReleaseDateMap
+): ReleaseDateMetadata | undefined =>
+  releaseDates[key] ?? releaseDates[key.split('#')[0] ?? key]
+
+export const combinedRankingRows = ({
+  priceRows,
+  speedRows,
+  qualityRows,
+  releaseDates = MODEL_RELEASE_DATES
+}: {
+  priceRows: readonly RankingRow[]
+  speedRows: readonly RankingRow[]
+  qualityRows: readonly RankingRow[]
+  releaseDates?: ReleaseDateMap
+}): CombinedRankingRow[] => {
+  const weights = combinedMetricWeights({ priceRows, speedRows, qualityRows })
+  if (weights.size === 0) {
+    return []
+  }
+
+  const priceRowsByKey = rowByKey(priceRows)
+  const speedRowsByKey = rowByKey(speedRows)
+  const qualityRowsByKey = rowByKey(qualityRows)
+  const keys = [...new Set([
+    ...priceRows.map((row) => row.key),
+    ...speedRows.map((row) => row.key),
+    ...qualityRows.map((row) => row.key)
+  ])].sort()
+
+  const rows = keys.map((key): Omit<CombinedRankingRow, 'rank'> => {
+    const releaseDate = assertValidReleaseDate(key, releaseMetadataForKey(key, releaseDates))
+    const price = component({ key, rows: priceRows, rowsByKey: priceRowsByKey, metric: 'price' })
+    const speed = component({ key, rows: speedRows, rowsByKey: speedRowsByKey, metric: 'speed' })
+    const quality = component({ key, rows: qualityRows, rowsByKey: qualityRowsByKey, metric: 'quality' })
+    const combinedScore = [...weights.entries()].reduce((score, [metric, weight]) => {
+      if (metric === 'price') {
+        return score + price.score * weight
+      }
+      if (metric === 'speed') {
+        return score + speed.score * weight
+      }
+      return score + quality.score * weight
+    }, 0)
+
+    return {
+      key,
+      combinedScore,
+      releaseDate: releaseDate.date,
+      releaseDateSourceUrl: releaseDate.sourceUrl,
+      ...(releaseDate.note ? { releaseDateNote: releaseDate.note } : {}),
+      price,
+      speed,
+      quality
+    }
+  })
+
+  return rows
+    .sort((left, right) => {
+      const scoreComparison = right.combinedScore - left.combinedScore
+      return scoreComparison === 0 ? left.key.localeCompare(right.key) : scoreComparison
+    })
+    .map((row, index) => ({ ...row, rank: index + 1 }))
+}
+
 const topPickShortfallNote = (selectedCount: number, eligibleCount: number): string | undefined => {
   if (selectedCount >= TOP_PICK_TARGET_COUNT) {
     return undefined
@@ -86,6 +252,9 @@ export const selectTopBenchmarkPicks = ({
 }): TopBenchmarkPickSelection => {
   const rows: TopBenchmarkPick[] = []
   const selectedKeys = new Set<string>()
+  const priceRanks = rankByKey(priceRows)
+  const speedRanks = rankByKey(speedRows)
+  const qualityRanks = rankByKey(qualityRows)
   const bestRows = qualityRows.length > 0
     ? qualityRows
     : [...priceRows].sort((left, right) => {
@@ -111,6 +280,10 @@ export const selectTopBenchmarkPicks = ({
         continue
       }
 
+      const priceRank = priceRanks.get(candidate.key)
+      const speedRank = speedRanks.get(candidate.key)
+      const qualityRank = qualityRanks.get(candidate.key)
+
       rows.push({
         bucket,
         key: candidate.key,
@@ -118,6 +291,9 @@ export const selectTopBenchmarkPicks = ({
         metricName: candidate.metricName ?? metricName,
         metricValue: candidate.average,
         originalRank: candidate.rank,
+        ...(priceRank !== undefined ? { priceRank } : {}),
+        ...(speedRank !== undefined ? { speedRank } : {}),
+        ...(qualityRank !== undefined ? { qualityRank } : {}),
         samples: candidate.count,
         selectionNote
       })

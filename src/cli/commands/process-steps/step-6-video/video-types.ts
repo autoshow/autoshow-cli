@@ -8,7 +8,6 @@ export type VideoGenOptions = Pick<
   | 'glmVideoModels' | 'glmVideoModel'
   | 'grokVideoModels' | 'grokVideoModel'
   | 'runwayVideoModels' | 'runwayVideoModel'
-  | 'deapiVideoModels' | 'deapiVideoModel'
   | 'allVideo'
   | 'videoDuration' | 'videoSize' | 'videoAspectRatio' | 'videoResolution'
   | 'videoMode' | 'videoInputImage' | 'videoLastFrame' | 'videoReferenceImages' | 'videoInputVideo'
@@ -26,13 +25,12 @@ export type GlmVideoDurationSeconds = 4 | 5 | 10
 export type GlmVideoQuality = 'speed' | 'quality'
 export type GlmVideoFps = 30 | 60
 export type GrokVideoDurationSeconds = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15
-export type GrokVideoResolution = '480p' | '720p' | '1080p'
+export type GrokVideoResolution = '480p' | '720p'
 export type RunwayDurationSeconds = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
 export type RunwayRatio = '1280:720' | '720:1280'
-export type DeapiVideoFps = 24 | 30
 
 export type VideoTarget = ProviderTargetBase<VideoProvider> & {
-  run: (prompt: string, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
+  run: (prompt: string | undefined, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
 }
 
 export type VideoCostEstimate = CostEstimateBase<VideoProvider> & {
@@ -52,11 +50,11 @@ export type EstimateVideoCostOptions = {
   grokVideoModel?: string | undefined
   runwayVideoModels?: string[] | undefined
   runwayVideoModel?: string | undefined
-  deapiVideoModels?: string[] | undefined
-  deapiVideoModel?: string | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined
   videoAspectRatio?: string | undefined
   videoResolution?: string | undefined
   videoMode?: string | undefined
+  grokInputImageCount?: number | undefined
+  grokInputVideoDurationSeconds?: number | undefined
 }

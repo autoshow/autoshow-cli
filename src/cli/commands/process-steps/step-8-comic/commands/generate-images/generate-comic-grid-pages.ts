@@ -1,6 +1,6 @@
 import { mkdir, readdir } from 'node:fs/promises'
 import { comicLog } from '../../utils/logger'
-import { createImageRunStats } from '../../image-services'
+import { createImageRunStats } from '../../image-services/image-costs'
 import { getPanelPromptsDirectory, getPagesDirectory } from '../../utils/project-paths'
 import {
   getPanelNumberFromName,
@@ -25,9 +25,9 @@ import type {
 import type {
   GenerateComicGridPagesOptions,
   ImagePromptVariation,
-} from '../../types'
+} from '../../types/comic-command-types'
 
-export type GenerateComicGridPagesDependencies = {
+type GenerateComicGridPagesDependencies = {
   composeGridPage?: (input: ComposeComicGridPageInput) => Promise<{ width: number; height: number }>
 }
 

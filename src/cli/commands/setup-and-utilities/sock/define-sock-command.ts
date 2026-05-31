@@ -148,14 +148,14 @@ const sockFlags = {
     negatable: false
   },
   'token-help': {
-    description: 'Print Socket API token scope guidance and exit',
+    description: 'Print minimal Socket API token scope guidance and exit',
     type: Boolean,
     default: false,
     negatable: false
   }
 } as const satisfies CliFlagsDefinition
 
-export const SOCKET_TOKEN_HELP = `Socket API token guidance for bun as sock
+const SOCKET_TOKEN_HELP = `Socket API token guidance for bun as sock
 
 Do not select all scopes.
 

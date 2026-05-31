@@ -1,6 +1,6 @@
+import * as l from '~/utils/logger'
 import { join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as l from '~/utils/logger'
 import { logResumeItem, logResumeSummary } from '../../resume/resume-logging'
 import {
   DocumentMetadataSchema,
@@ -213,17 +213,13 @@ const buildResumeExtractionOpts = (
     outputDir,
     dpi: opts.dpi,
     languages: opts.lang,
-    oem: opts.oem,
-    psm: opts.psm,
     outputFormat: opts.out,
     password: opts.password,
-    pageSeparator: opts.pageSeparator ?? '\n\n',
     ocrProviderConcurrency: opts.ocrProviderConcurrency,
     ocrLocalConcurrency: opts.ocrLocalConcurrency,
-    preserveInterwordSpaces: opts.preserveSpaces,
-    rotate: opts.rotate,
-    awsRegion: opts.awsRegion,
-    awsBucket: opts.awsBucket,
+    epubChapterFiles: opts.epubChapterFiles,
+    epubChunkLimitChars: opts.epubChunkLimitChars,
+    pdfChapterMode: opts.pdfChapterMode,
     configPath: opts.configPath,
     ...(opts.useEpubBun ? { useEpubBun: true } : {}),
     ...(opts.useEpubCalibre ? { useEpubCalibre: true } : {}),

@@ -115,6 +115,8 @@ export type BenchmarkReport = {
 
 export type BenchmarkFlags = {
   tts?: boolean | undefined
+  image?: boolean | undefined
+  video?: boolean | undefined
   bitrates: string
   speeds: string
   'stt-services'?: string | undefined
@@ -127,5 +129,8 @@ export type BenchmarkFlags = {
   'tts-roundtrip-dir'?: string | undefined
   'tts-metric-fixtures'?: string | undefined
   'tts-audio-judge-model'?: string | undefined
+  'tts-content-type'?: string | undefined
   'tts-keep-temp'?: boolean | undefined
+  'image-judge-model'?: string | undefined
+  'video-judge-model'?: string | undefined
 }

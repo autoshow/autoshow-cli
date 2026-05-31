@@ -8,32 +8,18 @@
       "hannah",
       "austin",
       "daniel",
-      "troy",
-      "abdullah",
-      "fahad",
-      "sultan",
-      "lulwa",
-      "noura",
-      "aisha"
+      "troy"
     ],
     "models": {
       "canopylabs/orpheus-v1-english": {
         "description": "Orpheus v1 English — expressive low-latency cloud TTS",
-        "inputCostPer1MCharsUSD": 10,
-        "inputCostPer1MCharsCents": 1000,
-        "outputCostPer1MCharsUSD": 22,
-        "outputCostPer1MCharsCents": 2200,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPer1KChars": 16316
-        }
-      },
-      "canopylabs/orpheus-arabic-saudi": {
-        "description": "Orpheus Arabic Saudi — authentic Saudi dialect cloud TTS",
-        "inputCostPer1MCharsUSD": 0,
-        "inputCostPer1MCharsCents": 0,
-        "outputCostPer1MCharsUSD": 40,
-        "outputCostPer1MCharsCents": 4000,
+        "pricingSourceUrl": "https://console.groq.com/docs/text-to-speech/orpheus",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "On-demand pay-as-you-go",
+        "pricingNotes": "Groq lists canopylabs/orpheus-v1-english Text-To-Speech as billed at $22 / 1M characters. Stored as a single character rate to avoid double-counting input text.",
+        "costPer1kCharsUSD": 0.022,
+        "costPer1kCharsCents": 2.2,
         "estimation": {
           "costMultiplier": 1,
           "msPer1KChars": 16316

@@ -13,9 +13,10 @@ import type {
 import { CLIUsageError } from '~/utils/error-handler'
 import { writeFile } from '~/utils/cli-utils'
 import * as l from '~/utils/logger'
-import { buildPdfChapterArtifacts } from './chapters'
-import { runEpubBunInspect, runEpubCalibreInspect } from './epub'
+import { buildPdfChapterArtifacts } from './chapters/artifacts'
 import { buildEpubTextOutput } from './epub/export'
+import { runEpubBunInspect } from './epub/run-epub-bun-inspect'
+import { runEpubCalibreInspect } from './epub/run-epub-calibre-inspect'
 import {
   countSelectedOcrEngines,
   engineSuffix,
@@ -23,8 +24,7 @@ import {
   hasEpubExportFlags,
   hasHostedOcr,
   hasOcrFlag,
-  resolveExtractEngine,
-  warnTesseractOnlyFlags
+  resolveExtractEngine
 } from './ocr-engine-selection'
 import {
   getHostedDirectImageSupportError,
@@ -104,7 +104,7 @@ export const runOcr = async (
   const ocrEngineCount = countSelectedOcrEngines(opts)
 
   if ((typeof opts.preparedMarkdown !== 'string' || opts.preparedMarkdown.trim().length === 0) && ocrEngineCount > 1) {
-    throw CLIUsageError('Use at most one OCR engine at a time (--ocrmypdf, --paddle-ocr, --mistral-ocr, --glm-ocr, --kimi-ocr, --openai-ocr, --anthropic-ocr, --gemini-ocr, --deepinfra-ocr, --aws-textract, --gcloud-docai, --unstructured-ocr).')
+    throw CLIUsageError('Use at most one OCR provider at a time. Select one with --provider provider[=model].')
   }
 
   if (useEpubBun && useEpubCalibre) {
@@ -124,7 +124,7 @@ export const runOcr = async (
       ? opts.preparedMarkdown.trim()
       : typeof canonicalText === 'string' && canonicalText.trim().length > 0
         ? canonicalText.trim()
-        : buildCombinedText(pages, opts.pageSeparator, extractionMethod !== 'epub-text')
+        : buildCombinedText(pages, extractionMethod !== 'epub-text')
 
     await writeFile(`${opts.outputDir}/extraction.txt`, text)
   }
@@ -288,7 +288,7 @@ export const runOcr = async (
         if (totalCompletionTokens > 0) completionTokens = totalCompletionTokens
       } else {
         const engine = resolveExtractEngine(opts)
-        if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
+
 
         const ocrNormDir = await mkdtemp(join(tmpdir(), 'autoshow-cbz-ocr-'))
         try {
@@ -336,7 +336,6 @@ export const runOcr = async (
       }
     } else {
       const engine = resolveExtractEngine(opts)
-      if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
 
       const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-img-ocr-'))
       try {
@@ -366,7 +365,6 @@ export const runOcr = async (
       mergeHostedProviderCost(run)
     } else {
       const engine = resolveExtractEngine(opts)
-      if (engine !== 'tesseract') warnTesseractOnlyFlags(engine, opts)
 
       const run = await runLocalPdfOcr(filePath, step1Metadata, opts, engine)
       pages = run.pages

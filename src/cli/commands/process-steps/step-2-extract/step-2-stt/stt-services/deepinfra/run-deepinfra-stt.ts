@@ -1,4 +1,5 @@
 import type { Step2Metadata, TranscriptionResult } from '~/types'
+import { DEEPINFRA_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { runOpenAICompatibleSingleSpeakerStt } from '../openai-compatible-single-speaker'
 
@@ -22,9 +23,7 @@ export const runDeepinfraTranscribe = async (
     throw new Error('DEEPINFRA_API_KEY environment variable is required for DeepInfra transcription')
   }
 
-  const baseURL = normalizeDeepinfraBaseURL(
-    readEnv('DEEPINFRA_BASE_URL') ?? 'https://api.deepinfra.com/v1'
-  )
+  const baseURL = normalizeDeepinfraBaseURL(DEEPINFRA_DEFAULT_BASE_URL)
   return await runOpenAICompatibleSingleSpeakerStt(audioPath, outputDir, {
     service: 'deepinfra',
     providerLabel: 'DeepInfra',

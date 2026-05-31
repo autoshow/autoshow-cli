@@ -16,6 +16,7 @@ import {
   colorizeHumanTableCell,
   colorizeHumanTableHeader
 } from '~/utils/logger/log-colors'
+import { formatDuration } from '~/utils/logger/formatters'
 import { stripAnsi } from '~/utils/terminal-colors'
 
 const tableIndent = '  '
@@ -109,6 +110,55 @@ const conditionallyLiftVerboseColumnNames = new Set<string>([
 const normalizeColumnName = (column: string): string =>
   column.trim().replace(/[^a-z0-9]+/gi, '').toLowerCase()
 
+const humanLabelOverrides = new Map<string, string>([
+  ['batchmanifest', 'batch manifest'],
+  ['cachedir', 'cache dir'],
+  ['durationms', 'duration'],
+  ['elapsedms', 'elapsed'],
+  ['estimatedtime', 'estimated'],
+  ['inputdir', 'input dir'],
+  ['inputpath', 'input path'],
+  ['outputcount', 'outputs'],
+  ['outputdir', 'output dir'],
+  ['outputpath', 'output path'],
+  ['processingtime', 'time'],
+  ['processingtimems', 'time'],
+  ['providermodel', 'provider/model'],
+  ['retryoutputdir', 'retry output dir'],
+  ['runmanifest', 'run manifest'],
+  ['sourcemedia', 'source media'],
+  ['sourcepath', 'source path'],
+  ['targetpath', 'target path'],
+  ['totalestimatedcost', 'total estimated cost'],
+  ['totalestimatedprocessingtime', 'total estimated processing time'],
+  ['totalprocessingtime', 'total processing time']
+])
+
+const humanizeIdentifier = (value: string): string => {
+  const trimmed = value.trim()
+  if (trimmed.length === 0) {
+    return trimmed
+  }
+
+  if (/\s/.test(trimmed)) {
+    return trimmed
+  }
+
+  const override = humanLabelOverrides.get(normalizeColumnName(trimmed))
+  if (override) {
+    return override
+  }
+
+  return trimmed
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+    .toLowerCase()
+}
+
+const getDisplayLabel = (table: HumanLogTable, label: string): string =>
+  table.labels?.[label] ?? humanizeIdentifier(label)
+
 const isAlwaysLiftVerboseColumnName = (column: string): boolean =>
   alwaysLiftVerboseColumnNames.has(normalizeColumnName(column))
 
@@ -184,6 +234,119 @@ const formatTableCell = (value: HumanLogTableCell | undefined): string => {
 
   if (value === null) {
     return 'null'
+  }
+
+  return String(value)
+}
+
+const getSemanticColumnName = (
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string
+): string => {
+  if (columns.length === 2 && column === columns[1]) {
+    const keyValueLabel = detailLabelFromCell(row[columns[0] as string])
+    return keyValueLabel ?? column
+  }
+
+  return column
+}
+
+const isDurationSemanticColumn = (column: string): boolean => {
+  const normalized = normalizeColumnName(column)
+  return normalized.includes('duration')
+    || normalized.includes('processingtime')
+    || normalized.includes('elapsed')
+    || normalized.includes('latency')
+    || normalized.endsWith('time')
+    || normalized.endsWith('ms')
+}
+
+const isSecondsSemanticColumn = (column: string): boolean => {
+  const normalized = normalizeColumnName(column)
+  return normalized.endsWith('seconds') || normalized.endsWith('secs')
+}
+
+const isCostSemanticColumn = (column: string): boolean => {
+  const normalized = normalizeColumnName(column)
+  return normalized.includes('cost')
+    || normalized.includes('price')
+    || normalized.includes('cents')
+}
+
+const isCountSemanticColumn = (column: string): boolean => {
+  const normalized = normalizeColumnName(column)
+  return normalized === 'total'
+    || normalized === 'count'
+    || normalized.endsWith('count')
+    || normalized.endsWith('counts')
+    || normalized.endsWith('chunks')
+    || normalized.endsWith('images')
+    || normalized.endsWith('outputs')
+    || normalized.endsWith('attempt')
+    || normalized.endsWith('attempts')
+    || normalized.endsWith('pages')
+    || normalized.endsWith('tokens')
+    || normalized.endsWith('characters')
+}
+
+const shouldFormatDurationValue = (
+  semanticColumn: string,
+  value: HumanLogTableCell
+): value is number =>
+  typeof value === 'number'
+  && Number.isFinite(value)
+  && isDurationSemanticColumn(semanticColumn)
+  && !isSecondsSemanticColumn(semanticColumn)
+
+const isKeyLabelColumn = (
+  columns: readonly string[],
+  column: string
+): boolean =>
+  columns.length === 2
+  && column === columns[0]
+  && (
+    columns[1] === 'value'
+    || columns[1] === 'path'
+  )
+
+const formatDisplayTableCell = (
+  table: HumanLogTable,
+  row: HumanLogTableRow,
+  columns: readonly string[],
+  column: string,
+  value: HumanLogTableCell | undefined
+): string => {
+  if (value === undefined) {
+    return ''
+  }
+
+  if (value === null) {
+    return 'null'
+  }
+
+  if (isKeyLabelColumn(columns, column) && typeof value === 'string') {
+    return getDisplayLabel(table, value)
+  }
+
+  const semanticColumn = getSemanticColumnName(row, columns, column)
+  if (shouldFormatDurationValue(semanticColumn, value)) {
+    return formatDuration(value)
+  }
+
+  return String(value)
+}
+
+const formatDisplayDetailCell = (
+  label: string,
+  value: HumanLogTableCell
+): string => {
+  if (value === null) {
+    return 'null'
+  }
+
+  if (shouldFormatDurationValue(label, value)) {
+    return formatDuration(value)
   }
 
   return String(value)
@@ -441,7 +604,8 @@ const extractWidePathDetails = (table: HumanLogTable): HumanLogTable => {
           )
         }
       : {}),
-    details
+    details,
+    ...(table.labels ? { labels: table.labels } : {})
   }
 
   return out
@@ -504,15 +668,28 @@ const renderTableRow = (
 export const createHumanTable = (
   rows: readonly HumanLogTableRow[],
   columns?: readonly string[],
-  options: Pick<HumanLogTable, 'align'> = {}
+  options: Pick<HumanLogTable, 'align' | 'labels'> = {}
 ): HumanLogTable =>
   extractWidePathDetails(
     extractVerboseCellDetails({
       rows,
       ...(columns ? { columns } : {}),
-      ...(options.align ? { align: options.align } : {})
+      ...(options.align ? { align: options.align } : {}),
+      ...(options.labels ? { labels: options.labels } : {})
     })
   )
+
+export const createDetailTable = (
+  entries: ReadonlyArray<readonly [string, unknown]>,
+  options: Pick<HumanLogTable, 'labels'> = {}
+): HumanLogTable => ({
+  rows: [],
+  details: entries.map(([label, value]) => ({
+    label,
+    value: normalizeTableCell(value)
+  })),
+  ...(options.labels ? { labels: options.labels } : {})
+})
 
 export const createKeyValueTable = (
   entries: ReadonlyArray<readonly [string, unknown]>,
@@ -636,26 +813,103 @@ export const logBatchItemTable = (
   })
 }
 
-const renderHumanTableDetails = (details: readonly HumanLogTableDetail[] | undefined): string => {
+const isRightAlignedDisplayValue = (value: string): boolean => {
+  const trimmed = stripAnsi(value).trim()
+  return trimmed.length > 0
+    && (
+      /^-?\d+(?:\.\d+)?$/.test(trimmed)
+      || /^-?\$?\d+(?:\.\d+)?\u00a2?$/.test(trimmed)
+      || trimmed === 'free'
+      || trimmed === '<0.01\u00a2'
+      || /^\d+(?:\.\d+)?(?:ms|s)$/.test(trimmed)
+      || /^\d+m \d+s$/.test(trimmed)
+    )
+}
+
+const inferColumnAlign = (
+  table: HumanLogTable,
+  columns: readonly string[],
+  column: string,
+  displayValues: readonly string[]
+): HumanLogTableAlign | undefined => {
+  if (isKeyLabelColumn(columns, column)) {
+    return undefined
+  }
+
+  const columnIndex = columns.indexOf(column)
+  const semanticColumns = new Set(
+    table.rows.map(row => getSemanticColumnName(row, columns, column))
+  )
+  const shouldAlignBySemantic = semanticColumns.size === 1 && [...semanticColumns].some(semantic =>
+    isCostSemanticColumn(semantic)
+    || isDurationSemanticColumn(semantic)
+    || isCountSemanticColumn(semantic)
+  )
+  if (shouldAlignBySemantic) {
+    return 'right'
+  }
+
+  const nonEmptyValues = displayValues
+    .map(value => value.trim())
+    .filter(value => value.length > 0)
+  if (
+    columnIndex >= 0
+    && nonEmptyValues.length > 0
+    && nonEmptyValues.every(isRightAlignedDisplayValue)
+  ) {
+    return 'right'
+  }
+
+  return undefined
+}
+
+const resolveRenderAlign = (
+  table: HumanLogTable,
+  columns: readonly string[],
+  rows: readonly (readonly string[])[]
+): HumanLogTable['align'] => {
+  const align: Record<string, HumanLogTableAlign> = {}
+
+  for (const [index, column] of columns.entries()) {
+    const explicitAlign = table.align?.[column]
+    const inferredAlign = explicitAlign ?? inferColumnAlign(
+      table,
+      columns,
+      column,
+      rows.map(row => row[index] ?? '')
+    )
+    if (inferredAlign) {
+      align[column] = inferredAlign
+    }
+  }
+
+  return Object.keys(align).length > 0 ? align : undefined
+}
+
+const renderHumanTableDetails = (
+  table: HumanLogTable,
+  details: readonly HumanLogTableDetail[] | undefined
+): string => {
   if (!details || details.length === 0) {
     return ''
   }
 
   return details
     .map((detail) => {
-      const value = formatTableCell(detail.value)
+      const label = getDisplayLabel(table, detail.label)
+      const value = formatDisplayDetailCell(detail.label, detail.value)
       const valueLines = value.split(/\r?\n/).map(line => colorizeHumanTableCell({
         column: detail.label,
         value: line,
         row: { [detail.label]: line }
       }))
       const [firstLine = '', ...restLines] = valueLines
-      const renderedFirstLine = `${tableIndent}${detail.label}: ${firstLine}`
+      const renderedFirstLine = `${tableIndent}${label}: ${firstLine}`
       if (restLines.length === 0) {
         return renderedFirstLine
       }
 
-      const continuationIndent = `${tableIndent}${' '.repeat(detail.label.length + 2)}`
+      const continuationIndent = `${tableIndent}${' '.repeat(label.length + 2)}`
       return [
         renderedFirstLine,
         ...restLines.map(line => `${continuationIndent}${line}`)
@@ -666,7 +920,7 @@ const renderHumanTableDetails = (details: readonly HumanLogTableDetail[] | undef
 
 export const renderHumanTable = (table: HumanLogTable): string => {
   const normalizedTable = extractWidePathDetails(extractVerboseCellDetails(table))
-  const renderedDetails = renderHumanTableDetails(normalizedTable.details)
+  const renderedDetails = renderHumanTableDetails(normalizedTable, normalizedTable.details)
 
   if (normalizedTable.rows.length === 0) {
     return renderedDetails.length > 0 ? renderedDetails : `${tableIndent}(empty)`
@@ -678,20 +932,24 @@ export const renderHumanTable = (table: HumanLogTable): string => {
   }
 
   const renderHeader = shouldRenderHeader(columns)
-  const rows = normalizedTable.rows.map(row => columns.map(column => formatTableCell(row[column])))
+  const headerValues = columns.map(column => getDisplayLabel(normalizedTable, column))
+  const rows = normalizedTable.rows.map(row =>
+    columns.map(column => formatDisplayTableCell(normalizedTable, row, columns, column, row[column]))
+  )
+  const renderAlign = resolveRenderAlign(normalizedTable, columns, rows)
   const widths = columns.map((column, index) => Math.max(
-    renderHeader ? column.length : 0,
+    renderHeader ? (headerValues[index]?.length ?? column.length) : 0,
     ...rows.map(row => row[index]?.length ?? 0)
   ))
   const lines = [
     renderBorder(tableChars.topLeft, tableChars.topJoin, tableChars.topRight, widths),
     ...(renderHeader
       ? [
-          renderTableRow(columns, widths, columns, { header: true, align: normalizedTable.align }),
+          renderTableRow(headerValues, widths, columns, { header: true, align: renderAlign }),
           renderBorder(tableChars.leftJoin, tableChars.crossJoin, tableChars.rightJoin, widths)
         ]
       : []),
-    ...rows.map(row => renderTableRow(row, widths, columns, { align: normalizedTable.align })),
+    ...rows.map(row => renderTableRow(row, widths, columns, { align: renderAlign })),
     renderBorder(tableChars.bottomLeft, tableChars.bottomJoin, tableChars.bottomRight, widths)
   ]
 

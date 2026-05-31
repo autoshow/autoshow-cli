@@ -20,15 +20,16 @@ Documents and images route through local OCR, hosted OCR, or native text extract
   - [GLM OCR](#glm-ocr)
   - [Kimi OCR](#kimi-ocr)
   - [OpenAI OCR](#openai-ocr)
+  - [Grok OCR](#grok-ocr)
   - [Anthropic OCR](#anthropic-ocr)
   - [Gemini OCR](#gemini-ocr)
   - [DeepInfra OCR](#deepinfra-ocr)
-  - [AWS Textract](#aws-textract)
-  - [Google Cloud Document AI](#google-cloud-document-ai)
   - [Unstructured OCR](#unstructured-ocr)
 - [OCR Notes](#ocr-notes)
 
 See the [`extract` overview](./01-extract.md) for input routing across STT, OCR, article HTML, and X/Twitter inputs. Remote article URLs and local HTML are documented separately in [URL and X extraction](./04-extract-url.md).
+
+The standalone `extract` command uses route-aware `--provider provider[=model]` selectors for document/OCR inputs. The `write` and `config` commands use the step selector `--ocr provider[=model]`; `resume` uses target-aware `--provider provider[=model]`.
 
 ## OCR Setup
 
@@ -43,10 +44,8 @@ bun as setup --step calibre
 PaddleOCR can also be prepared lazily on first use:
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --paddle
+bun as extract input/examples/document/1-document.pdf --provider paddle-ocr
 ```
-
-`--epub-calibre` is kept as a compatibility alias for the native Bun EPUB inspector and does not require Calibre.
 
 ## OCR Environment
 
@@ -56,6 +55,8 @@ Use these only when you select the matching hosted OCR engine:
 MISTRAL_API_KEY=...
 OPENAI_API_KEY=...
 OPENAI_BASE_URL=https://api.openai.com/v1
+XAI_API_KEY=...
+XAI_BASE_URL=https://api.x.ai/v1
 ANTHROPIC_API_KEY=...
 ANTHROPIC_BASE_URL=https://api.anthropic.com
 GEMINI_API_KEY=...
@@ -67,18 +68,14 @@ DEEPINFRA_API_KEY=...
 DEEPINFRA_BASE_URL=https://api.deepinfra.com/v1/openai
 UNSTRUCTURED_API_KEY=...
 UNSTRUCTURED_API_URL=https://platform.unstructuredapp.io/api/v1
-# AWS Textract uses AWS CLI auth and region/bucket config
-bun as setup --aws
-# Google Cloud Document AI uses gcloud CLI auth plus Document AI/GCS settings
-bun as setup --gcloud
 ```
 
 ## OCR Routing
 
 | Input family | Default path | Other available paths |
 |--------------|--------------|-----------------------|
-| PDF | `mutool+tesseract` | `--tesseract`, `--ocrmypdf`, `--paddle`, `--mistral`, `--glm`, `--kimi`, `--openai`, `--anthropic`, `--gemini`, `--deepinfra`, `--aws`, `--gcloud`, `--unstructured` |
-| EPUB | cleaned native extraction (`epub-text`) | `--tesseract`, `--ocrmypdf`, `--paddle`, hosted OCR engines, `--epub-bun`, `--epub-calibre` |
+| PDF | `mutool+tesseract` | `--provider tesseract`, `--provider ocrmypdf`, `--provider paddle-ocr`, `--provider mistral`, `--provider glm`, `--provider kimi`, `--provider openai`, `--provider grok`, `--provider anthropic`, `--provider gemini`, `--provider deepinfra`, `--provider unstructured` |
+| EPUB | cleaned native extraction (`epub-text`) | `--provider tesseract`, `--provider ocrmypdf`, `--provider paddle-ocr`, hosted OCR engines, `--epub-bun` |
 | MOBI / AZW3 / FB2 / LIT | normalize to EPUB, then follow the EPUB path | same |
 | DOCX / PPTX / XLSX / ODF | native ZIP/XML text extraction | OCR flags are ignored with a warning |
 | RTF | native RTF text extraction | OCR flags are ignored with a warning |
@@ -92,13 +89,13 @@ bun as setup --gcloud
 
 | Flag | Description |
 |------|-------------|
-| `--out <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
+| `--format <format>` | Output format: `text`, `json`, `tsv`, or `hocr` |
 | `--password <value>` | Password for encrypted PDFs |
-| `--all-ocr` | Enable every supported OCR provider/model for this command |
+| `--all-providers` | Enable every supported OCR provider/model for this route |
 | `--primary-ocr <service[/model]>` | In multi-provider OCR, choose which requested provider writes top-level extraction artifacts |
-| `--ocr-provider-concurrency <n>` | Hosted OCR providers/models to run concurrently per item; default `2` |
-| `--ocr-local-concurrency <n>` | Local OCR providers to run concurrently per item; default `1` |
-| `--dpi <n>` | Render DPI for OCR pages |
+| `--provider-concurrency <n>` | Hosted providers/models to run concurrently per item; default `2` |
+| `--local-concurrency <n>` | Local providers to run concurrently per item; default `1` |
+| `--ocr-dpi <n>` | Render DPI for OCR pages |
 | `--chapters` | EPUB native text runs or PDF autodetection: write chapter files under `chapters/` |
 | `--length <n>` | Hard export limit in thousands of characters; for EPUB alone writes `chunks/`, and with `--chapters` splits oversized EPUB or PDF chapter files |
 | `--pdf-chapter-mode <mode>` | PDF chapter detection mode: `local`, `auto`, or `llm` |
@@ -109,13 +106,15 @@ bun as setup --gcloud
 bun as extract input/examples/document/1-document.pdf
 
 # JSON output
-bun as extract input/examples/document/1-document.pdf --out json
+bun as extract input/examples/document/1-document.pdf --format json
 
 # Fan out across every OCR provider in price mode
-bun as extract input/examples/document/1-document.pdf --all-ocr --price
+bun as extract input/examples/document/1-document.pdf --all-providers --price
 ```
 
 For token-priced hosted OCR providers, `--price` uses model-specific input/output token heuristics from recent benchmark usage. Actual runs write provider usage to `run.json` when available, and post-run cost diagnostics use those actual token counts.
+
+The human price table shows only `step`, `provider`, `model`, and `cost`. Run with `--json` when you need the structured estimate fields behind the total, including page counts, prompt/completion tokens, input/output rates, and `estimateType`.
 
 ## EPUB Options
 
@@ -124,15 +123,13 @@ For token-priced hosted OCR providers, `--price` uses model-specific input/outpu
 | Flag | Result |
 |------|--------|
 | `--epub-bun` | Inspect EPUB structure with the Bun ZIP/XML parser and write structured EPUB data into `run.json` |
-| `--epub-calibre` | Compatibility alias for the Bun ZIP/XML parser that preserves the existing `epub-calibre` output method |
 
 ```bash
-bun as extract input/examples/document/1-epub.epub --epub-bun --out json
-bun as extract input/examples/document/1-epub.epub --epub-calibre --out json
+bun as extract input/examples/document/1-epub.epub --epub-bun --format json
 ```
 
 - Inspect mode is metadata-only for EPUB inputs.
-- If `--out` is set in inspect mode, it must be `json`.
+- If `--format` is set in inspect mode, it must be `json`.
 - `--chapters` and `--length` are ignored in inspect mode.
 
 ### Native EPUB Export
@@ -170,49 +167,48 @@ bun as extract input/examples/document/3-document.pdf --chapters --pdf-chapter-m
 
 | Option | Value |
 |--------|-------|
-| Selector | default PDF/image path, or `--tesseract` |
-| Language | `--lang <codes>` such as `eng` or `eng+fra` |
-| Tuning | `--psm <n>`, `--oem <n>`, `--page-separator <text>`, `--preserve-spaces`, `--rotate <degrees>` |
+| Selector | default PDF/image path, or `--provider tesseract` |
+| Language | `--ocr-language <codes>` such as `eng` or `eng+fra` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --tesseract
-bun as extract input/examples/document/1-document.pdf --tesseract --lang eng+fra --dpi 300
+bun as extract input/examples/document/1-document.pdf --provider tesseract
+bun as extract input/examples/document/1-document.pdf --provider tesseract --ocr-language eng+fra --ocr-dpi 300
 ```
 
-Tesseract tuning flags work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md). Non-Tesseract engines may ignore Tesseract-specific tuning flags and report a warning when they do.
+Tesseract language and DPI controls work on the `extract` document/OCR route and on [`write`](../step-3-write/write-text.md). Non-Tesseract engines may ignore local OCR controls and report a warning when they do.
 
 ### OCRmyPDF
 
 | Option | Value |
 |--------|-------|
-| Selector | `--ocrmypdf` |
+| Selector | `--provider ocrmypdf` |
 | Input focus | PDF OCR path |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --ocrmypdf
+bun as extract input/examples/document/1-document.pdf --provider ocrmypdf
 ```
 
 ### PaddleOCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--paddle` |
+| Selector | `--provider paddle-ocr` |
 | Setup | Can be prepared lazily on first use |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --paddle
+bun as extract input/examples/document/1-document.pdf --provider paddle-ocr
 ```
 
 ### Mistral OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--mistral <model>` |
+| Selector | `--provider mistral[=<model>]` |
 | Models | cheapest supported model, or `mistral-ocr-2512` |
 | Direct input support | PDF and standard images (`PNG`, `JPG`, `TIF`) |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --mistral mistral-ocr-2512
+bun as extract input/examples/document/1-document.pdf --provider mistral=mistral-ocr-2512
 ```
 
 No numeric Mistral OCR file-size/page-count caps were found in `project/links/all-all-links.md`, so this CLI does not enforce any new numeric limits for that provider from that source.
@@ -221,12 +217,12 @@ No numeric Mistral OCR file-size/page-count caps were found in `project/links/al
 
 | Option | Value |
 |--------|-------|
-| Selector | `--glm <model>` |
+| Selector | `--provider glm[=<model>]` |
 | Models | cheapest supported model, or `glm-ocr` |
 | Direct input support | PDF plus `PNG` and `JPG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --glm glm-ocr
+bun as extract input/examples/document/1-document.pdf --provider glm=glm-ocr
 ```
 
 GLM OCR currently enforces the bundled docs caps from `project/links/glm-all-links.md`: images up to 10 MB, PDFs up to 50 MB, and PDFs up to 100 pages.
@@ -235,13 +231,13 @@ GLM OCR currently enforces the bundled docs caps from `project/links/glm-all-lin
 
 | Option | Value |
 |--------|-------|
-| Selector | `--kimi <model>` |
+| Selector | `--provider kimi[=<model>]` |
 | Models | `kimi-k2.6` |
 | Direct input support | `PNG`, `JPG/JPEG`, `WEBP`, and `GIF`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6
-bun as extract input/examples/document/1-document.pdf --kimi kimi-k2.6 --price
+bun as extract input/examples/document/1-document.pdf --provider kimi=kimi-k2.6
+bun as extract input/examples/document/1-document.pdf --provider kimi=kimi-k2.6 --price
 ```
 
 Kimi OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. Direct or rendered image uploads are capped at 100 MB.
@@ -259,40 +255,60 @@ Kimi OCR uses token pricing estimates and recorded usage when available.
 
 | Option | Value |
 |--------|-------|
-| Selector | `--openai <model>` |
-| Models | `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` |
+| Selector | `--provider openai[=<model>]` |
+| Models | `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.4-nano` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --openai gpt-5.4-nano
+bun as extract input/examples/document/1-document.pdf --provider openai=gpt-5.5
+bun as extract input/examples/document/1-document.pdf --provider openai=gpt-5.4-nano
 ```
 
 OpenAI OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. OpenAI OCR currently enforces the bundled PDF size cap from `project/links/openai-all-links.md`: PDFs up to 50 MB.
+
+Passing `--provider openai` on an OCR-routed `extract` run keeps the existing cheapest OpenAI OCR default. `gpt-5.5` is used only when selected explicitly or through `--all-providers`; `gpt-5.4-pro` is intentionally not listed for OCR.
+
+### Grok OCR
+
+| Option | Value |
+|--------|-------|
+| Selector | `--provider grok[=<model>]` |
+| Models | `grok-4.3` |
+| Direct input support | `PNG` and `JPG/JPEG`; rendered PDF/EPUB pages as `PNG` |
+
+```bash
+bun as extract input/examples/document/1-document.pdf --provider grok=grok-4.3
+bun as extract input/examples/document/1-document.jpg --provider grok=grok-4.3 --price
+```
+
+Grok OCR uses xAI's OpenAI-compatible chat endpoint with image input. Direct images and rendered PDF pages are capped at 20 MiB each. `--price` uses a provisional estimate of 4,000 input tokens and 1,000 output tokens per page until calibrated usage data is available; actual runs record returned token usage when xAI includes it.
 
 ### Anthropic OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--anthropic <model>` |
-| Models | `claude-haiku-4-5` |
+| Selector | `--provider anthropic[=<model>]` |
+| Models | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` |
 | Direct input support | Standard unencrypted PDFs plus `PNG`, `JPG`, `WEBP`, and `GIF` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --anthropic claude-haiku-4-5
+bun as extract input/examples/document/1-document.pdf --provider anthropic=claude-opus-4-7
+bun as extract input/examples/document/1-document.pdf --provider anthropic=claude-sonnet-4-6
+bun as extract input/examples/document/1-document.pdf --provider anthropic=claude-haiku-4-5
 ```
 
-Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run.
+Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled Claude docs caps from `project/links/claude-all-links.md`: direct images up to 5 MB each, PDF chunk uploads through the Files API, and only standard unencrypted PDFs. PDFs are split into internal 10-page Files API uploads, token usage is summed across chunks, and uploaded files are deleted best-effort after each chunk run. Passing `--provider anthropic` without a model on an OCR-routed `extract` run keeps the cheapest Anthropic OCR default, `claude-haiku-4-5`; Opus and Sonnet run only when selected explicitly or through `--all-providers`.
 
 ### Gemini OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--gemini <model>` |
-| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
+| Selector | `--provider gemini[=<model>]` |
+| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --gemini gemini-3.1-flash-lite-preview
+bun as extract input/examples/document/1-document.pdf --provider gemini=gemini-3.1-flash-lite
 ```
 
 Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled docs caps from `project/links/gemini-all-links.md`: inline PDFs up to 50 MB, inline non-PDF inputs up to 100 MB, Files API uploads up to 2 GB per file, and PDFs up to 1000 pages.
@@ -301,14 +317,14 @@ Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when Im
 
 | Option | Value |
 |--------|-------|
-| Selector | `--deepinfra <model>` |
+| Selector | `--provider deepinfra[=<model>]` |
 | Models | `Qwen/Qwen3-VL-235B-A22B-Instruct`, `Qwen/Qwen3-VL-30B-A3B-Instruct` |
 | Direct input support | `PNG`, `JPG/JPEG`, and `WEBP`; rendered PDF/EPUB pages as `PNG` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct
-bun as extract input/examples/document/1-document.jpg --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct
-bun as extract input/examples/document/1-document.pdf --deepinfra Qwen/Qwen3-VL-30B-A3B-Instruct --price
+bun as extract input/examples/document/1-document.pdf --provider deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct
+bun as extract input/examples/document/1-document.jpg --provider deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct
+bun as extract input/examples/document/1-document.pdf --provider deepinfra=Qwen/Qwen3-VL-30B-A3B-Instruct --price
 ```
 
 DeepInfra OCR normalizes `GIF`, `BMP`, and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. Uploads are capped at 20 MB per direct or rendered image and omit OpenAI's `detail` parameter.
@@ -324,49 +340,19 @@ DeepInfra OCR uses token pricing estimates and recorded usage when available.
 - Cached-token pricing is not used for OCR estimates because AutoShow sends direct or rendered page images and those image requests are not cache-stable.
 - DeepInfra implementation details are based on DeepInfra's [Vision & OCR](https://docs.deepinfra.com/chat/vision), [OpenAI-compatible Chat Completions](https://docs.deepinfra.com/api-reference/chat-completions/openai-chat-completions), and [OCR catalog](https://deepinfra.com/models/ocr) docs.
 
-### AWS Textract
-
-| Option | Value |
-|--------|-------|
-| Selector | `--aws <model>` |
-| Models | `detect-text` |
-| Staging | S3 bucket shared with AWS Transcribe for PDFs and large async inputs; AutoShow can create and save one on first use, or you can pass `--aws-region` / `--aws-bucket` |
-
-```bash
-bun as extract input/examples/document/1-document.pdf --aws detect-text
-```
-
-AWS Textract supports PDF, PNG, JPG, and TIFF natively. BMP, WebP, and GIF inputs are normalized to PNG via ImageMagick when available. `detect-text` is text-only at $1.50 per 1,000 pages. Single-page images use the sync Textract API directly. PDFs and multi-page TIFF files use the async API via S3 staging. AWS Textract async supports files up to 500 MB and up to 3,000 pages per document.
-
-For async inputs, AutoShow resolves the region from `--aws-region`, saved config, AWS environment/CLI config, then `us-east-1`. If no accessible staging bucket is configured, it creates an `autoshow-aws-...` bucket, uses it immediately, and saves the region and bucket under the shared `defaults.extract.stt.awsRegion` / `awsBucket` config keys.
-
-### Google Cloud Document AI
-
-| Option | Value |
-|--------|-------|
-| Selector | `--gcloud <model>` |
-| Models | `ocr` |
-| Setup | `bun as setup --gcloud --gcloud-project PROJECT_ID` |
-
-```bash
-bun as extract input/examples/document/1-document.pdf --gcloud ocr
-```
-
-Google Cloud Document AI uses the OCR processor and GCS staging bucket from environment variables or explicitly saved config. `bun as setup --gcloud --gcloud-project PROJECT_ID` creates or discovers those resources, saves the reusable processor and bucket settings to `config/autoshow.json`, and still prints environment exports for one-off shell use.
-
 ### Unstructured OCR
 
 | Option | Value |
 |--------|-------|
-| Selector | `--unstructured <model>` |
+| Selector | `--provider unstructured[=<model>]` |
 | Models | `hi_res_and_enrichment` |
 | Direct input support | PDF plus `PNG`, `JPG/JPEG`, `TIF/TIFF`, and `BMP` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --unstructured hi_res_and_enrichment
+bun as extract input/examples/document/1-document.pdf --provider unstructured=hi_res_and_enrichment
 ```
 
-Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create-job to return `input_file_ids`, polls `/jobs/{id}/details` for processing status and node counters, downloads JSON elements, and groups element text by `metadata.page_number`. `GIF` and `WEBP` inputs are normalized to `PNG` locally before upload. AutoShow cancels the remote job if polling reaches `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, if the details status/node counters make no observable progress for `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS` (default 10 minutes), if an `IN_PROGRESS` job has no files in any workflow node for `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` (default 2 minutes), or if the local process receives `SIGINT`/`SIGTERM`. Unstructured documents each on-demand job as limited to 10 files / 10 MB per file, and says at most 5 on-demand jobs can run at once; interrupted jobs can keep occupying those remote slots until cancelled. The bundled price fallback is zero because Unstructured account pricing is plan-specific; price mode still records page counts and processing-time estimates.
+Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create-job to return `input_file_ids`, polls `/jobs/{id}/details` for processing status and node counters, downloads JSON elements, and groups element text by `metadata.page_number`. `GIF` and `WEBP` inputs are normalized to `PNG` locally before upload. AutoShow cancels the remote job if polling reaches `AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS`, if the details status/node counters make no observable progress for `AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS` (default 10 minutes), if an `IN_PROGRESS` job has no files in any workflow node for `AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS` (default 2 minutes), or if the local process receives `SIGINT`/`SIGTERM`. Unstructured documents each on-demand job as limited to 10 files / 10 MB per file, and says at most 5 on-demand jobs can run at once; interrupted jobs can keep occupying those remote slots until cancelled. Price mode estimates the published Pay-As-You-Go rate of `$0.03/page`; free allowance or custom Business pricing may differ.
 
 ## OCR Notes
 
@@ -375,5 +361,7 @@ Unstructured OCR uses on-demand jobs: AutoShow uploads the file, requires create
 - Supported document formats include PDF, EPUB, MOBI, AZW3, FB2, LIT, DOCX, PPTX, XLSX, ODT, ODS, ODP, RTF, CSV, and CBZ.
 - Supported image formats include PNG, JPG, JPEG, TIF, TIFF, WebP, BMP, and GIF.
 - Office inputs try native extraction first and only fall back to OCR when the extracted text quality is poor.
-- Config defaults can persist chapter export settings under `defaults.extract.chapters`, `defaults.extract.length`, and `defaults.extract.pdfChapterMode`.
+- Config defaults can persist chapter export settings under `defaults.extract.ocr.chapters`, `defaults.extract.ocr.length`, and `defaults.extract.ocr.pdfChapterMode`.
 - Backfill existing OCR outputs with top-level [`resume`](../../setup-and-utilities/resume/resume.md).
+- Grok OCR refers to xAI `grok-4.3`. Groq `openai/gpt-oss-20b` and `openai/gpt-oss-120b` are LLM text models in this project and are not OCR benchmark targets.
+- MiniMax `MiniMax-M2.7` / `MiniMax-M2.7-highspeed` and GLM `glm-5.1` are LLM text models here. Use `glm-ocr` for GLM OCR coverage.

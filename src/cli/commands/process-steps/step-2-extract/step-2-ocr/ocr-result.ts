@@ -13,7 +13,7 @@ import { estimateTokens } from '~/utils/text-utils'
 import { validateData } from '~/utils/validate/validation'
 import { buildCombinedText } from './native-text-extractors'
 
-export type OcrResultBuilderInput = {
+type OcrResultBuilderInput = {
   start: number
   pages: PageResult[]
   extractionMethod: string
@@ -44,7 +44,7 @@ export const buildOcrOutput = (
     ? input.opts.preparedMarkdown.trim()
     : typeof input.canonicalText === 'string' && input.canonicalText.trim().length > 0
       ? input.canonicalText.trim()
-      : buildCombinedText(input.pages, input.opts.pageSeparator, input.extractionMethod !== 'epub-text')
+      : buildCombinedText(input.pages, input.extractionMethod !== 'epub-text')
   const ocrPages = input.pages.filter(page => page.method === 'ocr').length
   const textPages = input.pages.filter(page => page.method === 'text').length
 
@@ -94,6 +94,9 @@ export const buildOcrOutput = (
   if (typeof input.opts.openaiOcrModel === 'string' && input.extractionMethod.includes('openai-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.openaiOcrModel
   }
+  if (typeof input.opts.grokOcrModel === 'string' && input.extractionMethod.includes('grok-ocr')) {
+    step2MetadataPayload['ocrModel'] = input.opts.grokOcrModel
+  }
   if (typeof input.opts.anthropicOcrModel === 'string' && input.extractionMethod.includes('anthropic-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.anthropicOcrModel
   }
@@ -102,12 +105,6 @@ export const buildOcrOutput = (
   }
   if (typeof input.opts.deepinfraOcrModel === 'string' && input.extractionMethod.includes('deepinfra-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.deepinfraOcrModel
-  }
-  if (typeof input.opts.awsTextractModel === 'string' && input.extractionMethod.includes('aws-textract')) {
-    step2MetadataPayload['ocrModel'] = input.opts.awsTextractModel
-  }
-  if (typeof input.opts.gcloudDocaiModel === 'string' && input.extractionMethod.includes('gcloud-docai')) {
-    step2MetadataPayload['ocrModel'] = input.opts.gcloudDocaiModel
   }
   if (typeof input.opts.unstructuredOcrModel === 'string' && input.extractionMethod.includes('unstructured-ocr')) {
     step2MetadataPayload['ocrModel'] = input.opts.unstructuredOcrModel

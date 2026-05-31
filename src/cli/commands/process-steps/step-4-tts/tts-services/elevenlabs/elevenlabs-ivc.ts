@@ -6,6 +6,7 @@ import { validateData } from '~/utils/validate/validation'
 import { getAudioDuration } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/audio-splitter'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readElevenLabsError } from './elevenlabs-utils'
+import { materializeMediaInput } from '~/utils/media-url'
 
 export const ELEVENLABS_TTS_IVC_COST_CENTS = 0
 export const ELEVENLABS_TTS_IVC_SETUP_MS = 10_000
@@ -34,7 +35,7 @@ const ElevenLabsIvcResponseSchema = v.object({
   requires_verification: v.boolean()
 })
 
-export type ElevenLabsTtsIvcAudio = {
+type ElevenLabsTtsIvcAudio = {
   path: string
   basename: string
   mimeType: string
@@ -42,14 +43,14 @@ export type ElevenLabsTtsIvcAudio = {
   durationSeconds?: number | undefined
 }
 
-export type ElevenLabsTtsIvcResult = {
+type ElevenLabsTtsIvcResult = {
   voiceId: string
   voiceName: string
   sourceAudio: ElevenLabsTtsIvcAudio
   requiresVerification: boolean
 }
 
-export type ElevenLabsTtsIvcContext = {
+type ElevenLabsTtsIvcContext = {
   voicePromise?: Promise<ElevenLabsTtsIvcResult> | undefined
 }
 
@@ -62,7 +63,7 @@ export type ElevenLabsTtsIvcOptions = {
 
 export const createElevenLabsTtsIvcContext = (): ElevenLabsTtsIvcContext => ({})
 
-export const defaultElevenLabsTtsIvcVoiceName = (): string => `AutoShow_${Date.now()}`
+const defaultElevenLabsTtsIvcVoiceName = (): string => `AutoShow_${Date.now()}`
 
 export const validateElevenLabsTtsIvcAudio = async (
   audioPath: string
@@ -122,7 +123,13 @@ const createElevenLabsTtsIvcVoice = async (
   apiKey: string,
   options: ElevenLabsTtsIvcOptions
 ): Promise<ElevenLabsTtsIvcResult> => {
-  const sourceAudio = await validateElevenLabsTtsIvcAudio(options.refAudioPath)
+  const materializedRefAudio = await materializeMediaInput(options.refAudioPath, {
+    accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+    label: 'ElevenLabs TTS IVC reference audio'
+  })
+
+  try {
+  const sourceAudio = await validateElevenLabsTtsIvcAudio(materializedRefAudio.path)
   const voiceName = options.voiceName?.trim() || defaultElevenLabsTtsIvcVoiceName()
 
   const data = await withRetry(
@@ -175,6 +182,9 @@ const createElevenLabsTtsIvcVoice = async (
   }
 
   return result
+  } finally {
+    await materializedRefAudio.cleanup()
+  }
 }
 
 export const ensureElevenLabsTtsIvcVoice = async (

@@ -10,6 +10,7 @@ import {
   resolveTranscriptionOutput,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import {
   isRecord,
   parseHappyScribeNumber
@@ -398,18 +399,11 @@ export const parseHappyScribeTranscriptPayload = (
   return {
     text: finalText,
     segments: finalSegments,
-    evidence: {
-      ...(evidenceSegments.length > 0 ? { segments: evidenceSegments } : {}),
-      ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
-      capabilities: {
-        hasNativeWordTiming: evidenceWords.length > 0,
-        hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number')
-          || evidenceSegments.some((segment) => typeof segment.confidence === 'number'),
-        hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined)
-          || finalSegments.some((segment) => segment.speaker !== undefined)
-      },
-      timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
+    evidence: buildTranscriptionWordEvidence({
+      words: evidenceWords,
+      segments: finalSegments,
+      evidenceSegments,
       rawResponse: payload
-    }
+    })
   }
 }

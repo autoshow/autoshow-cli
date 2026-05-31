@@ -2,7 +2,6 @@ import { createHumanTable, createKeyValueTable, createSingleRowTable } from '~/u
 import type { HumanLogTable, LogLevel, TableLogger } from '~/types'
 import type {
   AudioSegmentDescriptor,
-  DiarizationOptions,
   EffectiveSttProviderConcurrency,
   ProviderFailure,
   SplitPolicyTarget,
@@ -110,19 +109,6 @@ export const logSttDiarizationConfig = (
   })
 }
 
-export const buildSttPromptDiarizationTable = (
-  summary: {
-    detectedSpeakers: number
-    requestedSpeakerCount?: number | undefined
-    sourceProvider?: string | undefined
-  }
-): HumanLogTable =>
-  createKeyValueTable([
-    ['detectedSpeakers', summary.detectedSpeakers],
-    ...(summary.requestedSpeakerCount !== undefined ? [['requestedSpeakerCount', summary.requestedSpeakerCount] as const] : []),
-    ...(summary.sourceProvider ? [['sourceProvider', summary.sourceProvider] as const] : [])
-  ])
-
 export const buildSttSplitDecisionTable = (
   target: SplitPolicyTarget,
   decision: Pick<SttSplitDecision, 'reasons' | 'segmentDurationMinutes'>,
@@ -186,7 +172,7 @@ export const logSttSplitDecision = (
   })
 }
 
-export const buildSttSplitSummaryTable = (
+const buildSttSplitSummaryTable = (
   summary: {
     input: string
     segmentDurationMinutes: number
@@ -294,7 +280,7 @@ export const logSttCleanupArtifacts = (
   })
 }
 
-export const buildSttCleanupFailureTable = (
+const buildSttCleanupFailureTable = (
   summary: {
     provider: string
     artifact: string
@@ -340,7 +326,7 @@ export const logSttProviderSpeakerCountHints = (
   })
 }
 
-export const buildSttRecoveryPassTable = (
+const buildSttRecoveryPassTable = (
   summary: {
     pass: number
     maxPasses: number
@@ -366,18 +352,6 @@ export const logSttRecoveryPass = (
   })
 }
 
-export const buildSttProviderDiarizationHintTable = (
-  provider: string,
-  model: string,
-  diarizationOptions: DiarizationOptions | undefined
-): HumanLogTable =>
-  buildSttDiarizationConfigTable({
-    provider,
-    model,
-    enabled: diarizationOptions?.enabled !== false,
-    ...(diarizationOptions?.speakerCount !== undefined ? { speakerCount: diarizationOptions.speakerCount } : {})
-  })
-
 export const buildSttCacheTable = (
   event: SttCacheEvent
 ): HumanLogTable =>
@@ -400,7 +374,7 @@ export const logSttCacheEvent = (
   })
 }
 
-export const buildSttAcquireRows = (
+const buildSttAcquireRows = (
   summary: SttAcquireSummary
 ): Array<{ item: string, sourceMedia: string, elapsedMs: number }> => [{
   item: summary.item,
@@ -408,7 +382,7 @@ export const buildSttAcquireRows = (
   elapsedMs: summary.elapsedMs
 }]
 
-export const buildSttAcquireTable = (
+const buildSttAcquireTable = (
   summary: SttAcquireSummary
 ): HumanLogTable =>
   createHumanTable(buildSttAcquireRows(summary), ['item', 'sourceMedia', 'elapsedMs'])
@@ -424,7 +398,7 @@ export const logSttAcquireSummary = (
   })
 }
 
-export const buildSttAsyncJobRows = (
+const buildSttAsyncJobRows = (
   lifecycle: SttAsyncJobLifecycle
 ): Array<{ provider: string, action: string, remoteId: string, state: string }> => [{
   provider: lifecycle.provider,
@@ -433,7 +407,7 @@ export const buildSttAsyncJobRows = (
   state: lifecycle.state
 }]
 
-export const buildSttAsyncJobTable = (
+const buildSttAsyncJobTable = (
   lifecycle: SttAsyncJobLifecycle
 ): HumanLogTable =>
   createHumanTable(buildSttAsyncJobRows(lifecycle), ['provider', 'action', 'remoteId', 'state'])
@@ -449,7 +423,7 @@ export const logSttAsyncJobLifecycle = (
   })
 }
 
-export const buildSttSegmentLifecycleRows = (
+const buildSttSegmentLifecycleRows = (
   lifecycle: SttSegmentLifecycle
 ): Array<{
   provider: string
@@ -469,7 +443,7 @@ export const buildSttSegmentLifecycleRows = (
   detail: lifecycle.detail ?? ''
 }]
 
-export const buildSttSegmentLifecycleTable = (
+const buildSttSegmentLifecycleTable = (
   lifecycle: SttSegmentLifecycle
 ): HumanLogTable =>
   createHumanTable(
@@ -489,7 +463,7 @@ export const logSttSegmentLifecycle = (
   })
 }
 
-export const buildSttRunStatusRows = (
+const buildSttRunStatusRows = (
   summary: SttRunStatusSummary
 ): Array<{
   completionStatus: SttCompletionStatus
@@ -507,7 +481,7 @@ export const buildSttRunStatusRows = (
   skipped: summary.skipped
 }]
 
-export const buildSttRunStatusTable = (
+const buildSttRunStatusTable = (
   summary: SttRunStatusSummary
 ): HumanLogTable =>
   createHumanTable(
@@ -609,7 +583,7 @@ const summarizeProviderFailureReason = (
   return 'failed'
 }
 
-export const buildSttProviderFailureTable = (
+const buildSttProviderFailureTable = (
   failures: readonly ProviderFailure[]
 ): HumanLogTable => {
   const table = createHumanTable(
@@ -656,7 +630,7 @@ export const logSttProviderFailures = (
   })
 }
 
-export const buildSttProviderSkipTable = (
+const buildSttProviderSkipTable = (
   skippedProviders: ReadonlyArray<Pick<SttProviderState, 'service' | 'model' | 'lastError'>>
 ): HumanLogTable => {
   const table = createHumanTable(

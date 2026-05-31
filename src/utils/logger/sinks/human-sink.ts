@@ -5,7 +5,7 @@ import {
   colorizeLogMessage,
   colorizeLogTimestamp
 } from '~/utils/logger/log-colors'
-import type { HumanSinkOptions, LogSink, LogSinkEvent } from '~/types'
+import type { HumanLogSection, HumanSinkOptions, LogSink, LogSinkEvent } from '~/types'
 
 const logIndent = '  '
 
@@ -30,7 +30,7 @@ const getBatchItemPrefix = (event: LogSinkEvent): string => {
 const getLevelSymbol = (level: LogSinkEvent['level']): string => {
   switch (level) {
     case 'info':
-      return ''
+      return '\u2022'
     case 'warn':
       return '\u26a0'
     case 'error':
@@ -42,14 +42,31 @@ const getLevelSymbol = (level: LogSinkEvent['level']): string => {
   }
 }
 
+const formatHumanTimestamp = (timestamp: string): string => {
+  const date = new Date(timestamp)
+  if (Number.isNaN(date.getTime())) {
+    return `[${timestamp}]`
+  }
+
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `[${hours}:${minutes}:${seconds}]`
+}
+
 const formatMessage = (event: LogSinkEvent): string => {
-  const timestamp = colorizeLogTimestamp(`[${event.timestamp}]`)
+  const timestamp = colorizeLogTimestamp(formatHumanTimestamp(event.timestamp))
   const symbol = getLevelSymbol(event.level)
-  const levelPrefix = symbol.length > 0 ? `${colorizeLogLevelSymbol(symbol, event.level)} ` : ''
+  const levelPrefix = `${colorizeLogLevelSymbol(symbol, event.level)} `
   const batchPrefix = colorizeLogBatchPrefix(getBatchItemPrefix(event))
-  const message = event.indent ? `${logIndent}${event.message}` : event.message
+  const message = event.message
   return `${timestamp} ${levelPrefix}${batchPrefix}${colorizeLogMessage(message, event.category)}`
 }
+
+const renderHumanSection = (section: HumanLogSection): string => [
+  `${logIndent}${section.title}`,
+  renderHumanTable(section.table)
+].join('\n')
 
 export const createHumanSink = (options: HumanSinkOptions = {}): LogSink => {
   const interactive = options.interactive ?? process.stdout.isTTY === true
@@ -60,6 +77,10 @@ export const createHumanSink = (options: HumanSinkOptions = {}): LogSink => {
 
     if (event.humanTable) {
       renderedParts.push(renderHumanTable(event.humanTable))
+    }
+
+    if (event.humanSections) {
+      renderedParts.push(...event.humanSections.map(renderHumanSection))
     }
 
     const message = renderedParts.join('\n')

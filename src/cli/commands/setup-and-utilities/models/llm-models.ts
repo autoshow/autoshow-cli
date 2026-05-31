@@ -4,6 +4,7 @@ import { CLIUsageError } from '~/utils/error-handler'
 import type { GroqModel, AnthropicModel, MinimaxModel, GlmModel, KimiModel } from '~/types'
 
 export const SUPPORTED_OPENAI_MODELS = [
+  'gpt-5.5',
   'gpt-5.4',
   'gpt-5.4-pro',
   'gpt-5.4-mini',
@@ -17,6 +18,7 @@ export const SUPPORTED_GROQ_MODELS = [
 
 export const SUPPORTED_GEMINI_MODELS = [
   'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
 ] as const satisfies readonly string[]
 
@@ -24,15 +26,15 @@ export const SUPPORTED_ANTHROPIC_MODELS = [
   'claude-opus-4-7',
   'claude-sonnet-4-6',
   'claude-haiku-4-5',
-  'claude-opus-4-6',
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_MINIMAX_MODELS = [
-  'MiniMax-M2.5',
-  'MiniMax-M2.5-highspeed'
+  'MiniMax-M2.7',
+  'MiniMax-M2.7-highspeed'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GROK_MODELS = [
+  'grok-4.3',
   'grok-4.20-reasoning',
   'grok-4.20-non-reasoning'
 ] as const satisfies readonly string[]

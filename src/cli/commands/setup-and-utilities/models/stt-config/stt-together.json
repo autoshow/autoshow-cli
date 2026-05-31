@@ -5,6 +5,11 @@
     "models": {
       "openai/whisper-large-v3": {
         "description": "OpenAI Whisper large v3 via Together's OpenAI-compatible transcription API",
+        "pricingSourceUrl": "https://www.together.ai/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Together AI hosted Whisper pricing",
+        "pricingNotes": "Together AI Whisper transcription is estimated at $0.09/hour. Free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.09,
         "costPerHourCents": 9,
         "limits": {
@@ -12,7 +17,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 32
+          "msPerSecond": 39
         }
       }
     }

@@ -1,6 +1,6 @@
 import type { AggregatedPriceEstimate } from '~/utils/pricing/pricing-types'
 
-export const LOG_LEVELS = ['debug', 'info', 'success', 'warn', 'error'] as const
+const LOG_LEVELS = ['debug', 'info', 'success', 'warn', 'error'] as const
 
 export type LogLevel = typeof LOG_LEVELS[number]
 
@@ -12,7 +12,7 @@ export const LOG_LEVEL_PRIORITY: Readonly<Record<LogLevel, number>> = {
   error: 50
 }
 
-export const LOG_CATEGORIES = [
+const LOG_CATEGORIES = [
   'general',
   'command',
   'artifact',
@@ -44,9 +44,15 @@ export type HumanLogTable = {
   columns?: readonly string[]
   align?: Readonly<Record<string, HumanLogTableAlign>>
   details?: readonly HumanLogTableDetail[]
+  labels?: Readonly<Record<string, string>>
 }
 
-export type LogEvent = {
+export type HumanLogSection = {
+  title: string
+  table: HumanLogTable
+}
+
+type LogEvent = {
   timestamp: string
   level: LogLevel
   message: string
@@ -65,12 +71,14 @@ export type LogWriteOptions = {
   indent?: boolean
   args?: readonly unknown[]
   humanTable?: HumanLogTable
+  humanSections?: readonly HumanLogSection[]
 }
 
 export type LogSinkEvent = LogEvent & {
   indent: boolean
   args: readonly unknown[]
   humanTable?: HumanLogTable
+  humanSections?: readonly HumanLogSection[]
 }
 
 export type LogSink = (event: LogSinkEvent) => void
@@ -87,7 +95,7 @@ export type CreateLoggerOptions = {
   minLevel?: LogLevel
 }
 
-export type BaseLogFn = (message: string, ...args: unknown[]) => void
+type BaseLogFn = (message: string, ...args: unknown[]) => void
 
 export interface Logger {
   write: (level: LogLevel, message: string, options?: LogWriteOptions) => void
@@ -147,7 +155,7 @@ export type HumanCompletionTables = {
   timing?: HumanLogTable
 }
 
-export type HumanCompletionSection = keyof HumanCompletionTables
+type HumanCompletionSection = keyof HumanCompletionTables
 
 export type CompleteOptions = {
   metrics?: Record<string, ReporterMetricValue>
@@ -156,6 +164,7 @@ export type CompleteOptions = {
   totalCost?: number
   summaryMessage?: string
   hideHumanSections?: readonly HumanCompletionSection[]
+  includeOutputDir?: boolean
 }
 
 export type Reporter = {

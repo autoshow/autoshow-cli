@@ -16,11 +16,13 @@ export const buildAggregatedPriceEstimate = async (
   command: ProcessCommand,
   resolvedTarget: string,
   opts: RuntimeOptions,
-  characterCount?: number
+  characterCount?: number,
+  context: { ttsInputText?: string | undefined } = {}
 ): Promise<AggregatedPriceEstimate> => {
   const steps: StepEstimate[] = []
   let totalEstimatedCost = 0
   let ttsTimingCharacterCount: number | undefined
+  let ttsTimingInputText: string | undefined
   const notes: string[] = []
 
   const addStep = (step: StepEstimate): void => {
@@ -87,7 +89,7 @@ export const buildAggregatedPriceEstimate = async (
       addStep(image)
     }
 
-    for (const video of buildVideoEstimates(opts)) {
+    for (const video of await buildVideoEstimates(opts)) {
       addStep(video)
     }
 
@@ -98,6 +100,7 @@ export const buildAggregatedPriceEstimate = async (
 
   if (command === 'tts') {
     ttsTimingCharacterCount = typeof characterCount === 'number' ? characterCount : 0
+    ttsTimingInputText = context.ttsInputText
     const ttsEstimates = await buildTtsEstimates(opts, ttsTimingCharacterCount)
     for (const tts of ttsEstimates) {
       addStep(tts)
@@ -111,7 +114,7 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'video') {
-    for (const video of buildVideoEstimates(opts)) {
+    for (const video of await buildVideoEstimates(opts)) {
       addStep(video)
     }
   }
@@ -130,7 +133,10 @@ export const buildAggregatedPriceEstimate = async (
     notes.push(SCRAPECREATORS_STT_AGGREGATE_NOTE)
   }
 
-  const timing = buildAggregateTiming(steps, ttsTimingCharacterCount)
+  const timing = buildAggregateTiming(steps, ttsTimingCharacterCount, {
+    ...(typeof ttsTimingInputText === 'string' ? { ttsInputText: ttsTimingInputText } : {}),
+    ...(typeof opts.ttsChunkConcurrency === 'number' ? { ttsChunkConcurrency: opts.ttsChunkConcurrency } : {})
+  })
 
   return {
     steps,

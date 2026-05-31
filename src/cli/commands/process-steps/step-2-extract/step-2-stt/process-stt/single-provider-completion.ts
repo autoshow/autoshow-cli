@@ -75,12 +75,13 @@ export const completeSingleProviderStt = async ({
   })
 
   const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, requestedTargets, prepared.durationSeconds, prepared.step1Metadata.url))
+  const observedEstimate = filterEstimatedSttCosts(resolveSttEstimatedCosts(undefined, requestedTargets, prepared.durationSeconds, prepared.step1Metadata.url))
   const actual = computeActualCosts({
     step1: prepared.step1Metadata,
     step2: transcription.metadata,
     audioDurationSeconds: prepared.durationSeconds
   })
-  const cost = { estimated, actual }
+  const cost = preflightEstimate ? { estimated, observedEstimate, actual } : { estimated, actual }
   const estimatedTiming = computeEstimatedProcessingTimes({
     sttTargets: requestedTargets.map((entry) => ({ service: entry.service, model: entry.model })),
     audioDurationSeconds: prepared.durationSeconds

@@ -6,8 +6,8 @@ import {
   getTtsArtifactFileName,
   validateTtsInput,
 } from './tts-targets'
-import { isDialogueTtsRequested } from './dialogue-normalizer'
-import { runDialogueTts } from './run-dialogue-tts'
+import { isMultiSpeakerRequested } from './dialogue-normalizer'
+import { runMultiSpeakerTts } from './run-multi-speaker-tts'
 
 const getMetadataAudioPath = (outputDir: string, metadata: Step4Metadata): string =>
   `${outputDir}/${metadata.audioFileName}`
@@ -57,16 +57,22 @@ export const runTts = async (
 ): Promise<{ audioPaths: string[], metadata: Step4Metadata[] }> => {
   validateTtsInput(text, options)
   const targets = collectTtsTargets(options)
-  if (isDialogueTtsRequested(options)) {
-    const { audioPath, metadata } = await runDialogueTts(text, outputDir, options)
-    return {
-      audioPaths: [audioPath],
-      metadata: [metadata]
-    }
-  }
 
   if (targets.length === 0) {
     throw new Error('No TTS provider configured')
+  }
+
+  if (isMultiSpeakerRequested(options)) {
+    const wrappedTargets: TtsTarget[] = targets.map((target) => ({
+      ...target,
+      run: async (t: string, dir: string, _opts: TtsOptions) =>
+        runMultiSpeakerTts(t, dir, target, _opts)
+    }))
+    const metadata = await runTtsTargets(wrappedTargets, text, outputDir, options)
+    return {
+      audioPaths: metadata.map((entry) => getMetadataAudioPath(outputDir, entry)),
+      metadata
+    }
   }
 
   const metadata = await runTtsTargets(targets, text, outputDir, options)

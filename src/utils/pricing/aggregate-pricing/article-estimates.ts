@@ -4,7 +4,7 @@ import { hasConfiguredOcrProviderSelection, HTML_ARTICLE_OCR_FLAGS_IGNORED_WARNI
 import { getExtractEstimation, getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
 
-export type ArticleEstimateResult = {
+type ArticleEstimateResult = {
   estimates: ExtractStepEstimate[]
   notes: string[]
 }

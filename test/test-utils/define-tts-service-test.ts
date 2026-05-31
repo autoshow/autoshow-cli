@@ -1,16 +1,16 @@
-import { expect, test } from 'bun:test'
+import { expect } from 'bun:test'
 import {
   runCommand,
   fileExists,
   findLatestDirectory,
-  cleanupTestOutput,
   STABLE_TTS_MD_PATH,
   STABLE_TTS_MD_TITLE,
 } from './test-helpers'
 import { budgetedTest, E2E_TEST_TIMEOUT_MS } from './budget'
 import {
   defineInvalidModelTest,
-  shouldSkipMissingEnv,
+  formatCommandFailureDiagnostics,
+  requireConfiguredEnvVar,
   withOutputLifecycle
 } from './service-test-kit'
 import { readRunMetadata } from './manifest-helpers'
@@ -29,35 +29,52 @@ const isTransientMinimaxTtsFailure = (output: string): boolean => {
 const isRunwayInsufficientCreditsFailure = (output: string): boolean =>
   output.includes('You do not have enough credits to run this task.')
 
+const isGroqTermsAcceptanceFailure = (output: string): boolean =>
+  /requires terms acceptance/i.test(stripAnsi(output))
+
+type TtsExtraArgs = readonly string[] | ((model: string) => readonly string[] | Promise<readonly string[]>)
+
+const resolveTtsExtraArgs = async (
+  extraArgs: TtsExtraArgs | undefined,
+  model: string
+): Promise<readonly string[]> => {
+  if (!extraArgs) return []
+  return typeof extraArgs === 'function' ? await extraArgs(model) : extraArgs
+}
+
 export const defineTTSServiceTest = ({
   models,
-  cliFlag,
+  provider,
   ttsService,
   envVarKey,
   envVarDescription,
+  inputPath = STABLE_TTS_MD_PATH,
+  inputTitle = STABLE_TTS_MD_TITLE,
   extraArgs,
   resolveExpectedSpeaker,
   generationTimeoutMs,
   generationTimeoutMsByModel,
 }: {
   models: readonly string[]
-  cliFlag: string
+  provider: string
   ttsService: string
   envVarKey: string
   envVarDescription: string
-  extraArgs?: string[]
-  resolveExpectedSpeaker?: () => Promise<string>
+  inputPath?: string
+  inputTitle?: string
+  extraArgs?: TtsExtraArgs
+  resolveExpectedSpeaker?: (model: string) => string | Promise<string>
   generationTimeoutMs?: number
   generationTimeoutMsByModel?: Readonly<Record<string, number>>
 }): void => {
-  withOutputLifecycle(STABLE_TTS_MD_TITLE)
+  withOutputLifecycle(inputTitle)
 
   defineInvalidModelTest(`rejects invalid ${ttsService} model`, [
     'src/cli/create-cli.ts',
     'tts',
-    STABLE_TTS_MD_PATH,
-    cliFlag,
-    'invalid-model'
+    inputPath,
+    '--provider',
+    `${provider}=invalid-model`
   ])
 
   for (const model of models) {
@@ -65,19 +82,17 @@ export const defineTTSServiceTest = ({
     const timeoutMs = generationTimeoutMsByModel?.[model] ?? generationTimeoutMs ?? E2E_TEST_TIMEOUT_MS
 
     budgetedTest(budgetKey, `${model} generates speech.wav`, async () => {
-      if (await shouldSkipMissingEnv(envVarKey, `${envVarKey} is required for ${envVarDescription}`)) {
-        return
-      }
+      await requireConfiguredEnvVar(envVarKey, `${envVarKey} is required for ${envVarDescription}`)
 
-      await cleanupTestOutput(STABLE_TTS_MD_TITLE)
+      const resolvedExtraArgs = await resolveTtsExtraArgs(extraArgs, model)
 
       const args = [
         'src/cli/create-cli.ts',
         'tts',
-        STABLE_TTS_MD_PATH,
-        cliFlag,
-        model,
-        ...(extraArgs ?? [])
+        inputPath,
+        '--provider',
+        `${provider}=${model}`,
+        ...resolvedExtraArgs
       ]
       let result = await runCommand(args)
 
@@ -91,8 +106,7 @@ export const defineTTSServiceTest = ({
           if (result.exitCode !== 0) {
             const retryOutput = `${result.stdout}\n${result.stderr}`
             if (isTransientMinimaxTtsFailure(retryOutput)) {
-              console.log(`Skipping: MiniMax transient TTS error persisted for ${model}`)
-              return
+              throw new Error(`MiniMax transient TTS error persisted for ${model}\n${formatCommandFailureDiagnostics(args, result)}`)
             }
           }
         }
@@ -100,59 +114,43 @@ export const defineTTSServiceTest = ({
       if (result.exitCode !== 0 && ttsService === 'runway') {
         const combinedOutput = `${result.stdout}\n${result.stderr}`
         if (isRunwayInsufficientCreditsFailure(combinedOutput)) {
-          console.log('Skipping: Runway account does not have enough credits to run this task')
-          return
+          throw new Error(`Runway account does not have enough credits to run this task\n${formatCommandFailureDiagnostics(args, result)}`)
         }
+      }
+      if (result.exitCode !== 0 && ttsService === 'groq') {
+        const combinedOutput = `${result.stdout}\n${result.stderr}`
+        if (isGroqTermsAcceptanceFailure(combinedOutput)) {
+          throw new Error(`Groq terms acceptance is required for ${model}\n${formatCommandFailureDiagnostics(args, result)}`)
+        }
+      }
+
+      if (result.exitCode !== 0) {
+        throw new Error(formatCommandFailureDiagnostics(args, result))
       }
 
       expect(result.exitCode).toBe(0)
 
-      const outputDir = result.outputDir ?? await findLatestDirectory(STABLE_TTS_MD_TITLE)
-      expect(outputDir).not.toBeNull()
-
-      if (outputDir) {
-        const audioExists = await fileExists(`${outputDir}/speech.wav`)
-        expect(audioExists).toBe(true)
-
-        const audioFile = Bun.file(`${outputDir}/speech.wav`)
-        expect(audioFile.size).toBeGreaterThan(0)
-
-        const metadata = await readRunMetadata(outputDir) as {
-          tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, audioFileName?: string }>
-        }
-        expect(metadata.tts?.[0]?.ttsService).toBe(ttsService)
-        expect(metadata.tts?.[0]?.ttsModel).toBe(model)
-        if (resolveExpectedSpeaker) {
-          const expectedSpeaker = await resolveExpectedSpeaker()
-          expect(metadata.tts?.[0]?.speaker).toBe(expectedSpeaker)
-        }
-        expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
+      const outputDir = result.outputDir ?? await findLatestDirectory(inputTitle, result.outputRoot)
+      if (!outputDir) {
+        throw new Error(`Expected output directory for ${inputTitle}`)
       }
+
+      const audioExists = await fileExists(`${outputDir}/speech.wav`)
+      expect(audioExists).toBe(true)
+
+      const audioFile = Bun.file(`${outputDir}/speech.wav`)
+      expect(audioFile.size).toBeGreaterThan(0)
+
+      const metadata = await readRunMetadata(outputDir) as {
+        tts?: Array<{ ttsService?: string, ttsModel?: string, speaker?: string, audioFileName?: string }>
+      }
+      expect(metadata.tts?.[0]?.ttsService).toBe(ttsService)
+      expect(metadata.tts?.[0]?.ttsModel).toBe(model)
+      if (resolveExpectedSpeaker) {
+        const expectedSpeaker = await resolveExpectedSpeaker(model)
+        expect(metadata.tts?.[0]?.speaker).toBe(expectedSpeaker)
+      }
+      expect(metadata.tts?.[0]?.audioFileName).toBe('speech.wav')
     }, timeoutMs)
-  }
-}
-
-export const defineTTSServicePriceTests = ({
-  models,
-  cliFlag,
-  ttsService,
-}: {
-  models: readonly string[]
-  cliFlag: string
-  ttsService: string
-}): void => {
-  for (const model of models) {
-    test(`${ttsService} ${model} --price prints estimate`, async () => {
-      const result = await runCommand([
-        'src/cli/create-cli.ts',
-        'tts',
-        STABLE_TTS_MD_PATH,
-        cliFlag,
-        model,
-        '--price'
-      ])
-
-      expect(result.exitCode).toBe(0)
-    }, E2E_TEST_TIMEOUT_MS)
   }
 }

@@ -5,6 +5,11 @@
     "models": {
       "stt-async-v4": {
         "description": "Async v4 — diarized asynchronous transcription with token timestamps",
+        "pricingSourceUrl": "https://soniox.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Soniox API pay-as-you-go speech-to-text pricing",
+        "pricingNotes": "Soniox async speech-to-text is estimated at $0.10/hour. Free plan usage, subscriptions, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.1,
         "costPerHourCents": 10,
         "limits": {

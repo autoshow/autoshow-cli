@@ -34,23 +34,12 @@ import type {
   ScenePromptData,
   StructuredScriptData,
   StructuredScriptSourceSegment,
-} from '~/cli/commands/process-steps/step-8-comic/types'
+} from '~/cli/commands/process-steps/step-8-comic/types/comic-types'
+import { pngSignature, redDotPng } from '../../test-utils/media-fixtures'
 
-const episode5ScriptPath = 'input/episode-scripts/05-script/01-paddy-goes-on-vacation.md'
-const episode4RecapScriptPath = 'input/episode-scripts/04-script/01-previously-on-uss-acampo.md'
+const episode5ScriptPath = 'input/uss/episode-scripts/05-script/01-paddy-goes-on-vacation.md'
+const episode4RecapScriptPath = 'input/uss/episode-scripts/04-script/01-previously-on-uss-acampo.md'
 const comicSourceRoot = 'src/cli/commands/process-steps/step-8-comic'
-const pngSignature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-const redDotPng = new Uint8Array([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-  0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-  0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
-  0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44, 0x41,
-  0x54, 0x78, 0x9c, 0x63, 0xf8, 0xcf, 0xc0, 0xf0,
-  0x1f, 0x00, 0x05, 0x00, 0x01, 0xff, 0x89, 0x99,
-  0x3d, 0x1d, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
-  0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
-])
 
 type BunImageCodec = {
   webp: () => BunImageEncoded
@@ -171,7 +160,7 @@ describe('comic source coverage contracts', () => {
 
   test('character sketch sheet composition uses ImageMagick without sharp', async () => {
     if (!Bun.which('magick') && !Bun.which('convert')) {
-      return
+      throw new Error('ImageMagick magick or convert is required for sketch sheet composition coverage')
     }
 
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-comic-sketch-sheet-'))
@@ -199,7 +188,7 @@ describe('comic source coverage contracts', () => {
 
   test('comic grid composition uses ImageMagick and leaves partial cells blank', async () => {
     if (!Bun.which('magick') && !Bun.which('convert')) {
-      return
+      throw new Error('ImageMagick magick or convert is required for comic grid composition coverage')
     }
 
     const dir = await mkdtemp(join(tmpdir(), 'autoshow-comic-grid-page-'))
@@ -408,7 +397,7 @@ describe('comic source coverage contracts', () => {
 
   test('recap montage resolver maps Episode 4 scripts to Episode 3 scripts', () => {
     expect(resolvePreviousEpisodeScriptsDirectory(episode4RecapScriptPath))
-      .toBe(join('input', 'episode-scripts', '03-script'))
+      .toBe(join('input', 'uss', 'episode-scripts', '03-script'))
   })
 
   test('recap montage cue detection requires both episode and montage in the same beat', () => {
@@ -683,7 +672,7 @@ describe('comic source coverage contracts', () => {
 
       expect(existsSync(`${panelDir}/12-chat.webp`)).toBe(true)
       expect(prompt).toContain('"name": "HR Hologram"')
-      expect(prompt).toContain('"image": "input/characters/12-chat.webp"')
+      expect(prompt).toContain('"image": "input/uss/characters/12-chat.webp"')
     } finally {
       await rm(sceneOutputDirectory, { recursive: true, force: true })
     }

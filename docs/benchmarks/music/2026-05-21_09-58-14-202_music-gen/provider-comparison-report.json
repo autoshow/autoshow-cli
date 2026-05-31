@@ -1,0 +1,420 @@
+{
+  "schemaVersion": 2,
+  "kind": "music-provider-comparison",
+  "category": "music",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/music/2026-05-21_09-58-14-202_music-gen",
+  "runName": "2026-05-21_09-58-14-202_music-gen",
+  "generatedAt": "2026-05-21T15:09:16.429Z",
+  "metric": "price-speed",
+  "scoreFormula": "50% cost-efficiency + 50% processing-speed",
+  "duplicateGroups": [],
+  "normalization": null,
+  "providerCount": 5,
+  "providerGroups": {
+    "local": {
+      "count": 0,
+      "providers": []
+    },
+    "service": {
+      "count": 5,
+      "providers": [
+        {
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 16633,
+          "costCents": 28,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null
+        },
+        {
+          "providerKey": "gemini/lyria-3-clip-preview",
+          "provider": "gemini/lyria-3-clip-preview",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 20049,
+          "costCents": 4,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null
+        },
+        {
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 36488,
+          "costCents": 8,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null
+        },
+        {
+          "providerKey": "minimax/music-2.6",
+          "provider": "minimax/music-2.6",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 115966,
+          "costCents": 16,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null
+        },
+        {
+          "providerKey": "minimax/music-2.6-free",
+          "provider": "minimax/music-2.6-free",
+          "model": null,
+          "group": "service",
+          "processingTimeMs": 144199,
+          "costCents": 1,
+          "qualityMetric": null,
+          "qualityValue": null,
+          "qualityLabel": null,
+          "metrics": {
+            "wer": null,
+            "cer": null,
+            "speakerAwareWER": null,
+            "textOnlyWER": null,
+            "roundtripWER": null,
+            "contentCoverage": null,
+            "qualityScore": null,
+            "humanQualityScore": null,
+            "humanSpeechScore": null
+          },
+          "supportsDiarization": null,
+          "diarizationSupport": null,
+          "qualityWarnings": [],
+          "segmentStats": null,
+          "duplicateGroupId": null,
+          "tierGroup": null,
+          "groupOverallRank": null,
+          "groupTier": null
+        }
+      ]
+    }
+  },
+  "rankingSurfaces": {
+    "local": {
+      "fastest": [],
+      "cheapest": [],
+      "highestQuality": [],
+      "fastestUnavailableReason": "No local providers were found.",
+      "cheapestUnavailableReason": "No local providers were found.",
+      "highestQualityUnavailableReason": "No local providers were found.",
+      "price": [],
+      "speed": [],
+      "automatedQuality": [],
+      "humanQuality": [],
+      "priceUnavailableReason": "No local providers were found.",
+      "speedUnavailableReason": "No local providers were found.",
+      "automatedQualityUnavailableReason": "No local providers were found.",
+      "humanQualityUnavailableReason": "No local providers were found."
+    },
+    "service": {
+      "fastest": [
+        {
+          "rank": 1,
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 16633,
+          "label": "16.63s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "gemini/lyria-3-clip-preview",
+          "provider": "gemini/lyria-3-clip-preview",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 20049,
+          "label": "20.05s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 36488,
+          "label": "36.49s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "minimax/music-2.6",
+          "provider": "minimax/music-2.6",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 115966,
+          "label": "115.97s"
+        },
+        {
+          "rank": 5,
+          "providerKey": "minimax/music-2.6-free",
+          "provider": "minimax/music-2.6-free",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 144199,
+          "label": "144.20s"
+        }
+      ],
+      "cheapest": [
+        {
+          "rank": 1,
+          "providerKey": "minimax/music-2.6-free",
+          "provider": "minimax/music-2.6-free",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 1,
+          "label": "$0.0100"
+        },
+        {
+          "rank": 2,
+          "providerKey": "gemini/lyria-3-clip-preview",
+          "provider": "gemini/lyria-3-clip-preview",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 4,
+          "label": "$0.0400"
+        },
+        {
+          "rank": 3,
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 8,
+          "label": "$0.0800"
+        },
+        {
+          "rank": 4,
+          "providerKey": "minimax/music-2.6",
+          "provider": "minimax/music-2.6",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 16,
+          "label": "$0.1600"
+        },
+        {
+          "rank": 5,
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 28,
+          "label": "$0.2800"
+        }
+      ],
+      "highestQuality": [],
+      "fastestUnavailableReason": null,
+      "cheapestUnavailableReason": null,
+      "highestQualityUnavailableReason": "No explicit music qualityScore was available for service providers. File size, dimensions, duration, bitrate, cost, and speed are not used as automated quality proxies.",
+      "price": [
+        {
+          "rank": 1,
+          "providerKey": "minimax/music-2.6-free",
+          "provider": "minimax/music-2.6-free",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 1,
+          "label": "$0.0100"
+        },
+        {
+          "rank": 2,
+          "providerKey": "gemini/lyria-3-clip-preview",
+          "provider": "gemini/lyria-3-clip-preview",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 4,
+          "label": "$0.0400"
+        },
+        {
+          "rank": 3,
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 8,
+          "label": "$0.0800"
+        },
+        {
+          "rank": 4,
+          "providerKey": "minimax/music-2.6",
+          "provider": "minimax/music-2.6",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 16,
+          "label": "$0.1600"
+        },
+        {
+          "rank": 5,
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "metric": "costCents",
+          "value": 28,
+          "label": "$0.2800"
+        }
+      ],
+      "speed": [
+        {
+          "rank": 1,
+          "providerKey": "elevenlabs/music_v1",
+          "provider": "elevenlabs/music_v1",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 16633,
+          "label": "16.63s"
+        },
+        {
+          "rank": 2,
+          "providerKey": "gemini/lyria-3-clip-preview",
+          "provider": "gemini/lyria-3-clip-preview",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 20049,
+          "label": "20.05s"
+        },
+        {
+          "rank": 3,
+          "providerKey": "gemini/lyria-3-pro-preview",
+          "provider": "gemini/lyria-3-pro-preview",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 36488,
+          "label": "36.49s"
+        },
+        {
+          "rank": 4,
+          "providerKey": "minimax/music-2.6",
+          "provider": "minimax/music-2.6",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 115966,
+          "label": "115.97s"
+        },
+        {
+          "rank": 5,
+          "providerKey": "minimax/music-2.6-free",
+          "provider": "minimax/music-2.6-free",
+          "model": null,
+          "group": "service",
+          "metric": "processingTimeMs",
+          "value": 144199,
+          "label": "144.20s"
+        }
+      ],
+      "automatedQuality": [],
+      "humanQuality": [],
+      "priceUnavailableReason": null,
+      "speedUnavailableReason": null,
+      "automatedQualityUnavailableReason": "No explicit music qualityScore was available for service providers. File size, dimensions, duration, bitrate, cost, and speed are not used as automated quality proxies.",
+      "humanQualityUnavailableReason": "No explicit humanQualityScore was available for service providers. Generic quality scores, cost, speed, and artifact metadata are not used as human quality proxies."
+    }
+  },
+  "combinedLeaderboardPolicy": "omitted: local and service providers are not ranked against each other",
+  "notes": [
+    "Best overall: `gemini/lyria-3-clip-preview` scored 93.11/100.",
+    "The cheapest provider was `minimax/music-2.6-free` at 1.0000¢ ($0.0100).",
+    "Fastest provider: `elevenlabs/music_v1` at 16.63s.",
+    "Ranking used price-speed scoring: cost efficiency (50%) and processing speed (50%).",
+    "Music artifact existence, file size, duration, lyrics, and audio metadata are reported as evidence only; audio/music quality is not assessed or scored."
+  ]
+}

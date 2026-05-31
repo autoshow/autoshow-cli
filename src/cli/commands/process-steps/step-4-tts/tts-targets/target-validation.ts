@@ -3,47 +3,63 @@ import {
   getGroqTtsVoicesForModel,
   validateGroqTtsVoice
 } from '~/cli/commands/setup-and-utilities/models/model-options'
-import {
-  parseSpeakerRefAudioMappings,
-  resolveDialogueFormat
-} from '../dialogue-normalizer'
-import { DEAPI_TTS_VOICE_CLONE_MODEL, DEAPI_TTS_VOICE_DESIGN_MODEL } from '../tts-services/deapi/run-deapi-tts'
+import { resolveDialogueFormat } from '../dialogue-normalizer'
 import { validateSpeechifyTtsCustomVoiceGender } from '../tts-services/speechify/speechify-custom-voices'
 import type { TtsTargetSelection } from './selection'
+import { getMultiSpeakerStrategy, supportsRefAudioMultiSpeaker } from './multi-speaker-capability'
+
+const requireProviderSelectionMessage = (
+  label: string,
+  provider: string,
+  detail: string
+): string =>
+  `${label} ${detail} require selecting ${provider} TTS with --provider/--tts ${provider}[=model] or an all-provider TTS run.`
 
 export const validateTtsTargetSelection = (
   options: TtsOptions,
   selection: TtsTargetSelection
 ): void => {
-  if (selection.dialogueRequested) {
+  if (selection.multiSpeakerRequested) {
     resolveDialogueFormat(options)
-    const speakerRegistry = parseSpeakerRefAudioMappings(options.ttsSpeakerRefAudios)
-    if (speakerRegistry.entries.length === 0) {
-      throw new Error('Dialogue TTS requires at least one --tts-speaker-ref-audio SPEAKER=path mapping.')
+    const registry = selection.speakerVoiceRegistry
+    if (!registry || registry.entries.length === 0) {
+      throw new Error('Multi-speaker TTS requires at least one --tts-speaker SPEAKER=VOICE mapping.')
     }
-    if (selection.mistralModels.length !== 1) {
-      throw new Error('Dialogue TTS requires exactly one --mistral-tts <model> selection.')
+
+    const allProviderModels = [
+      { provider: 'kitten' as const, models: selection.kittenModels },
+      { provider: 'elevenlabs' as const, models: selection.elevenlabsModels },
+      { provider: 'minimax' as const, models: selection.minimaxModels },
+      { provider: 'groq' as const, models: selection.groqModels },
+      { provider: 'grok' as const, models: selection.grokModels },
+      { provider: 'mistral' as const, models: selection.mistralModels },
+      { provider: 'openai' as const, models: selection.openaiModels },
+      { provider: 'gemini' as const, models: selection.geminiModels },
+      { provider: 'deepgram' as const, models: selection.deepgramModels },
+      { provider: 'speechify' as const, models: selection.speechifyModels },
+      { provider: 'hume' as const, models: selection.humeModels },
+      { provider: 'cartesia' as const, models: selection.cartesiaModels },
+    ]
+    const selectedProviders = allProviderModels.filter((p) => p.models.length > 0)
+    if (selectedProviders.length === 0) {
+      throw new Error('Multi-speaker TTS requires at least one TTS provider.')
     }
-    const nonMistralModelCount = [
-      selection.kittenModels,
-      selection.elevenlabsModels,
-      selection.minimaxModels,
-      selection.groqModels,
-      selection.grokModels,
-      selection.openaiModels,
-      selection.geminiModels,
-      selection.deepgramModels,
-      selection.speechifyModels,
-      selection.humeModels,
-      selection.cartesiaModels,
-      selection.gcloudModels,
-      selection.deapiModels
-    ].reduce((sum, models) => sum + (models?.length ?? 0), 0)
-    if (nonMistralModelCount > 0) {
-      throw new Error('Dialogue TTS v1 supports exactly one Mistral TTS model and cannot be combined with other TTS providers.')
+
+    const hasCapable = selectedProviders.some((p) => getMultiSpeakerStrategy(p.provider) !== undefined)
+    if (!hasCapable) {
+      throw new Error('No selected TTS provider supports multi-speaker TTS.')
     }
-    if (selection.mistralVoiceId || selection.mistralRefAudioPath) {
-      throw new Error('Dialogue TTS uses --tts-speaker-ref-audio mappings; do not combine it with --mistral-tts-voice or --mistral-tts-ref-audio.')
+
+    const refAudioSpeakers = registry.entries.filter((e) => e.voiceKind === 'ref-audio')
+    if (refAudioSpeakers.length > 0) {
+      for (const { provider, models } of selectedProviders) {
+        if (models.length > 0 && !supportsRefAudioMultiSpeaker(provider)) {
+          throw new Error(
+            `Provider ${provider} does not support reference audio for multi-speaker TTS. `
+            + `Use voice IDs instead of file paths in --tts-speaker mappings, or remove ${provider}.`
+          )
+        }
+      }
     }
   }
 
@@ -57,14 +73,14 @@ export const validateTtsTargetSelection = (
     || (selection.minimaxPronunciations && selection.minimaxPronunciations.length > 0)
   )
   if (hasMinimaxRequestControlFlags && selection.minimaxModels.length === 0) {
-    throw new Error('MiniMax TTS request control flags require --minimax-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('MiniMax TTS', 'minimax', 'request control flags'))
   }
 
   if (selection.hasOpenAICloneFlags && selection.openaiModels.length === 0) {
-    throw new Error('OpenAI TTS custom voice flags require --openai-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('OpenAI TTS', 'openai', 'custom voice flags'))
   }
   if ((selection.openaiInstructions || typeof selection.openaiSpeed === 'number') && selection.openaiModels.length === 0) {
-    throw new Error('OpenAI TTS request control flags require --openai-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('OpenAI TTS', 'openai', 'request control flags'))
   }
   if (selection.hasOpenAICloneFlags && !selection.openaiCloneRefAudioPath) {
     throw new Error('OpenAI TTS custom voice creation requires --openai-tts-ref-audio.')
@@ -80,7 +96,7 @@ export const validateTtsTargetSelection = (
   }
 
   if ((selection.grokLanguage || selection.grokTextNormalization) && selection.grokModels.length === 0) {
-    throw new Error('Grok TTS request control flags require --grok-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Grok TTS', 'grok', 'request control flags'))
   }
 
   if (selection.groqVoiceId && selection.groqModels.length > 1) {
@@ -90,8 +106,8 @@ export const validateTtsTargetSelection = (
     )
     throw new Error(
       matchingModel
-        ? `Groq TTS --groq-voice "${voice}" matches only ${matchingModel}; use explicit --groq-tts ${matchingModel}.`
-        : `Groq TTS --groq-voice "${voice}" requires an explicit --groq-tts <model>.`
+        ? `Groq TTS --groq-voice "${voice}" matches only ${matchingModel}; select --provider/--tts groq=${matchingModel}.`
+        : `Groq TTS --groq-voice "${voice}" requires selecting a Groq TTS model with --provider/--tts groq[=model].`
     )
   }
 
@@ -103,11 +119,11 @@ export const validateTtsTargetSelection = (
     || typeof selection.deepgramSpeed === 'number'
   )
   if (hasDeepgramRequestControlFlags && selection.deepgramModels.length === 0) {
-    throw new Error('Deepgram TTS request control flags require --deepgram-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Deepgram TTS', 'deepgram', 'request control flags'))
   }
 
   if (selection.mistralVoiceName && selection.mistralModels.length === 0) {
-    throw new Error('Mistral TTS saved voice creation requires --mistral-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Mistral TTS', 'mistral', 'saved voice creation'))
   }
   if (selection.mistralVoiceName && !selection.mistralRefAudioPath) {
     throw new Error('Mistral TTS --mistral-tts-voice-name requires --mistral-tts-ref-audio.')
@@ -117,7 +133,7 @@ export const validateTtsTargetSelection = (
   }
 
   if (selection.hasElevenLabsCloneFlags && selection.elevenlabsModels.length === 0) {
-    throw new Error('ElevenLabs TTS IVC flags require --elevenlabs-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('ElevenLabs TTS', 'elevenlabs', 'IVC flags'))
   }
   const hasElevenLabsRequestControlFlags = Boolean(
     selection.elevenLabsOutputFormat
@@ -131,10 +147,9 @@ export const validateTtsTargetSelection = (
     || selection.elevenLabsTextNormalization
     || (selection.elevenLabsPronunciationDictionaryLocators && selection.elevenLabsPronunciationDictionaryLocators.length > 0)
     || typeof selection.elevenLabsOptimizeStreamingLatency === 'number'
-    || selection.elevenLabsPvcAsIvc
   )
   if (hasElevenLabsRequestControlFlags && selection.elevenlabsModels.length === 0) {
-    throw new Error('ElevenLabs TTS request control flags require --elevenlabs-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('ElevenLabs TTS', 'elevenlabs', 'request control flags'))
   }
   if (selection.hasElevenLabsCloneFlags && !selection.elevenLabsCloneRefAudioPath) {
     throw new Error('ElevenLabs TTS IVC creation requires --elevenlabs-tts-ref-audio.')
@@ -143,14 +158,14 @@ export const validateTtsTargetSelection = (
     throw new Error('ElevenLabs TTS IVC creation cannot be combined with --elevenlabs-voice. Use --elevenlabs-tts-voice-name for the created voice label.')
   }
   if (selection.hasElevenLabsVoiceNameOnly) {
-    throw new Error('ElevenLabs TTS --elevenlabs-tts-voice-name requires --elevenlabs-tts-ref-audio for IVC or an ElevenLabs PVC setup flag.')
+    throw new Error('ElevenLabs TTS --elevenlabs-tts-voice-name requires --elevenlabs-tts-ref-audio.')
   }
 
   if (selection.hasSpeechifyCustomVoiceFlags && selection.speechifyModels.length === 0) {
-    throw new Error('Speechify TTS custom voice flags require --speechify-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Speechify TTS', 'speechify', 'custom voice flags'))
   }
   if ((selection.speechifyAudioFormat || selection.speechifyLanguage) && selection.speechifyModels.length === 0) {
-    throw new Error('Speechify TTS request control flags require --speechify-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Speechify TTS', 'speechify', 'request control flags'))
   }
   if (selection.hasSpeechifyCustomVoiceFlags && !selection.speechifyCustomVoiceRefAudioPath) {
     throw new Error('Speechify TTS custom voice creation requires --speechify-tts-ref-audio.')
@@ -169,83 +184,11 @@ export const validateTtsTargetSelection = (
   }
 
   if ((selection.humeVoice || selection.humeVoiceProvider) && selection.humeModels.length === 0) {
-    throw new Error('Hume TTS voice flags require --hume-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Hume TTS', 'hume', 'voice flags'))
   }
 
   if ((selection.cartesiaVoiceId || selection.cartesiaLanguage) && selection.cartesiaModels.length === 0) {
-    throw new Error('Cartesia TTS request control flags require --cartesia-tts <model> or --all-tts.')
+    throw new Error(requireProviderSelectionMessage('Cartesia TTS', 'cartesia', 'request control flags'))
   }
 
-  if (selection.hasGcloudIcvFlags && selection.gcloudModels.length === 0) {
-    throw new Error('Google Cloud TTS instant custom voice flags require --gcloud-tts instant-custom-voice.')
-  }
-  if (selection.hasGcloudIcvFlags && !selection.gcloudModels.includes('instant-custom-voice')) {
-    throw new Error('Google Cloud TTS instant custom voice flags require --gcloud-tts instant-custom-voice.')
-  }
-  if ((selection.gcloudRefAudioPath || selection.gcloudConsentAudioPath || selection.gcloudConsentLanguage || selection.gcloudVoiceCloningKeyOut) && selection.gcloudVoiceCloningKey) {
-    throw new Error('Google Cloud TTS --gcloud-tts-voice-cloning-key cannot be combined with key generation flags.')
-  }
-  if ((selection.gcloudRefAudioPath || selection.gcloudConsentAudioPath || selection.gcloudConsentLanguage || selection.gcloudVoiceCloningKeyOut) && (!selection.gcloudRefAudioPath || !selection.gcloudConsentAudioPath)) {
-    throw new Error('Google Cloud TTS instant custom voice key generation requires both --gcloud-tts-ref-audio and --gcloud-tts-consent-audio.')
-  }
-
-  if (selection.hasElevenLabsPvcSetupFlags && selection.elevenlabsModels.length === 0) {
-    throw new Error('ElevenLabs TTS PVC setup flags require --elevenlabs-tts <model> or --all-tts.')
-  }
-  if (selection.elevenLabsPvcVoiceId && selection.elevenLabsVoiceId) {
-    throw new Error('ElevenLabs TTS PVC voice cannot be combined with --elevenlabs-voice.')
-  }
-  if (selection.elevenLabsPvcVoiceId && selection.hasElevenLabsCloneFlags) {
-    throw new Error('ElevenLabs TTS PVC voice cannot be combined with ElevenLabs IVC flags.')
-  }
-  if (selection.hasElevenLabsPvcSetupFlags && selection.hasElevenLabsCloneFlags) {
-    throw new Error('ElevenLabs TTS PVC setup flags cannot be combined with ElevenLabs IVC flags.')
-  }
-  if (selection.hasElevenLabsPvcSetupFlags && selection.elevenLabsVoiceId) {
-    throw new Error('ElevenLabs TTS PVC setup cannot be combined with --elevenlabs-voice.')
-  }
-  if ((selection.elevenLabsPvcLanguage || selection.elevenLabsPvcDescription || (selection.elevenLabsCloneVoiceName && selection.hasElevenLabsPvcActionFlags)) && !selection.elevenLabsPvcSampleDir && (!selection.elevenLabsPvcSamplePaths || selection.elevenLabsPvcSamplePaths.length === 0)) {
-    throw new Error('ElevenLabs TTS PVC voice metadata requires --elevenlabs-tts-pvc-sample or --elevenlabs-tts-pvc-sample-dir.')
-  }
-  if (selection.elevenLabsPvcCaptchaOut && !selection.elevenLabsPvcVoiceId && !selection.elevenLabsPvcSampleDir && (!selection.elevenLabsPvcSamplePaths || selection.elevenLabsPvcSamplePaths.length === 0)) {
-    throw new Error('ElevenLabs TTS PVC captcha output requires --elevenlabs-tts-pvc-voice or PVC samples that create a voice.')
-  }
-  if (selection.elevenLabsPvcVerifyAudio && !selection.elevenLabsPvcVoiceId && (!selection.elevenLabsPvcSamplePaths || selection.elevenLabsPvcSamplePaths.length === 0) && !selection.elevenLabsPvcSampleDir) {
-    throw new Error('ElevenLabs TTS PVC verification requires --elevenlabs-tts-pvc-voice or PVC samples that create a voice.')
-  }
-  if (selection.elevenLabsPvcWait && !selection.elevenLabsPvcVoiceId && !selection.hasElevenLabsPvcActionFlags) {
-    throw new Error('ElevenLabs TTS PVC wait requires --elevenlabs-tts-pvc-voice or PVC setup flags.')
-  }
-  if (selection.elevenLabsPvcWait && selection.hasElevenLabsPvcActionFlags && selection.elevenlabsModels.length > 1) {
-    throw new Error('ElevenLabs TTS PVC setup with --elevenlabs-tts-pvc-wait supports one ElevenLabs model per run.')
-  }
-
-  const hasDeapiRequestControlFlags = Boolean(
-    selection.deapiLanguage
-    || typeof selection.deapiSpeed === 'number'
-    || selection.deapiFormat
-    || typeof selection.deapiSampleRate === 'number'
-    || selection.deapiInstruction
-  )
-  if (hasDeapiRequestControlFlags && selection.deapiModels.length === 0) {
-    throw new Error('deAPI TTS request control flags require --deapi-tts <model> or --all-tts.')
-  }
-  if (selection.deapiRefText && !selection.deapiRefAudioPath) {
-    throw new Error('deAPI TTS --deapi-tts-ref-text requires --deapi-tts-ref-audio.')
-  }
-  if (selection.deapiRefAudioPath && !selection.deapiModels.includes(DEAPI_TTS_VOICE_CLONE_MODEL)) {
-    throw new Error(`deAPI TTS --deapi-tts-ref-audio requires --deapi-tts ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
-  }
-  if (selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL) && !selection.deapiInstruction) {
-    throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_DESIGN_MODEL} requires --deapi-tts-instruction.`)
-  }
-  if (selection.deapiInstruction && selection.deapiModels.length > 0 && !selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL)) {
-    throw new Error(`deAPI TTS --deapi-tts-instruction requires --deapi-tts ${DEAPI_TTS_VOICE_DESIGN_MODEL}.`)
-  }
-  if (selection.deapiModels.includes(DEAPI_TTS_VOICE_DESIGN_MODEL) && (selection.deapiRefAudioPath || selection.deapiVoiceId)) {
-    throw new Error(`deAPI TTS model ${DEAPI_TTS_VOICE_DESIGN_MODEL} uses --deapi-tts-instruction and cannot be combined with --deapi-tts-ref-audio or --deapi-tts-voice.`)
-  }
-  if (selection.deapiRefAudioPath && selection.deapiModels.some((model) => model !== DEAPI_TTS_VOICE_CLONE_MODEL)) {
-    throw new Error(`deAPI TTS voice cloning is only supported for ${DEAPI_TTS_VOICE_CLONE_MODEL}.`)
-  }
 }

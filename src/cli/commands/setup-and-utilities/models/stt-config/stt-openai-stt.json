@@ -5,6 +5,11 @@
     "models": {
       "gpt-4o-mini-transcribe": {
         "description": "OpenAI GPT-4o mini transcribe",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard transcription pricing",
+        "pricingNotes": "OpenAI lists gpt-4o-mini-transcribe at an estimated $0.003/min with $1.25/1M input tokens and $5.00/1M output tokens. Stored hourly estimate is $0.18/hr. Batch discounts, enterprise agreements, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.18,
         "costPerHourCents": 18,
         "limits": {
@@ -15,11 +20,16 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 150
+          "msPerSecond": 241
         }
       },
       "gpt-4o-transcribe": {
         "description": "OpenAI GPT-4o transcribe",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard transcription pricing",
+        "pricingNotes": "OpenAI lists gpt-4o-transcribe at an estimated $0.006/min with $2.50/1M input tokens and $10.00/1M output tokens. Stored hourly estimate is $0.36/hr. Batch discounts, enterprise agreements, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.36,
         "costPerHourCents": 36,
         "limits": {
@@ -30,7 +40,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 200
+          "msPerSecond": 154
         }
       }
     }

@@ -1,10 +1,12 @@
 albums
-input
 .DS_Store
 node_modules/
 *.env
 *.log
 **/*/__pycache__
+input
+input/uss
+input/ryan-gpt
 input/ajc
 input/examples/audio
 input/examples/video

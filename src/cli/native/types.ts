@@ -1,4 +1,4 @@
-export type CliFlagType =
+type CliFlagType =
   | BooleanConstructor
   | StringConstructor
   | [StringConstructor]
@@ -22,9 +22,9 @@ export type CliParameterDefinition = {
   description?: string
 }
 
-export type CliHelpGroup = readonly [key: string, label: string]
+type CliHelpGroup = readonly [key: string, label: string]
 
-export type CliHelpDefinition = {
+type CliHelpDefinition = {
   group?: string
   examples?: ReadonlyArray<readonly [command: string, description: string]>
   notes?: readonly string[]
@@ -44,9 +44,7 @@ export type CliParameterValues = Record<string, string> & {
 }
 
 export type CliFlagValues = Record<string, unknown> & {
-  aws?: unknown
   doctor?: unknown
-  gcloud?: unknown
   models?: unknown
   out?: unknown
   refresh?: unknown
@@ -64,7 +62,7 @@ export type CliCommandContext = {
   store: Record<string, unknown>
 }
 
-export type CliCommandHandler = (ctx: CliCommandContext) => void | Promise<void>
+type CliCommandHandler = (ctx: CliCommandContext) => void | Promise<void>
 
 export type CliCommandDefinition = {
   name: string
@@ -88,7 +86,7 @@ export type CliRootDefinition = {
   flagGroups: readonly CliHelpGroup[]
 }
 
-export type CliParseMode = 'command' | 'help' | 'version'
+type CliParseMode = 'command' | 'help' | 'version'
 
 export type CliParseResult = {
   mode: CliParseMode

@@ -24,7 +24,7 @@ bun as download <input>
 | Direct media URL (`.mp3`, `.mp4`, etc.) | HTTP fetch, normalize to compressed audio-only media, collect media metadata |
 | Direct document URL (`.pdf`, `.epub`, `.docx`, etc.) | HTTP fetch to a temp file, detect format, collect document metadata |
 | Direct document URL without an extension | HEAD probe plus download + magic-byte detection |
-| Remote article / HTML URL | Article extraction through `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` via `--url-backend` |
+| Remote article / HTML URL | Article extraction through `defuddle`, `firecrawl`, `glm-reader`, `spider`, or `zyte` via `--url-provider` |
 | Local `.html` / `.htm` file | Article extraction with local `defuddle` |
 | Local media file | normalize to compressed audio-only media, collect media metadata |
 | Local document file | detect format by magic bytes first, then extension |
@@ -50,7 +50,7 @@ Step-1 metadata in `run.json` also includes `slug`, which is derived from the or
 --keep-original-media  Keep downloaded media in its original/downloaded format instead of creating the normalized compressed audio artifact
 --best-quality       Download the best available video+audio media and skip audio-only normalization
 --flat-batch         Batch download: place primary media files directly in the batch output directory
---url-backend        Article/HTML extraction backend: defuddle|firecrawl|glm-reader|spider|zyte (default defuddle; local .html/.htm always use defuddle)
+--url-provider       Article/HTML extraction backend: defuddle|firecrawl|glm-reader|spider|zyte (default defuddle; local .html/.htm always use defuddle)
 --batch-limit        Batch: number of items to process (default 5)
 --batch-all          Batch: process all items
 --batch-order        Batch: item order newest|oldest (default newest)
@@ -150,7 +150,7 @@ bun as download https://www.youtube.com/watch?v=u1-WHqATSQU
 bun as download https://www.youtube.com/watch?v=u1-WHqATSQU --best-quality
 
 # Download a local audio file
-bun as download input/examples/audio/1-audio.mp3
+bun as download https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # Download document metadata from a local PDF
 bun as download input/examples/document/1-document.pdf

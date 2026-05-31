@@ -36,8 +36,8 @@ Progress:
 - [ ] Build the packet with `scripts/run.ts <category> build-packet`.
 - [ ] Write the category consensus artifact when the workflow requires agent reconciliation.
 - [ ] Generate reports with `scripts/run.ts <category> build-report`.
-- [ ] Verify that JSON reports include the required local and service ranking surfaces.
-- [ ] For OCR and STT, verify the combined overall ranking and tier breakdown are preserved.
+- [ ] Verify that JSON reports include the required ranking contract for the category.
+- [ ] For OCR and STT, verify full grouped `metricRankings` are present and old combined overall/tier/top-three fields are absent.
 
 ## Commands
 
@@ -68,7 +68,7 @@ bun scripts/run.ts <category> build-report <run_dir> [--input-text <path>] [--ro
 
 TTS packet and report generation require `--input-text <path>`.
 
-For OCR, STT, and URL report generation, `--input-text <path>` can point to the already-authored gold text:
+For OCR, STT, and URL report generation, `--input-text <path>` can point to the already-authored consensus artifact:
 
 1. OCR: `consensus-extraction.txt`
 2. STT: `consensus-transcription.txt`
@@ -76,11 +76,32 @@ For OCR, STT, and URL report generation, `--input-text <path>` can point to the 
 
 If omitted, the report command uses the category default file in the run directory.
 
+## Gold Reference Source
+
+For OCR, STT, and URL, the gold reference is the consensus artifact authored from the full multi-provider packet evidence: `consensus-extraction.txt` for OCR/URL and `consensus-transcription.txt` for STT.
+
+Do not copy or treat `prompt.md`, per-provider transcripts/extractions, provider summaries, model summaries, or any single provider output as the gold reference.
+
+Existing gold files may only be reused when they are already agent-authored consensus artifacts created from packet evidence. If that provenance is unclear, rebuild the packet and reconcile the artifact before report generation.
+
 ## Ranking Contract
 
 Reports expose separate local and service ranking surfaces so cost, speed, and quality can be inspected within each provider class.
 
-Every JSON report generated through `scripts/run.ts <category> build-report` includes:
+Image, music, TTS, URL, and video JSON reports generated through `scripts/run.ts <category> build-report` include complete local and service rankings:
+
+1. `rankingSurfaces.local.price`
+2. `rankingSurfaces.local.speed`
+3. `rankingSurfaces.local.automatedQuality`
+4. `rankingSurfaces.local.humanQuality`
+5. `rankingSurfaces.service.price`
+6. `rankingSurfaces.service.speed`
+7. `rankingSurfaces.service.automatedQuality`
+8. `rankingSurfaces.service.humanQuality`
+
+Each full-ranking array has a matching `*UnavailableReason` field. Price and speed rankings include every provider in the group; missing values sort last with `value: null` and `label: "n/a"`.
+
+Compatibility aliases are retained and full-length:
 
 1. `rankingSurfaces.local.fastest`
 2. `rankingSurfaces.local.cheapest`
@@ -89,38 +110,59 @@ Every JSON report generated through `scripts/run.ts <category> build-report` inc
 5. `rankingSurfaces.service.cheapest`
 6. `rankingSurfaces.service.highestQuality`
 
-If a group or metric is unavailable, the surface is an empty list and has an adjacent `*UnavailableReason` field.
+`fastest` aliases `speed`, `cheapest` aliases `price`, and `highestQuality` aliases `humanQuality` when present, otherwise `automatedQuality`.
 
-OCR and STT reports additionally preserve a combined report structure:
+OCR reports use grouped full metric rankings instead of top-three ranking surfaces:
 
-1. `## Overall Ranking` using `balanced-overall`
-2. `## Tier Breakdown` with local and third-party tier groups
-3. `## Ranking` as the combined WER accuracy ranking
-4. JSON `overall`, `providers`, and `tiering` fields with overall scores, component scores, group ranks, and tiers
+1. `metricRankings.local.price`
+2. `metricRankings.local.speed`
+3. `metricRankings.local.qualityScore`
+4. `metricRankings.thirdPartyService.price`
+5. `metricRankings.thirdPartyService.speed`
+6. `metricRankings.thirdPartyService.qualityScore`
+
+STT reports use grouped full metric rankings split by diarization support:
+
+1. `metricRankings.local.price`
+2. `metricRankings.local.speed`
+3. `metricRankings.local.qualityScore`
+4. `metricRankings.thirdPartyServiceNonDiarization.price`
+5. `metricRankings.thirdPartyServiceNonDiarization.speed`
+6. `metricRankings.thirdPartyServiceNonDiarization.qualityScore`
+7. `metricRankings.thirdPartyServiceDiarization.price`
+8. `metricRankings.thirdPartyServiceDiarization.speed`
+9. `metricRankings.thirdPartyServiceDiarization.qualityScore`
+
+OCR and STT do not emit JSON `rankingSurfaces`, `overall`, `overallMetric`, `overallWeights`, or `tiering`, and their markdown does not emit `## Overall Ranking`, `## Tier Breakdown`, or combined `## Ranking` sections.
+
+Each OCR/STT metric ranking entry includes `rank`, `providerKey`, `provider`, `model`, `group`, `metric`, `value`, `label`, and relevant evidence fields. Price ranks lower cost first, with local providers at zero monetary cost and missing service price retained at the end. Speed ranks lower processing time first, with missing timing retained at the end. Quality Score ranks the existing score from highest to lowest.
 
 ## Category Notes
 
-Image, music, and video reports rank fastest and cheapest service providers from measurable run metadata. Highest-quality rankings remain unavailable unless an explicit quality metric is present.
+Image, music, and video reports rank price and speed from measurable run metadata. Automated quality remains unavailable unless an explicit `qualityScore` metric is present.
 
-OCR reports use WER/CER-derived extraction accuracy for highest-quality rankings.
+OCR reports use WER/CER-derived extraction accuracy for quality rankings.
 
-STT reports use speaker-aware WER-derived transcript accuracy for highest-quality rankings.
+STT reports use speaker-aware WER-derived transcript accuracy for quality rankings and split service groups by diarization support.
 
-URL reports use WER, CER, and content coverage for highest-quality rankings.
+URL reports use WER, CER, and content coverage for automated quality rankings.
 
-TTS reports use roundtrip WER when present, or explicit voice-quality data if a report already provides it. File size, bitrate, duration, and subjective judgment are not quality proxies.
+Human quality uses only explicit human score fields such as `humanQualityScore`, or `humanSpeechScore` for TTS. Generic `qualityScore`, file size, bitrate, duration, cost, speed, and subjective judgment are not human quality proxies.
+
+TTS reports keep automated and human quality separate. Automated quality uses roundtrip WER-derived accuracy when present, including `voice-quality-report.json` median roundtrip WER. Human quality uses `humanSpeechScore` from `voice-quality-report.json` when present. File size, bitrate, duration, and subjective judgment are not quality proxies.
 
 ## Validation Checklist
 
 1. Confirm the consensus artifact exists when required by the category.
 2. Confirm the markdown report exposes the category's expected ranking structure.
-3. Confirm all six JSON `rankingSurfaces` paths exist.
-4. Confirm unavailable quality rankings explain why they are unavailable.
-5. Confirm local cheapest rankings only compare local providers and use zero monetary cost.
-6. For OCR and STT, confirm combined overall ranking and tier breakdowns remain in markdown and JSON.
-7. For categories without a combined-overall contract, confirm no combined local-vs-service leaderboard remains in the markdown or JSON report.
-8. Delete temporary packet files unless the user explicitly wants to keep them.
-9. If a script fails, report the exact command, run directory, and first actionable error line.
+3. For non-OCR/STT reports, confirm full `price`, `speed`, `automatedQuality`, and `humanQuality` JSON `rankingSurfaces` paths exist, plus compatibility aliases.
+4. For OCR/STT, confirm grouped full `metricRankings` exist and old `rankingSurfaces`, `overall`, `overallMetric`, `overallWeights`, and `tiering` fields are absent.
+5. For TTS, confirm full `price`, `speed`, `automatedQuality`, and `humanQuality` rankings exist for local and service groups.
+6. Confirm unavailable quality rankings explain why they are unavailable.
+7. Confirm local cheapest rankings only compare local providers and use zero monetary cost.
+8. Confirm no combined local-vs-service leaderboard remains in the markdown or JSON report.
+9. Delete temporary packet files unless the user explicitly wants to keep them.
+10. If a script fails, report the exact command, run directory, and first actionable error line.
 
 ## Reporting
 
@@ -128,5 +170,5 @@ When you finish, report:
 
 1. Which run directory and category were processed.
 2. Which final deliverables were written.
-3. Whether required ranking surfaces and any category-specific combined ranking were present.
+3. Whether required ranking surfaces or OCR/STT metric rankings were present.
 4. Which verification commands were run.

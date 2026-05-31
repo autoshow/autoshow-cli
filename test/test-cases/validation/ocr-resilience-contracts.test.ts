@@ -4,14 +4,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { DocumentMetadata, HostedOcrRun, PageResult } from '~/types'
 import {
-  DEFAULT_OCR_POLL_DEADLINE_MS,
-  DEFAULT_OCR_REQUEST_TIMEOUT_MS,
-  readPositiveIntegerEnv
+  OCR_POLL_DEADLINE_MS,
+  OCR_REQUEST_TIMEOUT_MS
 } from '~/utils/timeouts'
 import {
   classifyOcrCreateRetry,
-  DEFAULT_OCR_PAGE_REQUEST_ATTEMPTS,
-  DEFAULT_OCR_PAGE_REQUEST_TIMEOUT_MS,
+  OCR_PAGE_REQUEST_ATTEMPTS,
+  OCR_PAGE_REQUEST_TIMEOUT_MS,
   OCR_CREATE_RETRY_POLICY,
   OCR_PAGE_REQUEST_RETRY_POLICY,
   OCR_SCHEMA_RETRY_ATTEMPTS,
@@ -24,7 +23,6 @@ import {
   shouldFallbackToOcrPdfChunks,
   stitchHostedOcrChunkRuns
 } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/pdf-chunk-fallback'
-import { isRetryableDeapiOcrJobFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-services/deapi-ocr/run-deapi-ocr'
 import { classifyOcrProviderFailure } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-run-state'
 import {
   OcrStructuredResponseError,
@@ -87,10 +85,10 @@ const jsonResponse = (body: unknown, status = 200): Response =>
 
 describe('OCR resilience contracts', () => {
   test('OCR retry policy and timeout defaults are aggressive and env parsing is strict', () => {
-    expect(DEFAULT_OCR_REQUEST_TIMEOUT_MS).toBe(60 * 60_000)
-    expect(DEFAULT_OCR_POLL_DEADLINE_MS).toBe(60 * 60_000)
-    expect(DEFAULT_OCR_PAGE_REQUEST_ATTEMPTS).toBe(2)
-    expect(DEFAULT_OCR_PAGE_REQUEST_TIMEOUT_MS).toBe(5 * 60_000)
+    expect(OCR_REQUEST_TIMEOUT_MS).toBe(60 * 60_000)
+    expect(OCR_POLL_DEADLINE_MS).toBe(60 * 60_000)
+    expect(OCR_PAGE_REQUEST_ATTEMPTS).toBe(2)
+    expect(OCR_PAGE_REQUEST_TIMEOUT_MS).toBe(5 * 60_000)
     expect(HOSTED_OCR_PDF_PAGE_FALLBACK_THRESHOLD).toBe(20)
     expect(OCR_SCHEMA_RETRY_ATTEMPTS).toBe(3)
     expect(OCR_CREATE_RETRY_POLICY).toMatchObject({
@@ -107,22 +105,6 @@ describe('OCR resilience contracts', () => {
     })
     expect(classifyOcrCreateRetry(new DOMException('deadline exceeded', 'TimeoutError')).shouldRetry).toBe(true)
 
-    const envKey = 'AUTOSHOW_TEST_OCR_TIMEOUT_PARSE_MS'
-    const original = process.env[envKey]
-    try {
-      process.env[envKey] = '1234'
-      expect(readPositiveIntegerEnv(envKey, 7)).toBe(1234)
-      process.env[envKey] = '0'
-      expect(readPositiveIntegerEnv(envKey, 7)).toBe(7)
-      process.env[envKey] = 'not-a-number'
-      expect(readPositiveIntegerEnv(envKey, 7)).toBe(7)
-    } finally {
-      if (original === undefined) {
-        delete process.env[envKey]
-      } else {
-        process.env[envKey] = original
-      }
-    }
   })
 
   test('Unstructured progress key tracks node counters instead of log messages or node order', () => {
@@ -161,12 +143,7 @@ describe('OCR resilience contracts', () => {
     const previousSleep = Bun.sleep
     const previousDateNow = Date.now
     const previousEnv = {
-      UNSTRUCTURED_API_KEY: process.env['UNSTRUCTURED_API_KEY'],
-      AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS'],
-      AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS'],
-      AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS'],
-      AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS'],
-      AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS']
+      UNSTRUCTURED_API_KEY: process.env['UNSTRUCTURED_API_KEY']
     }
     let now = 0
     const calls: Array<{ method: string, url: string }> = []
@@ -176,11 +153,6 @@ describe('OCR resilience contracts', () => {
     try {
       await Bun.write(inputPath, new Uint8Array([37, 80, 68, 70]))
       process.env['UNSTRUCTURED_API_KEY'] = 'test-key'
-      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_INTERVAL_MS'] = '100'
-      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_DEADLINE_MS'] = '1000'
-      process.env['AUTOSHOW_UNSTRUCTURED_OCR_STALL_DEADLINE_MS'] = '900'
-      process.env['AUTOSHOW_UNSTRUCTURED_OCR_EMPTY_WORKFLOW_DEADLINE_MS'] = '250'
-      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS'] = '100'
 
       Date.now = () => now
       ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async (ms?: number | string) => {
@@ -220,7 +192,7 @@ describe('OCR resilience contracts', () => {
       }, 'hi_res_and_enrichment')).rejects.toThrow('did not move any files into workflow nodes')
 
       expect(calls.some((call) => call.method === 'POST' && call.url.endsWith('/api/v1/jobs/job-1/cancel'))).toBe(true)
-      expect(now).toBeLessThan(1000)
+      expect(now).toBeLessThan(130_000)
     } finally {
       globalThis.fetch = previousFetch
       ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = previousSleep
@@ -239,8 +211,7 @@ describe('OCR resilience contracts', () => {
   test('Unstructured create-job without input file IDs is cancelled immediately', async () => {
     const previousFetch = globalThis.fetch
     const previousEnv = {
-      UNSTRUCTURED_API_KEY: process.env['UNSTRUCTURED_API_KEY'],
-      AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS: process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS']
+      UNSTRUCTURED_API_KEY: process.env['UNSTRUCTURED_API_KEY']
     }
     const calls: Array<{ method: string, url: string }> = []
     const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-unstructured-no-input-'))
@@ -249,7 +220,6 @@ describe('OCR resilience contracts', () => {
     try {
       await Bun.write(inputPath, new Uint8Array([37, 80, 68, 70]))
       process.env['UNSTRUCTURED_API_KEY'] = 'test-key'
-      process.env['AUTOSHOW_UNSTRUCTURED_OCR_POLL_REQUEST_TIMEOUT_MS'] = '100'
 
       globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
         const url = String(input)
@@ -682,16 +652,4 @@ describe('OCR resilience contracts', () => {
     expect(failure.message).toContain('timeout')
   })
 
-  test('deAPI terminal unknown OCR job failures are retryable at job level', () => {
-    expect(isRetryableDeapiOcrJobFailure(new Error('deAPI job failed: unknown error'))).toBe(true)
-    expect(isRetryableDeapiOcrJobFailure(Object.assign(new Error('deAPI polling failed'), {
-      status: 502,
-      stage: 'poll'
-    }))).toBe(true)
-    expect(isRetryableDeapiOcrJobFailure(Object.assign(new Error('deAPI OCR request failed'), {
-      status: 502,
-      stage: 'create'
-    }))).toBe(false)
-    expect(isRetryableDeapiOcrJobFailure(new Error('DEAPI_API_KEY environment variable is required for deAPI OCR'))).toBe(false)
-  })
 })

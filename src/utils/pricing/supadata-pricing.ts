@@ -22,10 +22,10 @@ export const SUPADATA_STT_AGGREGATE_NOTE =
 
 export const getSupadataCreditRateCents = (): number => SUPADATA_REFERENCE_CREDIT_RATE_CENTS
 
-export const estimateSupadataGenerateCredits = (durationSeconds: number): number =>
+const estimateSupadataGenerateCredits = (durationSeconds: number): number =>
   (Math.max(0, durationSeconds) / 60) * SUPADATA_GENERATE_CREDITS_PER_MINUTE
 
-export const isSupadataForcedGenerationUrl = (sourceUrl: string | undefined): boolean => {
+const isSupadataForcedGenerationUrl = (sourceUrl: string | undefined): boolean => {
   if (typeof sourceUrl !== 'string' || sourceUrl.length === 0) {
     return false
   }
@@ -38,7 +38,7 @@ export const isSupadataForcedGenerationUrl = (sourceUrl: string | undefined): bo
   }
 }
 
-export const estimateSupadataCredits = (
+const estimateSupadataCredits = (
   model: string,
   durationSeconds: number,
   context: SupadataPricingContext = {}
@@ -60,7 +60,7 @@ export const estimateSupadataCredits = (
   }
 }
 
-export const convertSupadataCreditsToCents = (
+const convertSupadataCreditsToCents = (
   credits: number,
   creditRateCents = getSupadataCreditRateCents()
 ): number => Math.max(0, credits) * creditRateCents
@@ -78,7 +78,7 @@ export const estimateSupadataCost = (
   }
 }
 
-export const buildSupadataSttEstimateNote = (
+const buildSupadataSttEstimateNote = (
   model: string,
   durationSeconds: number,
   context: SupadataPricingContext = {}

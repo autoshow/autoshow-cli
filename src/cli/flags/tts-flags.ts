@@ -10,14 +10,12 @@ import {
   SUPPORTED_GEMINI_TTS_MODELS,
   SUPPORTED_DEEPGRAM_TTS_MODELS,
   SUPPORTED_SPEECHIFY_TTS_MODELS,
-  SUPPORTED_GCLOUD_TTS_MODELS,
-  SUPPORTED_DEAPI_TTS_MODELS,
   SUPPORTED_HUME_TTS_MODELS,
   SUPPORTED_CARTESIA_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { generationOutputFlags, priceFlag } from './shared-flags'
-import { renameFlags } from './flag-utils'
+import { batchFlags, booleanAllProvidersFlag, generationOutputFlags, priceFlag, sharedConcurrencyFlags } from './shared-flags'
+import { pickFlags, withHelpGroup } from './flag-utils'
 
 export const TTS_COMMAND_SELECTOR_FLAGS = {
   'kitten-tts': 'kitten',
@@ -29,11 +27,9 @@ export const TTS_COMMAND_SELECTOR_FLAGS = {
   'openai-tts': 'openai',
   'gemini-tts': 'gemini',
   'deepgram-tts': 'deepgram',
-  'deapi-tts': 'deapi',
   'speechify-tts': 'speechify',
   'hume-tts': 'hume',
-  'cartesia-tts': 'cartesia',
-  'gcloud-tts': 'gcloud'
+  'cartesia-tts': 'cartesia'
 } as const satisfies Record<string, string>
 
 export const ttsFlags = {
@@ -44,7 +40,7 @@ export const ttsFlags = {
     negatable: false
   },
   'tts-provider-concurrency': {
-    description: 'TTS: max hosted providers/models running in parallel for one item (default 2; --all-tts defaults up to 8)',
+    description: 'TTS: max hosted providers/models running in parallel for one item (default 2; all-provider TTS runs default up to 8)',
     type: String,
     default: '2'
   },
@@ -94,10 +90,6 @@ export const ttsFlags = {
     description: buildModelDescription('Deepgram TTS model', SUPPORTED_DEEPGRAM_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
-  'deapi-tts': {
-    description: buildModelDescription('deAPI TTS model', SUPPORTED_DEAPI_TTS_MODELS),
-    type: [String] as [StringConstructor]
-  },
   'speechify-tts': {
     description: buildModelDescription('Speechify TTS model', SUPPORTED_SPEECHIFY_TTS_MODELS),
     type: [String] as [StringConstructor]
@@ -108,10 +100,6 @@ export const ttsFlags = {
   },
   'cartesia-tts': {
     description: buildModelDescription('Cartesia TTS model', SUPPORTED_CARTESIA_TTS_MODELS),
-    type: [String] as [StringConstructor]
-  },
-  'gcloud-tts': {
-    description: buildModelDescription('Google Cloud TTS model', SUPPORTED_GCLOUD_TTS_MODELS),
     type: [String] as [StringConstructor]
   },
   'minimax-tts-voice': {
@@ -212,38 +200,6 @@ export const ttsFlags = {
     description: 'Deepgram TTS voice speed from 0.5 to 2.0',
     type: String
   },
-  'deapi-tts-voice': {
-    description: 'deAPI TTS voice override (default: af_heart for Kokoro)',
-    type: String
-  },
-  'deapi-tts-ref-audio': {
-    description: 'deAPI TTS reference audio path for Qwen3 voice cloning',
-    type: String
-  },
-  'deapi-tts-ref-text': {
-    description: 'Optional transcript for the deAPI TTS reference audio',
-    type: String
-  },
-  'deapi-tts-language': {
-    description: 'deAPI TTS language override, e.g. en-us|English|Spanish',
-    type: String
-  },
-  'deapi-tts-speed': {
-    description: 'deAPI TTS speech speed from 0.5 to 2.0',
-    type: String
-  },
-  'deapi-tts-format': {
-    description: 'deAPI TTS output format, e.g. mp3|wav',
-    type: String
-  },
-  'deapi-tts-sample-rate': {
-    description: 'deAPI TTS output sample rate in Hz',
-    type: String
-  },
-  'deapi-tts-instruction': {
-    description: 'deAPI Qwen3 VoiceDesign voice description/instruction',
-    type: String
-  },
   'speechify-voice': {
     description: 'Speechify TTS voice ID override (default: george)',
     type: String
@@ -294,34 +250,6 @@ export const ttsFlags = {
   },
   'cartesia-tts-language': {
     description: 'Cartesia TTS language code override',
-    type: String
-  },
-  'gcloud-tts-voice': {
-    description: 'Google Cloud TTS voice name override (default depends on --gcloud-tts model)',
-    type: String
-  },
-  'gcloud-tts-language': {
-    description: 'Google Cloud TTS BCP 47 language tag; inferred from voice or defaults to en-US',
-    type: String
-  },
-  'gcloud-tts-ref-audio': {
-    description: 'Google Cloud TTS reference audio path for instant custom voice key generation',
-    type: String
-  },
-  'gcloud-tts-consent-audio': {
-    description: 'Google Cloud TTS consent recording audio path for instant custom voice key generation',
-    type: String
-  },
-  'gcloud-tts-consent-language': {
-    description: 'Google Cloud TTS consent recording BCP 47 language tag (default: en-US)',
-    type: String
-  },
-  'gcloud-tts-voice-cloning-key': {
-    description: 'Existing Google Cloud TTS instant custom voice cloning key',
-    type: String
-  },
-  'gcloud-tts-voice-cloning-key-out': {
-    description: 'Write a generated Google Cloud TTS instant custom voice cloning key to this path',
     type: String
   },
   'gemini-speaker-1-name': {
@@ -378,12 +306,12 @@ export const ttsFlags = {
     description: 'Speaker reference audio mapping for dialogue TTS, SPEAKER=path; repeatable',
     type: [String] as [StringConstructor]
   },
+  'tts-speaker': {
+    description: 'Multi-speaker TTS voice mapping, SPEAKER=VOICE or SPEAKER=path; repeatable',
+    type: [String] as [StringConstructor]
+  },
   'elevenlabs-voice': {
     description: 'ElevenLabs voice ID override (default: hpp4J3VqNfWAUOO0d1Us)',
-    type: String
-  },
-  'elevenlabs-tts-pvc-voice': {
-    description: 'ElevenLabs trained Professional Voice Clone voice ID for synthesis',
     type: String
   },
   'elevenlabs-tts-ref-audio': {
@@ -446,46 +374,142 @@ export const ttsFlags = {
     description: 'ElevenLabs optimize_streaming_latency value from 0 to 4',
     type: String
   },
-  'elevenlabs-tts-pvc-as-ivc': {
-    description: 'Request ElevenLabs PVC as IVC behavior when supported',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
-  'elevenlabs-tts-pvc-sample': {
-    description: 'ElevenLabs PVC training sample audio path; repeatable',
-    type: [String] as [StringConstructor]
-  },
-  'elevenlabs-tts-pvc-sample-dir': {
-    description: 'Directory of ElevenLabs PVC training sample audio files',
-    type: String
-  },
-  'elevenlabs-tts-pvc-language': {
-    description: 'ElevenLabs PVC sample language code (default: en)',
-    type: String
-  },
-  'elevenlabs-tts-pvc-description': {
-    description: 'ElevenLabs PVC voice description',
-    type: String
-  },
-  'elevenlabs-tts-pvc-captcha-out': {
-    description: 'Write the ElevenLabs PVC verification CAPTCHA image to this path',
-    type: String
-  },
-  'elevenlabs-tts-pvc-verify-audio': {
-    description: 'Audio recording of the ElevenLabs PVC CAPTCHA reading for verification',
-    type: String
-  },
-  'elevenlabs-tts-pvc-wait': {
-    description: 'Wait for ElevenLabs PVC fine tuning before synthesis',
-    type: Boolean,
-    default: false,
-    negatable: false
-  },
   ...priceFlag
 } as const satisfies CliFlagsDefinition
 
+export const genericTtsOptionFlags = {
+  'tts-voice': {
+    description: 'Generic TTS voice selector. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-speed': {
+    description: 'Generic TTS speed. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-language': {
+    description: 'Generic TTS language. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-ref-audio': {
+    description: 'Generic TTS reference audio path. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-voice-name': {
+    description: 'Generic created/saved TTS voice label. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-consent-audio': {
+    description: 'Generic TTS consent recording audio path. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-consent-language': {
+    description: 'Generic TTS consent recording language. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-consent-name': {
+    description: 'Generic TTS consent recording name. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-consent-email': {
+    description: 'Generic TTS consent email. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-text-normalization': {
+    description: 'Generic TTS text normalization. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-instructions': {
+    description: 'Generic TTS voice/style instructions. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-output-format': {
+    description: 'Generic TTS output format. Use value with one selected provider, or provider=value with multiple providers.',
+    type: [String] as [StringConstructor]
+  },
+  'tts-chunk-concurrency': {
+    description: 'TTS text chunks to synthesize in parallel per provider (default 1)',
+    type: String,
+    default: '1'
+  },
+} as const satisfies CliFlagsDefinition
+
+const ttsProviderSelectionFlags = {
+  provider: {
+    description: 'TTS provider[=model]: kitten|elevenlabs|minimax|groq|grok|mistral|openai|gemini|deepgram|speechify|hume|cartesia; repeatable',
+    type: [String] as [StringConstructor]
+  },
+  ...booleanAllProvidersFlag,
+  ...sharedConcurrencyFlags
+} as const satisfies CliFlagsDefinition
+
+const minimaxTtsCommandOptionNames = [
+  'minimax-tts-language-boost',
+  'minimax-tts-volume',
+  'minimax-tts-pitch',
+  'minimax-tts-emotion',
+  'minimax-tts-pronunciation'
+] as const
+
+const openaiTtsCommandOptionNames = [
+  'openai-tts-consent-id'
+] as const
+
+const deepgramTtsCommandOptionNames = [
+  'deepgram-tts-container',
+  'deepgram-tts-bit-rate',
+  'deepgram-tts-sample-rate'
+] as const
+
+const speechifyTtsCommandOptionNames = [
+  'speechify-tts-voice-locale',
+  'speechify-tts-voice-gender'
+] as const
+
+const humeTtsCommandOptionNames = [
+  'hume-tts-voice-provider'
+] as const
+
+const groqTtsCommandOptionNames = [
+  'groq-voice'
+] as const
+
+const geminiTtsCommandOptionNames = [
+  'gemini-speaker-1-name',
+  'gemini-speaker-1-voice',
+  'gemini-speaker-2-name',
+  'gemini-speaker-2-voice'
+] as const
+
+const dialogueTtsCommandOptionNames = [
+  'tts-dialogue-format',
+  'tts-speaker-ref-audio',
+  'tts-speaker'
+] as const
+
+const elevenlabsTtsCommandOptionNames = [
+  'elevenlabs-tts-clone-remove-background-noise',
+  'elevenlabs-tts-stability',
+  'elevenlabs-tts-similarity-boost',
+  'elevenlabs-tts-style',
+  'elevenlabs-tts-use-speaker-boost',
+  'elevenlabs-tts-seed',
+  'elevenlabs-tts-pronunciation-dictionary-locator',
+  'elevenlabs-tts-optimize-streaming-latency'
+] as const
+
 export const ttsCommandFlags = {
-  ...renameFlags(ttsFlags, TTS_COMMAND_SELECTOR_FLAGS),
-  ...generationOutputFlags
+  ...withHelpGroup(ttsProviderSelectionFlags, 'provider-selection'),
+  ...withHelpGroup(genericTtsOptionFlags, 'tts-options'),
+  ...withHelpGroup(pickFlags(batchFlags, ['batch-concurrency']), 'batch-processing'),
+  ...withHelpGroup(pickFlags(ttsFlags, minimaxTtsCommandOptionNames), 'tts-minimax'),
+  ...withHelpGroup(pickFlags(ttsFlags, openaiTtsCommandOptionNames), 'tts-openai'),
+  ...withHelpGroup(pickFlags(ttsFlags, deepgramTtsCommandOptionNames), 'tts-deepgram'),
+  ...withHelpGroup(pickFlags(ttsFlags, speechifyTtsCommandOptionNames), 'tts-speechify'),
+  ...withHelpGroup(pickFlags(ttsFlags, humeTtsCommandOptionNames), 'tts-hume'),
+  ...withHelpGroup(pickFlags(ttsFlags, groqTtsCommandOptionNames), 'tts-groq'),
+  ...withHelpGroup(pickFlags(ttsFlags, geminiTtsCommandOptionNames), 'tts-gemini'),
+  ...withHelpGroup(pickFlags(ttsFlags, dialogueTtsCommandOptionNames), 'tts-dialogue'),
+  ...withHelpGroup(pickFlags(ttsFlags, elevenlabsTtsCommandOptionNames), 'tts-elevenlabs'),
+  ...withHelpGroup(priceFlag, 'pricing'),
+  ...withHelpGroup(generationOutputFlags, 'output')
 } as const satisfies CliFlagsDefinition

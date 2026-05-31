@@ -2,7 +2,7 @@ import { mkdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import * as l from '~/utils/logger'
 import { runWithLogContext } from '~/utils/logger'
-import { createKeyValueTable } from '~/utils/logger/human-table'
+import { createHumanTable, createKeyValueTable } from '~/utils/logger/human-table'
 import { ensureDirectory, writeFile } from '~/utils/cli-utils'
 import { validateData } from '~/utils/validate/validation'
 import { estimateTokens } from '~/utils/text-utils'
@@ -14,7 +14,7 @@ import { runProviderTargetScheduler } from '~/cli/commands/process-steps/provide
 import { logExtractManifestConsoleSummary } from '~/cli/commands/process-steps/write-manifest-log'
 import {
   HOSTED_URL_ARTICLE_BACKENDS,
-  runUrlArticleProvider,
+  runUrlArticleProviderWithStats,
   URL_ARTICLE_BACKENDS
 } from './url-provider-registry'
 import {
@@ -23,6 +23,7 @@ import {
   isRemoteSource,
   type UrlArticleRunResult
 } from './url-utils'
+import type { UrlArticleRunOptions } from './url-provider-adapter'
 import {
   DocumentMetadataSchema,
   ExtractionMetadataSchema,
@@ -41,7 +42,7 @@ import {
 } from '~/types'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
-import { collectEstimatedExtractTargets, resolveExtractEstimatedCosts } from '../step-2-ocr/ocr-costs'
+import { collectEstimatedExtractTargets, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts } from '../step-2-ocr/ocr-costs'
 import { buildExtractionCallOpts } from '../../step-1-download/targets/single/document-write'
 import {
   formatHtmlArticleOcrFlagsIgnoredWarning,
@@ -59,17 +60,19 @@ type UrlProviderSuccess = {
   article: UrlArticleRunResult
   result: ExtractionResult
   metadata: ExtractionMetadata
+  attempts: number
   relativeDir?: string | undefined
 }
 
 type UrlProviderFailure = {
   backend: HtmlArticleBackend
   message: string
+  attempts: number
 }
 
 type UrlProviderRunOutcome =
   | { status: 'succeeded', success: UrlProviderSuccess }
-  | { status: 'failed', backend: HtmlArticleBackend, message: string }
+  | { status: 'failed', backend: HtmlArticleBackend, message: string, attempts: number }
   | { status: 'skipped', backend: HtmlArticleBackend, message: string }
 
 const isLocalUrlBackend = (backend: HtmlArticleBackend): boolean => backend === 'defuddle'
@@ -95,6 +98,23 @@ const readLocalHtmlFileSize = async (source: string): Promise<number | undefined
   } catch {
     return undefined
   }
+}
+
+const buildUrlRunOptions = (
+  opts: Pick<RuntimeOptions, 'urlRequestTimeoutMs' | 'urlRequestAttempts'>
+): UrlArticleRunOptions => ({
+  timeoutMs: opts.urlRequestTimeoutMs,
+  requestAttempts: opts.urlRequestAttempts
+})
+
+const getErrorAttempts = (error: unknown): number => {
+  if (error && typeof error === 'object' && 'attemptsMade' in error) {
+    const attempts = (error as { attemptsMade?: unknown }).attemptsMade
+    if (typeof attempts === 'number' && Number.isFinite(attempts) && attempts > 0) {
+      return Math.floor(attempts)
+    }
+  }
+  return 1
 }
 
 const buildFallbackStep1Metadata = async (
@@ -234,19 +254,25 @@ const runSingleUrlBackend = async (
   source: string,
   requestedBackend: HtmlArticleBackend,
   sourceUrl: string | undefined,
-  extractionOpts: Pick<ExtractionOptions, 'dpi' | 'languages' | 'outputFormat'>
+  extractionOpts: Pick<ExtractionOptions, 'dpi' | 'languages' | 'outputFormat'>,
+  urlRunOptions: UrlArticleRunOptions
 ): Promise<UrlProviderSuccess> => {
   let backend = requestedBackend
   const startedAt = Date.now()
   let article: UrlArticleRunResult
+  let attempts = 0
 
   if (requestedBackend === 'defuddle' && sourceUrl) {
     try {
-      article = await runUrlArticleProvider('defuddle', source, sourceUrl)
+      const run = await runUrlArticleProviderWithStats('defuddle', source, sourceUrl, urlRunOptions)
+      article = run.article
+      attempts = run.attempts
     } catch (defuddleError) {
       l.warn(`Defuddle article extraction failed; falling back to Firecrawl: ${formatErrorMessage(defuddleError)}`)
       try {
-        article = await runUrlArticleProvider('firecrawl', source, sourceUrl)
+        const run = await runUrlArticleProviderWithStats('firecrawl', source, sourceUrl, urlRunOptions)
+        article = run.article
+        attempts = run.attempts
         backend = 'firecrawl'
       } catch (firecrawlError) {
         throw new Error(
@@ -256,27 +282,11 @@ const runSingleUrlBackend = async (
       }
     }
   } else {
-    article = await runUrlArticleProvider(requestedBackend, source, sourceUrl)
+    const run = await runUrlArticleProviderWithStats(requestedBackend, source, sourceUrl, urlRunOptions)
+    article = run.article
+    attempts = run.attempts
   }
 
-  const result = buildUrlExtractionResult(article)
-  const metadata = buildUrlExtractionMetadata(backend, result, Date.now() - startedAt, extractionOpts)
-  return {
-    backend,
-    article,
-    result,
-    metadata
-  }
-}
-
-const runUrlBackendDirect = async (
-  source: string,
-  backend: HtmlArticleBackend,
-  sourceUrl: string | undefined,
-  extractionOpts: Pick<ExtractionOptions, 'dpi' | 'languages' | 'outputFormat'>
-): Promise<UrlProviderSuccess> => {
-  const startedAt = Date.now()
-  const article = await runUrlArticleProvider(backend, source, sourceUrl)
   const result = buildUrlExtractionResult(article)
   const metadata = buildUrlExtractionMetadata(backend, result, Date.now() - startedAt, extractionOpts)
   return {
@@ -284,6 +294,28 @@ const runUrlBackendDirect = async (
     article,
     result,
     metadata,
+    attempts
+  }
+}
+
+const runUrlBackendDirect = async (
+  source: string,
+  backend: HtmlArticleBackend,
+  sourceUrl: string | undefined,
+  extractionOpts: Pick<ExtractionOptions, 'dpi' | 'languages' | 'outputFormat'>,
+  urlRunOptions: UrlArticleRunOptions
+): Promise<UrlProviderSuccess> => {
+  const startedAt = Date.now()
+  const run = await runUrlArticleProviderWithStats(backend, source, sourceUrl, urlRunOptions)
+  const article = run.article
+  const result = buildUrlExtractionResult(article)
+  const metadata = buildUrlExtractionMetadata(backend, result, Date.now() - startedAt, extractionOpts)
+  return {
+    backend,
+    article,
+    result,
+    metadata,
+    attempts: run.attempts,
     relativeDir: getUrlProviderArtifactDir(backend)
   }
 }
@@ -317,7 +349,7 @@ const buildProviderStates = (
         model: backend,
         artifactDir: getUrlProviderArtifactDir(backend),
         status: 'succeeded',
-        attempts: 1
+        attempts: outcome.success.attempts
       }
     }
 
@@ -326,7 +358,7 @@ const buildProviderStates = (
       model: backend,
       artifactDir: getUrlProviderArtifactDir(backend),
       status: outcome.status,
-      attempts: outcome.status === 'skipped' ? 0 : 1,
+      attempts: outcome.status === 'skipped' ? 0 : outcome.attempts,
       lastError: {
         message: outcome.message
       }
@@ -364,6 +396,7 @@ const buildManifestMetadata = (
       : [step2Metadata]
   const extractTargets = collectEstimatedExtractTargets(normalizedStep2)
   const estimated = resolveExtractEstimatedCosts(options.preflightEstimate, normalizedStep2)
+  const observedEstimate = resolveExtractObservedEstimateCosts(normalizedStep2)
   const actual = computeActualCosts({ step2: normalizedStep2 })
   const estimatedTiming = computeEstimatedProcessingTimes({
     extractTargets: extractTargets.map((target) => ({
@@ -394,7 +427,7 @@ const buildManifestMetadata = (
       .map((state) => ({ service: state.service, model: state.model })),
     ...(options.web ? { web: options.web } : {}),
     source: options.source,
-    cost: { estimated, actual },
+    cost: options.preflightEstimate ? { estimated, observedEstimate, actual } : { estimated, actual },
     ...(timing ? { timing } : {}),
     ...(options.failures.length > 0 ? { errors: options.failures.map((failure) => ({
       service: failure.backend,
@@ -411,6 +444,7 @@ const runAllUrlBackends = async (
   opts: RuntimeOptions,
   extractionOpts: Pick<ExtractionOptions, 'dpi' | 'languages' | 'outputFormat'>
 ): Promise<UrlProviderRunOutcome[]> => {
+  const urlRunOptions = buildUrlRunOptions(opts)
   const scheduled = await runProviderTargetScheduler<HtmlArticleBackend, UrlProviderRunOutcome>({
     entries: requestedBackends.map((backend, index) => ({
       index,
@@ -425,14 +459,15 @@ const runAllUrlBackends = async (
     runTarget: async (_index, backend) => {
       try {
         const success = await runWithLogContext({ step: 'step-2-url', provider: backend }, async () =>
-          await runUrlBackendDirect(source, backend, sourceUrl, extractionOpts)
+          await runUrlBackendDirect(source, backend, sourceUrl, extractionOpts, urlRunOptions)
         )
         return { status: 'succeeded', success }
       } catch (error) {
         return {
           status: 'failed',
           backend,
-          message: formatErrorMessage(error)
+          message: formatErrorMessage(error),
+          attempts: getErrorAttempts(error)
         }
       }
     }
@@ -453,6 +488,7 @@ export const processUrlArticle = async (
   const sourceUrl = remote ? source : undefined
   const extractionOpts = buildExtractionCallOpts(source, baseDir, opts) as Pick<ExtractionOptions, 'dpi' | 'languages' | 'outputFormat'>
   const fallbackStep1 = await buildFallbackStep1Metadata(source)
+  const urlRunOptions = buildUrlRunOptions(opts)
 
   if (hasConfiguredOcrProviderSelection(opts)) {
     l.warn(formatHtmlArticleOcrFlagsIgnoredWarning(source))
@@ -466,11 +502,11 @@ export const processUrlArticle = async (
     : [remote ? opts.urlBackend : 'defuddle']
 
   if (!remote && opts.urlBackend !== 'defuddle' && !allUrlMode) {
-    l.warn(`Ignoring --url-backend ${opts.urlBackend} for local HTML inputs; using defuddle instead`)
+    l.warn(`Ignoring --url-provider ${opts.urlBackend} for local HTML inputs; using defuddle instead`)
   }
 
   if (allUrlMode && !remote) {
-    l.warn('--all-url with a local HTML input runs defuddle only; hosted URL backends are skipped for local inputs')
+    l.warn('--all-providers with a local HTML input runs defuddle only; hosted URL backends are skipped for local inputs')
   }
 
   const outcomes = allUrlMode
@@ -492,11 +528,12 @@ export const processUrlArticle = async (
       ]
     : [await runWithLogContext({ step: 'step-2-url' }, async () => ({
         status: 'succeeded' as const,
-        success: await runSingleUrlBackend(source, requestedBackends[0] ?? 'defuddle', sourceUrl, extractionOpts)
+        success: await runSingleUrlBackend(source, requestedBackends[0] ?? 'defuddle', sourceUrl, extractionOpts, urlRunOptions)
       })).catch((error) => ({
         status: 'failed' as const,
         backend: requestedBackends[0] ?? 'defuddle',
-        message: formatErrorMessage(error)
+        message: formatErrorMessage(error),
+        attempts: getErrorAttempts(error)
       }))]
 
   const successes = outcomes
@@ -506,7 +543,8 @@ export const processUrlArticle = async (
     .filter((outcome): outcome is Extract<UrlProviderRunOutcome, { status: 'failed' }> => outcome.status === 'failed')
     .map((outcome) => ({
       backend: outcome.backend,
-      message: outcome.message
+      message: outcome.message,
+      attempts: outcome.attempts
     }))
   const step1Metadata = buildStep1MetadataFromArticle(source, successes[0]?.article, fallbackStep1)
   const outputDir = await reserveUrlOutputDir(source, baseDir, opts, fallbackStep1, successes[0]?.article, batchChildContext)
@@ -580,6 +618,17 @@ export const processUrlArticle = async (
       ]),
       metadata: runStatus
     })
+    if (failures.length > 0) {
+      l.write('warn', 'Failed URL Providers', {
+        category: 'pipeline',
+        humanTable: createHumanTable(failures.map((failure) => ({
+          backend: failure.backend,
+          attempts: failure.attempts,
+          error: failure.message
+        })), ['backend', 'attempts', 'error']),
+        metadata: { failures }
+      })
+    }
     l.write('warn', 'Locations', {
       category: 'artifact',
       humanTable: createKeyValueTable([['retryOutputDir', outputDir]], 'artifact', 'path')

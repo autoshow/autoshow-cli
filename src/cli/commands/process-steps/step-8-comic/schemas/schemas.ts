@@ -1,32 +1,30 @@
 import * as v from 'valibot'
-import type {
-  CharacterFilePath,
-} from '../types'
 
-
-export const CHARACTER_FILES = {
-  '00': 'input/characters/00-uss-acampo.webp',
-  '01': 'input/characters/01-peaches.webp',
-  '02': 'input/characters/02-bishop.webp',
-  '03': 'input/characters/03-duco.webp',
-  '04': 'input/characters/04-geebee.webp',
-  '05': 'input/characters/05-seamus.webp',
-  '06': 'input/characters/06-gulp.webp',
-  '07': 'input/characters/07-paddy.webp',
-  '08': 'input/characters/08-specter.webp',
-  '09': 'input/characters/09-ironhand-1.webp',
-  '10': 'input/characters/10-ironhand-2.webp',
-  '11': 'input/characters/11-ironhand-3.webp',
-  '12': 'input/characters/12-chat.webp',
-  '13': 'input/characters/13-podcast-host.webp',
-  '14': 'input/characters/14-buoy-4-buoy-6.webp',
-  '15': 'input/characters/15-villagers.webp',
-  '16': 'input/characters/16-village-guards.webp',
+const CHARACTER_FILES = {
+  '00': 'input/uss/characters/00-uss-acampo.webp',
+  '01': 'input/uss/characters/01-peaches.webp',
+  '02': 'input/uss/characters/02-bishop.webp',
+  '03': 'input/uss/characters/03-duco.webp',
+  '04': 'input/uss/characters/04-geebee.webp',
+  '05': 'input/uss/characters/05-seamus.webp',
+  '06': 'input/uss/characters/06-gulp.webp',
+  '07': 'input/uss/characters/07-paddy.webp',
+  '08': 'input/uss/characters/08-specter.webp',
+  '09': 'input/uss/characters/09-ironhand-1.webp',
+  '10': 'input/uss/characters/10-ironhand-2.webp',
+  '11': 'input/uss/characters/11-ironhand-3.webp',
+  '12': 'input/uss/characters/12-chat.webp',
+  '13': 'input/uss/characters/13-podcast-host.webp',
+  '14': 'input/uss/characters/14-buoy-4-buoy-6.webp',
+  '15': 'input/uss/characters/15-villagers.webp',
+  '16': 'input/uss/characters/16-village-guards.webp',
 } as const
 
+type CharacterFileNumber = keyof typeof CHARACTER_FILES
+type CharacterFilePath = (typeof CHARACTER_FILES)[CharacterFileNumber]
 
 const CHARACTER_FILE_PATHS = Object.values(CHARACTER_FILES) as [CharacterFilePath, ...CharacterFilePath[]]
-const CHARACTER_REFERENCE_IMAGE_PATH_PATTERN = /^input\/characters\/.+\.(?:png|webp|jpg|jpeg)$/
+const CHARACTER_REFERENCE_IMAGE_PATH_PATTERN = /^input\/uss\/characters\/.+\.(?:png|webp|jpg|jpeg)$/
 const CHARACTER_SKETCH_IMAGE_PATH_PATTERN = /^output\/characters\/sketches\/.+\.png$/
 
 export const CHARACTER_NAMES = [
@@ -39,14 +37,14 @@ export const CHARACTER_REFERENCE_ALIASES = {
   CHAT: 'HR Hologram',
 } as const
 
-export const STRUCTURED_SCRIPT_BEAT_TYPES = ['narration', 'dialogue', 'direction', 'transition', 'panel-note'] as const
+const STRUCTURED_SCRIPT_BEAT_TYPES = ['narration', 'dialogue', 'direction', 'transition', 'panel-note'] as const
 
-export const CharacterReferenceImagePathSchema = v.pipe(
+const CharacterReferenceImagePathSchema = v.pipe(
   v.string(),
-  v.regex(CHARACTER_REFERENCE_IMAGE_PATH_PATTERN, 'Expected a character reference image path under input/characters/')
+  v.regex(CHARACTER_REFERENCE_IMAGE_PATH_PATTERN, 'Expected a character reference image path under input/uss/characters/')
 )
 
-export const CharacterSketchImagePathSchema = v.pipe(
+const CharacterSketchImagePathSchema = v.pipe(
   v.string(),
   v.regex(CHARACTER_SKETCH_IMAGE_PATH_PATTERN, 'Expected a character sketch image path under output/characters/sketches/')
 )
@@ -87,11 +85,6 @@ const CharacterSketchPromptsSchema = v.object({
 const ImagePromptVariationsSchema = v.object({
   'animation-polish': v.string(),
   'cinematic-depth': v.string(),
-})
-
-const EpisodeEntrySchema = v.object({
-  scenes: v.array(v.string()),
-  scripts: v.array(v.string())
 })
 
 const SpeechItemSchema = v.object({
@@ -156,11 +149,6 @@ export const PromptsConfigSchema = v.object({
   'Sketch Prompts': SketchPromptsSchema,
   'Character Sketch Prompts': CharacterSketchPromptsSchema,
   'Image Prompt Variations': ImagePromptVariationsSchema,
-})
-
-
-export const EpisodeManifestSchema = v.object({
-  episodes: v.record(v.string(), EpisodeEntrySchema)
 })
 
 

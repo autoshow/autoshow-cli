@@ -7,7 +7,7 @@ import { makeExecutable, walkPaths } from '~/utils/filesystem'
 import { downloadFile } from './download'
 import { readDependencyVersion } from '../dependency-metadata'
 
-export const managedUvPath = join(RUNTIME_BIN_DIR, 'uv')
+const managedUvPath = join(RUNTIME_BIN_DIR, 'uv')
 export const managedUvxPath = join(RUNTIME_BIN_DIR, 'uvx')
 
 const DEFAULT_UV_VERSION = '0.11.14'
@@ -47,12 +47,6 @@ export const resolveUvCommandFromCandidates = async (
 
 export const resolveUvCommand = async (): Promise<string | undefined> => {
   return await resolveUvCommandFromCandidates(Bun.which('uv'), managedUvPath)
-}
-
-export const requireUvCommand = async (): Promise<string> => {
-  const command = await resolveUvCommand()
-  if (command) return command
-  throw new Error('uv is not available. Run `bun as setup --step uv` to install AutoShow managed uv.')
 }
 
 const findExtractedBinary = async (root: string, name: 'uv' | 'uvx'): Promise<string> => {

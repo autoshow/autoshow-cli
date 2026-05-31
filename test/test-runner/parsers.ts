@@ -44,6 +44,7 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
       const callerLine = getFiniteNumber(parsedRaw['callerLine'])
       const callerColumn = getFiniteNumber(parsedRaw['callerColumn'])
       const outputDir = typeof parsedRaw['outputDir'] === 'string' && parsedRaw['outputDir'].length > 0 ? parsedRaw['outputDir'] : null
+      const outputRoot = typeof parsedRaw['outputRoot'] === 'string' && parsedRaw['outputRoot'].length > 0 ? parsedRaw['outputRoot'] : null
       const at = typeof parsedRaw['at'] === 'string' ? parsedRaw['at'] : null
       const testName = typeof parsedRaw['testName'] === 'string' ? parsedRaw['testName'] : null
       const estimatedCostCents = getFiniteNumber(parsedRaw['estimatedCostCents'])
@@ -58,6 +59,7 @@ export const readMetrics = async (path: string): Promise<ParsedCommandMetric[]> 
         exitCode,
         durationMs,
         outputDir,
+        outputRoot,
         callerFile,
         callerLine,
         callerColumn,

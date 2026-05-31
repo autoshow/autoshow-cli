@@ -8,7 +8,7 @@ import type {
   TableLogger
 } from '~/types'
 
-export const buildAudioDownloadRows = (
+const buildAudioDownloadRows = (
   summary: AudioDownloadSummary
 ): Array<{ status: string, source: string, target: string, detail: string }> => [{
   status: summary.status,
@@ -17,7 +17,7 @@ export const buildAudioDownloadRows = (
   detail: summary.detail ?? ''
 }]
 
-export const buildAudioDownloadTable = (
+const buildAudioDownloadTable = (
   summary: AudioDownloadSummary
 ): HumanLogTable =>
   createHumanTable(buildAudioDownloadRows(summary), ['status', 'source', 'target', 'detail'])

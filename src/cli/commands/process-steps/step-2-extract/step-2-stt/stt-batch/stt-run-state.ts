@@ -23,11 +23,8 @@ const TRANSCRIPT_LINE_PATTERN = /^\[(\d{2}:\d{2}:\d{2})\]\s+(?:\[([^\]]+)\]\s+)?
 const STT_SERVICES = new Set<SttTarget['service']>([
   'whisper',
   'reverb',
-  'gcloud',
-  'aws',
   'deepgram',
   'deepinfra',
-  'deapi',
   'elevenlabs',
   'soniox',
   'speechmatics',
@@ -116,12 +113,28 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     if (typeof value['billing']['creditRateCents'] === 'number') {
       parsedBilling.creditRateCents = value['billing']['creditRateCents']
     }
+    if (typeof value['billing']['inputTokens'] === 'number') {
+      parsedBilling.inputTokens = value['billing']['inputTokens']
+    }
+    if (typeof value['billing']['outputTokens'] === 'number') {
+      parsedBilling.outputTokens = value['billing']['outputTokens']
+    }
+    if (typeof value['billing']['totalTokens'] === 'number') {
+      parsedBilling.totalTokens = value['billing']['totalTokens']
+    }
+    if (typeof value['billing']['audioInputTokens'] === 'number') {
+      parsedBilling.audioInputTokens = value['billing']['audioInputTokens']
+    }
+    if (typeof value['billing']['textInputTokens'] === 'number') {
+      parsedBilling.textInputTokens = value['billing']['textInputTokens']
+    }
     if (typeof value['billing']['totalCost'] === 'number') {
       parsedBilling.totalCost = value['billing']['totalCost']
     }
     if (
       value['billing']['source'] === 'response-header'
       || value['billing']['source'] === 'fallback-estimate'
+      || value['billing']['source'] === 'provider_usage'
       || value['billing']['source'] === 'provider_quote'
       || value['billing']['source'] === 'registry_fallback'
     ) {
@@ -131,6 +144,7 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
       value['billing']['mode'] === 'url'
       || value['billing']['mode'] === 'duration'
       || value['billing']['mode'] === 'order'
+      || value['billing']['mode'] === 'token'
       || value['billing']['mode'] === 'segment_sum'
     ) {
       parsedBilling.mode = value['billing']['mode']
@@ -162,8 +176,6 @@ export const toRequestedProvider = (target: SttTarget): SttRequestedProvider => 
   service: target.service,
   model: target.model,
   local: target.local,
-  ...(target.awsRegion ? { awsRegion: target.awsRegion } : {}),
-  ...(target.awsBucket ? { awsBucket: target.awsBucket } : {}),
   ...(target.diarizationOptions ? { diarizationOptions: target.diarizationOptions } : {})
 })
 
@@ -179,7 +191,7 @@ export const toRecordedProviderError = (
   ...(failure.rawResponseFile ? { rawResponseFile: failure.rawResponseFile } : {})
 })
 
-export const parseStoredRequestedTarget = (value: unknown): SttTarget | undefined => {
+const parseStoredRequestedTarget = (value: unknown): SttTarget | undefined => {
   if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
     return undefined
   }
@@ -188,8 +200,6 @@ export const parseStoredRequestedTarget = (value: unknown): SttTarget | undefine
     service: value['service'],
     model: value['model'],
     local: value['local'] === true,
-    ...(typeof value['awsRegion'] === 'string' ? { awsRegion: value['awsRegion'] } : {}),
-    ...(typeof value['awsBucket'] === 'string' ? { awsBucket: value['awsBucket'] } : {}),
     ...(isRecord(value['diarizationOptions']) ? { diarizationOptions: value['diarizationOptions'] as SttTarget['diarizationOptions'] } : {})
   }
 }
@@ -201,7 +211,7 @@ export const parseStoredRequestedTargets = (
     ? entry['requestedProviders'].map(parseStoredRequestedTarget).filter((target): target is SttTarget => target !== undefined)
     : []
 
-export const parseStoredProviderState = (value: unknown): SttProviderState | undefined => {
+const parseStoredProviderState = (value: unknown): SttProviderState | undefined => {
   if (!isRecord(value) || !isSttService(value['service']) || typeof value['model'] !== 'string') {
     return undefined
   }
@@ -237,7 +247,7 @@ export const parseStoredProviderState = (value: unknown): SttProviderState | und
   }
 }
 
-export const parseStoredProviderStateMap = (
+const parseStoredProviderStateMap = (
   entry: Record<string, unknown>
 ): Map<string, SttProviderState> => {
   const states = new Map<string, SttProviderState>()
@@ -252,7 +262,7 @@ export const parseStoredProviderStateMap = (
   return states
 }
 
-export const parseSuccessfulProviderKeys = (
+const parseSuccessfulProviderKeys = (
   entry: Record<string, unknown>
 ): Set<string> => {
   const values = Array.isArray(entry['step2'])

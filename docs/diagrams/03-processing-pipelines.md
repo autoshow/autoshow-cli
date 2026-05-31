@@ -53,12 +53,13 @@ src/cli/commands/process-steps/process-video.ts
 │  resolveSttEngine() - picks requested STT providers/models:                 │
 │                                                                              │
 │  Local: Whisper.cpp, Reverb ASR                                             │
-│  Cloud: Google Cloud, AWS, DeepInfra, deAPI, ElevenLabs, Deepgram, Soniox,  │
-│         Speechmatics, Rev, Groq, Grok, Mistral, AssemblyAI, Gladia,         │
-│         Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM, Together│
+│  Hosted: ElevenLabs, Deepgram, Soniox, Speechmatics, Rev, Groq, Grok,       │
+│          Mistral, AssemblyAI, Gladia,                                       │
+│          Happy Scribe, Supadata, ScrapeCreators, OpenAI, Gemini, GLM,       │
+│          Together, DeepInfra                                                │
 │                                    │                                         │
 │           (no engine flag) → Whisper.cpp (local binary)                      │
-│           --whisper-stt MODEL: tiny|base|small|medium|large-v3-turbo    │
+│           --provider whisper=MODEL or --stt whisper=MODEL               │
 │                                                                              │
 │           --split: split audio into 30-min chunks, transcribe each           │
 │                                    │                                         │
@@ -102,36 +103,14 @@ src/cli/commands/process-steps/process-video.ts
                                         │  (triggered by flags on      │
                                         │   write cmd)                 │
                                         │                              │
-                                        │  Step 4: TTS (--kitten-tts,  │
-                                        │   --elevenlabs-tts,          │
-                                        │   --elevenlabs-tts-ref-audio,│
-                                        │   --elevenlabs-tts-pvc-voice,│
-                                        │   --minimax-tts,             │
-                                        │   --groq-tts, --grok-tts,    │
-                                        │   --mistral-tts,             │
-                                        │   --openai-tts,              │
-                                        │   --openai-tts-ref-audio,    │
-                                        │   --gemini-tts,              │
-                                        │   --deepgram-tts,            │
-                                        │   --speechify-tts,           │
-                                        │   --hume-tts,                │
-                                        │   --cartesia-tts,            │
-                                        │   --gcloud-tts, --deapi-tts) │
-                                        │  Step 5: Image (--gemini-    │
-                                        │   image, --openai-image,     │
-                                        │   --minimax-image,           │
-                                        │   --grok-image,              │
-                                        │   --runway-image,            │
-                                        │   --bfl-image, --deapi-image)│
-                                        │  Step 6: Video (--gemini-    │
-                                        │   video, --minimax-video,    │
-                                        │   --glm-video, --grok-video, │
-                                        │   --runway-video, --deapi-   │
-                                        │   video)                     │
-                                        │  Step 7: Music (--elevenlabs-│
-                                        │   music, --minimax-music,    │
-                                        │   --deapi-music, --gemini-   │
-                                        │   music)                     │
+                                        │  Step 4: TTS                 │
+                                        │   --tts provider[=model]     │
+                                        │  Step 5: Image               │
+                                        │   --image provider[=model]   │
+                                        │  Step 6: Video               │
+                                        │   --video provider[=model]   │
+                                        │  Step 7: Music               │
+                                        │   --music provider[=model]   │
                                         └──────────────────────────────┘
                                                     |
                                                     v
@@ -148,7 +127,7 @@ src/cli/commands/process-steps/process-video.ts
 
 ## Document Processing Pipeline
 
-Article URL and local HTML inputs share the document route until Step 2, then use `step-2-url/process-url.ts` instead of OCR. Single-backend article runs write a top-level extraction artifact; `--all-url` writes `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for each URL backend and summarizes provider status in `run.json`.
+Article URL and local HTML inputs share the document route until Step 2, then use `step-2-url/process-url.ts` instead of OCR. Single-backend article runs write a top-level extraction artifact; route-aware `--all-providers` writes `providers/<backend>/extraction.txt` and `providers/<backend>/result.json` for each URL backend and summarizes provider status in `run.json`.
 
 ```
 src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
@@ -193,15 +172,16 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  ┌──────────────────────┐  ┌──────────┐  ┌─────────────────────────┐        │
 │  │  Engine Selection    │  │ Direct   │  │  ZIP+XML extraction     │        │
 │  │                      │  │ OCR via  │  │  (no external deps)     │        │
-│  │  --ocrmypdf →        │  │ Tesseract│  │                         │        │
+│  │  --provider ocrmypdf │  │ Tesseract│  │                         │        │
 │  │    OCRmyPDF (PDF)    │  │          │  │  docx → word/document   │        │
-│  │  --paddle-ocr →      │  │ --dpi    │  │  pptx → ppt/slides/*    │        │
-│  │    PaddleOCR         │  │ --lang   │  │  xlsx → sharedStrings   │        │
-│  │  --unstructured-ocr →│  │ --psm   │  │                         │        │
-│  │    Unstructured (API)│  │ --oem    │  └────────────┬────────────┘        │
-│  │  hosted OCR flags →  │  │ --rotate │               |                     │
-│  │    API providers     │  │          │               |                     │
-│  │  default → MuPDF+Tess│  └────┬─────┘               |                     │
+│  │  --provider          │  │ --ocr-dpi│  │  pptx → ppt/slides/*    │        │
+│  │    paddle-ocr →      │  │ --ocr-   │  │  xlsx → sharedStrings   │        │
+│  │    PaddleOCR         │  │ language │  │                         │        │
+│  │  hosted providers →  │  │          │  │                         │        │
+│  │    API providers     │  │          │  └────────────┬────────────┘        │
+│  │  default → MuPDF+Tess│  │          │               |                     │
+│  │                      │  │          │               |                     │
+│  │                      │  └────┬─────┘               |                     │
 │  │  Stage A: MuPDF      │       |                     |                     │
 │  │  mutool draw -F text │       |                     |                     │
 │  │  per-page text       │       |                     |                     │
@@ -232,11 +212,11 @@ src/cli/commands/process-steps/step-2-extract/step-2-ocr/process-ocr.ts
 │  │       'paddle-ocr' | 'mutool+paddle-ocr' | 'docx' | ...        │            │
 │  └──────────────────────────────────────────────────────────────┘            │
 │                                                                              │
-│  Output (based on --out):                                                    │
-│  ├── extraction.txt  → full text (default --out text)                        │
-│  ├── result.json     → structured per-page results (if --out json)           │
-│  ├── extraction.tsv  → (if --out tsv)                                        │
-│  └── extraction.hocr → (if --out hocr)                                       │
+│  Output (based on --format):                                                 │
+│  ├── extraction.txt  → full text (default --format text)                     │
+│  ├── result.json     → structured per-page results (if --format json)        │
+│  ├── extraction.tsv  → (if --format tsv)                                     │
+│  └── extraction.hocr → (if --format hocr)                                    │
 └──────────────────────────────────────────────────────────────────────────────┘
                                     |
                         ┌───────────┴───────────┐

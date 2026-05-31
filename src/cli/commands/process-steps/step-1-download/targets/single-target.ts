@@ -8,7 +8,7 @@ import { fileExists } from '~/utils/cli-utils'
 import { CLIUsageError } from '~/utils/error-handler'
 import type { AggregatedPriceEstimate, BatchChildRunContext, BatchItem, BatchItemProcessResult, ProcessCommand, RuntimeOptions, SttBatchCoordinator } from '~/types'
 import { canonicalizeProcessCommand, isExtractCommand } from '~/cli/commands/process-steps/process-command-kinds'
-import { classifyInputFamily, classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUrl } from './input/input-classifier'
+import { classifyInputFamily, classifyUrlInput, isDocumentByExtension, isHtmlDocumentPath, isLikelyUrl } from './source-input/input-classifier'
 import { throwUnrecognizedExtractInput, throwUnsupportedProcessInput } from './single/errors'
 import { processDownloadMedia, processMediaSingle, processMetadataMedia } from './single/media-runner'
 import { prepareArticleDocument, processDownloadDocument, processDownloadPreparedDocument, processMetadataDocument, processMetadataPreparedDocument, processOcrSingle } from './single/document-runner'
@@ -186,8 +186,8 @@ export const processSingleTarget = async (
   const exists = await fileExists(item)
 
   if (!exists) {
-    const { isSpaceId } = await import('~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/x-spaces/input')
-    if (isSpaceId(item) && isExtractCommand(command)) {
+    const { extractSpaceIdsFromText } = await import('~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/x-spaces/input')
+    if (extractSpaceIdsFromText(item).includes(item.trim()) && isExtractCommand(command)) {
       return await processXSpace(item, baseDir, opts, batchChildContext)
     }
     throw CLIUsageError(`Input does not exist: ${item}. Run: bun as help ${displayCommand}`)

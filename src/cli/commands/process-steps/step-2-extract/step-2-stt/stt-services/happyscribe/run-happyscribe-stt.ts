@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import type {
   AsyncSttLifecycleHooks,
   HappyScribeExport,
@@ -8,7 +9,6 @@ import type {
   Step2RuntimeMetadata,
   TranscriptionResult
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttAsyncJobLifecycle, logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   buildTranscriptionOutputBase,
@@ -16,10 +16,12 @@ import {
   formatTranscriptText
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import {
+  createAsyncSttJobReadyNotifier,
+  createAsyncSttProgressMetadataPersister,
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
 import {
   buildHappyScribeOrganizationResolutionError,
   getHappyScribeApiKey,
@@ -200,7 +202,7 @@ export const runHappyScribeStt = async (
     throw new Error([
       `Happy Scribe organization ${organizationSelection.selected.id}${organizationSelection.selected.name ? ` (${organizationSelection.selected.name})` : ''} reports currency ${organizationSelection.selected.currency}, but v1 execution supports exact-cost capture only for usd organizations.`,
       `Organizations: ${organizationSelection.organizations.length > 0 ? organizationSelection.organizations.map((organization) => `${organization.id}${organization.name ? ` "${organization.name}"` : ''}${organization.currency ? ` currency=${organization.currency}` : ''}`).join(', ') : 'none'}.`,
-      'Pass --happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
+      'Pass --stt-happyscribe-organization-id <id> or save defaults.extract.stt.happyscribeOrganizationId with bun as config.'
     ].join(' '))
   }
 
@@ -211,7 +213,22 @@ export const runHappyScribeStt = async (
   let orderId = runtime?.remoteJobId
   let uploadUrl = runtime?.remoteAssetUrl
   let resumedExistingOrder = false
-  let jobReadyNotified = false
+
+  const buildTimingMetadata = (remoteProcessingMs = 0): Step2Metadata['timings'] =>
+    buildStep2TimingMetadata({
+      uploadMs,
+      createMs,
+      createCount,
+      pollMs,
+      pollSleepMs,
+      pollCount,
+      transcriptMs,
+      remoteProcessingMs,
+      requestCount,
+      retryCount,
+      rateLimitCount,
+      backfillCount
+    })
 
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'happyscribe',
@@ -219,34 +236,16 @@ export const runHappyScribeStt = async (
     processingTime: Date.now() - startTime,
     tokenCount: 0,
     ...(billing ? { billing } : {}),
-    timings: {
-      ...(uploadMs > 0 ? { uploadMs } : {}),
-      ...(createMs > 0 ? { createMs } : {}),
-      ...(createCount > 0 ? { createCount } : {}),
-      ...(pollMs > 0 ? { pollMs } : {}),
-      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-      ...(pollCount > 0 ? { pollCount } : {}),
-      ...(transcriptMs > 0 ? { transcriptMs } : {}),
-      ...(requestCount > 0 ? { requestCount } : {}),
-      ...(retryCount > 0 ? { retryCount } : {}),
-      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-      ...(backfillCount > 0 ? { backfillCount } : {})
-    },
+    timings: buildTimingMetadata() ?? {},
     runtime: nextRuntime
   })
 
-  const persistProgressMetadata = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    runtime = nextRuntime
-    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(nextRuntime))
-  }
-
-  const notifyJobReady = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    if (jobReadyNotified) {
-      return
-    }
-    jobReadyNotified = true
-    await lifecycle?.onJobReady?.(nextRuntime)
-  }
+  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+    outputDir,
+    buildProgressMetadata,
+    (nextRuntime) => { runtime = nextRuntime }
+  )
+  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
 
   if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
     resumedExistingOrder = true
@@ -320,7 +319,6 @@ export const runHappyScribeStt = async (
     initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
     maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
     audioDurationSeconds,
-    envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_HAPPYSCRIBE',
     pollMode: resumedExistingOrder ? 'resume-probe' : 'fresh',
     buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
     buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
@@ -420,7 +418,6 @@ export const runHappyScribeStt = async (
         initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
         maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
         audioDurationSeconds,
-        envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_HAPPYSCRIBE',
         buildDeadlineError: (jobId, pollDeadlineMs) => buildExportDeadlineError(jobId, pollDeadlineMs),
         poll: async () => apiClient.pollExport(activeExportId),
         isComplete: (exportStatus) => exportStatus.state === 'ready',
@@ -455,6 +452,7 @@ export const runHappyScribeStt = async (
 
   const processingTime = Date.now() - startTime
   const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs - transcriptMs)
+  const timings = buildTimingMetadata(remoteProcessingMs)
   const metadata: Step2Metadata = {
     transcriptionService: 'happyscribe',
     transcriptionModel: modelName,
@@ -462,24 +460,7 @@ export const runHappyScribeStt = async (
     tokenCount: countTokens(result.text),
     runtime: completedRuntime,
     ...(billing ? { billing } : {}),
-    ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || pollSleepMs > 0 || transcriptMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
-      ? {
-          timings: {
-            ...(uploadMs > 0 ? { uploadMs } : {}),
-            ...(createMs > 0 ? { createMs } : {}),
-            ...(createCount > 0 ? { createCount } : {}),
-            ...(pollMs > 0 ? { pollMs } : {}),
-            ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-            ...(pollCount > 0 ? { pollCount } : {}),
-            ...(transcriptMs > 0 ? { transcriptMs } : {}),
-            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-            ...(requestCount > 0 ? { requestCount } : {}),
-            ...(retryCount > 0 ? { retryCount } : {}),
-            ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-            ...(backfillCount > 0 ? { backfillCount } : {})
-          }
-        }
-      : {})
+    ...(timings ? { timings } : {})
   }
 
   if (segmentNumber && totalSegments) {

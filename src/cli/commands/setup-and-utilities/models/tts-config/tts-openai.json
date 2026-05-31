@@ -5,13 +5,18 @@
     "models": {
       "gpt-4o-mini-tts": {
         "description": "GPT-4o Mini TTS — compact speech synthesis model",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard audio generation pricing",
+        "pricingNotes": "OpenAI GPT-4o Mini TTS estimates use published text-input and audio-output character rates. Custom voice consent/setup costs are handled separately when selected; free credits, batch/flex/priority prices, enterprise pricing, taxes, and provider credits are ignored.",
         "inputCostPer1MCharsUSD": 0.6,
         "inputCostPer1MCharsCents": 60,
         "outputCostPer1MCharsUSD": 12,
         "outputCostPer1MCharsCents": 1200,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 23893
+          "msPer1KChars": 21351
         }
       }
     }

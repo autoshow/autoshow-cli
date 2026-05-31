@@ -418,6 +418,7 @@ export const runMultiProviderSttBatch = async ({
   const promptSource = selectPrimaryPromptProvider(successes)
 
   const estimated = filterEstimatedSttCosts(resolveSttEstimatedCosts(preflightEstimate, applicableTargets, prepared.durationSeconds, prepared.step1Metadata.url))
+  const observedEstimate = filterEstimatedSttCosts(resolveSttEstimatedCosts(undefined, applicableTargets, prepared.durationSeconds, prepared.step1Metadata.url))
   const actual = computeActualCosts({
     step1: prepared.step1Metadata,
     step2: successfulProviders.map((entry) => entry.metadata),
@@ -425,6 +426,7 @@ export const runMultiProviderSttBatch = async ({
   })
   const cost = {
     estimated,
+    ...(preflightEstimate ? { observedEstimate } : {}),
     actual,
     aggregate: {
       estimatedTotalCost: estimated.totalCost,

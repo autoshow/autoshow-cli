@@ -73,6 +73,38 @@ test('show notes preserve prompt frontmatter and include rendered output plus so
   }
 })
 
+test('show notes preserve rendered song lyric text instead of generic JSON fields', async () => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-show-note-song-'))
+  try {
+    const outputDir = join(tempDir, 'out')
+    await mkdir(outputDir, { recursive: true })
+    await writePrompt(outputDir)
+
+    await writeShowNoteArtifacts({
+      outputDir,
+      results: [{
+        metadata: buildStep3Metadata({
+          structuredPresetNames: ['rapSongLongLyrics']
+        }),
+        renderedText: '01. Track One (ChatGPT)\n\nVerse 1\n\nLine one\nLine two\n\nChorus\n\nHook line',
+        parsedJson: {
+          title: 'Track One',
+          verse1: ['Line one', 'Line two'],
+          chorus1: ['Hook line']
+        }
+      }],
+      sourceText: 'source'
+    })
+
+    const showNote = await Bun.file(join(outputDir, 'show-note.md')).text()
+    expect(showNote).toContain('01. Track One (ChatGPT)\n\nVerse 1\n\nLine one\nLine two')
+    expect(showNote).not.toContain('## Verse1')
+    expect(showNote).not.toContain('- Line one')
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+})
+
 test('show notes flatten default summary JSON into publication markdown', async () => {
   const tempDir = await mkdtemp(join(tmpdir(), 'autoshow-show-note-default-'))
   try {

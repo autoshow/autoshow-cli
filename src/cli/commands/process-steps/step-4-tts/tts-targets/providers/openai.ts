@@ -48,14 +48,15 @@ export const collectOpenAITtsTargets = (
             setupNote: OPENAI_TTS_CLONE_SETUP_NOTE
           }
         : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureOpenAITtsSetup()
         return await runOpenAITts(text, outputDir, {
           model,
           voiceId,
           clone,
           instructions: selection.openaiInstructions,
-          speed: selection.openaiSpeed
+          speed: selection.openaiSpeed,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

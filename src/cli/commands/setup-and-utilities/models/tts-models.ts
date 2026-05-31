@@ -17,8 +17,6 @@ import type {
   GeminiTtsModel,
   DeepgramTtsModel,
   SpeechifyTtsModel,
-  GcloudTtsModel,
-  DeapiTtsModel,
   HumeTtsModel,
   CartesiaTtsModel
 } from '~/types'
@@ -54,7 +52,7 @@ export const SUPPORTED_ELEVENLABS_TTS_MODELS = [
 ] as const satisfies readonly string[]
 
 export const ELEVENLABS_DEFAULT_VOICE_ID = 'hpp4J3VqNfWAUOO0d1Us'
-export const SUPPORTED_ELEVENLABS_TTS_TEXT_NORMALIZATIONS = [
+const SUPPORTED_ELEVENLABS_TTS_TEXT_NORMALIZATIONS = [
   'auto',
   'on',
   'off'
@@ -79,7 +77,7 @@ export const SUPPORTED_MINIMAX_TTS_MODELS = [
 
 export const validateMinimaxTtsModel = createModelValidator<MinimaxTtsModel>(SUPPORTED_MINIMAX_TTS_MODELS, 'minimax-tts')
 
-export const SUPPORTED_MINIMAX_TTS_LANGUAGE_BOOSTS = [
+const SUPPORTED_MINIMAX_TTS_LANGUAGE_BOOSTS = [
   'Chinese',
   'Chinese,Yue',
   'English',
@@ -123,7 +121,7 @@ export const SUPPORTED_MINIMAX_TTS_LANGUAGE_BOOSTS = [
   'auto'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_MINIMAX_TTS_EMOTIONS = [
+const SUPPORTED_MINIMAX_TTS_EMOTIONS = [
   'happy',
   'sad',
   'angry',
@@ -161,8 +159,7 @@ export const validateMinimaxTtsEmotion = (value: string): string => {
 }
 
 export const SUPPORTED_GROQ_TTS_MODELS = [
-  'canopylabs/orpheus-v1-english',
-  'canopylabs/orpheus-arabic-saudi'
+  'canopylabs/orpheus-v1-english'
 ] as const satisfies readonly string[]
 
 export const SUPPORTED_GROQ_ENGLISH_TTS_VOICES = [
@@ -174,18 +171,8 @@ export const SUPPORTED_GROQ_ENGLISH_TTS_VOICES = [
   'troy'
 ] as const satisfies readonly string[]
 
-export const SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES = [
-  'abdullah',
-  'fahad',
-  'sultan',
-  'lulwa',
-  'noura',
-  'aisha'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_GROQ_TTS_VOICES = getGroqTtsVoices()
-export const GROQ_DEFAULT_TTS_VOICE = 'troy'
-export const GROQ_DEFAULT_ARABIC_SAUDI_TTS_VOICE = 'fahad'
+const SUPPORTED_GROQ_TTS_VOICES = getGroqTtsVoices()
+const GROQ_DEFAULT_TTS_VOICE = 'troy'
 
 export const validateGroqTtsModel = createModelValidator<GroqTtsModel>(SUPPORTED_GROQ_TTS_MODELS, 'groq-tts')
 
@@ -199,15 +186,11 @@ export const validateGroqTtsVoice = (voice: string): string => {
   return normalized
 }
 
-export const getGroqTtsVoicesForModel = (model: GroqTtsModel): readonly string[] =>
-  model === 'canopylabs/orpheus-arabic-saudi'
-    ? SUPPORTED_GROQ_ARABIC_SAUDI_TTS_VOICES
-    : SUPPORTED_GROQ_ENGLISH_TTS_VOICES
+export const getGroqTtsVoicesForModel = (_model: GroqTtsModel): readonly string[] =>
+  SUPPORTED_GROQ_ENGLISH_TTS_VOICES
 
-export const getGroqDefaultTtsVoiceForModel = (model: GroqTtsModel): string =>
-  model === 'canopylabs/orpheus-arabic-saudi'
-    ? GROQ_DEFAULT_ARABIC_SAUDI_TTS_VOICE
-    : GROQ_DEFAULT_TTS_VOICE
+export const getGroqDefaultTtsVoiceForModel = (_model: GroqTtsModel): string =>
+  GROQ_DEFAULT_TTS_VOICE
 
 export const validateGroqTtsVoiceForModel = (model: GroqTtsModel, voice: string): string => {
   const normalized = voice.trim().toLowerCase()
@@ -226,7 +209,7 @@ export const SUPPORTED_GROK_TTS_MODELS = [
 
 export const SUPPORTED_GROK_TTS_VOICES = getGrokTtsVoices()
 export const GROK_DEFAULT_TTS_VOICE = 'eve'
-export const SUPPORTED_GROK_TTS_LANGUAGES = [
+const SUPPORTED_GROK_TTS_LANGUAGES = [
   'auto',
   'en',
   'ar-EG',
@@ -296,74 +279,10 @@ export const validateGeminiTtsModel = createModelValidator<GeminiTtsModel>(SUPPO
 
 export const SUPPORTED_DEEPGRAM_TTS_MODELS = [
   'aura-2-thalia-en',
-  'aura-2-amalthea-en',
   'aura-2-andromeda-en',
   'aura-2-apollo-en',
-  'aura-2-arcas-en',
-  'aura-2-ariadne-en',
-  'aura-2-aries-en',
-  'aura-2-asteria-en',
-  'aura-2-athena-en',
-  'aura-2-atlas-en',
-  'aura-2-aurora-en',
-  'aura-2-callista-en',
-  'aura-2-canto-en',
-  'aura-2-cassiopeia-en',
-  'aura-2-castor-en',
-  'aura-2-celeste-en',
-  'aura-2-cepheus-en',
-  'aura-2-charisma-en',
-  'aura-2-clara-en',
-  'aura-2-cordelia-en',
-  'aura-2-delia-en',
-  'aura-2-draco-en',
-  'aura-2-electra-en',
-  'aura-2-harmonia-en',
-  'aura-2-helena-en',
-  'aura-2-hera-en',
-  'aura-2-hermes-en',
-  'aura-2-hyperion-en',
-  'aura-2-iris-en',
-  'aura-2-janus-en',
-  'aura-2-juno-en',
-  'aura-2-jupiter-en',
   'aura-2-luna-en',
-  'aura-2-mars-en',
-  'aura-2-messenger-en',
-  'aura-2-moneta-en',
-  'aura-2-neptune-en',
-  'aura-2-odysseus-en',
-  'aura-2-ophelia-en',
   'aura-2-orion-en',
-  'aura-2-orpheus-en',
-  'aura-2-pandora-en',
-  'aura-2-phoebe-en',
-  'aura-2-pluto-en',
-  'aura-2-saturn-en',
-  'aura-2-selene-en',
-  'aura-2-theia-en',
-  'aura-2-vesta-en',
-  'aura-2-zeus-en',
-  'aura-2-sirio-es',
-  'aura-2-nestor-es',
-  'aura-2-carina-es',
-  'aura-2-celeste-es',
-  'aura-2-alvaro-es',
-  'aura-2-gisela-de',
-  'aura-2-eva-de',
-  'aura-2-katrin-de',
-  'aura-2-stefan-de',
-  'aura-2-florian-de',
-  'aura-2-luna-it',
-  'aura-2-bianca-it',
-  'aura-2-stella-it',
-  'aura-2-luca-it',
-  'aura-2-marco-it',
-  'aura-2-asteria-ja',
-  'aura-2-luna-ja',
-  'aura-2-stella-ja',
-  'aura-2-athena-ja',
-  'aura-2-orion-ja'
 ] as const satisfies readonly string[]
 
 export const DEEPGRAM_DEFAULT_VOICE = 'aura-2-thalia-en'
@@ -385,7 +304,7 @@ export const SUPPORTED_SPEECHIFY_TTS_MODELS = [
 ] as const satisfies readonly string[]
 
 export const SPEECHIFY_DEFAULT_TTS_VOICE = 'george'
-export const SUPPORTED_SPEECHIFY_TTS_AUDIO_FORMATS = [
+const SUPPORTED_SPEECHIFY_TTS_AUDIO_FORMATS = [
   'mp3',
   'ogg',
   'aac',
@@ -413,59 +332,12 @@ export const validateSpeechifyTtsAudioFormat = (value: string): string => {
   return normalized
 }
 
-export const SUPPORTED_GCLOUD_TTS_MODELS = [
-  'chirp3-hd',
-  'studio',
-  'instant-custom-voice'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS = [
-  'chirp3-hd',
-  'studio',
-] as const satisfies readonly string[]
-
-export const GCLOUD_DEFAULT_TTS_VOICES = {
-  'chirp3-hd': 'en-US-Chirp3-HD-Charon',
-  studio: 'en-US-Studio-O',
-} as const satisfies Record<typeof SUPPORTED_GCLOUD_PREBUILT_TTS_MODELS[number], string>
-
-export const GCLOUD_DEFAULT_TTS_LANGUAGE = 'en-US'
-export const GCLOUD_DEFAULT_ICV_CONSENT_LANGUAGE = 'en-US'
-
-export const validateGcloudTtsModel = createModelValidator<GcloudTtsModel>(SUPPORTED_GCLOUD_TTS_MODELS, 'gcloud-tts')
-
-export const validateGcloudTtsVoice = (voice: string): string => {
-  const normalized = voice.trim()
-  if (!normalized) {
-    throw CLIUsageError('Invalid --gcloud-tts-voice value. Expected a non-empty Google Cloud voice name.')
-  }
-  return normalized
-}
-
-export const SUPPORTED_DEAPI_TTS_MODELS = [
-  'Kokoro',
-  'Chatterbox',
-  'Qwen3_TTS_12Hz_1_7B_CustomVoice',
-  'Qwen3_TTS_12Hz_1_7B_Base',
-  'Qwen3_TTS_12Hz_1_7B_VoiceDesign'
-] as const satisfies readonly string[]
-
-export const SUPPORTED_DEAPI_RUNNABLE_TTS_MODELS = [
-  'Kokoro',
-  'Chatterbox',
-  'Qwen3_TTS_12Hz_1_7B_CustomVoice'
-] as const satisfies readonly string[]
-
-export const DEAPI_DEFAULT_TTS_VOICE = 'af_heart'
-
-export const validateDeapiTtsModel = createModelValidator<DeapiTtsModel>(SUPPORTED_DEAPI_TTS_MODELS, 'deapi-tts')
-
 export const SUPPORTED_HUME_TTS_MODELS = [
   'octave-2'
 ] as const satisfies readonly string[]
 
 export const HUME_DEFAULT_TTS_VOICE = 'Male English Actor'
-export const SUPPORTED_HUME_TTS_VOICE_PROVIDERS = [
+const SUPPORTED_HUME_TTS_VOICE_PROVIDERS = [
   'HUME_AI',
   'CUSTOM_VOICE'
 ] as const satisfies readonly string[]

@@ -21,12 +21,13 @@ export const collectHumeTtsTargets = (
       service: 'hume',
       model,
       ...(voice ? { voice } : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureHumeTtsSetup()
         return await runHumeTts(text, outputDir, {
           model,
           voice,
-          voiceProvider
+          voiceProvider,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

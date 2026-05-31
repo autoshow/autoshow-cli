@@ -8,6 +8,7 @@ import {
 } from './bench-rank-config'
 import { relativeToProject } from './bench-rank-io'
 import {
+  combinedRankingRows,
   rankingRows,
   selectTopBenchmarkPicks,
   sourceKindSummary,
@@ -22,6 +23,8 @@ import {
   reconcileRawReports
 } from './bench-rank-sources'
 import type {
+  CombinedRankingComponent,
+  CombinedRankingRow,
   DashboardFile,
   ProviderAggregate,
   RankingRow,
@@ -36,9 +39,11 @@ import type {
 export {
   buildEstimatedCostCentsByProviderModel,
   isExcludedService,
+  resolveDashboardSpeedMsForRanking,
+  resolveRawSpeedMsForRanking,
   resolveRawCostUsd
 } from './bench-rank-sources'
-export { selectTopBenchmarkPicks } from './bench-rank-rankings'
+export { combinedRankingRows, selectTopBenchmarkPicks } from './bench-rank-rankings'
 
 const escapeCell = (value: string): string => value.replaceAll('|', '\\|')
 
@@ -87,6 +92,14 @@ const markdownInlineList = (values: readonly string[]): string => {
 const excludedServicesFootnoteList = (): string =>
   markdownInlineList([...EXCLUDED_SERVICES])
 
+const formatRank = (rank: number | undefined): string => rank === undefined ? 'n/a' : `${rank}`
+
+const formatCombinedComponentScore = (component: CombinedRankingComponent): string =>
+  component.active ? formatQuality(component.score) : 'n/a'
+
+const formatReleaseDate = (row: CombinedRankingRow): string =>
+  `[${row.releaseDate}](${row.releaseDateSourceUrl})`
+
 const metricTable = (rows: readonly RankingRow[], metric: 'price' | 'speed' | 'quality'): string => {
   if (rows.length === 0) {
     if (metric === 'price') {
@@ -123,19 +136,36 @@ const metricTable = (rows: readonly RankingRow[], metric: 'price' | 'speed' | 'q
   return lines.join('\n')
 }
 
+const combinedRankingTable = (rows: readonly CombinedRankingRow[]): string => {
+  if (rows.length === 0) {
+    return 'No combined ranking rows.'
+  }
+
+  const lines = [
+    '| Rank | Provider/model | Combined score | Model release date | Price score | Speed score | Quality score | Price rank | Speed rank | Quality rank |',
+    '| ---: | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |'
+  ]
+
+  for (const row of rows) {
+    lines.push(`| ${row.rank} | ${escapeCell(row.key)} | ${formatQuality(row.combinedScore)} | ${formatReleaseDate(row)} | ${formatCombinedComponentScore(row.price)} | ${formatCombinedComponentScore(row.speed)} | ${formatCombinedComponentScore(row.quality)} | ${formatRank(row.price.rank)} | ${formatRank(row.speed.rank)} | ${formatRank(row.quality.rank)} |`)
+  }
+
+  return lines.join('\n')
+}
+
 const topPicksTable = (selection: TopBenchmarkPickSelection): string => {
   if (selection.rows.length === 0) {
     return `No ${topPickLabel()} picks are available because this step has no measurable third-party rankings.`
   }
 
   const lines = [
-    '| Bucket | Provider/model | Metric | Original rank | Samples | Selection note |',
-    '| --- | --- | --- | ---: | ---: | --- |'
+    '| Bucket | Provider/model | Metric | Price rank | Speed rank | Quality rank | Original rank | Samples | Selection note |',
+    '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |'
   ]
 
   for (const bucket of TOP_PICK_BUCKET_DISPLAY_ORDER) {
     for (const pick of selection.rows.filter((row) => row.bucket === bucket)) {
-      lines.push(`| ${pick.bucket} | ${escapeCell(pick.key)} | ${escapeCell(formatTopPickMetric(pick))} | ${pick.originalRank} | ${pick.samples} | ${escapeCell(pick.selectionNote)} |`)
+      lines.push(`| ${pick.bucket} | ${escapeCell(pick.key)} | ${escapeCell(formatTopPickMetric(pick))} | ${formatRank(pick.priceRank)} | ${formatRank(pick.speedRank)} | ${formatRank(pick.qualityRank)} | ${pick.originalRank} | ${pick.samples} | ${escapeCell(pick.selectionNote)} |`)
     }
   }
 
@@ -153,12 +183,14 @@ const appendRankingSections = (
     priceRows,
     speedRows,
     qualityRows,
+    combinedRows,
     noQualityNote,
     headingLevel
   }: {
     priceRows: readonly RankingRow[]
     speedRows: readonly RankingRow[]
     qualityRows: readonly RankingRow[]
+    combinedRows: readonly CombinedRankingRow[]
     noQualityNote: string
     headingLevel: number
   }
@@ -187,6 +219,11 @@ const appendRankingSections = (
     lines.push(`Quality: ${noQualityNote}`)
     lines.push('')
   }
+
+  lines.push(`${heading} Combined Ranking`)
+  lines.push('')
+  lines.push(combinedRankingTable(combinedRows))
+  lines.push('')
 }
 
 const filterSttDiarizationAggregates = (
@@ -219,17 +256,17 @@ const buildReport = (
 
   lines.push('# Benchmark Ranking Report')
   lines.push('')
-  lines.push('This report averages available benchmark rows into per-step third-party provider/model rankings. It intentionally does not compute a combined overall score.')
+  lines.push('This report averages available benchmark rows into per-step third-party provider/model rankings and balanced combined scores.')
   lines.push('')
   lines.push(`Updated: ${formatReportTimestamp()}`)
   lines.push('')
   lines.push('## Source Summary')
   lines.push('')
-  lines.push(`- Scanned \`${relativeToProject(RAW_BENCHMARKS_DIR)}/{ocr,stt,tts,url}\` for raw benchmark comparison reports.`)
+  lines.push(`- Scanned \`${relativeToProject(RAW_BENCHMARKS_DIR)}/{image,ocr,stt,tts,url,video}\` for raw benchmark comparison reports.`)
   lines.push(`- Reconciled \`project/reports/results/index.json\` with ${stats.indexFiles} listed dashboard report files.`)
   lines.push(`- Used ${stats.rawReportsRead} docs benchmark comparison reports and ${stats.dashboardReportsRead} test-run dashboard reports.`)
   lines.push(`- Skipped ${stats.benchmarkDashboardsSkipped} project benchmark dashboard reports; ${skippedBenchmarkDashboardsWithDocsRaw} had matching docs benchmark reports and ${projectOnlyBenchmarkDashboardText} outside the scanned docs directories.`)
-  lines.push(`- Saw ${plural(stats.totalRowsSeen, 'provider/test row')}: included ${stats.includedRows}, excluded ${plural(stats.excludedNonThirdPartyRows, 'local or non-third-party row')}, omitted ${plural(stats.omittedFailedRows, 'failed row')}, skipped ${plural(stats.unsupportedCategoryRows, 'unsupported-category row')}, and skipped ${plural(stats.noMetricRows, 'row')} with no measurable metrics.`)
+  lines.push(`- Saw ${plural(stats.totalRowsSeen, 'provider/test row')}: included ${stats.includedRows}, excluded ${plural(stats.excludedNonThirdPartyRows, 'local or non-third-party row')}, omitted ${plural(stats.omittedFailedRows, 'failed row')}, skipped ${plural(stats.unsupportedCategoryRows, 'unsupported-category/model row')}, and skipped ${plural(stats.noMetricRows, 'row')} with no measurable metrics.`)
   lines.push(`- Filled ${plural(stats.priceRowsFilledFromRunEstimates, 'raw price row')} from sibling run estimates where raw comparison costs were zero or missing.`)
   lines.push(`- Missing metrics among otherwise included rows: price ${stats.missingPriceRows}, speed ${stats.missingSpeedRows}, quality ${stats.missingQualityRows} in quality-ranked steps.`)
   lines.push(`- ${sourceKindSummary(aggregates)}`)
@@ -264,12 +301,20 @@ const buildReport = (
         { title: 'Non-Diarization Models', group: 'nonDiarization' as const }
       ]) {
         const sectionAggregates = filterSttDiarizationAggregates(stepAggregates, section.group)
+        const sectionPriceRows = rankingRows(sectionAggregates, 'price')
+        const sectionSpeedRows = rankingRows(sectionAggregates, 'speed')
+        const sectionQualityRows = rankingRows(sectionAggregates, 'quality')
         lines.push(`### ${section.title}`)
         lines.push('')
         appendRankingSections(lines, {
-          priceRows: rankingRows(sectionAggregates, 'price'),
-          speedRows: rankingRows(sectionAggregates, 'speed'),
-          qualityRows: rankingRows(sectionAggregates, 'quality'),
+          priceRows: sectionPriceRows,
+          speedRows: sectionSpeedRows,
+          qualityRows: sectionQualityRows,
+          combinedRows: combinedRankingRows({
+            priceRows: sectionPriceRows,
+            speedRows: sectionSpeedRows,
+            qualityRows: sectionQualityRows
+          }),
           noQualityNote: definition.noQualityNote,
           headingLevel: 4
         })
@@ -281,6 +326,7 @@ const buildReport = (
       priceRows,
       speedRows,
       qualityRows,
+      combinedRows: combinedRankingRows({ priceRows, speedRows, qualityRows }),
       noQualityNote: definition.noQualityNote,
       headingLevel: 3
     })
@@ -290,7 +336,9 @@ const buildReport = (
   lines.push('')
   lines.push('- Price averages use USD per successful measurable row. Raw comparison rows use positive actual costs first, then positive reported costs, then positive sibling `run.json` `metadata.cost.estimated.steps` estimates when raw costs are zero or missing; raw cents are converted to USD and dashboard costs already reported in USD are used as-is.')
   lines.push('- Speed averages use actual processing time where present, converted from milliseconds to seconds.')
-  lines.push('- Quality rankings are shown only for pure quality metrics: OCR WER-derived accuracy, URL extraction accuracy, and STT speaker-aware WER scores. Dashboard smoke/e2e rows do not contain pure quality metrics and therefore contribute only price and speed.')
+  lines.push('- Quality rankings are shown only for pure quality metrics: image/video OpenAI vision judge scores, TTS human speech quality scores, OCR WER-derived accuracy, URL extraction accuracy, and STT speaker-aware WER scores. Dashboard smoke/e2e rows do not contain pure quality metrics and therefore contribute only price and speed.')
+  lines.push('- Combined rankings normalize lower-is-better price and speed to 0-100. Sections with quality use 50% quality, 25% speed, and 25% price; sections without quality renormalize across price and speed. Missing active metrics contribute a neutral 50 and show `n/a` for that metric rank.')
+  lines.push('- Combined ranking release dates come from the generator metadata map. Report generation fails if any ranked provider/model lacks a `YYYY-MM-DD` release date and source URL.')
   lines.push('- STT rankings are split by diarization support using raw STT `supportsDiarization` metadata; dashboard-only STT rows use the service defaults from the benchmark ranking generator.')
   lines.push(`- Zero-cost third-party rows remain in price rankings. Local and non-third-party services are excluded, including ${excludedServicesFootnoteList()}.`)
   lines.push(`- Omitted ${plural(stats.omittedFailedRows, 'failed row')}. Missing metric counts are reported in the source summary and those missing values were omitted only from the affected metric average.`)
@@ -299,7 +347,7 @@ const buildReport = (
   return `${lines.join('\n')}\n`
 }
 
-export const runBenchmarkRankingReport = async (): Promise<number> => {
+const runBenchmarkRankingReport = async (): Promise<number> => {
   const stats = createStats()
   const aggregates = new Map<StepKey, Map<string, ProviderAggregate>>()
   const dashboards = await dashboardFilesFromIndex(stats)

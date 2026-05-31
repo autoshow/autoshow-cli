@@ -5,6 +5,11 @@
     "models": {
       "mistral-ocr-2512": {
         "description": "Mistral OCR (December 2025)",
+        "pricingSourceUrl": "https://mistral.ai/pricing/",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Mistral La Plateforme public pricing",
+        "pricingNotes": "Mistral OCR is listed at $2 per 1,000 pages. Free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kPagesUSD": 2,
         "costPer1kPagesCents": 200,
         "limits": {
@@ -12,7 +17,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2238
+          "msPerPage": 2957
         }
       }
     }
@@ -23,6 +28,11 @@
     "models": {
       "glm-ocr": {
         "description": "GLM OCR",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI standard token pricing",
+        "pricingNotes": "Z.AI lists GLM OCR token pricing at $0.03/1M input tokens and $0.03/1M output tokens. OCR estimates multiply observed or heuristic token usage by these rates; cache discounts, batch discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.03,
         "costPerMOutputTokensUSD": 0.03,
         "costPerMInputTokensCents": 3,
@@ -35,7 +45,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 5193,
+          "msPerPage": 4127,
           "promptTokensPerPage": 2403,
           "completionTokensPerPage": 434.5
         }
@@ -48,6 +58,11 @@
     "models": {
       "kimi-k2.6": {
         "description": "Kimi K2.6 OCR via multimodal Chat Completions",
+        "pricingSourceUrl": "https://platform.moonshot.ai/",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Moonshot AI public API token pricing",
+        "pricingNotes": "Moonshot AI public pricing lists Kimi K2.6 at $0.95/1M input tokens and $4/1M output tokens. OCR estimates use cache-miss input pricing conservatively; cache discounts, batch discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.95,
         "costPerMOutputTokensUSD": 4,
         "costPerMInputTokensCents": 95,
@@ -57,8 +72,8 @@
           "notes": "project/links/kimi-general-ocr-text-links.md documents Kimi image support for PNG/JPEG/WebP/GIF, a 100 MB request-body/file limit, and recommended image resolution no higher than 4K. AutoShow renders PDFs to page images before calling Kimi OCR."
         },
         "estimation": {
-          "costMultiplier": 0.6066,
-          "msPerPage": 9493,
+          "costMultiplier": 0.4405,
+          "msPerPage": 16355,
           "promptTokensPerPage": 4232,
           "completionTokensPerPage": 2068
         }
@@ -66,11 +81,62 @@
     }
   },
   "openai": {
-    "description": "OpenAI GPT-5.4 OCR via Responses API",
+    "description": "OpenAI GPT OCR via Responses API",
     "type": "api",
     "models": {
+      "gpt-5.5": {
+        "description": "GPT-5.5 OCR",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard token pricing",
+        "pricingNotes": "OpenAI lists GPT-5.5 Standard pricing with short-context rates of $5/1M input tokens, $0.50/1M cached input tokens, and $30/1M output tokens. For prompts with >272K input tokens, OpenAI applies 2x input and 1.5x output pricing for the full session. OCR estimates switch bands from observed or heuristic input tokens; batch, flex, priority, regional uplifts, cached-input discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPerMInputTokensUSD": 5,
+        "costPerMCachedInputTokensUSD": 0.5,
+        "costPerMOutputTokensUSD": 30,
+        "costPerMInputTokensCents": 500,
+        "costPerMCachedInputTokensCents": 50,
+        "costPerMOutputTokensCents": 3000,
+        "limits": {
+          "pdfBytes": 52428800,
+          "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
+        },
+        "estimation": {
+          "promptTokensPerPage": 2986,
+          "completionTokensPerPage": 1903,
+          "costMultiplier": 0.2892,
+          "msPerPage": 5887
+        },
+        "tokenPricingBands": [
+          {
+            "label": "standard-short-context",
+            "maxInputTokens": 272000,
+            "inputCostPer1MUSD": 5,
+            "inputCostPer1MCents": 500,
+            "cachedInputCostPer1MUSD": 0.5,
+            "cachedInputCostPer1MCents": 50,
+            "outputCostPer1MUSD": 30,
+            "outputCostPer1MCents": 3000
+          },
+          {
+            "label": "standard-long-context",
+            "minInputTokens": 272001,
+            "inputCostPer1MUSD": 10,
+            "inputCostPer1MCents": 1000,
+            "cachedInputCostPer1MUSD": 1,
+            "cachedInputCostPer1MCents": 100,
+            "outputCostPer1MUSD": 45,
+            "outputCostPer1MCents": 4500
+          }
+        ]
+      },
       "gpt-5.4": {
         "description": "GPT-5.4 OCR",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard token pricing",
+        "pricingNotes": "OpenAI lists GPT-5.4 Standard pricing with short-context rates of $2.50/1M input tokens, $0.25/1M cached input tokens, and $15/1M output tokens. For prompts with >272K input tokens, OpenAI applies 2x input and 1.5x output pricing for the full session. OCR estimates switch bands from observed or heuristic input tokens; batch, flex, priority, regional uplifts, cached-input discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 2.5,
         "costPerMOutputTokensUSD": 15,
         "costPerMInputTokensCents": 250,
@@ -81,11 +147,36 @@
         },
         "estimation": {
           "promptTokensPerPage": 2986,
-          "completionTokensPerPage": 1903
-        }
+          "completionTokensPerPage": 1903,
+          "costMultiplier": 0.2165,
+          "msPerPage": 4931
+        },
+        "tokenPricingBands": [
+          {
+            "label": "standard-short-context",
+            "maxInputTokens": 272000,
+            "inputCostPer1MUSD": 2.5,
+            "inputCostPer1MCents": 250,
+            "outputCostPer1MUSD": 15,
+            "outputCostPer1MCents": 1500
+          },
+          {
+            "label": "standard-long-context",
+            "minInputTokens": 272001,
+            "inputCostPer1MUSD": 5,
+            "inputCostPer1MCents": 500,
+            "outputCostPer1MUSD": 22.5,
+            "outputCostPer1MCents": 2250
+          }
+        ]
       },
       "gpt-5.4-mini": {
         "description": "GPT-5.4 Mini OCR",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard token pricing",
+        "pricingNotes": "OpenAI lists GPT-5.4 Mini at $0.75/1M input tokens and $4.50/1M output tokens. OCR estimates multiply observed token usage by these published rates; free credits, batch/flex discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.75,
         "costPerMOutputTokensUSD": 4.5,
         "costPerMInputTokensCents": 75,
@@ -96,11 +187,18 @@
         },
         "estimation": {
           "promptTokensPerPage": 2986,
-          "completionTokensPerPage": 1868
+          "completionTokensPerPage": 1868,
+          "costMultiplier": 0.2239,
+          "msPerPage": 2844
         }
       },
       "gpt-5.4-nano": {
         "description": "GPT-5.4 nano OCR",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "OpenAI API standard token pricing",
+        "pricingNotes": "OpenAI lists GPT-5.4 nano at $0.20/1M input tokens and $1.25/1M output tokens. OCR estimates multiply observed token usage by these published rates; free credits, batch/flex discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.2,
         "costPerMOutputTokensUSD": 1.25,
         "costPerMInputTokensCents": 20,
@@ -110,10 +208,44 @@
           "notes": "project/links/openai-all-links.md documents OpenAI file-input limits of 50 MB per file and 50 MB total across all files in a request. Image-input docs document PNG, JPEG, WEBP, and non-animated GIF support with request-level payload limits."
         },
         "estimation": {
-          "costMultiplier": 0.5433,
-          "msPerPage": 11349,
+          "costMultiplier": 0.2692,
+          "msPerPage": 7209,
           "promptTokensPerPage": 2986,
           "completionTokensPerPage": 1844
+        }
+      }
+    }
+  },
+  "grok": {
+    "description": "xAI Grok OCR via vision chat",
+    "type": "api",
+    "models": {
+      "grok-4.3": {
+        "description": "Grok 4.3 OCR via multimodal Chat Completions",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "xAI public Chat API token pricing",
+        "pricingNotes": "xAI lists Grok 4.3 at $1.25/1M input tokens, $0.20/1M cached input tokens, and $2.50/1M output tokens. OCR estimates use standard listed rates and emit a pricing note when observed or estimated input context exceeds 200K tokens. Batch discounts, cached-input discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPerMInputTokensUSD": 1.25,
+        "costPerMCachedInputTokensUSD": 0.2,
+        "costPerMOutputTokensUSD": 2.5,
+        "costPerMInputTokensCents": 125,
+        "costPerMCachedInputTokensCents": 20,
+        "costPerMOutputTokensCents": 250,
+        "limits": {
+          "imageBytes": 20971520,
+          "notes": "docs.x.ai documents Grok 4.3 image input support for PNG/JPG/JPEG with a 20 MiB maximum image size. AutoShow renders PDF pages to PNG images before calling Grok OCR."
+        },
+        "estimation": {
+          "promptTokensPerPage": 4000,
+          "completionTokensPerPage": 1000,
+          "costMultiplier": 0.7329,
+          "msPerPage": 18000
+        },
+        "higherContextPricing": {
+          "thresholdInputTokens": 200000,
+          "note": "xAI public pricing lists a 1M-context Grok 4.3 table but does not provide separate numeric higher-context rates. This estimate uses standard listed rates and may understate cost if a higher-context tier is applied."
         }
       }
     }
@@ -122,8 +254,57 @@
     "description": "Anthropic Claude OCR via Messages API",
     "type": "api",
     "models": {
+      "claude-opus-4-7": {
+        "description": "Claude Opus 4.7 OCR",
+        "pricingSourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing?hsLang=en",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Claude API standard token pricing",
+        "pricingNotes": "Anthropic lists Claude Opus 4.7 at $5/1M input tokens and $25/1M output tokens. OCR estimates multiply observed token usage by these published rates; prompt caching, batch discounts, fast mode, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPerMInputTokensUSD": 5,
+        "costPerMOutputTokensUSD": 25,
+        "costPerMInputTokensCents": 500,
+        "costPerMOutputTokensCents": 2500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 7914,
+          "promptTokensPerPage": 1657.5,
+          "completionTokensPerPage": 474.5
+        }
+      },
+      "claude-sonnet-4-6": {
+        "description": "Claude Sonnet 4.6 OCR",
+        "pricingSourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing?hsLang=en",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Claude API standard token pricing",
+        "pricingNotes": "Anthropic lists Claude Sonnet 4.6 at $3/1M input tokens and $15/1M output tokens. OCR estimates multiply observed token usage by these published rates; prompt caching, batch discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPerMInputTokensUSD": 3,
+        "costPerMOutputTokensUSD": 15,
+        "costPerMInputTokensCents": 300,
+        "costPerMOutputTokensCents": 1500,
+        "limits": {
+          "imageBytes": 5242880,
+          "notes": "project/links/claude-all-links.md documents standard unencrypted PDF support, image support for JPEG/PNG/GIF/WebP up to 5 MB each, Messages/Token Counting requests up to 32 MB, Files API uploads up to 500 MB, and uploaded files persist until deleted. AutoShow Anthropic OCR chunks PDFs into 10-page Files API uploads and rejects encrypted/password-protected PDFs."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 8679,
+          "promptTokensPerPage": 1657.5,
+          "completionTokensPerPage": 474.5
+        }
+      },
       "claude-haiku-4-5": {
         "description": "Claude Haiku 4.5 OCR",
+        "pricingSourceUrl": "https://platform.claude.com/docs/en/about-claude/pricing?hsLang=en",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Claude API standard token pricing",
+        "pricingNotes": "Anthropic lists Claude Haiku 4.5 at $1/1M input tokens and $5/1M output tokens. OCR estimates multiply observed token usage by these published rates; prompt caching, batch discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 1,
         "costPerMOutputTokensUSD": 5,
         "costPerMInputTokensCents": 100,
@@ -147,6 +328,11 @@
     "models": {
       "gemini-3.1-pro-preview": {
         "description": "Gemini 3.1 Pro OCR",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard",
+        "pricingNotes": "Gemini 3.1 Pro Preview Standard pricing is $2/1M input tokens and $12/1M output tokens for prompts up to 200K tokens, and $4/1M input tokens and $18/1M output tokens for prompts over 200K tokens. OCR estimates switch bands from observed or heuristic input tokens; free tier, batch/flex/priority prices, context caching, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 2,
         "costPerMOutputTokensUSD": 12,
         "costPerMInputTokensCents": 200,
@@ -159,11 +345,40 @@
         },
         "estimation": {
           "promptTokensPerPage": 1157,
-          "completionTokensPerPage": 2063
-        }
+          "completionTokensPerPage": 2063,
+          "costMultiplier": 0.2928,
+          "msPerPage": 5089
+        },
+        "tokenPricingBands": [
+          {
+            "label": "standard-up-to-200k",
+            "maxInputTokens": 200000,
+            "inputCostPer1MUSD": 2,
+            "inputCostPer1MCents": 200,
+            "cachedInputCostPer1MUSD": 0.2,
+            "cachedInputCostPer1MCents": 20,
+            "outputCostPer1MUSD": 12,
+            "outputCostPer1MCents": 1200
+          },
+          {
+            "label": "standard-over-200k",
+            "minInputTokens": 200001,
+            "inputCostPer1MUSD": 4,
+            "inputCostPer1MCents": 400,
+            "cachedInputCostPer1MUSD": 0.4,
+            "cachedInputCostPer1MCents": 40,
+            "outputCostPer1MUSD": 18,
+            "outputCostPer1MCents": 1800
+          }
+        ]
       },
-      "gemini-3.1-flash-lite-preview": {
+      "gemini-3.1-flash-lite": {
         "description": "Gemini 3.1 Flash-Lite OCR",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard",
+        "pricingNotes": "Gemini 3.1 Flash-Lite Standard pricing is $0.25/1M text/image/video input tokens and $1.50/1M output tokens. OCR estimates multiply observed token usage by these published rates; free tier, batch/flex prices, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.25,
         "costPerMOutputTokensUSD": 1.5,
         "costPerMInputTokensCents": 25,
@@ -175,8 +390,32 @@
           "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
         },
         "estimation": {
-          "costMultiplier": 0.6139,
-          "msPerPage": 3280,
+          "costMultiplier": 0.4492,
+          "msPerPage": 2921,
+          "promptTokensPerPage": 1157,
+          "completionTokensPerPage": 1626
+        }
+      },
+      "gemini-3.1-flash-lite-preview": {
+        "description": "Compatibility alias for Gemini 3.1 Flash-Lite OCR",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard",
+        "pricingNotes": "Gemini 3.1 Flash-Lite Standard pricing is $0.25/1M text/image/video input tokens and $1.50/1M output tokens. OCR estimates multiply observed token usage by these published rates; free tier, batch/flex prices, taxes, and provider credits are ignored.",
+        "costPerMInputTokensUSD": 0.25,
+        "costPerMOutputTokensUSD": 1.5,
+        "costPerMInputTokensCents": 25,
+        "costPerMOutputTokensCents": 150,
+        "limits": {
+          "pdfBytes": 2147483648,
+          "imageBytes": 2147483648,
+          "pageCount": 1000,
+          "notes": "project/links/gemini-all-links.md documents inline PDF input up to 50 MB, inline non-PDF payloads up to 100 MB, Files API uploads up to 2 GB per file, and document understanding up to 1000 PDF pages."
+        },
+        "estimation": {
+          "costMultiplier": 0.4492,
+          "msPerPage": 2921,
           "promptTokensPerPage": 1157,
           "completionTokensPerPage": 1626
         }
@@ -189,6 +428,11 @@
     "models": {
       "Qwen/Qwen3-VL-235B-A22B-Instruct": {
         "description": "Qwen3 VL 235B A22B Instruct via DeepInfra",
+        "pricingSourceUrl": "https://deepinfra.com/Qwen/Qwen3-VL-235B-A22B-Instruct",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "DeepInfra public per-token model pricing",
+        "pricingNotes": "DeepInfra lists Qwen/Qwen3-VL-235B-A22B-Instruct at $0.20/1M input tokens, $0.11/1M cached input tokens, and $0.88/1M output tokens. OCR estimates use non-cached token rates; discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.2,
         "costPerMOutputTokensUSD": 0.88,
         "costPerMInputTokensCents": 20,
@@ -206,6 +450,11 @@
       },
       "Qwen/Qwen3-VL-30B-A3B-Instruct": {
         "description": "Qwen3 VL 30B A3B Instruct via DeepInfra",
+        "pricingSourceUrl": "https://deepinfra.com/Qwen/Qwen3-VL-30B-A3B-Instruct",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "DeepInfra public per-token model pricing",
+        "pricingNotes": "DeepInfra lists Qwen/Qwen3-VL-30B-A3B-Instruct at $0.15/1M input tokens and $0.60/1M output tokens. OCR estimates use these public rates; discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMInputTokensUSD": 0.15,
         "costPerMOutputTokensUSD": 0.6,
         "costPerMInputTokensCents": 15,
@@ -216,7 +465,7 @@
         },
         "estimation": {
           "costMultiplier": 0.7802,
-          "msPerPage": 12920,
+          "msPerPage": 12618,
           "promptTokensPerPage": 7981,
           "completionTokensPerPage": 471.5
         }
@@ -247,6 +496,11 @@
     "models": {
       "firecrawl": {
         "description": "Firecrawl /scrape markdown extraction estimated at the Standard plan effective credit rate",
+        "pricingSourceUrl": "https://www.firecrawl.dev/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard monthly credit reference rate",
+        "pricingNotes": "Firecrawl Standard is $83/month for 100,000 credits and /scrape uses 1 credit/page for the base markdown scrape. The estimate is a base/reference heuristic because advanced formats, enhanced mode, agents, browser actions, and other options can consume extra credits. Free credits, annual discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kPagesUSD": 0.83,
         "costPer1kPagesCents": 83,
         "limits": {
@@ -254,7 +508,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 41
+          "msPerPage": 315
         }
       }
     }
@@ -265,6 +519,11 @@
     "models": {
       "glm-reader": {
         "description": "GLM Reader URL-to-markdown extraction estimated from Z.AI built-in web tool per-use pricing",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI built-in web tool reference pricing",
+        "pricingNotes": "GLM Reader estimates use the Z.AI built-in web-search/tool reference of $0.01 per use as a per-page/request heuristic. Provider-specific quote paths, free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kPagesUSD": 10,
         "costPer1kPagesCents": 1000,
         "limits": {
@@ -272,7 +531,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 2253
+          "msPerPage": 2145
         }
       }
     }
@@ -283,6 +542,11 @@
     "models": {
       "spider": {
         "description": "Spider /scrape markdown extraction heuristic estimate",
+        "pricingSourceUrl": "https://spider.cloud/",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Base/reference heuristic",
+        "pricingNotes": "Spider pricing can depend on scrape mode, compute, and bandwidth. AutoShow keeps a conservative base/reference per-page heuristic for dry-run totals; free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kPagesUSD": 1.2,
         "costPer1kPagesCents": 120,
         "limits": {
@@ -295,12 +559,40 @@
       }
     }
   },
+  "supadata": {
+    "description": "Supadata hosted article extraction",
+    "type": "api",
+    "models": {
+      "supadata": {
+        "description": "Supadata Web Reader /web/scrape extraction at 1 credit per request using the Basic/Pro auto-recharge rate ($10 / 1,000 credits)",
+        "pricingSourceUrl": "https://supadata.ai/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Basic/Pro auto-recharge reference rate",
+        "pricingNotes": "Supadata lists 1 URL scrape as 1 credit. The default reference rate is Basic/Pro auto-recharge at $10 per 1,000 credits. Free plan credits, yearly discounts, larger-plan auto-recharge rates, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPer1kPagesUSD": 10,
+        "costPer1kPagesCents": 1000,
+        "limits": {
+          "notes": "Supadata Web Reader charges 1 credit per scrape request. Actual plan pricing can differ from the reference auto-recharge rate."
+        },
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerPage": 2500
+        }
+      }
+    }
+  },
   "zyte": {
     "description": "Zyte API hosted article extraction",
     "type": "api",
     "models": {
       "zyte": {
         "description": "Zyte article automatic extraction add-on estimate; base request tier costs may also apply",
+        "pricingSourceUrl": "https://docs.zyte.com/zyte-api/pricing.html",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go reference heuristic",
+        "pricingNotes": "Zyte lists automatic extraction at $0.0004-$0.0016 per data type before discounts, while base request tiers, bandwidth, actions, screenshots, and selected features can add cost. AutoShow uses the $0.0016 upper-bound extraction add-on as a base/reference heuristic and excludes variable base request costs, free credits, discounts, enterprise pricing, taxes, and provider credits.",
         "costPer1kPagesUSD": 1.6,
         "costPer1kPagesCents": 160,
         "limits": {
@@ -313,64 +605,27 @@
       }
     }
   },
-  "gcloud-docai": {
-    "description": "Google Cloud Document AI OCR",
-    "type": "api",
-    "models": {
-      "ocr": {
-        "description": "Google Cloud Document AI OCR processor",
-        "costPer1kPagesUSD": 1.5,
-        "costPer1kPagesCents": 150,
-        "limits": {
-          "pdfBytes": 20971520,
-          "imageBytes": 20971520,
-          "pageCount": 2000,
-          "notes": "Sync API: 20 MB per request. Batch API: 1 GB per file, 50 GB per batch, 2000 pages per batch."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 1500
-        }
-      }
-    }
-  },
-  "aws-textract": {
-    "description": "AWS Textract OCR",
-    "type": "api",
-    "models": {
-      "detect-text": {
-        "description": "AWS Textract DetectDocumentText API",
-        "costPer1kPagesUSD": 1.5,
-        "costPer1kPagesCents": 150,
-        "limits": {
-          "pdfBytes": 524288000,
-          "imageBytes": 10485760,
-          "pageCount": 3000,
-          "notes": "Sync: single-page, 10 MB image. Async: up to 3000 pages per PDF, 500 MB max file size."
-        },
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerPage": 1200
-        }
-      }
-    }
-  },
   "unstructured": {
     "description": "Unstructured hosted document OCR and partitioning",
     "type": "api",
     "models": {
       "hi_res_and_enrichment": {
         "description": "Unstructured on-demand hi_res_and_enrichment workflow template",
-        "costPer1kPagesUSD": 0,
-        "costPer1kPagesCents": 0,
+        "pricingSourceUrl": "https://unstructured.io/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Pay-As-You-Go",
+        "pricingNotes": "Pay-As-You-Go flat rate is $0.03/page; free Let's Go allowance may apply before billing, and Business pricing is custom.",
+        "costPer1kPagesUSD": 30,
+        "costPer1kPagesCents": 3000,
         "limits": {
           "effectiveBytes": 10485760,
           "pageCount": 1000,
-          "notes": "Unstructured on-demand jobs support local files up to 10 MB. AutoShow records a zero-cost registry fallback because Unstructured account pricing is plan-specific."
+          "notes": "Unstructured on-demand jobs support local files up to 10 MB. AutoShow estimates Pay-As-You-Go pricing at $0.03/page; free allowance or custom Business pricing may differ."
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerPage": 3500
+          "msPerPage": 15098
         }
       }
     }

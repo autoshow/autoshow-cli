@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import { basename } from 'node:path'
 import type {
   AsyncSttLifecycleHooks,
@@ -17,7 +18,6 @@ import {
   GladiaStatusResponseSchema,
   GladiaUploadResponseSchema
 } from '~/types'
-import * as l from '~/utils/logger'
 import {
   logSttAsyncJobLifecycle,
   logSttDiarizationConfig,
@@ -32,11 +32,14 @@ import {
   resolveTranscriptionOutput,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
+import { buildTranscriptionWordEvidence } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-evidence'
 import {
+  createAsyncSttJobReadyNotifier,
+  createAsyncSttProgressMetadataPersister,
   pollAsyncSttJobUntilComplete,
   readPersistedAsyncSttRuntime,
-  writeAsyncSttProgressMetadata
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/async-lifecycle'
+import { buildStep2TimingMetadata } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-timing-metadata'
 import { getGladiaBaseUrl } from './gladia'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
@@ -236,40 +239,37 @@ export const runGladiaStt = async (
   let uploadAssetId = runtime?.remoteAssetId
   let transcriptionId = runtime?.remoteJobId
   let resumedExistingJob = false
-  let jobReadyNotified = false
+
+  const buildTimingMetadata = (remoteProcessingMs = 0): Step2Metadata['timings'] =>
+    buildStep2TimingMetadata({
+      uploadMs,
+      createMs,
+      createCount,
+      pollMs,
+      pollSleepMs,
+      pollCount,
+      remoteProcessingMs,
+      requestCount,
+      retryCount,
+      rateLimitCount,
+      backfillCount
+    })
 
   const buildProgressMetadata = (nextRuntime: Step2RuntimeMetadata): Step2Metadata => ({
     transcriptionService: 'gladia',
     transcriptionModel: modelName,
     processingTime: Date.now() - startTime,
     tokenCount: 0,
-    timings: {
-      ...(uploadMs > 0 ? { uploadMs } : {}),
-      ...(createMs > 0 ? { createMs } : {}),
-      ...(createCount > 0 ? { createCount } : {}),
-      ...(pollMs > 0 ? { pollMs } : {}),
-      ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-      ...(pollCount > 0 ? { pollCount } : {}),
-      ...(requestCount > 0 ? { requestCount } : {}),
-      ...(retryCount > 0 ? { retryCount } : {}),
-      ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-      ...(backfillCount > 0 ? { backfillCount } : {})
-    },
+    timings: buildTimingMetadata() ?? {},
     runtime: nextRuntime
   })
 
-  const persistProgressMetadata = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    runtime = nextRuntime
-    await writeAsyncSttProgressMetadata(outputDir, buildProgressMetadata(nextRuntime))
-  }
-
-  const notifyJobReady = async (nextRuntime: Step2RuntimeMetadata): Promise<void> => {
-    if (jobReadyNotified) {
-      return
-    }
-    jobReadyNotified = true
-    await lifecycle?.onJobReady?.(nextRuntime)
-  }
+  const persistProgressMetadata = createAsyncSttProgressMetadataPersister(
+    outputDir,
+    buildProgressMetadata,
+    (nextRuntime) => { runtime = nextRuntime }
+  )
+  const notifyJobReady = createAsyncSttJobReadyNotifier(lifecycle?.onJobReady)
 
   if (runtime && (runtime.stage === 'created' || runtime.stage === 'polling')) {
     resumedExistingJob = true
@@ -449,7 +449,6 @@ export const runGladiaStt = async (
     initialPollIntervalMs: INITIAL_POLL_INTERVAL_MS,
     maxPollIntervalMs: MAX_POLL_INTERVAL_MS,
     audioDurationSeconds,
-    envSpecificDeadlineKey: 'AUTOSHOW_STT_POLL_DEADLINE_MS_GLADIA',
     pollMode: resumedExistingJob ? 'resume-probe' : 'fresh',
     buildDeadlineError: (jobId, pollDeadlineMs) => buildPollingDeadlineError(jobId, pollDeadlineMs),
     buildResumeProbeError: (jobId, probeCount, totalWaitMs) => buildResumeProbeError(jobId, probeCount, totalWaitMs),
@@ -579,29 +578,14 @@ export const runGladiaStt = async (
 
   const processingTime = Date.now() - startTime
   const remoteProcessingMs = Math.max(0, processingTime - uploadMs - createMs - pollMs)
+  const timings = buildTimingMetadata(remoteProcessingMs)
   const metadata: Step2Metadata = {
     transcriptionService: 'gladia',
     transcriptionModel: modelName,
     processingTime,
     tokenCount: countTokens(finalText),
     runtime: completedRuntime,
-    ...((uploadMs > 0 || createMs > 0 || pollMs > 0 || pollSleepMs > 0 || remoteProcessingMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0)
-      ? {
-          timings: {
-            ...(uploadMs > 0 ? { uploadMs } : {}),
-            ...(createMs > 0 ? { createMs } : {}),
-            ...(createCount > 0 ? { createCount } : {}),
-            ...(pollMs > 0 ? { pollMs } : {}),
-            ...(pollSleepMs > 0 ? { pollSleepMs } : {}),
-            ...(pollCount > 0 ? { pollCount } : {}),
-            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-            ...(requestCount > 0 ? { requestCount } : {}),
-            ...(retryCount > 0 ? { retryCount } : {}),
-            ...(rateLimitCount > 0 ? { rateLimitCount } : {}),
-            ...(backfillCount > 0 ? { backfillCount } : {})
-          }
-        }
-      : {})
+    ...(timings ? { timings } : {})
   }
 
   if (segmentNumber && totalSegments) {
@@ -612,16 +596,7 @@ export const runGladiaStt = async (
     result: {
       text: finalText,
       segments: finalSegments,
-      evidence: {
-        ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
-        capabilities: {
-          hasNativeWordTiming: evidenceWords.length > 0,
-          hasConfidence: evidenceWords.some((word) => typeof word.confidence === 'number'),
-          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-        },
-        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-        rawResponse: transcript
-      }
+      evidence: buildTranscriptionWordEvidence({ words: evidenceWords, segments: finalSegments, rawResponse: transcript })
     },
     metadata
   }

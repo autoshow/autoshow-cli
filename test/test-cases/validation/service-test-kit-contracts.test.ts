@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { classifySkippableLiveProviderFailure } from '../../test-utils/service-test-kit'
+import { classifyLiveProviderAvailabilityFailure, formatCommandFailureDiagnostics } from '../../test-utils/service-test-kit'
 
-describe('classifySkippableLiveProviderFailure', () => {
+describe('classifyLiveProviderAvailabilityFailure', () => {
   test('classifies known live-provider availability failures', () => {
     const cases: Array<{ output: string; expected: string }> = [
       {
@@ -31,18 +31,59 @@ describe('classifySkippableLiveProviderFailure', () => {
       {
         output: 'DeepInfra target openai/whisper-large-v3 command timed out after 300000ms',
         expected: 'DeepInfra openai/whisper-large-v3 transcription timed out'
+      },
+      {
+        output: 'Retry Attempt\noperation gemini-image-generate\nreason retryable status 503\nFailed to run Gemini image model gemini-3.1-flash-image-preview: gemini-image-generate failed after 3/3 attempts (max attempts reached, 2100ms elapsed)\nGemini API request failed with status 503: service unavailable',
+        expected: 'Gemini image provider is temporarily unavailable or rate limited'
+      },
+      {
+        output: 'gemini/gemini-3.1-flash-image-preview Gemini API request failed with status 429: Resource exhausted',
+        expected: 'Gemini image provider is temporarily unavailable or rate limited'
+      },
+      {
+        output: 'BFL image result download failed (504)',
+        expected: 'BFL image result download hit a transient provider availability failure'
+      },
+      {
+        output: 'Retry Attempt\noperation bfl-image-result-download\nreason retryable status 504\nflux-2-flex bfl-image-result-download failed after 4/4 attempts (max attempts reached, 4200ms elapsed)',
+        expected: 'BFL image result download hit a transient provider availability failure'
       }
     ]
 
     for (const { output, expected } of cases) {
-      expect(classifySkippableLiveProviderFailure(output)).toBe(expected)
+      expect(classifyLiveProviderAvailabilityFailure(output)).toBe(expected)
     }
   })
 
   test('does not classify unrelated failures or the DeepInfra turbo model', () => {
-    expect(classifySkippableLiveProviderFailure('GLM validation failed because output was malformed')).toBeNull()
-    expect(classifySkippableLiveProviderFailure('command timed out for openai/whisper-large-v3')).toBeNull()
-    expect(classifySkippableLiveProviderFailure('DeepInfra openai/whisper-large-v3 completed')).toBeNull()
-    expect(classifySkippableLiveProviderFailure('DeepInfra openai/whisper-large-v3-turbo command timed out')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('GLM validation failed because output was malformed')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('command timed out for openai/whisper-large-v3')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('DeepInfra openai/whisper-large-v3 completed')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('DeepInfra openai/whisper-large-v3-turbo command timed out')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('Gemini image validation failed because output was malformed')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('Failed to run Gemini model: Gemini API request failed with status 503')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('Gemini API request failed with status 400 for gemini-3.1-flash-image-preview: invalid prompt')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('BFL image request failed (400): invalid prompt')).toBeNull()
+    expect(classifyLiveProviderAvailabilityFailure('flux-2-flex bfl-image-result-download failed after 2/4 attempts (non-retryable status 400, 1200ms elapsed)')).toBeNull()
+  })
+})
+
+describe('formatCommandFailureDiagnostics', () => {
+  test('prints a compact command, stdout tail, and stderr tail', () => {
+    const output = formatCommandFailureDiagnostics(
+      ['src/cli/create-cli.ts', 'video', 'A serene mountain landscape', '--runway', 'gen4.5'],
+      {
+        exitCode: 1,
+        stdout: ['stdout 1', 'stdout 2', 'stdout 3'].join('\n'),
+        stderr: ['stderr 1', 'stderr 2', 'stderr 3'].join('\n')
+      },
+      2
+    )
+
+    expect(output).toContain('Command failed with exit code 1: bun src/cli/create-cli.ts video "A serene mountain landscape" --runway gen4.5')
+    expect(output).toContain('--- stdout tail (2 lines) ---\nstdout 2\nstdout 3')
+    expect(output).toContain('--- stderr tail (2 lines) ---\nstderr 2\nstderr 3')
+    expect(output).not.toContain('stdout 1')
+    expect(output).not.toContain('stderr 1')
   })
 })

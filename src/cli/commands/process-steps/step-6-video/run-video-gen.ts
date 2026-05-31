@@ -7,7 +7,7 @@ import {
 
 export const runVideoTargets = async (
   targets: VideoTarget[],
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options?: Pick<VideoGenOptions, 'videoProviderConcurrency' | 'videoLocalConcurrency'>,
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
@@ -40,13 +40,13 @@ export const runVideoTargets = async (
 }
 
 export const runVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: VideoGenOptions
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
   const targets = collectVideoTargets(options)
   if (targets.length === 0) {
-    throw new Error('Specify a video generation provider: --gemini-video <model>, --minimax-video <model>, --glm-video <model>, --grok-video <model>, --runway-video <model>, or --deapi-video <model>')
+    throw new Error('Specify a video generation provider with --provider gemini|minimax|glm|grok|runway[=model].')
   }
   return await runVideoTargets(targets, prompt, outputDir, options)
 }

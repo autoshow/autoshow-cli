@@ -9,40 +9,8 @@ import type {
   TranscriptionResult
 } from '~/types'
 
-const STT_SERVICES = new Set<Step2Metadata['transcriptionService']>([
-  'whisper',
-  'reverb',
-  'gcloud',
-  'aws',
-  'deepgram',
-  'deepinfra',
-  'deapi',
-  'elevenlabs',
-  'soniox',
-  'speechmatics',
-  'rev',
-  'groq',
-  'grok',
-  'mistral',
-  'assemblyai',
-  'gladia',
-  'happyscribe',
-  'supadata',
-  'scrapecreators',
-  'openai-stt',
-  'gemini-stt',
-  'glm-stt',
-  'together',
-  'youtube-captions'
-])
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
-
-export const isSttService = (
-  value: unknown
-): value is Step2Metadata['transcriptionService'] =>
-  typeof value === 'string' && STT_SERVICES.has(value as Step2Metadata['transcriptionService'])
 
 const parseEvidenceSegment = (
   value: unknown

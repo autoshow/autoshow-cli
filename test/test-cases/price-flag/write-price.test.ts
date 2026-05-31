@@ -7,8 +7,8 @@ import {
   fileExists,
   OUTPUT_DIR,
   runCommand,
-  STABLE_LOCAL_AUDIO_PATH,
-  STABLE_LOCAL_AUDIO_TITLE,
+  STABLE_EXAMPLE_AUDIO_URL,
+  STABLE_EXAMPLE_AUDIO_TITLE,
   stopLlamaServer
 } from '../../test-utils/test-helpers'
 import { E2E_TEST_TIMEOUT_MS } from '../../test-utils/budget'
@@ -66,7 +66,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await stopLlamaServer()
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
   for (const projectDir of createdProjects) {
     await rm(projectDir, { recursive: true, force: true })
   }
@@ -76,10 +76,10 @@ test('ggml-org/gemma-3-270m-it-GGUF --price prints a llama cost estimate', async
   const model = 'ggml-org/gemma-3-270m-it-GGUF'
 
   await stopLlamaServer()
-  await cleanupTestOutput(STABLE_LOCAL_AUDIO_TITLE)
+  await cleanupTestOutput(STABLE_EXAMPLE_AUDIO_TITLE)
 
   const result = await runCommand(
-    ['src/cli/create-cli.ts', 'write', STABLE_LOCAL_AUDIO_PATH, '--llama', model, '--price'],
+    ['src/cli/create-cli.ts', 'write', STABLE_EXAMPLE_AUDIO_URL, '--llm', `llama=${model}`, '--price'],
     { testName: `${model} --price prints a llama cost estimate` },
   )
   const output = `${result.stdout}\n${result.stderr}`
@@ -100,7 +100,7 @@ test('write project directory --price reports rendered lyric outputs without cre
     'write',
     project.textDir,
     '--price'
-  ])
+  ], { env: { AUTOSHOW_OUTPUT_DIR: OUTPUT_DIR } })
 
   expect(result.exitCode).toBe(0)
   expect(result.outputDir).toBeNull()

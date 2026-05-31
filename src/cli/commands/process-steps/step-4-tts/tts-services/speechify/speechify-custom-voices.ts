@@ -5,6 +5,7 @@ import * as l from '~/utils/logger'
 import { getAudioDuration } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/audio-splitter'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { validateData } from '~/utils/validate/validation'
+import { materializeMediaInput } from '~/utils/media-url'
 
 export const SPEECHIFY_TTS_CUSTOM_VOICE_COST_CENTS = 0
 export const SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS = 10_000
@@ -39,7 +40,7 @@ const SPEECHIFY_CUSTOM_VOICE_GENDERS = ['male', 'female', 'notSpecified'] as con
 
 type SpeechifyTtsCustomVoiceGender = typeof SPEECHIFY_CUSTOM_VOICE_GENDERS[number]
 
-export type SpeechifyTtsCustomVoiceAudio = {
+type SpeechifyTtsCustomVoiceAudio = {
   path: string
   basename: string
   mimeType: string
@@ -47,7 +48,7 @@ export type SpeechifyTtsCustomVoiceAudio = {
   durationSeconds?: number | undefined
 }
 
-export type SpeechifyTtsCustomVoiceResult = {
+type SpeechifyTtsCustomVoiceResult = {
   voiceId: string
   voiceName: string
   locale: string
@@ -55,7 +56,7 @@ export type SpeechifyTtsCustomVoiceResult = {
   sourceAudio: SpeechifyTtsCustomVoiceAudio
 }
 
-export type SpeechifyTtsCustomVoiceContext = {
+type SpeechifyTtsCustomVoiceContext = {
   voicePromise?: Promise<SpeechifyTtsCustomVoiceResult> | undefined
 }
 
@@ -71,7 +72,7 @@ export type SpeechifyTtsCustomVoiceOptions = {
 
 export const createSpeechifyTtsCustomVoiceContext = (): SpeechifyTtsCustomVoiceContext => ({})
 
-export const defaultSpeechifyTtsCustomVoiceName = (): string => `AutoShow_${Date.now()}`
+const defaultSpeechifyTtsCustomVoiceName = (): string => `AutoShow_${Date.now()}`
 
 const isSpeechifyCustomVoiceGender = (value: string): value is SpeechifyTtsCustomVoiceGender =>
   (SPEECHIFY_CUSTOM_VOICE_GENDERS as readonly string[]).includes(value)
@@ -115,7 +116,7 @@ const resolveSpeechifyTtsCustomVoiceConsent = (
   return { fullName, email }
 }
 
-export const validateSpeechifyTtsCustomVoiceAudio = async (
+const validateSpeechifyTtsCustomVoiceAudio = async (
   audioPath: string
 ): Promise<SpeechifyTtsCustomVoiceAudio> => {
   const normalizedPath = audioPath.trim()
@@ -203,7 +204,13 @@ const createSpeechifyTtsCustomVoice = async (
   apiKey: string,
   options: SpeechifyTtsCustomVoiceOptions
 ): Promise<SpeechifyTtsCustomVoiceResult> => {
-  const sourceAudio = await validateSpeechifyTtsCustomVoiceAudio(options.refAudioPath)
+  const materializedRefAudio = await materializeMediaInput(options.refAudioPath, {
+    accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+    label: 'Speechify TTS custom voice reference audio'
+  })
+
+  try {
+  const sourceAudio = await validateSpeechifyTtsCustomVoiceAudio(materializedRefAudio.path)
   const voiceName = options.voiceName?.trim() || defaultSpeechifyTtsCustomVoiceName()
   const locale = resolveSpeechifyTtsCustomVoiceLocale(options.locale)
   const gender = validateSpeechifyTtsCustomVoiceGender(options.gender)
@@ -249,6 +256,9 @@ const createSpeechifyTtsCustomVoice = async (
     locale,
     gender,
     sourceAudio
+  }
+  } finally {
+    await materializedRefAudio.cleanup()
   }
 }
 

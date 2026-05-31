@@ -1,13 +1,11 @@
-import type { DeapiMusicModel, ElevenlabsMusicModel, GeminiMusicModel, MinimaxMusicModel, MusicGenOptions, MusicTarget, Step7MusicMetadata } from '~/types'
-import { validateDeapiMusicModel, validateElevenlabsMusicModel, validateGeminiMusicModel, validateMinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
+import type { ElevenlabsMusicModel, GeminiMusicModel, MinimaxMusicModel, MusicGenOptions, MusicTarget, Step7MusicMetadata } from '~/types'
+import { validateElevenlabsMusicModel, validateGeminiMusicModel, validateMinimaxMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureElevenLabsMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/elevenlabs/elevenlabs-music-gen'
 import { ensureMinimaxMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/minimax/minimax-music-gen'
-import { ensureDeapiMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/deapi/deapi-music-gen'
 import { ensureGeminiMusicGenSetup } from '~/cli/commands/process-steps/step-7-music/music-services/gemini/gemini-music-gen'
 import { buildSingleArtifactMap, getSingleFileArtifactName } from '~/cli/commands/process-steps/target-runner'
 import { runElevenLabsMusicGen } from './music-services/elevenlabs/run-elevenlabs-music-gen'
 import { runMinimaxMusicGen } from './music-services/minimax/run-minimax-music-gen'
-import { runDeapiMusicGen } from './music-services/deapi/run-deapi-music-gen'
 import { runGeminiMusicGen } from './music-services/gemini/run-gemini-music-gen'
 
 export const getMusicArtifactFileName = (
@@ -33,7 +31,6 @@ export const collectMusicTargets = (options: MusicGenOptions): MusicTarget[] => 
   const targets: MusicTarget[] = []
   const elevenlabsModels = options.elevenlabsMusicModels ?? (options.elevenlabsMusicModel ? [options.elevenlabsMusicModel] : [])
   const minimaxModels = options.minimaxMusicModels ?? (options.minimaxMusicModel ? [options.minimaxMusicModel] : [])
-  const deapiModels = options.deapiMusicModels ?? (options.deapiMusicModel ? [options.deapiMusicModel] : [])
   const geminiModels = options.geminiMusicModels ?? (options.geminiMusicModel ? [options.geminiMusicModel] : [])
 
   for (const rawModel of elevenlabsModels) {
@@ -62,24 +59,6 @@ export const collectMusicTargets = (options: MusicGenOptions): MusicTarget[] => 
       run: async (prompt, outputDir) => {
         await ensureMinimaxMusicGenSetup()
         return await runMinimaxMusicGen(prompt, outputDir, {
-          model,
-          durationSeconds: options.musicDuration,
-          lyricsFile: options.musicLyricsFile,
-          forceInstrumental: options.musicInstrumental
-        })
-      }
-    })
-  }
-
-  for (const rawModel of deapiModels) {
-    const model: DeapiMusicModel = validateDeapiMusicModel(rawModel)
-
-    targets.push({
-      service: 'deapi',
-      model,
-      run: async (prompt, outputDir) => {
-        await ensureDeapiMusicGenSetup()
-        return await runDeapiMusicGen(prompt, outputDir, {
           model,
           durationSeconds: options.musicDuration,
           lyricsFile: options.musicLyricsFile,

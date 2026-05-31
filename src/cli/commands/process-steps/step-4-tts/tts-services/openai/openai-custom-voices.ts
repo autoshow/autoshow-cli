@@ -3,8 +3,8 @@ import { basename, extname } from 'node:path'
 import * as v from 'valibot'
 import { validateData } from '~/utils/validate/validation'
 import { createOpenAIVoice, createOpenAIVoiceConsent } from '~/utils/openai/client'
-
-const OPENAI_DEFAULT_BASE_URL = 'https://api.openai.com/v1'
+import { OPENAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
+import { materializeMediaInput } from '~/utils/media-url'
 const OPENAI_DEFAULT_CONSENT_LANGUAGE = 'en-US'
 const MAX_OPENAI_CUSTOM_VOICE_AUDIO_BYTES = 10 * 1024 * 1024
 
@@ -38,20 +38,20 @@ const OpenAIVoiceResponseSchema = v.object({
   created_at: v.optional(v.number(), undefined)
 })
 
-export type OpenAITtsCustomVoiceAudio = {
+type OpenAITtsCustomVoiceAudio = {
   path: string
   basename: string
   mimeType: string
   sizeBytes: number
 }
 
-export type OpenAITtsCustomVoiceResult = {
+type OpenAITtsCustomVoiceResult = {
   voiceId: string
   sampleAudio: OpenAITtsCustomVoiceAudio
   voiceName: string
 }
 
-export type OpenAITtsCustomVoiceContext = {
+type OpenAITtsCustomVoiceContext = {
   voicePromise?: Promise<OpenAITtsCustomVoiceResult> | undefined
 }
 
@@ -78,12 +78,12 @@ const sanitizeGeneratedName = (value: string): string =>
     .replace(/\s+/g, '_')
     .replace(/^_+|_+$/g, '')
 
-export const defaultOpenAITtsConsentName = (audioPath: string): string => {
+const defaultOpenAITtsConsentName = (audioPath: string): string => {
   const label = sanitizeGeneratedName(basename(audioPath))
   return label || `AutoShow_consent_${Date.now()}`
 }
 
-export const defaultOpenAITtsVoiceName = (): string => `AutoShow_${Date.now()}`
+const defaultOpenAITtsVoiceName = (): string => `AutoShow_${Date.now()}`
 
 export const validateOpenAITtsCustomVoiceAudio = async (
   audioPath: string,
@@ -159,11 +159,23 @@ const createOpenAITtsCustomVoice = async (
   apiKey: string,
   options: OpenAITtsCustomVoiceOptions
 ): Promise<OpenAITtsCustomVoiceResult> => {
-  const sampleAudio = await validateOpenAITtsCustomVoiceAudio(options.refAudioPath, 'sample audio')
+  const materializedSampleAudio = await materializeMediaInput(options.refAudioPath, {
+    accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+    label: 'OpenAI TTS custom voice sample audio'
+  })
+  const materializedConsentAudio = options.consentAudioPath
+    ? await materializeMediaInput(options.consentAudioPath, {
+        accept: 'audio/*,application/octet-stream;q=0.9,*/*;q=0.8',
+        label: 'OpenAI TTS custom voice consent recording'
+      })
+    : undefined
+
+  try {
+  const sampleAudio = await validateOpenAITtsCustomVoiceAudio(materializedSampleAudio.path, 'sample audio')
   const consentId = options.consentId?.trim() || (
-    options.consentAudioPath
+    materializedConsentAudio
       ? await uploadOpenAITtsVoiceConsent(baseURL, apiKey, {
-          consentAudioPath: options.consentAudioPath,
+          consentAudioPath: materializedConsentAudio.path,
           consentLanguage: options.consentLanguage,
           consentName: options.consentName
         })
@@ -192,6 +204,12 @@ const createOpenAITtsCustomVoice = async (
     voiceId: data.id,
     sampleAudio,
     voiceName
+  }
+  } finally {
+    await Promise.all([
+      materializedSampleAudio.cleanup(),
+      materializedConsentAudio?.cleanup() ?? Promise.resolve()
+    ])
   }
 }
 

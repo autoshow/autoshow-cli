@@ -70,41 +70,6 @@ const waitForPidsExit = async (pids: number[], timeoutMs: number): Promise<boole
   }
 }
 
-const stopLlamaServerProcesses = (pids: number[], signal: NodeJS.Signals): void => {
-  for (const pid of pids) {
-    try {
-      process.kill(pid, signal)
-    } catch (error) {
-      if (getErrorCode(error) !== 'ESRCH') {
-        throw error
-      }
-    }
-  }
-}
-
-export const stopLlamaServerPids = async (
-  pids: number[],
-  options: LlamaServerResourceOptions = {}
-): Promise<void> => {
-  stopLlamaServerProcesses(pids, 'SIGTERM')
-  const stoppedAfterTerm = await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)
-    && await waitForPidsExit(pids, LLAMA_SERVER_STOP_TIMEOUT_MS)
-  if (stoppedAfterTerm) {
-    await clearLlamaServerState(undefined, options)
-    return
-  }
-
-  stopLlamaServerProcesses(pids, 'SIGKILL')
-  const stoppedAfterKill = await waitForLlamaHealthState(false, LLAMA_SERVER_STOP_TIMEOUT_MS)
-    && await waitForPidsExit(pids, LLAMA_SERVER_STOP_TIMEOUT_MS)
-  if (stoppedAfterKill) {
-    await clearLlamaServerState(undefined, options)
-    return
-  }
-
-  throw new Error(`Failed to stop existing llama-server on localhost:8080 (pids: ${pids.join(', ')})`)
-}
-
 const stopRecordedDefaultLlamaServer = async (
   options: LlamaServerResourceOptions = {}
 ): Promise<boolean> => {

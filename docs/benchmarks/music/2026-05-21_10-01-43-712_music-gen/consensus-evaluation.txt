@@ -1,0 +1,49 @@
+Music Generation Consensus Evaluation
+Run: 2026-05-21_10-01-43-712_music-gen
+Providers with successful artifacts: 5
+
+Scope
+
+This evaluation uses only run metadata and artifact checks. It does not claim audio or musical quality judgment. Duration, file size, processing time, lyrics metadata, audio metadata, and cost are evidence only unless a report contains an explicit quality metric.
+
+Artifact placement
+
+All music outputs referenced by run.json are present in the run directory root under docs/benchmarks/music/2026-05-21_10-01-43-712_music-gen. The generated evidence packet reported no warnings.
+
+Provider measurements from the evidence packet
+
+| Provider | Artifact | Duration | File size | Audio metadata | Processing time | Cost |
+| --- | --- | ---: | ---: | --- | ---: | ---: |
+| elevenlabs/music_v1 | generated-music-elevenlabs-music_v1.mp3 | 180.00s | 2,879,783 bytes | 44.1 kHz, 128 kbps | 32.759s | 84.0000 cents ($0.8400) |
+| minimax/music-2.6 | generated-music-minimax-music-2.6.mp3 | 205.217s | 6,575,564 bytes | 44.1 kHz, 2 channels, 256 kbps | 110.269s | 16.0000 cents ($0.1600) |
+| minimax/music-2.6-free | generated-music-minimax-music-2.6-free.mp3 | 196.728s | 6,303,620 bytes | 44.1 kHz, 2 channels, 256 kbps | 107.280s | 1.0000 cents ($0.0100) |
+| gemini/lyria-3-clip-preview | generated-music-gemini-lyria-3-clip-preview.mp3 | 30.00s | 744,609 bytes | audio metadata not reported | 21.091s | 4.0000 cents ($0.0400) |
+| gemini/lyria-3-pro-preview | generated-music-gemini-lyria-3-pro-preview.mp3 | 180.00s | 4,266,752 bytes | audio metadata not reported | 40.827s | 8.0000 cents ($0.0800) |
+
+Top measurable rankings from packet metadata
+
+Fastest service providers:
+
+1. gemini/lyria-3-clip-preview at 21.091s
+2. elevenlabs/music_v1 at 32.759s
+3. gemini/lyria-3-pro-preview at 40.827s
+4. minimax/music-2.6-free at 107.280s
+5. minimax/music-2.6 at 110.269s
+
+Cheapest service providers:
+
+1. minimax/music-2.6-free at 1.0000 cents ($0.0100)
+2. gemini/lyria-3-clip-preview at 4.0000 cents ($0.0400)
+3. gemini/lyria-3-pro-preview at 8.0000 cents ($0.0800)
+4. minimax/music-2.6 at 16.0000 cents ($0.1600)
+5. elevenlabs/music_v1 at 84.0000 cents ($0.8400)
+
+Coverage notes
+
+- All five providers are service providers for report grouping; no local music providers were present.
+- The Gemini clip-preview output is materially shorter than the other artifacts, so speed and price rankings should be read as run metadata rather than normalized cost-per-minute or speed-per-minute comparisons.
+- The MiniMax artifacts reported the largest file sizes and highest bitrate metadata, while file size and bitrate remain context only and are not quality metrics.
+
+Quality ranking
+
+Unavailable. No explicit music qualityScore or humanQualityScore metric was present. File size, duration, bitrate, cost, speed, and subjective judgment are not used as quality proxies.

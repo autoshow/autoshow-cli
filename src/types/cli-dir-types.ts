@@ -8,6 +8,7 @@ export type BatchItem = {
   author?: string
   publishedAt?: string
   duration?: string
+  description?: string
   directDownload?: boolean
   meta?: Record<string, unknown>
 }
@@ -18,7 +19,7 @@ export type BatchChildRunContext = {
   outputDir?: string
 }
 
-export type BatchSourceKind = 'podcast_rss' | 'youtube_channel' | 'youtube_playlist' | 'url_list'
+type BatchSourceKind = 'podcast_rss' | 'youtube_channel' | 'youtube_playlist' | 'url_list'
 
 export type BatchSource = {
   sourceKind: BatchSourceKind

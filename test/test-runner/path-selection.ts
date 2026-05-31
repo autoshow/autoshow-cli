@@ -1,6 +1,5 @@
 const E2E_PREFIX = 'test/test-cases/e2e/'
 const TEST_CASES_PREFIX = 'test/test-cases/'
-const TEST_PRICE_PREFIX = 'test/test-price/'
 
 export const normalizePathFilter = (pathFilter: string): string => {
   return pathFilter
@@ -9,7 +8,7 @@ export const normalizePathFilter = (pathFilter: string): string => {
     .replace(/\/+$/, '')
 }
 
-export const matchPathFilters = (file: string, pathFilters: string[]): boolean => {
+const matchPathFilters = (file: string, pathFilters: string[]): boolean => {
   return pathFilters.some(pathFilter => {
     const normalizedFilter = normalizePathFilter(pathFilter)
     const prefix = normalizedFilter.endsWith('/') ? normalizedFilter : `${normalizedFilter}/`
@@ -32,9 +31,6 @@ export const resolveSelectedFiles = (allFiles: string[], pathFilters: string[]):
 
 const formatSelectionPath = (pathFilter: string): string => {
   const normalized = normalizePathFilter(pathFilter)
-  if (normalized.startsWith(TEST_PRICE_PREFIX)) {
-    return normalized.slice(TEST_PRICE_PREFIX.length)
-  }
   if (normalized.startsWith(E2E_PREFIX)) {
     return normalized.slice(E2E_PREFIX.length)
   }
@@ -46,8 +42,4 @@ const formatSelectionPath = (pathFilter: string): string => {
 
 export const formatSelectedPathsLabel = (pathFilters: string[]): string => {
   return `Selected paths: ${pathFilters.map(formatSelectionPath).join(', ')}`
-}
-
-export const formatSelectedPriceSuitesLabel = (pathFilters: string[]): string => {
-  return `Selected price suites: ${pathFilters.map(formatSelectionPath).join(', ')}`
 }

@@ -90,7 +90,7 @@ export const parseLlamaServerIdentityFromModels = (raw: unknown): LlamaServerIde
   }
 }
 
-export const mergeLlamaServerIdentity = (
+const mergeLlamaServerIdentity = (
   propsIdentity: LlamaServerIdentity | null,
   modelsIdentity: LlamaServerIdentity | null
 ): LlamaServerIdentity | null => {

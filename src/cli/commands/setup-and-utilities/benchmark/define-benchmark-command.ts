@@ -4,11 +4,21 @@ import type { BenchmarkFlags } from './benchmark-types'
 
 export const benchmarkCommand = defineCliCommand({
   name: 'benchmark',
-  description: 'Benchmark STT transcription quality or score an existing TTS run',
-  parameters: [{ key: '[input]', description: 'Audio file path to benchmark, or TTS run directory with --tts' }],
+  description: 'Benchmark STT transcription quality, score an existing TTS run, or judge an existing image/video run',
+  parameters: [{ key: '[input]', description: 'Audio file path to benchmark, TTS run directory with --tts, image run directory with --image, or video run directory with --video' }],
   flags: {
     tts: {
       description: 'Score an existing TTS run directory and write voice-quality reports',
+      type: Boolean,
+      default: false
+    },
+    image: {
+      description: 'Score an existing image run directory and write image-quality reports',
+      type: Boolean,
+      default: false
+    },
+    video: {
+      description: 'Score an existing video run directory and write video-quality reports',
       type: Boolean,
       default: false
     },
@@ -71,6 +81,16 @@ export const benchmarkCommand = defineCliCommand({
       description: 'Keep temporary normalized audio files created during TTS scoring',
       type: Boolean,
       default: false
+    },
+    'image-judge-model': {
+      description: 'OpenAI vision model for paid image rubric judging',
+      type: String,
+      default: 'gpt-5.5'
+    },
+    'video-judge-model': {
+      description: 'OpenAI vision model for paid video rubric judging',
+      type: String,
+      default: 'gpt-5.5'
     }
   },
   help: {
@@ -81,7 +101,9 @@ export const benchmarkCommand = defineCliCommand({
       ['bun as benchmark audio.mp3 --bitrates 96,64,32,16 --speeds 1.5,2.0,3.0', 'Custom bitrate and speed ranges'],
       ['bun as benchmark docs/benchmarks/tts/<run> --tts', 'Score an existing TTS run with full scoring'],
       ['bun as benchmark docs/benchmarks/tts/<run> --tts --tts-mode local', 'Score a TTS run without paid calls'],
-      ['bun as benchmark docs/benchmarks/tts/<run> --tts --tts-roundtrip-dir <dir>', 'Use existing roundtrip STT transcripts']
+      ['bun as benchmark docs/benchmarks/tts/<run> --tts --tts-roundtrip-dir <dir>', 'Use existing roundtrip STT transcripts'],
+      ['bun as benchmark docs/benchmarks/image/<run> --image', 'Score an existing image run with OpenAI vision judging'],
+      ['bun as benchmark docs/benchmarks/video/<run> --video', 'Score an existing video run with OpenAI vision judging']
     ]
   }
 }, async (ctx) => {

@@ -15,6 +15,11 @@
     "models": {
       "veo-3.1-generate-preview": {
         "description": "Veo 3.1 — standard quality video generation",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Paid tier standard pay-as-you-go",
+        "pricingNotes": "Gemini pricing lists Veo 3.1 Standard at $0.40/s for 720p and 1080p, and $0.60/s for 4k. The 4k rate is represented in the video pricing helper; 1080p and 4k requests are normalized to 8s by CLI constraints.",
         "baseCostPerSecondUSD": 0.4,
         "baseCostPerSecondCents": 40,
         "resolutionMultiplier1080p": 1,
@@ -25,6 +30,11 @@
       },
       "veo-3.1-fast-generate-preview": {
         "description": "Veo 3.1 Fast — faster video generation",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Paid tier standard pay-as-you-go",
+        "pricingNotes": "Gemini pricing lists Veo 3.1 Fast at $0.10/s for 720p, $0.12/s for 1080p, and $0.30/s for 4k. The 4k rate is represented in the video pricing helper; 1080p and 4k requests are normalized to 8s by CLI constraints.",
         "baseCostPerSecondUSD": 0.1,
         "baseCostPerSecondCents": 10,
         "resolutionMultiplier1080p": 1.2,
@@ -35,6 +45,11 @@
       },
       "veo-3.1-lite-generate-preview": {
         "description": "Veo 3.1 Lite — lower-cost video generation",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Paid tier standard pay-as-you-go",
+        "pricingNotes": "Gemini pricing lists Veo 3.1 Lite at $0.05/s for 720p and $0.08/s for 1080p. 4k output is not supported.",
         "baseCostPerSecondUSD": 0.05,
         "baseCostPerSecondCents": 5,
         "resolutionMultiplier1080p": 1.6,
@@ -59,6 +74,11 @@
     "models": {
       "MiniMax-Hailuo-2.3": {
         "description": "MiniMax Hailuo 2.3 — flagship video model",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.28,
         "blockCost720pCents": 28,
@@ -71,30 +91,32 @@
       },
       "MiniMax-Hailuo-2.3-Fast": {
         "description": "MiniMax Hailuo 2.3 Fast — fast image-to-video model",
-        "blockSizeSec": 6,
-        "blockCost720pUSD": 0.28,
-        "blockCost720pCents": 28,
-        "blockCost1080pUSD": 0.49,
-        "blockCost1080pCents": 49,
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax Hailuo 2.3 Fast estimates use published fixed duration/resolution prices as normalized by AutoShow: 768P/CLI 720p at $0.19 for 6s and $0.32 for 10s, and 1080P at $0.33 for 6s. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "fixedCostByResolutionDurationCents": {
+          "720p": {
+            "6": 19,
+            "10": 32
+          },
+          "1080p": {
+            "6": 33
+          }
+        },
         "estimation": {
           "costMultiplier": 1,
           "msPerSecond": 12000
         }
       },
-      "MiniMax-Hailuo-02": {
-        "description": "MiniMax Hailuo 02 — balanced video model",
-        "blockSizeSec": 6,
-        "blockCost720pUSD": 0.28,
-        "blockCost720pCents": 28,
-        "blockCost1080pUSD": 0.49,
-        "blockCost1080pCents": 49,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 12085
-        }
-      },
       "T2V-01-Director": {
         "description": "T2V-01-Director — camera-control focused video model",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -105,6 +127,11 @@
       },
       "T2V-01": {
         "description": "T2V-01 — text-to-video model",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -115,6 +142,11 @@
       },
       "I2V-01-Director": {
         "description": "I2V-01-Director — camera-control focused image-to-video model",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -125,6 +157,11 @@
       },
       "I2V-01-live": {
         "description": "I2V-01-live — image-to-video model tuned for live subjects",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -135,6 +172,11 @@
       },
       "I2V-01": {
         "description": "I2V-01 — image-to-video model",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -145,6 +187,11 @@
       },
       "S2V-01": {
         "description": "S2V-01 — subject-reference video model",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go video pricing",
+        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "blockSizeSec": 6,
         "blockCost720pUSD": 0.19,
         "blockCost720pCents": 19,
@@ -174,36 +221,59 @@
     "models": {
       "cogvideox-3": {
         "description": "CogVideoX-3 text-to-video model",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI video generation public pricing",
+        "pricingNotes": "Z.AI video estimates use published per-job pricing for the selected model and mode as normalized by AutoShow. Free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "baseJobFeeUSD": 0.2,
-        "baseJobFeeCents": 20
+        "baseJobFeeCents": 20,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 29669
+        }
       },
       "viduq1-text": {
         "description": "Vidu Q1 text-to-video model",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI video generation public pricing",
+        "pricingNotes": "Z.AI video estimates use published per-job pricing for the selected model and mode as normalized by AutoShow. Free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "baseJobFeeUSD": 0.4,
-        "baseJobFeeCents": 40
-      },
-      "viduq1-image": {
-        "description": "Vidu Q1 image-to-video model",
-        "baseJobFeeUSD": 0.4,
-        "baseJobFeeCents": 40
-      },
-      "viduq1-start-end": {
-        "description": "Vidu Q1 first-and-last-frame video model",
-        "baseJobFeeUSD": 0.4,
-        "baseJobFeeCents": 40
+        "baseJobFeeCents": 40,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 36089
+        }
       },
       "vidu2-image": {
         "description": "Vidu 2 image-to-video model",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI video generation public pricing",
+        "pricingNotes": "Z.AI video estimates use published per-job pricing for the selected model and mode as normalized by AutoShow. Free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "baseJobFeeUSD": 0.2,
         "baseJobFeeCents": 20
       },
       "vidu2-start-end": {
         "description": "Vidu 2 first-and-last-frame video model",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI video generation public pricing",
+        "pricingNotes": "Z.AI video estimates use published per-job pricing for the selected model and mode as normalized by AutoShow. Free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "baseJobFeeUSD": 0.2,
         "baseJobFeeCents": 20
       },
       "vidu2-reference": {
         "description": "Vidu 2 reference-based video model",
+        "pricingSourceUrl": "https://docs.z.ai/guides/overview/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Z.AI video generation public pricing",
+        "pricingNotes": "Z.AI video estimates use published per-job pricing for the selected model and mode as normalized by AutoShow. Free quotas, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "baseJobFeeUSD": 0.4,
         "baseJobFeeCents": 40
       }
@@ -214,8 +284,7 @@
     "type": "api",
     "resolutions": [
       "480p",
-      "720p",
-      "1080p"
+      "720p"
     ],
     "billedDurations": [
       1,
@@ -237,9 +306,22 @@
     "models": {
       "grok-imagine-video": {
         "description": "Grok Imagine text-to-video model",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "xAI public Imagine API video pricing",
+        "pricingNotes": "xAI Imagine video estimates use published per-second rates, with resolution-specific multipliers normalized by AutoShow. Input image/reference image charges are included when selected, and input video charges are included when input-video duration is known. Discounts, enterprise pricing, taxes, and provider credits are ignored unless provider usage is returned.",
         "baseCostPerSecondUSD": 0.05,
         "baseCostPerSecondCents": 5,
-        "resolutionMultiplier720p": 1.4
+        "resolutionMultiplier720p": 1.4,
+        "inputImageCostUSD": 0.002,
+        "inputImageCostCents": 0.2,
+        "inputVideoCostPerSecondUSD": 0.01,
+        "inputVideoCostPerSecondCents": 1,
+        "estimation": {
+          "costMultiplier": 1,
+          "msPerSecond": 10833
+        }
       }
     }
   },
@@ -260,55 +342,13 @@
     "models": {
       "gen4.5": {
         "description": "Runway Gen-4.5 text-to-video model",
+        "pricingSourceUrl": "https://docs.dev.runwayml.com/guides/pricing/",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Runway API credit pricing",
+        "pricingNotes": "Runway Gen-4.5 is priced at 12 credits per second, represented as $0.12/s using the API credit reference. Plan credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "baseCostPerSecondUSD": 0.12,
         "baseCostPerSecondCents": 12
-      }
-    }
-  },
-  "deapi": {
-    "description": "deAPI video generation",
-    "type": "api",
-    "sizes": [
-      "256x256",
-      "512x512",
-      "768x768",
-      "1024x1024"
-    ],
-    "billedDurations": [
-      1,
-      2.0416666666666665,
-      4,
-      5,
-      8.033333333333333,
-      10.041666666666666
-    ],
-    "models": {
-      "Ltxv_13B_0_9_8_Distilled_FP8": {
-        "description": "LTX-Video 0.9.8 13B text-to-video generation",
-        "baseCostPerSecondUSD": 0.0008685,
-        "baseCostPerSecondCents": 0.08685,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 14990
-        }
-      },
-      "Ltx2_19B_Dist_FP8": {
-        "description": "LTX-2 19B Distilled text-to-video generation",
-        "baseCostPerSecondUSD": 0.0008685,
-        "baseCostPerSecondCents": 0.08685,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 20000
-        }
-      },
-      "Ltx2_3_22B_Dist_INT8": {
-        "description": "LTX-2.3 22B Distilled text-to-video generation",
-        "baseCostPerSecondUSD": 0.0008685,
-        "baseCostPerSecondCents": 0.08685,
-        "estimation": {
-          "costMultiplier": 1,
-          "msPerSecond": 20000
-        }
       }
     }
   }

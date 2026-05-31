@@ -7,6 +7,7 @@ import { computeActualProcessingTimes } from '~/utils/pricing/compute-processing
 import type { ResumeTarget, RuntimeOptions, Step4Metadata, TtsTarget } from '~/types'
 
 const TTS_PROVIDER_FLAGS = [
+  'all-tts',
   'kitten-tts',
   'elevenlabs-tts',
   'minimax-tts',
@@ -18,9 +19,7 @@ const TTS_PROVIDER_FLAGS = [
   'deepgram-tts',
   'speechify-tts',
   'hume-tts',
-  'cartesia-tts',
-  'gcloud-tts',
-  'deapi-tts'
+  'cartesia-tts'
 ] as const
 
 const TTS_MODEL_FIELDS = {
@@ -35,9 +34,7 @@ const TTS_MODEL_FIELDS = {
   deepgram: ['deepgramTtsModels', 'deepgramTtsModel'],
   speechify: ['speechifyTtsModels', 'speechifyTtsModel'],
   hume: ['humeTtsModels', 'humeTtsModel'],
-  cartesia: ['cartesiaTtsModels', 'cartesiaTtsModel'],
-  gcloud: ['gcloudTtsModels', 'gcloudTtsModel'],
-  deapi: ['deapiTtsModels', 'deapiTtsModel']
+  cartesia: ['cartesiaTtsModels', 'cartesiaTtsModel']
 } as const
 
 const clearTtsProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
@@ -65,11 +62,7 @@ const clearTtsProviderModels = (opts: RuntimeOptions): RuntimeOptions => ({
   humeTtsModels: undefined,
   humeTtsModel: undefined,
   cartesiaTtsModels: undefined,
-  cartesiaTtsModel: undefined,
-  gcloudTtsModels: undefined,
-  gcloudTtsModel: undefined,
-  deapiTtsModels: undefined,
-  deapiTtsModel: undefined
+  cartesiaTtsModel: undefined
 })
 
 const collectTtsTargetsForProviders = (

@@ -17,7 +17,7 @@ import type {
   PriorPanelReference,
   ResolvedReferenceImages,
   ResolveReferenceImagesOptions,
-} from '../types'
+} from '../types/comic-types'
 
 
 

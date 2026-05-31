@@ -1,43 +1,37 @@
 import { extname } from 'node:path'
-import type { BflImageModel, DeapiImageModel, GeminiImageModel, GrokImageModel, ImageGenOptions, ImageTarget, MinimaxImageModel, OpenAIImageModel, RunwayImageModel, Step5Metadata } from '~/types'
+import type { BflImageModel, GeminiImageModel, GrokImageModel, ImageGenOptions, ImageTarget, OpenAIImageModel, ReveImageModel, Step5Metadata } from '~/types'
 import { CLIUsageError } from '~/utils/error-handler'
 import {
-  isNativeGeminiImageModel,
   supportsGeminiImageSize,
   validateBflImageModel,
   validateGeminiImageModel,
-  validateDeapiImageModel,
   validateGrokImageModel,
-  validateMinimaxImageModel,
   validateOpenAIImageModel,
-  validateRunwayImageModel
+  validateReveImageModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { ensureBflImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/bfl/bfl-image-gen'
-import { ensureDeapiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/deapi/deapi-image-gen'
 import { ensureGeminiImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/gemini/gemini-image-gen'
 import { ensureGrokImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/grok/grok-image-gen'
 import { ensureOpenAIImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/openai/openai-image-gen'
-import { ensureRunwayImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/runway/runway-image-gen'
+import { ensureReveImageGenSetup } from '~/cli/commands/process-steps/step-5-image/image-services/reve/reve-image-gen'
 import { sanitizeModelName } from '~/cli/commands/process-steps/target-runner'
 import { getBflImageExtension, normalizeBflImageOutputFormat, normalizeBflImageSize, runBflImageGen } from './image-services/bfl/run-bfl-image-gen'
-import { normalizeDeapiImageSize, runDeapiImageGen } from './image-services/deapi/run-deapi-image-gen'
 import { runGeminiImageGen } from './image-services/gemini/run-gemini-image-gen'
 import { normalizeGrokImageResolution, runGrokImageGen } from './image-services/grok/run-grok-image-gen'
-import { normalizeMinimaxImageSize, runMinimaxImageGen } from './image-services/minimax/run-minimax-image-gen'
 import { runOpenAIImageGen } from './image-services/openai/run-openai-image-gen'
-import { normalizeRunwayImageRatio, normalizeRunwayImageResolution, runRunwayImageGen } from './image-services/runway/run-runway-image-gen'
+import { getReveImageExtension, normalizeReveImageAspectRatio, normalizeReveImageOutputFormat, normalizeReveImageSize, runReveImageGen } from './image-services/reve/run-reve-image-gen'
 import {
   BFL_IMAGE_INPUT_MIME_TYPES,
   GEMINI_IMAGE_INPUT_MIME_TYPES,
   GROK_IMAGE_INPUT_MIME_TYPES,
-  MINIMAX_IMAGE_INPUT_MIME_TYPES,
   OPENAI_IMAGE_INPUT_MIME_TYPES,
   OPENAI_IMAGE_MASK_MIME_TYPES,
+  REVE_IMAGE_INPUT_MIME_TYPES,
   validateImageInputReferences,
   validateImageMaskReference
 } from './image-utils/image-inputs'
 
-export const sanitizeImageModelName = sanitizeModelName
+const sanitizeImageModelName = sanitizeModelName
 
 const normalizeOpenAIImageExtension = (format: string | undefined): string => {
   if (format === 'jpeg') {
@@ -50,16 +44,10 @@ const OPENAI_FIXED_IMAGE_SIZES = new Set(['auto', '1024x1024', '1536x1024', '102
 const OPENAI_IMAGE_QUALITIES = new Set(['auto', 'low', 'medium', 'high'])
 const OPENAI_IMAGE_FORMATS = new Set(['png', 'jpeg', 'webp'])
 const OPENAI_IMAGE_BACKGROUNDS = new Set(['auto', 'transparent', 'opaque'])
-const GEMINI_IMAGEN_ASPECT_RATIOS = new Set(['1:1', '3:4', '4:3', '9:16', '16:9'])
 const GEMINI_NATIVE_ASPECT_RATIOS = new Set(['1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9'])
 const GEMINI_IMAGE_SIZES = new Set(['1K', '2K', '4K'])
 const GEMINI_RESPONSE_MODES = new Set(['image', 'text-image'])
-const GEMINI_PERSON_GENERATION_VALUES = new Set(['dont_allow', 'allow_adult', 'allow_all'])
 const GROK_ASPECT_RATIOS = new Set(['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3', '2:1', '1:2', '19.5:9', '9:19.5', '20:9', '9:20', 'auto'])
-const MINIMAX_ASPECT_RATIOS = new Set(['1:1', '16:9', '4:3', '3:2', '2:3', '3:4', '9:16', '21:9'])
-
-const getBflImageInputLimit = (model: BflImageModel): number =>
-  model.includes('klein') ? 4 : 8
 
 const hasEditInputs = (options: Pick<ImageGenOptions, 'imageInputs' | 'imageMask'>): boolean =>
   (options.imageInputs?.length ?? 0) > 0 || options.imageMask !== undefined
@@ -102,16 +90,6 @@ const validateImageCount = (
   return count
 }
 
-const rejectImageCountForSingleImageProvider = (
-  provider: string,
-  model: string,
-  value: number | undefined
-): void => {
-  if (value !== undefined) {
-    throw unsupportedFlagError(provider, model, ['--image-count'], 'This provider supports single-image requests only; omit --image-count.')
-  }
-}
-
 const collectUnsupportedCommonFlags = (
   options: ImageGenOptions,
   flagNames: Array<keyof ImageGenOptions>,
@@ -123,16 +101,12 @@ const IMAGE_OPTION_LABELS: Record<keyof ImageGenOptions, string> = {
   geminiImageModel: '--gemini-image',
   openaiImageModels: '--openai-image',
   openaiImageModel: '--openai-image',
-  minimaxImageModels: '--minimax-image',
-  minimaxImageModel: '--minimax-image',
   grokImageModels: '--grok-image',
   grokImageModel: '--grok-image',
-  runwayImageModels: '--runway-image',
-  runwayImageModel: '--runway-image',
   bflImageModels: '--bfl-image',
   bflImageModel: '--bfl-image',
-  deapiImageModels: '--deapi-image',
-  deapiImageModel: '--deapi-image',
+  reveImageModels: '--reve-image',
+  reveImageModel: '--reve-image',
   imageAspectRatio: '--image-aspect-ratio',
   imageSize: '--image-size',
   imageQuality: '--image-quality',
@@ -142,7 +116,6 @@ const IMAGE_OPTION_LABELS: Record<keyof ImageGenOptions, string> = {
   imageInputs: '--image-input',
   imageMask: '--image-mask',
   imageResponseMode: '--image-response-mode',
-  geminiPersonGeneration: '--gemini-person-generation',
   geminiSearchGrounding: '--gemini-search-grounding',
   imageCompression: '--image-compression',
   imageProviderConcurrency: '--image-provider-concurrency',
@@ -196,7 +169,7 @@ const validateFixedOpenAIImageSize = (model: OpenAIImageModel, size: string | un
   throw CLIUsageError(`Invalid --image-size value "${size}" for ${model}. Expected auto, 1024x1024, 1536x1024, or 1024x1536.`)
 }
 
-export const validateOpenAIImageOptions = (
+const validateOpenAIImageOptions = (
   model: OpenAIImageModel,
   options: Pick<ImageGenOptions, 'imageSize' | 'imageQuality' | 'imageFormat' | 'imageBackground' | 'imageCompression'>
 ): void => {
@@ -225,20 +198,11 @@ export const getExpectedImageCount = (
   target: Pick<ImageTarget, 'service' | 'model'>,
   options: ImageGenOptions
 ): number => {
-  if (target.service === 'openai' || target.service === 'grok' || target.service === 'minimax') {
+  if (target.service === 'openai' || target.service === 'grok') {
     return Math.max(1, options.imageCount ?? 1)
   }
 
-  if (target.service !== 'gemini') {
-    return 1
-  }
-
-  const model = target.model as GeminiImageModel
-  if (isNativeGeminiImageModel(model)) {
-    return 1
-  }
-
-  return Math.max(1, options.imageCount ?? 1)
+  return 1
 }
 
 const getExpectedImageExtension = (
@@ -249,10 +213,6 @@ const getExpectedImageExtension = (
     return normalizeOpenAIImageExtension(options.imageFormat)
   }
 
-  if (target.service === 'minimax') {
-    return 'jpeg'
-  }
-
   if (target.service === 'grok') {
     return 'jpg'
   }
@@ -261,10 +221,14 @@ const getExpectedImageExtension = (
     return getBflImageExtension(options.imageFormat)
   }
 
+  if (target.service === 'reve') {
+    return getReveImageExtension(options.imageFormat)
+  }
+
   return 'png'
 }
 
-export const getImageArtifactFileName = (
+const getImageArtifactFileName = (
   target: Pick<ImageTarget, 'service' | 'model'> | Pick<Step5Metadata, 'imageService' | 'imageModel'>,
   singleTarget: boolean,
   sourceFileName: string,
@@ -302,7 +266,7 @@ export const getExpectedImageArtifactFileNames = (
   )
 }
 
-export const getStep5ImageFileNames = (
+const getStep5ImageFileNames = (
   metadata: Pick<Step5Metadata, 'imageFileNames'>
 ): string[] => metadata.imageFileNames
 
@@ -334,53 +298,32 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
   const targets: ImageTarget[] = []
   const geminiModels = options.geminiImageModels ?? (options.geminiImageModel ? [options.geminiImageModel] : [])
   const openaiModels = options.openaiImageModels ?? (options.openaiImageModel ? [options.openaiImageModel] : [])
-  const minimaxModels = options.minimaxImageModels ?? (options.minimaxImageModel ? [options.minimaxImageModel] : [])
   const grokModels = options.grokImageModels ?? (options.grokImageModel ? [options.grokImageModel] : [])
-  const runwayModels = options.runwayImageModels ?? (options.runwayImageModel ? [options.runwayImageModel] : [])
   const bflModels = options.bflImageModels ?? (options.bflImageModel ? [options.bflImageModel] : [])
-  const deapiModels = options.deapiImageModels ?? (options.deapiImageModel ? [options.deapiImageModel] : [])
+  const reveModels = options.reveImageModels ?? (options.reveImageModel ? [options.reveImageModel] : [])
 
   for (const rawModel of geminiModels) {
     const model: GeminiImageModel = validateGeminiImageModel(rawModel)
-    const native = isNativeGeminiImageModel(model)
     if (typeof options.imageSize === 'string' && options.imageSize.length > 0 && !supportsGeminiImageSize(model)) {
       throw CLIUsageError(`--image-size is not supported by Gemini/${model}. Supported alternatives: omit --image-size or use an image-size-capable Gemini image model.`)
     }
     validateEnumOption('Gemini', model, 'image-size', options.imageSize, GEMINI_IMAGE_SIZES)
     validateEnumOption('Gemini', model, 'image-response-mode', options.imageResponseMode, GEMINI_RESPONSE_MODES)
-    validateEnumOption('Gemini', model, 'gemini-person-generation', options.geminiPersonGeneration, GEMINI_PERSON_GENERATION_VALUES)
-
-    if (native) {
-      validateEnumOption('Gemini', model, 'image-aspect-ratio', options.imageAspectRatio, GEMINI_NATIVE_ASPECT_RATIOS)
-      if (options.imageCount !== undefined) {
-        throw unsupportedFlagError('Gemini', model, ['--image-count'], 'Native Gemini image generation returns one image per request; omit --image-count.')
-      }
-      if (options.geminiPersonGeneration !== undefined) {
-        throw unsupportedFlagError('Gemini', model, ['--gemini-person-generation'], 'Use this flag only with Imagen models.')
-      }
-      if (options.imageMask !== undefined) {
-        throw unsupportedFlagError('Gemini', model, ['--image-mask'], 'Gemini native image editing supports reference images via --image-input, not masks.')
-      }
-      validateImageInputReferences(options.imageInputs, {
-        provider: 'Gemini',
-        model,
-        allowedMimeTypes: GEMINI_IMAGE_INPUT_MIME_TYPES
-      })
-    } else {
-      validateImageCount('Gemini', model, options.imageCount, 1, 4)
-      validateEnumOption('Gemini', model, 'image-aspect-ratio', options.imageAspectRatio, GEMINI_IMAGEN_ASPECT_RATIOS)
-      const unsupported: string[] = []
-      if ((options.imageInputs?.length ?? 0) > 0) unsupported.push('--image-input')
-      if (options.imageMask !== undefined) unsupported.push('--image-mask')
-      if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
-      if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
-      if (unsupported.length > 0) {
-        throw unsupportedFlagError('Gemini', model, unsupported, 'Use a native Gemini image model for reference/edit workflows.')
-      }
+    validateEnumOption('Gemini', model, 'image-aspect-ratio', options.imageAspectRatio, GEMINI_NATIVE_ASPECT_RATIOS)
+    if (options.imageCount !== undefined) {
+      throw unsupportedFlagError('Gemini', model, ['--image-count'], 'Gemini native image generation returns one image per request; omit --image-count.')
     }
+    if (options.imageMask !== undefined) {
+      throw unsupportedFlagError('Gemini', model, ['--image-mask'], 'Gemini native image editing supports reference images via --image-input, not masks.')
+    }
+    validateImageInputReferences(options.imageInputs, {
+      provider: 'Gemini',
+      model,
+      allowedMimeTypes: GEMINI_IMAGE_INPUT_MIME_TYPES
+    })
     const unsupportedCommon = collectUnsupportedCommonFlags(options, ['imageQuality', 'imageFormat', 'imageBackground', 'imageCompression'], IMAGE_OPTION_LABELS)
     if (unsupportedCommon.length > 0) {
-      throw unsupportedFlagError('Gemini', model, unsupportedCommon, 'Supported Gemini image options are --image-aspect-ratio, --image-size for supported models, --image-count for Imagen, and native Gemini edit/search flags.')
+      throw unsupportedFlagError('Gemini', model, unsupportedCommon, 'Supported Gemini image options are --image-aspect-ratio, --image-size, --image-response-mode, --image-input references, and --gemini-search-grounding.')
     }
 
     targets.push({
@@ -394,9 +337,7 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
           inputs: options.imageInputs,
           aspectRatio: options.imageAspectRatio,
           imageSize: options.imageSize,
-          imageCount: options.imageCount,
           responseMode: options.imageResponseMode === 'text-image' ? 'text-image' : 'image',
-          personGeneration: options.geminiPersonGeneration,
           searchGrounding: options.geminiSearchGrounding
         })
       }
@@ -416,10 +357,9 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     if (options.imageAspectRatio !== undefined) {
       throw unsupportedFlagError('OpenAI', model, ['--image-aspect-ratio'], 'Use --image-size for OpenAI dimensions.')
     }
-    if (options.imageResponseMode !== undefined || options.geminiPersonGeneration !== undefined || options.geminiSearchGrounding === true) {
+    if (options.imageResponseMode !== undefined || options.geminiSearchGrounding === true) {
       const unsupported: string[] = []
       if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
-      if (options.geminiPersonGeneration !== undefined) unsupported.push('--gemini-person-generation')
       if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
       throw unsupportedFlagError('OpenAI', model, unsupported, 'These flags are Gemini-only.')
     }
@@ -458,47 +398,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     })
   }
 
-  for (const rawModel of minimaxModels) {
-    const model: MinimaxImageModel = validateMinimaxImageModel(rawModel)
-    validateImageCount('MiniMax', model, options.imageCount, 1, 9)
-    validateEnumOption('MiniMax', model, 'image-aspect-ratio', options.imageAspectRatio, MINIMAX_ASPECT_RATIOS)
-    if (!options.imageAspectRatio) {
-      normalizeMinimaxImageSize(options.imageSize)
-    }
-    const unsupported = collectUnsupportedCommonFlags(options, [
-      'imageQuality',
-      'imageFormat',
-      'imageBackground',
-      'imageMask',
-      'imageResponseMode',
-      'geminiPersonGeneration',
-      'imageCompression'
-    ], IMAGE_OPTION_LABELS)
-    if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
-    if (unsupported.length > 0) {
-      throw unsupportedFlagError('MiniMax', model, unsupported, 'Supported MiniMax image options: --image-aspect-ratio, --image-size WIDTHxHEIGHT when no aspect ratio is provided, --image-count 1-9, and --image-input references.')
-    }
-    validateImageInputReferences(options.imageInputs, {
-      provider: 'MiniMax',
-      model,
-      allowedMimeTypes: MINIMAX_IMAGE_INPUT_MIME_TYPES
-    })
-
-    targets.push({
-      service: 'minimax',
-      model,
-      run: async (prompt, outputDir) => {
-        return await runMinimaxImageGen(prompt, outputDir, {
-          model,
-          aspectRatio: options.imageAspectRatio,
-          count: options.imageCount,
-          imageSize: options.imageSize,
-          inputs: options.imageInputs
-        })
-      }
-    })
-  }
-
   for (const rawModel of grokModels) {
     const model: GrokImageModel = validateGrokImageModel(rawModel)
     validateImageCount('Grok', model, options.imageCount, 1, 10)
@@ -509,7 +408,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
       'imageFormat',
       'imageBackground',
       'imageResponseMode',
-      'geminiPersonGeneration',
       'imageCompression'
     ], IMAGE_OPTION_LABELS)
     if (options.imageMask !== undefined) unsupported.push('--image-mask')
@@ -544,39 +442,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     })
   }
 
-  for (const rawModel of runwayModels) {
-    const model: RunwayImageModel = validateRunwayImageModel(rawModel)
-    rejectImageCountForSingleImageProvider('Runway', model, options.imageCount)
-    const resolution = normalizeRunwayImageResolution(options.imageSize)
-    normalizeRunwayImageRatio(options.imageAspectRatio, resolution)
-    const unsupported: string[] = []
-    if (options.imageFormat) unsupported.push('--image-format')
-    if (options.imageBackground) unsupported.push('--image-background')
-    if (options.imageQuality) unsupported.push('--image-quality')
-    if ((options.imageInputs?.length ?? 0) > 0) unsupported.push('--image-input')
-    if (options.imageMask !== undefined) unsupported.push('--image-mask')
-    if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
-    if (options.geminiPersonGeneration !== undefined) unsupported.push('--gemini-person-generation')
-    if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
-    if (options.imageCompression !== undefined) unsupported.push('--image-compression')
-    if (unsupported.length > 0) {
-      throw unsupportedFlagError('Runway', model, unsupported, 'Supported Runway image options: --image-aspect-ratio and --image-size 720p|1080p.')
-    }
-
-    targets.push({
-      service: 'runway',
-      model,
-      run: async (prompt, outputDir) => {
-        await ensureRunwayImageGenSetup()
-        return await runRunwayImageGen(prompt, outputDir, {
-          model,
-          aspectRatio: options.imageAspectRatio,
-          imageSize: options.imageSize
-        })
-      }
-    })
-  }
-
   for (const rawModel of bflModels) {
     const model: BflImageModel = validateBflImageModel(rawModel)
     const unsupported: string[] = []
@@ -586,7 +451,6 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     if (options.imageCount !== undefined) unsupported.push('--image-count')
     if (options.imageMask !== undefined) unsupported.push('--image-mask')
     if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
-    if (options.geminiPersonGeneration !== undefined) unsupported.push('--gemini-person-generation')
     if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
     if (options.imageCompression !== undefined) unsupported.push('--image-compression')
     if (unsupported.length > 0) {
@@ -596,7 +460,7 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
       provider: 'BFL',
       model,
       allowedMimeTypes: BFL_IMAGE_INPUT_MIME_TYPES,
-      maxInputs: getBflImageInputLimit(model)
+      maxInputs: 8
     })
     normalizeBflImageSize(options.imageSize)
     normalizeBflImageOutputFormat(options.imageFormat)
@@ -616,33 +480,43 @@ export const collectImageTargets = (options: ImageGenOptions): ImageTarget[] => 
     })
   }
 
-  for (const rawModel of deapiModels) {
-    const model: DeapiImageModel = validateDeapiImageModel(rawModel)
+  for (const rawModel of reveModels) {
+    const model: ReveImageModel = validateReveImageModel(rawModel)
+    normalizeReveImageAspectRatio(options.imageAspectRatio)
+    normalizeReveImageSize(options.imageSize)
+    normalizeReveImageOutputFormat(options.imageFormat)
     const unsupported: string[] = []
-    if (options.imageAspectRatio) unsupported.push('--image-aspect-ratio')
     if (options.imageQuality) unsupported.push('--image-quality')
-    if (options.imageFormat) unsupported.push('--image-format')
     if (options.imageBackground) unsupported.push('--image-background')
     if (options.imageCount !== undefined) unsupported.push('--image-count')
-    if ((options.imageInputs?.length ?? 0) > 0) unsupported.push('--image-input')
     if (options.imageMask !== undefined) unsupported.push('--image-mask')
     if (options.imageResponseMode !== undefined) unsupported.push('--image-response-mode')
-    if (options.geminiPersonGeneration !== undefined) unsupported.push('--gemini-person-generation')
     if (options.geminiSearchGrounding === true) unsupported.push('--gemini-search-grounding')
     if (options.imageCompression !== undefined) unsupported.push('--image-compression')
     if (unsupported.length > 0) {
-      throw unsupportedFlagError('deAPI', model, unsupported, 'Use --image-size WIDTHxHEIGHT for deAPI dimensions. deAPI is single-image-only here.')
+      throw unsupportedFlagError('Reve', model, unsupported, 'Supported Reve image options: --image-aspect-ratio, --image-size WIDTHxHEIGHT fit-within resizing, --image-format png|jpeg|webp, and up to six --image-input references.')
     }
-    normalizeDeapiImageSize(model, options.imageSize)
+    if ((options.imageInputs?.length ?? 0) > 0 && model === 'reve-create@20250915') {
+      throw unsupportedFlagError('Reve', model, ['--image-input'], 'Use --reve latest for Reve edit/remix workflows.')
+    }
+    validateImageInputReferences(options.imageInputs, {
+      provider: 'Reve',
+      model,
+      allowedMimeTypes: REVE_IMAGE_INPUT_MIME_TYPES,
+      maxInputs: 6
+    })
 
     targets.push({
-      service: 'deapi',
+      service: 'reve',
       model,
       run: async (prompt, outputDir) => {
-        await ensureDeapiImageGenSetup()
-        return await runDeapiImageGen(prompt, outputDir, {
+        await ensureReveImageGenSetup()
+        return await runReveImageGen(prompt, outputDir, {
           model,
-          imageSize: options.imageSize
+          inputs: options.imageInputs,
+          aspectRatio: options.imageAspectRatio,
+          imageSize: options.imageSize,
+          outputFormat: options.imageFormat
         })
       }
     })

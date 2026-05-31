@@ -1,11 +1,13 @@
+import * as l from '~/utils/logger'
 import * as v from 'valibot'
 import type { MinimaxVideoModel, Step6VideoMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { estimateVideoCost, logVideoEstimate } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import { readEnv } from '~/utils/validate/env-utils'
+import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
-import * as l from '~/utils/logger'
 import { normalizeMinimaxDurationForApi, normalizeMinimaxResolutionForApi } from '~/cli/commands/process-steps/step-6-video/video-utils/video-normalization'
+import { downloadVideoOutputBytes } from '~/cli/commands/process-steps/step-6-video/video-utils/video-output-download'
 import { pollUntil } from '~/utils/retries'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import {
@@ -16,8 +18,6 @@ import {
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 import { videoMediaReferenceToUrlOrDataUrl } from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
-
-const MINIMAX_DEFAULT_BASE_URL = 'https://api.minimax.io'
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
@@ -52,7 +52,7 @@ const readTaskStatus = (query: v.InferOutput<typeof MinimaxQueryVideoResponseSch
 }
 
 export const runMinimaxVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: {
     model: MinimaxVideoModel
@@ -69,7 +69,7 @@ export const runMinimaxVideoGen = async (
     throw new Error('MINIMAX_API_KEY environment variable is required')
   }
 
-  const baseURL = readEnv('MINIMAX_BASE_URL') ?? MINIMAX_DEFAULT_BASE_URL
+  const baseURL = MINIMAX_DEFAULT_BASE_URL
   const mode = options.mode ?? 'text'
   const resolutionForApi = normalizeMinimaxResolutionForApi(options.model, options.resolution)
   const durationForApi = normalizeMinimaxDurationForApi(options.model, resolutionForApi, options.durationSeconds)
@@ -102,7 +102,7 @@ export const runMinimaxVideoGen = async (
 
   const requestBody: Record<string, unknown> = {
     model: options.model,
-    prompt
+    ...(prompt !== undefined ? { prompt } : {})
   }
   if (mode === 'reference-to-video') {
     requestBody['subject_reference'] = referenceImage
@@ -210,13 +210,8 @@ export const runMinimaxVideoGen = async (
   )
   ensureMinimaxBaseRespSuccess(retrieveData.base_resp, 'MiniMax video file retrieve')
 
-  const downloadResp = await fetch(retrieveData.file.download_url)
-  if (!downloadResp.ok) {
-    throw new Error(`MiniMax video download failed (${downloadResp.status})`)
-  }
-
   const outputPath = `${outputDir}/generated-video.mp4`
-  const bytes = new Uint8Array(await downloadResp.arrayBuffer())
+  const bytes = await downloadVideoOutputBytes(retrieveData.file.download_url, 'MiniMax')
   await Bun.write(outputPath, bytes)
 
   const processingTime = Date.now() - startTime
@@ -228,7 +223,8 @@ export const runMinimaxVideoGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   const metadata: Step6VideoMetadata = {

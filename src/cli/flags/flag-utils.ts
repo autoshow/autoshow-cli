@@ -27,28 +27,6 @@ export const renameFlags = (
   return renamed
 }
 
-export const aliasFlags = (
-  flags: CliFlagsDefinition,
-  publicNameByInternalName: Record<string, string>
-): CliFlagsDefinition => {
-  const aliased = renameFlags(flags, publicNameByInternalName)
-
-  for (const [internalName, definition] of Object.entries(flags)) {
-    if (!(internalName in publicNameByInternalName)) {
-      continue
-    }
-    aliased[internalName] = {
-      ...definition,
-      help: {
-        ...(definition.help ?? {}),
-        hidden: true
-      }
-    }
-  }
-
-  return aliased
-}
-
 export const omitFlags = (
   flags: CliFlagsDefinition,
   names: readonly string[]
@@ -57,4 +35,18 @@ export const omitFlags = (
   return Object.fromEntries(
     Object.entries(flags).filter(([name]) => !omitted.has(name))
   ) as CliFlagsDefinition
+}
+
+export const pickFlags = (
+  flags: CliFlagsDefinition,
+  names: readonly string[]
+): CliFlagsDefinition => {
+  const picked: CliFlagsDefinition = {}
+  for (const name of names) {
+    const definition = flags[name]
+    if (definition !== undefined) {
+      picked[name] = definition
+    }
+  }
+  return picked
 }

@@ -7,7 +7,7 @@ export const PDF_LENGTH_WITHOUT_CHAPTERS_WARNING = 'For PDF inputs, --length is 
 export const EPUB_EXPORT_FLAGS_IGNORED_INSPECT_WARNING = 'EPUB export flags (--chapters, --length) are ignored when using EPUB inspect mode.'
 export const EPUB_EXPORT_FLAGS_IGNORED_OCR_WARNING = 'EPUB export flags (--chapters, --length) are ignored when an OCR engine is selected for EPUB input.'
 export const EPUB_INSPECT_NON_EPUB_INFO = 'EPUB inspect flag was provided for a non-EPUB input. Falling back to normal extract flow for this file.'
-export const EPUB_INSPECT_JSON_ONLY_ERROR = 'EPUB inspect mode supports JSON output only. Use --out json with --epub-bun or --epub-calibre.'
+export const EPUB_INSPECT_JSON_ONLY_ERROR = 'EPUB inspect mode supports JSON output only. Use --format json with --epub-bun.'
 
 const hasSelectedModel = (
   values: string[] | undefined,
@@ -24,11 +24,10 @@ export const hasConfiguredOcrProviderSelection = (
   || hasSelectedModel(opts.glmOcrModels, opts.glmOcrModel)
   || hasSelectedModel(opts.kimiOcrModels, opts.kimiOcrModel)
   || hasSelectedModel(opts.openaiOcrModels, opts.openaiOcrModel)
+  || hasSelectedModel(opts.grokOcrModels, opts.grokOcrModel)
   || hasSelectedModel(opts.anthropicOcrModels, opts.anthropicOcrModel)
   || hasSelectedModel(opts.geminiOcrModels, opts.geminiOcrModel)
   || hasSelectedModel(opts.deepinfraOcrModels, opts.deepinfraOcrModel)
-  || hasSelectedModel(opts.awsTextractModels, opts.awsTextractModel)
-  || hasSelectedModel(opts.gcloudDocaiModels, opts.gcloudDocaiModel)
   || hasSelectedModel(opts.unstructuredOcrModels, opts.unstructuredOcrModel)
 
 export const formatHtmlArticleOcrFlagsIgnoredWarning = (

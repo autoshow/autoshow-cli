@@ -1,4 +1,4 @@
-import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { MODEL_CONFIG_FRAGMENT_PREFIXES, MODEL_CONFIG_PATHS } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { getFiniteNumber } from './utils'
@@ -15,31 +15,33 @@ type StepObservation = {
   rawEstimatedCostCents: number | null
   actualCostCents: number | null
   actualProcessingTimeMs: number | null
+  actualMsPerUnit: number | null
   unitValue: number | null
 }
 
-type CalibrationUpdate = {
+type CalibrationRecommendation = {
   kind: CalibrationKind
   service: string
   model: string
   costSamples: number
   timeSamples: number
   oldCostMultiplier: number | null
-  newCostMultiplier: number | null
+  recommendedCostMultiplier: number | null
   medianCostMultiplier: number | null
   timeField: string
   oldTimeValue: number | null
-  newTimeValue: number | null
+  recommendedTimeValue: number | null
   medianTimeValue: number | null
+  notes?: string[]
 }
 
-export type CalibrationReport = {
+type CalibrationReport = {
   generatedAt: string
   rootDir: string
   runsScanned: number
   metadataFilesScanned: number
-  updatedModels: number
-  updates: CalibrationUpdate[]
+  recommendedModels: number
+  recommendations: CalibrationRecommendation[]
 }
 
 type StepShape = {
@@ -225,16 +227,18 @@ const getEstimatedCostSteps = (metadata: Record<string, unknown>): Map<string, {
   return out
 }
 
-const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { processingTimeMs: number, unitValue: number | null }> => {
+const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { processingTimeMs: number, msPerUnit: number | null, unitValue: number | null }> => {
   const timing = metadata['timing']
   if (!isRecord(timing)) return new Map()
   const actual = timing['actual']
   if (!isRecord(actual)) return new Map()
   const steps = Array.isArray(actual['steps']) ? actual['steps'] : []
-  const out = new Map<string, { processingTimeMs: number, unitValue: number | null }>()
+  const out = new Map<string, { processingTimeMs: number, msPerUnit: number | null, unitValue: number | null }>()
 
   for (const rawStep of steps) {
     if (!isRecord(rawStep)) continue
+    const timingScope = typeof rawStep['timingScope'] === 'string' ? rawStep['timingScope'] : null
+    if (timingScope !== null && timingScope !== 'wall') continue
     const kind = typeof rawStep['step'] === 'string' ? rawStep['step'] : ''
     const service = typeof rawStep['provider'] === 'string' ? rawStep['provider'] : ''
     const model = typeof rawStep['model'] === 'string' ? rawStep['model'] : ''
@@ -244,7 +248,11 @@ const getTimingActualSteps = (metadata: Record<string, unknown>): Map<string, { 
 
     const metric = typeof rawStep['inputMetric'] === 'string' ? rawStep['inputMetric'] : null
     const inputValue = normalizeUnitValue(normalized.kind, metric, getFiniteNumber(rawStep['inputValue']))
-    out.set(buildStepKey(normalized), { processingTimeMs, unitValue: inputValue })
+    out.set(buildStepKey(normalized), {
+      processingTimeMs,
+      msPerUnit: getFiniteNumber(rawStep['msPerUnit']),
+      unitValue: inputValue
+    })
   }
 
   return out
@@ -279,6 +287,7 @@ const collectObservationsFromMetadata = (metadata: Record<string, unknown>): Ste
       rawEstimatedCostCents: estimatedCost?.rawCost ?? null,
       actualCostCents: actualCost?.cost ?? null,
       actualProcessingTimeMs: timing?.processingTimeMs ?? null,
+      actualMsPerUnit: timing?.msPerUnit ?? null,
       unitValue: timing?.unitValue ?? actualCost?.unitValue ?? null,
     })
   }
@@ -309,13 +318,6 @@ const readCurrentCostMultiplier = (modelEntry: MutableJson): number | null => {
   const estimation = modelEntry['estimation']
   if (!isRecord(estimation)) return null
   return getFiniteNumber(estimation['costMultiplier'])
-}
-
-const setEstimationValue = (modelEntry: MutableJson, fieldName: string, value: number): void => {
-  const estimationRaw = modelEntry['estimation']
-  const estimation = isRecord(estimationRaw) ? estimationRaw : {}
-  estimation[fieldName] = value
-  modelEntry['estimation'] = estimation
 }
 
 const getConfigFragmentFilenamePrefix = (kind: CalibrationKind): string | null => {
@@ -391,7 +393,7 @@ const collectCalibrationManifestPaths = async (runDir: string): Promise<string[]
   return [...runManifests, ...metadataManifests]
 }
 
-export const applyModelConfigCalibrations = async (
+export const buildModelCalibrationReport = async (
   rootDir: string,
   configPaths: ConfigPaths = MODEL_CONFIG_PATHS
 ): Promise<CalibrationReport> => {
@@ -408,8 +410,8 @@ export const applyModelConfigCalibrations = async (
       rootDir: resolve(rootDir),
       runsScanned,
       metadataFilesScanned,
-      updatedModels: 0,
-      updates: [],
+      recommendedModels: 0,
+      recommendations: [],
     }
   }
 
@@ -441,8 +443,7 @@ export const applyModelConfigCalibrations = async (
   }
 
   const parsedConfigCache = new Map<string, MutableJson>()
-  const changedConfigPaths = new Set<string>()
-  const updates: CalibrationUpdate[] = []
+  const recommendations: CalibrationRecommendation[] = []
 
   for (const [key, group] of grouped) {
     const [kind, service, model] = key.split('::')
@@ -475,6 +476,7 @@ export const applyModelConfigCalibrations = async (
 
     const timeRates = group
       .map(obs => {
+        if (obs.actualMsPerUnit !== null) return obs.actualMsPerUnit
         if (obs.actualProcessingTimeMs === null || obs.unitValue === null) return null
         return computeObservedTimeRate(obs.kind, obs.actualProcessingTimeMs, obs.unitValue)
       })
@@ -486,16 +488,15 @@ export const applyModelConfigCalibrations = async (
     const timeField = getTimeFieldName(calibrationKind)
     const oldTime = readCurrentTimeValue(modelEntry, timeField)
 
-    let newCost: number | null = null
-    let newTime: number | null = null
+    let recommendedCost: number | null = null
+    let recommendedTime: number | null = null
 
     if (medianCost !== null) {
       const next = roundCostMultiplier(smoothValue(oldCost, medianCost))
       const baseline = oldCost ?? 1
       const drift = Math.abs((next - baseline) / baseline)
       if (oldCost === null || drift >= COST_DRIFT_THRESHOLD) {
-        setEstimationValue(modelEntry, 'costMultiplier', next)
-        newCost = next
+        recommendedCost = next
       }
     }
 
@@ -504,34 +505,30 @@ export const applyModelConfigCalibrations = async (
       const baseline = oldTime ?? medianTime
       const drift = baseline > 0 ? Math.abs((next - baseline) / baseline) : 1
       if (oldTime === null || drift >= TIME_DRIFT_THRESHOLD) {
-        setEstimationValue(modelEntry, timeField, next)
-        newTime = next
+        recommendedTime = next
       }
     }
 
-    if (newCost !== null || newTime !== null) {
-      changedConfigPaths.add(configFilePath)
-      updates.push({
+    if (recommendedCost !== null || recommendedTime !== null) {
+      const notes = recommendedTime !== null && timeRates.length > 0
+        ? ['Timing calibration uses wall-clock latency observations.']
+        : []
+      recommendations.push({
         kind: calibrationKind,
         service,
         model,
         costSamples: costRatios.length,
         timeSamples: timeRates.length,
         oldCostMultiplier: oldCost,
-        newCostMultiplier: newCost,
+        recommendedCostMultiplier: recommendedCost,
         medianCostMultiplier: medianCost,
         timeField,
         oldTimeValue: oldTime,
-        newTimeValue: newTime,
+        recommendedTimeValue: recommendedTime,
         medianTimeValue: medianTime,
+        ...(notes.length > 0 ? { notes } : {}),
       })
     }
-  }
-
-  for (const configFilePath of changedConfigPaths) {
-    const parsedConfig = parsedConfigCache.get(configFilePath)
-    if (!parsedConfig) continue
-    await writeFile(configFilePath, `${JSON.stringify(parsedConfig, null, 2)}\n`)
   }
 
   return {
@@ -539,7 +536,7 @@ export const applyModelConfigCalibrations = async (
     rootDir: resolve(rootDir),
     runsScanned,
     metadataFilesScanned,
-    updatedModels: updates.length,
-    updates,
+    recommendedModels: recommendations.length,
+    recommendations,
   }
 }

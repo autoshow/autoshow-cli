@@ -11,20 +11,30 @@
     "models": {
       "simba-english": {
         "description": "Speechify Simba English — highest-quality English TTS",
+        "pricingSourceUrl": "https://speechify.com/integrations",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Speechify API pay-as-you-go TTS pricing",
+        "pricingNotes": "Speechify Simba TTS estimates use the published $10 per 1M characters API reference rate. Subscription plans, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kCharsUSD": 0.01,
         "costPer1kCharsCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 3000
+          "msPer1KChars": 4500
         }
       },
       "simba-multilingual": {
         "description": "Speechify Simba Multilingual — multilingual and mixed-language TTS",
+        "pricingSourceUrl": "https://speechify.com/integrations",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Speechify API pay-as-you-go TTS pricing",
+        "pricingNotes": "Speechify Simba TTS estimates use the published $10 per 1M characters API reference rate. Subscription plans, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kCharsUSD": 0.01,
         "costPer1kCharsCents": 1,
         "estimation": {
           "costMultiplier": 1,
-          "msPer1KChars": 3000
+          "msPer1KChars": 4500
         }
       }
     }

@@ -1,6 +1,5 @@
 import type { SttTarget } from '~/types'
 import { ensureProviderReady } from '~/utils/bootstrap-broker'
-import { ensureAwsSttSetup } from './stt-services/aws/aws'
 import { getStep2BootstrapProviderId } from '../step-2-shared/provider-registry'
 
 export {
@@ -14,10 +13,7 @@ const toBootstrapProviderId = (
     case 'whisper':
       return `whisper:${target.model}`
     case 'reverb':
-    case 'gcloud':
-    case 'aws':
     case 'deepinfra':
-    case 'deapi':
     case 'elevenlabs':
     case 'deepgram':
     case 'soniox':
@@ -42,17 +38,9 @@ const toBootstrapProviderId = (
 }
 
 export const ensureSttTargetSetup = async (
-  target: Pick<SttTarget, 'service' | 'model' | 'awsRegion' | 'awsBucket'>
+  target: Pick<SttTarget, 'service' | 'model'>
 ): Promise<void> => {
   if (target.service === 'youtube-captions') {
-    return
-  }
-
-  if (target.service === 'aws') {
-    await ensureAwsSttSetup({
-      preferredRegion: target.awsRegion,
-      preferredBucket: target.awsBucket
-    })
     return
   }
 

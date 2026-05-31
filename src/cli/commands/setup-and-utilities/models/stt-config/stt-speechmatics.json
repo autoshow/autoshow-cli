@@ -5,6 +5,11 @@
     "models": {
       "standard": {
         "description": "Batch standard accuracy — faster turnaround with lower cost",
+        "pricingSourceUrl": "https://www.speechmatics.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Speechmatics batch transcription public pricing",
+        "pricingNotes": "Speechmatics batch transcription estimates use published per-hour pricing for the selected accuracy tier. Free allowance, volume discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.45,
         "costPerHourCents": 45,
         "limits": {
@@ -19,6 +24,11 @@
       },
       "enhanced": {
         "description": "Batch enhanced accuracy — highest accuracy for file transcription",
+        "pricingSourceUrl": "https://www.speechmatics.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Speechmatics batch transcription public pricing",
+        "pricingNotes": "Speechmatics batch transcription estimates use published per-hour pricing for the selected accuracy tier. Free allowance, volume discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.75,
         "costPerHourCents": 75,
         "limits": {
@@ -28,7 +38,7 @@
         },
         "estimation": {
           "costMultiplier": 1,
-          "msPerSecond": 244
+          "msPerSecond": 218
         }
       }
     }

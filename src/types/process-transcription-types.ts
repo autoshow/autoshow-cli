@@ -7,7 +7,7 @@ export type TranscriptionSegment = {
   speaker?: string | undefined
 }
 
-export type TranscriptionEvidenceTimingSource = 'native' | 'interpolated'
+type TranscriptionEvidenceTimingSource = 'native' | 'interpolated'
 
 export type TranscriptionEvidenceSegment = {
   startSeconds: number
@@ -43,18 +43,6 @@ export type TranscriptionEvidence = {
   rawResponse?: unknown
 }
 
-export type PersistedTranscriptionEvidence = {
-  service: string
-  model: string
-  label: string
-  transcriptText: string
-  segments: TranscriptionEvidenceSegment[]
-  words: TranscriptionEvidenceWord[]
-  capabilities: TranscriptionEvidenceCapabilities
-  timingQuality: TranscriptionEvidenceTimingQuality
-  speakerInventory: string[]
-}
-
 export type TranscriptionResult = {
   text: string
   segments: TranscriptionSegment[]
@@ -82,16 +70,21 @@ export type Step2RuntimeMetadata = {
   } | undefined
 }
 
-export type Step2BillingMetadata = {
+type Step2BillingMetadata = {
   creditsUsed?: number | undefined
   creditRateCents?: number | undefined
+  inputTokens?: number | undefined
+  outputTokens?: number | undefined
+  totalTokens?: number | undefined
+  audioInputTokens?: number | undefined
+  textInputTokens?: number | undefined
   totalCost?: number | undefined
-  source?: 'response-header' | 'fallback-estimate' | 'provider_quote' | 'registry_fallback' | undefined
-  mode?: 'url' | 'duration' | 'order' | 'segment_sum' | undefined
+  source?: 'response-header' | 'response_header' | 'fallback-estimate' | 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
+  mode?: 'url' | 'duration' | 'order' | 'token' | 'segment_sum' | undefined
 }
 
 export type Step2Metadata = {
-  transcriptionService: 'whisper' | 'reverb' | 'gcloud' | 'aws' | 'deepgram' | 'deepinfra' | 'deapi' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'scrapecreators' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'youtube-captions'
+  transcriptionService: 'whisper' | 'reverb' | 'deepgram' | 'deepinfra' | 'elevenlabs' | 'soniox' | 'speechmatics' | 'rev' | 'groq' | 'grok' | 'mistral' | 'assemblyai' | 'gladia' | 'happyscribe' | 'supadata' | 'scrapecreators' | 'openai-stt' | 'gemini-stt' | 'glm-stt' | 'together' | 'youtube-captions'
   transcriptionModel: string
   processingTime: number
   tokenCount: number

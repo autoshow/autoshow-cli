@@ -1,7 +1,7 @@
 import type { HtmlArticleBackend } from '~/types'
-import type { UrlArticleRunResult } from './url-utils'
+import type { UrlArticleRunResult, UrlRequestOptions } from './url-utils'
 
-export type UrlArticleProviderCapability =
+type UrlArticleProviderCapability =
   | 'remote-html'
   | 'local-html'
   | 'main-content'
@@ -19,12 +19,11 @@ export type UrlArticleProviderCapability =
   | 'search'
   | 'browser-actions'
 
-export type UrlArticleRunOptions = {
+export type UrlArticleRunOptions = UrlRequestOptions & {
   contentScope?: 'main' | 'full' | undefined
   includeSelectors?: string[] | undefined
   excludeSelectors?: string[] | undefined
   waitMs?: number | undefined
-  timeoutMs?: number | undefined
   geo?: {
     country?: string | undefined
     languages?: string[] | undefined

@@ -1,0 +1,1646 @@
+{
+  "schemaVersion": 1,
+  "kind": "video-quality-report",
+  "runDir": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen",
+  "runName": "2026-05-21_06-51-12-517_video-gen",
+  "generatedAt": "2026-05-21T15:40:03.502Z",
+  "judge": {
+    "provider": "openai",
+    "model": "gpt-5.5",
+    "endpoint": "responses"
+  },
+  "prompt": "a man eating spaghetti",
+  "rubric": {
+    "scale": "1-10",
+    "qualityScore": "average criterion score x 10",
+    "frameSampling": "10 midpoint-interval screenshots per video",
+    "criteria": [
+      "prompt adherence",
+      "visual quality",
+      "artifact control",
+      "temporal consistency",
+      "composition/camera"
+    ]
+  },
+  "providerCount": 8,
+  "videoCount": 8,
+  "frameCount": 80,
+  "providers": [
+    {
+      "rank": 1,
+      "providerKey": "gemini/veo-3.1-lite-generate-preview",
+      "provider": "gemini",
+      "model": "veo-3.1-lite-generate-preview",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-gemini-veo-3.1-lite-generate-preview.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 41408,
+      "costCents": 20,
+      "criterionScores": {
+        "promptAdherence": 10,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 9,
+        "compositionCamera": 9
+      },
+      "averageScore10": 9,
+      "qualityScore": 90,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4: High-quality, photorealistic video matching the prompt: a man actively eating spaghetti. The action progresses clearly from lifting noodles to putting them in his mouth, with stable subject identity and appealing framing.",
+        "strengths": [
+          "Directly depicts a man eating spaghetti",
+          "Clear, appetizing food detail with realistic sauce and meatballs",
+          "Warm lighting and shallow depth of field create strong visual appeal",
+          "Motion across frames is coherent and readable",
+          "Stable camera and centered composition"
+        ],
+        "issues": [
+          "Some noodle physics look slightly exaggerated and overly suspended",
+          "Minor utensil/hand inconsistencies typical of generated video",
+          "Steam/smoke appears a bit heavy and stylized in places"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 1,
+            "timestampSeconds": 0.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 2,
+            "timestampSeconds": 0.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 3,
+            "timestampSeconds": 1,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 4,
+            "timestampSeconds": 1.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 5,
+            "timestampSeconds": 1.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 6,
+            "timestampSeconds": 2.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 7,
+            "timestampSeconds": 2.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 8,
+            "timestampSeconds": 3,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 9,
+            "timestampSeconds": 3.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+            "index": 10,
+            "timestampSeconds": 3.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-gemini-veo-3.1-lite-generate-preview.mp4",
+          "durationSeconds": 4,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 1.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 2.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 2.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 3,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 3.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 3.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-lite-generate-preview/generated-video-gemini-veo-3.1-lite-generate-preview/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 10,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 9,
+            "compositionCamera": 9
+          },
+          "averageScore10": 9,
+          "qualityScore": 90,
+          "summary": "High-quality, photorealistic video matching the prompt: a man actively eating spaghetti. The action progresses clearly from lifting noodles to putting them in his mouth, with stable subject identity and appealing framing.",
+          "strengths": [
+            "Directly depicts a man eating spaghetti",
+            "Clear, appetizing food detail with realistic sauce and meatballs",
+            "Warm lighting and shallow depth of field create strong visual appeal",
+            "Motion across frames is coherent and readable",
+            "Stable camera and centered composition"
+          ],
+          "issues": [
+            "Some noodle physics look slightly exaggerated and overly suspended",
+            "Minor utensil/hand inconsistencies typical of generated video",
+            "Steam/smoke appears a bit heavy and stylized in places"
+          ],
+          "usage": {
+            "input_tokens": 11513,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 356,
+            "output_tokens_details": {
+              "reasoning_tokens": 184
+            },
+            "total_tokens": 11869
+          }
+        }
+      ]
+    },
+    {
+      "rank": 2,
+      "providerKey": "gemini/veo-3.1-fast-generate-preview",
+      "provider": "gemini",
+      "model": "veo-3.1-fast-generate-preview",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-gemini-veo-3.1-fast-generate-preview.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 41379,
+      "costCents": 40,
+      "criterionScores": {
+        "promptAdherence": 10,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 8,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4: The video clearly depicts a man eating spaghetti, with strong realism, appealing lighting, and a coherent dining-room setup. Motion is mostly believable, though the spaghetti and fork interaction show minor AI-style inconsistencies across frames.",
+        "strengths": [
+          "Directly matches the prompt with a man actively eating spaghetti.",
+          "High visual fidelity with realistic face, lighting, food texture, and depth of field.",
+          "Clear, stable composition centered on the man, fork, and plate.",
+          "Action progression is readable: lifting spaghetti, bringing it to mouth, and eating."
+        ],
+        "issues": [
+          "Spaghetti strands and garnish shift somewhat unnaturally between frames.",
+          "Fork and noodle contact is not always physically convincing.",
+          "The amount and shape of spaghetti changes inconsistently during the eating motion."
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 1,
+            "timestampSeconds": 0.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 2,
+            "timestampSeconds": 0.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 3,
+            "timestampSeconds": 1,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 4,
+            "timestampSeconds": 1.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 5,
+            "timestampSeconds": 1.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 6,
+            "timestampSeconds": 2.2,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 7,
+            "timestampSeconds": 2.6,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 8,
+            "timestampSeconds": 3,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 9,
+            "timestampSeconds": 3.4,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+            "index": 10,
+            "timestampSeconds": 3.8,
+            "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-gemini-veo-3.1-fast-generate-preview.mp4",
+          "durationSeconds": 4,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 1.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 2.2,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 2.6,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 3,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 3.4,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 3.8,
+              "fileName": "video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/gemini-veo-3.1-fast-generate-preview/generated-video-gemini-veo-3.1-fast-generate-preview/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 10,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 8,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "The video clearly depicts a man eating spaghetti, with strong realism, appealing lighting, and a coherent dining-room setup. Motion is mostly believable, though the spaghetti and fork interaction show minor AI-style inconsistencies across frames.",
+          "strengths": [
+            "Directly matches the prompt with a man actively eating spaghetti.",
+            "High visual fidelity with realistic face, lighting, food texture, and depth of field.",
+            "Clear, stable composition centered on the man, fork, and plate.",
+            "Action progression is readable: lifting spaghetti, bringing it to mouth, and eating."
+          ],
+          "issues": [
+            "Spaghetti strands and garnish shift somewhat unnaturally between frames.",
+            "Fork and noodle contact is not always physically convincing.",
+            "The amount and shape of spaghetti changes inconsistently during the eating motion."
+          ],
+          "usage": {
+            "input_tokens": 11513,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 267,
+            "output_tokens_details": {
+              "reasoning_tokens": 78
+            },
+            "total_tokens": 11780
+          }
+        }
+      ]
+    },
+    {
+      "rank": 3,
+      "providerKey": "grok/grok-imagine-video",
+      "provider": "grok",
+      "model": "grok-imagine-video",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-grok-grok-imagine-video.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 21024,
+      "costCents": 20,
+      "criterionScores": {
+        "promptAdherence": 10,
+        "visualQuality": 9,
+        "artifactControl": 8,
+        "temporalConsistency": 8,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.8,
+      "qualityScore": 88,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-grok-grok-imagine-video.mp4: The video clearly depicts a man eating spaghetti in a restaurant setting, with attractive lighting, sharp subject detail, and a coherent eating action from twirling to lifting to biting and swallowing. Minor AI artifacts appear in the spaghetti/fork interaction and there is a noticeable camera/framing jump mid-sequence, but overall it is a strong match to the prompt.",
+        "strengths": [
+          "Directly matches the prompt: a man is visibly eating spaghetti.",
+          "High visual fidelity with warm lighting, detailed face, food, and restaurant environment.",
+          "Action is readable and sequential: fork gathers pasta, lifts it, man bites and eats.",
+          "Good centered composition with clear focus on the man and plate."
+        ],
+        "issues": [
+          "Some spaghetti strands and fork interactions look slightly unnatural or fused.",
+          "Noticeable abrupt push-in/crop change around the middle of the sequence.",
+          "Minor continuity inconsistencies in pasta amount and strand behavior while eating."
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 1,
+            "timestampSeconds": 0.2,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 2,
+            "timestampSeconds": 0.61,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 3,
+            "timestampSeconds": 1.01,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 4,
+            "timestampSeconds": 1.41,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 5,
+            "timestampSeconds": 1.82,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 6,
+            "timestampSeconds": 2.22,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 7,
+            "timestampSeconds": 2.63,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 8,
+            "timestampSeconds": 3.03,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 9,
+            "timestampSeconds": 3.44,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-grok-grok-imagine-video.mp4",
+            "index": 10,
+            "timestampSeconds": 3.84,
+            "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-grok-grok-imagine-video.mp4",
+          "durationSeconds": 4.04,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.2,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.61,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.01,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.41,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 1.82,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 2.22,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 2.63,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 3.03,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 3.44,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 3.84,
+              "fileName": "video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/grok-grok-imagine-video/generated-video-grok-grok-imagine-video/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 10,
+            "visualQuality": 9,
+            "artifactControl": 8,
+            "temporalConsistency": 8,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.8,
+          "qualityScore": 88,
+          "summary": "The video clearly depicts a man eating spaghetti in a restaurant setting, with attractive lighting, sharp subject detail, and a coherent eating action from twirling to lifting to biting and swallowing. Minor AI artifacts appear in the spaghetti/fork interaction and there is a noticeable camera/framing jump mid-sequence, but overall it is a strong match to the prompt.",
+          "strengths": [
+            "Directly matches the prompt: a man is visibly eating spaghetti.",
+            "High visual fidelity with warm lighting, detailed face, food, and restaurant environment.",
+            "Action is readable and sequential: fork gathers pasta, lifts it, man bites and eats.",
+            "Good centered composition with clear focus on the man and plate."
+          ],
+          "issues": [
+            "Some spaghetti strands and fork interactions look slightly unnatural or fused.",
+            "Noticeable abrupt push-in/crop change around the middle of the sequence.",
+            "Minor continuity inconsistencies in pasta amount and strand behavior while eating."
+          ],
+          "usage": {
+            "input_tokens": 5325,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 351,
+            "output_tokens_details": {
+              "reasoning_tokens": 132
+            },
+            "total_tokens": 5676
+          }
+        }
+      ]
+    },
+    {
+      "rank": 4,
+      "providerKey": "minimax/MiniMax-Hailuo-2.3",
+      "provider": "minimax",
+      "model": "MiniMax-Hailuo-2.3",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-minimax-MiniMax-Hailuo-2.3.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 72335,
+      "costCents": 28,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 8,
+        "artifactControl": 8,
+        "temporalConsistency": 8,
+        "compositionCamera": 9
+      },
+      "averageScore10": 8.4,
+      "qualityScore": 84,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4: The video clearly depicts a man eating spaghetti at a table, with a coherent sequence of twirling, lifting, and eating the noodles. It is visually appealing and well-framed, with only minor generative artifacts in the fork, hand, and spaghetti motion.",
+        "strengths": [
+          "Strong match to the prompt: a man visibly eats spaghetti.",
+          "Warm, cinematic lighting and clear subject focus.",
+          "Stable, readable composition with the plate and man centered.",
+          "Motion progresses logically from twirling noodles to bringing them to his mouth."
+        ],
+        "issues": [
+          "Some slight unnaturalness in spaghetti strands and sauce behavior.",
+          "Fork and hand details appear mildly inconsistent in a few frames.",
+          "The eating motion is good but not perfectly natural at the mouth/noodle interaction."
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 1,
+            "timestampSeconds": 0.29,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 2,
+            "timestampSeconds": 0.88,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 3,
+            "timestampSeconds": 1.47,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 4,
+            "timestampSeconds": 2.06,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 5,
+            "timestampSeconds": 2.64,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 6,
+            "timestampSeconds": 3.23,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 7,
+            "timestampSeconds": 3.82,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 8,
+            "timestampSeconds": 4.41,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 9,
+            "timestampSeconds": 4.99,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+            "index": 10,
+            "timestampSeconds": 5.58,
+            "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-minimax-MiniMax-Hailuo-2.3.mp4",
+          "durationSeconds": 5.88,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.29,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.88,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.47,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 2.06,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.64,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 3.23,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.82,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 4.41,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.99,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 5.58,
+              "fileName": "video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-minimax-hailuo-2.3/generated-video-minimax-minimax-hailuo-2.3/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 8,
+            "artifactControl": 8,
+            "temporalConsistency": 8,
+            "compositionCamera": 9
+          },
+          "averageScore10": 8.4,
+          "qualityScore": 84,
+          "summary": "The video clearly depicts a man eating spaghetti at a table, with a coherent sequence of twirling, lifting, and eating the noodles. It is visually appealing and well-framed, with only minor generative artifacts in the fork, hand, and spaghetti motion.",
+          "strengths": [
+            "Strong match to the prompt: a man visibly eats spaghetti.",
+            "Warm, cinematic lighting and clear subject focus.",
+            "Stable, readable composition with the plate and man centered.",
+            "Motion progresses logically from twirling noodles to bringing them to his mouth."
+          ],
+          "issues": [
+            "Some slight unnaturalness in spaghetti strands and sauce behavior.",
+            "Fork and hand details appear mildly inconsistent in a few frames.",
+            "The eating motion is good but not perfectly natural at the mouth/noodle interaction."
+          ],
+          "usage": {
+            "input_tokens": 12855,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 346,
+            "output_tokens_details": {
+              "reasoning_tokens": 159
+            },
+            "total_tokens": 13201
+          }
+        }
+      ]
+    },
+    {
+      "rank": 5,
+      "providerKey": "minimax/T2V-01",
+      "provider": "minimax",
+      "model": "T2V-01",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-minimax-T2V-01.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 401029,
+      "costCents": 19,
+      "criterionScores": {
+        "promptAdherence": 9,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "temporalConsistency": 8,
+        "compositionCamera": 8
+      },
+      "averageScore10": 8,
+      "qualityScore": 80,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-minimax-T2V-01.mp4: The video clearly depicts a man eating spaghetti, with a coherent progression from lifting noodles on a fork to slurping them. It is visually strong and readable, though heavily warm-toned and slightly stylized. Minor artifacts appear in the fork, hand, steam, and noodle behavior, but the scene remains convincing overall.",
+        "strengths": [
+          "Directly matches the prompt with a man visibly eating spaghetti",
+          "Clear, centered composition with the food and action easy to read",
+          "Good continuity of the eating motion across frames",
+          "Detailed spaghetti strands and recognizable dining setting"
+        ],
+        "issues": [
+          "Color grading is very warm and oversaturated",
+          "Some noodle motion and volume feel physically exaggerated",
+          "Fork and hand details show minor generation inconsistencies",
+          "Steam/smoke near the face appears somewhat unnatural"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 1,
+            "timestampSeconds": 0.28,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 2,
+            "timestampSeconds": 0.85,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 3,
+            "timestampSeconds": 1.41,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 4,
+            "timestampSeconds": 1.97,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 5,
+            "timestampSeconds": 2.54,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 6,
+            "timestampSeconds": 3.1,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 7,
+            "timestampSeconds": 3.67,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 8,
+            "timestampSeconds": 4.23,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 9,
+            "timestampSeconds": 4.79,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01.mp4",
+            "index": 10,
+            "timestampSeconds": 5.36,
+            "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-minimax-T2V-01.mp4",
+          "durationSeconds": 5.64,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.28,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.85,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.41,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.97,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.54,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 3.1,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.67,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 4.23,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.79,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 5.36,
+              "fileName": "video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01/generated-video-minimax-t2v-01/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 9,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "temporalConsistency": 8,
+            "compositionCamera": 8
+          },
+          "averageScore10": 8,
+          "qualityScore": 80,
+          "summary": "The video clearly depicts a man eating spaghetti, with a coherent progression from lifting noodles on a fork to slurping them. It is visually strong and readable, though heavily warm-toned and slightly stylized. Minor artifacts appear in the fork, hand, steam, and noodle behavior, but the scene remains convincing overall.",
+          "strengths": [
+            "Directly matches the prompt with a man visibly eating spaghetti",
+            "Clear, centered composition with the food and action easy to read",
+            "Good continuity of the eating motion across frames",
+            "Detailed spaghetti strands and recognizable dining setting"
+          ],
+          "issues": [
+            "Color grading is very warm and oversaturated",
+            "Some noodle motion and volume feel physically exaggerated",
+            "Fork and hand details show minor generation inconsistencies",
+            "Steam/smoke near the face appears somewhat unnatural"
+          ],
+          "usage": {
+            "input_tokens": 11505,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 374,
+            "output_tokens_details": {
+              "reasoning_tokens": 180
+            },
+            "total_tokens": 11879
+          }
+        }
+      ]
+    },
+    {
+      "rank": 6,
+      "providerKey": "glm/cogvideox-3",
+      "provider": "glm",
+      "model": "cogvideox-3",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-glm-cogvideox-3.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 149944,
+      "costCents": 20,
+      "criterionScores": {
+        "promptAdherence": 8,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "temporalConsistency": 7,
+        "compositionCamera": 9
+      },
+      "averageScore10": 7.8,
+      "qualityScore": 78,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-glm-cogvideox-3.mp4: Clear, attractive shot of a man with a plate of spaghetti, lifting noodles toward his mouth in a cozy kitchen. It fits the prompt well, though the actual eating moment is not fully convincing and some utensil/noodle physics are artificial.",
+        "strengths": [
+          "Subject and spaghetti are immediately recognizable",
+          "Warm, well-lit kitchen setting with strong visual appeal",
+          "Consistent framing and readable action across frames",
+          "Man, plate, and environment remain mostly stable"
+        ],
+        "issues": [
+          "Fork shape and hand grip look slightly unnatural at times",
+          "Spaghetti strands stretch, merge, and change inconsistently",
+          "The bite/eating action is implied but not clearly completed",
+          "Some AI-smooth facial and object rendering reduces realism"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 1,
+            "timestampSeconds": 0.26,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 2,
+            "timestampSeconds": 0.78,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 3,
+            "timestampSeconds": 1.3,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 4,
+            "timestampSeconds": 1.82,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 5,
+            "timestampSeconds": 2.34,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 6,
+            "timestampSeconds": 2.86,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 7,
+            "timestampSeconds": 3.38,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 8,
+            "timestampSeconds": 3.9,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 9,
+            "timestampSeconds": 4.41,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-cogvideox-3.mp4",
+            "index": 10,
+            "timestampSeconds": 4.93,
+            "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-glm-cogvideox-3.mp4",
+          "durationSeconds": 5.19,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.26,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.78,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.3,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.82,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.34,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 2.86,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.38,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 3.9,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.41,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 4.93,
+              "fileName": "video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-cogvideox-3/generated-video-glm-cogvideox-3/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 8,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "temporalConsistency": 7,
+            "compositionCamera": 9
+          },
+          "averageScore10": 7.8,
+          "qualityScore": 78,
+          "summary": "Clear, attractive shot of a man with a plate of spaghetti, lifting noodles toward his mouth in a cozy kitchen. It fits the prompt well, though the actual eating moment is not fully convincing and some utensil/noodle physics are artificial.",
+          "strengths": [
+            "Subject and spaghetti are immediately recognizable",
+            "Warm, well-lit kitchen setting with strong visual appeal",
+            "Consistent framing and readable action across frames",
+            "Man, plate, and environment remain mostly stable"
+          ],
+          "issues": [
+            "Fork shape and hand grip look slightly unnatural at times",
+            "Spaghetti strands stretch, merge, and change inconsistently",
+            "The bite/eating action is implied but not clearly completed",
+            "Some AI-smooth facial and object rendering reduces realism"
+          ],
+          "usage": {
+            "input_tokens": 24946,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 419,
+            "output_tokens_details": {
+              "reasoning_tokens": 239
+            },
+            "total_tokens": 25365
+          }
+        }
+      ]
+    },
+    {
+      "rank": 7,
+      "providerKey": "minimax/T2V-01-Director",
+      "provider": "minimax",
+      "model": "T2V-01-Director",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-minimax-T2V-01-Director.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 154630,
+      "costCents": 19,
+      "criterionScores": {
+        "promptAdherence": 7,
+        "visualQuality": 8,
+        "artifactControl": 7,
+        "temporalConsistency": 8,
+        "compositionCamera": 7
+      },
+      "averageScore10": 7.4,
+      "qualityScore": 74,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-minimax-T2V-01-Director.mp4: The video clearly depicts a man at a table with a bowl of spaghetti, lifting noodles with utensils in a warm cinematic setting. It fits the prompt reasonably well, though he never visibly takes a bite, so the 'eating' action is only implied.",
+        "strengths": [
+          "Clear subject: adult man with spaghetti in a bowl",
+          "Cohesive warm lighting and cinematic restaurant/home-dining atmosphere",
+          "Mostly consistent character, setting, bowl, utensils, and noodle motion across frames",
+          "Readable action of gathering and lifting spaghetti"
+        ],
+        "issues": [
+          "No visible moment of the man actually eating or bringing spaghetti into his mouth",
+          "Later frames crop the face heavily, reducing clarity of the human subject",
+          "Some noodles appear overly bright/glowing and slightly unnatural",
+          "Steam/smoke wisps look somewhat artificial and disconnected"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 1,
+            "timestampSeconds": 0.28,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 2,
+            "timestampSeconds": 0.85,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 3,
+            "timestampSeconds": 1.41,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 4,
+            "timestampSeconds": 1.97,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 5,
+            "timestampSeconds": 2.54,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 6,
+            "timestampSeconds": 3.1,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 7,
+            "timestampSeconds": 3.67,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 8,
+            "timestampSeconds": 4.23,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 9,
+            "timestampSeconds": 4.79,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-minimax-T2V-01-Director.mp4",
+            "index": 10,
+            "timestampSeconds": 5.36,
+            "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-minimax-T2V-01-Director.mp4",
+          "durationSeconds": 5.64,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.28,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.85,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.41,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.97,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.54,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 3.1,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.67,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 4.23,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.79,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 5.36,
+              "fileName": "video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/minimax-t2v-01-director/generated-video-minimax-t2v-01-director/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 7,
+            "visualQuality": 8,
+            "artifactControl": 7,
+            "temporalConsistency": 8,
+            "compositionCamera": 7
+          },
+          "averageScore10": 7.4,
+          "qualityScore": 74,
+          "summary": "The video clearly depicts a man at a table with a bowl of spaghetti, lifting noodles with utensils in a warm cinematic setting. It fits the prompt reasonably well, though he never visibly takes a bite, so the 'eating' action is only implied.",
+          "strengths": [
+            "Clear subject: adult man with spaghetti in a bowl",
+            "Cohesive warm lighting and cinematic restaurant/home-dining atmosphere",
+            "Mostly consistent character, setting, bowl, utensils, and noodle motion across frames",
+            "Readable action of gathering and lifting spaghetti"
+          ],
+          "issues": [
+            "No visible moment of the man actually eating or bringing spaghetti into his mouth",
+            "Later frames crop the face heavily, reducing clarity of the human subject",
+            "Some noodles appear overly bright/glowing and slightly unnatural",
+            "Steam/smoke wisps look somewhat artificial and disconnected"
+          ],
+          "usage": {
+            "input_tokens": 11509,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 357,
+            "output_tokens_details": {
+              "reasoning_tokens": 156
+            },
+            "total_tokens": 11866
+          }
+        }
+      ]
+    },
+    {
+      "rank": 8,
+      "providerKey": "glm/viduq1-text",
+      "provider": "glm",
+      "model": "viduq1-text",
+      "group": "service",
+      "videoFiles": [
+        "generated-video-glm-viduq1-text.mp4"
+      ],
+      "videoCount": 1,
+      "processingTimeMs": 190835,
+      "costCents": 40,
+      "criterionScores": {
+        "promptAdherence": 5,
+        "visualQuality": 8,
+        "artifactControl": 6,
+        "temporalConsistency": 6,
+        "compositionCamera": 8
+      },
+      "averageScore10": 6.6,
+      "qualityScore": 66,
+      "qualityMetric": "video quality score",
+      "evidence": {
+        "summary": "generated-video-glm-viduq1-text.mp4: High-quality close-up of spaghetti being lifted with utensils, but it does not actually show a man eating; only hands and arms are visible. The scene is attractive and readable, with some utensil warping and continuity issues.",
+        "strengths": [
+          "Photorealistic lighting, depth of field, and appetizing spaghetti texture",
+          "Clear focus on spaghetti and hand interaction",
+          "Stable, coherent close-up composition"
+        ],
+        "issues": [
+          "No visible face or mouth, so the requested action of eating is not shown",
+          "Man is only implied by hands/arms rather than clearly depicted",
+          "Forks/utensils appear to warp, blur, or change shape across frames",
+          "Spaghetti strands stretch and morph unnaturally at times"
+        ],
+        "frameCount": 10,
+        "frames": [
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 1,
+            "timestampSeconds": 0.26,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-01.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 2,
+            "timestampSeconds": 0.78,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-02.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 3,
+            "timestampSeconds": 1.3,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-03.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 4,
+            "timestampSeconds": 1.82,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-04.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 5,
+            "timestampSeconds": 2.34,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-05.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 6,
+            "timestampSeconds": 2.86,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-06.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 7,
+            "timestampSeconds": 3.39,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-07.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 8,
+            "timestampSeconds": 3.91,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-08.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 9,
+            "timestampSeconds": 4.43,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-09.png"
+          },
+          {
+            "videoFileName": "generated-video-glm-viduq1-text.mp4",
+            "index": 10,
+            "timestampSeconds": 4.95,
+            "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-10.png"
+          }
+        ]
+      },
+      "videos": [
+        {
+          "fileName": "generated-video-glm-viduq1-text.mp4",
+          "durationSeconds": 5.21,
+          "frameCount": 10,
+          "frames": [
+            {
+              "index": 1,
+              "timestampSeconds": 0.26,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-01.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-01.png"
+            },
+            {
+              "index": 2,
+              "timestampSeconds": 0.78,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-02.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-02.png"
+            },
+            {
+              "index": 3,
+              "timestampSeconds": 1.3,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-03.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-03.png"
+            },
+            {
+              "index": 4,
+              "timestampSeconds": 1.82,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-04.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-04.png"
+            },
+            {
+              "index": 5,
+              "timestampSeconds": 2.34,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-05.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-05.png"
+            },
+            {
+              "index": 6,
+              "timestampSeconds": 2.86,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-06.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-06.png"
+            },
+            {
+              "index": 7,
+              "timestampSeconds": 3.39,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-07.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-07.png"
+            },
+            {
+              "index": 8,
+              "timestampSeconds": 3.91,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-08.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-08.png"
+            },
+            {
+              "index": 9,
+              "timestampSeconds": 4.43,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-09.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-09.png"
+            },
+            {
+              "index": 10,
+              "timestampSeconds": 4.95,
+              "fileName": "video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-10.png",
+              "path": "/Users/ajc/c/as/autoshow-cli/docs/benchmarks/video/2026-05-21_06-51-12-517_video-gen/video-quality-frames/glm-viduq1-text/generated-video-glm-viduq1-text/frame-10.png"
+            }
+          ],
+          "criterionScores": {
+            "promptAdherence": 5,
+            "visualQuality": 8,
+            "artifactControl": 6,
+            "temporalConsistency": 6,
+            "compositionCamera": 8
+          },
+          "averageScore10": 6.6,
+          "qualityScore": 66,
+          "summary": "High-quality close-up of spaghetti being lifted with utensils, but it does not actually show a man eating; only hands and arms are visible. The scene is attractive and readable, with some utensil warping and continuity issues.",
+          "strengths": [
+            "Photorealistic lighting, depth of field, and appetizing spaghetti texture",
+            "Clear focus on spaghetti and hand interaction",
+            "Stable, coherent close-up composition"
+          ],
+          "issues": [
+            "No visible face or mouth, so the requested action of eating is not shown",
+            "Man is only implied by hands/arms rather than clearly depicted",
+            "Forks/utensils appear to warp, blur, or change shape across frames",
+            "Spaghetti strands stretch and morph unnaturally at times"
+          ],
+          "usage": {
+            "input_tokens": 24944,
+            "input_tokens_details": {
+              "cached_tokens": 0
+            },
+            "output_tokens": 402,
+            "output_tokens_details": {
+              "reasoning_tokens": 218
+            },
+            "total_tokens": 25346
+          }
+        }
+      ]
+    }
+  ]
+}

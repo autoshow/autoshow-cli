@@ -1,7 +1,7 @@
 import { chmod, mkdir, rm, symlink } from 'node:fs/promises'
 import { dirname, join, posix } from 'node:path'
 
-export type TarGzExtractOptions = {
+type TarGzExtractOptions = {
   destination: string
   stripComponents?: number
 }
@@ -137,12 +137,4 @@ export const extractTarGzBuffer = async (
       }
     }
   }
-}
-
-export const extractTarGzFile = async (
-  archivePath: string,
-  options: TarGzExtractOptions
-): Promise<void> => {
-  const archive = await Bun.file(archivePath).arrayBuffer()
-  await extractTarGzBuffer(archive, options)
 }

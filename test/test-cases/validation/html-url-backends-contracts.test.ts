@@ -7,6 +7,7 @@ import { assertUrlArticleOptionsSupported } from '~/cli/commands/process-steps/s
 import {
   HOSTED_URL_ARTICLE_BACKENDS,
   getUrlArticleProviderAdapter,
+  runUrlArticleProviderWithStats,
   URL_ARTICLE_BACKENDS,
   URL_ARTICLE_PROVIDER_ADAPTERS
 } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-registry'
@@ -15,10 +16,12 @@ import { runOcr } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/r
 import { runFirecrawlUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/firecrawl/run-firecrawl-url'
 import { runGlmReaderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/glm-reader/run-glm-reader-url'
 import { runSpiderUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/spider/run-spider-url'
+import { runSupadataUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/supadata/run-supadata-url'
 import { runZyteUrl } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-services/zyte/run-zyte-url'
 import { buildOptsFromFlags } from '~/cli/commands/process-steps/step-1-download/targets/build-opts-from-flags'
 import type { DocumentMetadata, ExtractionOptions, HtmlArticleBackend } from '~/types'
-import type { UrlArticleProviderAdapter } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-adapter'
+import type { UrlArticleProviderAdapter, UrlArticleRunOptions } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-provider-adapter'
+import { DEFAULT_URL_REQUEST_TIMEOUT_MS } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-utils'
 import type { UrlArticleRunResult } from '~/cli/commands/process-steps/step-2-extract/step-2-url/url-utils'
 
 const originalFetch = globalThis.fetch
@@ -29,6 +32,8 @@ const envKeys = [
   'ZAI_BASE_URL',
   'SPIDER_API_URL',
   'SPIDER_API_KEY',
+  'SUPADATA_API_KEY',
+  'SUPADATA_BASE_URL',
   'ZYTE_API_URL',
   'ZYTE_API_KEY',
   'AUTOSHOW_DEFUDDLE_BIN',
@@ -95,6 +100,12 @@ const buildMockArticle = (
       wordCount: markdown.split(/\s+/).filter(Boolean).length
     }
   }
+}
+
+const buildAbortError = (message: string): Error => {
+  const error = new Error(message)
+  error.name = 'AbortError'
+  return error
 }
 
 const writeFakeDefuddleBin = async (): Promise<{ bin: string, argsLog: string }> => {
@@ -217,14 +228,9 @@ test('prepared article markdown carries backend duration into extraction metadat
     outputDir: '/tmp/autoshow-html-duration-test',
     dpi: 300,
     languages: 'eng',
-    oem: 1,
-    psm: 3,
     outputFormat: 'text',
-    pageSeparator: '\n\n',
     ocrProviderConcurrency: 2,
     ocrLocalConcurrency: 1,
-    preserveInterwordSpaces: false,
-    rotate: 0,
     pdfChapterMode: 'local',
     preparedMarkdown: longMarkdown,
     htmlArticleProcessingTimeMs: 4321,
@@ -284,7 +290,8 @@ test('firecrawl URL backend posts scrape request and normalizes article metadata
     body: {
       url: 'https://article.test/story',
       formats: ['markdown'],
-      onlyMainContent: true
+      onlyMainContent: true,
+      timeout: DEFAULT_URL_REQUEST_TIMEOUT_MS
     }
   })
   expect(result).toMatchObject({
@@ -304,11 +311,117 @@ test('firecrawl URL backend posts scrape request and normalizes article metadata
 test('URL article provider adapters expose neutral capabilities and reject unsupported explicit options', () => {
   expect(getUrlArticleProviderAdapter('firecrawl').capabilities).toContain('selectors')
   expect(getUrlArticleProviderAdapter('spider').capabilities).toContain('selectors')
+  expect(getUrlArticleProviderAdapter('defuddle').capabilities).toContain('timeout')
+  expect(getUrlArticleProviderAdapter('zyte').capabilities).toContain('timeout')
   expect(getUrlArticleProviderAdapter('zyte').capabilities).toContain('structured-extraction')
   expect(() => assertUrlArticleOptionsSupported(
     getUrlArticleProviderAdapter('zyte'),
     { includeSelectors: ['article'] }
   )).toThrow('Zyte does not support URL article option "selectors".')
+})
+
+test('URL article provider retry wrapper retries timeout failures and reports attempts', async () => {
+  const originalSleep = Bun.sleep
+  const seenOptions: UrlArticleRunOptions[] = []
+  let calls = 0
+
+  try {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async () => {}) as typeof Bun.sleep
+    URL_ARTICLE_PROVIDER_ADAPTERS.zyte.run = async (source, sourceUrl, options) => {
+      calls += 1
+      seenOptions.push(options ?? {})
+      if (calls === 1) {
+        throw buildAbortError('Zyte request timed out after 25ms')
+      }
+      return buildMockArticle('zyte', source, sourceUrl)
+    }
+
+    const result = await runUrlArticleProviderWithStats('zyte', 'https://article.test/retry', 'https://article.test/retry', {
+      timeoutMs: 25,
+      requestAttempts: 2
+    })
+
+    expect(result.article.title).toBe('zyte Article')
+    expect(result.attempts).toBe(2)
+    expect(calls).toBe(2)
+    expect(seenOptions).toHaveLength(2)
+    for (const options of seenOptions) {
+      expect(options).toMatchObject({
+        timeoutMs: 25,
+        requestAttempts: 2
+      })
+      expect(options.requestSignal).toBeInstanceOf(AbortSignal)
+    }
+  } finally {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalSleep
+  }
+})
+
+test('URL article provider retry wrapper retries retryable HTTP status failures', async () => {
+  const originalSleep = Bun.sleep
+  let calls = 0
+
+  try {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async () => {}) as typeof Bun.sleep
+    URL_ARTICLE_PROVIDER_ADAPTERS.firecrawl.run = async (source, sourceUrl) => {
+      calls += 1
+      if (calls === 1) {
+        const error = new Error('Firecrawl scrape failed (503 Service Unavailable): overloaded')
+        Object.assign(error, {
+          status: 503,
+          headers: new Headers()
+        })
+        throw error
+      }
+      return buildMockArticle('firecrawl', source, sourceUrl)
+    }
+
+    const result = await runUrlArticleProviderWithStats('firecrawl', 'https://article.test/status-retry', 'https://article.test/status-retry', {
+      timeoutMs: 25,
+      requestAttempts: 2
+    })
+
+    expect(result.article.title).toBe('firecrawl Article')
+    expect(result.attempts).toBe(2)
+    expect(calls).toBe(2)
+  } finally {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalSleep
+  }
+})
+
+test('URL article provider retry wrapper enriches exhausted timeout errors', async () => {
+  const originalSleep = Bun.sleep
+
+  try {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async () => {}) as typeof Bun.sleep
+    URL_ARTICLE_PROVIDER_ADAPTERS.zyte.run = async () => {
+      throw buildAbortError('Zyte request timed out after 25ms')
+    }
+
+    await expect(runUrlArticleProviderWithStats('zyte', 'https://article.test/retry-fail', 'https://article.test/retry-fail', {
+      timeoutMs: 25,
+      requestAttempts: 2
+    })).rejects.toThrow('Zyte request failed after 2/2 attempts with 25ms timeout')
+
+    let error: unknown
+    try {
+      await runUrlArticleProviderWithStats('zyte', 'https://article.test/retry-fail', 'https://article.test/retry-fail', {
+        timeoutMs: 25,
+        requestAttempts: 2
+      })
+    } catch (caught) {
+      error = caught
+    }
+
+    expect(error).toBeInstanceOf(Error)
+    const message = (error as Error).message
+    expect(message).toContain('Zyte request failed after 2/2 attempts with 25ms timeout')
+    expect(message).toContain('ms elapsed')
+    expect(message).toContain('Zyte request timed out after 25ms')
+    expect((error as { attemptsMade?: unknown }).attemptsMade).toBe(2)
+  } finally {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalSleep
+  }
 })
 
 test('GLM Reader URL backend posts reader request and normalizes article metadata', async () => {
@@ -356,7 +469,7 @@ test('GLM Reader URL backend posts reader request and normalizes article metadat
     body: {
       url: 'https://article.test/glm',
       return_format: 'markdown',
-      timeout: 20,
+      timeout: Math.ceil(DEFAULT_URL_REQUEST_TIMEOUT_MS / 1000),
       no_cache: false,
       retain_images: false,
       no_gfm: false,
@@ -423,7 +536,8 @@ test('Spider URL backend posts scrape request and normalizes article metadata', 
       url: 'https://article.test/spider',
       return_format: 'markdown',
       metadata: true,
-      filter_output_main_only: true
+      filter_output_main_only: true,
+      request_timeout: Math.ceil(DEFAULT_URL_REQUEST_TIMEOUT_MS / 1000)
     }
   })
   expect(result).toMatchObject({
@@ -439,6 +553,92 @@ test('Spider URL backend posts scrape request and normalizes article metadata', 
     }
   })
   expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
+})
+
+test('Supadata URL backend sends scrape request and normalizes article metadata', async () => {
+  process.env['SUPADATA_API_KEY'] = 'supadata-test-key'
+  process.env['SUPADATA_BASE_URL'] = 'https://supadata.local/v1'
+
+  const requests: Array<{ url: string, method: string, headers?: Record<string, string> }> = []
+  globalThis.fetch = (async (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]): Promise<Response> => {
+    const url = String(input)
+    const headers: Record<string, string> = {}
+    if (init?.headers && typeof init.headers === 'object') {
+      for (const [key, value] of Object.entries(init.headers as Record<string, string>)) {
+        headers[key] = value
+      }
+    }
+    requests.push({
+      url,
+      method: init?.method ?? 'GET',
+      headers
+    })
+
+    if (url.startsWith('https://supadata.local/v1/web/scrape')) {
+      return Response.json({
+        url: 'https://article.test/supadata-final',
+        content: longMarkdown,
+        name: 'Supadata Title',
+        description: 'Supadata description',
+        ogUrl: 'https://article.test/og-image.png',
+        countCharacters: longMarkdown.length,
+        urls: ['https://article.test/link-1']
+      })
+    }
+
+    if (url === 'https://article.test/supadata') {
+      return new Response(htmlDocument, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8' }
+      })
+    }
+
+    throw new Error(`Unexpected Supadata mock fetch: ${url}`)
+  }) as typeof fetch
+
+  const result = await runSupadataUrl('https://article.test/supadata', 'https://article.test/supadata')
+
+  expect(requests[0]).toMatchObject({
+    url: 'https://supadata.local/v1/web/scrape?url=https%3A%2F%2Farticle.test%2Fsupadata',
+    method: 'GET',
+    headers: { 'x-api-key': 'supadata-test-key' }
+  })
+  expect(result).toMatchObject({
+    markdown: longMarkdown,
+    title: 'Supadata Title',
+    web: {
+      sourceUrl: 'https://article.test/supadata',
+      finalUrl: 'https://article.test/supadata-final',
+      description: 'Supadata description'
+    }
+  })
+  expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
+})
+
+test('Supadata URL backend rejects missing API key', async () => {
+  delete process.env['SUPADATA_API_KEY']
+  delete process.env['SUPADATA_BASE_URL']
+
+  await expect(
+    runSupadataUrl('https://article.test/no-key', 'https://article.test/no-key')
+  ).rejects.toThrow('SUPADATA_API_KEY is required')
+})
+
+test('Supadata URL backend reports provider HTTP errors with message/details', async () => {
+  process.env['SUPADATA_API_KEY'] = 'supadata-test-key'
+  process.env['SUPADATA_BASE_URL'] = 'https://supadata.local/v1'
+
+  globalThis.fetch = (async (_input: Parameters<typeof fetch>[0], _init?: Parameters<typeof fetch>[1]): Promise<Response> =>
+    new Response(JSON.stringify({
+      error: 'unauthorized',
+      message: 'Unauthorized',
+      details: 'The request is unauthorized. Please check your API key.'
+    }), { status: 401, statusText: 'Unauthorized' })
+  ) as typeof fetch
+
+  await expect(
+    runSupadataUrl('https://article.test/error', 'https://article.test/error')
+  ).rejects.toThrow('Supadata scrape failed (401 Unauthorized): Unauthorized')
 })
 
 test('Zyte URL backend posts article extract request and normalizes article metadata', async () => {
@@ -505,16 +705,23 @@ test('Zyte URL backend posts article extract request and normalizes article meta
   expect(result.fileSize).toBeGreaterThan(longMarkdown.length)
 })
 
-test('--all-url orchestrator writes provider artifacts and a multi-provider run manifest', async () => {
+test('--all-providers URL orchestrator writes provider artifacts and a multi-provider run manifest', async () => {
   const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-all-url-'))
 
   try {
+    const seenOptions = new Map<HtmlArticleBackend, UrlArticleRunOptions | undefined>()
     for (const backend of URL_ARTICLE_BACKENDS) {
-      URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async (source, sourceUrl) =>
-        buildMockArticle(backend, source, sourceUrl)
+      URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async (source, sourceUrl, options) => {
+        seenOptions.set(backend, options)
+        return buildMockArticle(backend, source, sourceUrl)
+      }
     }
 
-    const opts = buildOptsFromFlags(false, { 'all-url': true })
+    const opts = buildOptsFromFlags(false, {
+      'all-url': true,
+      'url-request-timeout-ms': '25000',
+      'url-request-attempts': '2'
+    })
     const output = await processUrlArticle('https://article.test/story.html', tempRoot, opts)
 
     expect(await Bun.file(join(output.outputDir, 'result.json')).exists()).toBe(false)
@@ -558,16 +765,81 @@ test('--all-url orchestrator writes provider artifacts and a multi-provider run 
       'succeeded',
       'succeeded',
       'succeeded',
+      'succeeded',
       'succeeded'
     ])
     expect(manifest.metadata.step2).toHaveLength(URL_ARTICLE_BACKENDS.length)
     expect(manifest.metadata.resolvedStep2.backends).toEqual([...URL_ARTICLE_BACKENDS])
+    for (const backend of URL_ARTICLE_BACKENDS) {
+      expect(seenOptions.get(backend)).toMatchObject({
+        timeoutMs: 25000,
+        requestAttempts: 2
+      })
+    }
   } finally {
     await rm(tempRoot, { recursive: true, force: true })
   }
 })
 
-test('--all-url with local HTML runs defuddle and marks hosted backends skipped', async () => {
+test('--all-providers URL manifest records one exhausted failed URL provider without an actual-cost artifact', async () => {
+  const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-all-url-failed-provider-'))
+  const originalSleep = Bun.sleep
+
+  try {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = (async () => {}) as typeof Bun.sleep
+    for (const backend of URL_ARTICLE_BACKENDS) {
+      URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async (source, sourceUrl) =>
+        buildMockArticle(backend, source, sourceUrl)
+    }
+    URL_ARTICLE_PROVIDER_ADAPTERS.zyte.run = async () => {
+      throw buildAbortError('Zyte request timed out after 25ms')
+    }
+
+    const opts = buildOptsFromFlags(false, {
+      'all-url': true,
+      'url-request-timeout-ms': '25',
+      'url-request-attempts': '2'
+    })
+    const output = await processUrlArticle('https://article.test/partial.html', tempRoot, opts)
+
+    expect(await Bun.file(join(output.outputDir, 'providers', 'zyte', 'result.json')).exists()).toBe(false)
+    expect(await Bun.file(join(output.outputDir, 'providers', 'firecrawl', 'result.json')).exists()).toBe(true)
+
+    const manifest = await Bun.file(join(output.outputDir, 'run.json')).json() as {
+      metadata: {
+        completionStatus: string
+        missingProviders: Array<{ service: string, model: string }>
+        errors?: Array<{ service: string, model: string, message: string }>
+        providerStates: Array<{ service: string, status: string, attempts: number, lastError?: { message: string } }>
+        cost: { actual: { steps?: unknown[], totalCost: number } }
+      }
+    }
+
+    expect(manifest.metadata.completionStatus).toBe('incomplete')
+    expect(manifest.metadata.missingProviders).toEqual([{ service: 'zyte', model: 'zyte' }])
+    expect(manifest.metadata.errors).toEqual([{
+      service: 'zyte',
+      model: 'zyte',
+      message: expect.stringContaining('Zyte request failed after 2/2 attempts with 25ms timeout')
+    }])
+    expect(manifest.metadata.providerStates.find((state) => state.service === 'zyte')).toMatchObject({
+      service: 'zyte',
+      status: 'failed',
+      attempts: 2,
+      lastError: {
+        message: expect.stringContaining('Zyte request timed out after 25ms')
+      }
+    })
+    expect(manifest.metadata.cost.actual.steps?.some((step) =>
+      typeof step === 'object' && step !== null && JSON.stringify(step).includes('zyte')
+    )).toBe(false)
+  } finally {
+    ;(Bun as typeof Bun & { sleep: typeof Bun.sleep }).sleep = originalSleep
+    await rm(tempRoot, { recursive: true, force: true })
+  }
+})
+
+test('--all-providers URL with local HTML runs defuddle and marks hosted backends skipped', async () => {
   const tempRoot = await mkdtemp(join(tmpdir(), 'autoshow-local-all-url-'))
 
   try {
@@ -578,7 +850,7 @@ test('--all-url with local HTML runs defuddle and marks hosted backends skipped'
       buildMockArticle('defuddle', source, sourceUrl)
     for (const backend of HOSTED_URL_ARTICLE_BACKENDS) {
       URL_ARTICLE_PROVIDER_ADAPTERS[backend].run = async () => {
-        throw new Error(`${backend} should not run for local HTML --all-url`)
+        throw new Error(`${backend} should not run for local HTML --all-providers`)
       }
     }
 
@@ -605,6 +877,7 @@ test('--all-url with local HTML runs defuddle and marks hosted backends skipped'
       expect.objectContaining({ service: 'firecrawl', status: 'skipped' }),
       expect.objectContaining({ service: 'glm-reader', status: 'skipped' }),
       expect.objectContaining({ service: 'spider', status: 'skipped' }),
+      expect.objectContaining({ service: 'supadata', status: 'skipped' }),
       expect.objectContaining({ service: 'zyte', status: 'skipped' })
     ])
   } finally {

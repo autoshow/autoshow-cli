@@ -14,7 +14,7 @@ export type LeafPrompt = {
   structuredPreset?: string | undefined
 }
 
-export type CompositePrompt = {
+type CompositePrompt = {
   description: string
   includes: string[]
 }

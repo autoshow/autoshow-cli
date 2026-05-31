@@ -1,20 +1,18 @@
+import * as l from '~/utils/logger'
 import type { DeepgramAlternative, DeepgramHttpError, DeepgramResponse, DeepgramWords, RetryClass, Step2Metadata, TranscriptionResult, TranscriptionSegment } from '~/types'
 import { DeepgramResponseSchema } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   appendToken,
   buildSegmentsFromWords,
-  buildTranscriptionOutputBase,
-  countTokens,
   formatSpeakerLabel,
-  formatTranscriptText,
-  resolveTranscriptionOutput,
   toTimestamp
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { DEEPGRAM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData } from '~/utils/validate/validation'
+import { finalizeHostedSttResult } from '../finalize-hosted-stt'
 
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 
@@ -180,11 +178,10 @@ export const runDeepgramTranscribe = async (
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
 
   const file = Bun.file(audioPath)
   const mimeType = inferDeepgramMimeType(audioPath, file.type)
-  const baseURL = readEnv('DEEPGRAM_BASE_URL') ?? 'https://api.deepgram.com'
+  const baseURL = DEEPGRAM_DEFAULT_BASE_URL
   let transcribeMs = 0
   let requestCount = 0
   let retryCount = 0
@@ -250,53 +247,22 @@ export const runDeepgramTranscribe = async (
   const wordSegments = segmentsFromWords(primaryAlternative?.words, offsetSeconds)
   const segments = utteranceSegments.length > 0 ? utteranceSegments : wordSegments
   const text = transcript || toTextFromWords(primaryAlternative?.words)
-
-  const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
-
-  await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
-
-  const processingTime = Date.now() - startTime
-  const remoteProcessingMs = Math.max(0, processingTime - transcribeMs)
   const evidenceWords = evidenceWordsFromDeepgram(primaryAlternative?.words, offsetSeconds)
-  const metadata: Step2Metadata = {
-    transcriptionService: 'deepgram',
-    transcriptionModel: modelName,
-    processingTime,
-    tokenCount: countTokens(finalText),
-    ...((transcribeMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0 || remoteProcessingMs > 0)
-      ? {
-          timings: {
-            ...(transcribeMs > 0 ? { transcribeMs } : {}),
-            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-            ...(requestCount > 0 ? { requestCount } : {}),
-            ...(retryCount > 0 ? { retryCount } : {}),
-            ...(rateLimitCount > 0 ? { rateLimitCount } : {})
-          }
-        }
-      : {})
-  }
-
-  if (segmentNumber && totalSegments) {
-    logSttSegmentLifecycle(l, { provider: 'deepgram', action: 'completed', segmentNumber, totalSegments, model: modelName, processingTimeMs: processingTime })
-  }
-
-  return {
-    result: {
-      text: finalText,
-      segments: finalSegments,
-      evidence: {
-        ...(evidenceWords.length > 0 ? {
-          words: evidenceWords
-        } : {}),
-        capabilities: {
-          hasNativeWordTiming: evidenceWords.length > 0,
-          hasConfidence: false,
-          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-        },
-        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-        rawResponse: payload
-      }
-    },
-    metadata
-  }
+  return await finalizeHostedSttResult({
+    provider: 'deepgram',
+    model: modelName,
+    outputDir,
+    segmentNumber,
+    totalSegments,
+    offsetSeconds,
+    startTime,
+    transcribeMs,
+    requestCount,
+    retryCount,
+    rateLimitCount,
+    text,
+    segments,
+    evidenceWords,
+    rawResponse: payload
+  })
 }

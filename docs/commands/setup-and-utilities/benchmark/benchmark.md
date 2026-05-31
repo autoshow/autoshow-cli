@@ -1,6 +1,6 @@
 # benchmark
 
-Benchmark STT transcription quality across audio compression levels and playback speeds, or score voice quality for an existing TTS run.
+Benchmark STT transcription quality across audio compression levels and playback speeds, score voice quality for an existing TTS run, or judge image/video quality for an existing generation run.
 
 ## Outline
 
@@ -9,6 +9,8 @@ Benchmark STT transcription quality across audio compression levels and playback
 - [Flags](#flags)
 - [Examples](#examples)
 - [TTS voice-quality mode](#tts-voice-quality-mode)
+- [Image quality mode](#image-quality-mode)
+- [Video quality mode](#video-quality-mode)
 - [How it works](#how-it-works)
   - [Phase 1: Prepare source audio](#phase-1-prepare-source-audio)
   - [Phase 2: Generate audio variants](#phase-2-generate-audio-variants)
@@ -29,6 +31,8 @@ Benchmark STT transcription quality across audio compression levels and playback
 ```bash
 bun as benchmark <audio-file> [flags]
 bun as benchmark <tts-run-dir> --tts [flags]
+bun as benchmark <image-run-dir> --image [flags]
+bun as benchmark <video-run-dir> --video [flags]
 ```
 
 ## Modes
@@ -36,6 +40,12 @@ bun as benchmark <tts-run-dir> --tts [flags]
 Default STT mode takes an audio file, generates a spectrum of degraded versions (lower bitrates and faster playback speeds), transcribes each version through all available STT services, and produces a JSON report comparing transcription quality via Word Error Rate (WER). This identifies at what point compression or speed-up causes transcription quality to degrade for each service.
 
 TTS mode is selected with `--tts`. It takes an existing AutoShow TTS run directory, reads `run.json`, derives the source text from `metadata.input`, scores all `metadata.tts[]` audio files, and writes voice quality reports beside the run.
+
+Image mode is selected with `--image`. It takes an existing AutoShow image run directory, reads `run.json`, derives the source prompt from `metadata.input`, scores all generated files listed in `metadata.image[].imageFileNames`, and writes image quality reports beside the run. It evaluates existing generated images only; it does not generate new images.
+
+Video mode is selected with `--video`. It takes an existing AutoShow video run directory, reads `run.json`, derives the source prompt from `metadata.input`, extracts 10 midpoint-interval frames per generated video with local `ffmpeg`/`ffprobe`, scores those ordered frames, and writes video quality reports beside the run. It evaluates existing generated videos only; it does not generate new videos.
+
+Document OCR benchmarks are not run by `bun as benchmark`. For OCR, run the normal extraction flow with route-aware provider selections such as `--all-providers`, then generate or inspect the OCR comparison reports under `docs/benchmarks/ocr/`.
 
 ## Flags
 
@@ -63,14 +73,32 @@ TTS mode is selected with `--tts`. It takes an existing AutoShow TTS run directo
 | `--tts-audio-judge-model`   | `gpt-audio`              | OpenAI audio-capable chat model for paid rubric judging                         |
 | `--tts-keep-temp`           | `false`                  | Keep temporary normalized audio files                                           |
 
+### Image flags
+
+| Flag                    | Default   | Description                                                    |
+|-------------------------|-----------|----------------------------------------------------------------|
+| `--image`               | `false`   | Score an existing image run instead of running the STT benchmark |
+| `--image-judge-model`   | `gpt-5.5` | OpenAI vision model for paid image rubric judging              |
+
+Image mode calls the OpenAI Responses API once per generated image. Treat `bun as benchmark <image-run-dir> --image` as a paid provider run.
+
+### Video flags
+
+| Flag                    | Default   | Description                                                    |
+|-------------------------|-----------|----------------------------------------------------------------|
+| `--video`               | `false`   | Score an existing video run instead of running the STT benchmark |
+| `--video-judge-model`   | `gpt-5.5` | OpenAI vision model for paid video rubric judging              |
+
+Video mode calls the OpenAI Responses API once per generated video after extracting local frame screenshots. Treat `bun as benchmark <video-run-dir> --video` as a paid provider run.
+
 ## Examples
 
 ```bash
 # Full benchmark with all available STT services
-bun as benchmark input/examples/audio/1-audio.mp3
+bun as benchmark https://ajc.pics/autoshow/examples/1-audio.mp3
 
 # Benchmark with local Whisper only (free, no API keys needed)
-bun as benchmark input/examples/audio/1-audio.mp3 --stt-services whisper
+bun as benchmark https://ajc.pics/autoshow/examples/1-audio.mp3 --stt-services whisper
 
 # Compression-only benchmark with select cloud services
 bun as benchmark audio.mp3 --stt-services deepgram,groq --skip-speed
@@ -95,6 +123,18 @@ bun as benchmark docs/benchmarks/tts/<run> --tts --tts-mode local
 
 # Score a TTS run with existing roundtrip transcripts
 bun as benchmark docs/benchmarks/tts/<run> --tts --tts-roundtrip-dir <dir>
+
+# Score an existing image run
+bun as benchmark docs/benchmarks/image/<run> --image
+
+# Score an image run with a specific OpenAI judge model
+bun as benchmark docs/benchmarks/image/<run> --image --image-judge-model gpt-5.5
+
+# Score an existing video run
+bun as benchmark docs/benchmarks/video/<run> --video
+
+# Score a video run with a specific OpenAI judge model
+bun as benchmark docs/benchmarks/video/<run> --video --video-judge-model gpt-5.5
 ```
 
 ## TTS voice-quality mode
@@ -102,6 +142,8 @@ bun as benchmark docs/benchmarks/tts/<run> --tts --tts-roundtrip-dir <dir>
 `bun as benchmark <tts-run-dir> --tts` is analysis-only. It does not generate new TTS samples. The run directory must contain a TTS `run.json` with `metadata.tts[]`; each entry's `audioFileName` is resolved relative to the run directory.
 
 By default, `--tts` uses `--tts-mode full`. Full mode computes local signal/prosody heuristics, uses any supplied fixtures or roundtrip transcripts, and may call OpenAI audio judging plus AssemblyAI/OpenAI roundtrip STT when the corresponding API keys are configured. Configured paid scoring calls are strict in full mode: if OpenAI judging or paid roundtrip STT is attempted and fails, the benchmark exits non-zero instead of recording a warning. Missing paid credentials still skip those metrics. Use `--tts-mode local` for a no-paid, warning-tolerant pass.
+
+Full mode can add paid audio-judge and roundtrip STT metrics, but it does not run UTMOSv2, NISQA-TTS, NISQA, or DNSMOS scorers. Provide `--tts-metric-fixtures` from those external scorers when you need full MOS/DNS metric coverage.
 
 Outputs are written beside the run:
 
@@ -113,6 +155,73 @@ Outputs are written beside the run:
 ```
 
 The voice-quality score excludes cost, provider processing speed, and provider latency. It combines naturalness signals with speech-quality/intelligibility signals and records missing metrics per provider.
+
+The silence threshold is computed adaptively from the audio noise floor rather than using a fixed value, improving accuracy across recordings with different noise characteristics.
+
+The voice-quality report includes per-provider detail breakdowns, confidence indicators (High/Medium/Low based on metric coverage), and recommendations identifying the best providers and flagging signal quality concerns.
+
+When a `voice-quality-report.json` exists in a TTS run directory, the provider comparison report (`provider-comparison-report.json`) automatically incorporates `humanSpeechScore` as `qualityScore`, and the benchmark ranking report includes TTS in quality rankings.
+
+## Image quality mode
+
+`bun as benchmark <image-run-dir> --image` is analysis-only. It does not generate new images. The run directory must contain an image `run.json` with:
+
+- `kind: "image"`
+- `metadata.input` containing the original generation prompt
+- `metadata.image[]` entries with `imageService`, `imageModel`, and relative `imageFileNames[]`
+
+Each image is sent to OpenAI `gpt-5.5` by default through the Responses API as an `input_image` data URL with `detail: "auto"`. The judge uses native strict JSON schema output and scores five criteria from 1 to 10:
+
+- Prompt adherence
+- Visual quality
+- Artifact control
+- Composition
+- Detail/text handling
+
+The report stores those original 1-10 criterion scores and a `qualityScore` equal to the average criterion score multiplied by 10 for 0-100 ranking compatibility. The score excludes provider cost, provider speed, file size, and image dimensions.
+
+Outputs are written beside the run:
+
+```
+<image-run-dir>/
+  image-quality-report.json
+  image-quality-report.md
+  provider-comparison-report.json
+  provider-comparison-report.md
+```
+
+`image-quality-report.json` contains the judge model, source prompt, rubric, per-image criterion scores, per-provider averaged criterion scores, 0-100 `qualityScore`, and evidence summaries. `provider-comparison-report.json` is regenerated with image quality evidence on each provider row, `metrics.qualityScore`, top-level `qualityScore`, and populated highest-quality ranking surfaces so benchmark ranking reports can include image quality.
+
+## Video quality mode
+
+`bun as benchmark <video-run-dir> --video` is analysis-only. It does not generate new videos. The run directory must contain a video `run.json` with:
+
+- `kind: "video"`
+- `metadata.input` containing the original generation prompt
+- `metadata.video[]` entries with `videoGenService`, `videoGenModel`, and relative `videoFileName`
+
+The benchmark requires local `ffmpeg` and `ffprobe` so it can sample 10 ordered PNG frames from each generated video. Each video is sent to OpenAI `gpt-5.5` by default through the Responses API as ordered `input_image` data URLs with `detail: "auto"`. The judge uses native strict JSON schema output and scores five criteria from 1 to 10:
+
+- Prompt adherence
+- Visual quality
+- Artifact control
+- Temporal consistency
+- Composition/camera
+
+The report stores those original 1-10 criterion scores and a `qualityScore` equal to the average criterion score multiplied by 10 for 0-100 ranking compatibility. The score excludes provider cost, provider speed, file size, and duration.
+
+Outputs are written beside the run:
+
+```
+<video-run-dir>/
+  video-quality-frames/
+  video-quality-report.json
+  video-quality-report.md
+  provider-comparison-report.json
+  provider-comparison-report.md
+```
+
+`video-quality-report.json` contains the judge model, source prompt, rubric, sampled frame evidence, per-video criterion scores, per-provider averaged criterion scores, 0-100 `qualityScore`, and evidence summaries. `provider-comparison-report.json` is regenerated with video quality evidence on each provider row, `metrics.qualityScore`, top-level `qualityScore`, and populated highest-quality ranking surfaces so benchmark ranking reports can include video quality.
 
 ## How it works
 
@@ -295,9 +404,6 @@ The benchmark automatically detects which STT services are available based on en
 | rev           | `REVAI_ACCESS_TOKEN`        |
 | gladia        | `GLADIA_API_KEY`            |
 | happyscribe   | `HAPPYSCRIBE_API_KEY`       |
-| deapi         | `DEAPI_API_KEY`             |
-| gcloud        | `gcloud` CLI                |
-| aws           | `aws` CLI                   |
 
 Services that require URLs (`youtube-captions`, `supadata`, `scrapecreators`) are excluded since the benchmark works with locally-generated audio files.
 

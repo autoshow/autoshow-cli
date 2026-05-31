@@ -1,6 +1,8 @@
 import * as v from 'valibot'
 import type { ImageProvider, MusicProvider, TtsProvider, VideoProvider } from './provider-types'
 
+type GenerationProviderCostSource = 'provider_usage' | 'provider_quote' | 'registry_fallback'
+
 export type Step4Metadata = {
   ttsService: TtsProvider
   ttsModel: string
@@ -39,7 +41,7 @@ export type Step5Metadata = {
   groundingMetadata?: unknown
   providerModeration?: unknown
   providerCostCents?: number | undefined
-  providerCostSource?: 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
+  providerCostSource?: GenerationProviderCostSource | undefined
 }
 
 export type Step6VideoMetadata = {
@@ -56,6 +58,7 @@ export type Step6VideoMetadata = {
   lastFrameImage?: string | undefined
   referenceImages?: string[] | undefined
   inputVideo?: string | undefined
+  inputVideoDurationSeconds?: number | undefined
   providerRequestId?: string | undefined
   providerReturnedModel?: string | undefined
   providerVideoUrl?: string | undefined
@@ -65,7 +68,7 @@ export type Step6VideoMetadata = {
   providerFileOutput?: unknown
   providerStorageError?: unknown
   providerCostCents?: number | undefined
-  providerCostSource?: 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
+  providerCostSource?: GenerationProviderCostSource | undefined
 }
 
 export type Step7MusicMetadata = {
@@ -77,7 +80,7 @@ export type Step7MusicMetadata = {
   musicDurationMs: number | undefined
   lyricsSource: 'provided' | 'generated' | 'none'
   providerCostCents?: number | undefined
-  providerCostSource?: 'provider_quote' | 'registry_fallback' | undefined
+  providerCostSource?: Extract<GenerationProviderCostSource, 'provider_quote' | 'registry_fallback'> | undefined
   providerRequestId?: string | undefined
   providerTraceId?: string | undefined
   audioMimeType?: string | undefined
@@ -95,6 +98,22 @@ export type Step7MusicMetadata = {
   generatedText?: string | undefined
 }
 
+export type TimingRateBasis = 'durationSecond' | 'page' | '1KTokens' | '1KCharacters' | 'image'
+export type TimingThroughputUnit = 'x' | 'tokensPerSecond' | 'charactersPerSecond' | 'pagesPerMinute' | 'imagesPerMinute'
+export type TimingScope = 'estimated' | 'wall'
+export type TimingBreakdown = Partial<Record<
+  | 'queueWaitMs'
+  | 'transcribeMs'
+  | 'uploadMs'
+  | 'createMs'
+  | 'pollMs'
+  | 'pollSleepMs'
+  | 'transcriptMs'
+  | 'remoteProcessingMs'
+  | 'cleanupMs',
+  number
+>>
+
 export type TimingStepEntry = {
   step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
   provider: string
@@ -102,4 +121,10 @@ export type TimingStepEntry = {
   processingTimeMs: number
   inputMetric?: string
   inputValue?: number
+  rateBasis?: TimingRateBasis
+  msPerUnit?: number
+  throughputValue?: number
+  throughputUnit?: TimingThroughputUnit
+  timingScope?: TimingScope
+  timingBreakdown?: TimingBreakdown
 }

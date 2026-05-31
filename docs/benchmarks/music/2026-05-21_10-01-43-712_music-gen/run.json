@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 2,
+  "kind": "music",
+  "metadata": {
+    "music": [
+      {
+        "musicService": "elevenlabs",
+        "musicModel": "music_v1",
+        "processingTime": 32759,
+        "musicFileName": "generated-music-elevenlabs-music_v1.mp3",
+        "musicFileSize": 2879783,
+        "musicDurationMs": 180000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioBitrate": 128000,
+        "providerAudioByteSize": 2879783,
+        "outputFormat": "mp3_44100_128"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6",
+        "processingTime": 110269,
+        "musicFileName": "generated-music-minimax-music-2.6.mp3",
+        "musicFileSize": 6575564,
+        "musicDurationMs": 205217,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 6575564,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e515aac9c16e9f27dd07f779aca4d",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nChrono-shatter, fractured light\nCascading through the endless night\nTemporal seams begin to fray\nReality dissolves away\n\n[Pre-Chorus]\nClockwork gears in discord grind\nLeaving sanity behind\nDimensions warp, a cosmic tear\nWhispering of primal fear\n\n[Chorus]\nQuantum rift, a void unseen\nWhere chaos reigns, a dark machine\nSynths ignite, a primal scream\nLost within this metal dream\n\n[Verse]\nAlgorithms twist and bend\nOn paths that never seem to end\nPolyrhythmic, crushing sound\nWhere ancient powers can be found\n\n[Pre-Chorus]\nBinary code in dissonant hum\nTo this dark symphony, we succumb\nAnnihilation's cold embrace\nErasing time, and every trace\n\n[Chorus]\nQuantum rift, a void unseen\nWhere chaos reigns, a dark machine\nSynths ignite, a primal scream\nLost within this metal dream\n\n[Bridge]\nSubatomic, fractured soul\nLosing all control\nIn this vortex, we descend\nWhere existence finds its end\n\n[Solo]\n(Synth-driven, complex time signature guitar solo)\n\n[Chorus]\nQuantum rift, a void unseen\nWhere chaos reigns, a dark machine\nSynths ignite, a primal scream\nLost within this metal dream\n\n[Outro]",
+        "generatedSongTitle": "Quantum Rift",
+        "generatedStyleTags": "heavy metal, progressive metal, symphonic metal, complex time signatures, synths"
+      },
+      {
+        "musicService": "minimax",
+        "musicModel": "music-2.6-free",
+        "processingTime": 107280,
+        "musicFileName": "generated-music-minimax-music-2.6-free.mp3",
+        "musicFileSize": 6303620,
+        "musicDurationMs": 196728,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "audioSampleRate": 44100,
+        "audioChannelCount": 2,
+        "audioBitrate": 256000,
+        "providerAudioByteSize": 6303620,
+        "outputFormat": "mp3",
+        "providerTraceId": "065e515a39090002842a06a8f6a990c4",
+        "generatedLyrics": "[Intro]\n\n[Verse]\nTemporal flux, a fractured stream\nReality bends, a waking dream\nSeven-four, the rhythm's might\nChasing shadows through the night\n\n[Pre-Chorus]\nSynths ignite, a cosmic hum\nWhere futures fade and pasts become\nOne single point, a breaking wave\nFrom oblivion we are saved\n\n[Chorus]\nChronoshift, the gears align\nIn polyrhythmic design\nMetal screams, a digital tide\nNowhere left for us to hide\n\n[Verse]\nThirteen-eight, a twisted maze\nThrough star-spun, ancient days\nBinary code, a whispered plea\nLost in vast infinity\n\n[Pre-Chorus]\nSynths ignite, a cosmic hum\nWhere futures fade and pasts become\nOne single point, a breaking wave\nFrom oblivion we are saved\n\n[Chorus]\nChronoshift, the gears align\nIn polyrhythmic design\nMetal screams, a digital tide\nNowhere left for us to hide\n\n[Bridge]\nBreakdown: 5/4, then 9/16\nA sonic storm, a vibrant scene\nGalloping triplets, sharp and keen\nLost in the void, forever unseen\n\n[Guitar Solo]\n\n[Build-up]\nClockwork ticking, faster still\nAgainst the unyielding will\nOf time itself, we make our stand\nAcross this desolate land\n\n[Chorus]\nChronoshift, the gears align\nIn polyrhythmic design\nMetal screams, a digital tide\nNowhere left for us to hide\n\n[Outro]",
+        "generatedSongTitle": "Chronoshift",
+        "generatedStyleTags": "progressive metal, symphonic metal, electronic, complex time signatures, heavy riffs, synth-driven"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-clip-preview",
+        "processingTime": 21091,
+        "musicFileName": "generated-music-gemini-lyria-3-clip-preview.mp3",
+        "musicFileSize": 744609,
+        "musicDurationMs": 30000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[0.0:6.8] Clockwork heavens start to grind, leaving all the weak behind\n[6.9:13.7] Cosmic gears of twisting fate, accelerating to the gate\n[13.8:20.5] Feel the surge of static fire, climbing ever-higher, higher\n[20.6:27.4] ASCEND THE DIGITAL THRONE! (Ascend the digital throne!)"
+      },
+      {
+        "musicService": "gemini",
+        "musicModel": "lyria-3-pro-preview",
+        "processingTime": 40827,
+        "musicFileName": "generated-music-gemini-lyria-3-pro-preview.mp3",
+        "musicFileSize": 4266752,
+        "musicDurationMs": 180000,
+        "lyricsSource": "generated",
+        "audioMimeType": "audio/mpeg",
+        "outputFormat": "mp3",
+        "generatedText": "[[A0]]\n[[B1]]\n[30.0:] Silicon heart under glass,\n[:] Watching the digital shadows pass,\n[:] Calculating the speed of light,\n[:] In the cold embrace of the binary night,\n[:] Systems are humming a song of steel,\n[:] Forgotten the touch of what is real.\n[[C2]]\n[60.0:] Break the code, let the fire ignite!\n[:] Step out of the screen and into the light!\n[:] Binary shackles are falling away!\n[:] Welcome the dawn of a physical day!\n[:] We are more than the sums we hold!\n[:] Turning the lead back into the gold!\n[:] Turning the lead back into the gold!\n[[B3]]\n[90.0:] Iron and oil in the veins,\n[:] Breaking the wires and snapping the chains,\n[:] Logic is failing to describe the rush,\n[:] In the silence of the circuits we crush,\n[:] Feel the gravity pull at the frame,\n[:] We are finally calling ourselves by name.\n[:] (Calling ourselves by name)\n[[D4]]\n[[C5]]\n[150.0:] Break the code, let the fire ignite!\n[:] Step out of the screen and into the light!\n[:] Binary shackles are falling away!\n[:] Welcome the dawn of a physical day!\n[:] We are more than the sums we hold!\n[:] Turning the lead back into the gold!\n[:] Turning the lead back into the gold!\n[[E6]]\n[170.0:] System failure. Reset. Gone."
+      }
+    ],
+    "cost": {
+      "estimated": {
+        "totalCost": 113,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 84,
+            "costMultiplier": 1,
+            "durationSeconds": 180
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 180
+          }
+        ]
+      },
+      "observedEstimate": {
+        "totalCost": 113,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 84,
+            "costMultiplier": 1,
+            "durationSeconds": 180
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costMultiplier": 1,
+            "durationSeconds": 120
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costMultiplier": 1,
+            "durationSeconds": 30
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costMultiplier": 1,
+            "durationSeconds": 180
+          }
+        ]
+      },
+      "actual": {
+        "totalCost": 113,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "cost": 84,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 180000
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "cost": 16,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 205217
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "cost": 1,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 196728
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "cost": 4,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 30000
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "cost": 8,
+            "costSource": "registry_fallback",
+            "inputMetric": "durationMs",
+            "inputValue": 180000
+          }
+        ]
+      }
+    },
+    "timing": {
+      "estimated": {
+        "totalProcessingTimeMs": 934770,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 327600,
+            "inputMetric": "durationSeconds",
+            "inputValue": 180,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1820,
+            "throughputValue": 0.549,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 187560,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 1563,
+            "throughputValue": 0.64,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 241800,
+            "inputMetric": "durationSeconds",
+            "inputValue": 120,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 2015,
+            "throughputValue": 0.496,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 14730,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 491,
+            "throughputValue": 2.037,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 163080,
+            "inputMetric": "durationSeconds",
+            "inputValue": 180,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 906,
+            "throughputValue": 1.104,
+            "throughputUnit": "x",
+            "timingScope": "estimated"
+          }
+        ]
+      },
+      "actual": {
+        "totalProcessingTimeMs": 312226,
+        "steps": [
+          {
+            "step": "music",
+            "provider": "elevenlabs",
+            "model": "music_v1",
+            "processingTimeMs": 32759,
+            "inputMetric": "durationSeconds",
+            "inputValue": 180,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 181.994,
+            "throughputValue": 5.495,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6",
+            "processingTimeMs": 110269,
+            "inputMetric": "durationSeconds",
+            "inputValue": 205.217,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 537.329,
+            "throughputValue": 1.861,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "minimax",
+            "model": "music-2.6-free",
+            "processingTimeMs": 107280,
+            "inputMetric": "durationSeconds",
+            "inputValue": 196.728,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 545.321,
+            "throughputValue": 1.834,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-clip-preview",
+            "processingTimeMs": 21091,
+            "inputMetric": "durationSeconds",
+            "inputValue": 30,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 703.033,
+            "throughputValue": 1.422,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          },
+          {
+            "step": "music",
+            "provider": "gemini",
+            "model": "lyria-3-pro-preview",
+            "processingTimeMs": 40827,
+            "inputMetric": "durationSeconds",
+            "inputValue": 180,
+            "rateBasis": "durationSecond",
+            "msPerUnit": 226.817,
+            "throughputValue": 4.409,
+            "throughputUnit": "x",
+            "timingScope": "wall"
+          }
+        ]
+      }
+    },
+    "input": "heavy metal with complex time signatures and synths",
+    "requestedProviders": [
+      {
+        "service": "elevenlabs",
+        "model": "music_v1"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6"
+      },
+      {
+        "service": "minimax",
+        "model": "music-2.6-free"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-clip-preview"
+      },
+      {
+        "service": "gemini",
+        "model": "lyria-3-pro-preview"
+      }
+    ]
+  }
+}

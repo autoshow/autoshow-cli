@@ -1,5 +1,6 @@
 import * as l from '~/utils/logger'
 import { readEnv } from '~/utils/validate/env-utils'
+import { GROQ_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import type { Step3Metadata, StructuredRequestOptions } from '~/types'
 import { runOpenAICompatibleChatModel } from '../openai-compatible-chat'
 
@@ -10,8 +11,7 @@ const getGroqClientConfig = (): { apiKey: string, baseURL: string } => {
     throw new Error('GROQ_API_KEY environment variable is required for --groq models')
   }
 
-  const baseURL = readEnv('GROQ_BASE_URL') ?? 'https://api.groq.com/openai/v1'
-  return { apiKey, baseURL }
+  return { apiKey, baseURL: GROQ_DEFAULT_BASE_URL }
 }
 
 export const runGroqModel = async (

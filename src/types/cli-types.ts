@@ -1,9 +1,9 @@
 import type { BatchOrder } from '../cli/commands/process-steps/step-1-download/download-types'
 import type { HtmlArticleBackend } from './process-extraction-types'
 
-export const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'video', 'music'] as const
+const PROCESS_COMMANDS = ['metadata', 'download', 'extract', 'write', 'tts', 'image', 'video', 'music'] as const
 
-export type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
+type CanonicalProcessCommand = typeof PROCESS_COMMANDS[number]
 export type ProcessCommand = CanonicalProcessCommand
 
 export type OutputFormat = 'text' | 'json' | 'tsv' | 'hocr'
@@ -37,16 +37,8 @@ export type RuntimeOptions = {
   kimiModel: string | undefined
   whisperModels: string[] | undefined
   whisperModel: string
-  gcloudSttModels: string[] | undefined
-  gcloudSttModel: string | undefined
-  awsSttModels: string[] | undefined
-  awsSttModel: string | undefined
-  awsRegion: string | undefined
-  awsBucket: string | undefined
   deepinfraSttModels: string[] | undefined
   deepinfraSttModel: string | undefined
-  deapiSttModels: string[] | undefined
-  deapiSttModel: string | undefined
   groqSttModels: string[] | undefined
   groqSttModel: string | undefined
   grokSttModels: string[] | undefined
@@ -95,6 +87,7 @@ export type RuntimeOptions = {
   llmLocalConcurrency: number
   ttsProviderConcurrency: number
   ttsLocalConcurrency: number
+  ttsChunkConcurrency: number
   imageProviderConcurrency: number
   imageLocalConcurrency: number
   videoProviderConcurrency: number
@@ -110,13 +103,8 @@ export type RuntimeOptions = {
   skipLLM: boolean
   dpi: number
   lang: string
-  psm: number
-  oem: number
   out: OutputFormat
   password: string | undefined
-  pageSeparator: string | undefined
-  preserveSpaces: boolean
-  rotate: number
   useTesseract: boolean
   useOcrmypdf: boolean
   usePaddleOcr: boolean
@@ -128,16 +116,14 @@ export type RuntimeOptions = {
   kimiOcrModel: string | undefined
   openaiOcrModels: string[] | undefined
   openaiOcrModel: string | undefined
+  grokOcrModels: string[] | undefined
+  grokOcrModel: string | undefined
   anthropicOcrModels: string[] | undefined
   anthropicOcrModel: string | undefined
   geminiOcrModels: string[] | undefined
   geminiOcrModel: string | undefined
   deepinfraOcrModels: string[] | undefined
   deepinfraOcrModel: string | undefined
-  awsTextractModels: string[] | undefined
-  awsTextractModel: string | undefined
-  gcloudDocaiModels: string[] | undefined
-  gcloudDocaiModel: string | undefined
   unstructuredOcrModels: string[] | undefined
   unstructuredOcrModel: string | undefined
   primaryOcr: string | undefined
@@ -150,6 +136,8 @@ export type RuntimeOptions = {
   urlBackendExplicit: boolean
   urlBackends: HtmlArticleBackend[] | undefined
   urlProviderConcurrency: number
+  urlRequestTimeoutMs: number
+  urlRequestAttempts: number
 
   batchLimit: number
   batchAll: boolean
@@ -187,6 +175,7 @@ export type RuntimeOptions = {
   mistralTtsVoiceName: string | undefined
   ttsDialogueFormat: 'screenplay' | 'labeled' | undefined
   ttsSpeakerRefAudios: string[] | undefined
+  ttsSpeakers: string[] | undefined
   openaiTtsModels: string[] | undefined
   openaiTtsModel: string | undefined
   openaiVoiceId: string | undefined
@@ -208,7 +197,6 @@ export type RuntimeOptions = {
   elevenlabsTtsModels: string[] | undefined
   elevenlabsTtsModel: string | undefined
   elevenlabsVoiceId: string | undefined
-  elevenlabsTtsPvcVoice: string | undefined
   elevenlabsTtsRefAudio: string | undefined
   elevenlabsTtsVoiceName: string | undefined
   elevenlabsTtsCloneRemoveBackgroundNoise: boolean
@@ -223,14 +211,6 @@ export type RuntimeOptions = {
   elevenlabsTtsTextNormalization: string | undefined
   elevenlabsTtsPronunciationDictionaryLocators: string[] | undefined
   elevenlabsTtsOptimizeStreamingLatency: number | undefined
-  elevenlabsTtsPvcAsIvc: boolean
-  elevenlabsTtsPvcSamples: string[] | undefined
-  elevenlabsTtsPvcSampleDir: string | undefined
-  elevenlabsTtsPvcLanguage: string | undefined
-  elevenlabsTtsPvcDescription: string | undefined
-  elevenlabsTtsPvcCaptchaOut: string | undefined
-  elevenlabsTtsPvcVerifyAudio: string | undefined
-  elevenlabsTtsPvcWait: boolean
   deepgramTtsModels: string[] | undefined
   deepgramTtsModel: string | undefined
   deepgramVoiceId: string | undefined
@@ -258,15 +238,6 @@ export type RuntimeOptions = {
   cartesiaTtsModel: string | undefined
   cartesiaTtsVoice: string | undefined
   cartesiaTtsLanguage: string | undefined
-  gcloudTtsModels: string[] | undefined
-  gcloudTtsModel: string | undefined
-  gcloudTtsVoice: string | undefined
-  gcloudTtsLanguage: string | undefined
-  gcloudTtsRefAudio: string | undefined
-  gcloudTtsConsentAudio: string | undefined
-  gcloudTtsConsentLanguage: string | undefined
-  gcloudTtsVoiceCloningKey: string | undefined
-  gcloudTtsVoiceCloningKeyOut: string | undefined
   minimaxTtsModels: string[] | undefined
   minimaxTtsModel: string | undefined
   minimaxTtsVoice: string | undefined
@@ -277,30 +248,16 @@ export type RuntimeOptions = {
   minimaxTtsEmotion: string | undefined
   minimaxTtsEnglishNormalization: boolean
   minimaxTtsPronunciations: string[] | undefined
-  deapiTtsModels: string[] | undefined
-  deapiTtsModel: string | undefined
-  deapiTtsVoice: string | undefined
-  deapiTtsRefAudio: string | undefined
-  deapiTtsRefText: string | undefined
-  deapiTtsLanguage: string | undefined
-  deapiTtsSpeed: number | undefined
-  deapiTtsFormat: string | undefined
-  deapiTtsSampleRate: number | undefined
-  deapiTtsInstruction: string | undefined
   geminiImageModels: string[] | undefined
   geminiImageModel: string | undefined
   openaiImageModels: string[] | undefined
   openaiImageModel: string | undefined
-  minimaxImageModels: string[] | undefined
-  minimaxImageModel: string | undefined
   grokImageModels: string[] | undefined
   grokImageModel: string | undefined
-  runwayImageModels: string[] | undefined
-  runwayImageModel: string | undefined
   bflImageModels: string[] | undefined
   bflImageModel: string | undefined
-  deapiImageModels: string[] | undefined
-  deapiImageModel: string | undefined
+  reveImageModels: string[] | undefined
+  reveImageModel: string | undefined
   imageAspectRatio: string | undefined
   imageSize: string | undefined
   imageQuality: string | undefined
@@ -310,7 +267,6 @@ export type RuntimeOptions = {
   imageInputs: string[] | undefined
   imageMask: string | undefined
   imageResponseMode: string | undefined
-  geminiPersonGeneration: string | undefined
   geminiSearchGrounding: boolean | undefined
   imageCompression: number | undefined
 
@@ -318,8 +274,6 @@ export type RuntimeOptions = {
   elevenlabsMusicModel: string | undefined
   minimaxMusicModels: string[] | undefined
   minimaxMusicModel: string | undefined
-  deapiMusicModels: string[] | undefined
-  deapiMusicModel: string | undefined
   geminiMusicModels: string[] | undefined
   geminiMusicModel: string | undefined
   musicDuration: number | undefined
@@ -336,8 +290,6 @@ export type RuntimeOptions = {
   grokVideoModel: string | undefined
   runwayVideoModels: string[] | undefined
   runwayVideoModel: string | undefined
-  deapiVideoModels: string[] | undefined
-  deapiVideoModel: string | undefined
   allVideo: boolean | undefined
   videoDuration: number | undefined
   videoSize: string | undefined

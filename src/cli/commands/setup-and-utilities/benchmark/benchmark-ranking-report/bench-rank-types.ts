@@ -1,6 +1,6 @@
 export type JsonObject = Record<string, unknown>
 
-export type SourceKind = 'raw' | 'dashboard'
+type SourceKind = 'raw' | 'dashboard'
 
 export type SttDiarizationGroup = 'diarization' | 'nonDiarization'
 
@@ -66,6 +66,36 @@ export interface RankingRow {
   metricName?: string
 }
 
+export type CombinedRankingMetric = 'price' | 'speed' | 'quality'
+
+export interface ReleaseDateMetadata {
+  date: string
+  sourceUrl: string
+  note?: string
+}
+
+export type ReleaseDateMap = Readonly<Record<string, ReleaseDateMetadata>>
+
+export interface CombinedRankingComponent {
+  score: number
+  active: boolean
+  rank?: number
+  average?: number
+  samples?: number
+}
+
+export interface CombinedRankingRow {
+  rank: number
+  key: string
+  combinedScore: number
+  releaseDate: string
+  releaseDateSourceUrl: string
+  releaseDateNote?: string
+  price: CombinedRankingComponent
+  speed: CombinedRankingComponent
+  quality: CombinedRankingComponent
+}
+
 export type TopPickBucket = 'Fastest' | 'Cheapest' | 'Best'
 
 export type TopPickMetric = 'speed' | 'price' | 'quality'
@@ -77,6 +107,9 @@ export interface TopBenchmarkPick {
   metricName: string
   metricValue: number
   originalRank: number
+  priceRank?: number
+  speedRank?: number
+  qualityRank?: number
   samples: number
   selectionNote: string
 }

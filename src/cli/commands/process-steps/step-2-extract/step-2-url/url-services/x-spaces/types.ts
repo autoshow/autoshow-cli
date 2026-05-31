@@ -44,7 +44,7 @@ export interface XSpace {
   updated_at?: string | undefined;
 }
 
-export interface XPostUrlEntity {
+interface XPostUrlEntity {
   display_url?: string | undefined;
   expanded_url?: string | undefined;
   unwound_url?: string | undefined;
@@ -61,12 +61,12 @@ export interface XPost {
   text: string;
 }
 
-export interface XIncludes {
+interface XIncludes {
   tweets?: XPost[] | undefined;
   users?: XUser[] | undefined;
 }
 
-export interface XListMeta {
+interface XListMeta {
   newest_id?: string | undefined;
   next_token?: string | undefined;
   oldest_id?: string | undefined;
@@ -115,7 +115,7 @@ export interface SpacesClientContract {
   searchSpaces(query: string): Promise<XSpacesResponse>;
 }
 
-export type SpaceInputEntrySource = "input";
+type SpaceInputEntrySource = "input";
 
 export interface ParsedSpaceInputEntry {
   line: number;
@@ -147,7 +147,7 @@ export interface ParsedSpaceInput {
   posts: ParsedPostInputReference[];
 }
 
-export type SpacesArtifactSourceType =
+type SpacesArtifactSourceType =
   | "input"
   | "input-post"
   | "lookup"
@@ -201,7 +201,7 @@ export interface SpacePostReference {
   username?: string | undefined;
 }
 
-export interface SpacesArtifactTotals {
+interface SpacesArtifactTotals {
   errors: number;
   input_ids: number;
   input_posts: number;

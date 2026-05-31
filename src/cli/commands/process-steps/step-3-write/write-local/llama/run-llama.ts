@@ -9,7 +9,6 @@ import { stopDefaultLlamaServer as stopLlamaServerForRecovery } from './llama-se
 import { ensureLlamaServerRunning } from './llama-server-runtime'
 
 export { LLAMA_PROCESS_LOCK_NAME } from './llama-constants'
-export { resolveLlamaServerTarget } from './llama-config'
 export { ensureLlamaModelDownloaded } from './llama-model-download'
 export {
   evaluateLlamaServerIdentityMatch,
@@ -65,6 +64,7 @@ export const runLlamaModel = async (
           processingTime,
           inputTokenCount,
           outputTokenCount,
+          tokenCountSource: 'local_count',
           outputFileName: '',
           outputFormat: 'json',
           structuredMode: structuredOpts?.strategy ?? 'schema-guided',

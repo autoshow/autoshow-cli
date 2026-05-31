@@ -4,7 +4,8 @@ Service-backed, networked, and setup-adjacent test coverage for provider integra
 
 Shared `bun t` runner behavior, artifacts, cleanup, and path-based selection are documented in [Local Tests](local-tests.md).
 
-These commands are opt-in service coverage. They may reach OpenAI, Anthropic, Gemini, Mistral, AWS, Google Cloud, ElevenLabs, MiniMax, Hume, Cartesia, deAPI, Deepgram, Groq, Grok, Firecrawl, or other paid providers when credentials are present. Agents should use `bun run check` plus the no-cost targeted tests in [Local Tests](local-tests.md) unless the user explicitly approves live or full-suite testing.
+These commands are documented for humans. Service, e2e, and full-runner commands may call paid or quota-limited providers and must not be used as agent verification without explicit approval for that exact run. Agents should use `bun run check` plus the targeted no-cost smoke tests listed in [Local Tests](local-tests.md).
+
 
 ## Outline
 
@@ -19,18 +20,31 @@ These commands are opt-in service coverage. They may reach OpenAI, Anthropic, Ge
 bun t test/test-cases/setup/tts-models/tts-setup.test.ts
 
 # network-backed download coverage
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-direct-url.test.ts
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-streaming.test.ts
-bun t test/test-cases/e2e/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-direct-url.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-streaming.test.ts
+bun t test/test-cases/e2e/local/step-1-download-e2e/download-input-types-feed-or-channel.test.ts
 
 # service command suites
-bun t test/test-cases/e2e/step-2-ocr-e2e/ocr-services/
-bun t test/test-cases/e2e/step-2-stt-e2e/stt-services/
-bun t test/test-cases/e2e/step-3-write-e2e/write-services/
-bun t test/test-cases/e2e/step-4-tts-e2e/tts-services/
-bun t test/test-cases/e2e/step-5-image-gen-e2e/
-bun t test/test-cases/e2e/step-6-video-gen-e2e/
-bun t test/test-cases/e2e/step-7-music-gen-e2e/
+bun t test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/
+bun t test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/ --test-price
+
+bun t test/test-cases/e2e/service/step-2-stt-e2e/stt-services/
+bun t test/test-cases/e2e/service/step-2-stt-e2e/stt-services/ --test-price
+
+bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/
+bun t test/test-cases/e2e/service/step-3-write-e2e/write-services/ --test-price
+
+bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/
+bun t test/test-cases/e2e/service/step-4-tts-e2e/tts-services/ --test-price
+
+bun t test/test-cases/e2e/service/step-5-image-gen-e2e/
+bun t test/test-cases/e2e/service/step-5-image-gen-e2e/ --test-price
+
+bun t test/test-cases/e2e/service/step-6-video-gen-e2e/
+bun t test/test-cases/e2e/service/step-6-video-gen-e2e/ --test-price
+
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/
+bun t test/test-cases/e2e/service/step-7-music-gen-e2e/ --test-price
 ```
 
 ## Step Pages
@@ -51,4 +65,4 @@ bun t test/test-cases/e2e/step-7-music-gen-e2e/
 - `test/test-cases/validation/video-provider-contracts.test.ts`, `image-provider-rest-contracts.test.ts`, `tts-provider-contracts.test.ts`, `music-provider-contracts.test.ts`, and `resume-additive-provider-contracts.test.ts` cover mocked REST and provider-contract behavior across their respective generation command families. Provider-specific REST contract suites such as `anthropic-rest-contracts.test.ts`, `gemini-rest-contracts.test.ts`, `openai-rest-contracts.test.ts`, and `mistral-rest-contracts.test.ts` cover write/OCR service request payloads.
 - `test/test-cases/price-flag/` contains focused `--price` coverage for STT, OCR, write, TTS, image, video, and music command families.
 - `test/test-cases/e2e/cli-integration.test.ts` covers cross-provider CLI flows, but it does not currently have mapped price commands.
-- `--test-price` with no path filters still resolves all mapped price suites across both local and service coverage.
+- `--test-price` with no path filters still resolves all mapped test price commands across both local and service coverage.

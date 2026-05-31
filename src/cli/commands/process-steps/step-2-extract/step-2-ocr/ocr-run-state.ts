@@ -138,7 +138,7 @@ export const classifyOcrProviderFailure = (
 export const getOcrTargetKey = (target: Pick<OcrTarget, 'service' | 'model'>): string =>
   `${target.service}:${target.model}`
 
-export const getOcrProviderArtifactDir = (
+const getOcrProviderArtifactDir = (
   target: Pick<OcrTarget, 'service' | 'model'>
 ): string => `providers/${getOcrTargetDirectoryName(target)}`
 
@@ -163,8 +163,6 @@ export const parseStoredRequestedTarget = (value: unknown): OcrTarget | undefine
     && value['service'] !== 'anthropic'
     && value['service'] !== 'gemini'
     && value['service'] !== 'deepinfra'
-    && value['service'] !== 'aws-textract'
-    && value['service'] !== 'gcloud-docai'
     && value['service'] !== 'unstructured'
   ) {
     return undefined
@@ -187,7 +185,7 @@ export const parseStoredRequestedTargets = (
     ? entry['requestedProviders'].map(parseStoredRequestedTarget).filter((target): target is OcrTarget => target !== undefined)
     : []
 
-export const parseStoredProviderState = (value: unknown): OcrProviderState | undefined => {
+const parseStoredProviderState = (value: unknown): OcrProviderState | undefined => {
   if (!isRecord(value)) {
     return undefined
   }
@@ -227,7 +225,7 @@ export const parseStoredProviderState = (value: unknown): OcrProviderState | und
   }
 }
 
-export const parseStoredProviderStateMap = (
+const parseStoredProviderStateMap = (
   entry: Record<string, unknown>
 ): Map<string, OcrProviderState> => {
   const states = new Map<string, OcrProviderState>()

@@ -1,3 +1,4 @@
+import * as l from '~/utils/logger'
 import * as v from 'valibot'
 import type {
   RetryClass,
@@ -6,22 +7,18 @@ import type {
   TranscriptionResult,
   TranscriptionSegment
 } from '~/types'
-import * as l from '~/utils/logger'
 import { logSttSegmentLifecycle } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-logging'
 import {
   appendToken,
   buildSegmentsFromWords,
-  buildTranscriptionOutputBase,
-  countTokens,
-  formatSpeakerLabel,
-  formatTranscriptText,
-  resolveTranscriptionOutput
+  formatSpeakerLabel
 } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-utils/stt-utils'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readEnv } from '~/utils/validate/env-utils'
 import { validateData, validateDataSafe } from '~/utils/validate/validation'
+import { finalizeHostedSttResult } from '../finalize-hosted-stt'
 
-const GROK_DEFAULT_BASE_URL = 'https://api.x.ai/v1'
 const REQUEST_TIMEOUT_MS = 20 * 60 * 1000
 
 const GrokSttWordSchema = v.object({
@@ -222,8 +219,7 @@ export const runGrokStt = async (
 
   const startTime = Date.now()
   const offsetSeconds = segmentOffsetMinutes * 60
-  const outputBase = buildTranscriptionOutputBase(outputDir, segmentNumber)
-  const baseURL = trimTrailingSlash(readEnv('XAI_BASE_URL') ?? GROK_DEFAULT_BASE_URL)
+  const baseURL = trimTrailingSlash(XAI_DEFAULT_BASE_URL)
   let transcribeMs = 0
   let requestCount = 0
   let retryCount = 0
@@ -292,49 +288,21 @@ export const runGrokStt = async (
   const text = payload.text.trim() || textFromWords(payload.words)
   const segments = segmentsFromWords(payload.words, offsetSeconds)
   const evidenceWords = evidenceWordsFromApi(payload.words, offsetSeconds)
-  const { finalSegments, finalText } = resolveTranscriptionOutput(segments, text, offsetSeconds)
-
-  await Bun.write(`${outputBase}.txt`, formatTranscriptText(finalSegments))
-
-  const processingTime = Date.now() - startTime
-  const remoteProcessingMs = Math.max(0, processingTime - transcribeMs)
-  const metadata: Step2Metadata = {
-    transcriptionService: 'grok',
-    transcriptionModel: model,
-    processingTime,
-    tokenCount: countTokens(finalText),
-    ...((transcribeMs > 0 || requestCount > 0 || retryCount > 0 || rateLimitCount > 0 || remoteProcessingMs > 0)
-      ? {
-          timings: {
-            ...(transcribeMs > 0 ? { transcribeMs } : {}),
-            ...(remoteProcessingMs > 0 ? { remoteProcessingMs } : {}),
-            ...(requestCount > 0 ? { requestCount } : {}),
-            ...(retryCount > 0 ? { retryCount } : {}),
-            ...(rateLimitCount > 0 ? { rateLimitCount } : {})
-          }
-        }
-      : {})
-  }
-
-  if (segmentNumber && totalSegments) {
-    logSttSegmentLifecycle(l, { provider: 'grok', action: 'completed', segmentNumber, totalSegments, model, processingTimeMs: processingTime })
-  }
-
-  return {
-    result: {
-      text: finalText,
-      segments: finalSegments,
-      evidence: {
-        ...(evidenceWords.length > 0 ? { words: evidenceWords } : {}),
-        capabilities: {
-          hasNativeWordTiming: evidenceWords.length > 0,
-          hasConfidence: evidenceWords.some((word) => word.confidence !== undefined),
-          hasSpeakerLabels: evidenceWords.some((word) => word.speaker !== undefined) || finalSegments.some((segment) => segment.speaker !== undefined)
-        },
-        timingQuality: evidenceWords.length > 0 ? 'native_word' : 'segment_interpolated',
-        rawResponse: payload
-      }
-    },
-    metadata
-  }
+  return await finalizeHostedSttResult({
+    provider: 'grok',
+    model,
+    outputDir,
+    segmentNumber,
+    totalSegments,
+    offsetSeconds,
+    startTime,
+    transcribeMs,
+    requestCount,
+    retryCount,
+    rateLimitCount,
+    text,
+    segments,
+    evidenceWords,
+    rawResponse: payload
+  })
 }

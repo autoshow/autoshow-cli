@@ -12,16 +12,12 @@ export type ImageGenOptions = Pick<
   | 'geminiImageModel'
   | 'openaiImageModels'
   | 'openaiImageModel'
-  | 'minimaxImageModels'
-  | 'minimaxImageModel'
   | 'grokImageModels'
   | 'grokImageModel'
-  | 'runwayImageModels'
-  | 'runwayImageModel'
   | 'bflImageModels'
   | 'bflImageModel'
-  | 'deapiImageModels'
-  | 'deapiImageModel'
+  | 'reveImageModels'
+  | 'reveImageModel'
   | 'imageAspectRatio'
   | 'imageSize'
   | 'imageQuality'
@@ -31,7 +27,6 @@ export type ImageGenOptions = Pick<
   | 'imageInputs'
   | 'imageMask'
   | 'imageResponseMode'
-  | 'geminiPersonGeneration'
   | 'geminiSearchGrounding'
   | 'imageCompression'
   | 'imageProviderConcurrency'
@@ -57,16 +52,12 @@ export type EstimateImageCostOptions = {
   geminiImageModel?: string | undefined
   openaiImageModels?: string[] | undefined
   openaiImageModel?: string | undefined
-  minimaxImageModels?: string[] | undefined
-  minimaxImageModel?: string | undefined
   grokImageModels?: string[] | undefined
   grokImageModel?: string | undefined
-  runwayImageModels?: string[] | undefined
-  runwayImageModel?: string | undefined
   bflImageModels?: string[] | undefined
   bflImageModel?: string | undefined
-  deapiImageModels?: string[] | undefined
-  deapiImageModel?: string | undefined
+  reveImageModels?: string[] | undefined
+  reveImageModel?: string | undefined
   imageSize?: string | undefined
   imageQuality?: string | undefined
   imageCount?: number | undefined

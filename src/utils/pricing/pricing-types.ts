@@ -30,6 +30,8 @@ export type LlmStepEstimate = ProviderModelBase & {
   estimatedOutputTokens?: number
   totalCost: number
   costMultiplier?: number
+  pricingBand?: string
+  pricingNote?: string
 }
 
 export type TtsStepEstimate = ProviderModelBase & {
@@ -38,6 +40,7 @@ export type TtsStepEstimate = ProviderModelBase & {
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number
   characterCount?: number
+  chunkConcurrency?: number
   totalCost: number
   costMultiplier?: number
   estimateType?: 'heuristic' | 'exact'
@@ -48,28 +51,33 @@ export type TtsStepEstimate = ProviderModelBase & {
 
 export type ImageStepEstimate = CostEstimateBase<ImageProvider> & {
   step: 'image'
+  imageCount: number
 }
 
 export type VideoStepEstimate = CostEstimateBase<VideoProvider> & {
   step: 'video'
+  durationSeconds: number
 }
 
 export type MusicStepEstimate = ProviderModelBase<MusicProvider> & {
   step: 'music'
   totalCost: number
   costMultiplier?: number
+  durationSeconds: number
   lyricsSource: 'provided' | 'generated' | 'none'
   note?: string
 }
 
-export type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'zyte'
+type UrlExtractProvider = 'defuddle' | 'firecrawl' | 'glm-reader' | 'spider' | 'supadata' | 'zyte'
 
-export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'> & {
+export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | 'paddle-ocr' | 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured'> & {
   step: 'extract'
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
+  pricingBand?: string
+  pricingNote?: string
   pageCount?: number
   estimatedOutputChars?: number
   promptTokens?: number
@@ -96,7 +104,7 @@ export type AggregatedPriceEstimate = {
   notes?: string[]
 }
 
-export type ActualPipelineInputsBase<TStep1> = {
+type ActualPipelineInputsBase<TStep1> = {
   step1?: TStep1 | undefined
   step2?: Step2Metadata | Step2Metadata[] | ExtractionMetadata | ExtractionMetadata[] | undefined
   step3?: Step3Metadata | Step3Metadata[] | undefined
@@ -116,10 +124,7 @@ export type ComputeEstimatedCostsInput = {
   sourceUrl?: string | undefined
   sttTargets?: Array<{ service: Step2Metadata['transcriptionService'], model: string }> | undefined
   whisperModel?: string | undefined
-  gcloudSttModel?: string | undefined
-  awsSttModel?: string | undefined
   deepinfraSttModel?: string | undefined
-  deapiSttModel?: string | undefined
   groqSttModel?: string | undefined
   grokSttModel?: string | undefined
   elevenlabsSttModel?: string | undefined
@@ -141,12 +146,13 @@ export type ComputeEstimatedCostsInput = {
   glmOcrModel?: string | undefined
   kimiOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
   unstructuredOcrModel?: string | undefined
   extractTargets?: Array<{
-    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured'
+    provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured'
     model: string
     pageCount?: number
     promptTokens?: number
@@ -176,11 +182,8 @@ export type ComputeEstimatedCostsInput = {
   imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number, imageSize?: string, imageQuality?: string }> | undefined
   geminiImageModel?: string | undefined
   openaiImageModel?: string | undefined
-  minimaxImageModel?: string | undefined
   grokImageModel?: string | undefined
-  runwayImageModel?: string | undefined
   bflImageModel?: string | undefined
-  deapiImageModel?: string | undefined
   imageSize?: string | undefined
   imageQuality?: string | undefined
   imageCount?: number | undefined
@@ -189,16 +192,16 @@ export type ComputeEstimatedCostsInput = {
   glmVideoModel?: string | undefined
   grokVideoModel?: string | undefined
   runwayVideoModel?: string | undefined
-  deapiVideoModel?: string | undefined
   videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
   videoDuration?: number | undefined
   videoSize?: string | undefined
   videoAspectRatio?: string | undefined
   videoResolution?: string | undefined
   videoMode?: string | undefined
+  grokInputImageCount?: number | undefined
+  grokInputVideoDurationSeconds?: number | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
-  deapiMusicModel?: string | undefined
   geminiMusicModel?: string | undefined
   musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicDuration?: number | undefined
@@ -215,11 +218,12 @@ export type ComputeEstimatedProcessingTimesInput = {
   glmOcrModel?: string | undefined
   kimiOcrModel?: string | undefined
   openaiOcrModel?: string | undefined
+  grokOcrModel?: string | undefined
   anthropicOcrModel?: string | undefined
   geminiOcrModel?: string | undefined
   deepinfraOcrModel?: string | undefined
   unstructuredOcrModel?: string | undefined
-  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'gcloud-docai' | 'aws-textract' | 'unstructured', model: string, pageCount?: number }> | undefined
+  extractTargets?: Array<{ provider: 'mistral' | 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra' | UrlExtractProvider | 'unstructured', model: string, pageCount?: number }> | undefined
   extractPageCount?: number | undefined
   llmTargets?: Array<{
     service: Step3Metadata['llmService']
@@ -232,10 +236,12 @@ export type ComputeEstimatedProcessingTimesInput = {
   llmInputTokenCount?: number | undefined
   llmOutputTokenCount?: number | undefined
   skipLLM?: boolean | undefined
-  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string, setupTimeMs?: number, setupCostCents?: number, setupNote?: string }> | undefined
+  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string, setupTimeMs?: number, setupCostCents?: number, setupNote?: string, chunkConcurrency?: number }> | undefined
   ttsService?: Step4Metadata['ttsService'] | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
+  ttsInputText?: string | undefined
+  ttsChunkConcurrency?: number | undefined
   imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number, imageSize?: string, imageQuality?: string }> | undefined
   imageService?: Step5Metadata['imageService'] | undefined
   imageModel?: string | undefined
@@ -244,6 +250,8 @@ export type ComputeEstimatedProcessingTimesInput = {
   videoModel?: string | undefined
   videoDurationSeconds?: number | undefined
   videoTargets?: Array<{ service: Step6VideoMetadata['videoGenService'], model: string, durationSeconds?: number }> | undefined
+  videoResolution?: string | undefined
+  videoMode?: string | undefined
   musicTargets?: Array<{ service: Step7MusicMetadata['musicService'], model: string, durationSeconds?: number }> | undefined
   musicService?: Step7MusicMetadata['musicService'] | undefined
   musicModel?: string | undefined
@@ -265,15 +273,27 @@ export type BilledSttCost = {
   cost: number
 }
 
+export type CostSource =
+  | 'provider_usage'
+  | 'provider_quote'
+  | 'response_header'
+  | 'computed_usage'
+  | 'registry_fallback'
+  | 'heuristic'
+  | 'local_zero'
+
 export type StepCostEntry = {
   step: 'stt' | 'extract' | 'llm' | 'tts' | 'image' | 'video' | 'music'
   provider: string
   model: string
   cost: number
+  costSource: CostSource
   inputMetric?: string
   inputValue?: number
   promptTokens?: number
   completionTokens?: number
+  pricingBand?: string
+  pricingNote?: string
 }
 
 export type ActualCostBreakdown = {
@@ -288,6 +308,7 @@ export type EstimatedStepEntry = {
   cost: number
   costMultiplier?: number
   durationSeconds?: number
+  imageCount?: number
   costPer1kPagesCents?: number
   costPer1kOutputCharsCents?: number
   pageCount?: number
@@ -298,6 +319,8 @@ export type EstimatedStepEntry = {
   estimatedOutputTokens?: number
   promptTokens?: number
   completionTokens?: number
+  pricingBand?: string
+  pricingNote?: string
   estimateType?: 'heuristic' | 'exact'
   costPer1kCharactersCents?: number
   inputCostPer1MCharactersCents?: number

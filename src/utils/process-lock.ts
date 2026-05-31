@@ -10,7 +10,7 @@ const DEFAULT_LOCK_HEARTBEAT_MS = 5_000
 const LOCK_OWNER_FILE = 'owner.json'
 const CURRENT_HOSTNAME = hostname()
 
-export type ProcessLockOptions = {
+type ProcessLockOptions = {
   lockRoot?: string
   staleMs?: number
   waitTimeoutMs?: number
@@ -39,23 +39,14 @@ type ActiveProcessLockOwner = {
 const getErrorCode = (error: unknown): string | undefined =>
   error instanceof Error && 'code' in error ? (error as Error & { code?: string }).code : undefined
 
-const parsePositiveInteger = (value: string | undefined, fallback: number): number => {
-  const parsed = Number.parseInt(value ?? '', 10)
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return fallback
-  }
-  return parsed
-}
-
 const resolvePositiveInteger = (
   optionValue: number | undefined,
-  envKey: string,
   fallback: number
 ): number => {
   if (typeof optionValue === 'number' && Number.isFinite(optionValue) && optionValue > 0) {
     return Math.floor(optionValue)
   }
-  return parsePositiveInteger(process.env[envKey], fallback)
+  return fallback
 }
 
 const sanitizeLockName = (lockName: string): string => {
@@ -72,13 +63,17 @@ const sanitizeLockName = (lockName: string): string => {
   return sanitized
 }
 
+let configuredCacheDir: string | undefined
+
+export const configureCacheDir = (dir?: string): void => {
+  configuredCacheDir = dir?.trim() || undefined
+}
+
+export const getDefaultCacheDir = (): string =>
+  configuredCacheDir ?? join(process.env['HOME'] ?? resolve('.'), '.cache', 'autoshow-cli')
+
 export const resolveProcessLockRoot = (options: ProcessLockOptions = {}): string =>
-  options.lockRoot
-    ?? process.env['AUTOSHOW_PROCESS_LOCK_DIR']
-    ?? join(
-      process.env['AUTOSHOW_CACHE_DIR'] ?? join(process.env['HOME'] ?? resolve('.'), '.cache', 'autoshow-cli'),
-      'process-locks'
-    )
+  options.lockRoot ?? join(getDefaultCacheDir(), 'process-locks')
 
 const getLockOwnerPath = (lockDir: string): string => join(lockDir, LOCK_OWNER_FILE)
 
@@ -185,13 +180,13 @@ export const withProcessLock = async <T,>(
 ): Promise<T> => {
   const lockRoot = resolveProcessLockRoot(options)
   const lockDir = join(lockRoot, sanitizeLockName(lockName))
-  const heartbeatMs = resolvePositiveInteger(options.heartbeatMs, 'AUTOSHOW_PROCESS_LOCK_HEARTBEAT_MS', DEFAULT_LOCK_HEARTBEAT_MS)
+  const heartbeatMs = resolvePositiveInteger(options.heartbeatMs, DEFAULT_LOCK_HEARTBEAT_MS)
   const staleMs = Math.max(
     heartbeatMs * 2,
-    resolvePositiveInteger(options.staleMs, 'AUTOSHOW_PROCESS_LOCK_STALE_MS', DEFAULT_LOCK_STALE_MS)
+    resolvePositiveInteger(options.staleMs, DEFAULT_LOCK_STALE_MS)
   )
-  const waitTimeoutMs = resolvePositiveInteger(options.waitTimeoutMs, 'AUTOSHOW_PROCESS_LOCK_WAIT_TIMEOUT_MS', DEFAULT_LOCK_WAIT_TIMEOUT_MS)
-  const waitMs = resolvePositiveInteger(options.waitMs, 'AUTOSHOW_PROCESS_LOCK_WAIT_MS', DEFAULT_LOCK_WAIT_MS)
+  const waitTimeoutMs = resolvePositiveInteger(options.waitTimeoutMs, DEFAULT_LOCK_WAIT_TIMEOUT_MS)
+  const waitMs = resolvePositiveInteger(options.waitMs, DEFAULT_LOCK_WAIT_MS)
   const startedAt = Date.now()
 
   await mkdir(lockRoot, { recursive: true })

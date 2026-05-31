@@ -4,7 +4,7 @@ import type {
   Step3Metadata
 } from '~/types'
 import { withRetry, classifyFetchRetry } from '~/utils/retries'
-import { runWithLLMInstrumentation, buildStep3Metadata } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
+import { runWithLLMInstrumentation, buildStep3Metadata, type LlmApiCallResult } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
 import { LLM_REQUEST_TIMEOUT_MS } from '~/utils/timeouts'
 import { createAnthropicMessage } from '~/utils/anthropic/client'
 
@@ -30,7 +30,7 @@ export const runAnthropicCompatibleModel = async ({
   supportsStructuredOutput = false
 }: RunAnthropicCompatibleModelOptions): Promise<{ result: string, metadata: Step3Metadata }> => {
   try {
-    const apiCall = (): Promise<string> => withRetry(
+    const apiCall = (): Promise<LlmApiCallResult> => withRetry(
       { retryClass: 'runtime_http_create_conservative', operationName },
       async (signal) => {
         const requestBody: Record<string, unknown> = {
@@ -56,15 +56,20 @@ export const runAnthropicCompatibleModel = async ({
         if (!text) {
           throw new Error('No response text from model')
         }
-        return text
+        return {
+          text,
+          usage: message.usage,
+          rawProviderUsage: message.usage,
+          returnedModel: message.model
+        }
       },
       (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
     )
 
-    const { responseText, inputTokenCount, outputTokenCount, processingTime } = await runWithLLMInstrumentation(prompt, apiCall)
-    const metadata = buildStep3Metadata(service, model, { processingTime, inputTokenCount, outputTokenCount }, structuredOpts)
+    const instrumentation = await runWithLLMInstrumentation(prompt, apiCall)
+    const metadata = buildStep3Metadata(service, model, instrumentation, structuredOpts)
 
-    return { result: responseText, metadata }
+    return { result: instrumentation.responseText, metadata }
   } catch (error) {
     l.error(`Failed to run ${providerLabel} model`, error)
     throw error

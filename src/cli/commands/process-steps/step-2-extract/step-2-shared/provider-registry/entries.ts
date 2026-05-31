@@ -1,4 +1,3 @@
-import type { CliFlagsDefinition } from '~/cli/native'
 import type {
   Step2Command,
   Step2ModelProviderRegistryEntry,
@@ -9,7 +8,7 @@ import type {
 import { STEP2_OCR_PROVIDER_REGISTRY } from './ocr-providers'
 import { STEP2_STT_PROVIDER_REGISTRY } from './stt-providers'
 
-export const STEP2_PROVIDER_REGISTRY = [
+const STEP2_PROVIDER_REGISTRY = [
   ...STEP2_STT_PROVIDER_REGISTRY,
   ...STEP2_OCR_PROVIDER_REGISTRY
 ] as const satisfies readonly Step2ProviderRegistryEntry[]
@@ -28,13 +27,6 @@ export const getStep2ProviderEntries = (
 export const getStep2ProviderEntry = (
   flagName: string
 ): Step2ProviderRegistryEntry | undefined => STEP2_PROVIDER_ENTRY_BY_FLAG.get(flagName)
-
-export const getStep2ProviderFlags = (
-  step: Step2Command
-): CliFlagsDefinition =>
-  Object.fromEntries(
-    getStep2ProviderEntries(step).map((entry) => [entry.flagName, entry.flag])
-  )
 
 export const getStep2ProviderSelectionFlagNames = (
   step: Step2Command

@@ -6,18 +6,6 @@ export type ProviderSpec = {
   model?: string | undefined
 }
 
-export type BatchPolicy = {
-  enabled?: boolean | undefined
-  limit?: number | undefined
-  all?: boolean | undefined
-  order?: 'newest' | 'oldest' | undefined
-  concurrency?: number | undefined
-}
-
-export type ResumePolicy = {
-  path?: string | undefined
-}
-
 export type ProviderCheckpoint = {
   schemaVersion: 2
   kind: 'provider-checkpoint'
