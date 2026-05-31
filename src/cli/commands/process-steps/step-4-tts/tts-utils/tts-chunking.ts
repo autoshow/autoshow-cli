@@ -12,8 +12,8 @@ export const TTS_CHUNK_CHARACTER_LIMITS = {
   gemini: 4000,
   cartesia: 5000,
   hume: 5000,
-  grok: 15000,
-  minimax: 50000,
+  grok: 5000,
+  minimax: 5000,
 } as const satisfies Record<TtsProvider, number | undefined>
 
 const resolveSyntheticChunkLengths = (

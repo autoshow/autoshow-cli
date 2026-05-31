@@ -275,7 +275,7 @@ describe('TTS provider service contracts', () => {
       })
     }) as typeof fetch
 
-    const input = `${'A'.repeat(15000)} ${'B'.repeat(15000)} ${'C'.repeat(100)}`
+    const input = `${'A'.repeat(5000)} ${'B'.repeat(5000)} ${'C'.repeat(100)}`
     const runPromise = runGrokTts(input, dir, {
       model: 'grok-tts',
       chunkConcurrency: 3

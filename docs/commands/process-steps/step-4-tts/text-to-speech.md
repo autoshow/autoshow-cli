@@ -151,7 +151,7 @@ bun as tts input/examples/tts/1-tts.md --provider minimax=speech-2.8-hd --minima
 bun as tts input/examples/tts/1-tts.md --provider minimax=speech-2.8-turbo --tts-voice English_expressive_narrator --price
 ```
 
-MiniMax TTS uses existing/preset voices. Use `--tts-voice` to override the voice ID for the selected MiniMax model.
+MiniMax TTS uses existing/preset voices. Text is split into 5000-character chunks. Use `--tts-voice` to override the voice ID for the selected MiniMax model.
 
 ### Groq
 
@@ -181,6 +181,8 @@ Groq voices are validated against the selected model. Groq Orpheus English defau
 bun as tts input/examples/tts/1-tts.md --provider grok=grok-tts --tts-voice eve
 bun as tts input/examples/tts/1-tts.md --provider grok=grok-tts --tts-voice ab12cd34 --tts-language ar-SA --tts-text-normalization true
 ```
+
+Grok TTS text is split into 5000-character chunks.
 
 ### Mistral
 

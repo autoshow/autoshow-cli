@@ -529,7 +529,7 @@ describe('price mode contracts', () => {
       ttsChunkConcurrency: 5
     })
 
-    expect(parallelTiming.steps[0]?.processingTimeMs).toBe(Math.round(15 * rate))
+    expect(parallelTiming.steps[0]?.processingTimeMs).toBe(Math.round((7666 / 1000) * rate))
     expect(serialTiming.steps[0]?.processingTimeMs).toBe(Math.round((characterCount / 1000) * rate))
     expect(syntheticTiming.steps[0]?.processingTimeMs).toBe(parallelTiming.steps[0]?.processingTimeMs)
   })
@@ -621,7 +621,7 @@ describe('price mode contracts', () => {
         throw new Error('Missing Grok timing step')
       }
 
-      expect(grokStep['processingTimeMs']).toBe(Math.round(15 * rate))
+      expect(grokStep['processingTimeMs']).toBe(Math.round((7666 / 1000) * rate))
       expect(grokStep['processingTimeMs']).toBeLessThan(Math.round((characterCount / 1000) * rate))
     } finally {
       await rm(dir, { recursive: true, force: true })
