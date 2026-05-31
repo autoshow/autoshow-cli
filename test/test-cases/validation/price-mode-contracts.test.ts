@@ -1,4 +1,5 @@
-import { mkdtemp, rm } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'bun:test'
@@ -18,9 +19,10 @@ import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import { buildAggregateTiming } from '~/utils/pricing/aggregate-pricing/timing'
+import { buildTtsBatchEstimateSummary, computeSuccessfulTtsBatchActualCost } from '~/cli/commands/process-steps/step-4-tts/tts-batch-summary'
 import { computeSttCost } from '~/utils/pricing/cost-helpers'
 import { STABLE_EXAMPLE_AUDIO_URL, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
-import type { ExtractionMetadata, Step1Metadata, Step2Metadata, StepEstimate } from '~/types'
+import type { AggregatedPriceEstimate, ExtractionMetadata, Step1Metadata, Step2Metadata, Step4Metadata, StepEstimate } from '~/types'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string | string[]; env?: Record<string, string | undefined> }> = [
   {
@@ -162,6 +164,16 @@ const buildSttMetadata = (overrides: Partial<Step2Metadata> = {}): Step2Metadata
   ...overrides
 })
 
+const buildTtsMetadata = (overrides: Partial<Step4Metadata> = {}): Step4Metadata => ({
+  ttsService: 'grok',
+  ttsModel: 'grok-tts',
+  processingTime: 1234,
+  audioFileName: 'speech.wav',
+  audioFileSize: 1234,
+  chunkCount: 1,
+  ...overrides
+})
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
 
@@ -250,6 +262,58 @@ describe('price mode contracts', () => {
     expect(emittedResult).toBeDefined()
     expect(findPricingNoteKeys(emittedResult)).toEqual([])
     expect(JSON.stringify(emittedResult)).not.toContain('TTS estimate omitted')
+  })
+
+  test('tts directory --price reports per-item estimates and suite total without creating output dirs', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-tts-directory-price-'))
+    const inputDir = join(dir, 'inputs')
+    const nestedDir = join(inputDir, 'nested')
+    const outputDir = join(dir, 'tts-batch-out')
+
+    await mkdir(nestedDir, { recursive: true })
+    await Bun.write(join(inputDir, '01-first.md'), 'First TTS source.\n')
+    await Bun.write(join(nestedDir, '02-second.txt'), 'Second TTS source.\n')
+    await Bun.write(join(inputDir, 'ignore.json'), '{"text":"ignored"}\n')
+
+    try {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'tts',
+        inputDir,
+        '--provider',
+        'grok=grok-tts',
+        '--tts-chunk-concurrency',
+        '5',
+        '--batch-concurrency',
+        '2',
+        '--output-dir',
+        outputDir,
+        '--price'
+      ], {
+        env: { XAI_API_KEY: '' }
+      })
+
+      expect(result.exitCode).toBe(0)
+      expect(result.outputDir).toBeNull()
+      expect(existsSync(outputDir)).toBe(false)
+
+      const output = `${result.stdout}\n${result.stderr}`
+      expect(output).toContain('TTS Price Item')
+      expect(output).toContain('01-first.md')
+      expect(output).toContain('02-second.txt')
+      expect(output).not.toContain('ignore.json')
+      expect(output).toContain('grok-tts')
+      expect(output).toContain('TTS Batch Estimate')
+      expect(output).toContain('batch concurrency')
+      expect(output).toContain('tts chunk concurrency')
+      expect(output).toContain('total estimated processing time')
+      expect(output).toContain('estimated wall time')
+      expect(output).toContain('total estimated cost')
+      expect(output).toContain('Suite Cost Summary')
+      expect(output).toContain('2 TTS inputs')
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   test('URL article extraction methods resolve provider models consistently', () => {
@@ -505,6 +569,15 @@ describe('price mode contracts', () => {
       .toBe(Math.round(getTtsEstimation('mistral', model).msPer1KChars))
   })
 
+  test('Grok TTS estimates use current xAI Voice API character pricing', () => {
+    const cost = estimateTtsCosts({
+      grokTtsModels: ['grok-tts']
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)[0]
+
+    expect(cost?.costPer1kCharactersCents).toBe(1.5)
+    expect(cost?.totalCost).toBe(1.5)
+  })
+
   test('chunked TTS estimates use chunk concurrency for wall-clock time', () => {
     const model = 'grok-tts'
     const characterCount = 27_666
@@ -626,6 +699,38 @@ describe('price mode contracts', () => {
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
+  })
+
+  test('tts batch estimate summary simulates batch worker wall time', () => {
+    const estimates: AggregatedPriceEstimate[] = [
+      { steps: [], totalEstimatedCost: 1, timing: { totalProcessingTimeMs: 1000, steps: [] } },
+      { steps: [], totalEstimatedCost: 2, timing: { totalProcessingTimeMs: 2000, steps: [] } },
+      { steps: [], totalEstimatedCost: 3, timing: { totalProcessingTimeMs: 3000, steps: [] } }
+    ]
+
+    expect(buildTtsBatchEstimateSummary(estimates, 2, 5)).toEqual({
+      inputCount: 3,
+      batchConcurrency: 2,
+      ttsChunkConcurrency: 5,
+      totalEstimatedProcessingTimeMs: 6000,
+      estimatedWallTimeMs: 4000,
+      totalEstimatedCost: 6
+    })
+  })
+
+  test('tts batch actual total cost sums successful child runs by child character count', () => {
+    const first = buildTtsMetadata({ audioFileName: 'first.wav' })
+    const second = buildTtsMetadata({ audioFileName: 'second.wav' })
+    const actualTotal = computeSuccessfulTtsBatchActualCost([
+      { metadata: [first], characterCount: 1000 },
+      { metadata: [second], characterCount: 2000 }
+    ])
+    const separateTotal = computeActualCosts({ step4: [first], ttsCharacterCount: 1000 }).totalCost
+      + computeActualCosts({ step4: [second], ttsCharacterCount: 2000 }).totalCost
+    const flattenedOvercount = computeActualCosts({ step4: [first, second], ttsCharacterCount: 3000 }).totalCost
+
+    expect(actualTotal).toBe(separateTotal)
+    expect(actualTotal).toBeLessThan(flattenedOvercount)
   })
 
   test('Speechify TTS estimates use registry pricing and timing defaults', () => {

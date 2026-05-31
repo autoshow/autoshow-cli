@@ -14,7 +14,7 @@ import {
   SUPPORTED_CARTESIA_TTS_MODELS
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { buildModelDescription } from '~/cli/commands/setup-and-utilities/models/model-validation'
-import { booleanAllProvidersFlag, generationOutputFlags, priceFlag, sharedConcurrencyFlags } from './shared-flags'
+import { batchFlags, booleanAllProvidersFlag, generationOutputFlags, priceFlag, sharedConcurrencyFlags } from './shared-flags'
 import { pickFlags, withHelpGroup } from './flag-utils'
 
 export const TTS_COMMAND_SELECTOR_FLAGS = {
@@ -500,6 +500,7 @@ const elevenlabsTtsCommandOptionNames = [
 export const ttsCommandFlags = {
   ...withHelpGroup(ttsProviderSelectionFlags, 'provider-selection'),
   ...withHelpGroup(genericTtsOptionFlags, 'tts-options'),
+  ...withHelpGroup(pickFlags(batchFlags, ['batch-concurrency']), 'batch-processing'),
   ...withHelpGroup(pickFlags(ttsFlags, minimaxTtsCommandOptionNames), 'tts-minimax'),
   ...withHelpGroup(pickFlags(ttsFlags, openaiTtsCommandOptionNames), 'tts-openai'),
   ...withHelpGroup(pickFlags(ttsFlags, deepgramTtsCommandOptionNames), 'tts-deepgram'),

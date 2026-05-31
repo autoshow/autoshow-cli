@@ -364,6 +364,25 @@ test('tts rejects removed MiniMax clone flags as unknown flags', async () => {
   )
 })
 
+test('tts rejects missing inputs', async () => {
+  const root = await makeTempRoot('autoshow-tts-missing-')
+  await expectUsageExit(
+    ['tts', join(root, 'missing.md'), '--price'],
+    `File not found: ${join(root, 'missing.md')}`
+  )
+})
+
+test('tts rejects non-text single files', async () => {
+  const root = await makeTempRoot('autoshow-tts-non-text-')
+  const inputPath = join(root, 'source.json')
+  await writeFile(inputPath, '{"text":"hello"}\n')
+
+  await expectUsageExit(
+    ['tts', inputPath, '--price'],
+    `tts only accepts .md or .txt files. Got: ${inputPath}`
+  )
+})
+
 test('tts rejects ambiguous generic TTS options with multiple providers', async () => {
   await expectUsageExit(
     ['tts', 'input/examples/tts/1-tts.md', '--provider', 'openai=gpt-4o-mini-tts', '--provider', 'elevenlabs=eleven_v3', '--tts-voice', 'alloy', '--price'],
