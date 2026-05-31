@@ -12,26 +12,61 @@ import { createKeyValueTable } from '~/utils/logger/human-table'
 
 type OpenAIImageQuality = 'low' | 'medium' | 'high'
 
-const GPT_IMAGE_2_DEFAULT_COST_CENTS = 5.3
-const GPT_IMAGE_2_COMMON_SIZE_COSTS: Record<string, Record<OpenAIImageQuality, number>> = {
-  '1024x1024': {
-    low: 0.6,
-    medium: 5.3,
-    high: 21.1
+type OpenAIImageOutputPricing = {
+  defaultCostCents: number
+  commonSizeCosts: Record<string, Record<OpenAIImageQuality, number>>
+  label: string
+  supportsFlexibleSizes?: boolean
+}
+
+const OPENAI_IMAGE_OUTPUT_PRICE_CENTS: Partial<Record<string, OpenAIImageOutputPricing>> = {
+  'gpt-image-2': {
+    label: 'GPT Image 2',
+    defaultCostCents: 5.3,
+    supportsFlexibleSizes: true,
+    commonSizeCosts: {
+      '1024x1024': {
+        low: 0.6,
+        medium: 5.3,
+        high: 21.1
+      },
+      '1024x1536': {
+        low: 0.5,
+        medium: 4.1,
+        high: 16.5
+      },
+      '1536x1024': {
+        low: 0.5,
+        medium: 4.1,
+        high: 16.5
+      }
+    }
   },
-  '1024x1536': {
-    low: 0.5,
-    medium: 4.1,
-    high: 16.5
-  },
-  '1536x1024': {
-    low: 0.5,
-    medium: 4.1,
-    high: 16.5
+  'gpt-image-1.5': {
+    label: 'GPT Image 1.5',
+    defaultCostCents: 3.4,
+    commonSizeCosts: {
+      '1024x1024': {
+        low: 0.9,
+        medium: 3.4,
+        high: 13.3
+      },
+      '1024x1536': {
+        low: 1.3,
+        medium: 5,
+        high: 20
+      },
+      '1536x1024': {
+        low: 1.3,
+        medium: 5,
+        high: 20
+      }
+    }
   }
 }
 
-const OPENAI_GPT_IMAGE_2_LATENCY_NOTE = 'Low quality is fastest; square images are typically fastest; JPEG is faster than PNG; complex prompts can take up to about 2 minutes.'
+const OPENAI_IMAGE_LATENCY_NOTE = 'Low quality is fastest; square images are typically fastest; JPEG is faster than PNG; complex prompts can take up to about 2 minutes.'
+const OPENAI_IMAGE_INPUT_COST_NOTE = 'Estimate covers image output only; OpenAI also bills text and image input tokens when present.'
 
 const normalizeOpenAIQualityForEstimate = (quality: string | undefined): OpenAIImageQuality => {
   const normalized = quality?.toLowerCase()
@@ -53,27 +88,31 @@ const estimateOpenAIImageCost = (
   model: string,
   options: Pick<EstimateImageCostOptions, 'imageSize' | 'imageQuality'>
 ): { costPerImageCents: number, note: string } => {
-  if (model !== 'gpt-image-2') {
+  const pricing = OPENAI_IMAGE_OUTPUT_PRICE_CENTS[model]
+  if (!pricing) {
     return {
       costPerImageCents: getImageCost('openai', model) || 4,
-      note: 'Approximate cost; see OpenAI pricing for exact rates'
+      note: `Approximate cost; see OpenAI pricing for exact rates. ${OPENAI_IMAGE_INPUT_COST_NOTE}`
     }
   }
 
   const quality = normalizeOpenAIQualityForEstimate(options.imageQuality)
   const size = normalizeOpenAIImageSizeForEstimate(options.imageSize)
-  const documentedCost = GPT_IMAGE_2_COMMON_SIZE_COSTS[size]?.[quality]
+  const documentedCost = pricing.commonSizeCosts[size]?.[quality]
 
   if (typeof documentedCost === 'number') {
     return {
       costPerImageCents: documentedCost,
-      note: `Approximate OpenAI output estimate for ${size} ${quality} quality. ${OPENAI_GPT_IMAGE_2_LATENCY_NOTE}`
+      note: `Approximate ${pricing.label} output estimate for ${size} ${quality} quality. ${OPENAI_IMAGE_INPUT_COST_NOTE} ${OPENAI_IMAGE_LATENCY_NOTE}`
     }
   }
 
+  const sizeDescription = pricing.supportsFlexibleSizes
+    ? 'a flexible size'
+    : 'an unsupported size'
   return {
-    costPerImageCents: GPT_IMAGE_2_DEFAULT_COST_CENTS,
-    note: `Approximate OpenAI output estimate for a flexible gpt-image-2 size; using the 1024x1024 medium default. Check OpenAI's calculator for this exact resolution. ${OPENAI_GPT_IMAGE_2_LATENCY_NOTE}`
+    costPerImageCents: pricing.defaultCostCents,
+    note: `Approximate ${pricing.label} output estimate for ${sizeDescription}; using the 1024x1024 medium default. ${OPENAI_IMAGE_INPUT_COST_NOTE} Check OpenAI's calculator for this exact resolution. ${OPENAI_IMAGE_LATENCY_NOTE}`
   }
 }
 

@@ -17,8 +17,8 @@ import * as l from '~/utils/logger'
 import { createKeyValueTable } from '~/utils/logger/human-table'
 
 const GEMINI_MODEL_COST_FALLBACKS: Record<GeminiVideoModel, { cents720p: number, cents1080p: number, cents4k: number }> = {
-  'veo-3.1-fast-generate-preview': { cents720p: 10, cents1080p: 12, cents4k: 12 },
-  'veo-3.1-generate-preview': { cents720p: 40, cents1080p: 40, cents4k: 40 },
+  'veo-3.1-fast-generate-preview': { cents720p: 10, cents1080p: 12, cents4k: 30 },
+  'veo-3.1-generate-preview': { cents720p: 40, cents1080p: 40, cents4k: 60 },
   'veo-3.1-lite-generate-preview': { cents720p: 5, cents1080p: 8, cents4k: 8 }
 }
 

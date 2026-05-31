@@ -213,10 +213,10 @@ test('Gemini video price estimates use current per-second pricing', async () => 
     ['veo-3.1-lite-generate-preview', '1080p', '4', '64.00¢'],
     ['veo-3.1-fast-generate-preview', '720p', '4', '40.00¢'],
     ['veo-3.1-fast-generate-preview', '1080p', '4', '96.00¢'],
-    ['veo-3.1-fast-generate-preview', '4k', '4', '96.00¢'],
+    ['veo-3.1-fast-generate-preview', '4k', '4', '$2.40'],
     ['veo-3.1-generate-preview', '720p', '4', '$1.60'],
     ['veo-3.1-generate-preview', '1080p', '4', '$3.20'],
-    ['veo-3.1-generate-preview', '4k', '4', '$3.20']
+    ['veo-3.1-generate-preview', '4k', '4', '$4.80']
   ] as const
 
   for (const [model, resolution, duration, expectedCost] of cases) {

@@ -100,7 +100,7 @@ test('write project directory --price reports rendered lyric outputs without cre
     'write',
     project.textDir,
     '--price'
-  ])
+  ], { env: { AUTOSHOW_OUTPUT_DIR: OUTPUT_DIR } })
 
   expect(result.exitCode).toBe(0)
   expect(result.outputDir).toBeNull()

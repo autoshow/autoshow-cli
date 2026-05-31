@@ -21,6 +21,7 @@ import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~
 import { buildAggregateTiming } from '~/utils/pricing/aggregate-pricing/timing'
 import { buildTtsBatchEstimateSummary, computeSuccessfulTtsBatchActualCost } from '~/cli/commands/process-steps/step-4-tts/tts-batch-summary'
 import { computeSttCost } from '~/utils/pricing/cost-helpers'
+import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { STABLE_EXAMPLE_AUDIO_URL, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
 import type { AggregatedPriceEstimate, ExtractionMetadata, Step1Metadata, Step2Metadata, Step4Metadata, StepEstimate } from '~/types'
 
@@ -512,7 +513,7 @@ describe('price mode contracts', () => {
     expect(resolveCheapestModelForFlag('grok')).toBe('grok-4.20-non-reasoning')
     expect(resolveCheapestModelForFlag('glm')).toBe('glm-5.1')
     expect(resolveCheapestModelForFlag('kimi')).toBe('kimi-k2.6')
-    expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-2')
+    expect(resolveCheapestModelForFlag('openai-image')).toBe('gpt-image-1.5')
     expect(resolveCheapestModelForFlag('bfl-image')).toBe('flux-2-pro')
     expect(resolveCheapestModelForFlag('reve-image')).toBe('latest')
     expect(resolveCheapestModelForFlag('gemini-music')).toBe('lyria-3-clip-preview')
@@ -576,6 +577,17 @@ describe('price mode contracts', () => {
 
     expect(cost?.costPer1kCharactersCents).toBe(1.5)
     expect(cost?.totalCost).toBe(1.5)
+  })
+
+  test('Groq Orpheus TTS estimates use single character pricing', () => {
+    const cost = estimateTtsCosts({
+      groqTtsModels: ['canopylabs/orpheus-v1-english']
+    } as Parameters<typeof estimateTtsCosts>[0], 1000)[0]
+
+    expect(cost?.costPer1kCharactersCents).toBe(2.2)
+    expect(cost?.inputCostPer1MCharactersCents).toBeUndefined()
+    expect(cost?.outputCostPer1MCharactersCents).toBeUndefined()
+    expect(cost?.totalCost).toBe(2.2)
   })
 
   test('chunked TTS estimates use chunk concurrency for wall-clock time', () => {
@@ -866,7 +878,7 @@ describe('price mode contracts', () => {
     ])
   })
 
-  test('gpt-image-2 image estimates use size and quality', () => {
+  test('OpenAI image estimates use model size and quality tables', () => {
     expect(estimateImageCosts({
       openaiImageModel: 'gpt-image-2',
       imageSize: '1024x1024',
@@ -887,9 +899,24 @@ describe('price mode contracts', () => {
       imageSize: '2048x2048',
       imageQuality: 'high'
     })[0]?.note).toContain('OpenAI')
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-1.5',
+      imageSize: '1024x1024',
+      imageQuality: 'low'
+    })[0]?.costPerImageCents).toBe(0.9)
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-1.5',
+      imageSize: '1024x1536',
+      imageQuality: 'medium'
+    })[0]?.costPerImageCents).toBe(5)
+    expect(estimateImageCosts({
+      openaiImageModel: 'gpt-image-1.5',
+      imageSize: 'auto',
+      imageQuality: 'auto'
+    })[0]?.costPerImageCents).toBe(3.4)
   })
 
-  test('gpt-image-2 actual fallback cost preserves OpenAI image options', () => {
+  test('OpenAI actual fallback cost preserves image options', () => {
     const cost = computeActualCosts({
       step5: {
         imageService: 'openai',
@@ -913,6 +940,30 @@ describe('price mode contracts', () => {
       model: 'gpt-image-2',
       cost: 0.6
     })
+
+    const gptImage15Cost = computeActualCosts({
+      step5: {
+        imageService: 'openai',
+        imageModel: 'gpt-image-1.5',
+        processingTime: 10_000,
+        imageFileNames: ['generated-image.png'],
+        imageCount: 1,
+        imageFileSize: 1234,
+        imageWidth: 1024,
+        imageHeight: 1536,
+        imageSize: '1024x1536',
+        imageQuality: 'high',
+        imageFormat: 'png',
+        requestMode: 'generation'
+      }
+    })
+
+    expect(gptImage15Cost.steps[0]).toMatchObject({
+      step: 'image',
+      provider: 'openai',
+      model: 'gpt-image-1.5',
+      cost: 20
+    })
   })
 
   test('STT actual fallback costs use explicit audio duration when step1 duration is unknown', () => {
@@ -933,6 +984,17 @@ describe('price mode contracts', () => {
     })
     expect(sttStep?.cost).toBe(computeSttCost('deepgram', 'nova-3', audioDurationSeconds))
     expect(actual.totalCost).toBeGreaterThan(0)
+  })
+
+  test('STT billing metadata applies provider minimums and rounding', () => {
+    const oneSecond = computeBilledSttCost('rev', 'machine', 1)
+    expect(oneSecond.requestedDurationSeconds).toBe(1)
+    expect(oneSecond.billedDurationSeconds).toBe(15)
+    expect(oneSecond.cost).toBeCloseTo((15 / 3600) * 20)
+
+    const fractional = computeBilledSttCost('rev', 'machine', 15.2)
+    expect(fractional.requestedDurationSeconds).toBe(15.2)
+    expect(fractional.billedDurationSeconds).toBe(16)
   })
 
   test('STT provider billing metadata wins over duration fallback', () => {

@@ -5,6 +5,11 @@
     "models": {
       "gemini-3.1-flash-image-preview": {
         "description": "Gemini 3.1 Flash Image Preview — native multimodal image generation and editing",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Paid tier standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published Gemini 3.1 Flash Image 1K output-image estimate. Text/image input tokens and other output resolutions are not estimated locally.",
         "costPerImageUSD": 0.067,
         "costPerImageCents": 6.7,
         "nativeGeminiImage": true,
@@ -21,8 +26,13 @@
     "models": {
       "gpt-image-1.5": {
         "description": "GPT Image 1.5 — latest generation",
-        "costPerImageUSD": 0.08,
-        "costPerImageCents": 8,
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/guides/image-generation#calculating-costs",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published GPT Image 1.5 1024x1024 medium output-image estimate. Size/quality-specific estimates are handled in the OpenAI image pricing helper; text and image input tokens are not estimated locally.",
+        "costPerImageUSD": 0.034,
+        "costPerImageCents": 3.4,
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 40283
@@ -30,6 +40,11 @@
       },
       "gpt-image-2": {
         "description": "GPT Image 2 — state-of-the-art image generation",
+        "pricingSourceUrl": "https://developers.openai.com/api/docs/guides/image-generation#calculating-costs",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published GPT Image 2 1024x1024 medium output-image estimate. Flexible size/quality estimates are handled in the OpenAI image pricing helper; text and image input tokens are not estimated locally.",
         "costPerImageUSD": 0.053,
         "costPerImageCents": 5.3,
         "estimation": {
@@ -45,6 +60,11 @@
     "models": {
       "grok-imagine-image-quality": {
         "description": "Grok Imagine Image Quality — higher-fidelity image generation and editing",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published 1K output-image price. xAI bills image inputs separately for image editing; local estimates do not count input images.",
         "costPerImageUSD": 0.05,
         "costPerImageCents": 5,
         "estimation": {
@@ -54,6 +74,11 @@
       },
       "grok-imagine-image": {
         "description": "Grok Imagine text-to-image generation",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Standard pay-as-you-go",
+        "pricingNotes": "Default registry rate is the published 1K output-image price. xAI bills image inputs separately for image editing; local estimates do not count input images.",
         "costPerImageUSD": 0.02,
         "costPerImageCents": 2,
         "estimation": {

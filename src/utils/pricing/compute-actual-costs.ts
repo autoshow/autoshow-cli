@@ -185,7 +185,10 @@ const computeImageFallbackCost = (
   metadata: Step5Metadata,
   imageCount: number
 ): number => {
-  if (metadata.imageService === 'openai' && metadata.imageModel === 'gpt-image-2') {
+  if (
+    metadata.imageService === 'openai'
+    && (metadata.imageModel === 'gpt-image-1.5' || metadata.imageModel === 'gpt-image-2')
+  ) {
     const estimate = estimateImageCosts({
       openaiImageModel: metadata.imageModel,
       imageSize: metadata.imageSize,
