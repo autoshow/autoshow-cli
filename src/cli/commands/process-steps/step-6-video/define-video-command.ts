@@ -76,6 +76,9 @@ const providerModelsFromTargets = (
 
 const first = <T,>(values: T[] | undefined): T | undefined => values?.[0]
 
+const countGrokInputImages = (opts: RuntimeOptions): number =>
+  (opts.videoInputImage ? 1 : 0) + (opts.videoReferenceImages?.length ?? 0)
+
 const buildPricingOptionsForTargets = (
   opts: RuntimeOptions,
   targets: VideoTarget[]
@@ -209,7 +212,9 @@ export const videoCommand = defineCliCommand({
     videoSize: videoOpts.videoSize,
     videoAspectRatio: videoOpts.videoAspectRatio,
     videoResolution: videoOpts.videoResolution,
-    videoMode: videoOpts.videoMode
+    videoMode: videoOpts.videoMode,
+    grokInputImageCount: countGrokInputImages(videoOpts),
+    grokInputVideoDurationSeconds: metadata.find((entry) => entry.videoGenService === 'grok' && typeof entry.inputVideoDurationSeconds === 'number')?.inputVideoDurationSeconds
   })
   const actual = computeActualCosts({ step6: metadata })
   const cost = {

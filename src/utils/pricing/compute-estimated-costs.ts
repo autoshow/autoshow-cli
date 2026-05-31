@@ -452,7 +452,9 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       videoSize: input.videoSize,
       videoAspectRatio: input.videoAspectRatio,
       videoResolution: input.videoResolution,
-      videoMode: input.videoMode
+      videoMode: input.videoMode,
+      ...(input.grokInputImageCount !== undefined ? { grokInputImageCount: input.grokInputImageCount } : {}),
+      ...(input.grokInputVideoDurationSeconds !== undefined ? { grokInputVideoDurationSeconds: input.grokInputVideoDurationSeconds } : {})
     })
     for (const estimate of videoEstimates) {
       const estimation = getVideoEstimation(estimate.provider, estimate.model)

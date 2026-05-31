@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { basename, extname } from 'node:path'
 import { CLIUsageError } from '~/utils/error-handler'
+import { exec } from '~/utils/cli-utils'
 
 type VideoMediaKind = 'image' | 'video'
 
@@ -73,6 +74,11 @@ const parseDataUrl = (value: string): { mimeType: string, base64: string } | und
   const base64 = match[2]
   if (!mimeType || base64 === undefined) return undefined
   return { mimeType, base64 }
+}
+
+const parseDurationSeconds = (value: string): number | undefined => {
+  const durationSeconds = Number.parseFloat(value.trim())
+  return Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : undefined
 }
 
 const getReferenceMimeType = (value: string): string | undefined => {
@@ -259,6 +265,24 @@ export const videoMediaReferenceToGrokUrlObject = async (
   kind: VideoMediaKind
 ): Promise<GrokUrlMedia> => {
   return { url: await videoMediaReferenceToUrlOrDataUrl(value, kind) }
+}
+
+export const tryResolveLocalVideoDurationSeconds = async (value: string): Promise<number | undefined> => {
+  if (isHttpMediaUrl(value) || isVideoMediaDataUrl(value) || !existsSync(value) || Bun.which('ffprobe') === null) {
+    return undefined
+  }
+
+  const result = await exec('ffprobe', [
+    '-v', 'error',
+    '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1',
+    value
+  ])
+  if (result.exitCode !== 0) {
+    return undefined
+  }
+
+  return parseDurationSeconds(result.stdout)
 }
 
 export const videoMediaReferenceToUrlOrBase64 = async (

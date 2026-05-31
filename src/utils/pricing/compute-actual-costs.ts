@@ -2,10 +2,10 @@ import {
   getExtractPricing,
   getImageCost,
   getLlmCost,
-  getMusicModelMeta,
-  getVideoModelMeta
+  getMusicModelMeta
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
+import { estimateVideoCost } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
 import type {
   ActualCostBreakdown,
   ComputeActualCostsInput,
@@ -13,6 +13,7 @@ import type {
   ExtractionMetadata,
   Step2Metadata,
   Step5Metadata,
+  Step6VideoMetadata,
   StepCostEntry
 } from '~/types'
 import { toArray } from '~/utils/text-utils'
@@ -221,6 +222,27 @@ const computeActualSttCharge = (
     inputMetric: 'durationSeconds',
     inputValue: durationSeconds
   }
+}
+
+const countGrokVideoInputImages = (entry: Step6VideoMetadata): number =>
+  (entry.inputImage ? 1 : 0) + (entry.referenceImages?.length ?? 0)
+
+const estimateActualVideoFallbackCost = (entry: Step6VideoMetadata): number => {
+  const estimate = estimateVideoCost({
+    ...(entry.videoGenService === 'gemini' ? { geminiVideoModel: entry.videoGenModel } : {}),
+    ...(entry.videoGenService === 'minimax' ? { minimaxVideoModel: entry.videoGenModel } : {}),
+    ...(entry.videoGenService === 'glm' ? { glmVideoModel: entry.videoGenModel } : {}),
+    ...(entry.videoGenService === 'grok' ? { grokVideoModel: entry.videoGenModel } : {}),
+    ...(entry.videoGenService === 'runway' ? { runwayVideoModel: entry.videoGenModel } : {}),
+    ...(typeof entry.videoDuration === 'number' ? { videoDuration: entry.videoDuration } : {}),
+    ...(typeof entry.videoResolution === 'string' ? { videoResolution: entry.videoResolution } : {}),
+    ...(typeof entry.requestMode === 'string' ? { videoMode: entry.requestMode } : {}),
+    ...(entry.videoGenService === 'grok' ? { grokInputImageCount: countGrokVideoInputImages(entry) } : {}),
+    ...(entry.videoGenService === 'grok' && typeof entry.inputVideoDurationSeconds === 'number'
+      ? { grokInputVideoDurationSeconds: entry.inputVideoDurationSeconds }
+      : {})
+  })
+  return estimate.totalCost
 }
 
 const computeImageFallbackCost = (
@@ -602,19 +624,10 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   }
 
   for (const step6Entry of toArray(input.step6)) {
-    const meta = getVideoModelMeta(step6Entry.videoGenService, step6Entry.videoGenModel)
-    let cost = 0
     const videoDuration = step6Entry.videoDuration ?? 0
-    if (typeof step6Entry.providerCostCents === 'number') {
-      cost = step6Entry.providerCostCents
-    } else if (meta) {
-      if (meta.blockSizeSec && (meta.blockCost720pCents || meta.blockCost1080pCents)) {
-        const blockCount = Math.max(1, Math.ceil(videoDuration / meta.blockSizeSec))
-        cost = blockCount * (meta.blockCost720pCents ?? 0)
-      } else {
-        cost = ((meta.baseCostPerSecondCents ?? 0) * videoDuration) + (meta.baseJobFeeCents ?? 0)
-      }
-    }
+    const cost = typeof step6Entry.providerCostCents === 'number'
+      ? step6Entry.providerCostCents
+      : estimateActualVideoFallbackCost(step6Entry)
     steps.push({
       step: 'video',
       provider: step6Entry.videoGenService,

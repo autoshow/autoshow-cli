@@ -15,7 +15,10 @@ import { readEnv } from '~/utils/validate/env-utils'
 import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { validateData } from '~/utils/validate/validation'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
-import { videoMediaReferenceToGrokUrlObject } from '../../video-utils/video-media-inputs'
+import {
+  tryResolveLocalVideoDurationSeconds,
+  videoMediaReferenceToGrokUrlObject
+} from '../../video-utils/video-media-inputs'
 import type { VideoMode } from '../../video-types'
 const POLL_INTERVAL_MS = 10_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
@@ -98,11 +101,17 @@ export const runGrokVideoGen = async (
     status: 'started'
   })
 
+  const inputVideoDurationSeconds = options.inputVideo
+    ? await tryResolveLocalVideoDurationSeconds(options.inputVideo)
+    : undefined
+  const inputImageCount = (options.inputImage ? 1 : 0) + (options.referenceImages?.length ?? 0)
   const estimate = estimateVideoCost({
     grokVideoModel: options.model,
     videoDuration: options.durationSeconds,
     videoResolution: options.resolution,
-    videoMode: options.mode
+    videoMode: options.mode,
+    grokInputImageCount: inputImageCount,
+    ...(inputVideoDurationSeconds !== undefined ? { grokInputVideoDurationSeconds: inputVideoDurationSeconds } : {})
   })
   logVideoEstimate(estimate)
 
@@ -231,6 +240,7 @@ export const runGrokVideoGen = async (
       ...(options.inputImage ? { inputImage: options.inputImage } : {}),
       ...(options.referenceImages && options.referenceImages.length > 0 ? { referenceImages: options.referenceImages } : {}),
       ...(options.inputVideo ? { inputVideo: options.inputVideo } : {}),
+      ...(inputVideoDurationSeconds !== undefined ? { inputVideoDurationSeconds } : {}),
       providerRequestId: createData.request_id,
       ...(taskData.model ? { providerReturnedModel: taskData.model } : {}),
       providerVideoUrl: videoUrl,

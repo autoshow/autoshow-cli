@@ -89,7 +89,7 @@ export const buildAggregatedPriceEstimate = async (
       addStep(image)
     }
 
-    for (const video of buildVideoEstimates(opts)) {
+    for (const video of await buildVideoEstimates(opts)) {
       addStep(video)
     }
 
@@ -114,7 +114,7 @@ export const buildAggregatedPriceEstimate = async (
   }
 
   if (command === 'video') {
-    for (const video of buildVideoEstimates(opts)) {
+    for (const video of await buildVideoEstimates(opts)) {
       addStep(video)
     }
   }

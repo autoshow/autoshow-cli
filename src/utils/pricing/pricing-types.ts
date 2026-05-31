@@ -198,6 +198,8 @@ export type ComputeEstimatedCostsInput = {
   videoAspectRatio?: string | undefined
   videoResolution?: string | undefined
   videoMode?: string | undefined
+  grokInputImageCount?: number | undefined
+  grokInputVideoDurationSeconds?: number | undefined
   elevenlabsMusicModel?: string | undefined
   minimaxMusicModel?: string | undefined
   geminiMusicModel?: string | undefined

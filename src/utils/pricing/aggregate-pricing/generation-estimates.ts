@@ -8,6 +8,7 @@ import {
   getVideoEstimation
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
+import { tryResolveLocalVideoDurationSeconds } from '~/cli/commands/process-steps/step-6-video/video-utils/video-media-inputs'
 
 export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] => {
   const hasImage = (opts.geminiImageModels?.length ?? 0) > 0
@@ -49,7 +50,10 @@ export const buildImageEstimates = (opts: RuntimeOptions): ImageStepEstimate[] =
   })
 }
 
-export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] => {
+const countGrokInputImages = (opts: RuntimeOptions): number =>
+  (opts.videoInputImage ? 1 : 0) + (opts.videoReferenceImages?.length ?? 0)
+
+export const buildVideoEstimates = async (opts: RuntimeOptions): Promise<VideoStepEstimate[]> => {
   const hasVideo = (opts.geminiVideoModels?.length ?? 0) > 0
     || !!opts.geminiVideoModel
     || (opts.minimaxVideoModels?.length ?? 0) > 0
@@ -61,6 +65,11 @@ export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] =
     || (opts.runwayVideoModels?.length ?? 0) > 0
     || !!opts.runwayVideoModel
   if (!hasVideo) return []
+
+  const hasGrokVideo = (opts.grokVideoModels?.length ?? 0) > 0 || !!opts.grokVideoModel
+  const grokInputVideoDurationSeconds = hasGrokVideo && opts.videoInputVideo
+    ? await tryResolveLocalVideoDurationSeconds(opts.videoInputVideo)
+    : undefined
 
   return estimateVideoCosts({
     geminiVideoModels: opts.geminiVideoModels,
@@ -77,7 +86,9 @@ export const buildVideoEstimates = (opts: RuntimeOptions): VideoStepEstimate[] =
     videoSize: opts.videoSize,
     videoAspectRatio: opts.videoAspectRatio,
     videoResolution: opts.videoResolution,
-    videoMode: opts.videoMode
+    videoMode: opts.videoMode,
+    ...(hasGrokVideo ? { grokInputImageCount: countGrokInputImages(opts) } : {}),
+    ...(grokInputVideoDurationSeconds !== undefined ? { grokInputVideoDurationSeconds } : {})
   }).map((estimate) => {
     const estimation = getVideoEstimation(estimate.provider, estimate.model)
     return {

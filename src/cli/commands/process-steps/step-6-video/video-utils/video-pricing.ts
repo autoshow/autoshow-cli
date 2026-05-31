@@ -59,6 +59,19 @@ const estimateMinimaxCost = (model: MinimaxVideoModel, options: EstimateVideoCos
   const meta = getVideoModelMeta('minimax', model)
   const normalizedResolution = normalizeMinimaxResolution(model, options.videoResolution)
   const normalizedDuration = normalizeMinimaxDuration(model, normalizedResolution, options.videoDuration)
+  const fixedCost = meta?.fixedCostByResolutionDurationCents?.[normalizedResolution]?.[String(normalizedDuration)]
+  if (typeof fixedCost === 'number') {
+    return {
+      provider: 'minimax',
+      model,
+      durationSeconds: normalizedDuration,
+      billedDurationSeconds: normalizedDuration,
+      costPerSecond: normalizedDuration > 0 ? fixedCost / normalizedDuration : 0,
+      totalCost: fixedCost,
+      note: `Exact estimate using published ${normalizedResolution}/${normalizedDuration}s pricing`
+    }
+  }
+
   const blockSize = meta?.blockSizeSec ?? 6
   const blockCount = Math.max(1, Math.ceil(normalizedDuration / blockSize))
   const blockCost720 = meta?.blockCost720pCents ?? 0
@@ -110,20 +123,29 @@ const estimateGrokCost = (model: GrokVideoModel, options: EstimateVideoCostOptio
     ? normalizeGrokVideoExtensionDuration(options.videoDuration)
     : normalizeGrokVideoDuration(options.videoDuration)
   const normalizedResolution = normalizeGrokVideoResolution(options.videoResolution)
-  const resolutionMultiplier = normalizedResolution === '1080p'
-    ? 2
-    : normalizedResolution === '720p'
-      ? (meta?.resolutionMultiplier720p ?? 1.4)
-      : 1
+  const resolutionMultiplier = normalizedResolution === '720p'
+    ? (meta?.resolutionMultiplier720p ?? 1.4)
+    : 1
   const costPerSecond = (meta?.baseCostPerSecondCents ?? 5) * resolutionMultiplier
+  const inputImageCount = Math.max(0, Math.floor(options.grokInputImageCount ?? 0))
+  const inputImageCost = inputImageCount * (meta?.inputImageCostCents ?? 0.2)
+  const inputVideoDurationSeconds = typeof options.grokInputVideoDurationSeconds === 'number' && Number.isFinite(options.grokInputVideoDurationSeconds)
+    ? Math.max(0, options.grokInputVideoDurationSeconds)
+    : 0
+  const inputVideoCost = inputVideoDurationSeconds * (meta?.inputVideoCostPerSecondCents ?? 1)
+  const mediaInputCost = inputImageCost + inputVideoCost
+  const totalCost = (durationSeconds * costPerSecond) + mediaInputCost
+  const mediaNote = mediaInputCost > 0
+    ? ` plus ${mediaInputCost.toFixed(3)}¢ media input charges`
+    : ''
   return {
     provider: 'grok',
     model,
     durationSeconds,
     billedDurationSeconds: durationSeconds,
     costPerSecond,
-    totalCost: durationSeconds * costPerSecond,
-    note: `Approximate estimate using ${normalizedResolution} per-second pricing`
+    totalCost,
+    note: `Approximate estimate using ${normalizedResolution} per-second pricing${mediaNote}`
   }
 }
 

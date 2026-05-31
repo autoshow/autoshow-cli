@@ -7,7 +7,7 @@ import { runMinimaxVideoGen } from './video-services/minimax/run-minimax-video-g
 import { runGlmVideoGen } from './video-services/glm/run-glm-video-gen'
 import { runGrokVideoGen } from './video-services/grok/run-grok-video-gen'
 import { runRunwayVideoGen } from './video-services/runway/run-runway-video-gen'
-import { normalizeGeminiResolution } from './video-utils/video-normalization'
+import { normalizeGeminiResolution, normalizeGrokVideoResolution } from './video-utils/video-normalization'
 import { validateVideoMediaReferences } from './video-utils/video-media-inputs'
 
 const VIDEO_MODES = ['text', 'image-to-video', 'reference-to-video', 'interpolate', 'extend', 'edit'] as const
@@ -263,6 +263,9 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
     const model: GrokVideoModel = validateGrokVideoModel(rawModel)
     if (!isSupportedOrSkippedForAllVideo(options, 'grok', model, mode, ['text', 'image-to-video', 'reference-to-video', 'extend', 'edit'])) {
       continue
+    }
+    if (mode !== 'edit') {
+      normalizeGrokVideoResolution(options.videoResolution)
     }
     if (options.videoInputImage) {
       validateVideoMediaReferences([options.videoInputImage], { flagName: '--video-input-image', provider: 'grok', model, kind: 'image' })

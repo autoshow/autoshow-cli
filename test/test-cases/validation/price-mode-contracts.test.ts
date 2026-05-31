@@ -25,7 +25,7 @@ import { computeSttCost } from '~/utils/pricing/cost-helpers'
 import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
 import { computeTokenCost } from '~/utils/pricing/token-pricing'
 import { STABLE_EXAMPLE_AUDIO_URL, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
-import type { AggregatedPriceEstimate, ExtractionMetadata, ModelRegistry, Step1Metadata, Step2Metadata, Step3Metadata, Step4Metadata, StepEstimate } from '~/types'
+import type { AggregatedPriceEstimate, ExtractionMetadata, ModelRegistry, Step1Metadata, Step2Metadata, Step3Metadata, Step4Metadata, Step6VideoMetadata, StepEstimate } from '~/types'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string | string[]; env?: Record<string, string | undefined> }> = [
   {
@@ -267,7 +267,11 @@ const PRICE_FIELD_NAMES = [
   'blockCost720pUSD',
   'blockCost720pCents',
   'blockCost1080pUSD',
-  'blockCost1080pCents'
+  'blockCost1080pCents',
+  'inputImageCostUSD',
+  'inputImageCostCents',
+  'inputVideoCostPerSecondUSD',
+  'inputVideoCostPerSecondCents'
 ] as const
 
 const USD_CENTS_FIELD_PAIRS = [
@@ -290,7 +294,9 @@ const USD_CENTS_FIELD_PAIRS = [
   ['baseCostPerSecondUSD', 'baseCostPerSecondCents'],
   ['baseJobFeeUSD', 'baseJobFeeCents'],
   ['blockCost720pUSD', 'blockCost720pCents'],
-  ['blockCost1080pUSD', 'blockCost1080pCents']
+  ['blockCost1080pUSD', 'blockCost1080pCents'],
+  ['inputImageCostUSD', 'inputImageCostCents'],
+  ['inputVideoCostPerSecondUSD', 'inputVideoCostPerSecondCents']
 ] as const
 
 type RegistryModelEntry = Record<string, unknown>
@@ -342,11 +348,21 @@ const hasPositiveTokenPricingBand = (entry: RegistryModelEntry): boolean => {
   )
 }
 
+const hasPositiveFixedCostMatrix = (entry: RegistryModelEntry): boolean => {
+  const matrix = entry['fixedCostByResolutionDurationCents']
+  if (!isRecord(matrix)) return false
+  return Object.values(matrix).some((durationCosts) =>
+    isRecord(durationCosts)
+    && Object.values(durationCosts).some((value) => typeof value === 'number' && value > 0)
+  )
+}
+
 const isPaidApiRegistryModel = (record: RegistryModelRecord): boolean =>
   record.serviceType === 'api'
   && (
     hasPositivePricingField(record.entry)
     || hasPositiveTokenPricingBand(record.entry)
+    || hasPositiveFixedCostMatrix(record.entry)
     || record.entry['providerPricing'] === 'quote'
     || CREDIT_PRICED_MODEL_KEYS.has(`${record.step}/${record.provider}/${record.model}`)
   )
@@ -393,6 +409,16 @@ const buildStep3CostMetadata = (overrides: Partial<Step3Metadata> = {}): Step3Me
   outputFormat: 'json',
   structuredMode: 'native',
   structuredPresetNames: [],
+  ...overrides
+})
+
+const buildVideoMetadata = (overrides: Partial<Step6VideoMetadata>): Step6VideoMetadata => ({
+  videoGenService: 'gemini',
+  videoGenModel: 'veo-3.1-fast-generate-preview',
+  processingTime: 1234,
+  videoFileName: 'generated-video.mp4',
+  videoFileSize: 1234,
+  videoDuration: 4,
   ...overrides
 })
 
@@ -741,6 +767,70 @@ describe('price mode contracts', () => {
       model: 'zyte',
       processingTimeMs: 1234
     })
+  })
+
+  test('video actual-cost fallback reuses provider estimator options', () => {
+    const cases = [
+      [
+        buildVideoMetadata({
+          videoGenService: 'gemini',
+          videoGenModel: 'veo-3.1-fast-generate-preview',
+          videoDuration: 8,
+          videoResolution: '1080p'
+        }),
+        96
+      ],
+      [
+        buildVideoMetadata({
+          videoGenService: 'minimax',
+          videoGenModel: 'MiniMax-Hailuo-2.3-Fast',
+          videoDuration: 10,
+          videoResolution: '720p'
+        }),
+        32
+      ],
+      [
+        buildVideoMetadata({
+          videoGenService: 'minimax',
+          videoGenModel: 'MiniMax-Hailuo-2.3-Fast',
+          videoDuration: 6,
+          videoResolution: '1080p'
+        }),
+        33
+      ],
+      [
+        buildVideoMetadata({
+          videoGenService: 'grok',
+          videoGenModel: 'grok-imagine-video',
+          videoDuration: 5,
+          videoResolution: '720p',
+          inputImage: 'input.png'
+        }),
+        35.2
+      ],
+      [
+        buildVideoMetadata({
+          videoGenService: 'grok',
+          videoGenModel: 'grok-imagine-video',
+          videoDuration: 5,
+          videoResolution: '720p',
+          inputVideo: 'input.mp4',
+          inputVideoDurationSeconds: 3
+        }),
+        38
+      ]
+    ] as const
+
+    for (const [metadata, expectedCost] of cases) {
+      const actual = computeActualCosts({ step6: metadata })
+      expect(actual.steps[0]).toMatchObject({
+        step: 'video',
+        provider: metadata.videoGenService,
+        model: metadata.videoGenModel,
+        costSource: 'registry_fallback'
+      })
+      expect(actual.totalCost).toBeCloseTo(expectedCost)
+    }
   })
 
   test('timing estimates include normalized rates and throughput fields', () => {

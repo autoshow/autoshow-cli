@@ -210,6 +210,11 @@ const MusicServiceSchema = v.object({
   models: v.record(v.string(), MusicModelSchema)
 })
 
+const VideoFixedCostMatrixSchema = v.record(
+  v.string(),
+  v.record(v.string(), v.number())
+)
+
 const VideoModelSchema = v.object({
   description: v.string(),
   ...PricingProvenanceFields,
@@ -226,6 +231,11 @@ const VideoModelSchema = v.object({
   blockCost720pCents: v.optional(v.number(), undefined),
   blockCost1080pUSD: v.optional(v.number(), undefined),
   blockCost1080pCents: v.optional(v.number(), undefined),
+  fixedCostByResolutionDurationCents: v.optional(VideoFixedCostMatrixSchema, undefined),
+  inputImageCostUSD: v.optional(v.number(), undefined),
+  inputImageCostCents: v.optional(v.number(), undefined),
+  inputVideoCostPerSecondUSD: v.optional(v.number(), undefined),
+  inputVideoCostPerSecondCents: v.optional(v.number(), undefined),
   estimation: v.optional(v.object({
     costMultiplier: v.optional(v.number(), undefined),
     msPerSecond: v.optional(v.number(), undefined)

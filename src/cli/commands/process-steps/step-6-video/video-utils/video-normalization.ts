@@ -161,8 +161,8 @@ export const normalizeGrokVideoExtensionDuration = (duration: number | undefined
 
 export const normalizeGrokVideoResolution = (resolution: string | undefined): GrokVideoResolution => {
   if (resolution === undefined || resolution === '') return '480p'
-  if (resolution === '480p' || resolution === '720p' || resolution === '1080p') return resolution
-  throw CLIUsageError(`Invalid --video-resolution value "${resolution}" for Grok. Expected 480p, 720p, or 1080p.`)
+  if (resolution === '480p' || resolution === '720p') return resolution
+  throw CLIUsageError(`Invalid --video-resolution value "${resolution}" for Grok. Expected 480p or 720p.`)
 }
 
 export const normalizeGrokVideoAspectRatio = (aspectRatio: string | undefined): string => {

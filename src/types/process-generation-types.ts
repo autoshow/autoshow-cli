@@ -58,6 +58,7 @@ export type Step6VideoMetadata = {
   lastFrameImage?: string | undefined
   referenceImages?: string[] | undefined
   inputVideo?: string | undefined
+  inputVideoDurationSeconds?: number | undefined
   providerRequestId?: string | undefined
   providerReturnedModel?: string | undefined
   providerVideoUrl?: string | undefined

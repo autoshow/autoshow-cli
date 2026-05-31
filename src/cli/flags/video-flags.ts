@@ -28,7 +28,7 @@ export const videoGenFlags = {
     type: String
   },
   'video-resolution': {
-    description: 'Video resolution: 720p|1080p|4k (Gemini; 4k requires Veo 3.1 standard/Fast)',
+    description: 'Video resolution: 720p|1080p|4k (Gemini; 4k requires Veo 3.1 standard/Fast), 720p|1080p (MiniMax Hailuo), 480p|720p (Grok)',
     type: String
   },
   'video-input-image': {

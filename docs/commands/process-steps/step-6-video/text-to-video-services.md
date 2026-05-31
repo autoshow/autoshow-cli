@@ -179,7 +179,7 @@ GLM `cogvideox-3` supports text, image-to-video, and interpolation with `image_u
 |--------|-------|
 | Selector | `--provider grok[=<model>]` |
 | Models | `grok-imagine-video` |
-| Duration/resolution | `--duration <seconds>`, `--resolution 480p\|720p\|1080p` for generation modes |
+| Duration/resolution | `--duration <seconds>`, `--resolution 480p\|720p` for generation modes |
 | Storage | `--grok-video-storage-filename`, `--grok-video-storage-expires-after` |
 
 ```bash
@@ -190,7 +190,7 @@ bun as video "animate the mug with a slow tabletop camera slide" --provider grok
 bun as video "extend with a wider camera reveal of the tabletop set" --provider grok=grok-imagine-video --mode extend --input-video output/grok-video-base/generated-video.mp4 --duration 6 --output-dir output/grok-video-extended
 ```
 
-Grok text, image-to-video, and reference-to-video durations are clamped to `1` through `15` seconds and default to `8`. Extension durations are clamped to `1` through `10` seconds and default to `6`. When xAI returns `usage.cost_in_usd_ticks`, the run metadata uses that provider cost for actual-cost reporting.
+Grok text, image-to-video, and reference-to-video durations are clamped to `1` through `15` seconds and default to `8`. Extension durations are clamped to `1` through `10` seconds and default to `6`. Grok estimates include the published input image/reference-image fee when image inputs are selected, and include input-video seconds when local input duration can be probed. When xAI returns `usage.cost_in_usd_ticks`, the run metadata uses that provider cost for actual-cost reporting.
 
 ### Runway
 

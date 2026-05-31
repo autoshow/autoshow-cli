@@ -175,6 +175,81 @@ test('new video providers print price estimates', async () => {
   }
 })
 
+test('MiniMax Hailuo 2.3 Fast uses published duration and resolution prices', async () => {
+  const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
+  const cases = [
+    ['6', undefined, '19.00¢'],
+    ['10', undefined, '32.00¢'],
+    ['6', '1080p', '33.00¢']
+  ] as const
+
+  for (const [duration, resolution, expectedCost] of cases) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'animate image',
+      '--provider',
+      'minimax=MiniMax-Hailuo-2.3-Fast',
+      '--mode',
+      'image-to-video',
+      '--input-image',
+      imageDataUrl,
+      '--duration',
+      duration,
+      ...(resolution ? ['--resolution', resolution] : []),
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain('MiniMax-Hailuo-2.3-Fast')
+    expect(output).toContain(expectedCost)
+  }
+})
+
+test('Grok video prices supported resolutions and input image fees', async () => {
+  const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
+  const cases = [
+    ['480p', [], '25.00¢'],
+    ['720p', [], '35.00¢'],
+    ['480p', ['--mode', 'image-to-video', '--input-image', imageDataUrl], '25.20¢']
+  ] as const
+
+  for (const [resolution, mediaArgs, expectedCost] of cases) {
+    const result = await runCommand([
+      'src/cli/create-cli.ts',
+      'video',
+      'a cinematic mountain sunrise',
+      '--provider',
+      'grok=grok-imagine-video',
+      '--resolution',
+      resolution,
+      '--duration',
+      '5',
+      ...mediaArgs,
+      '--price'
+    ])
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+    expect(output).toContain('grok-imagine-video')
+    expect(output).toContain(expectedCost)
+  }
+})
+
+test('Grok video rejects 1080p resolution with --price', async () => {
+  const result = await runCommand([
+    'src/cli/create-cli.ts',
+    'video',
+    'a cinematic mountain sunrise',
+    '--provider',
+    'grok=grok-imagine-video',
+    '--resolution',
+    '1080p',
+    '--price'
+  ])
+  expect(result.exitCode).not.toBe(0)
+  expect(`${result.stdout}\n${result.stderr}`).toContain('Expected 480p or 720p')
+})
+
 test('GLM and MiniMax media video models accept --price in supported modes', async () => {
   const imageDataUrl = `data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`
   const lastFrameDataUrl = `data:image/webp;base64,${Buffer.from([4, 5, 6]).toString('base64')}`

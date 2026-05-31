@@ -95,12 +95,16 @@
         "pricingCheckedAt": "2026-05-31",
         "pricingCurrency": "USD",
         "pricingTier": "MiniMax pay-as-you-go video pricing",
-        "pricingNotes": "MiniMax video estimates use published block pricing for the selected model/resolution as normalized by AutoShow. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
-        "blockSizeSec": 6,
-        "blockCost720pUSD": 0.28,
-        "blockCost720pCents": 28,
-        "blockCost1080pUSD": 0.49,
-        "blockCost1080pCents": 49,
+        "pricingNotes": "MiniMax Hailuo 2.3 Fast estimates use published fixed duration/resolution prices as normalized by AutoShow: 768P/CLI 720p at $0.19 for 6s and $0.32 for 10s, and 1080P at $0.33 for 6s. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "fixedCostByResolutionDurationCents": {
+          "720p": {
+            "6": 19,
+            "10": 32
+          },
+          "1080p": {
+            "6": 33
+          }
+        },
         "estimation": {
           "costMultiplier": 1,
           "msPerSecond": 12000
@@ -280,8 +284,7 @@
     "type": "api",
     "resolutions": [
       "480p",
-      "720p",
-      "1080p"
+      "720p"
     ],
     "billedDurations": [
       1,
@@ -307,10 +310,14 @@
         "pricingCheckedAt": "2026-05-31",
         "pricingCurrency": "USD",
         "pricingTier": "xAI public Imagine API video pricing",
-        "pricingNotes": "xAI Imagine video estimates use published per-second rates, with resolution-specific multipliers normalized by AutoShow. Input image charges, discounts, enterprise pricing, taxes, and provider credits are ignored unless provider usage is returned.",
+        "pricingNotes": "xAI Imagine video estimates use published per-second rates, with resolution-specific multipliers normalized by AutoShow. Input image/reference image charges are included when selected, and input video charges are included when input-video duration is known. Discounts, enterprise pricing, taxes, and provider credits are ignored unless provider usage is returned.",
         "baseCostPerSecondUSD": 0.05,
         "baseCostPerSecondCents": 5,
         "resolutionMultiplier720p": 1.4,
+        "inputImageCostUSD": 0.002,
+        "inputImageCostCents": 0.2,
+        "inputVideoCostPerSecondUSD": 0.01,
+        "inputVideoCostPerSecondCents": 1,
         "estimation": {
           "costMultiplier": 1,
           "msPerSecond": 10833
