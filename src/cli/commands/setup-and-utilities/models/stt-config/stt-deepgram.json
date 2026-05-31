@@ -9,9 +9,9 @@
         "pricingCheckedAt": "2026-05-31",
         "pricingCurrency": "USD",
         "pricingTier": "Pay As You Go",
-        "pricingNotes": "Nova-3 Monolingual pre-recorded pricing is $0.0048/min and Speaker Diarization is $0.0020/min. AutoShow always sends diarize=true, so estimates use $0.0068/min ($0.408/hr). Free credits, Growth discounts, enterprise pricing, taxes, and provider credits are ignored.",
-        "costPerHourUSD": 0.408,
-        "costPerHourCents": 40.8,
+        "pricingNotes": "Nova-3 Monolingual pre-recorded pricing is $0.0077/min and Speaker Diarization is $0.0020/min. AutoShow always sends diarize=true, so estimates use $0.0097/min ($0.582/hr). Free credits, Growth discounts, enterprise pricing, taxes, and provider credits are ignored.",
+        "costPerHourUSD": 0.582,
+        "costPerHourCents": 58.2,
         "limits": {
           "effectiveBytes": 2147483648,
           "directUploadBytes": 2147483648,
