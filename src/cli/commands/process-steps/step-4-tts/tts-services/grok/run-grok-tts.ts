@@ -1,13 +1,13 @@
 import type { GrokTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, runTtsChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { fetchTtsAudioBytes, trimTrailingSlash } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-http-utils'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import { GROK_DEFAULT_TTS_VOICE, validateGrokTtsLanguage, validateGrokTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { XAI_DEFAULT_BASE_URL } from '~/utils/base-urls'
-const MAX_CHARS_PER_CHUNK = 15000
 
 export const runGrokTts = async (
   text: string,
@@ -17,6 +17,7 @@ export const runGrokTts = async (
     voiceId?: string | undefined
     language?: string | undefined
     textNormalization?: boolean | undefined
+    chunkConcurrency?: number | undefined
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('XAI_API_KEY')
@@ -28,7 +29,7 @@ export const runGrokTts = async (
   const rawVoice = options.voiceId?.trim() || GROK_DEFAULT_TTS_VOICE
   const voice = validateGrokTtsVoice(rawVoice)
   const language = validateGrokTtsLanguage(options.language?.trim() || 'auto')
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.grok)
 
   if (chunks.length === 0) {
     throw new Error('Grok TTS input text is empty')
@@ -46,18 +47,18 @@ export const runGrokTts = async (
   const chunkPaths: string[] = []
 
   try {
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkIndex = i + 1
+    const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+      const chunkIndex = index + 1
       const chunkPath = `${outputDir}/speech-grok-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
-      const audioBytes = await withRetry(
-        { retryClass: 'runtime_http_create_conservative', operationName: `grok-tts-chunk-${chunkIndex}` },
+      const audioBytes = await withHostedTtsRetry(
+        { operationName: `grok-tts-chunk-${chunkIndex}` },
         async (signal) => await fetchTtsAudioBytes({
           url: `${baseURL}/tts`,
           apiKey,
           providerLabel: 'Grok',
           signal,
           body: {
-            text: chunks[i] as string,
+            text: chunk,
             voice_id: voice,
             language,
             text_normalization: options.textNormalization === true,
@@ -66,8 +67,7 @@ export const runGrokTts = async (
               sample_rate: 24000
             }
           }
-        }),
-        (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+        })
       )
 
       if (audioBytes.byteLength === 0) {
@@ -76,9 +76,10 @@ export const runGrokTts = async (
 
       await Bun.write(chunkPath, audioBytes)
       chunkPaths.push(chunkPath)
-    }
+      return chunkPath
+    })
 
-    const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Grok')
+    const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir, 'Grok')
     return finalizeTtsRun({
       service: 'grok',
       model: options.model,

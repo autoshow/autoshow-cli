@@ -1,36 +1,24 @@
 import * as v from 'valibot'
-
-const RESET = '\x1b[0m'
-const CYAN = '\x1b[36m'
-const GREEN = '\x1b[32m'
-const RED = '\x1b[31m'
-const DIM = '\x1b[2m'
-const BOLD = '\x1b[1m'
-
-const colorize = (text: string, color: string): string => {
-  return `${color}${text}${RESET}`
-}
+import { formatDuration as formatSharedDuration } from '~/utils/logger/formatters'
+import { paint, terminalPalette, terminalStyles } from '~/utils/terminal-colors'
 
 const timestamp = (): string => {
   const now = new Date()
   const h = String(now.getHours()).padStart(2, '0')
   const m = String(now.getMinutes()).padStart(2, '0')
   const s = String(now.getSeconds()).padStart(2, '0')
-  const ms = String(now.getMilliseconds()).padStart(3, '0')
-  return colorize(`${h}:${m}:${s}.${ms}`, DIM)
+  return terminalStyles.muted(`[${h}:${m}:${s}]`)
 }
 
 export const bold = (text: string): string => {
-  return `${BOLD}${text}${RESET}`
+  return paint(text, 'white')
 }
 
 export const cyan = (text: string): string => {
-  return `${CYAN}${text}${RESET}`
+  return terminalStyles.info(text)
 }
 
-export const formatDuration = (durationMs: number): string => {
-  return `${(durationMs / 1000).toFixed(2)}s`
-}
+export const formatDuration = formatSharedDuration
 
 export const formatCompactCost = (dollars: number): string => {
   return dollars < 0.01
@@ -52,18 +40,18 @@ const logBase = (...messages: unknown[]): void => {
   const restMessages = messages.slice(1)
 
   if (typeof firstMessage === 'string' && firstMessage.includes('\x1b[')) {
-    console.log(timestamp(), colorize('►', CYAN), firstMessage, ...restMessages)
+    console.log(timestamp(), terminalStyles.info('\u2022'), firstMessage, ...restMessages)
   } else {
-    console.log(timestamp(), colorize('►', CYAN), ...messages)
+    console.log(timestamp(), terminalStyles.info('\u2022'), ...messages)
   }
 }
 
 logBase.dim = (...messages: unknown[]): void => {
-  console.log(timestamp(), `${DIM}${messages.map(String).join(' ')}${RESET}`)
+  console.log(timestamp(), terminalStyles.muted('\u2022'), terminalStyles.muted(messages.map(String).join(' ')))
 }
 
 logBase.success = (message: string): void => {
-  console.log(timestamp(), colorize('✓', GREEN), colorize(message, GREEN))
+  console.log(timestamp(), terminalStyles.success('\u2713'), terminalStyles.success(message))
 }
 
 export const l = logBase
@@ -100,7 +88,7 @@ const errBase = (...messages: unknown[]): void => {
     return
   }
 
-  console.error(timestamp(), colorize('✗', RED), colorize(messages.map(String).join(' '), RED))
+  console.error(timestamp(), terminalStyles.error('\u2716'), paint(messages.map(String).join(' '), terminalPalette.error))
 }
 
 const errValidation = (error: v.ValiError<v.GenericSchema | v.GenericSchemaAsync>): void => {

@@ -20,6 +20,11 @@ type TimedImageService = NonNullable<ComputeEstimatedProcessingTimesInput['image
 type TimedVideoService = NonNullable<ComputeEstimatedProcessingTimesInput['videoTargets']>[number]['service']
 type TimedMusicService = NonNullable<ComputeEstimatedProcessingTimesInput['musicTargets']>[number]['service']
 
+type AggregateTimingOptions = {
+  ttsInputText?: string | undefined
+  ttsChunkConcurrency?: number | undefined
+}
+
 const TIMED_EXTRACT_PROVIDERS = new Set<TimedExtractProvider>([
   'defuddle',
   'mistral',
@@ -41,7 +46,8 @@ const isTimedExtractProvider = (provider: ExtractStepEstimate['provider']): prov
 
 export const buildAggregateTiming = (
   steps: StepEstimate[],
-  ttsTimingCharacterCount: number | undefined
+  ttsTimingCharacterCount: number | undefined,
+  options: AggregateTimingOptions = {}
 ): AggregatedPriceEstimate['timing'] => {
   const sttTimingTargets = steps
     .filter((step): step is SttStepEstimate & { durationSeconds: number } =>
@@ -71,7 +77,8 @@ export const buildAggregateTiming = (
     .map((step) => ({
       service: step.provider as Step4Metadata['ttsService'],
       model: step.model,
-      ...(typeof step.setupTimeMs === 'number' ? { setupTimeMs: step.setupTimeMs } : {})
+      ...(typeof step.setupTimeMs === 'number' ? { setupTimeMs: step.setupTimeMs } : {}),
+      ...(typeof step.chunkConcurrency === 'number' ? { chunkConcurrency: step.chunkConcurrency } : {})
     }))
   const llmTimingTargets = steps
     .filter((step): step is LlmStepEstimate =>
@@ -129,7 +136,12 @@ export const buildAggregateTiming = (
         ...(extractTimingTargets.length > 0 ? { extractTargets: extractTimingTargets } : {}),
         ...(llmTimingTargets.length > 0 ? { llmTargets: llmTimingTargets } : {}),
         ...(ttsTimingTargets.length > 0 && typeof ttsTimingCharacterCount === 'number'
-          ? { ttsTargets: ttsTimingTargets, ttsCharacterCount: ttsTimingCharacterCount }
+          ? {
+              ttsTargets: ttsTimingTargets,
+              ttsCharacterCount: ttsTimingCharacterCount,
+              ...(typeof options.ttsInputText === 'string' ? { ttsInputText: options.ttsInputText } : {}),
+              ...(typeof options.ttsChunkConcurrency === 'number' ? { ttsChunkConcurrency: options.ttsChunkConcurrency } : {})
+            }
           : {}),
         ...(imageTimingTargets.length > 0 ? { imageTargets: imageTimingTargets } : {}),
         ...(videoTimingTargets.length > 0 ? { videoTargets: videoTimingTargets } : {}),

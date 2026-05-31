@@ -74,6 +74,51 @@ export const splitTextIntoUtf8ByteChunks = (text: string, maxBytes: number): str
   return chunks
 }
 
+export const normalizeTtsChunkConcurrency = (concurrency: number | undefined): number => {
+  if (typeof concurrency !== 'number' || !Number.isFinite(concurrency)) {
+    return 1
+  }
+  return Math.max(1, Math.trunc(concurrency))
+}
+
+export const runTtsChunks = async <T>(
+  chunks: readonly string[],
+  concurrency: number | undefined,
+  runChunk: (chunk: string, index: number) => Promise<T>
+): Promise<T[]> => {
+  const normalizedConcurrency = normalizeTtsChunkConcurrency(concurrency)
+  const results = new Array<T>(chunks.length)
+  let nextIndex = 0
+  let firstError: unknown
+
+  const worker = async (): Promise<void> => {
+    while (true) {
+      if (firstError !== undefined) return
+      const index = nextIndex
+      nextIndex += 1
+      if (index >= chunks.length) return
+
+      try {
+        results[index] = await runChunk(chunks[index] as string, index)
+      } catch (error) {
+        if (firstError === undefined) {
+          firstError = error
+        }
+        return
+      }
+    }
+  }
+
+  const workerCount = Math.min(normalizedConcurrency, chunks.length)
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+
+  if (firstError !== undefined) {
+    throw firstError
+  }
+
+  return results
+}
+
 export const concatAndConvertToWav = async (
   chunkPaths: string[],
   outputDir: string,

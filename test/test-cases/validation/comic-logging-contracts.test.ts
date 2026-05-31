@@ -146,7 +146,7 @@ describe('comic compact logging contracts', () => {
     expect(captured.stdout).toContain('inputs ready draft=existing prompts=existing coverage=4/4')
     expect(captured.stdout).toContain('config target=sketches')
     expect(captured.stdout).toContain('generated sketch id=panels-01-04')
-    expect(captured.stdout).toContain('summary generated=1 skipped=0 tokens=30 cost=$0.02 api=0.20s')
+    expect(captured.stdout).toContain('summary generated=1 skipped=0 tokens=30 cost=$0.02 api=200ms')
     expect(captured.stdout).toContain('output directory: output/comic/01-co-work-smarter')
     expectRemovedFragmentsAbsent(captured.stdout)
   })

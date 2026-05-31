@@ -10,6 +10,7 @@ import {
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 import { estimateVideoCosts } from '~/cli/commands/process-steps/step-6-video/video-utils/video-pricing'
+import { estimateTtsSynthesisProcessingTimeMs } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
 import type {
   ComputeActualProcessingTimesInput,
@@ -391,7 +392,14 @@ export const computeEstimatedProcessingTimes = (
       step: 'tts',
       provider: ttsTarget.service,
       model: ttsTarget.model,
-      processingTimeMs: roundMs((characterCount / 1000) * estimation.msPer1KChars + (ttsTarget.setupTimeMs ?? 0)),
+      processingTimeMs: roundMs(estimateTtsSynthesisProcessingTimeMs({
+        provider: ttsTarget.service,
+        text: input.ttsInputText,
+        characterCount,
+        msPer1KChars: estimation.msPer1KChars,
+        setupTimeMs: ttsTarget.setupTimeMs,
+        chunkConcurrency: ttsTarget.chunkConcurrency ?? input.ttsChunkConcurrency,
+      })),
       inputMetric: 'characters',
       inputValue: characterCount,
     }, 'estimated'))

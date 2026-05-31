@@ -1,7 +1,7 @@
 import { basename } from 'node:path'
 import { assertNever } from '~/utils/validate/assert-never'
 import { formatCost, formatDuration, formatEstimatedCost, formatEstimatedCostWithExactCents } from '~/utils/logger/formatters'
-import { createHumanTable, logLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
+import { createDetailTable, createHumanTable, createLocationsTable, toHumanTableCell } from '~/utils/logger/human-table'
 import { emitResult } from '~/utils/logger/result-emitter'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 import type {
@@ -213,27 +213,49 @@ const buildHumanCompletionTables = (
 
 const buildHumanEstimateRows = (
   estimate: AggregatedPriceEstimate
-): HumanLogTableRow[] =>
-  estimate.steps.map((step) => ({
-    step: step.step,
-    provider: step.step === 'stt' ? formatSttProvider(step.provider) : step.provider,
-    model: step.step === 'stt' && step.provider === 'reverb'
-      ? resolveReverbModelLabel(step.model)
-      : step.model,
-    ...(step.step === 'tts' && typeof step.setupCostCents === 'number'
-      ? { setup: formatEstimatedCost(step.setupCostCents) }
-      : {}),
-    cost: formatEstimatedCost(step.totalCost)
-  }))
+): HumanLogTableRow[] => {
+  const timingRows = estimate.timing?.steps.map(mapTimingEstimate) ?? []
+
+  return estimate.steps.map((step, index) => {
+    const timing = timingRows[index]
+    return {
+      step: step.step,
+      provider: step.step === 'stt' ? formatSttProvider(step.provider) : step.provider,
+      model: step.step === 'stt' && step.provider === 'reverb'
+        ? resolveReverbModelLabel(step.model)
+        : step.model,
+      ...(typeof timing?.['input'] === 'string' ? { input: timing['input'] } : {}),
+      ...(step.step === 'tts' && typeof step.setupCostCents === 'number'
+        ? { setup: formatEstimatedCost(step.setupCostCents) }
+        : {}),
+      cost: formatEstimatedCost(step.totalCost),
+      ...(typeof timing?.['estimatedTime'] === 'string' ? { estimatedTime: timing['estimatedTime'] } : {})
+    }
+  })
+}
 
 const buildHumanEstimateTable = (
   rows: readonly HumanLogTableRow[]
 ) => {
   const hasSetup = rows.some((row) => 'setup' in row)
-  const columns = hasSetup
-    ? ['step', 'provider', 'model', 'setup', 'cost']
-    : ['step', 'provider', 'model', 'cost']
-  return createHumanTable(rows, columns, { align: { cost: 'right', ...(hasSetup ? { setup: 'right' } : {}) } })
+  const hasInput = rows.some((row) => 'input' in row)
+  const hasEstimated = rows.some((row) => 'estimatedTime' in row)
+  const columns = [
+    'step',
+    'provider',
+    'model',
+    ...(hasInput ? ['input'] : []),
+    ...(hasSetup ? ['setup'] : []),
+    'cost',
+    ...(hasEstimated ? ['estimatedTime'] : [])
+  ]
+  return createHumanTable(rows, columns, {
+    align: {
+      cost: 'right',
+      ...(hasSetup ? { setup: 'right' } : {}),
+      ...(hasEstimated ? { estimatedTime: 'right' } : {})
+    }
+  })
 }
 
 const buildCompleteResultData = (
@@ -277,19 +299,21 @@ export const createReporter = (logger: Logger): Reporter => {
     },
     estimate: (estimate) => {
       const estimateRows = buildHumanEstimateRows(estimate)
-
-      logger.write('info', `Total estimated cost: ${formatEstimatedCostWithExactCents(estimate.totalEstimatedCost)}`, { category: 'pricing' })
-      logger.write('info', 'Cost Estimate', {
-        category: 'pricing',
-        humanTable: buildHumanEstimateTable(estimateRows)
-      })
+      const estimateSummary: Array<readonly [string, unknown]> = [
+        ['Total estimated cost', formatEstimatedCostWithExactCents(estimate.totalEstimatedCost)]
+      ]
       if (estimate.timing && estimate.timing.steps.length > 0) {
-        logger.write('info', `Total estimated processing time: ${formatDuration(estimate.timing.totalProcessingTimeMs)}`, { category: 'pricing' })
-        logger.write('info', 'Processing Time Estimate', {
-          category: 'pricing',
-          humanTable: createHumanTable(estimate.timing.steps.map(mapTimingEstimate), ['step', 'provider', 'model', 'input', 'estimatedTime'])
-        })
+        estimateSummary.push(['Total estimated processing time', formatDuration(estimate.timing.totalProcessingTimeMs)])
       }
+
+      logger.write('info', 'Estimate', {
+        category: 'pricing',
+        humanTable: createDetailTable(estimateSummary),
+        humanSections: [{
+          title: 'Cost Estimate',
+          table: buildHumanEstimateTable(estimateRows)
+        }]
+      })
 
       emitResult({
         dryRun: true,
@@ -301,22 +325,26 @@ export const createReporter = (logger: Logger): Reporter => {
       })
     },
     complete: (outputDir, files, options) => {
-      logLocationsTable(logger, [{ artifact: 'outputDir', path: outputDir }], { category: 'artifact' })
-      logger.write('success', options?.summaryMessage ?? 'Complete!', { category: 'artifact' })
       const tables = buildHumanCompletionTables(outputDir, files, options)
       const hiddenSections = new Set(options?.hideHumanSections ?? [])
-      if (tables.artifacts && !hiddenSections.has('artifacts')) {
-        logger.write('info', 'Artifacts', { category: 'artifact', humanTable: tables.artifacts })
-      }
-      if (tables.providers && !hiddenSections.has('providers')) {
-        logger.write('info', 'Providers', { category: 'artifact', humanTable: tables.providers })
-      }
-      if (tables.metrics && !hiddenSections.has('metrics')) {
-        logger.write('info', 'Metrics', { category: 'artifact', humanTable: tables.metrics })
-      }
-      if (tables.timing && !hiddenSections.has('timing')) {
-        logger.write('info', 'Timing', { category: 'artifact', humanTable: tables.timing })
-      }
+      const includeOutputDir = options?.includeOutputDir ?? true
+      const humanSections = [
+        ...(includeOutputDir
+          ? [{
+              title: 'Locations',
+              table: createLocationsTable([{ artifact: 'outputDir', path: outputDir }])
+            }]
+          : []),
+        ...(tables.artifacts && !hiddenSections.has('artifacts') ? [{ title: 'Artifacts', table: tables.artifacts }] : []),
+        ...(tables.metrics && !hiddenSections.has('metrics') ? [{ title: 'Metrics', table: tables.metrics }] : []),
+        ...(tables.providers && !hiddenSections.has('providers') ? [{ title: 'Providers', table: tables.providers }] : []),
+        ...(tables.timing && !hiddenSections.has('timing') ? [{ title: 'Timing', table: tables.timing }] : [])
+      ]
+
+      logger.write('success', options?.summaryMessage ?? 'Complete', {
+        category: 'artifact',
+        ...(humanSections.length > 0 ? { humanSections } : {})
+      })
 
       emitResult(buildCompleteResultData(outputDir, files, options))
     }

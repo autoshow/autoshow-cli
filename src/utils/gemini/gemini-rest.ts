@@ -89,6 +89,11 @@ type GeminiInlineMedia = {
   }
 }
 
+type GeminiVideoImageMedia = {
+  mimeType: string
+  bytesBase64Encoded: string
+}
+
 type GeminiVideoReferenceImage = {
   image: GeminiInlineMedia
   referenceType: 'asset'
@@ -329,12 +334,12 @@ export const geminiPredictLongRunning = async (
   apiKey: string,
   params: {
     model: string
-    prompt: string
+    prompt?: string | undefined
     numberOfVideos: number
     durationSeconds: number
     resolution: string
     aspectRatio?: string | undefined
-    image?: GeminiInlineMedia | undefined
+    image?: GeminiVideoImageMedia | undefined
     lastFrame?: GeminiInlineMedia | undefined
     referenceImages?: GeminiVideoReferenceImage[] | undefined
     video?: GeminiInlineMedia | undefined
@@ -342,7 +347,7 @@ export const geminiPredictLongRunning = async (
 ): Promise<GeminiVideoOperation> => {
   const body: Record<string, unknown> = {
     instances: [{
-      prompt: params.prompt,
+      ...(params.prompt !== undefined ? { prompt: params.prompt } : {}),
       ...(params.image ? { image: params.image } : {}),
       ...(params.lastFrame ? { lastFrame: params.lastFrame } : {}),
       ...(params.referenceImages && params.referenceImages.length > 0 ? { referenceImages: params.referenceImages } : {}),

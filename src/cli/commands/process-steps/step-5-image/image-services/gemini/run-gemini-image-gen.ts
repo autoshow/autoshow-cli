@@ -106,7 +106,11 @@ export const runGeminiImageGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: imagePaths.length
+    outputCount: imagePaths.length,
+    artifacts: imagePaths.map((imagePath, index) => ({
+      artifact: index === 0 ? 'image' : `image ${index + 1}`,
+      path: imagePath
+    }))
   })
 
   const metadata: Step5Metadata = {

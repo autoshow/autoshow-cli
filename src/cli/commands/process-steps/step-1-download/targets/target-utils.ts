@@ -7,13 +7,13 @@ export {
   isDocumentLikeTarget,
   isHtmlArticleTarget,
   isLikelyUrl
-} from './input/input-classifier'
+} from './source-input/input-classifier'
 export {
   classifyTopLevelTarget,
   collectInputFiles,
   isInputDirectoryPath,
   readInputList
-} from './input/input-collection'
+} from './source-input/input-collection'
 export { resolveInputRoutingForCommand } from './routing/input-routing'
 export { logSttBatchFinalSummary } from './batch/batch-summary'
 export { planBatchInputsForCommand } from './batch/batch-planner'

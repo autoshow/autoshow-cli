@@ -130,7 +130,8 @@ const TtsDefaultsSchema = v.strictObject({
   minimaxTtsEnglishNormalization: v.optional(v.boolean(), undefined),
   minimaxTtsPronunciations: v.optional(v.array(v.string()), undefined),
   providerConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
-  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
+  localConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined),
+  chunkConcurrency: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1)), undefined)
 })
 
 const ImageDefaultsSchema = v.strictObject({

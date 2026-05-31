@@ -3,7 +3,8 @@ import * as v from 'valibot'
 import type { MinimaxTtsModel, Step4Metadata } from '~/types'
 import * as l from '~/utils/logger'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { runTtsChunks, splitTextIntoChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
@@ -19,7 +20,6 @@ import {
 } from '~/cli/commands/process-steps/step-4-tts/tts-services/minimax/minimax-utils'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 const MINIMAX_DEFAULT_VOICE_ID = 'English_expressive_narrator'
-const MAX_CHARS_PER_CHUNK = 50_000
 const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 
@@ -33,6 +33,7 @@ type MinimaxTtsOptions = {
   emotion?: string | undefined
   englishNormalization?: boolean | undefined
   pronunciations?: string[] | undefined
+  chunkConcurrency?: number | undefined
 }
 
 const MinimaxCreateResponseSchema = v.object({
@@ -158,7 +159,7 @@ export const runMinimaxTts = async (
   }
 
   const baseURL = MINIMAX_DEFAULT_BASE_URL
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.minimax)
   if (chunks.length === 0) {
     throw new Error('MiniMax TTS input text is empty')
   }
@@ -181,118 +182,120 @@ export const runMinimaxTts = async (
 
   const chunkPaths: string[] = []
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i] as string
-    const chunkIndex = i + 1
-    l.debug(`Submitting MiniMax TTS chunk ${chunkIndex}/${chunks.length}`)
-    const voiceSetting = {
-      voice_id: voiceId,
-      ...(typeof options.speed === 'number' ? { speed: options.speed } : {}),
-      ...(typeof options.volume === 'number' ? { vol: options.volume } : {}),
-      ...(typeof options.pitch === 'number' ? { pitch: options.pitch } : {}),
-      ...(options.emotion ? { emotion: options.emotion } : {}),
-      ...(options.englishNormalization === true ? { english_normalization: true } : {})
-    }
-    const pronunciationRules = options.pronunciations?.map(item => item.trim()).filter(Boolean)
-    const requestBody = {
-      model: options.model,
-      text: chunk,
-      voice_setting: voiceSetting,
-      audio_setting: {
-        format: 'mp3',
-        audio_sample_rate: 32000,
-        channel: 1
-      },
-      ...(options.languageBoost ? { language_boost: options.languageBoost } : {}),
-      ...(pronunciationRules && pronunciationRules.length > 0 ? { pronunciation_dict: { tone: pronunciationRules } } : {})
-    }
-
-    const createTaskResponse = await fetch(`${baseURL}/v1/t2a_async_v2`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    })
-
-    if (!createTaskResponse.ok) {
-      const body = await createTaskResponse.text()
-      throw new Error(`MiniMax TTS task creation failed (${createTaskResponse.status}): ${body || 'No response body'}`)
-    }
-
-    const createTaskData = validateData(
-      MinimaxCreateResponseSchema,
-      await parseMinimaxJsonResponse(createTaskResponse, 'MiniMax TTS create task response'),
-      'MiniMax TTS create task response'
-    )
-    ensureMinimaxBaseRespSuccess(createTaskData.base_resp, 'MiniMax TTS task creation')
-
-    const taskId = String(createTaskData.task_id)
-
-    const queryData = await pollUntil({
-      operationName: `minimax-tts-chunk-${chunkIndex}`,
-      intervalMs: POLL_INTERVAL_MS,
-      deadlineMs: POLL_TIMEOUT_MS,
-      pollFn: async () => {
-        const queryResponse = await fetch(`${baseURL}/v1/query/t2a_async_query_v2?task_id=${encodeURIComponent(taskId)}`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        })
-
-        if (!queryResponse.ok) {
-          const body = await queryResponse.text()
-          throw new Error(`MiniMax TTS task query failed (${queryResponse.status}): ${body || 'No response body'}`)
-        }
-
-        const data = validateData(
-          MinimaxQueryResponseSchema,
-          await parseMinimaxJsonResponse(queryResponse, 'MiniMax TTS query task response'),
-          'MiniMax TTS query task response'
-        )
-        ensureMinimaxBaseRespSuccess(data.base_resp, 'MiniMax TTS task query')
-        return data
-      },
-      isDone: (data) => isMinimaxTaskSuccess(readTaskStatus(data)),
-      isFailed: (data) => {
-        const status = readTaskStatus(data)
-        if (isMinimaxTaskFailure(status)) {
-          return { failed: true, reason: data.error_message ?? data.base_resp?.status_msg ?? 'Unknown error' }
-        }
-        return { failed: false }
+  try {
+    const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+      const chunkIndex = index + 1
+      l.debug(`Submitting MiniMax TTS chunk ${chunkIndex}/${chunks.length}`)
+      const voiceSetting = {
+        voice_id: voiceId,
+        ...(typeof options.speed === 'number' ? { speed: options.speed } : {}),
+        ...(typeof options.volume === 'number' ? { vol: options.volume } : {}),
+        ...(typeof options.pitch === 'number' ? { pitch: options.pitch } : {}),
+        ...(options.emotion ? { emotion: options.emotion } : {}),
+        ...(options.englishNormalization === true ? { english_normalization: true } : {})
       }
+      const pronunciationRules = options.pronunciations?.map(item => item.trim()).filter(Boolean)
+      const requestBody = {
+        model: options.model,
+        text: chunk,
+        voice_setting: voiceSetting,
+        audio_setting: {
+          format: 'mp3',
+          audio_sample_rate: 32000,
+          channel: 1
+        },
+        ...(options.languageBoost ? { language_boost: options.languageBoost } : {}),
+        ...(pronunciationRules && pronunciationRules.length > 0 ? { pronunciation_dict: { tone: pronunciationRules } } : {})
+      }
+
+      const createTaskResponse = await fetch(`${baseURL}/v1/t2a_async_v2`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      })
+
+      if (!createTaskResponse.ok) {
+        const body = await createTaskResponse.text()
+        throw new Error(`MiniMax TTS task creation failed (${createTaskResponse.status}): ${body || 'No response body'}`)
+      }
+
+      const createTaskData = validateData(
+        MinimaxCreateResponseSchema,
+        await parseMinimaxJsonResponse(createTaskResponse, 'MiniMax TTS create task response'),
+        'MiniMax TTS create task response'
+      )
+      ensureMinimaxBaseRespSuccess(createTaskData.base_resp, 'MiniMax TTS task creation')
+
+      const taskId = String(createTaskData.task_id)
+
+      const queryData = await pollUntil({
+        operationName: `minimax-tts-chunk-${chunkIndex}`,
+        intervalMs: POLL_INTERVAL_MS,
+        deadlineMs: POLL_TIMEOUT_MS,
+        pollFn: async () => {
+          const queryResponse = await fetch(`${baseURL}/v1/query/t2a_async_query_v2?task_id=${encodeURIComponent(taskId)}`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (!queryResponse.ok) {
+            const body = await queryResponse.text()
+            throw new Error(`MiniMax TTS task query failed (${queryResponse.status}): ${body || 'No response body'}`)
+          }
+
+          const data = validateData(
+            MinimaxQueryResponseSchema,
+            await parseMinimaxJsonResponse(queryResponse, 'MiniMax TTS query task response'),
+            'MiniMax TTS query task response'
+          )
+          ensureMinimaxBaseRespSuccess(data.base_resp, 'MiniMax TTS task query')
+          return data
+        },
+        isDone: (data) => isMinimaxTaskSuccess(readTaskStatus(data)),
+        isFailed: (data) => {
+          const status = readTaskStatus(data)
+          if (isMinimaxTaskFailure(status)) {
+            return { failed: true, reason: data.error_message ?? data.base_resp?.status_msg ?? 'Unknown error' }
+          }
+          return { failed: false }
+        }
+      })
+
+      const fileId = extractFileId(createTaskData, queryData)
+      if (!fileId) {
+        throw new Error('MiniMax TTS task succeeded but no file_id was returned')
+      }
+
+      const chunkPath = `${outputDir}/speech-minimax-chunk-${chunkIndex}.mp3`
+      await downloadChunkAudio(baseURL, apiKey, fileId, chunkPath)
+      chunkPaths.push(chunkPath)
+      return chunkPath
     })
 
-    const fileId = extractFileId(createTaskData, queryData)
-    if (!fileId) {
-      throw new Error('MiniMax TTS task succeeded but no file_id was returned')
+    const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir)
+    const result = finalizeTtsRun({
+      service: 'minimax',
+      model: options.model,
+      speaker: voiceId,
+      audioPath,
+      chunkCount: chunks.length,
+      startTime
+    })
+
+    return {
+      audioPath: result.audioPath,
+      metadata: result.metadata
     }
-
-    const chunkPath = `${outputDir}/speech-minimax-chunk-${chunkIndex}.mp3`
-    await downloadChunkAudio(baseURL, apiKey, fileId, chunkPath)
-    chunkPaths.push(chunkPath)
-  }
-
-  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir)
-  for (const chunkPath of chunkPaths) {
-    await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
-  }
-  await Bun.$`rm -f ${outputDir}/speech-minimax-chunks.txt ${outputDir}/speech-minimax-merged.mp3`.quiet().nothrow()
-
-  const result = finalizeTtsRun({
-    service: 'minimax',
-    model: options.model,
-    speaker: voiceId,
-    audioPath,
-    chunkCount: chunks.length,
-    startTime
-  })
-
-  return {
-    audioPath: result.audioPath,
-    metadata: result.metadata
+  } finally {
+    for (const chunkPath of chunkPaths) {
+      await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
+    }
+    await Bun.$`rm -f ${outputDir}/speech-minimax-chunks.txt ${outputDir}/speech-minimax-merged.mp3`.quiet().nothrow()
   }
 }

@@ -38,6 +38,7 @@ export type TtsStepEstimate = ProviderModelBase & {
   inputCostPer1MCharactersCents?: number
   outputCostPer1MCharactersCents?: number
   characterCount?: number
+  chunkConcurrency?: number
   totalCost: number
   costMultiplier?: number
   estimateType?: 'heuristic' | 'exact'
@@ -229,10 +230,12 @@ export type ComputeEstimatedProcessingTimesInput = {
   llmInputTokenCount?: number | undefined
   llmOutputTokenCount?: number | undefined
   skipLLM?: boolean | undefined
-  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string, setupTimeMs?: number, setupCostCents?: number, setupNote?: string }> | undefined
+  ttsTargets?: Array<{ service: Step4Metadata['ttsService'], model: string, setupTimeMs?: number, setupCostCents?: number, setupNote?: string, chunkConcurrency?: number }> | undefined
   ttsService?: Step4Metadata['ttsService'] | undefined
   ttsModel?: string | undefined
   ttsCharacterCount?: number | undefined
+  ttsInputText?: string | undefined
+  ttsChunkConcurrency?: number | undefined
   imageTargets?: Array<{ service: Step5Metadata['imageService'], model: string, count: number, imageSize?: string, imageQuality?: string }> | undefined
   imageService?: Step5Metadata['imageService'] | undefined
   imageModel?: string | undefined

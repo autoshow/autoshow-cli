@@ -72,6 +72,7 @@ export const ProcessingOptionsSchema = v.pipe(
     llmLocalConcurrency: v.optional(v.number(), 1),
     ttsProviderConcurrency: v.optional(v.number(), 2),
     ttsLocalConcurrency: v.optional(v.number(), 1),
+    ttsChunkConcurrency: v.optional(v.number(), 1),
     imageProviderConcurrency: v.optional(v.number(), 2),
     imageLocalConcurrency: v.optional(v.number(), 1),
     videoProviderConcurrency: v.optional(v.number(), 2),

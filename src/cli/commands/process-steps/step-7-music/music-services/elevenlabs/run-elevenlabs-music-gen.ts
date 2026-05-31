@@ -1,6 +1,5 @@
 import * as l from '~/utils/logger'
 import type { ElevenlabsMusicModel, Step7MusicMetadata } from '~/types'
-import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
@@ -125,9 +124,9 @@ export const runElevenLabsMusicGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'music', path: musicPath }]
   })
-  logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
   const metadata: Step7MusicMetadata = {
     musicService: 'elevenlabs',

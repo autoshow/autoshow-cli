@@ -30,7 +30,7 @@ export type RunwayDurationSeconds = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
 export type RunwayRatio = '1280:720' | '720:1280'
 
 export type VideoTarget = ProviderTargetBase<VideoProvider> & {
-  run: (prompt: string, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
+  run: (prompt: string | undefined, outputDir: string) => Promise<{ videoPath: string, metadata: Step6VideoMetadata }>
 }
 
 export type VideoCostEstimate = CostEstimateBase<VideoProvider> & {

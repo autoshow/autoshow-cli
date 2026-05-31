@@ -939,6 +939,7 @@ describe('option resolution contracts', () => {
     const fallback = buildOptsFromFlags(false, {
       'tts-provider-concurrency': 'not-a-number',
       'tts-local-concurrency': 'nope',
+      'tts-chunk-concurrency': 'bad',
       'image-provider-concurrency': 'bad',
       'image-local-concurrency': 'bad',
       'video-provider-concurrency': 'bad',
@@ -949,6 +950,7 @@ describe('option resolution contracts', () => {
     const clamped = buildOptsFromFlags(false, {
       'tts-provider-concurrency': '0',
       'tts-local-concurrency': '-1',
+      'tts-chunk-concurrency': '0',
       'image-provider-concurrency': '0',
       'image-local-concurrency': '-1',
       'video-provider-concurrency': '0',
@@ -959,6 +961,7 @@ describe('option resolution contracts', () => {
 
     expect(defaults.ttsProviderConcurrency).toBe(2)
     expect(defaults.ttsLocalConcurrency).toBe(1)
+    expect(defaults.ttsChunkConcurrency).toBe(1)
     expect(defaults.imageProviderConcurrency).toBe(2)
     expect(defaults.imageLocalConcurrency).toBe(1)
     expect(defaults.videoProviderConcurrency).toBe(2)
@@ -966,17 +969,24 @@ describe('option resolution contracts', () => {
     expect(defaults.musicProviderConcurrency).toBe(2)
     expect(defaults.musicLocalConcurrency).toBe(1)
     expect(fallback.ttsProviderConcurrency).toBe(2)
+    expect(fallback.ttsChunkConcurrency).toBe(1)
     expect(fallback.imageProviderConcurrency).toBe(2)
     expect(fallback.videoProviderConcurrency).toBe(2)
     expect(fallback.musicProviderConcurrency).toBe(2)
     expect(clamped.ttsProviderConcurrency).toBe(1)
     expect(clamped.ttsLocalConcurrency).toBe(1)
+    expect(clamped.ttsChunkConcurrency).toBe(1)
     expect(clamped.imageProviderConcurrency).toBe(1)
     expect(clamped.imageLocalConcurrency).toBe(1)
     expect(clamped.videoProviderConcurrency).toBe(1)
     expect(clamped.videoLocalConcurrency).toBe(1)
     expect(clamped.musicProviderConcurrency).toBe(1)
     expect(clamped.musicLocalConcurrency).toBe(1)
+
+    const explicit = buildOptsFromFlags(false, {
+      'tts-chunk-concurrency': '3'
+    })
+    expect(explicit.ttsChunkConcurrency).toBe(3)
   })
 
   test('bare provider flags resolve to cheapest defaults', () => {

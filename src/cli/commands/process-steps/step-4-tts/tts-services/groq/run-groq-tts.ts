@@ -1,20 +1,21 @@
 import type { GroqTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, runTtsChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
 import { fetchTtsAudioBytes } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-http-utils'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import {
   getGroqDefaultTtsVoiceForModel,
   validateGroqTtsVoiceForModel
 } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { readEnv } from '~/utils/validate/env-utils'
 import { GROQ_DEFAULT_BASE_URL } from '~/utils/base-urls'
-const MAX_CHARS_PER_CHUNK = 200
 
 export const runGroqTts = async (
   text: string,
   outputDir: string,
-  options: { model: GroqTtsModel, voiceId?: string | undefined }
+  options: { model: GroqTtsModel, voiceId?: string | undefined, chunkConcurrency?: number | undefined }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('GROQ_API_KEY')
   if (!apiKey) {
@@ -24,7 +25,7 @@ export const runGroqTts = async (
   const baseURL = GROQ_DEFAULT_BASE_URL
   const rawVoice = options.voiceId?.trim() || getGroqDefaultTtsVoiceForModel(options.model)
   const voice = validateGroqTtsVoiceForModel(options.model, rawVoice)
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.groq)
   if (chunks.length === 0) {
     throw new Error('Groq TTS input text is empty')
   }
@@ -38,40 +39,47 @@ export const runGroqTts = async (
   const startTime = Date.now()
   const chunkPaths: string[] = []
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunkIndex = i + 1
-    const chunkPath = `${outputDir}/speech-groq-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
-    const audioBytes = await fetchTtsAudioBytes({
-      url: `${baseURL}/audio/speech`,
-      apiKey,
-      providerLabel: 'Groq',
-      body: {
-        model: options.model,
-        voice,
-        input: chunks[i] as string,
-        response_format: 'wav'
+  try {
+    const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+      const chunkIndex = index + 1
+      const chunkPath = `${outputDir}/speech-groq-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
+      const audioBytes = await withHostedTtsRetry(
+        { operationName: `groq-tts-chunk-${chunkIndex}` },
+        async (signal) => await fetchTtsAudioBytes({
+          url: `${baseURL}/audio/speech`,
+          apiKey,
+          providerLabel: 'Groq',
+          signal,
+          body: {
+            model: options.model,
+            voice,
+            input: chunk,
+            response_format: 'wav'
+          }
+        })
+      )
+
+      if (audioBytes.byteLength === 0) {
+        throw new Error('Groq TTS returned empty audio')
       }
+
+      await Bun.write(chunkPath, audioBytes)
+      chunkPaths.push(chunkPath)
+      return chunkPath
     })
 
-    if (audioBytes.byteLength === 0) {
-      throw new Error('Groq TTS returned empty audio')
+    const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir, 'Groq')
+    return finalizeTtsRun({
+      service: 'groq',
+      model: options.model,
+      speaker: voice,
+      audioPath,
+      chunkCount: chunks.length,
+      startTime
+    })
+  } finally {
+    for (const chunkPath of chunkPaths) {
+      await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
     }
-
-    await Bun.write(chunkPath, audioBytes)
-    chunkPaths.push(chunkPath)
   }
-
-  const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Groq')
-  for (const chunkPath of chunkPaths) {
-    await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
-  }
-
-  return finalizeTtsRun({
-    service: 'groq',
-    model: options.model,
-    speaker: voice,
-    audioPath,
-    chunkCount: chunks.length,
-    startTime
-  })
 }

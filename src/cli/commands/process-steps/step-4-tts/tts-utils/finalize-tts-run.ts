@@ -1,6 +1,5 @@
 import * as l from '~/utils/logger'
 import type { FinalizeTtsRunOptions, Step4Metadata } from '~/types'
-import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 
 export const finalizeTtsRun = ({
@@ -21,9 +20,9 @@ export const finalizeTtsRun = ({
     status: 'completed',
     processingTimeMs: processingTime,
     outputCount: chunkCount,
-    ...(speaker ? { detail: `speaker: ${speaker}` } : {})
+    ...(speaker ? { detail: `speaker: ${speaker}` } : {}),
+    artifacts: [{ artifact: 'speech', path: audioPath }]
   })
-  logLocationsTable(l, [{ artifact: 'speech', path: audioPath }], { level: 'success' })
 
   return {
     audioPath,

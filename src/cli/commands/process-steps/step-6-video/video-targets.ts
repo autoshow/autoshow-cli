@@ -304,6 +304,9 @@ export const collectVideoTargets = (options: VideoGenOptions): VideoTarget[] => 
       service: 'runway',
       model,
       run: async (prompt, outputDir) => {
+        if (prompt === undefined) {
+          throw CLIUsageError('Runway video prompt cannot be empty.')
+        }
         return await runRunwayVideoGen(prompt, outputDir, {
           model,
           durationSeconds: options.videoDuration,

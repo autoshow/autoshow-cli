@@ -103,6 +103,22 @@ export const isAbortError = (error: unknown): boolean => {
   return false
 }
 
+export const isTimeoutError = (error: unknown): boolean => {
+  if (error instanceof DOMException && error.name === 'TimeoutError') return true
+  if (error instanceof Error) {
+    return error.name === 'TimeoutError' || /timed out|timeout/i.test(error.message)
+  }
+  if (typeof error === 'string') {
+    return /timed out|timeout/i.test(error)
+  }
+  if (error && typeof error === 'object') {
+    const name = 'name' in error ? (error as { name: unknown }).name : undefined
+    const message = 'message' in error ? (error as { message: unknown }).message : undefined
+    return name === 'TimeoutError' || (typeof message === 'string' && /timed out|timeout/i.test(message))
+  }
+  return false
+}
+
 const getStatusFromError = (error: unknown): number | undefined => {
   if (error && typeof error === 'object' && 'status' in error) {
     const status = (error as { status: unknown }).status
@@ -127,13 +143,6 @@ export const classifyFetchRetry = (
   const noRetry = (reason: string): RetryDecision => ({ shouldRetry: false, delayMs: 0, reason })
   const doRetry = (delayMs: number, reason: string): RetryDecision => ({ shouldRetry: true, delayMs, reason })
 
-  if (isAbortError(error)) {
-    if (retryClass === 'runtime_http_create_conservative' && options.retryAbortOnConservative !== true) {
-      return noRetry('abort/timeout on conservative request')
-    }
-    return doRetry(0, 'abort/timeout')
-  }
-
   const status = getStatusFromError(error)
 
   if (status !== undefined) {
@@ -147,6 +156,13 @@ export const classifyFetchRetry = (
     }
 
     return noRetry(`unexpected status ${status}`)
+  }
+
+  if (isAbortError(error) || isTimeoutError(error)) {
+    if (retryClass === 'runtime_http_create_conservative' && options.retryAbortOnConservative !== true) {
+      return noRetry('abort/timeout on conservative request')
+    }
+    return doRetry(0, 'abort/timeout')
   }
 
   if (isNetworkError(error)) {

@@ -52,7 +52,7 @@ const formatGrokError = (value: unknown): string => {
 }
 
 export const runGrokVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: {
     model: GrokVideoModel
@@ -119,7 +119,7 @@ export const runGrokVideoGen = async (
 
   const requestBody: Record<string, unknown> = {
     model: options.model,
-    prompt,
+    ...(prompt !== undefined ? { prompt } : {}),
     ...(storageOptions ? { storage_options: storageOptions } : {})
   }
   if (mode === 'edit') {
@@ -212,7 +212,8 @@ export const runGrokVideoGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   return {

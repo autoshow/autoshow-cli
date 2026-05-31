@@ -161,7 +161,8 @@ export const runRunwayVideoGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   return {

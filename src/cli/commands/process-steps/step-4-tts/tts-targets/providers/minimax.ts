@@ -16,7 +16,7 @@ export const collectMinimaxTtsTargets = (
       service: 'minimax',
       model,
       ...(voiceId ? { voice: voiceId } : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         return await runMinimaxTts(text, outputDir, {
           model,
           voiceId,
@@ -26,7 +26,8 @@ export const collectMinimaxTtsTargets = (
           pitch: selection.minimaxPitch,
           emotion: selection.minimaxEmotion,
           englishNormalization: selection.minimaxEnglishNormalization,
-          pronunciations: selection.minimaxPronunciations
+          pronunciations: selection.minimaxPronunciations,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

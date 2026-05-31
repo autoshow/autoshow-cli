@@ -1,16 +1,16 @@
 import type { HumeTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, runTtsChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import {
   HUME_DEFAULT_TTS_VOICE,
   validateHumeTtsVoice,
   validateHumeTtsVoiceProvider
 } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { HUME_DEFAULT_BASE_URL } from '~/utils/base-urls'
-const MAX_CHARS_PER_CHUNK = 5000
 const UUID_LIKE_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 type HumeVoicePayload =
@@ -49,6 +49,7 @@ export const runHumeTts = async (
     model: HumeTtsModel
     voice?: string | undefined
     voiceProvider?: string | undefined
+    chunkConcurrency?: number | undefined
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('HUME_API_KEY')
@@ -57,7 +58,7 @@ export const runHumeTts = async (
   }
 
   const baseURL = trimTrailingSlash(HUME_DEFAULT_BASE_URL)
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.hume)
 
   if (chunks.length === 0) {
     throw new Error('Hume TTS input text is empty')
@@ -76,11 +77,11 @@ export const runHumeTts = async (
   const chunkPaths: string[] = []
 
   try {
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkIndex = i + 1
+    const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+      const chunkIndex = index + 1
       const chunkPath = `${outputDir}/speech-hume-chunk-${String(chunkIndex).padStart(3, '0')}.mp3`
-      const audioBytes = await withRetry(
-        { retryClass: 'runtime_http_create_conservative', operationName: `hume-tts-chunk-${chunkIndex}` },
+      const audioBytes = await withHostedTtsRetry(
+        { operationName: `hume-tts-chunk-${chunkIndex}` },
         async (signal) => {
           const response = await fetch(`${baseURL}/v0/tts/file`, {
             method: 'POST',
@@ -94,7 +95,7 @@ export const runHumeTts = async (
               format: { type: 'mp3' },
               num_generations: 1,
               utterances: [{
-                text: chunks[i] as string,
+                text: chunk,
                 voice: voice.payload
               }]
             }),
@@ -110,8 +111,7 @@ export const runHumeTts = async (
           }
 
           return new Uint8Array(await response.arrayBuffer())
-        },
-        (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+        }
       )
 
       if (audioBytes.byteLength === 0) {
@@ -120,9 +120,10 @@ export const runHumeTts = async (
 
       await Bun.write(chunkPath, audioBytes)
       chunkPaths.push(chunkPath)
-    }
+      return chunkPath
+    })
 
-    const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Hume')
+    const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir, 'Hume')
     return finalizeTtsRun({
       service: 'hume',
       model: options.model,

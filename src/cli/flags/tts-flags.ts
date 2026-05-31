@@ -426,6 +426,11 @@ export const genericTtsOptionFlags = {
     description: 'Generic TTS output format. Use value with one selected provider, or provider=value with multiple providers.',
     type: [String] as [StringConstructor]
   },
+  'tts-chunk-concurrency': {
+    description: 'TTS text chunks to synthesize in parallel per provider (default 1)',
+    type: String,
+    default: '1'
+  },
 } as const satisfies CliFlagsDefinition
 
 const ttsProviderSelectionFlags = {

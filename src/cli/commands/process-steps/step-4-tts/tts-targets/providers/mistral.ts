@@ -40,7 +40,8 @@ export const collectMistralTtsTargets = (
       run: async (text, outputDir, opts) => {
         return await runMistralTts(text, outputDir, {
           model,
-          ...resolveRuntimeMistralVoiceOptions(opts)
+          ...resolveRuntimeMistralVoiceOptions(opts),
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

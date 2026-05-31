@@ -102,6 +102,7 @@ export type TtsOptions = Pick<
   | 'geminiSpeaker2Voice'
   | 'ttsProviderConcurrency'
   | 'ttsLocalConcurrency'
+  | 'ttsChunkConcurrency'
 >
 
 export type MultiSpeakerStrategy = 'native' | 'segment-and-concat'

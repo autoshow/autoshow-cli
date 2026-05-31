@@ -51,14 +51,15 @@ export const collectSpeechifyTtsTargets = (
             setupNote: SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_NOTE
           }
         : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureSpeechifyTtsSetup()
         return await runSpeechifyTts(text, outputDir, {
           model,
           voiceId,
           customVoice,
           audioFormat: selection.speechifyAudioFormat,
-          language: selection.speechifyLanguage
+          language: selection.speechifyLanguage,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

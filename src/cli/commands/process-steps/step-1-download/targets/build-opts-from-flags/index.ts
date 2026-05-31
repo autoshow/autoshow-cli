@@ -245,6 +245,7 @@ export const buildOptsFromFlags = (
     llmLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'llm-local-concurrency'),
     ttsProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'tts-provider-concurrency', allShortcutFlags['all-tts'], hostedTtsTargetCount, explicitFlags, configuredFlags),
     ttsLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'tts-local-concurrency'),
+    ttsChunkConcurrency: Math.max(1, parseIntWithDefault(readOptionalStringFlag(mergedFlags, 'tts-chunk-concurrency'), 1)),
     imageProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'image-provider-concurrency', allShortcutFlags['all-image'], hostedImageTargetCount, explicitFlags, configuredFlags),
     imageLocalConcurrency: resolveLocalConcurrency(mergedFlags, 'image-local-concurrency'),
     videoProviderConcurrency: resolveProviderConcurrency(mergedFlags, 'video-provider-concurrency', allShortcutFlags['all-video'], hostedVideoTargetCount, explicitFlags, configuredFlags),

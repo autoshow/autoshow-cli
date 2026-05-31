@@ -7,7 +7,7 @@ import { normalizeBatchChildPublishedAt, reserveBatchChildOutputDir } from '~/cl
 import { buildMediaStep1Slug, createUniqueDirectoryName, extractSourceMetadata } from '~/cli/commands/process-steps/step-1-download/audio/metadata-utils'
 import { downloadAudio } from '~/cli/commands/process-steps/step-1-download/audio/dl-audio'
 import { writeRunManifest } from '~/cli/commands/process-steps/manifest-utils'
-import { isLikelyUrl } from '../input/input-classifier'
+import { isLikelyUrl } from '../source-input/input-classifier'
 import { buildLLMModelOptions, resolveLLMDefaults } from '../llm-defaults'
 import { writeMetadataTerminalOutput, writeSavedMetadataArtifacts } from './metadata-output'
 

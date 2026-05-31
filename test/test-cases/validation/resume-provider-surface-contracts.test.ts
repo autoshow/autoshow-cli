@@ -137,7 +137,7 @@ describe('resume provider flag surface', () => {
       'tts-voice', 'tts-speed', 'tts-language', 'tts-ref-audio',
       'tts-voice-name', 'tts-consent-audio', 'tts-consent-language',
       'tts-consent-name', 'tts-consent-email', 'tts-text-normalization',
-      'tts-instructions', 'tts-output-format'
+      'tts-instructions', 'tts-output-format', 'tts-chunk-concurrency'
     ])
     expectResumeHasFlags(without(imageGenFlags, ['price']))
     expectResumeHasFlags(without(videoGenFlags, ['price']))
@@ -153,7 +153,7 @@ describe('resume provider flag surface', () => {
       'tts-voice', 'tts-speed', 'tts-language', 'tts-ref-audio',
       'tts-voice-name', 'tts-consent-audio', 'tts-consent-language',
       'tts-consent-name', 'tts-consent-email', 'tts-text-normalization',
-      'tts-instructions', 'tts-output-format',
+      'tts-instructions', 'tts-output-format', 'tts-chunk-concurrency',
       'elevenlabs-tts-stability', 'elevenlabs-tts-similarity-boost',
       'openai-tts-consent-id', 'hume-tts-voice-provider',
       'minimax-tts-language-boost', 'minimax-tts-emotion',

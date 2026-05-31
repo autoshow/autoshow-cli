@@ -27,6 +27,7 @@ export const buildTtsEstimates = async (opts: RuntimeOptions, characterCount: nu
       characterCount: cost.characterCount,
       ...(cost.setupCostCents !== undefined ? { setupCostCents: cost.setupCostCents } : {}),
       ...(cost.setupTimeMs !== undefined ? { setupTimeMs: cost.setupTimeMs } : {}),
+      ...(typeof opts.ttsChunkConcurrency === 'number' ? { chunkConcurrency: opts.ttsChunkConcurrency } : {}),
       totalCost: applyCostMultiplier(cost.totalCost - (cost.setupCostCents ?? 0), estimation.costMultiplier) + (cost.setupCostCents ?? 0),
       costMultiplier: estimation.costMultiplier,
       ...(cost.setupNote ? { note: cost.setupNote } : {}),

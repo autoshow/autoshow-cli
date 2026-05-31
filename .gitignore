@@ -4,6 +4,7 @@ node_modules/
 *.env
 *.log
 **/*/__pycache__
+input
 input/uss
 input/ryan-gpt
 input/ajc

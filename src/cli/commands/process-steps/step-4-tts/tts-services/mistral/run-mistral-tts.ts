@@ -1,15 +1,16 @@
 import { basename, extname } from 'node:path'
 import type { MistralTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav, convertAudioToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, convertAudioToWav, runTtsChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import { mistralJsonRequest } from '~/utils/mistral/client'
 import { readEnv } from '~/utils/validate/env-utils'
 import { MISTRAL_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { MEDIA_GENERATION_TIMEOUT_MS } from '~/utils/timeouts'
 import { materializeMediaInput } from '~/utils/media-url'
 
-const MAX_CHARS_PER_CHUNK = 4000
 const REQUEST_TIMEOUT_MS = MEDIA_GENERATION_TIMEOUT_MS
 const MISTRAL_REF_AUDIO_DIRECT_EXTENSIONS = new Set(['.mp3', '.mpeg', '.mpga', '.wav', '.wave'])
 
@@ -139,6 +140,7 @@ export const runMistralTts = async (
     voiceId?: string | undefined
     refAudioPath?: string | undefined
     voiceName?: string | undefined
+    chunkConcurrency?: number | undefined
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const voiceSource = resolveVoiceSource(options)
@@ -151,7 +153,7 @@ export const runMistralTts = async (
     throw new Error('MISTRAL_API_KEY environment variable is required for Mistral TTS')
   }
 
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.mistral)
   if (chunks.length === 0) {
     throw new Error('Mistral TTS input text is empty')
   }
@@ -164,88 +166,93 @@ export const runMistralTts = async (
     : undefined
 
   try {
-  const referenceAudio = voiceSource.kind === 'refAudio'
-    ? await prepareReferenceAudio(materializedRefAudio?.path ?? voiceSource.path, outputDir)
-    : undefined
-  const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
-  const savedVoice = referenceAudio && voiceName
-    ? await createMistralSavedVoice(apiKey, baseURL, referenceAudio, voiceName)
-    : undefined
-  let speechVoiceInput: { voice_id: string } | { ref_audio: string }
-  if (voiceSource.kind === 'voice') {
-    speechVoiceInput = { voice_id: voiceSource.value }
-  } else if (savedVoice) {
-    speechVoiceInput = { voice_id: savedVoice.voiceId }
-  } else {
-    if (!referenceAudio) {
-      throw new Error('Mistral TTS reference audio preparation failed')
+    const referenceAudio = voiceSource.kind === 'refAudio'
+      ? await prepareReferenceAudio(materializedRefAudio?.path ?? voiceSource.path, outputDir)
+      : undefined
+    const baseURL = readEnv('MISTRAL_BASE_URL') ?? MISTRAL_DEFAULT_BASE_URL
+    const savedVoice = referenceAudio && voiceName
+      ? await createMistralSavedVoice(apiKey, baseURL, referenceAudio, voiceName)
+      : undefined
+    let speechVoiceInput: { voice_id: string } | { ref_audio: string }
+    if (voiceSource.kind === 'voice') {
+      speechVoiceInput = { voice_id: voiceSource.value }
+    } else if (savedVoice) {
+      speechVoiceInput = { voice_id: savedVoice.voiceId }
+    } else {
+      if (!referenceAudio) {
+        throw new Error('Mistral TTS reference audio preparation failed')
+      }
+      speechVoiceInput = { ref_audio: referenceAudio.base64 }
     }
-    speechVoiceInput = { ref_audio: referenceAudio.base64 }
-  }
 
-  logTtsConfig('Mistral', [
-    { label: 'model', value: options.model },
-    { label: voiceSource.kind === 'voice' ? 'voice' : 'reference audio', value: voiceSource.kind === 'voice' ? voiceSource.value : voiceSource.path },
-    { label: 'saved voice', value: savedVoice?.voiceId },
-    { label: 'reference upload', value: referenceAudio?.convertedPath ? referenceAudio.uploadPath : undefined },
-    { label: 'chunk count', value: chunks.length }
-  ])
+    logTtsConfig('Mistral', [
+      { label: 'model', value: options.model },
+      { label: voiceSource.kind === 'voice' ? 'voice' : 'reference audio', value: voiceSource.kind === 'voice' ? voiceSource.value : voiceSource.path },
+      { label: 'saved voice', value: savedVoice?.voiceId },
+      { label: 'reference upload', value: referenceAudio?.convertedPath ? referenceAudio.uploadPath : undefined },
+      { label: 'chunk count', value: chunks.length }
+    ])
 
-  const startTime = Date.now()
-  const chunkPaths: string[] = []
+    const startTime = Date.now()
+    const chunkPaths: string[] = []
 
-  try {
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkIndex = i + 1
-      const chunkPath = `${outputDir}/speech-mistral-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
-      const response = await mistralJsonRequest({
-        apiKey,
-        baseURL,
-        path: '/audio/speech',
-        timeoutMs: REQUEST_TIMEOUT_MS,
-        errorMessagePrefix: 'Mistral TTS failed',
-        body: {
-          model: options.model,
-          input: chunks[i] as string,
-          stream: false,
-          response_format: 'wav',
-          ...speechVoiceInput
+    try {
+      const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+        const chunkIndex = index + 1
+        const chunkPath = `${outputDir}/speech-mistral-chunk-${String(chunkIndex).padStart(3, '0')}.wav`
+        const response = await withHostedTtsRetry(
+          { operationName: `mistral-tts-chunk-${chunkIndex}` },
+          async (signal) => await mistralJsonRequest({
+            apiKey,
+            baseURL,
+            path: '/audio/speech',
+            signal,
+            timeoutMs: REQUEST_TIMEOUT_MS,
+            errorMessagePrefix: 'Mistral TTS failed',
+            body: {
+              model: options.model,
+              input: chunk,
+              stream: false,
+              response_format: 'wav',
+              ...speechVoiceInput
+            }
+          })
+        )
+        const audioData = readStringField(response, 'audio_data', 'Mistral TTS')
+
+        const audioBytes = decodeMistralAudioData(audioData)
+        if (audioBytes.byteLength === 0) {
+          throw new Error(`Mistral TTS returned empty audio for chunk ${chunkIndex}`)
         }
+        await Bun.write(chunkPath, audioBytes)
+        chunkPaths.push(chunkPath)
+        return chunkPath
       })
-      const audioData = readStringField(response, 'audio_data', 'Mistral TTS')
 
-      const audioBytes = decodeMistralAudioData(audioData)
-      if (audioBytes.byteLength === 0) {
-        throw new Error(`Mistral TTS returned empty audio for chunk ${chunkIndex}`)
+      const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir, 'Mistral')
+      const result = finalizeTtsRun({
+        service: 'mistral',
+        model: options.model,
+        speaker: savedVoice ? savedVoice.voiceId : voiceSource.speaker,
+        audioPath,
+        chunkCount: chunks.length,
+        startTime
+      })
+      return {
+        audioPath: result.audioPath,
+        metadata: {
+          ...result.metadata,
+          ...(savedVoice ? { clonedVoiceId: savedVoice.voiceId, cloneCostCents: 0 } : {})
+        }
       }
-      await Bun.write(chunkPath, audioBytes)
-      chunkPaths.push(chunkPath)
-    }
-
-    const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Mistral')
-    const result = finalizeTtsRun({
-      service: 'mistral',
-      model: options.model,
-      speaker: savedVoice ? savedVoice.voiceId : voiceSource.speaker,
-      audioPath,
-      chunkCount: chunks.length,
-      startTime
-    })
-    return {
-      audioPath: result.audioPath,
-      metadata: {
-        ...result.metadata,
-        ...(savedVoice ? { clonedVoiceId: savedVoice.voiceId, cloneCostCents: 0 } : {})
+    } finally {
+      for (const chunkPath of chunkPaths) {
+        await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
+      }
+      if (referenceAudio?.convertedPath) {
+        await Bun.$`rm -f ${referenceAudio.convertedPath}`.quiet().nothrow()
       }
     }
-  } finally {
-    for (const chunkPath of chunkPaths) {
-      await Bun.$`rm -f ${chunkPath}`.quiet().nothrow()
-    }
-    if (referenceAudio?.convertedPath) {
-      await Bun.$`rm -f ${referenceAudio.convertedPath}`.quiet().nothrow()
-    }
-  }
   } finally {
     await materializedRefAudio?.cleanup()
   }

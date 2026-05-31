@@ -284,6 +284,73 @@ const selectCheapestVideoModel = (
   provider: 'gemini' | 'minimax' | 'glm' | 'grok' | 'runway'
 ): string => selectCheapestVideoSelection(provider).model
 
+const TEXT_VIDEO_PROVIDERS = ['gemini', 'minimax', 'glm', 'grok', 'runway'] as const
+
+const providerVideoEstimateOptions = (
+  provider: typeof TEXT_VIDEO_PROVIDERS[number],
+  model: string
+): Parameters<typeof estimateVideoCost>[0] => ({
+  ...(provider === 'gemini' ? { geminiVideoModel: model } : {}),
+  ...(provider === 'minimax' ? { minimaxVideoModel: model } : {}),
+  ...(provider === 'glm' ? { glmVideoModel: model } : {}),
+  ...(provider === 'grok' ? { grokVideoModel: model } : {}),
+  ...(provider === 'runway' ? { runwayVideoModel: model } : {}),
+  videoMode: 'text'
+})
+
+export const selectCheapestDefaultTextVideoSelection = (): CheapestVideoSelection => {
+  let best: CheapestVideoSelection | null = null
+
+  for (const provider of TEXT_VIDEO_PROVIDERS) {
+    const serviceConfig = getModelRegistry().video[provider]
+    if (!serviceConfig) {
+      continue
+    }
+
+    const models = Object.keys(serviceConfig.models).filter((model) => isDefaultVideoSelectionModel(provider, model))
+    for (const model of models) {
+      let estimate: ReturnType<typeof estimateVideoCost>
+      try {
+        estimate = estimateVideoCost(providerVideoEstimateOptions(provider, model))
+      } catch {
+        continue
+      }
+
+      const candidate: CheapestVideoSelection = {
+        provider,
+        model,
+        duration: estimate.durationSeconds,
+        totalCost: estimate.totalCost
+      }
+
+      if (!best) {
+        best = candidate
+        continue
+      }
+
+      const candidateWinsByCost = candidate.totalCost < best.totalCost
+      const candidateWinsByDuration = candidate.totalCost === best.totalCost && candidate.duration < best.duration
+      const candidateWinsBySpeedHint = candidate.totalCost === best.totalCost
+        && candidate.duration === best.duration
+        && runtimeRank(candidate.model) < runtimeRank(best.model)
+      const candidateWinsByName = candidate.totalCost === best.totalCost
+        && candidate.duration === best.duration
+        && runtimeRank(candidate.model) === runtimeRank(best.model)
+        && `${candidate.provider}/${candidate.model}`.localeCompare(`${best.provider}/${best.model}`) < 0
+
+      if (candidateWinsByCost || candidateWinsByDuration || candidateWinsBySpeedHint || candidateWinsByName) {
+        best = candidate
+      }
+    }
+  }
+
+  if (!best) {
+    throw new Error('No default text-to-video candidates available')
+  }
+
+  return best
+}
+
 export const resolveCheapestModelForFlag = (flagName: string): string | undefined => {
   const localDefault = DEFAULT_LOCAL_MODEL_BY_FLAG[flagName as keyof typeof DEFAULT_LOCAL_MODEL_BY_FLAG]
   if (localDefault) {

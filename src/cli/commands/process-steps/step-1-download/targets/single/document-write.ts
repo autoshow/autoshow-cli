@@ -13,7 +13,7 @@ import { buildOcrCostDiagnostics, collectEstimatedExtractTargets, resolveDocumen
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
 import type { AggregatedPriceEstimate, BatchChildRunContext, ExtractionMetadata, ExtractionOptions, PreparedDocument, RuntimeOptions, Step1SourceRef, Step3Metadata, TranscriptionResult, VideoMetadata, WriteDocumentOutputMetadataOptions } from '~/types'
-import { isLikelyUrl } from '../input/input-classifier'
+import { isLikelyUrl } from '../source-input/input-classifier'
 import { buildLLMModelOptions, resolveLLMDefaults } from '../llm-defaults'
 
 const hasConfiguredLlmProvider = (opts: RuntimeOptions): boolean =>

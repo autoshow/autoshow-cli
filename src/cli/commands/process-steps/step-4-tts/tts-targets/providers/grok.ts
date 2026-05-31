@@ -19,13 +19,14 @@ export const collectGrokTtsTargets = (
       service: 'grok',
       model,
       ...(voiceId ? { voice: voiceId } : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureGrokTtsSetup()
         return await runGrokTts(text, outputDir, {
           model,
           voiceId,
           language: selection.grokLanguage,
-          textNormalization: selection.grokTextNormalization
+          textNormalization: selection.grokTextNormalization,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

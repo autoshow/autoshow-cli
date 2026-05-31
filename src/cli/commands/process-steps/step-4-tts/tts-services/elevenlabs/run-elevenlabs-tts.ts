@@ -5,7 +5,7 @@ import { exec } from '~/utils/cli-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { ELEVENLABS_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { ELEVENLABS_DEFAULT_VOICE_ID } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import { readElevenLabsError } from '~/cli/commands/process-steps/step-4-tts/tts-services/elevenlabs/elevenlabs-utils'
 import {
   ensureElevenLabsTtsIvcVoice,
@@ -92,9 +92,9 @@ export const runElevenLabsTts = async (
     ...(cloneResult ? [{ label: 'cloned voice_id', value: cloneResult.voiceId }] : [])
   ])
 
-  const audioBytes = await withRetry(
-    { retryClass: 'runtime_http_create_conservative', operationName: 'elevenlabs-tts' },
-    async () => {
+  const audioBytes = await withHostedTtsRetry(
+    { operationName: 'elevenlabs-tts' },
+    async (signal) => {
       const params = new URLSearchParams({ output_format: outputFormat })
       if (typeof options.controls?.optimizeStreamingLatency === 'number') {
         params.set('optimize_streaming_latency', String(options.controls.optimizeStreamingLatency))
@@ -118,19 +118,20 @@ export const runElevenLabsTts = async (
           'Content-Type': 'application/json',
           Accept: 'audio/mpeg'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        ...(signal ? { signal } : {})
       })
 
       if (!response.ok) {
         const errText = await readElevenLabsError(response)
-        const err = new Error(`ElevenLabs TTS failed (${response.status}): ${errText}`) as Error & { status: number }
+        const err = new Error(`ElevenLabs TTS failed (${response.status}): ${errText}`) as Error & { status: number, headers: Headers }
         err.status = response.status
+        err.headers = response.headers
         throw err
       }
 
       return await response.arrayBuffer()
-    },
-    (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+    }
   )
   if (audioBytes.byteLength === 0) {
     throw new Error('ElevenLabs TTS returned empty audio')

@@ -19,12 +19,13 @@ export const collectCartesiaTtsTargets = (
       service: 'cartesia',
       model,
       ...(voiceId ? { voice: voiceId } : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureCartesiaTtsSetup()
         return await runCartesiaTts(text, outputDir, {
           model,
           voiceId,
-          language: selection.cartesiaLanguage
+          language: selection.cartesiaLanguage,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

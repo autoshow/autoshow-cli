@@ -215,6 +215,34 @@ test('unknown flag exits 2', async () => {
   await expectUsageExit(['write', STABLE_EXAMPLE_AUDIO_URL, '--structured'], 'Unexpected flag: structured')
 })
 
+test('video command rejects missing first-class input', async () => {
+  await expectUsageExit(['video'], 'Missing video input: provide a text prompt or image path, URL, or data URL.')
+})
+
+test('video positional image rejects ambiguous explicit media input', async () => {
+  const root = await makeTempRoot('autoshow-video-ambiguous-media-')
+  const imagePath = join(root, 'input.png')
+  const otherImagePath = join(root, 'other.png')
+  await writeFile(imagePath, new Uint8Array([1, 2, 3]))
+  await writeFile(otherImagePath, new Uint8Array([4, 5, 6]))
+
+  await expectUsageExit(
+    ['video', imagePath, '--input-image', otherImagePath, '--price'],
+    'Positional image input cannot be combined with --input-image.'
+  )
+})
+
+test('video positional image rejects conflicting explicit text mode', async () => {
+  const root = await makeTempRoot('autoshow-video-ambiguous-mode-')
+  const imagePath = join(root, 'input.png')
+  await writeFile(imagePath, new Uint8Array([1, 2, 3]))
+
+  await expectUsageExit(
+    ['video', imagePath, '--mode', 'text', '--price'],
+    'Positional image input infers --mode image-to-video; do not combine it with --mode text.'
+  )
+})
+
 test('legacy step-2 command names are not public commands', async () => {
   for (const command of ['stt', 'ocr'] as const) {
     await expectUsageExit([command, STABLE_EXAMPLE_AUDIO_URL], `Unknown command "${command}`)

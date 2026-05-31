@@ -386,6 +386,7 @@ export const processVideo = async (
 	    let step6Metadata: Step6VideoMetadata[] | null = null
 	    let step7Metadata: Step7MusicMetadata[] | null = null
 	    let ttsCharacterCount: number | undefined
+	    let ttsInputText: string | undefined
 	    const ttsTargets = collectTtsTargets(processingOptions)
 	    const imageTargets = collectImageTargets(processingOptions)
 	    const videoTargets = collectVideoTargets(processingOptions)
@@ -404,6 +405,7 @@ export const processVideo = async (
 	      } else {
 	        const textContent = step3RunResults[0]?.renderedText ?? ''
 	        ttsCharacterCount = textContent.length
+	        ttsInputText = textContent
 
 	        const [ttsResult, imageResult, musicResult, videoResult] = await Promise.all([
 	          ttsRequested
@@ -526,6 +528,8 @@ export const processVideo = async (
 	      skipLLM: processingOptions.skipLLM,
 	      ttsTargets: ttsEstimateTargets,
 	      ttsCharacterCount,
+	      ...(ttsInputText !== undefined ? { ttsInputText } : {}),
+	      ttsChunkConcurrency: processingOptions.ttsChunkConcurrency,
 	      ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
 	      ...(attemptedVideoTargets.length > 0
 	        ? {

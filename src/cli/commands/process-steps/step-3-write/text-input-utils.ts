@@ -1,5 +1,6 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { basename, extname, isAbsolute, join, relative, resolve } from 'node:path'
+import type { Dirent } from 'node:fs'
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { ensureDirectory } from '~/utils/cli-utils'
 import type { LeafPrompt, Step3Metadata, StructuredRunResult } from '~/types'
 import type { RenderedTextArtifactResult } from '~/types'
@@ -28,6 +29,12 @@ type WriteTextProjectDefaults = {
   promptFile: string
   trackList?: string | undefined
   renderedOutDir: string
+}
+
+type TextInputTrackResolution = {
+  trackNumber: string | undefined
+  title: string
+  hasTrackTitle: boolean
 }
 
 const compareByBasename = (left: string, right: string): number => {
@@ -166,26 +173,27 @@ const stripLeadingTitleHeading = (content: string, title: string): string => {
 
 const withTrackHeader = (
   content: string,
-  sourcePath: string | undefined,
-  metadata: Pick<Step3Metadata, 'llmService' | 'llmModel'>,
-  tracks: Map<string, string> | undefined
+  track: TextInputTrackResolution | undefined,
+  metadata: Pick<Step3Metadata, 'llmService' | 'llmModel'>
 ): string => {
-  if (!sourcePath || !tracks || tracks.size === 0) {
+  if (!track?.trackNumber || !track.hasTrackTitle) {
     return content
   }
 
-  const trackNumber = extractTrackNumber(sourcePath)
-  if (!trackNumber) {
-    return content
-  }
+  const contentWithoutDuplicateTitle = stripLeadingTitleHeading(content, track.title)
+  return `${track.trackNumber}. ${track.title} (${formatRenderedLlmLabel(metadata)})\n\n${contentWithoutDuplicateTitle}`
+}
 
-  const title = tracks.get(trackNumber)
-  if (!title) {
-    return content
-  }
-
-  const contentWithoutDuplicateTitle = stripLeadingTitleHeading(content, title)
-  return `${trackNumber}. ${title} (${formatRenderedLlmLabel(metadata)})\n\n${contentWithoutDuplicateTitle}`
+export const formatTextInputRenderedText = async (options: {
+  content: string
+  sourcePath?: string | undefined
+  trackListPath?: string | undefined
+  metadata: Pick<Step3Metadata, 'llmService' | 'llmModel'>
+}): Promise<string> => {
+  const track = options.sourcePath
+    ? await resolveTextInputTrack(options.sourcePath, options.trackListPath)
+    : undefined
+  return withTrackHeader(options.content, track, options.metadata)
 }
 
 export const isTextInputPath = (value: string): boolean =>
@@ -263,6 +271,31 @@ const extractTrackNumber = (filePath: string): string | undefined => {
   const stem = basename(filePath, extname(filePath))
   const match = stem.match(/^(?:text-)?(\d+)(?:-|$)/)
   return match?.[1] ? match[1].padStart(2, '0') : undefined
+}
+
+const resolveSequentialTrackNumber = async (
+  inputPath: string,
+  trackListPath: string | undefined
+): Promise<string | undefined> => {
+  const inputDir = dirname(inputPath)
+  let entries: Dirent[]
+  try {
+    entries = await readdir(inputDir, { withFileTypes: true })
+  } catch {
+    return undefined
+  }
+
+  const resolvedInputPath = resolve(inputPath)
+  const resolvedTrackListPath = trackListPath ? resolve(trackListPath) : undefined
+  const files = entries
+    .filter(entry => entry.isFile())
+    .map(entry => join(inputDir, entry.name))
+    .filter(filePath => isTextInputPath(filePath))
+    .filter(filePath => resolve(filePath) !== resolvedTrackListPath)
+  files.sort(compareByBasename)
+
+  const index = files.findIndex(filePath => resolve(filePath) === resolvedInputPath)
+  return index >= 0 ? String(index + 1).padStart(2, '0') : undefined
 }
 
 export const estimatePromptTokensFromText = (value: string): number =>
@@ -411,17 +444,33 @@ const loadTrackTitles = async (filePath: string | undefined): Promise<Map<string
   return tracks
 }
 
+const resolveTextInputTrack = async (
+  inputPath: string,
+  trackListPath: string | undefined
+): Promise<TextInputTrackResolution> => {
+  const tracks = await loadTrackTitles(trackListPath)
+  const explicitTrackNumber = extractTrackNumber(inputPath)
+  const trackNumber = explicitTrackNumber ?? (tracks
+    ? await resolveSequentialTrackNumber(inputPath, trackListPath)
+    : undefined)
+  const trackTitle = trackNumber ? tracks?.get(trackNumber) : undefined
+  const hasTrackTitle = trackTitle !== undefined && trackTitle.length > 0
+
+  return {
+    trackNumber,
+    title: hasTrackTitle
+      ? trackTitle
+      : getTextInputTitle(inputPath),
+    hasTrackTitle
+  }
+}
+
 export const resolveTextInputSongTitle = async (
   inputPath: string,
   trackListPath: string | undefined
 ): Promise<string> => {
-  const tracks = await loadTrackTitles(trackListPath)
-  const trackNumber = extractTrackNumber(inputPath)
-  const trackTitle = trackNumber ? tracks?.get(trackNumber) : undefined
-
-  return trackTitle && trackTitle.length > 0
-    ? trackTitle
-    : getTextInputTitle(inputPath)
+  const track = await resolveTextInputTrack(inputPath, trackListPath)
+  return track.title
 }
 
 export const buildTextInputPrompt = (
@@ -460,7 +509,6 @@ export const writeRenderedTextArtifacts = async (options: {
     return { internalArtifacts, externalFiles }
   }
 
-  const tracks = await loadTrackTitles(trackListPath)
   const singleTarget = results.length === 1
 
   if (externalDir && externalBaseName) {
@@ -469,7 +517,12 @@ export const writeRenderedTextArtifacts = async (options: {
 
   for (const result of results) {
     const rendered = appendTrailingNewline(
-      withTrackHeader(result.renderedText, sourcePath, result.metadata, tracks)
+      await formatTextInputRenderedText({
+        content: result.renderedText,
+        sourcePath,
+        trackListPath,
+        metadata: result.metadata
+      })
     )
 
     if (writeInternal) {

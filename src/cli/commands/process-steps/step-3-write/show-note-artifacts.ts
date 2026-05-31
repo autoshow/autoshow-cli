@@ -7,6 +7,7 @@ import type {
   Step7MusicMetadata,
   StructuredRunResult
 } from '~/types'
+import { isSongLyricsPreset } from './structured-output/preset-registry'
 
 type ShowNoteArtifactResult = {
   internalArtifacts: Record<string, string>
@@ -166,7 +167,18 @@ const looksLikePromptEnvelope = (record: Record<string, unknown>): boolean =>
     && !('episodeSummary' in record)
     && !('chapters' in record)
 
-const renderShowNoteBody = (parsedJson: unknown, fallbackRenderedText: string): string => {
+const hasSongLyricsPreset = (metadata: Pick<Step3Metadata, 'structuredPresetNames'>): boolean =>
+  metadata.structuredPresetNames.some(isSongLyricsPreset)
+
+const renderShowNoteBody = (
+  parsedJson: unknown,
+  fallbackRenderedText: string,
+  metadata: Pick<Step3Metadata, 'structuredPresetNames'>
+): string => {
+  if (hasSongLyricsPreset(metadata)) {
+    return fallbackRenderedText.trimEnd()
+  }
+
   if (!isRecord(parsedJson)) {
     return fallbackRenderedText.trimEnd()
   }
@@ -287,7 +299,7 @@ export const writeShowNoteArtifacts = async (options: {
     const fileName = buildShowNoteFileName(result.metadata)
     const content = buildShowNoteContent({
       frontmatter,
-      bodyContent: renderShowNoteBody(result.parsedJson, result.renderedText),
+      bodyContent: renderShowNoteBody(result.parsedJson, result.renderedText, result.metadata),
       sourceText: options.sourceText,
       assetSection
     })

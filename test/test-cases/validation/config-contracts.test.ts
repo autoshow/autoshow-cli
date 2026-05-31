@@ -86,6 +86,7 @@ describe('config contracts', () => {
     expect(buildConfigPatchFromFlags({
       'tts-provider-concurrency': '4',
       'tts-local-concurrency': '1',
+      'tts-chunk-concurrency': '3',
       'image-provider-concurrency': '5',
       'image-local-concurrency': '1',
       'video-provider-concurrency': '6',
@@ -95,6 +96,7 @@ describe('config contracts', () => {
     }, new Set([
       'tts-provider-concurrency',
       'tts-local-concurrency',
+      'tts-chunk-concurrency',
       'image-provider-concurrency',
       'image-local-concurrency',
       'video-provider-concurrency',
@@ -106,7 +108,8 @@ describe('config contracts', () => {
         post: {
           tts: {
             providerConcurrency: 4,
-            localConcurrency: 1
+            localConcurrency: 1,
+            chunkConcurrency: 3
           },
           image: {
             providerConcurrency: 5,
@@ -156,6 +159,25 @@ describe('config contracts', () => {
           }
         }
       }
+    })
+  })
+
+  test('TTS chunk concurrency round-trips through saved config flags', () => {
+    const patch = buildConfigPatchFromFlags({
+      'tts-chunk-concurrency': '4'
+    }, new Set(['tts-chunk-concurrency']))
+
+    expect(patch).toEqual({
+      defaults: {
+        post: {
+          tts: {
+            chunkConcurrency: 4
+          }
+        }
+      }
+    })
+    expect(mergeConfigIntoRawFlags({}, patch as Parameters<typeof mergeConfigIntoRawFlags>[1], new Set())).toMatchObject({
+      'tts-chunk-concurrency': '4'
     })
   })
 
@@ -561,7 +583,8 @@ describe('config contracts', () => {
             elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2'],
             elevenlabsTtsOptimizeStreamingLatency: 2,
             minimaxTts: ['speech-2.8-turbo'],
-            minimaxTtsVoice: 'AutoShowTestVoice'
+            minimaxTtsVoice: 'AutoShowTestVoice',
+            chunkConcurrency: 3
           },
           image: {
             bflImage: ['flux-2-pro'],
@@ -633,7 +656,8 @@ describe('config contracts', () => {
             elevenlabsTtsPronunciationDictionaryLocators: ['dict_1:version_2'],
             elevenlabsTtsOptimizeStreamingLatency: 2,
             minimaxTts: ['speech-2.8-turbo'],
-            minimaxTtsVoice: 'AutoShowTestVoice'
+            minimaxTtsVoice: 'AutoShowTestVoice',
+            chunkConcurrency: 3
           },
           image: {
             bflImage: ['flux-2-pro'],

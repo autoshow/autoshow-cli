@@ -1,4 +1,4 @@
-import type { HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/types'
+import type { HumanLogSection, HumanLogTable, HumanLogTableCell, LogContext, LogMetadata } from '~/types'
 
 const REDACTED = 'REDACTED'
 
@@ -221,5 +221,20 @@ export const sanitizeHumanTable = (table: HumanLogTable): HumanLogTable => ({
           Object.entries(table.align).map(([column, align]) => [sanitizeLogText(column), align])
         )
       }
+    : {}),
+  ...(table.labels
+    ? {
+        labels: Object.fromEntries(
+          Object.entries(table.labels).map(([column, label]) => [sanitizeLogText(column), sanitizeLogText(label)])
+        )
+      }
     : {})
 })
+
+export const sanitizeHumanSections = (
+  sections: readonly HumanLogSection[]
+): readonly HumanLogSection[] =>
+  sections.map(section => ({
+    title: sanitizeLogText(section.title),
+    table: sanitizeHumanTable(section.table)
+  }))

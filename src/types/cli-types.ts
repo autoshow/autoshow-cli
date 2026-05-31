@@ -87,6 +87,7 @@ export type RuntimeOptions = {
   llmLocalConcurrency: number
   ttsProviderConcurrency: number
   ttsLocalConcurrency: number
+  ttsChunkConcurrency: number
   imageProviderConcurrency: number
   imageLocalConcurrency: number
   videoProviderConcurrency: number

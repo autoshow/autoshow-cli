@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, test } from 'bun:test'
 import {
   resolveCheapestModelForFlag,
@@ -500,6 +503,129 @@ describe('price mode contracts', () => {
     })
     expect(timing.steps.find((step) => step.provider === 'mistral')?.processingTimeMs)
       .toBe(Math.round(getTtsEstimation('mistral', model).msPer1KChars))
+  })
+
+  test('chunked TTS estimates use chunk concurrency for wall-clock time', () => {
+    const model = 'grok-tts'
+    const characterCount = 27_666
+    const text = 'a'.repeat(characterCount)
+    const rate = getTtsEstimation('grok', model).msPer1KChars
+
+    const parallelTiming = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'grok', model }],
+      ttsCharacterCount: characterCount,
+      ttsInputText: text,
+      ttsChunkConcurrency: 5
+    })
+    const serialTiming = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'grok', model }],
+      ttsCharacterCount: characterCount,
+      ttsInputText: text,
+      ttsChunkConcurrency: 1
+    })
+    const syntheticTiming = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'grok', model }],
+      ttsCharacterCount: characterCount,
+      ttsChunkConcurrency: 5
+    })
+
+    expect(parallelTiming.steps[0]?.processingTimeMs).toBe(Math.round(15 * rate))
+    expect(serialTiming.steps[0]?.processingTimeMs).toBe(Math.round((characterCount / 1000) * rate))
+    expect(syntheticTiming.steps[0]?.processingTimeMs).toBe(parallelTiming.steps[0]?.processingTimeMs)
+  })
+
+  test('non-chunked TTS estimates remain linear with chunk concurrency', () => {
+    const model = 'eleven_v3'
+    const characterCount = 27_666
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'elevenlabs', model }],
+      ttsCharacterCount: characterCount,
+      ttsInputText: 'a'.repeat(characterCount),
+      ttsChunkConcurrency: 5
+    })
+
+    expect(timing.steps[0]?.processingTimeMs)
+      .toBe(Math.round((characterCount / 1000) * getTtsEstimation('elevenlabs', model).msPer1KChars))
+  })
+
+  test('chunked TTS setup time is added once before parallel synthesis', () => {
+    const model = 'gpt-4o-mini-tts'
+    const setupTimeMs = 10_000
+    const rate = getTtsEstimation('openai', model).msPer1KChars
+    const timing = computeEstimatedProcessingTimes({
+      ttsTargets: [{ service: 'openai', model, setupTimeMs }],
+      ttsCharacterCount: 8000,
+      ttsInputText: 'a'.repeat(8000),
+      ttsChunkConcurrency: 5
+    })
+
+    expect(timing.steps[0]?.processingTimeMs)
+      .toBe(Math.round(setupTimeMs + 4 * rate))
+  })
+
+  test('tts --price reports chunk-concurrent Grok estimated time', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'autoshow-grok-tts-price-'))
+    const inputPath = join(dir, 'long-tts.txt')
+    const characterCount = 27_666
+    const model = 'grok-tts'
+    const rate = getTtsEstimation('grok', model).msPer1KChars
+
+    await Bun.write(inputPath, 'a'.repeat(characterCount))
+
+    try {
+      const result = await runCommand([
+        'src/cli/create-cli.ts',
+        'tts',
+        inputPath,
+        '--provider',
+        `grok=${model}`,
+        '--tts-chunk-concurrency',
+        '5',
+        '--price',
+        '--json'
+      ], {
+        env: { XAI_API_KEY: '' }
+      })
+
+      expect(result.exitCode).toBe(0)
+      expect(result.outputDir).toBeNull()
+
+      const emittedResult = parseJsonLines(`${result.stdout}\n${result.stderr}`)
+        .find((entry) => isRecord(entry) && entry['dryRun'] === true)
+      if (!isRecord(emittedResult)) {
+        throw new Error('Missing price-mode timing JSON result')
+      }
+
+      const estimate = emittedResult['estimate']
+      if (!isRecord(estimate)) {
+        throw new Error('Missing price-mode estimate JSON result')
+      }
+
+      const timing = estimate['timing']
+      if (!isRecord(timing)) {
+        throw new Error('Missing price-mode timing JSON result')
+      }
+
+      const steps = timing['steps']
+      if (!Array.isArray(steps)) {
+        throw new Error('Missing price-mode timing steps')
+      }
+
+      const grokStep = steps.find((entry) =>
+        isRecord(entry)
+        && entry['step'] === 'tts'
+        && entry['provider'] === 'grok'
+        && entry['model'] === model
+      )
+      if (!isRecord(grokStep)) {
+        throw new Error('Missing Grok timing step')
+      }
+
+      expect(grokStep['processingTimeMs']).toBe(Math.round(15 * rate))
+      expect(grokStep['processingTimeMs']).toBeLessThan(Math.round((characterCount / 1000) * rate))
+    } finally {
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   test('Speechify TTS estimates use registry pricing and timing defaults', () => {

@@ -43,7 +43,7 @@ import {
 import { createLogger } from '~/utils/logger/core'
 import { formatCost } from '~/utils/logger/formatters'
 import { createReporter } from '~/utils/logger/reporter'
-import { createHumanTable, createKeyValueTable, createLocationsTable, renderHumanTable } from '~/utils/logger/human-table'
+import { createDetailTable, createHumanTable, createKeyValueTable, createLocationsTable, renderHumanTable } from '~/utils/logger/human-table'
 import { sanitizeLogText } from '~/utils/logger/redaction'
 import { buildRetryAttemptTable } from '~/utils/retries'
 import { createHumanSink } from '~/utils/logger/sinks/human-sink'
@@ -181,7 +181,7 @@ describe('logging contracts', () => {
 
     const output = captured.stdout[0] as string
     expect(hasAnsi(output)).toBe(true)
-    expect(stripAnsi(output)).toContain('[2026-01-01T00:00:00.000Z] \u2713   Complete!')
+    expect(stripAnsi(output)).toContain('[00:00:00] \u2713 Complete!')
   })
 
   test('colored human table output strips back to plain output', () => {
@@ -312,10 +312,51 @@ describe('logging contracts', () => {
       ['provider', 'gemini']
     ])))
 
-    expect(rendered).toContain('\u2502 mediaType \u2502 video')
-    expect(rendered).toContain('\u2502 provider  \u2502 gemini')
+    expect(rendered).toContain('\u2502 media type \u2502 video')
+    expect(rendered).toContain('\u2502 provider   \u2502 gemini')
     expect(rendered).not.toContain('\u2502   \u2502 key')
     expect(rendered).not.toContain('\u2502 0 \u2502')
+  })
+
+  test('human table labels and millisecond durations render for display only', () => {
+    const table = createKeyValueTable([
+      ['outputDir', 'output/run'],
+      ['processingTimeMs', 760412],
+      ['providerModel', 'grok/grok-tts']
+    ])
+    const rendered = stripAnsi(renderHumanTable(table))
+
+    expect(table.rows).toEqual([
+      { key: 'outputDir', value: 'output/run' },
+      { key: 'processingTimeMs', value: 760412 },
+      { key: 'providerModel', value: 'grok/grok-tts' }
+    ])
+    expect(rendered).toContain('output dir')
+    expect(rendered).toContain('time')
+    expect(rendered).toContain('12m 40s')
+    expect(rendered).toContain('provider/model')
+    expect(rendered).not.toContain('760412')
+  })
+
+  test('human sink renders multiple titled sections on one event', () => {
+    const sink = createHumanSink({ interactive: true })
+    const captured = captureConsole(() => {
+      sink({
+        ...makeEvent('info'),
+        message: 'Complete',
+        humanTable: createDetailTable([['total', '12m 40s, 18.81\u00a2']]),
+        humanSections: [{
+          title: 'Artifacts',
+          table: createHumanTable([{ artifact: 'speech', path: 'speech.wav' }], ['artifact', 'path'])
+        }]
+      })
+    })
+
+    const output = stripAnsi(captured.stdout[0] as string)
+    expect(output).toContain('[00:00:00] \u2022 Complete')
+    expect(output).toContain('total: 12m 40s, 18.81\u00a2')
+    expect(output).toContain('Artifacts')
+    expect(output).toContain('\u2502 speech \u2502 speech.wav')
   })
 
   test('long Locations paths render as sidecar details outside the boxed table', () => {
@@ -325,7 +366,7 @@ describe('logging contracts', () => {
 
     expect(table.rows).toEqual([])
     expect(table.details).toEqual([{ label: 'runManifest', value: longPath }])
-    expect(rendered).toBe(`  runManifest: ${longPath}`)
+    expect(rendered).toBe(`  run manifest: ${longPath}`)
     expect(rendered).not.toContain('\u250c')
     expect(rendered).not.toContain(`\u2502 ${longPath}`)
   })
@@ -343,7 +384,8 @@ describe('logging contracts', () => {
       'result-groq': 'providers/groq/result.json'
     })
 
-    const providersTable = writes.find(write => write.message === 'Providers')?.options?.humanTable
+    const providersTable = writes.find(write => write.message === 'Complete')?.options?.humanSections
+      ?.find(section => section.title === 'Providers')?.table
     if (!providersTable) throw new Error('Expected Providers human table')
 
     const rendered = stripAnsi(renderHumanTable(providersTable))
@@ -351,10 +393,23 @@ describe('logging contracts', () => {
     expect(providersTable.rows).toEqual([{ transcripts: 0, results: 5 }])
     expect(providersTable.details).toEqual([{ label: 'dir', value: `${outputDir}/providers` }])
     expect(rendered).toContain('\u2502 transcripts \u2502 results')
-    expect(rendered).toContain('\u2502 0           \u2502 5')
+    expect(rendered).toContain('\u2502           0 \u2502       5')
     expect(rendered).toContain(`\n  dir: ${outputDir}/providers`)
     expect(rendered).not.toContain('\u2502 dir ')
     expect(rendered).not.toContain(`\u2502 ${outputDir}/providers`)
+  })
+
+  test('reporter completion can omit output directory section after Run already announced it', () => {
+    const { logger, writes } = createCapturingLogger()
+    const reporter = createReporter(logger)
+
+    reporter.complete('output/run', { speech: 'speech.wav', run: 'run.json' }, {
+      includeOutputDir: false
+    })
+
+    const sections = writes[0]?.options?.humanSections ?? []
+    expect(writes.map(write => write.message)).toEqual(['Complete'])
+    expect(sections.map(section => section.title)).toEqual(['Artifacts'])
   })
 
   test('short filenames and short paths remain inline in human tables', () => {
@@ -986,10 +1041,13 @@ describe('logging contracts', () => {
     })
 
     expect(writes.map(write => write.message)).toEqual([
-      'Total estimated cost: free (0.000\u00a2)',
-      'Cost Estimate'
+      'Estimate'
     ])
-    expect(writes[1]?.options?.humanTable).toBeDefined()
+    expect(writes[0]?.options?.humanTable?.details).toEqual([
+      { label: 'Total estimated cost', value: 'free (0.000\u00a2)' }
+    ])
+    expect(writes[0]?.options?.humanSections?.[0]?.title).toBe('Cost Estimate')
+    expect(writes[0]?.options?.humanSections?.[0]?.table).toBeDefined()
     expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
   })
 
@@ -1008,7 +1066,9 @@ describe('logging contracts', () => {
       }]
     })
 
-    expect(writes[1]?.options?.humanTable?.rows[0]).toMatchObject({
+    const estimateTable = writes[0]?.options?.humanSections
+      ?.find(section => section.title === 'Cost Estimate')?.table
+    expect(estimateTable?.rows[0]).toMatchObject({
       provider: 'reverb',
       model: 'reverb_asr_v1'
     })
@@ -1217,7 +1277,8 @@ describe('logging contracts', () => {
       notes: ['Aggregate caveat.']
     })
 
-    const humanTable = writes[1]?.options?.humanTable
+    const humanTable = writes[0]?.options?.humanSections
+      ?.find(section => section.title === 'Cost Estimate')?.table
     expect(humanTable).toEqual({
       columns: ['step', 'provider', 'model', 'cost'],
       align: { cost: 'right' },
@@ -1227,7 +1288,10 @@ describe('logging contracts', () => {
         { step: 'extract', provider: 'firecrawl', model: 'firecrawl', cost: '<0.01\u00a2' }
       ]
     })
-    expect(writes[0]?.message).toBe('Total estimated cost: $2.01 (201.255\u00a2)')
+    expect(writes[0]?.message).toBe('Estimate')
+    expect(writes[0]?.options?.humanTable?.details).toEqual([
+      { label: 'Total estimated cost', value: '$2.01 (201.255\u00a2)' }
+    ])
     expect(writes.some(write => write.message.includes('Cost estimate notes:'))).toBe(false)
 
     if (!humanTable) throw new Error('Expected cost estimate human table')
@@ -1307,7 +1371,8 @@ describe('logging contracts', () => {
       steps
     })
 
-    const humanTable = writes[1]?.options?.humanTable
+    const humanTable = writes[0]?.options?.humanSections
+      ?.find(section => section.title === 'Cost Estimate')?.table
     if (!humanTable) throw new Error('Expected cost estimate human table')
 
     expect(humanTable.columns).toEqual(['step', 'provider', 'model', 'setup', 'cost'])

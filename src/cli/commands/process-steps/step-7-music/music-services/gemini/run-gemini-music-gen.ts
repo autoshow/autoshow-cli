@@ -1,6 +1,5 @@
 import type { GeminiMusicModel, Step7MusicMetadata } from '~/types'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
-import { logLocationsTable } from '~/utils/logger/human-table'
 import { readEnv } from '~/utils/validate/env-utils'
 import * as l from '~/utils/logger'
 import { geminiGenerateContent } from '~/utils/gemini/gemini-rest'
@@ -200,9 +199,9 @@ export const runGeminiMusicGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'music', path: musicPath }]
   })
-  logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
   const metadata: Step7MusicMetadata = {
     musicService: 'gemini',

@@ -22,6 +22,7 @@ import { buildLLMModelOptions, resolveLLMDefaults } from '~/cli/commands/process
 import { runLLM } from './run-llm'
 import {
   buildTextInputPrompt,
+  formatTextInputRenderedText,
   getTextInputTitle,
   resolveTextInputSongTitle,
   writeRenderedTextArtifacts,
@@ -202,6 +203,7 @@ export const runTextWrite = async (
   let step6Metadata: Step6VideoMetadata[] | null = null
   let step7Metadata: Step7MusicMetadata[] | null = null
   let ttsCharacterCount: number | undefined
+  let ttsInputText: string | undefined
 
   const ttsTargets = collectTtsTargets(opts)
   const imageTargets = collectImageTargets(opts)
@@ -220,6 +222,7 @@ export const runTextWrite = async (
   } else if (step3Results.length === 1 && (ttsRequested || imageRequested || musicRequested || videoRequested)) {
     const renderedText = step3RunResults[0]?.renderedText ?? ''
     ttsCharacterCount = renderedText.length
+    ttsInputText = renderedText
 
     const [ttsResult, imageResult, musicResult, videoResult] = await Promise.all([
       ttsRequested
@@ -242,9 +245,19 @@ export const runTextWrite = async (
     step6Metadata = videoResult?.metadata ?? null
   }
 
+  const showNoteRunResults = await Promise.all(step3RunResults.map(async (result) => ({
+    ...result,
+    renderedText: await formatTextInputRenderedText({
+      content: result.renderedText,
+      sourcePath: inputPath,
+      trackListPath: opts.trackList,
+      metadata: result.metadata
+    })
+  })))
+
   const showNoteArtifacts = await writeShowNoteArtifacts({
     outputDir,
-    results: step3RunResults,
+    results: showNoteRunResults,
     sourceText,
     step4Metadata,
     step5Metadata,
@@ -317,6 +330,8 @@ export const runTextWrite = async (
     skipLLM: false,
     ttsTargets: ttsEstimateTargets,
     ttsCharacterCount,
+    ...(ttsInputText !== undefined ? { ttsInputText } : {}),
+    ttsChunkConcurrency: opts.ttsChunkConcurrency,
     ...(imageEstimateTargets.length > 0 ? { imageTargets: imageEstimateTargets } : {}),
     ...(attemptedVideoTargets.length > 0
       ? {

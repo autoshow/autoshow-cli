@@ -198,6 +198,11 @@ export type MediaGenerationStatus = {
   processingTimeMs?: number
   outputCount?: number
   detail?: string
+  artifacts?: readonly {
+    artifact: string
+    path: unknown
+    detail?: unknown
+  }[]
 }
 
 export type BatchChildDirectoryIdentity = {

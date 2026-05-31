@@ -189,6 +189,7 @@ export const mergeConfigIntoRawFlags = (
     inject('cartesia-tts-language', d.post.tts.cartesiaTtsLanguage)
     inject('tts-provider-concurrency', d.post.tts.providerConcurrency)
     inject('tts-local-concurrency', d.post.tts.localConcurrency)
+    inject('tts-chunk-concurrency', d.post.tts.chunkConcurrency)
   }
 
   if (d.post?.image) {
@@ -375,6 +376,7 @@ const FLAG_TO_CONFIG_PATH: Record<string, string[]> = {
   'cartesia-tts-language': ['defaults', 'post', 'tts', 'cartesiaTtsLanguage'],
   'tts-provider-concurrency': ['defaults', 'post', 'tts', 'providerConcurrency'],
   'tts-local-concurrency': ['defaults', 'post', 'tts', 'localConcurrency'],
+  'tts-chunk-concurrency': ['defaults', 'post', 'tts', 'chunkConcurrency'],
   'gemini-image':      ['defaults', 'post', 'image', 'geminiImage'],
   'openai-image':      ['defaults', 'post', 'image', 'openaiImage'],
   'grok-image':        ['defaults', 'post', 'image', 'grokImage'],
@@ -477,7 +479,7 @@ const parseConfigValue = (flagName: string, rawValue: unknown): unknown => {
     'llm-provider-concurrency', 'llm-local-concurrency',
     'stt-provider-concurrency', 'stt-local-concurrency', 'stt-segment-concurrency', 'stt-preflight-concurrency',
     'ocr-provider-concurrency', 'ocr-local-concurrency',
-    'tts-provider-concurrency', 'tts-local-concurrency',
+    'tts-provider-concurrency', 'tts-local-concurrency', 'tts-chunk-concurrency',
     'image-provider-concurrency', 'image-local-concurrency',
     'video-provider-concurrency', 'video-local-concurrency',
     'music-provider-concurrency', 'music-local-concurrency',

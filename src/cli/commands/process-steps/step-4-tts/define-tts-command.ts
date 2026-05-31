@@ -87,8 +87,13 @@ export const ttsCommand = defineCliCommand({
   const dialogueRequested = isMultiSpeakerRequested(ttsOptions)
   const dialoguePreview = dialogueRequested ? normalizeDialogueFromOptions(text, ttsOptions) : undefined
   const ttsCharacterCount = dialoguePreview?.spokenCharacterCount ?? text.length
+  const ttsTimingInputText = dialoguePreview
+    ? dialoguePreview.turns.map((turn) => turn.text).join('\n')
+    : text
 
-  const { estimate: preflightEstimate, shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, ttsCharacterCount)
+  const { estimate: preflightEstimate, shouldExit } = await runPreflight('tts', inputPath, ttsOptions, maxCents, ttsCharacterCount, {
+    ttsInputText: ttsTimingInputText
+  })
   if (shouldExit) {
     l.report.expectedOutput(
       getGenerationExpectedOutputDir(flags as Record<string, unknown>, './output/<timestamp>_<label>/'),
@@ -125,6 +130,8 @@ export const ttsCommand = defineCliCommand({
     estimated: computeEstimatedProcessingTimes({
       ttsTargets: estimatedTtsTargets,
       ttsCharacterCount,
+      ttsInputText: ttsTimingInputText,
+      ttsChunkConcurrency: ttsOptions.ttsChunkConcurrency,
     }),
     actual: computeActualProcessingTimes({
       step4: metadata,
@@ -154,7 +161,8 @@ export const ttsCommand = defineCliCommand({
         (entry) => entry.processingTime
       ),
       totalTimeMs: metadata.reduce((sum, entry) => sum + entry.processingTime, 0),
-      totalCost: actual.totalCost
+      totalCost: actual.totalCost,
+      includeOutputDir: false
     }
   )
 })

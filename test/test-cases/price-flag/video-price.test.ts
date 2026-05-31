@@ -1,6 +1,20 @@
 import { expect, test } from 'bun:test'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { defineVideoServicePriceTests } from '../../test-utils/define-video-service-test'
 import { runCommand } from '../../test-utils/test-helpers'
+
+const withTempImage = async <T,>(fn: (path: string) => Promise<T>): Promise<T> => {
+  const dir = await mkdtemp(join(tmpdir(), 'autoshow-video-price-image-'))
+  try {
+    const imagePath = join(dir, 'input.png')
+    await writeFile(imagePath, new Uint8Array([1, 2, 3]))
+    return await fn(imagePath)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+}
 
 defineVideoServicePriceTests({
   models: [
@@ -58,6 +72,81 @@ test('allows multiple providers with --price', async () => {
   expect(output).toContain('generated-video-glm-cogvideox-3.mp4')
   expect(output).toContain('generated-video-grok-grok-imagine-video.mp4')
   expect(output).toContain('generated-video-runway-gen4.5.mp4')
+})
+
+test('positional image input defaults to compatible image-to-video targets with --price', async () => {
+  await withTempImage(async (imagePath) => {
+    const result = await runCommand(
+      ['src/cli/create-cli.ts', 'video', imagePath, '--price'],
+    )
+    const output = `${result.stdout}\n${result.stderr}`
+    expect(result.exitCode).toBe(0)
+
+    for (const expected of [
+      'generated-video-gemini-veo-3.1-fast-generate-preview.mp4',
+      'generated-video-gemini-veo-3.1-generate-preview.mp4',
+      'generated-video-gemini-veo-3.1-lite-generate-preview.mp4',
+      'generated-video-minimax-MiniMax-Hailuo-2.3.mp4',
+      'generated-video-minimax-MiniMax-Hailuo-2.3-Fast.mp4',
+      'generated-video-minimax-I2V-01-Director.mp4',
+      'generated-video-minimax-I2V-01-live.mp4',
+      'generated-video-minimax-I2V-01.mp4',
+      'generated-video-glm-cogvideox-3.mp4',
+      'generated-video-glm-vidu2-image.mp4',
+      'generated-video-grok-grok-imagine-video.mp4'
+    ]) {
+      expect(output).toContain(expected)
+    }
+
+    for (const unsupported of [
+      'generated-video-runway-gen4.5.mp4',
+      'generated-video-minimax-T2V-01.mp4',
+      'generated-video-minimax-T2V-01-Director.mp4',
+      'generated-video-minimax-S2V-01.mp4',
+      'generated-video-glm-viduq1-text.mp4',
+      'generated-video-glm-vidu2-start-end.mp4',
+      'generated-video-glm-vidu2-reference.mp4'
+    ]) {
+      expect(output).not.toContain(unsupported)
+    }
+  })
+})
+
+test('positional text input defaults to cheapest text-to-video target with --price', async () => {
+  const result = await runCommand(
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--price'],
+  )
+  const output = `${result.stdout}\n${result.stderr}`
+  expect(result.exitCode).toBe(0)
+  expect(output).toContain('minimax')
+  expect(output).toContain('T2V-01')
+  expect(output).toContain('generated-video.mp4')
+  expect(output).not.toContain('generated-video-gemini')
+  expect(output).not.toContain('generated-video-glm')
+  expect(output).not.toContain('generated-video-grok')
+  expect(output).not.toContain('generated-video-runway')
+})
+
+test('positional image and text inputs allow explicit providers with --price', async () => {
+  await withTempImage(async (imagePath) => {
+    const imageResult = await runCommand(
+      ['src/cli/create-cli.ts', 'video', imagePath, '--provider', 'gemini=veo-3.1-fast-generate-preview', '--price'],
+    )
+    const imageOutput = `${imageResult.stdout}\n${imageResult.stderr}`
+    expect(imageResult.exitCode).toBe(0)
+    expect(imageOutput).toContain('gemini')
+    expect(imageOutput).toContain('veo-3.1-fast-generate-preview')
+    expect(imageOutput).toContain('generated-video.mp4')
+  })
+
+  const textResult = await runCommand(
+    ['src/cli/create-cli.ts', 'video', 'a cinematic mountain sunrise', '--provider', 'runway=gen4.5', '--price'],
+  )
+  const textOutput = `${textResult.stdout}\n${textResult.stderr}`
+  expect(textResult.exitCode).toBe(0)
+  expect(textOutput).toContain('runway')
+  expect(textOutput).toContain('gen4.5')
+  expect(textOutput).toContain('generated-video.mp4')
 })
 
 test('new video providers print price estimates', async () => {

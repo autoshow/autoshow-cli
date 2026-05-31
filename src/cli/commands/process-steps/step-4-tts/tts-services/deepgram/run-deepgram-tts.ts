@@ -1,13 +1,13 @@
 import type { DeepgramTtsModel, Step4Metadata } from '~/types'
 import { logTtsConfig } from '~/cli/commands/process-steps/step-4-tts/tts-utils/log-tts-config'
-import { splitTextIntoChunks, concatAndConvertToWav } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { splitTextIntoChunks, concatAndConvertToWav, runTtsChunks } from '~/cli/commands/process-steps/step-4-tts/tts-utils/audio-utils'
+import { TTS_CHUNK_CHARACTER_LIMITS } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-chunking'
 import { finalizeTtsRun } from '~/cli/commands/process-steps/step-4-tts/tts-utils/finalize-tts-run'
+import { withHostedTtsRetry } from '~/cli/commands/process-steps/step-4-tts/tts-utils/hosted-tts-retry'
 import { DEEPGRAM_DEFAULT_VOICE, validateDeepgramTtsVoice } from '~/cli/commands/setup-and-utilities/models/model-options'
-import { withRetry, classifyFetchRetry } from '~/utils/retries'
 import { readEnv } from '~/utils/validate/env-utils'
 import { DEEPGRAM_DEFAULT_BASE_URL } from '~/utils/base-urls'
 import { readDeepgramError } from './deepgram-utils'
-const MAX_CHARS_PER_CHUNK = 2000
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '')
 
@@ -22,6 +22,7 @@ export const runDeepgramTts = async (
     bitRate?: number | undefined
     sampleRate?: number | undefined
     speed?: number | undefined
+    chunkConcurrency?: number | undefined
   }
 ): Promise<{ audioPath: string, metadata: Step4Metadata }> => {
   const apiKey = readEnv('DEEPGRAM_API_KEY')
@@ -34,7 +35,7 @@ export const runDeepgramTts = async (
   const voice = validateDeepgramTtsVoice(rawVoice)
   const encoding = options.encoding?.trim() || undefined
   const container = options.container?.trim() || undefined
-  const chunks = splitTextIntoChunks(text, MAX_CHARS_PER_CHUNK)
+  const chunks = splitTextIntoChunks(text, TTS_CHUNK_CHARACTER_LIMITS.deepgram)
 
   if (chunks.length === 0) {
     throw new Error('Deepgram TTS input text is empty')
@@ -55,8 +56,8 @@ export const runDeepgramTts = async (
   const chunkPaths: string[] = []
 
   try {
-    for (let i = 0; i < chunks.length; i++) {
-      const chunkIndex = i + 1
+    const orderedChunkPaths = await runTtsChunks(chunks, options.chunkConcurrency, async (chunk, index) => {
+      const chunkIndex = index + 1
       const chunkPath = `${outputDir}/speech-deepgram-chunk-${String(chunkIndex).padStart(3, '0')}.mp3`
       const params = new URLSearchParams({ model: voice })
       if (encoding) params.set('encoding', encoding)
@@ -64,8 +65,8 @@ export const runDeepgramTts = async (
       if (typeof options.bitRate === 'number') params.set('bit_rate', String(options.bitRate))
       if (typeof options.sampleRate === 'number') params.set('sample_rate', String(options.sampleRate))
       if (typeof options.speed === 'number') params.set('speed', String(options.speed))
-      const audioBytes = await withRetry(
-        { retryClass: 'runtime_http_create_conservative', operationName: `deepgram-tts-chunk-${chunkIndex}` },
+      const audioBytes = await withHostedTtsRetry(
+        { operationName: `deepgram-tts-chunk-${chunkIndex}` },
         async (signal) => {
           const response = await fetch(`${baseURL}/v1/speak?${params.toString()}`, {
             method: 'POST',
@@ -74,7 +75,7 @@ export const runDeepgramTts = async (
               'Content-Type': 'application/json',
               Accept: 'audio/mpeg'
             },
-            body: JSON.stringify({ text: chunks[i] as string }),
+            body: JSON.stringify({ text: chunk }),
             ...(signal ? { signal } : {})
           })
 
@@ -87,8 +88,7 @@ export const runDeepgramTts = async (
           }
 
           return new Uint8Array(await response.arrayBuffer())
-        },
-        (error) => classifyFetchRetry(error, 'runtime_http_create_conservative')
+        }
       )
 
       if (audioBytes.byteLength === 0) {
@@ -97,9 +97,10 @@ export const runDeepgramTts = async (
 
       await Bun.write(chunkPath, audioBytes)
       chunkPaths.push(chunkPath)
-    }
+      return chunkPath
+    })
 
-    const audioPath = await concatAndConvertToWav(chunkPaths, outputDir, 'Deepgram')
+    const audioPath = await concatAndConvertToWav(orderedChunkPaths, outputDir, 'Deepgram')
     return finalizeTtsRun({
       service: 'deepgram',
       model: options.model,

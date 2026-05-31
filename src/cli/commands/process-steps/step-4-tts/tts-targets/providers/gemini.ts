@@ -24,13 +24,14 @@ export const collectGeminiTtsTargets = (
       service: 'gemini',
       model,
       ...(speaker ? { voice: speaker } : {}),
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureGeminiTtsSetup()
         return await runGeminiTts(text, outputDir, {
           model,
           voiceId,
           multiSpeakerConfig,
-          speakerVoiceRegistry: registry
+          speakerVoiceRegistry: registry,
+          chunkConcurrency: opts.ttsChunkConcurrency
         })
       }
     })

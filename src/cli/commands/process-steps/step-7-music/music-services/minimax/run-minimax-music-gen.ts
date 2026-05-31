@@ -2,7 +2,6 @@ import * as v from 'valibot'
 import type { MinimaxMusicModel, MinimaxMusicResponse, Step7MusicMetadata } from '~/types'
 import { isMinimaxInstrumentalMusicModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import * as l from '~/utils/logger'
-import { logLocationsTable } from '~/utils/logger/human-table'
 import { logMediaGenerationStatus } from '~/cli/commands/process-steps/generation-command-utils'
 import { readEnv } from '~/utils/validate/env-utils'
 import { MINIMAX_DEFAULT_BASE_URL } from '~/utils/base-urls'
@@ -316,9 +315,9 @@ export const runMinimaxMusicGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'music', path: musicPath }]
   })
-  logLocationsTable(l, [{ artifact: 'music', path: musicPath }], { level: 'success' })
 
   const metadata: Step7MusicMetadata = {
     musicService: 'minimax',

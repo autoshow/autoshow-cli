@@ -52,7 +52,7 @@ const readTaskStatus = (query: v.InferOutput<typeof MinimaxQueryVideoResponseSch
 }
 
 export const runMinimaxVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: {
     model: MinimaxVideoModel
@@ -102,7 +102,7 @@ export const runMinimaxVideoGen = async (
 
   const requestBody: Record<string, unknown> = {
     model: options.model,
-    prompt
+    ...(prompt !== undefined ? { prompt } : {})
   }
   if (mode === 'reference-to-video') {
     requestBody['subject_reference'] = referenceImage
@@ -223,7 +223,8 @@ export const runMinimaxVideoGen = async (
     model: options.model,
     status: 'completed',
     processingTimeMs: processingTime,
-    outputCount: 1
+    outputCount: 1,
+    artifacts: [{ artifact: 'video', path: outputPath }]
   })
 
   const metadata: Step6VideoMetadata = {

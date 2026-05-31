@@ -44,6 +44,12 @@ export type HumanLogTable = {
   columns?: readonly string[]
   align?: Readonly<Record<string, HumanLogTableAlign>>
   details?: readonly HumanLogTableDetail[]
+  labels?: Readonly<Record<string, string>>
+}
+
+export type HumanLogSection = {
+  title: string
+  table: HumanLogTable
 }
 
 type LogEvent = {
@@ -65,12 +71,14 @@ export type LogWriteOptions = {
   indent?: boolean
   args?: readonly unknown[]
   humanTable?: HumanLogTable
+  humanSections?: readonly HumanLogSection[]
 }
 
 export type LogSinkEvent = LogEvent & {
   indent: boolean
   args: readonly unknown[]
   humanTable?: HumanLogTable
+  humanSections?: readonly HumanLogSection[]
 }
 
 export type LogSink = (event: LogSinkEvent) => void
@@ -156,6 +164,7 @@ export type CompleteOptions = {
   totalCost?: number
   summaryMessage?: string
   hideHumanSections?: readonly HumanCompletionSection[]
+  includeOutputDir?: boolean
 }
 
 export type Reporter = {

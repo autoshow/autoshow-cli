@@ -9,9 +9,10 @@ export const runPreflight = async (
   resolvedTarget: string,
   opts: RuntimeOptions,
   maxCents: number | undefined,
-  characterCount?: number
+  characterCount?: number,
+  context: { ttsInputText?: string | undefined } = {}
 ): Promise<PreflightResult> => {
-  const estimate = await buildAggregatedPriceEstimate(command, resolvedTarget, opts, characterCount)
+  const estimate = await buildAggregatedPriceEstimate(command, resolvedTarget, opts, characterCount, context)
   l.report.estimate(estimate)
 
   if (opts.price) {

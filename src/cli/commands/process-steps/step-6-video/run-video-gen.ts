@@ -7,7 +7,7 @@ import {
 
 export const runVideoTargets = async (
   targets: VideoTarget[],
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options?: Pick<VideoGenOptions, 'videoProviderConcurrency' | 'videoLocalConcurrency'>,
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {
@@ -40,7 +40,7 @@ export const runVideoTargets = async (
 }
 
 export const runVideoGen = async (
-  prompt: string,
+  prompt: string | undefined,
   outputDir: string,
   options: VideoGenOptions
 ): Promise<{ videoPaths: string[], metadata: Step6VideoMetadata[] }> => {

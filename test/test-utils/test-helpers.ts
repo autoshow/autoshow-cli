@@ -98,9 +98,9 @@ const parseCallerLocation = (): { file: string | null, line: number | null, colu
 const parseOutputDirFromText = (text: string): string | null => {
   const clean = stripAnsi(text)
   const patterns = [
-    /(?:^|\n)\s*(?:outputDir|retryOutputDir):\s*([^\n\r]+)/g,
-    /(?:^|\n)\s*(?:runManifest|batchManifest):\s*([^\n\r]+\/(?:run|batch)\.json)/g,
-    /Locations[\s\S]*?│\s*(?:outputDir|retryOutputDir)\s*│\s*([^\n\r│]+?)\s*│/g,
+    /(?:^|\n)\s*(?:outputDir|output dir|retryOutputDir|retry output dir):\s*([^\n\r]+)/g,
+    /(?:^|\n)\s*(?:runManifest|run manifest|batchManifest|batch manifest):\s*([^\n\r]+\/(?:run|batch)\.json)/g,
+    /Locations[\s\S]*?│\s*(?:outputDir|output dir|retryOutputDir|retry output dir)\s*│\s*([^\n\r│]+?)\s*│/g,
     /Artifacts[\s\S]*?│\s*run\s*│\s*([^\n\r│]+\/run\.json)\s*│/g,
     /"artifact"\s*:\s*"outputDir"[\s\S]*?"path"\s*:\s*"([^"\n\r]+)"/g,
     /"run"\s*:\s*"([^"\n\r]+\/run\.json)"/g,

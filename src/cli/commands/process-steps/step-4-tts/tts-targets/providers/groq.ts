@@ -24,9 +24,13 @@ export const collectGroqTtsTargets = (
       service: 'groq',
       model,
       voice: targetVoice,
-      run: async (text, outputDir) => {
+      run: async (text, outputDir, opts) => {
         await ensureGroqTtsSetup()
-        return await runGroqTts(text, outputDir, { model, voiceId })
+        return await runGroqTts(text, outputDir, {
+          model,
+          voiceId,
+          chunkConcurrency: opts.ttsChunkConcurrency
+        })
       }
     })
   }
