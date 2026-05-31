@@ -5,6 +5,11 @@
     "models": {
       "speech-to-text": {
         "description": "xAI REST STT with word timestamps, formatting, and diarization",
+        "pricingSourceUrl": "https://docs.x.ai/developers/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "xAI public Voice API REST pricing",
+        "pricingNotes": "xAI lists Speech to Text at $0.10/hr for REST and $0.20/hr for Streaming. AutoShow uses the REST endpoint. Free credits, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.1,
         "costPerHourCents": 10,
         "limits": {

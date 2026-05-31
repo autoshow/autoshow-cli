@@ -17,8 +17,8 @@ export const ocrRegistry: PriceSelectionEntry[] = [
   ...exact('test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/anthropic-claude-haiku-4-5.test.ts', [
     command('extract-anthropic-claude-haiku-4-5', 'extract-anthropic-claude-haiku-4-5', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--provider', 'anthropic=claude-haiku-4-5', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/gemini-3.1-flash-lite-preview.test.ts', [
-    command('extract-gemini-gemini-3.1-flash-lite-preview', 'extract-gemini-gemini-3.1-flash-lite-preview', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--provider', 'gemini=gemini-3.1-flash-lite-preview', '--price']),
+  ...exact('test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/gemini-3.1-flash-lite.test.ts', [
+    command('extract-gemini-gemini-3.1-flash-lite', 'extract-gemini-gemini-3.1-flash-lite', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--provider', 'gemini=gemini-3.1-flash-lite', '--price']),
   ]),
   ...exact('test/test-cases/e2e/service/step-2-ocr-e2e/ocr-services/deepinfra-qwen3-vl-30b-a3b-instruct.test.ts', [
     command('extract-deepinfra-qwen3-vl-235b-a22b-instruct', 'extract-deepinfra-qwen3-vl-235b-a22b-instruct', ['src/cli/create-cli.ts', 'extract', 'input/examples/document/1-document.pdf', '--provider', 'deepinfra=Qwen/Qwen3-VL-235B-A22B-Instruct', '--price']),

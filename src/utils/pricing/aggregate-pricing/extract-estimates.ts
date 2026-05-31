@@ -25,6 +25,8 @@ type OcrCostEstimate = {
   costPer1kPagesCents?: number | undefined
   inputCostPer1MCents?: number | undefined
   outputCostPer1MCents?: number | undefined
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   pageCount?: number | undefined
   promptTokens?: number | undefined
   completionTokens?: number | undefined
@@ -124,6 +126,8 @@ const buildHostedExtractEstimate = (
     ...(typeof estimate.costPer1kPagesCents === 'number' ? { costPer1kPagesCents: estimate.costPer1kPagesCents } : {}),
     ...(typeof estimate.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: estimate.inputCostPer1MCents } : {}),
     ...(typeof estimate.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: estimate.outputCostPer1MCents } : {}),
+    ...(typeof estimate.pricingBand === 'string' ? { pricingBand: estimate.pricingBand } : {}),
+    ...(typeof estimate.pricingNote === 'string' ? { pricingNote: estimate.pricingNote } : {}),
     ...(typeof estimate.pageCount === 'number' ? { pageCount: estimate.pageCount } : {}),
     ...(typeof estimate.promptTokens === 'number' ? { promptTokens: estimate.promptTokens } : {}),
     ...(typeof estimate.completionTokens === 'number' ? { completionTokens: estimate.completionTokens } : {}),

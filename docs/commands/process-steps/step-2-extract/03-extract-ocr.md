@@ -304,11 +304,11 @@ Anthropic OCR normalizes `BMP` and `TIF/TIFF` inputs to `PNG` before upload when
 | Option | Value |
 |--------|-------|
 | Selector | `--provider gemini[=<model>]` |
-| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
+| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite` |
 | Direct input support | PDF plus `PNG`, `JPG`, `WEBP`, and `BMP` |
 
 ```bash
-bun as extract input/examples/document/1-document.pdf --provider gemini=gemini-3.1-flash-lite-preview
+bun as extract input/examples/document/1-document.pdf --provider gemini=gemini-3.1-flash-lite
 ```
 
 Gemini OCR normalizes `GIF` and `TIF/TIFF` inputs to `PNG` before upload when ImageMagick is available; otherwise those formats are rejected with a usage error. It currently enforces the bundled docs caps from `project/links/gemini-all-links.md`: inline PDFs up to 50 MB, inline non-PDF inputs up to 100 MB, Files API uploads up to 2 GB per file, and PDFs up to 1000 pages.

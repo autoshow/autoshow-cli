@@ -5,6 +5,11 @@
     "models": {
       "speech-2.8-hd": {
         "description": "speech-2.8-hd — high quality synthesis",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go speech pricing",
+        "pricingNotes": "MiniMax speech estimates use published per-1K-character rates for the selected model. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kCharsUSD": 0.1,
         "costPer1kCharsCents": 10,
         "estimation": {
@@ -14,6 +19,11 @@
       },
       "speech-2.8-turbo": {
         "description": "speech-2.8-turbo — low latency synthesis",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go speech pricing",
+        "pricingNotes": "MiniMax speech estimates use published per-1K-character rates for the selected model. Resource bundles, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPer1kCharsUSD": 0.06,
         "costPer1kCharsCents": 6,
         "estimation": {

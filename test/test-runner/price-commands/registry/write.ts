@@ -26,8 +26,8 @@ export const writeRegistry: PriceSelectionEntry[] = [
   ...exact('test/test-cases/e2e/service/step-3-write-e2e/write-services/gemini-3.1-pro-preview.test.ts', [
     command('write-gemini-gemini-3.1-pro-preview', 'write-gemini-gemini-3.1-pro-preview', ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--llm', 'gemini=gemini-3.1-pro-preview', '--prompt', 'shortSummary', '--price']),
   ]),
-  ...exact('test/test-cases/e2e/service/step-3-write-e2e/write-services/gemini-3.1-flash-lite-preview.test.ts', [
-    command('write-gemini-gemini-3.1-flash-lite-preview', 'write-gemini-gemini-3.1-flash-lite-preview', ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--llm', 'gemini=gemini-3.1-flash-lite-preview', '--price']),
+  ...exact('test/test-cases/e2e/service/step-3-write-e2e/write-services/gemini-3.1-flash-lite.test.ts', [
+    command('write-gemini-gemini-3.1-flash-lite', 'write-gemini-gemini-3.1-flash-lite', ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--llm', 'gemini=gemini-3.1-flash-lite', '--price']),
   ]),
   ...exact('test/test-cases/e2e/service/step-3-write-e2e/write-services/groq-openai-gpt-oss-20b.test.ts', [
     command('write-groq-openai/gpt-oss-20b', 'write-groq-openai/gpt-oss-20b', ['src/cli/create-cli.ts', 'write', 'https://ajc.pics/autoshow/examples/1-audio.mp3', '--llm', 'groq=openai/gpt-oss-20b', '--price']),

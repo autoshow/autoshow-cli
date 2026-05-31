@@ -5,6 +5,11 @@
     "models": {
       "youtube-transcript": {
         "description": "YouTube transcript retrieval through ScrapeCreators; does not generate transcripts from audio",
+        "pricingSourceUrl": "https://scrapecreators.com/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "ScrapeCreators Freelance credit reference rate",
+        "pricingNotes": "ScrapeCreators YouTube transcript retrieval is credit-based rather than duration-based. AutoShow estimates 1 credit per transcript request at the published Freelance reference rate ($47 / 25,000 credits). Free credits, plan discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0,
         "costPerHourCents": 0,
         "limits": {

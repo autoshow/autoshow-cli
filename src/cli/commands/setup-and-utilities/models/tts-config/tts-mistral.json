@@ -5,6 +5,11 @@
     "models": {
       "voxtral-mini-tts-2603": {
         "description": "Voxtral Mini TTS 2603 — low-latency speech synthesis with saved voices or reference audio",
+        "pricingSourceUrl": "https://mistral.ai/pricing/",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Mistral La Plateforme public audio pricing",
+        "pricingNotes": "Mistral Voxtral Mini TTS estimates use published output-character pricing, with input characters priced at zero in this registry. Free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "inputCostPer1MCharsUSD": 0,
         "inputCostPer1MCharsCents": 0,
         "outputCostPer1MCharsUSD": 16,

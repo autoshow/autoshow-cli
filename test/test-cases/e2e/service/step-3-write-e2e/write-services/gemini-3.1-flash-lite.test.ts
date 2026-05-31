@@ -3,7 +3,6 @@ import { geminiWrite } from './cases'
 
 defineLLMWriteTest({
   ...geminiWrite,
-  models: ['gemini-3.1-flash-lite-preview'],
+  models: ['gemini-3.1-flash-lite'],
   llmService: 'gemini',
 })
-

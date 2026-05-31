@@ -5,6 +5,11 @@
     "models": {
       "auto": {
         "description": "Auto mode — fetch a native transcript when available, otherwise fall back to AI generation",
+        "pricingSourceUrl": "https://supadata.ai/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Basic/Pro auto-recharge reference rate",
+        "pricingNotes": "Supadata pricing is credit-based rather than duration-based: 1 transcript request is 1 credit and generated transcript minutes cost 2 credits/min. The default reference rate is Basic/Pro auto-recharge at $10 per 1,000 credits. Free plan credits, yearly discounts, larger-plan auto-recharge rates, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0,
         "costPerHourCents": 0,
         "limits": {
@@ -13,7 +18,7 @@
         },
         "estimation": {
           "msPerSecond": 46,
-          "costMultiplier": 0.25
+          "costMultiplier": 1
         }
       }
     }

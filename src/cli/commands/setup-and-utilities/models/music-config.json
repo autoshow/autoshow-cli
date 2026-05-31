@@ -5,6 +5,11 @@
     "models": {
       "music_v1": {
         "description": "music_v1 — text prompt to complete song generation",
+        "pricingSourceUrl": "https://elevenlabs.io/pricing/api",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "ElevenLabs API music generation pricing",
+        "pricingNotes": "ElevenLabs music generation is estimated at the published per-minute API reference rate. Subscription inclusions, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerMinuteUSD": 0.15,
         "costPerMinuteCents": 15,
         "estimation": {
@@ -20,6 +25,11 @@
     "models": {
       "music-2.6": {
         "description": "music-2.6 — full song generation from prompt and lyrics with instrumental mode",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go music pricing",
+        "pricingNotes": "MiniMax music estimates use published per-track and lyrics-generation rates for the selected model. Free-tier model generation remains zero-cost for the base track while lyric generation is priced; discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerTrackUSD": 0.15,
         "costPerTrackCents": 15,
         "lyricsCostPerTrackUSD": 0.01,
@@ -31,6 +41,11 @@
       },
       "music-2.6-free": {
         "description": "music-2.6-free — free-tier full song generation from prompt and lyrics with lower rate limits",
+        "pricingSourceUrl": "https://platform.minimax.io/docs/pricing/overview",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "MiniMax pay-as-you-go music pricing",
+        "pricingNotes": "MiniMax music estimates use published per-track and lyrics-generation rates for the selected model. Free-tier model generation remains zero-cost for the base track while lyric generation is priced; discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerTrackUSD": 0,
         "costPerTrackCents": 0,
         "lyricsCostPerTrackUSD": 0.01,
@@ -48,6 +63,11 @@
     "models": {
       "lyria-3-clip-preview": {
         "description": "Lyria 3 Clip Preview — 30-second text-to-music clips with MP3 output",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard Lyria pricing",
+        "pricingNotes": "Gemini Lyria estimates use published per-track prices for the selected preview model. Free tier, priority pricing, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerTrackUSD": 0.04,
         "costPerTrackCents": 4,
         "estimation": {
@@ -57,6 +77,11 @@
       },
       "lyria-3-pro-preview": {
         "description": "Lyria 3 Pro Preview — full song generation with MP3 output",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard Lyria pricing",
+        "pricingNotes": "Gemini Lyria estimates use published per-track prices for the selected preview model. Free tier, priority pricing, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerTrackUSD": 0.08,
         "costPerTrackCents": 8,
         "estimation": {

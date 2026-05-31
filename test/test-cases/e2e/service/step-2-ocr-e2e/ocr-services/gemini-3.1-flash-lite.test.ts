@@ -3,8 +3,7 @@ import { geminiOcr } from './cases'
 
 defineOCRServiceTest({
   ...geminiOcr,
-  models: ['gemini-3.1-flash-lite-preview'],
+  models: ['gemini-3.1-flash-lite'],
   expectedService: 'gemini',
   imageInput: 'input/examples/document/1-document.jpg',
 })
-

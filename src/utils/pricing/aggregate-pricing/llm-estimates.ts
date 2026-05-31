@@ -2,9 +2,9 @@ import type { LlmStepEstimate, RuntimeOptions } from '~/types'
 import { resolveLLMDefaults } from '~/cli/commands/process-steps/step-1-download/targets/llm-defaults'
 import { estimateLlmRates } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-pricing'
 import { estimatePromptTokensFromText, readPromptFileText } from '~/cli/commands/process-steps/step-3-write/text-input-utils'
-import { getLlmEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { getLlmCost, getLlmEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { resolvePromptTokenEstimate } from '~/prompts/prompt-loader'
-import { applyCostMultiplier } from '~/utils/pricing/cost-helpers'
+import { computeTokenCost } from '~/utils/pricing/token-pricing'
 
 export const buildLlmEstimates = async (
   opts: RuntimeOptions,
@@ -25,9 +25,10 @@ export const buildLlmEstimates = async (
     const estimation = getLlmEstimation(registryService, r.model)
     const estimatedInputTokens = promptTokenEstimate.estimatedInputTokens + extraPromptTokens
     const estimatedOutputTokens = promptTokenEstimate.estimatedOutputTokens
-    const totalCost = applyCostMultiplier(
-      (estimatedInputTokens / 1_000_000) * r.inputCostPer1MCents +
-      (estimatedOutputTokens / 1_000_000) * r.outputCostPer1MCents,
+    const cost = computeTokenCost(
+      getLlmCost(registryService, r.model) ?? r,
+      estimatedInputTokens,
+      estimatedOutputTokens,
       estimation.costMultiplier
     )
 
@@ -35,12 +36,14 @@ export const buildLlmEstimates = async (
       step: 'llm' as const,
       provider: r.provider,
       model: r.model,
-      inputCostPer1MCents: r.inputCostPer1MCents,
-      outputCostPer1MCents: r.outputCostPer1MCents,
+      inputCostPer1MCents: cost.inputCostPer1MCents,
+      outputCostPer1MCents: cost.outputCostPer1MCents,
       estimatedInputTokens,
       estimatedOutputTokens,
-      totalCost,
+      totalCost: cost.totalCost,
       costMultiplier: estimation.costMultiplier,
+      ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+      ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {})
     }
   })
 }

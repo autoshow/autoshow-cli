@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto'
 import { getDocumentInfo } from '~/cli/commands/process-steps/step-1-download/document/mutool-utils'
 import { validateAnthropicOcrModel, validateDeepinfraOcrModel, validateGeminiOcrModel, validateGlmOcrModel, validateGrokOcrModel, validateKimiOcrModel, validateMistralOcrModel, validateOpenAIOcrModel, validateUnstructuredOcrModel } from '~/cli/commands/setup-and-utilities/models/model-options'
 import { getExtractEstimation, getExtractPricing } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { computeTokenCost } from '~/utils/pricing/token-pricing'
 
 const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.webp', '.gif', '.bmp'] as const
 const DEFAULT_EXTRACT_PAGE_COUNT = 1
@@ -23,6 +24,35 @@ export const KIMI_OCR_PRICE_NOTE = 'Model-specific heuristic token estimate base
 export const FIRECRAWL_PRICE_NOTE = 'Estimated at Firecrawl Standard plan rate ($83 / 100K credits; /scrape uses 1 credit per page).'
 
 type TokenOcrProvider = 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra'
+
+const computeOcrTokenCost = (
+  pricing: ReturnType<typeof getExtractPricing>,
+  fallbackInputCostPer1MCents: number,
+  fallbackOutputCostPer1MCents: number,
+  promptTokens: number,
+  completionTokens: number
+): {
+  inputCostPer1MCents: number
+  outputCostPer1MCents: number
+  totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
+} => {
+  const tokenCost = computeTokenCost({
+    inputCostPer1MCents: pricing.inputCostPer1MCents ?? fallbackInputCostPer1MCents,
+    outputCostPer1MCents: pricing.outputCostPer1MCents ?? fallbackOutputCostPer1MCents,
+    ...(pricing.tokenPricingBands !== undefined ? { tokenPricingBands: pricing.tokenPricingBands } : {}),
+    ...(pricing.higherContextPricing !== undefined ? { higherContextPricing: pricing.higherContextPricing } : {})
+  }, promptTokens, completionTokens)
+
+  return {
+    inputCostPer1MCents: tokenCost.inputCostPer1MCents,
+    outputCostPer1MCents: tokenCost.outputCostPer1MCents,
+    totalCost: tokenCost.totalCost,
+    ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+    ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
+  }
+}
 
 export const estimateOcrTokenUsage = (
   provider: TokenOcrProvider,
@@ -140,15 +170,16 @@ export const estimateGlmOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
 }> => {
   const model = validateGlmOcrModel(modelRaw)
   const pricing = getExtractPricing('glm', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 3
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 3
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('glm', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 3, 3, promptTokens, completionTokens)
 
   return {
     provider: 'glm',
@@ -156,10 +187,11 @@ export const estimateGlmOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic'
   }
 }
@@ -176,16 +208,17 @@ export const estimateOpenAIOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
   note: string
 }> => {
   const model = validateOpenAIOcrModel(modelRaw)
   const pricing = getExtractPricing('openai', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 20
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 125
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('openai', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 20, 125, promptTokens, completionTokens)
 
   return {
     provider: 'openai',
@@ -193,10 +226,11 @@ export const estimateOpenAIOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic',
     note: OPENAI_OCR_PRICE_NOTE
   }
@@ -214,16 +248,17 @@ export const estimateGrokOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
   note: string
 }> => {
   const model = validateGrokOcrModel(modelRaw)
   const pricing = getExtractPricing('grok', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 125
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 250
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('grok', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 125, 250, promptTokens, completionTokens)
 
   return {
     provider: 'grok',
@@ -231,10 +266,11 @@ export const estimateGrokOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic',
     note: GROK_OCR_PRICE_NOTE
   }
@@ -252,16 +288,17 @@ export const estimateAnthropicOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
   note: string
 }> => {
   const model = validateAnthropicOcrModel(modelRaw)
   const pricing = getExtractPricing('anthropic', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 100
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 500
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('anthropic', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 100, 500, promptTokens, completionTokens)
 
   return {
     provider: 'anthropic',
@@ -269,10 +306,11 @@ export const estimateAnthropicOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic',
     note: ANTHROPIC_OCR_PRICE_NOTE
   }
@@ -290,15 +328,16 @@ export const estimateGeminiOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
 }> => {
   const model = validateGeminiOcrModel(modelRaw)
   const pricing = getExtractPricing('gemini', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 25
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 150
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('gemini', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 25, 150, promptTokens, completionTokens)
 
   return {
     provider: 'gemini',
@@ -306,10 +345,11 @@ export const estimateGeminiOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic'
   }
 }
@@ -326,16 +366,17 @@ export const estimateDeepinfraOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
   note: string
 }> => {
   const model = validateDeepinfraOcrModel(modelRaw)
   const pricing = getExtractPricing('deepinfra', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 9
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 19
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('deepinfra', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 9, 19, promptTokens, completionTokens)
 
   return {
     provider: 'deepinfra',
@@ -343,10 +384,11 @@ export const estimateDeepinfraOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic',
     note: DEEPINFRA_OCR_PRICE_NOTE
   }
@@ -364,16 +406,17 @@ export const estimateKimiOcrCost = async (
   inputCostPer1MCents: number
   outputCostPer1MCents: number
   totalCost: number
+  pricingBand?: string | undefined
+  pricingNote?: string | undefined
   estimateType: 'heuristic'
   note: string
 }> => {
   const model = validateKimiOcrModel(modelRaw)
   const pricing = getExtractPricing('kimi', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 95
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 400
   const detectedPageCount = await resolveExtractInputPageCount(input)
   const pageCount = typeof detectedPageCount === 'number' ? detectedPageCount : DEFAULT_EXTRACT_PAGE_COUNT
   const { promptTokens, completionTokens } = estimateOcrTokenUsage('kimi', model, pageCount)
+  const cost = computeOcrTokenCost(pricing, 95, 400, promptTokens, completionTokens)
 
   return {
     provider: 'kimi',
@@ -381,10 +424,11 @@ export const estimateKimiOcrCost = async (
     pageCount,
     promptTokens,
     completionTokens,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents,
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost,
+    ...(typeof cost.pricingBand === 'string' ? { pricingBand: cost.pricingBand } : {}),
+    ...(typeof cost.pricingNote === 'string' ? { pricingNote: cost.pricingNote } : {}),
     estimateType: 'heuristic',
     note: KIMI_OCR_PRICE_NOTE
   }
@@ -427,16 +471,14 @@ export const computeActualAnthropicOcrCost = (
 } => {
   const model = validateAnthropicOcrModel(modelRaw)
   const pricing = getExtractPricing('anthropic', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 100
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 500
+  const cost = computeOcrTokenCost(pricing, 100, 500, promptTokens, completionTokens)
 
   return {
     provider: 'anthropic',
     model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost
   }
 }
 
@@ -453,16 +495,14 @@ export const computeActualGeminiOcrCost = (
 } => {
   const model = validateGeminiOcrModel(modelRaw)
   const pricing = getExtractPricing('gemini', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 25
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 150
+  const cost = computeOcrTokenCost(pricing, 25, 150, promptTokens, completionTokens)
 
   return {
     provider: 'gemini',
     model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost
   }
 }
 
@@ -479,16 +519,14 @@ export const computeActualGrokOcrCost = (
 } => {
   const model = validateGrokOcrModel(modelRaw)
   const pricing = getExtractPricing('grok', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 125
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 250
+  const cost = computeOcrTokenCost(pricing, 125, 250, promptTokens, completionTokens)
 
   return {
     provider: 'grok',
     model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost
   }
 }
 
@@ -505,16 +543,14 @@ export const computeActualDeepinfraOcrCost = (
 } => {
   const model = validateDeepinfraOcrModel(modelRaw)
   const pricing = getExtractPricing('deepinfra', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 9
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 19
+  const cost = computeOcrTokenCost(pricing, 9, 19, promptTokens, completionTokens)
 
   return {
     provider: 'deepinfra',
     model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost
   }
 }
 
@@ -531,16 +567,14 @@ export const computeActualKimiOcrCost = (
 } => {
   const model = validateKimiOcrModel(modelRaw)
   const pricing = getExtractPricing('kimi', model)
-  const inputCostPer1MCents = pricing.inputCostPer1MCents ?? 95
-  const outputCostPer1MCents = pricing.outputCostPer1MCents ?? 400
+  const cost = computeOcrTokenCost(pricing, 95, 400, promptTokens, completionTokens)
 
   return {
     provider: 'kimi',
     model,
-    inputCostPer1MCents,
-    outputCostPer1MCents,
-    totalCost: (promptTokens / 1_000_000) * inputCostPer1MCents
-      + (completionTokens / 1_000_000) * outputCostPer1MCents
+    inputCostPer1MCents: cost.inputCostPer1MCents,
+    outputCostPer1MCents: cost.outputCostPer1MCents,
+    totalCost: cost.totalCost
   }
 }
 

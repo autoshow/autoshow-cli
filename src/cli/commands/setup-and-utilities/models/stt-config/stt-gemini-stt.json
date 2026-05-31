@@ -5,6 +5,11 @@
     "models": {
       "gemini-3-flash-preview": {
         "description": "Gemini 3 Flash Preview prompted audio transcription",
+        "pricingSourceUrl": "https://ai.google.dev/gemini-api/docs/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gemini API paid Standard",
+        "pricingNotes": "Gemini 3 Flash Preview Standard paid pricing is $1.00/1M audio input tokens, $0.50/1M text/image/video input tokens, and $3.00/1M output tokens. The hourly estimate is the audio-input baseline using 32 audio tokens/sec from the Gemini token docs; completed runs record usageMetadata-based token billing when returned. Free tier, batch/flex/priority prices, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.1152,
         "costPerHourCents": 11.52,
         "limits": {

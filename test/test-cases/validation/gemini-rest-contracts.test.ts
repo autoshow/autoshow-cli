@@ -117,7 +117,7 @@ describe('Gemini REST contracts', () => {
       candidates: [{ content: { parts: [{ text: '{"title":"Done"}' }] } }]
     }))
 
-    const result = await runGeminiModel('Write a title.', 'gemini-3.1-flash-lite-preview', {
+    const result = await runGeminiModel('Write a title.', 'gemini-3.1-flash-lite', {
       strategy: 'schema-guided',
       schemaName: 'Title',
       strict: true,
@@ -130,7 +130,7 @@ describe('Gemini REST contracts', () => {
     })
 
     expect(result.result).toBe('{"title":"Done"}')
-    expect(calls[0]?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent')
+    expect(calls[0]?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent')
     expect(calls[0]?.bodyJson?.['generationConfig']).toEqual({
       responseMimeType: 'application/json',
       responseJsonSchema: {
@@ -203,7 +203,7 @@ describe('Gemini REST contracts', () => {
         format: 'png',
         fileSize: 3
       }
-      const result = await runGeminiOcr(imagePath, metadata, 'gemini-3.1-flash-lite-preview')
+      const result = await runGeminiOcr(imagePath, metadata, 'gemini-3.1-flash-lite')
 
       expect(result.pages).toEqual([{ pageNumber: 1, method: 'ocr', text: 'OCR text' }])
       expect(calls).toHaveLength(1)

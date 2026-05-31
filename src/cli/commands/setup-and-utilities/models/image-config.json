@@ -94,6 +94,11 @@
     "models": {
       "flux-2-pro": {
         "description": "FLUX.2 Pro fixed snapshot text-to-image generation",
+        "pricingSourceUrl": "https://docs.bfl.ai/quick_start/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "BFL FLUX.2 API megapixel pricing reference",
+        "pricingNotes": "BFL FLUX.2 prices scale with model variant, output megapixels, and image inputs. AutoShow keeps a model-level reference estimate for --price; actual provider quotes/usage should override when available. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerImageUSD": 0.03,
         "costPerImageCents": 3,
         "estimation": {
@@ -103,6 +108,11 @@
       },
       "flux-2-max": {
         "description": "FLUX.2 Max highest-quality text-to-image generation",
+        "pricingSourceUrl": "https://docs.bfl.ai/quick_start/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "BFL FLUX.2 API megapixel pricing reference",
+        "pricingNotes": "BFL FLUX.2 prices scale with model variant, output megapixels, and image inputs. AutoShow keeps a model-level reference estimate for --price; actual provider quotes/usage should override when available. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerImageUSD": 0.07,
         "costPerImageCents": 7,
         "estimation": {
@@ -112,6 +122,11 @@
       },
       "flux-2-flex": {
         "description": "FLUX.2 Flex text-to-image generation",
+        "pricingSourceUrl": "https://docs.bfl.ai/quick_start/pricing",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "BFL FLUX.2 API megapixel pricing reference",
+        "pricingNotes": "BFL FLUX.2 prices scale with model variant, output megapixels, and image inputs. AutoShow keeps a model-level reference estimate for --price; actual provider quotes/usage should override when available. Discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerImageUSD": 0.06,
         "costPerImageCents": 6,
         "estimation": {
@@ -127,9 +142,13 @@
     "models": {
       "latest": {
         "description": "Reve latest image creation model",
+        "pricingSourceUrl": "https://app.reve.com/faq",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Reve API credit reference heuristic",
+        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
         "costPerImageUSD": 0.0013333333333333333,
         "costPerImageCents": 0.13333333333333333,
-        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 30000
@@ -137,9 +156,13 @@
       },
       "reve-create@20250915": {
         "description": "Reve Create fixed text-to-image snapshot",
+        "pricingSourceUrl": "https://app.reve.com/faq",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Reve API credit reference heuristic",
+        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
         "costPerImageUSD": 0.0013333333333333333,
         "costPerImageCents": 0.13333333333333333,
-        "pricingNotes": "$10 / 7500 credits; provider usage headers override this fallback when returned",
         "estimation": {
           "costMultiplier": 1,
           "msPerImage": 30000

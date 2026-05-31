@@ -41,7 +41,10 @@ export const MODEL_RELEASE_DATES = {
     ['gemini/gemini-3.1-pro-preview', 'gemini/gemini-3-pro-image-preview'],
     release('2026-02-19', 'https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-pro', 'Gemini 3.1 Pro public preview release date; image-preview rows use the matching Gemini 3 Pro/3.1 image-capable family date.')
   ),
-  'gemini/gemini-3.1-flash-lite-preview': release('2026-03-03', 'https://ai.google.dev/gemini-api/docs/models/gemini'),
+  ...sameRelease(
+    ['gemini/gemini-3.1-flash-lite', 'gemini/gemini-3.1-flash-lite-preview'],
+    release('2026-03-03', 'https://ai.google.dev/gemini-api/docs/models/gemini')
+  ),
   'gemini/gemini-3.1-flash-tts-preview': release('2026-04-15', 'https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-1-flash-tts/'),
   ...sameRelease(
     ['gemini/gemini-2.5-flash-preview-tts', 'gemini/gemini-2.5-pro-preview-tts'],

@@ -319,7 +319,7 @@ Pass multiple models with `--image-model` to generate each panel with every mode
 | `gpt-5.4-mini` | OpenAI | Faster and cheaper, slightly lower quality. |
 | `gpt-5.4-nano` | OpenAI | Fastest and cheapest. |
 | `gemini-3.1-pro-preview` | Google | Gemini pro-tier text model. |
-| `gemini-3.1-flash-lite-preview` | Google | Gemini lightweight text model. |
+| `gemini-3.1-flash-lite` | Google | Gemini lightweight text model. |
 | `grok-4.3` | xAI | Grok structured JSON text model via chat completions. |
 
 `gpt-5.5-pro` is intentionally not listed because this CLI supports the requested `gpt-5.5` model.

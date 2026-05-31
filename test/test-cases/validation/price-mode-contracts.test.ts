@@ -12,9 +12,10 @@ import { estimateMusicCosts } from '~/cli/commands/process-steps/step-7-music/mu
 import { estimateTtsCosts } from '~/cli/commands/process-steps/step-4-tts/tts-utils/tts-pricing'
 import { estimateOcrTokenUsage } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { buildOcrCostDiagnostics, resolveExtractEstimatedCosts, resolveExtractObservedEstimateCosts, resolveExtractionProviderModel } from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-costs'
+import { computeGeminiSttBillingFromUsage } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-services/gemini-stt/run-gemini-stt'
 import { SPEECHIFY_TTS_CUSTOM_VOICE_SETUP_MS } from '~/cli/commands/process-steps/step-4-tts/tts-services/speechify/speechify-custom-voices'
 import { buildStep3Metadata, runWithLLMInstrumentation } from '~/cli/commands/process-steps/step-3-write/write-utils/llm-instrumentation'
-import { getExtractEstimation, getMusicEstimation, getTtsEstimation, getVideoEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
+import { getExtractEstimation, getExtractPricing, getLlmCost, getModelRegistry, getMusicEstimation, getTtsEstimation, getVideoEstimation } from '~/cli/commands/setup-and-utilities/models/model-loader'
 import { computeActualCosts } from '~/utils/pricing/compute-actual-costs'
 import { computeEstimatedCosts } from '~/utils/pricing/compute-estimated-costs'
 import { computeActualProcessingTimes, computeEstimatedProcessingTimes } from '~/utils/pricing/compute-processing-time'
@@ -22,8 +23,9 @@ import { buildAggregateTiming } from '~/utils/pricing/aggregate-pricing/timing'
 import { buildTtsBatchEstimateSummary, computeSuccessfulTtsBatchActualCost } from '~/cli/commands/process-steps/step-4-tts/tts-batch-summary'
 import { computeSttCost } from '~/utils/pricing/cost-helpers'
 import { computeBilledSttCost } from '~/utils/pricing/stt-billing'
+import { computeTokenCost } from '~/utils/pricing/token-pricing'
 import { STABLE_EXAMPLE_AUDIO_URL, STABLE_TTS_MD_PATH, runCommand } from '../../test-utils/test-helpers'
-import type { AggregatedPriceEstimate, ExtractionMetadata, Step1Metadata, Step2Metadata, Step4Metadata, StepEstimate } from '~/types'
+import type { AggregatedPriceEstimate, ExtractionMetadata, ModelRegistry, Step1Metadata, Step2Metadata, Step3Metadata, Step4Metadata, StepEstimate } from '~/types'
 
 const priceCases: Array<{ label: string; args: string[]; expected: string | string[]; env?: Record<string, string | undefined> }> = [
   {
@@ -213,6 +215,187 @@ const parseJsonLines = (text: string): unknown[] =>
       }
     })
 
+const PRICING_PROVENANCE_FIELDS = [
+  'pricingSourceUrl',
+  'pricingCheckedAt',
+  'pricingCurrency',
+  'pricingTier',
+  'pricingNotes'
+] as const
+
+const PRICE_FIELD_NAMES = [
+  'costPerHourUSD',
+  'costPerHourCents',
+  'costPerThreeHours',
+  'costPer1kPagesUSD',
+  'costPer1kPagesCents',
+  'costPer1kOutputCharsUSD',
+  'costPer1kOutputCharsCents',
+  'costPerMInputTokensUSD',
+  'costPerMInputTokensCents',
+  'costPerMCachedInputTokensUSD',
+  'costPerMCachedInputTokensCents',
+  'costPerMOutputTokensUSD',
+  'costPerMOutputTokensCents',
+  'inputCostPer1MUSD',
+  'inputCostPer1MCents',
+  'cachedInputCostPer1MUSD',
+  'cachedInputCostPer1MCents',
+  'outputCostPer1MUSD',
+  'outputCostPer1MCents',
+  'costPer1kCharsUSD',
+  'costPer1kCharsCents',
+  'characterBillingBlockCostCents',
+  'inputCostPer1MCharsUSD',
+  'inputCostPer1MCharsCents',
+  'outputCostPer1MCharsUSD',
+  'outputCostPer1MCharsCents',
+  'costPerImageUSD',
+  'costPerImageCents',
+  'costPerImage720pCents',
+  'costPerImage1080pCents',
+  'costPerTrackUSD',
+  'costPerTrackCents',
+  'costPerMinuteUSD',
+  'costPerMinuteCents',
+  'lyricsCostPerTrackUSD',
+  'lyricsCostPerTrackCents',
+  'baseCostPerSecondUSD',
+  'baseCostPerSecondCents',
+  'baseJobFeeUSD',
+  'baseJobFeeCents',
+  'blockCost720pUSD',
+  'blockCost720pCents',
+  'blockCost1080pUSD',
+  'blockCost1080pCents'
+] as const
+
+const USD_CENTS_FIELD_PAIRS = [
+  ['costPerHourUSD', 'costPerHourCents'],
+  ['costPer1kPagesUSD', 'costPer1kPagesCents'],
+  ['costPer1kOutputCharsUSD', 'costPer1kOutputCharsCents'],
+  ['costPerMInputTokensUSD', 'costPerMInputTokensCents'],
+  ['costPerMCachedInputTokensUSD', 'costPerMCachedInputTokensCents'],
+  ['costPerMOutputTokensUSD', 'costPerMOutputTokensCents'],
+  ['inputCostPer1MUSD', 'inputCostPer1MCents'],
+  ['cachedInputCostPer1MUSD', 'cachedInputCostPer1MCents'],
+  ['outputCostPer1MUSD', 'outputCostPer1MCents'],
+  ['costPer1kCharsUSD', 'costPer1kCharsCents'],
+  ['inputCostPer1MCharsUSD', 'inputCostPer1MCharsCents'],
+  ['outputCostPer1MCharsUSD', 'outputCostPer1MCharsCents'],
+  ['costPerImageUSD', 'costPerImageCents'],
+  ['costPerTrackUSD', 'costPerTrackCents'],
+  ['costPerMinuteUSD', 'costPerMinuteCents'],
+  ['lyricsCostPerTrackUSD', 'lyricsCostPerTrackCents'],
+  ['baseCostPerSecondUSD', 'baseCostPerSecondCents'],
+  ['baseJobFeeUSD', 'baseJobFeeCents'],
+  ['blockCost720pUSD', 'blockCost720pCents'],
+  ['blockCost1080pUSD', 'blockCost1080pCents']
+] as const
+
+type RegistryModelEntry = Record<string, unknown>
+
+type RegistryModelRecord = {
+  step: keyof ModelRegistry
+  provider: string
+  model: string
+  serviceType: string
+  entry: RegistryModelEntry
+}
+
+const CREDIT_PRICED_MODEL_KEYS = new Set([
+  'stt/supadata/auto',
+  'stt/scrapecreators/youtube-transcript'
+])
+
+const getRegistryModelRecords = (): RegistryModelRecord[] => {
+  const registry = getModelRegistry() as unknown as Record<string, Record<string, { type: string, models: Record<string, RegistryModelEntry> }>>
+  const records: RegistryModelRecord[] = []
+
+  for (const [step, services] of Object.entries(registry)) {
+    for (const [provider, service] of Object.entries(services)) {
+      for (const [model, entry] of Object.entries(service.models)) {
+        records.push({
+          step: step as keyof ModelRegistry,
+          provider,
+          model,
+          serviceType: service.type,
+          entry
+        })
+      }
+    }
+  }
+
+  return records
+}
+
+const hasPositivePricingField = (entry: RegistryModelEntry): boolean =>
+  PRICE_FIELD_NAMES.some((field) => {
+    const value = entry[field]
+    return typeof value === 'number' && value > 0
+  })
+
+const hasPositiveTokenPricingBand = (entry: RegistryModelEntry): boolean => {
+  const bands = entry['tokenPricingBands']
+  return Array.isArray(bands) && bands.some((band) =>
+    isRecord(band) && hasPositivePricingField(band)
+  )
+}
+
+const isPaidApiRegistryModel = (record: RegistryModelRecord): boolean =>
+  record.serviceType === 'api'
+  && (
+    hasPositivePricingField(record.entry)
+    || hasPositiveTokenPricingBand(record.entry)
+    || record.entry['providerPricing'] === 'quote'
+    || CREDIT_PRICED_MODEL_KEYS.has(`${record.step}/${record.provider}/${record.model}`)
+  )
+
+const validatePricingProvenance = (record: RegistryModelRecord): string[] =>
+  PRICING_PROVENANCE_FIELDS.flatMap((field) => {
+    const value = record.entry[field]
+    if (typeof value !== 'string' || value.trim().length === 0) {
+      return [`${record.step}/${record.provider}/${record.model}: missing ${field}`]
+    }
+    if (field === 'pricingCheckedAt' && value !== '2026-05-31') {
+      return [`${record.step}/${record.provider}/${record.model}: ${field}=${value}`]
+    }
+    if (field === 'pricingCurrency' && value !== 'USD') {
+      return [`${record.step}/${record.provider}/${record.model}: ${field}=${value}`]
+    }
+    return []
+  })
+
+const collectUsdCentsMismatches = (
+  entry: RegistryModelEntry,
+  path: string
+): string[] =>
+  USD_CENTS_FIELD_PAIRS.flatMap(([usdField, centsField]) => {
+    const usd = entry[usdField]
+    const cents = entry[centsField]
+    if (typeof usd !== 'number' || typeof cents !== 'number') {
+      return []
+    }
+    const expectedCents = usd * 100
+    return Math.abs(expectedCents - cents) < 1e-9
+      ? []
+      : [`${path}: ${usdField}=${usd} but ${centsField}=${cents}`]
+  })
+
+const buildStep3CostMetadata = (overrides: Partial<Step3Metadata> = {}): Step3Metadata => ({
+  llmService: 'openai',
+  llmModel: 'gpt-5.4',
+  processingTime: 1234,
+  inputTokenCount: 300_000,
+  outputTokenCount: 10_000,
+  tokenCountSource: 'provider_usage',
+  outputFileName: 'output.json',
+  outputFormat: 'json',
+  structuredMode: 'native',
+  structuredPresetNames: [],
+  ...overrides
+})
+
 describe('price mode contracts', () => {
   for (const priceCase of priceCases) {
     test(`${priceCase.label} accepts --price without producing an output directory`, async () => {
@@ -239,6 +422,199 @@ describe('price mode contracts', () => {
       expect(result.outputDir).toBeNull()
       expect(`${result.stdout}\n${result.stderr}`).toContain('Unexpected flag: price')
     }
+  })
+
+  test('paid API registry entries declare pricing provenance', () => {
+    const missing = getRegistryModelRecords()
+      .filter(isPaidApiRegistryModel)
+      .flatMap(validatePricingProvenance)
+
+    expect(missing).toEqual([])
+  })
+
+  test('registry USD and cents pricing fields agree', () => {
+    const mismatches = getRegistryModelRecords().flatMap((record) => {
+      const path = `${record.step}/${record.provider}/${record.model}`
+      const tokenPricingBands = record.entry['tokenPricingBands']
+      const bandMismatches = Array.isArray(tokenPricingBands)
+        ? tokenPricingBands.flatMap((band, index) =>
+            isRecord(band)
+              ? collectUsdCentsMismatches(band, `${path}.tokenPricingBands[${index}]`)
+              : [`${path}.tokenPricingBands[${index}]: invalid band`]
+          )
+        : []
+
+      return [
+        ...collectUsdCentsMismatches(record.entry, path),
+        ...bandMismatches
+      ]
+    })
+
+    expect(mismatches).toEqual([])
+  })
+
+  test('shared token pricing helper computes flat cents-per-million rates', () => {
+    const cost = computeTokenCost({
+      inputCostPer1MCents: 20,
+      outputCostPer1MCents: 125
+    }, 1_000_000, 1_000_000)
+
+    expect(cost).toMatchObject({
+      inputCostPer1MCents: 20,
+      outputCostPer1MCents: 125,
+      inputCost: 20,
+      outputCost: 125,
+      totalCost: 145,
+      costMultiplier: 1
+    })
+  })
+
+  test('shared token pricing helper applies OpenAI long-context bands', () => {
+    const rates = getLlmCost('openai', 'gpt-5.4')
+    if (!rates) {
+      throw new Error('Missing GPT-5.4 pricing')
+    }
+
+    const shortContext = computeTokenCost(rates, 200_000, 10_000)
+    expect(shortContext).toMatchObject({
+      pricingBand: 'standard-short-context',
+      inputCostPer1MCents: 250,
+      outputCostPer1MCents: 1500,
+      totalCost: 65
+    })
+
+    const longContext = computeTokenCost(rates, 300_000, 10_000)
+    expect(longContext).toMatchObject({
+      pricingBand: 'standard-long-context',
+      inputCostPer1MCents: 500,
+      outputCostPer1MCents: 2250,
+      totalCost: 172.5
+    })
+  })
+
+  test('shared token pricing helper applies Gemini Pro 200K bands', () => {
+    const rates = getLlmCost('gemini', 'gemini-3.1-pro-preview')
+    if (!rates) {
+      throw new Error('Missing Gemini 3.1 Pro pricing')
+    }
+
+    const standard = computeTokenCost(rates, 200_000, 1000)
+    const over200k = computeTokenCost(rates, 200_001, 1000)
+
+    expect(standard).toMatchObject({
+      pricingBand: 'standard-up-to-200k',
+      inputCostPer1MCents: 200,
+      outputCostPer1MCents: 1200
+    })
+    expect(over200k).toMatchObject({
+      pricingBand: 'standard-over-200k',
+      inputCostPer1MCents: 400,
+      outputCostPer1MCents: 1800
+    })
+    expect(over200k.totalCost).toBeCloseTo(81.8004)
+  })
+
+  test('shared token pricing helper emits xAI higher-context notes without inventing rates', () => {
+    const rates = getLlmCost('grok', 'grok-4.3')
+    if (!rates) {
+      throw new Error('Missing Grok 4.3 pricing')
+    }
+
+    const cost = computeTokenCost(rates, 200_001, 1000)
+
+    expect(cost).toMatchObject({
+      inputCostPer1MCents: 125,
+      outputCostPer1MCents: 250
+    })
+    expect(cost.pricingNote).toContain('higher context pricing')
+  })
+
+  test('LLM preflight and actual costs use the same context-tier helper', () => {
+    const estimated = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      llmTargets: [{
+        service: 'openai',
+        model: 'gpt-5.4',
+        inputTokens: 300_000,
+        outputTokens: 10_000
+      }]
+    })
+    const actual = computeActualCosts({
+      step3: buildStep3CostMetadata()
+    })
+
+    expect(estimated.steps[0]).toMatchObject({
+      step: 'llm',
+      provider: 'openai',
+      model: 'gpt-5.4',
+      cost: 172.5,
+      pricingBand: 'standard-long-context'
+    })
+    expect(actual.steps[0]).toMatchObject({
+      step: 'llm',
+      provider: 'openai',
+      model: 'gpt-5.4',
+      cost: 172.5,
+      costSource: 'provider_usage',
+      pricingBand: 'standard-long-context'
+    })
+    expect(actual.totalCost).toBe(estimated.totalCost)
+  })
+
+  test('token-priced OCR estimates and actuals use the shared context-tier helper', () => {
+    const extractTargets = [{
+      provider: 'gemini' as const,
+      model: 'gemini-3.1-pro-preview',
+      pageCount: 1,
+      promptTokens: 200_001,
+      completionTokens: 1000,
+      estimateType: 'exact' as const
+    }]
+    const estimated = computeEstimatedCosts({
+      applyCostMultipliers: false,
+      extractTargets
+    })
+    const actual = computeActualCosts({
+      step2: {
+        extractionMethod: 'pdf+gemini-ocr',
+        totalPages: 1,
+        ocrPages: 1,
+        textPages: 0,
+        processingTime: 1234,
+        dpi: 300,
+        languages: 'eng',
+        tokenEstimate: 201_001,
+        ocrService: 'gemini',
+        ocrModel: 'gemini-3.1-pro-preview',
+        promptTokens: 200_001,
+        completionTokens: 1000
+      }
+    })
+
+    expect(estimated.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'gemini',
+      model: 'gemini-3.1-pro-preview',
+      pricingBand: 'standard-over-200k'
+    })
+    expect(actual.steps[0]).toMatchObject({
+      step: 'extract',
+      provider: 'gemini',
+      model: 'gemini-3.1-pro-preview',
+      pricingBand: 'standard-over-200k'
+    })
+    expect(estimated.steps[0]?.cost).toBeCloseTo(81.8004)
+    expect(actual.steps[0]?.cost).toBeCloseTo(81.8004)
+    expect(actual.totalCost).toBeCloseTo(estimated.totalCost)
+  })
+
+  test('Gemini Flash-Lite canonical model preserves the preview alias', () => {
+    expect(getLlmCost('gemini', 'gemini-3.1-flash-lite')).toEqual(
+      getLlmCost('gemini', 'gemini-3.1-flash-lite-preview')
+    )
+    expect(getExtractPricing('gemini', 'gemini-3.1-flash-lite')).toEqual(
+      getExtractPricing('gemini', 'gemini-3.1-flash-lite-preview')
+    )
   })
 
   test('price JSON result omits estimate note fields', async () => {
@@ -1027,6 +1403,96 @@ describe('price mode contracts', () => {
     expect(actual.totalCost).toBe(providerCostCents)
   })
 
+  test('Deepgram Nova-3 estimates include diarization at the current public rate', () => {
+    const audioDurationSeconds = 3600
+    const estimated = computeEstimatedCosts({
+      audioDurationSeconds,
+      sttTargets: [
+        { service: 'deepgram', model: 'nova-3' }
+      ]
+    })
+
+    expect(computeSttCost('deepgram', 'nova-3', audioDurationSeconds)).toBe(40.8)
+    expect(estimated.steps[0]).toMatchObject({
+      step: 'stt',
+      provider: 'deepgram',
+      model: 'nova-3',
+      cost: 40.8,
+      costMultiplier: 1,
+      durationSeconds: audioDurationSeconds
+    })
+    expect(estimated.totalCost).toBe(40.8)
+  })
+
+  test('Supadata STT credit estimates are exact under default multipliers', () => {
+    const audioDurationSeconds = 3600
+    const expectedCredits = 120
+    const estimated = computeEstimatedCosts({
+      sourceUrl: 'https://example.com/audio.mp3',
+      audioDurationSeconds,
+      sttTargets: [
+        { service: 'supadata', model: 'auto' }
+      ]
+    })
+
+    expect(estimated.steps[0]).toMatchObject({
+      step: 'stt',
+      provider: 'supadata',
+      model: 'auto',
+      cost: expectedCredits,
+      costMultiplier: 1,
+      durationSeconds: audioDurationSeconds
+    })
+    expect(estimated.totalCost).toBe(expectedCredits)
+  })
+
+  test('Gemini STT actual costs use usage metadata token billing', () => {
+    const billing = computeGeminiSttBillingFromUsage({
+      promptTokenCount: 1200,
+      promptTokensDetails: [
+        { modality: 'AUDIO', tokenCount: 1000 },
+        { modality: 'TEXT', tokenCount: 200 }
+      ],
+      candidatesTokenCount: 80,
+      thoughtsTokenCount: 20,
+      totalTokenCount: 1300
+    })
+
+    expect(billing).toMatchObject({
+      inputTokens: 1200,
+      outputTokens: 100,
+      totalTokens: 1300,
+      audioInputTokens: 1000,
+      textInputTokens: 200,
+      source: 'provider_usage',
+      mode: 'token'
+    })
+    expect(billing?.totalCost).toBeCloseTo(0.14)
+
+    const actual = computeActualCosts({
+      step1: buildHostedStep1(),
+      step2: buildSttMetadata({
+        transcriptionService: 'gemini-stt',
+        transcriptionModel: 'gemini-3-flash-preview',
+        ...(billing ? { billing } : {})
+      }),
+      audioDurationSeconds: 3600
+    })
+
+    expect(actual.steps[0]).toMatchObject({
+      step: 'stt',
+      provider: 'gemini-stt',
+      model: 'gemini-3-flash-preview',
+      costSource: 'provider_usage',
+      inputMetric: 'tokens',
+      inputValue: 1300,
+      promptTokens: 1200,
+      completionTokens: 100
+    })
+    expect(actual.steps[0]?.cost).toBeCloseTo(0.14)
+    expect(actual.totalCost).toBeCloseTo(0.14)
+  })
+
   test('Supadata STT estimates force generation pricing for direct media URLs', () => {
     const audioDurationSeconds = 2423.04
     const expectedCredits = (audioDurationSeconds / 60) * 2
@@ -1204,8 +1670,8 @@ describe('price mode contracts', () => {
       llmTargets: [{
         service: 'openai',
         model: 'gpt-5.4',
-        inputTokens: 1_000_000,
-        outputTokens: 1_000_000
+        inputTokens: 100_000,
+        outputTokens: 100_000
       }]
     })
 
@@ -1214,9 +1680,10 @@ describe('price mode contracts', () => {
       provider: 'openai',
       model: 'gpt-5.4',
       costMultiplier: 1,
-      cost: 1750
+      cost: 175,
+      pricingBand: 'standard-short-context'
     })
-    expect(cost.totalCost).toBe(1750)
+    expect(cost.totalCost).toBe(175)
   })
 
   test('LLM provider usage wins over local token counting and records source', async () => {
@@ -1669,7 +2136,7 @@ describe('price mode contracts', () => {
       { provider: 'openai' as const, model: 'gpt-5.4-mini', pageCount: 1, estimateType: 'heuristic' as const },
       { provider: 'openai' as const, model: 'gpt-5.4-nano', pageCount: 1, estimateType: 'heuristic' as const },
       { provider: 'gemini' as const, model: 'gemini-3.1-pro-preview', pageCount: 1, estimateType: 'heuristic' as const },
-      { provider: 'gemini' as const, model: 'gemini-3.1-flash-lite-preview', pageCount: 1, estimateType: 'heuristic' as const },
+      { provider: 'gemini' as const, model: 'gemini-3.1-flash-lite', pageCount: 1, estimateType: 'heuristic' as const },
       { provider: 'deepinfra' as const, model: 'Qwen/Qwen3-VL-235B-A22B-Instruct', pageCount: 1, estimateType: 'heuristic' as const }
     ]) {
       const usage = estimateOcrTokenUsage(target.provider, target.model, target.pageCount)

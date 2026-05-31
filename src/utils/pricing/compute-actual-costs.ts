@@ -5,13 +5,6 @@ import {
   getMusicModelMeta,
   getVideoModelMeta
 } from '~/cli/commands/setup-and-utilities/models/model-loader'
-import {
-  computeActualAnthropicOcrCost,
-  computeActualDeepinfraOcrCost,
-  computeActualGeminiOcrCost,
-  computeActualGrokOcrCost,
-  computeActualKimiOcrCost
-} from '~/cli/commands/process-steps/step-2-extract/step-2-ocr/ocr-utils/extract-pricing'
 import { estimateImageCosts } from '~/cli/commands/process-steps/step-5-image/image-utils/image-pricing'
 import type {
   ActualCostBreakdown,
@@ -38,6 +31,7 @@ import {
 } from './scrapecreators-pricing'
 import { resolveReverbModelLabel } from '~/cli/commands/process-steps/step-2-extract/step-2-stt/stt-model-labels'
 import { resolveExtractionProviderModel } from '~/utils/extraction-provider-model'
+import { computeTokenCost } from './token-pricing'
 
 const WHISPER_MODEL_PATH_PATTERN = /ggml-([a-z0-9.-]+)\.bin/i
 
@@ -95,7 +89,9 @@ const mapBillingCostSource = (source: unknown): CostSource => {
   }
 }
 
-const TOKEN_PRICED_OCR_PROVIDERS = new Set(['glm', 'kimi', 'openai', 'grok', 'anthropic', 'gemini', 'deepinfra'])
+type TokenPricedOcrProvider = 'glm' | 'kimi' | 'openai' | 'grok' | 'anthropic' | 'gemini' | 'deepinfra'
+
+const TOKEN_PRICED_OCR_PROVIDERS = new Set<TokenPricedOcrProvider>(['glm', 'kimi', 'openai', 'grok', 'anthropic', 'gemini', 'deepinfra'])
 const LOCAL_ZERO_PROVIDERS = new Set([
   'reverb',
   'whisper',
@@ -110,6 +106,24 @@ const LOCAL_ZERO_PROVIDERS = new Set([
 
 const zeroCostSource = (provider: string, cost: number, fallback: CostSource): CostSource =>
   cost === 0 && LOCAL_ZERO_PROVIDERS.has(provider) ? 'local_zero' : fallback
+
+const isTokenPricedOcrProvider = (provider: string): provider is TokenPricedOcrProvider =>
+  TOKEN_PRICED_OCR_PROVIDERS.has(provider as TokenPricedOcrProvider)
+
+const computeActualTokenOcrCost = (
+  provider: TokenPricedOcrProvider,
+  model: string,
+  promptTokens: number,
+  completionTokens: number
+) => {
+  const pricing = getExtractPricing(provider, model)
+  return computeTokenCost({
+    inputCostPer1MCents: pricing.inputCostPer1MCents ?? 0,
+    outputCostPer1MCents: pricing.outputCostPer1MCents ?? 0,
+    ...(pricing.tokenPricingBands !== undefined ? { tokenPricingBands: pricing.tokenPricingBands } : {}),
+    ...(pricing.higherContextPricing !== undefined ? { higherContextPricing: pricing.higherContextPricing } : {})
+  }, promptTokens, completionTokens)
+}
 
 const resolveSttBillingDurationSeconds = (input: ComputeActualCostsInput): number => {
   if (typeof input.audioDurationSeconds === 'number') {
@@ -131,7 +145,14 @@ const computeActualSttCharge = (
   metadata: Step2Metadata,
   durationSeconds: number,
   sourceUrl: string | undefined
-): { cost: number, costSource: CostSource, inputMetric: string, inputValue: number } => {
+): {
+  cost: number
+  costSource: CostSource
+  inputMetric: string
+  inputValue: number
+  promptTokens?: number
+  completionTokens?: number
+} => {
   const service = metadata.transcriptionService
   const model = resolveTranscriptionModel(metadata)
 
@@ -165,6 +186,27 @@ const computeActualSttCharge = (
   }
 
   if (typeof metadata.billing?.totalCost === 'number' && Number.isFinite(metadata.billing.totalCost)) {
+    const inputTokens = metadata.billing.inputTokens
+    const outputTokens = metadata.billing.outputTokens
+    const totalTokens = metadata.billing.totalTokens
+    if (
+      typeof inputTokens === 'number'
+      && Number.isFinite(inputTokens)
+      && typeof outputTokens === 'number'
+      && Number.isFinite(outputTokens)
+    ) {
+      return {
+        cost: metadata.billing.totalCost,
+        costSource: mapBillingCostSource(metadata.billing.source),
+        inputMetric: 'tokens',
+        inputValue: typeof totalTokens === 'number' && Number.isFinite(totalTokens)
+          ? totalTokens
+          : inputTokens + outputTokens,
+        promptTokens: inputTokens,
+        completionTokens: outputTokens
+      }
+    }
+
     return {
       cost: metadata.billing.totalCost,
       costSource: mapBillingCostSource(metadata.billing.source),
@@ -213,7 +255,7 @@ const buildProviderCostExtractionEntry = (
   const promptTokens = metadata.promptTokens ?? 0
   const completionTokens = metadata.completionTokens ?? 0
   const tokenValue = promptTokens + completionTokens
-  const useTokenInputs = TOKEN_PRICED_OCR_PROVIDERS.has(provider) || tokenValue > 0
+  const useTokenInputs = isTokenPricedOcrProvider(provider) || tokenValue > 0
   return {
     step: 'extract',
     provider,
@@ -273,113 +315,123 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         inputValue: input.step2.totalPages,
       })
     } else if (provider === 'glm' && input.step2.ocrModel) {
-      const extractPricing = getExtractPricing('glm', input.step2.ocrModel)
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
-        + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0)
+      const tokenCost = computeActualTokenOcrCost('glm', input.step2.ocrModel, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'glm',
         model: input.step2.ocrModel,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'kimi' && input.step2.ocrModel) {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = computeActualKimiOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      const tokenCost = computeActualTokenOcrCost('kimi', input.step2.ocrModel, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'kimi',
         model: input.step2.ocrModel,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'openai' && input.step2.ocrModel) {
-      const extractPricing = getExtractPricing('openai', input.step2.ocrModel)
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
-        + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0)
+      const tokenCost = computeActualTokenOcrCost('openai', input.step2.ocrModel, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'openai',
         model: input.step2.ocrModel,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'grok' && input.step2.ocrModel) {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = computeActualGrokOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      const tokenCost = computeActualTokenOcrCost('grok', input.step2.ocrModel, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'grok',
         model: input.step2.ocrModel,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'anthropic' && input.step2.ocrModel) {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = computeActualAnthropicOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      const tokenCost = computeActualTokenOcrCost('anthropic', input.step2.ocrModel, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'anthropic',
         model: input.step2.ocrModel,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'gemini' && input.step2.ocrModel) {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = computeActualGeminiOcrCost(input.step2.ocrModel, promptTokens, completionTokens).totalCost
+      const tokenCost = computeActualTokenOcrCost('gemini', input.step2.ocrModel, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'gemini',
         model: input.step2.ocrModel,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'deepinfra') {
       const promptTokens = input.step2.promptTokens ?? 0
       const completionTokens = input.step2.completionTokens ?? 0
-      const cost = computeActualDeepinfraOcrCost(model, promptTokens, completionTokens).totalCost
+      const tokenCost = computeActualTokenOcrCost('deepinfra', model, promptTokens, completionTokens)
       steps.push({
         step: 'extract',
         provider: 'deepinfra',
         model,
-        cost,
+        cost: tokenCost.totalCost,
         costSource: tokenUsageCostSource(input.step2),
         inputMetric: 'tokens',
         inputValue: promptTokens + completionTokens,
         promptTokens,
-        completionTokens
+        completionTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     } else if (provider === 'unstructured') {
       const extractPricing = getExtractPricing('unstructured', model)
@@ -420,7 +472,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       cost: actual.cost,
       costSource: actual.costSource,
       inputMetric: actual.inputMetric,
-      inputValue: actual.inputValue
+      inputValue: actual.inputValue,
+      ...(typeof actual.promptTokens === 'number' ? { promptTokens: actual.promptTokens } : {}),
+      ...(typeof actual.completionTokens === 'number' ? { completionTokens: actual.completionTokens } : {})
     })
   }
 
@@ -434,40 +488,34 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
       }
       const promptTokens = step2Entry.promptTokens ?? 0
       const completionTokens = step2Entry.completionTokens ?? 0
+      const tokenModel = isTokenPricedOcrProvider(provider)
+        ? provider === 'deepinfra'
+          ? model
+          : step2Entry.ocrModel
+        : undefined
+      const tokenCost = isTokenPricedOcrProvider(provider) && typeof tokenModel === 'string'
+        ? computeActualTokenOcrCost(provider, tokenModel, promptTokens, completionTokens)
+        : undefined
       const cost = provider === 'mistral'
         ? (step2Entry.totalPages / 1000) * (getExtractPricing('mistral', model).costPer1kPagesCents ?? 0)
         : provider === 'firecrawl' || provider === 'glm-reader' || provider === 'spider' || provider === 'supadata' || provider === 'zyte'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing(provider, model).costPer1kPagesCents ?? 0)
         : provider === 'unstructured'
           ? (step2Entry.totalPages / 1000) * (getExtractPricing('unstructured', model).costPer1kPagesCents ?? 0)
-        : provider === 'glm' && step2Entry.ocrModel
-          ? (promptTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
-            + (completionTokens / 1e6) * (getExtractPricing('glm', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
-        : provider === 'kimi' && step2Entry.ocrModel
-          ? computeActualKimiOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
-        : provider === 'openai' && step2Entry.ocrModel
-          ? (promptTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).inputCostPer1MCents ?? 0)
-            + (completionTokens / 1e6) * (getExtractPricing('openai', step2Entry.ocrModel).outputCostPer1MCents ?? 0)
-        : provider === 'grok' && step2Entry.ocrModel
-          ? computeActualGrokOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
-        : provider === 'anthropic' && step2Entry.ocrModel
-          ? computeActualAnthropicOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
-        : provider === 'gemini' && step2Entry.ocrModel
-          ? computeActualGeminiOcrCost(step2Entry.ocrModel, promptTokens, completionTokens).totalCost
-        : provider === 'deepinfra'
-          ? computeActualDeepinfraOcrCost(model, promptTokens, completionTokens).totalCost
-          : 0
+        : tokenCost !== undefined ? tokenCost.totalCost : 0
       steps.push({
         step: 'extract',
         provider,
         model,
         cost,
-        costSource: TOKEN_PRICED_OCR_PROVIDERS.has(provider)
+        costSource: isTokenPricedOcrProvider(provider)
           ? tokenUsageCostSource(step2Entry)
           : zeroCostSource(provider, cost, 'registry_fallback'),
-        inputMetric: TOKEN_PRICED_OCR_PROVIDERS.has(provider) ? 'tokens' : 'pages',
-        inputValue: TOKEN_PRICED_OCR_PROVIDERS.has(provider) ? promptTokens + completionTokens : step2Entry.totalPages,
-        ...(TOKEN_PRICED_OCR_PROVIDERS.has(provider) ? { promptTokens, completionTokens } : {})
+        inputMetric: isTokenPricedOcrProvider(provider) ? 'tokens' : 'pages',
+        inputValue: isTokenPricedOcrProvider(provider) ? promptTokens + completionTokens : step2Entry.totalPages,
+        ...(isTokenPricedOcrProvider(provider) ? { promptTokens, completionTokens } : {}),
+        ...(typeof tokenCost?.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost?.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     }
   }
@@ -485,7 +533,9 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
         cost: actual.cost,
         costSource: actual.costSource,
         inputMetric: actual.inputMetric,
-        inputValue: actual.inputValue
+        inputValue: actual.inputValue,
+        ...(typeof actual.promptTokens === 'number' ? { promptTokens: actual.promptTokens } : {}),
+        ...(typeof actual.completionTokens === 'number' ? { completionTokens: actual.completionTokens } : {})
       })
     }
   }
@@ -493,20 +543,25 @@ export const computeActualCosts = (input: ComputeActualCostsInput): ActualCostBr
   for (const step3Entry of toArray(input.step3)) {
     const registryService = step3Entry.llmService === 'llama.cpp' ? 'llama' : step3Entry.llmService
     const rates = getLlmCost(registryService, step3Entry.llmModel)
-    const inputCost = (step3Entry.inputTokenCount / 1e6) * (rates?.inputCostPer1MCents ?? 0)
-    const outputCost = (step3Entry.outputTokenCount / 1e6) * (rates?.outputCostPer1MCents ?? 0)
+    const tokenCost = computeTokenCost(
+      rates ?? { inputCostPer1MCents: 0, outputCostPer1MCents: 0 },
+      step3Entry.inputTokenCount,
+      step3Entry.outputTokenCount
+    )
     steps.push({
       step: 'llm',
       provider: step3Entry.llmService,
       model: step3Entry.llmModel,
-      cost: inputCost + outputCost,
+      cost: tokenCost.totalCost,
       costSource: step3Entry.tokenCountSource === 'provider_usage'
         ? 'provider_usage'
-        : zeroCostSource(step3Entry.llmService, inputCost + outputCost, 'computed_usage'),
+        : zeroCostSource(step3Entry.llmService, tokenCost.totalCost, 'computed_usage'),
       inputMetric: 'tokens',
       inputValue: step3Entry.inputTokenCount + step3Entry.outputTokenCount,
       promptTokens: step3Entry.inputTokenCount,
-      completionTokens: step3Entry.outputTokenCount
+      completionTokens: step3Entry.outputTokenCount,
+      ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+      ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
     })
   }
 

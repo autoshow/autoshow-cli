@@ -33,6 +33,8 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           ...(typeof s.estimatedOutputChars === 'number' ? { estimatedOutputChars: s.estimatedOutputChars } : {}),
           ...(typeof s.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: s.inputCostPer1MCents } : {}),
           ...(typeof s.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: s.outputCostPer1MCents } : {}),
+          ...(typeof s.pricingBand === 'string' ? { pricingBand: s.pricingBand } : {}),
+          ...(typeof s.pricingNote === 'string' ? { pricingNote: s.pricingNote } : {}),
           ...(typeof s.promptTokens === 'number' ? { promptTokens: s.promptTokens } : {}),
           ...(typeof s.completionTokens === 'number' ? { completionTokens: s.completionTokens } : {}),
           ...(typeof s.estimateType === 'string' ? { estimateType: s.estimateType } : {})
@@ -48,7 +50,9 @@ export const preflightToEstimated = (estimate: AggregatedPriceEstimate): Estimat
           inputCostPer1MCents: s.inputCostPer1MCents,
           outputCostPer1MCents: s.outputCostPer1MCents,
           ...(typeof s.estimatedInputTokens === 'number' ? { estimatedInputTokens: s.estimatedInputTokens } : {}),
-          ...(typeof s.estimatedOutputTokens === 'number' ? { estimatedOutputTokens: s.estimatedOutputTokens } : {})
+          ...(typeof s.estimatedOutputTokens === 'number' ? { estimatedOutputTokens: s.estimatedOutputTokens } : {}),
+          ...(typeof s.pricingBand === 'string' ? { pricingBand: s.pricingBand } : {}),
+          ...(typeof s.pricingNote === 'string' ? { pricingNote: s.pricingNote } : {})
         })
         break
       case 'tts':

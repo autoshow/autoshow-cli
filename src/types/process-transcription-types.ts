@@ -73,9 +73,14 @@ export type Step2RuntimeMetadata = {
 type Step2BillingMetadata = {
   creditsUsed?: number | undefined
   creditRateCents?: number | undefined
+  inputTokens?: number | undefined
+  outputTokens?: number | undefined
+  totalTokens?: number | undefined
+  audioInputTokens?: number | undefined
+  textInputTokens?: number | undefined
   totalCost?: number | undefined
   source?: 'response-header' | 'response_header' | 'fallback-estimate' | 'provider_usage' | 'provider_quote' | 'registry_fallback' | undefined
-  mode?: 'url' | 'duration' | 'order' | 'segment_sum' | undefined
+  mode?: 'url' | 'duration' | 'order' | 'token' | 'segment_sum' | undefined
 }
 
 export type Step2Metadata = {

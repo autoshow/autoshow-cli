@@ -148,10 +148,10 @@ bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm anthropic=clau
 | Option | Value |
 |--------|-------|
 | Selector | `--llm gemini[=<model>]` |
-| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite-preview` |
+| Models | `gemini-3.1-pro-preview`, `gemini-3.1-flash-lite` |
 
 ```bash
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm gemini=gemini-3.1-flash-lite-preview
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm gemini=gemini-3.1-flash-lite
 ```
 
 ### Groq

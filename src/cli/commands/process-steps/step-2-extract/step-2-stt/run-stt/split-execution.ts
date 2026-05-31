@@ -70,6 +70,21 @@ const mergeSplitTranscriptionChunks = (
         const totalCredits = segmentResults.every((segment) => typeof segment.metadata.billing?.creditsUsed === 'number')
           ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.creditsUsed ?? 0), 0)
           : undefined
+        const totalInputTokens = segmentResults.every((segment) => typeof segment.metadata.billing?.inputTokens === 'number')
+          ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.inputTokens ?? 0), 0)
+          : undefined
+        const totalOutputTokens = segmentResults.every((segment) => typeof segment.metadata.billing?.outputTokens === 'number')
+          ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.outputTokens ?? 0), 0)
+          : undefined
+        const totalUsageTokens = segmentResults.every((segment) => typeof segment.metadata.billing?.totalTokens === 'number')
+          ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.totalTokens ?? 0), 0)
+          : undefined
+        const totalAudioInputTokens = segmentResults.every((segment) => typeof segment.metadata.billing?.audioInputTokens === 'number')
+          ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.audioInputTokens ?? 0), 0)
+          : undefined
+        const totalTextInputTokens = segmentResults.every((segment) => typeof segment.metadata.billing?.textInputTokens === 'number')
+          ? segmentResults.reduce((sum, segment) => sum + (segment.metadata.billing?.textInputTokens ?? 0), 0)
+          : undefined
         const explicitCreditRates = segmentResults
           .map((segment) => segment.metadata.billing?.creditRateCents)
           .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
@@ -81,12 +96,19 @@ const mergeSplitTranscriptionChunks = (
         return {
           totalCost,
           ...(typeof totalCredits === 'number' ? { creditsUsed: totalCredits } : {}),
+          ...(typeof totalInputTokens === 'number' ? { inputTokens: totalInputTokens } : {}),
+          ...(typeof totalOutputTokens === 'number' ? { outputTokens: totalOutputTokens } : {}),
+          ...(typeof totalUsageTokens === 'number' ? { totalTokens: totalUsageTokens } : {}),
+          ...(typeof totalAudioInputTokens === 'number' ? { audioInputTokens: totalAudioInputTokens } : {}),
+          ...(typeof totalTextInputTokens === 'number' ? { textInputTokens: totalTextInputTokens } : {}),
           ...(typeof sharedCreditRate === 'number'
             ? { creditRateCents: sharedCreditRate }
             : typeof totalCredits === 'number' && totalCredits > 0
               ? { creditRateCents: totalCost / totalCredits }
               : {}),
-          source: segmentResults.every((segment) => segment.metadata.billing?.source === 'provider_quote')
+          source: segmentResults.every((segment) => segment.metadata.billing?.source === 'provider_usage')
+            ? 'provider_usage' as const
+            : segmentResults.every((segment) => segment.metadata.billing?.source === 'provider_quote')
             ? 'provider_quote' as const
             : 'registry_fallback' as const,
           mode: 'segment_sum' as const

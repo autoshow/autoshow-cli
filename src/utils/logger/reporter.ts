@@ -53,6 +53,8 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       }
       if (typeof estimate.estimatedInputTokens === 'number') entry['estInputTokens'] = estimate.estimatedInputTokens
       if (typeof estimate.estimatedOutputTokens === 'number') entry['estOutputTokens'] = estimate.estimatedOutputTokens
+      if (typeof estimate.pricingBand === 'string') entry['pricingBand'] = estimate.pricingBand
+      if (typeof estimate.pricingNote === 'string') entry['pricingNote'] = estimate.pricingNote
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
       return entry
     }
@@ -77,6 +79,8 @@ const mapStepEstimate = (estimate: StepEstimate, mode: EstimateMode): Record<str
       if (typeof estimate.estimatedOutputChars === 'number') entry['estOutputChars'] = estimate.estimatedOutputChars
       if (typeof estimate.promptTokens === 'number') entry['promptTokens'] = estimate.promptTokens
       if (typeof estimate.completionTokens === 'number') entry['completionTokens'] = estimate.completionTokens
+      if (typeof estimate.pricingBand === 'string') entry['pricingBand'] = estimate.pricingBand
+      if (typeof estimate.pricingNote === 'string') entry['pricingNote'] = estimate.pricingNote
       if (typeof estimate.estimateType === 'string') entry['estimateType'] = estimate.estimateType
       entry[costKey(mode)] = costField(mode, estimate.totalCost)
       return entry

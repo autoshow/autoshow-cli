@@ -113,12 +113,28 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
     if (typeof value['billing']['creditRateCents'] === 'number') {
       parsedBilling.creditRateCents = value['billing']['creditRateCents']
     }
+    if (typeof value['billing']['inputTokens'] === 'number') {
+      parsedBilling.inputTokens = value['billing']['inputTokens']
+    }
+    if (typeof value['billing']['outputTokens'] === 'number') {
+      parsedBilling.outputTokens = value['billing']['outputTokens']
+    }
+    if (typeof value['billing']['totalTokens'] === 'number') {
+      parsedBilling.totalTokens = value['billing']['totalTokens']
+    }
+    if (typeof value['billing']['audioInputTokens'] === 'number') {
+      parsedBilling.audioInputTokens = value['billing']['audioInputTokens']
+    }
+    if (typeof value['billing']['textInputTokens'] === 'number') {
+      parsedBilling.textInputTokens = value['billing']['textInputTokens']
+    }
     if (typeof value['billing']['totalCost'] === 'number') {
       parsedBilling.totalCost = value['billing']['totalCost']
     }
     if (
       value['billing']['source'] === 'response-header'
       || value['billing']['source'] === 'fallback-estimate'
+      || value['billing']['source'] === 'provider_usage'
       || value['billing']['source'] === 'provider_quote'
       || value['billing']['source'] === 'registry_fallback'
     ) {
@@ -128,6 +144,7 @@ const parseStoredStep2Metadata = (value: unknown): Step2Metadata | undefined => 
       value['billing']['mode'] === 'url'
       || value['billing']['mode'] === 'duration'
       || value['billing']['mode'] === 'order'
+      || value['billing']['mode'] === 'token'
       || value['billing']['mode'] === 'segment_sum'
     ) {
       parsedBilling.mode = value['billing']['mode']

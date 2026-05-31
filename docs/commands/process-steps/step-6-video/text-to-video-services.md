@@ -213,7 +213,7 @@ Runway `gen4.5` durations are clamped to `2` through `10` seconds and default to
 bun as video "a rainy neon city street, slow camera pan" --provider gemini=veo-3.1-fast-generate-preview --provider gemini=veo-3.1-generate-preview --provider gemini=veo-3.1-lite-generate-preview
 
 # Write pipeline
-bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm gemini=gemini-3.1-flash-lite-preview --video gemini=veo-3.1-fast-generate-preview
+bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --llm gemini=gemini-3.1-flash-lite --video gemini=veo-3.1-fast-generate-preview
 bun as write https://ajc.pics/autoshow/examples/1-audio.mp3 --video gemini=veo-3.1-fast-generate-preview --video minimax=MiniMax-Hailuo-2.3 --video glm=cogvideox-3 --price
 ```
 

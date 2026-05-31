@@ -6,7 +6,6 @@ import {
   getLlmCost,
   getLlmEstimation,
   getMusicEstimation,
-  getSttEstimation,
   getTtsCost,
   getTtsEstimation,
   getTtsPricing,
@@ -30,6 +29,7 @@ import {
 } from './cost-helpers'
 import { estimateSupadataCost } from './supadata-pricing'
 import { estimateScrapeCreatorsCost } from './scrapecreators-pricing'
+import { computeTokenCost } from './token-pricing'
 
 const estimateImageTargetCost = (
   target: NonNullable<ComputeEstimatedCostsInput['imageTargets']>[number],
@@ -67,6 +67,8 @@ const resolveCostMultiplier = (
   multiplier: number
 ): number => input.applyCostMultipliers === false ? 1 : multiplier
 
+const EXACT_COST_MULTIPLIER = 1
+
 export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): EstimatedCostBreakdown => {
   const steps: EstimatedStepEntry[] = []
   let totalCost = 0
@@ -82,44 +84,38 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       }
 
       if (target.service === 'supadata') {
-        const estimation = getSttEstimation(target.service, target.model)
-        const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
         const supadataEstimate = estimateSupadataCost(target.model, durationSeconds, { sourceUrl: input.sourceUrl })
-        const cost = applyCostMultiplier(supadataEstimate.totalCost, costMultiplier)
+        const cost = supadataEstimate.totalCost
         totalCost += cost
         steps.push({
           step: 'stt',
           provider: target.service,
           model: target.model,
           cost,
-          costMultiplier,
+          costMultiplier: EXACT_COST_MULTIPLIER,
           durationSeconds
         })
         continue
       }
 
       if (target.service === 'scrapecreators') {
-        const estimation = getSttEstimation(target.service, target.model)
-        const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
         const scrapeCreatorsEstimate = estimateScrapeCreatorsCost()
-        const cost = applyCostMultiplier(scrapeCreatorsEstimate.totalCost, costMultiplier)
+        const cost = scrapeCreatorsEstimate.totalCost
         totalCost += cost
         steps.push({
           step: 'stt',
           provider: target.service,
           model: target.model,
           cost,
-          costMultiplier,
+          costMultiplier: EXACT_COST_MULTIPLIER,
           durationSeconds: 0
         })
         continue
       }
 
-      const estimation = getSttEstimation(target.service, target.model)
-      const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
-      const cost = applyCostMultiplier(computeSttCost(target.service, target.model, durationSeconds), costMultiplier)
+      const cost = computeSttCost(target.service, target.model, durationSeconds)
       totalCost += cost
-      steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier, durationSeconds })
+      steps.push({ step: 'stt', provider: target.service, model: target.model, cost, costMultiplier: EXACT_COST_MULTIPLIER, durationSeconds })
     }
   } else if (input.useReverb) {
     steps.push({ step: 'stt', provider: 'reverb', model: 'reverb', cost: 0, costMultiplier: 1, durationSeconds })
@@ -148,18 +144,16 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
     for (const { field, provider } of STT_FIELD_MAP) {
       const model = input[field]
       if (typeof model === 'string' && model.length > 0) {
-        const estimation = getSttEstimation(provider, model)
-        const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
         if (provider === 'supadata') {
           const supadataEstimate = estimateSupadataCost(model, durationSeconds, { sourceUrl: input.sourceUrl })
-          const cost = applyCostMultiplier(supadataEstimate.totalCost, costMultiplier)
+          const cost = supadataEstimate.totalCost
           totalCost += cost
           steps.push({
             step: 'stt',
             provider,
             model,
             cost,
-            costMultiplier,
+            costMultiplier: EXACT_COST_MULTIPLIER,
             durationSeconds
           })
           break
@@ -167,27 +161,27 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
 
         if (provider === 'scrapecreators') {
           const scrapeCreatorsEstimate = estimateScrapeCreatorsCost()
-          const cost = applyCostMultiplier(scrapeCreatorsEstimate.totalCost, costMultiplier)
+          const cost = scrapeCreatorsEstimate.totalCost
           totalCost += cost
           steps.push({
             step: 'stt',
             provider,
             model,
             cost,
-            costMultiplier,
+            costMultiplier: EXACT_COST_MULTIPLIER,
             durationSeconds: 0
           })
           break
         }
 
-        const cost = applyCostMultiplier(computeSttCost(provider, model, durationSeconds), costMultiplier)
+        const cost = computeSttCost(provider, model, durationSeconds)
         totalCost += cost
         steps.push({
           step: 'stt',
           provider,
           model,
           cost,
-          costMultiplier,
+          costMultiplier: EXACT_COST_MULTIPLIER,
           durationSeconds,
         })
         break
@@ -308,23 +302,31 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       : estimateOcrTokenUsage(target.provider, target.model, pageCount)
     const promptTokens = hasExactPromptTokens ? target.promptTokens as number : heuristicTokens?.promptTokens ?? 0
     const completionTokens = hasExactCompletionTokens ? target.completionTokens as number : heuristicTokens?.completionTokens ?? 0
-    const cost = applyCostMultiplier(
-      (promptTokens / 1e6) * (extractPricing.inputCostPer1MCents ?? 0)
-      + (completionTokens / 1e6) * (extractPricing.outputCostPer1MCents ?? 0),
+    const tokenCost = computeTokenCost(
+      {
+        inputCostPer1MCents: extractPricing.inputCostPer1MCents ?? 0,
+        outputCostPer1MCents: extractPricing.outputCostPer1MCents ?? 0,
+        ...(extractPricing.tokenPricingBands !== undefined ? { tokenPricingBands: extractPricing.tokenPricingBands } : {}),
+        ...(extractPricing.higherContextPricing !== undefined ? { higherContextPricing: extractPricing.higherContextPricing } : {})
+      },
+      promptTokens,
+      completionTokens,
       costMultiplier
     )
-    totalCost += cost
+    totalCost += tokenCost.totalCost
     steps.push({
       step: 'extract',
       provider: target.provider,
       model: target.model,
-      cost,
+      cost: tokenCost.totalCost,
       costMultiplier,
-      ...(typeof extractPricing.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: extractPricing.inputCostPer1MCents } : {}),
-      ...(typeof extractPricing.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: extractPricing.outputCostPer1MCents } : {}),
+      ...(typeof extractPricing.inputCostPer1MCents === 'number' ? { inputCostPer1MCents: tokenCost.inputCostPer1MCents } : {}),
+      ...(typeof extractPricing.outputCostPer1MCents === 'number' ? { outputCostPer1MCents: tokenCost.outputCostPer1MCents } : {}),
       ...(typeof target.pageCount === 'number' ? { pageCount: target.pageCount } : {}),
       promptTokens,
       completionTokens,
+      ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+      ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {}),
       estimateType: target.estimateType ?? (hasExactPromptTokens && hasExactCompletionTokens ? 'exact' : 'heuristic')
     })
   }
@@ -352,22 +354,20 @@ export const computeEstimatedCosts = (input: ComputeEstimatedCostsInput): Estima
       const costMultiplier = resolveCostMultiplier(input, estimation.costMultiplier)
       const estimatedInputTokens = typeof llmTarget.inputTokens === 'number' ? llmTarget.inputTokens : 0
       const estimatedOutputTokens = typeof llmTarget.outputTokens === 'number' ? llmTarget.outputTokens : 0
-      const cost = applyCostMultiplier(
-        (estimatedInputTokens / 1_000_000) * rates.inputCostPer1MCents
-        + (estimatedOutputTokens / 1_000_000) * rates.outputCostPer1MCents,
-        costMultiplier
-      )
-      totalCost += cost
+      const tokenCost = computeTokenCost(rates, estimatedInputTokens, estimatedOutputTokens, costMultiplier)
+      totalCost += tokenCost.totalCost
       steps.push({
         step: 'llm',
         provider: llmTarget.service,
         model: llmTarget.model,
-        cost,
+        cost: tokenCost.totalCost,
         costMultiplier,
-        inputCostPer1MCents: rates.inputCostPer1MCents,
-        outputCostPer1MCents: rates.outputCostPer1MCents,
+        inputCostPer1MCents: tokenCost.inputCostPer1MCents,
+        outputCostPer1MCents: tokenCost.outputCostPer1MCents,
         estimatedInputTokens,
-        estimatedOutputTokens
+        estimatedOutputTokens,
+        ...(typeof tokenCost.pricingBand === 'string' ? { pricingBand: tokenCost.pricingBand } : {}),
+        ...(typeof tokenCost.pricingNote === 'string' ? { pricingNote: tokenCost.pricingNote } : {})
       })
     }
   }

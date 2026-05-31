@@ -12,6 +12,7 @@ import type {
 
 export const GEMINI_LLM_MODELS = [
   'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
 ] as const
 export const GEMINI_IMAGE_MODELS = ['gemini-3.1-flash-image-preview'] as const
@@ -38,6 +39,13 @@ const GEMINI_LLM_PRICING: Record<GeminiLlmModel, GeminiTieredTokenPricing> = {
       input: 4.0,
       cachedInput: 0.4,
       output: 18.0,
+    },
+  },
+  'gemini-3.1-flash-lite': {
+    standard: {
+      input: 0.25,
+      cachedInput: 0.025,
+      output: 1.5,
     },
   },
   'gemini-3.1-flash-lite-preview': {

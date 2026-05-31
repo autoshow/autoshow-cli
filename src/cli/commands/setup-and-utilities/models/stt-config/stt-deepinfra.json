@@ -5,6 +5,11 @@
     "models": {
       "openai/whisper-large-v3-turbo": {
         "description": "OpenAI Whisper large v3 turbo via DeepInfra's OpenAI-compatible transcription API",
+        "pricingSourceUrl": "https://deepinfra.com/openai/whisper-large-v3-turbo",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "DeepInfra public per-minute model pricing",
+        "pricingNotes": "DeepInfra lists openai/whisper-large-v3-turbo at $0.00020/min, stored as $0.012/hr. Free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.012,
         "costPerHourCents": 1.2,
         "limits": {
@@ -17,6 +22,11 @@
       },
       "openai/whisper-large-v3": {
         "description": "OpenAI Whisper large v3 via DeepInfra's OpenAI-compatible transcription API",
+        "pricingSourceUrl": "https://deepinfra.com/openai/whisper-large-v3",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "DeepInfra public per-minute model pricing",
+        "pricingNotes": "DeepInfra lists openai/whisper-large-v3 at $0.00045/min, stored as $0.027/hr. Free credits, discounts, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.027,
         "costPerHourCents": 2.7,
         "limits": {

@@ -30,6 +30,8 @@ export type LlmStepEstimate = ProviderModelBase & {
   estimatedOutputTokens?: number
   totalCost: number
   costMultiplier?: number
+  pricingBand?: string
+  pricingNote?: string
 }
 
 export type TtsStepEstimate = ProviderModelBase & {
@@ -74,6 +76,8 @@ export type ExtractStepEstimate = ProviderModelBase<'tesseract' | 'ocrmypdf' | '
   costPer1kOutputCharsCents?: number
   inputCostPer1MCents?: number
   outputCostPer1MCents?: number
+  pricingBand?: string
+  pricingNote?: string
   pageCount?: number
   estimatedOutputChars?: number
   promptTokens?: number
@@ -286,6 +290,8 @@ export type StepCostEntry = {
   inputValue?: number
   promptTokens?: number
   completionTokens?: number
+  pricingBand?: string
+  pricingNote?: string
 }
 
 export type ActualCostBreakdown = {
@@ -311,6 +317,8 @@ export type EstimatedStepEntry = {
   estimatedOutputTokens?: number
   promptTokens?: number
   completionTokens?: number
+  pricingBand?: string
+  pricingNote?: string
   estimateType?: 'heuristic' | 'exact'
   costPer1kCharactersCents?: number
   inputCostPer1MCharactersCents?: number

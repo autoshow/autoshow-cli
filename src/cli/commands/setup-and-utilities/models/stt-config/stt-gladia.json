@@ -5,6 +5,11 @@
     "models": {
       "default": {
         "description": "Default pre-recorded STT — diarization-enabled async transcription",
+        "pricingSourceUrl": "https://support.gladia.io/article/understanding-our-transcription-pricing-pv1atikh8y9c8sw7sudm3rcy",
+        "pricingCheckedAt": "2026-05-31",
+        "pricingCurrency": "USD",
+        "pricingTier": "Gladia public transcription pricing",
+        "pricingNotes": "Gladia pre-recorded transcription is estimated at $0.61/hour. Free trial credits, custom plans, enterprise pricing, taxes, and provider credits are ignored.",
         "costPerHourUSD": 0.61,
         "costPerHourCents": 61,
         "limits": {

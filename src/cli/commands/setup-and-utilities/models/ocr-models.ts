@@ -44,6 +44,7 @@ export const validateAnthropicOcrModel = createModelValidator<AnthropicOcrModel>
 
 export const SUPPORTED_GEMINI_OCR_MODELS = [
   'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview'
 ] as const satisfies readonly string[]
 

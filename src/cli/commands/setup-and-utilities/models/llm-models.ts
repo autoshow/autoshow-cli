@@ -18,6 +18,7 @@ export const SUPPORTED_GROQ_MODELS = [
 
 export const SUPPORTED_GEMINI_MODELS = [
   'gemini-3.1-pro-preview',
+  'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
 ] as const satisfies readonly string[]
 
